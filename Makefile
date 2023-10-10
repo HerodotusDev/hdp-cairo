@@ -48,6 +48,8 @@ prepare-processor-input:
 	@echo "Prepare chunk_processor_input.json data with the parameters in tools/make/processor_input.json"
 	./tools/make/prepare_inputs_api.py
 
+prepare-inclusion-proof:
+	./tools/make/prepare_inclusion_proof.py
 get-program-hash:
 	@echo "Get chunk_processor.cairo program's hash."
 	cairo-compile ./src/single_chunk_processor/chunk_processor.cairo --output build/compiled_cairo_files/chunk_processor.json

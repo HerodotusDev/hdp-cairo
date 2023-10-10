@@ -6,7 +6,11 @@ import inquirer
 from tools.py.utils import create_directory, get_files_from_folders
 
 # Constants
-CAIRO_PROGRAMS_FOLDERS = ["tests/cairo_programs/", "src/single_chunk_processor"]
+CAIRO_PROGRAMS_FOLDERS = [
+    "tests/cairo_programs/",
+    "src/single_chunk_processor",
+    "src/batch_storage_proof",
+]
 BUILD_DIR = "build"
 PROFILING_DIR = os.path.join(BUILD_DIR, "profiling")
 COMPILED_FILES_DIR = os.path.join(BUILD_DIR, "compiled_cairo_files")
@@ -124,7 +128,7 @@ class CairoRunner:
     def construct_run_command(self, compiled_path):
         cmd_base = f"cairo-run --program={compiled_path} --layout=starknet_with_keccak"
         input_flag = (
-            f" --program_input={self.json_input_path}"
+            f" --program_input={self.json_input_path} --print_output"
             if os.path.exists(self.json_input_path)
             else ""
         )
