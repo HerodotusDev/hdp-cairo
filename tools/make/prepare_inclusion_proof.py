@@ -39,12 +39,15 @@ def prepare_inclusion_proofs(mmr: MMR, blocks_info: dict[int, MMRBlockInfo]) -> 
     element_positions = []
 
     for n, block_info in blocks_info.items():
+        # print(n, block_info.element_pos + 1)
         proof = mmr.gen_proof(block_info.element_pos)
         proof.verify(root, block_info.element_pos, block_info.element)
 
         inclusion_proofs.append(proof.proof)
         element_preimages.append(block_info.element_preimage)
-        element_positions.append(block_info.element_pos)
+        element_positions.append(
+            block_info.element_pos + 1
+        )  # Convert to 1-based indexing
 
     cairo_input["inclusion_proofs"] = inclusion_proofs
     cairo_input["element_preimages"] = element_preimages

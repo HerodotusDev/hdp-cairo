@@ -357,7 +357,7 @@ class MerkleProof(object):
                 if pos == peaks[-1]:
                     hasher.update(proof)
                     hasher.update(elem_hash)
-                    # print(f"Hashing : {proof}, {elem_hash}")
+                    # print(f"Hashing last: {proof}, {elem_hash}")
                 else:
                     hasher.update(elem_hash)
                     hasher.update(proof)
@@ -370,16 +370,19 @@ class MerkleProof(object):
             # verify merkle path
             pos_height = tree_pos_height(pos)
             next_height = tree_pos_height(pos + 1)
+            # print(f"position: {pos}, h={pos_height}, nh={next_height}")
             if next_height > pos_height:
                 # we are in right child
                 hasher.update(proof)
                 hasher.update(elem_hash)
                 pos += 1
+                # print(f"Hashing right : {proof}, {elem_hash}")
             else:
                 # we are in left child
                 hasher.update(elem_hash)
                 hasher.update(proof)
                 pos += 2 << height
+                # print(f"Hashing left : {elem_hash}, {proof}")
             # print(f"MerklePath: elem:{elem_hash}, proof:{proof}")
             elem_hash = hasher.digest()
             height += 1
