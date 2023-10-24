@@ -13,12 +13,12 @@ const DIV_32_MINUS_1 = DIV_32 - 1;
 // Use with a default_dict with default_value = 0.
 // If the element is present, the value will be 1.
 // If the element is not present, the value will be 0.
-func write_felt_array_to_dict{dict_end: DictAccess*}(array: felt*, index: felt) {
+func write_felt_array_to_dict_keys{dict_end: DictAccess*}(array: felt*, index: felt) {
     if (index == -1) {
         return ();
     } else {
         dict_write{dict_ptr=dict_end}(key=array[index], new_value=1);
-        return write_felt_array_to_dict(array, index - 1);
+        return write_felt_array_to_dict_keys(array, index - 1);
     }
 }
 

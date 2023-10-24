@@ -98,6 +98,53 @@ func get_bigint_byte_size{range_check_ptr}(byte: felt) -> felt {
         return byte - 128;
     }
 }
+// Retrieves the state root from a block header.
+// Assumes the block header is correctly RLP encoded with values as 64-bit little endian.
+//
+// Params:
+// - rlp: felt* - A pointer to the array of felts, each segmenting the block header into 8-byte little endian chunks.
+//
+// Returns:
+// - res: Uint256 - The state root extracted from the block header in little endian.
+func extract_state_root_little{range_check_ptr}(rlp: felt*) -> Uint256 {
+    // Ethereum block header RLP encoding is as follows for the first 4 items:
+    //
+    // -parent hash prefix: \xf9\x02B\xa0 (4 bytes)
+    // -parent hash: 32 bytes
+    // -unclesHash prefix: \xa0 (1 byte)
+    // -unclesHash: 32 bytes
+    // -coinbase prefix: \x94 (1 byte)
+    // -coinbase: 20 bytes
+    // -stateRoot prefix: \xa0 (1 byte)
+    // -stateRoot: 32 bytes
+    // We can skip the first (4+32+1+32+1+20+1) = 91 bytes, and start reading at index 91//8 +1 = 12 (index 11)
+    //
+    // The state root is between byte 92 and 124 (included)
+    // 0: bytes 89 to 96. Need to cut the first 3 bytes, which are the last 3 bytes in the little endian representation
+    // We need to keep bytes 92 to 96, which are the first 5 bytes in the little endian representation
+    // %{
+    //     rlp_array = [memory[ids.rlp + i] for i in range(10, 16)]
+    //     rlp_bytes = [int.to_bytes(x, 8, "big") for x in rlp_array]
+    //     print(f"rlp_array: {rlp_array}")
+    //     print(f"rlp_bytes: {rlp_bytes}")
+    // %}
+    let rlp_state_root_0 = rlp[11];
+    let (state_root_first_40, thrash) = felt_divmod(rlp_state_root_0, 2 ** (8 * 3));
+
+    let rlp_state_root_1 = rlp[12];  // bytes 97 to 104
+    let rlp_state_root_2 = rlp[13];  // bytes 105 to 112
+    let (state_root_128_168, state_root_104_128) = felt_divmod(rlp_state_root_2, 2 ** (8 * 3));
+
+    let rlp_state_root_3 = rlp[14];  // bytes 113 to 120
+    // We need to cut bytes 125-128, which are the first 5 bytes in the little endian representation
+    let rlp_state_root_4 = rlp[15];  // bytes 121 to 128
+    let (thrash, state_root_4_last_24) = felt_divmod(rlp_state_root_4, 2 ** (8 * 3));
+    let res_low = state_root_first_40 + 2 ** 40 * rlp_state_root_1 + 2 ** 104 * state_root_104_128;
+    let res_high = state_root_128_168 + 2 ** 40 * rlp_state_root_3 + 2 ** 104 *
+        state_root_4_last_24;
+    let res = Uint256(low=res_low, high=res_high);
+    return res;
+}
 
 // Retrieves the block number from a block header.
 // Assumes the block header is correctly RLP encoded with values as 64-bit big endian.

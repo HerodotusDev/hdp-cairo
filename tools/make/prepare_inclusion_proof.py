@@ -5,6 +5,10 @@ from starkware.cairo.common.poseidon_hash import poseidon_hash_many, poseidon_ha
 from tools.py.utils import bytes_to_8_bytes_chunks_little, write_to_json
 from dataclasses import dataclass
 
+STATE_ROOT_TRIE_TYPE = 0
+RECEIPTS_ROOT_TRIE_TYPE = 1
+WITHDRAWAL_ROOT_TRIE_TYPE = 2
+
 
 @dataclass
 class MMRBlockInfo:
@@ -56,8 +60,16 @@ def prepare_inclusion_proofs(mmr: MMR, blocks_info: dict[int, MMRBlockInfo]) -> 
     return cairo_input
 
 
+def prepare_storage_proofs(blocks_info: dict[int, MMRBlockInfo]):
+    trie_types = []
+    for n, block_info in blocks_info.items():
+        trie_types.append(STATE_ROOT_TRIE_TYPE)
+    return trie_types
+
+
 if __name__ == "__main__":
     mmr, blocks_info = build_mmr(0, 99)
     cairo_input = prepare_inclusion_proofs(mmr, blocks_info)
-
+    trie_types = prepare_storage_proofs(blocks_info)
+    cairo_input["trie_types"] = trie_types
     write_to_json("src/batch_storage_proof/storage_prover_input.json", cairo_input)

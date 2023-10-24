@@ -2,16 +2,21 @@
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.serialize import serialize_word
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
+from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash, poseidon_hash_many
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.dict import dict_read
-from src.libs.utils import pow2alloc127, write_felt_array_to_dict
+from src.libs.utils import pow2alloc127, write_felt_array_to_dict_keys
 from src.libs.mmr import (
     compute_peaks_positions,
     assert_mmr_size_is_valid,
     compute_height_pre_alloc_pow2 as compute_height,
 )
+from src.libs.block_header import extract_state_root_little
+
+const STATE_ROOT_TRIE_TYPE = 0;
+const RECEIPTS_ROOT_TRIE_TYPE = 1;
 
 // For now, takes Poseidon MMR inclusion proofs as input and verifies them.
 // Later : Associate a storage proof to each MMR inclusion proof.
@@ -30,7 +35,7 @@ func main{
     let (element_positions: felt*) = alloc();
     let (inclusion_proofs: felt**) = alloc();
     let (inclusion_proofs_len: felt*) = alloc();
-
+    let (trie_types: felt*) = alloc();
     let mmr_size = [range_check_ptr];
     let n_proofs = [range_check_ptr + 1];
     %{
@@ -41,6 +46,7 @@ func main{
         segments.write_arg(ids.element_positions, program_input["element_positions"])
         segments.write_arg(ids.inclusion_proofs, program_input["inclusion_proofs"])
         segments.write_arg(ids.inclusion_proofs_len, [len(x) for x in program_input["inclusion_proofs"]])
+        segments.write_arg(ids.trie_types, program_input["trie_types"])
         ids.n_proofs = len(program_input["inclusion_proofs"])
     %}
     let range_check_ptr = range_check_ptr + 2;
@@ -54,7 +60,7 @@ func main{
     let (local peaks_positions_dict) = default_dict_new(default_value=0);
     tempvar peaks_positions_dict_start = peaks_positions_dict;
 
-    write_felt_array_to_dict{dict_end=peaks_positions_dict}(peaks, peaks_len - 1);
+    write_felt_array_to_dict_keys{dict_end=peaks_positions_dict}(array=peaks, index=peaks_len - 1);
     let rightmost_peak_pos = peaks[peaks_len - 1];
     %{ print(f"Rightmost peak pos : {ids.rightmost_peak_pos}") %}
     verify_n_inclusion_proofs{
@@ -71,6 +77,10 @@ func main{
         inclusion_proofs_len,
         n_proofs - 1,
     );
+    let trie_roots: Uint256* = alloc();
+    extract_trie_roots{
+        block_headers_array=element_preimages, trie_types=trie_types, trie_roots=trie_roots
+    }(n_proofs - 1);
 
     default_dict_finalize(peaks_positions_dict_start, peaks_positions_dict, 0);
 
@@ -205,6 +215,45 @@ func verify_mmr_inclusion_proof{
     }
 }
 
+// Write trie_roots[index] == extract_root(trie_type[index], block_headers_array[index])
+// Where extract_root(trie_type, block_header) gets the root of type trie_type from block_header.
+// trie_type is either STATE_ROOT_TRIE_TYPE (0), RECEIPTS_ROOT_TRIE_TYPE (1) or WITHDRAWALS_ROOT_TRIE_TYPE (any other value)
+// Implicits arguments:
+// - range_check_ptr: The pointer to the range check segment.
+// - block_headers_array: Array of pointers to array of felts, each segmenting the block header into 8-byte little endian chunks.
+// - trie_types: Array of felts, each containing the type of the trie to extract. (0 for state root, 1 for receipts root, any other value for withdrawals root)
+// - trie_roots: Array of Uint256 to write the extracted trie roots to.
+// Params:
+// - index: The index of the trie to extract.
+func extract_trie_roots{
+    range_check_ptr, block_headers_array: felt**, trie_types: felt*, trie_roots: Uint256*
+}(index: felt) {
+    if (index == -1) {
+        return ();
+    } else {
+        if (trie_types[index] == STATE_ROOT_TRIE_TYPE) {
+            let trie_root = extract_state_root_little(block_headers_array[index]);
+            assert trie_roots[index].low = trie_root.low;
+            assert trie_roots[index].high = trie_root.high;
+            return extract_trie_roots(index - 1);
+        } else {
+            if (trie_types[index] == RECEIPTS_ROOT_TRIE_TYPE) {
+                // TODO
+                tempvar trie_root = Uint256(0, 0);
+                assert trie_roots[index].low = trie_root.low;
+                assert trie_roots[index].high = trie_root.high;
+                return extract_trie_roots(index - 1);
+            } else {
+                // Withdrawals root
+                // TODO
+                tempvar trie_root = Uint256(0, 0);
+                assert trie_roots[index].low = trie_root.low;
+                assert trie_roots[index].high = trie_root.high;
+                return extract_trie_roots(index - 1);
+            }
+        }
+    }
+}
 func batch_serialize_words{output_ptr: felt*}(words: felt*, n_words: felt) {
     if (n_words == 0) {
         return ();
