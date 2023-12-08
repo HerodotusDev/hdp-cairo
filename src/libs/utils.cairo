@@ -1,12 +1,56 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.registers import get_label_location
-from starkware.cairo.common.math import unsigned_div_rem as felt_divmod
+// from starkware.cairo.common.math import unsigned_div_rem as felt_divmod
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.dict import dict_write
+from starkware.cairo.common.uint256 import Uint256, SHIFT
 
 const DIV_32 = 2 ** 32;
 const DIV_32_MINUS_1 = DIV_32 - 1;
+
+// Fast version of common.uint256.uint256_add.
+func uint256_add{range_check_ptr}(a: Uint256, b: Uint256) -> (res: Uint256, carry: felt) {
+    alloc_locals;
+    local carry_low: felt;
+    local carry_high: felt;
+    %{
+        sum_low = ids.a.low + ids.b.low
+        ids.carry_low = 1 if sum_low >= ids.SHIFT else 0
+        sum_high = ids.a.high + ids.b.high + ids.carry_low
+        ids.carry_high = 1 if sum_high >= ids.SHIFT else 0
+    %}
+
+    if (carry_low != 0) {
+        if (carry_high != 0) {
+            tempvar range_check_ptr = range_check_ptr + 2;
+            tempvar res = Uint256(low=a.low + b.low - SHIFT, high=a.high + b.high + 1 - SHIFT);
+            assert [range_check_ptr - 2] = res.low;
+            assert [range_check_ptr - 1] = res.high;
+            return (res, 1);
+        } else {
+            tempvar range_check_ptr = range_check_ptr + 2;
+            tempvar res = Uint256(low=a.low + b.low - SHIFT, high=a.high + b.high + 1);
+            assert [range_check_ptr - 2] = res.low;
+            assert [range_check_ptr - 1] = res.high;
+            return (res, 0);
+        }
+    } else {
+        if (carry_high != 0) {
+            tempvar range_check_ptr = range_check_ptr + 2;
+            tempvar res = Uint256(low=a.low + b.low, high=a.high + b.high - SHIFT);
+            assert [range_check_ptr - 2] = res.low;
+            assert [range_check_ptr - 1] = res.high;
+            return (res, 1);
+        } else {
+            tempvar range_check_ptr = range_check_ptr + 2;
+            tempvar res = Uint256(low=a.low + b.low, high=a.high + b.high);
+            assert [range_check_ptr - 2] = res.low;
+            assert [range_check_ptr - 1] = res.high;
+            return (res, 0);
+        }
+    }
+}
 
 // Write the elements of the array as key in the dictionnary and assign the value 0 to each key.
 // Used to check that an element in the dict is present by checking dict[key] == 1.
@@ -479,4 +523,20 @@ func pow2alloc127() -> (array: felt*) {
     dw 0x20000000000000000000000000000000;
     dw 0x40000000000000000000000000000000;
     dw 0x80000000000000000000000000000000;
+}
+
+// Returns an array such that array[i] = 0xff << (8 * i) for i in [0, 7].
+func byte_mask_64_array() -> (array: felt*) {
+    let (data_address) = get_label_location(mask_data);
+    return (data_address,);
+
+    mask_data:
+    dw 0xff;
+    dw 0xff00;
+    dw 0xff0000;
+    dw 0xff000000;
+    dw 0xff00000000;
+    dw 0xff0000000000;
+    dw 0xff000000000000;
+    dw 0xff00000000000000;
 }
