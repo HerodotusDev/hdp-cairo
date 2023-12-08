@@ -16,6 +16,10 @@ def from_uint256(a):
     return a[0] + (a[1] << 128)
 
 
+def reverse_endian_256(x: int):
+    return int.from_bytes(x.to_bytes(32, "big"), "little")
+
+
 def rpc_request(url, rpc_request):
     headers = {"Content-Type": "application/json"}
     response = requests.post(url=url, headers=headers, data=json.dumps(rpc_request))
