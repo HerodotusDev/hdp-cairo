@@ -335,7 +335,7 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
             return (
                 n_nibbles_already_checked=n_nibbles_already_checked,
                 item_of_interest=value,
-                item_of_interest_len=value_len,
+                item_of_interest_len=second_item_bytes_len,
             );
         } else {
             // Extract hash (32 bytes)
@@ -346,7 +346,7 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
             return (
                 n_nibbles_already_checked=n_nibbles_already_checked,
                 item_of_interest=cast(&hash_le, felt*),
-                item_of_interest_len=2,
+                item_of_interest_len=32,
             );
         }
     } else {
@@ -364,15 +364,14 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
             ) = jump_branch_node_till_element_at_index(
                 rlp, 0, 16, third_item_start_word, third_item_start_offset, pow2_array
             );
+            tempvar last_item_bytes_len = bytes_len - (
+                last_item_start_word * 8 + last_item_start_offset
+            );
             let (last_item: felt*, last_item_len: felt) = extract_n_bytes_from_le_64_chunks_array(
-                rlp,
-                last_item_start_word,
-                last_item_start_offset,
-                bytes_len - (last_item_start_word * 8 + last_item_start_offset),
-                pow2_array,
+                rlp, last_item_start_word, last_item_start_offset, last_item_bytes_len, pow2_array
             );
 
-            return (n_nibbles_already_checked, last_item, last_item_len);
+            return (n_nibbles_already_checked, last_item, last_item_bytes_len);
         } else {
             %{ print(f"Branch case, last node : no") %}
             // Branch is not the last node in the proof. We need to extract the hash corresponding to the next nibble of the key.
@@ -450,7 +449,7 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
             );
 
             // Return the Uint256 hash as a felt* of length 2.
-            return (n_nibbles_already_checked + 1, cast(&hash_le, felt*), 2);
+            return (n_nibbles_already_checked + 1, cast(&hash_le, felt*), 32);
         }
     }
 }
