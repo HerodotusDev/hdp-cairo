@@ -68,3 +68,10 @@ def fetch_blocks_from_rpc_no_async(
         time.sleep(delay)  # Add delay
     time.sleep(delay)  # Add delay
     return all_results
+
+
+def get_block_header(number: int, RPC_URL: str):
+    blocks = fetch_blocks_from_rpc_no_async(number + 1, number - 1, RPC_URL)
+    block = blocks[1]
+    assert block.number == number, f"Block number mismatch {block.number} != {number}"
+    return block

@@ -3,7 +3,7 @@ from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.uint256 import Uint256, uint256_pow2, uint256_unsigned_div_rem
 from starkware.cairo.common.alloc import alloc
-from src.libs.utils import felt_divmod_8, felt_divmod
+from src.libs.utils import felt_divmod_8, felt_divmod, get_0xff_mask
 
 // Takes a 64 bit word in little endian, returns the byte at a given position as it would be in big endian.
 // Ie: word = b7 b6 b5 b4 b3 b2 b1 b0
@@ -393,96 +393,4 @@ func array_copy(src: felt*, dst: felt*, n: felt, index: felt) {
         assert dst[index] = src[index];
         return array_copy(src=src, dst=dst, n=n, index=index + 1);
     }
-}
-
-func get_0xff_mask(n: felt) -> felt {
-    let (_, pc) = get_fp_and_pc();
-
-    pc_labelx:
-    let data = pc + (n_0xff - pc_labelx);
-
-    let res = [data + n];
-
-    return res;
-
-    n_0xff:
-    dw 0;
-    dw 0xff;
-    dw 0xffff;
-    dw 0xffffff;
-    dw 0xffffffff;
-    dw 0xffffffffff;
-    dw 0xffffffffffff;
-    dw 0xffffffffffffff;
-    dw 0xffffffffffffffff;
-}
-
-func get_nibble_mask(n: felt) -> felt {
-    let (_, pc) = get_fp_and_pc();
-
-    pc_labelx:
-    let data = pc + (n_0xf - pc_labelx);
-
-    let res = [data + n];
-
-    return res;
-
-    n_0xf:
-    dw 0;
-    dw 0xf;
-    dw 0xff;
-    dw 0xfff;
-    dw 0xffff;
-    dw 0xfffff;
-    dw 0xffffff;
-    dw 0xfffffff;
-    dw 0xffffffff;
-    dw 0xfffffffff;
-    dw 0xffffffffff;
-    dw 0xfffffffffff;
-    dw 0xffffffffffff;
-    dw 0xfffffffffffff;
-    dw 0xffffffffffffff;
-    dw 0xfffffffffffffff;
-    dw 0xffffffffffffffff;
-    dw 0xfffffffffffffffff;
-    dw 0xffffffffffffffffff;
-    dw 0xfffffffffffffffffff;
-    dw 0xffffffffffffffffffff;
-    dw 0xfffffffffffffffffffff;
-    dw 0xffffffffffffffffffffff;
-    dw 0xfffffffffffffffffffffff;
-    dw 0xffffffffffffffffffffffff;
-    dw 0xfffffffffffffffffffffffff;
-    dw 0xffffffffffffffffffffffffff;
-    dw 0xfffffffffffffffffffffffffff;
-    dw 0xffffffffffffffffffffffffffff;
-    dw 0xfffffffffffffffffffffffffffff;
-    dw 0xffffffffffffffffffffffffffffff;
-    dw 0xfffffffffffffffffffffffffffffff;
-    dw 0xffffffffffffffffffffffffffffffff;
-}
-
-// pow_nib:
-// dw
-
-// Returns nibble * 2**n as a Uint256.
-func pow_nibble{range_check_ptr}(nibble: felt, n: felt, pow2_array: felt*) -> Uint256 {
-    alloc_locals;
-    local low;
-    local high;
-    %{
-        from tools.py.utils import split_128
-        assert 0 <= ids.nibble <= 15, f"Weird nibble: {ids.nibble}"
-
-        ids.low, ids.high = split_128(ids.nibble * 2**ids.n)
-    %}
-
-    assert [range_check_ptr] = low;
-    assert [range_check_ptr + 1] = high;
-    tempvar range_check_ptr = range_check_ptr + 2;
-
-    let res = Uint256(low=low, high=high);
-
-    return res;
 }

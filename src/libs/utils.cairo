@@ -4,6 +4,7 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.dict import dict_write
 from starkware.cairo.common.uint256 import Uint256, SHIFT
+from starkware.cairo.common.registers import get_fp_and_pc
 
 const DIV_32 = 2 ** 32;
 const DIV_32_MINUS_1 = DIV_32 - 1;
@@ -50,8 +51,6 @@ func uint256_add{range_check_ptr}(a: Uint256, b: Uint256) -> (res: Uint256, carr
         }
     }
 }
-
-
 
 // Write the elements of the array as key in the dictionnary and assign the value 0 to each key.
 // Used to check that an element in the dict is present by checking dict[key] == 1.
@@ -430,6 +429,28 @@ func word_reverse_endian_56_RC{range_check_ptr}(word: felt) -> felt {
     tempvar range_check_ptr = range_check_ptr + 14;
     return b0 + b1 * 256 + b2 * 256 ** 2 + b3 * 256 ** 3 + b4 * 256 ** 4 + b5 * 256 ** 5 + b6 *
         256 ** 6;
+}
+
+func get_0xff_mask(n: felt) -> felt {
+    let (_, pc) = get_fp_and_pc();
+
+    pc_labelx:
+    let data = pc + (n_0xff - pc_labelx);
+
+    let res = [data + n];
+
+    return res;
+
+    n_0xff:
+    dw 0;
+    dw 0xff;
+    dw 0xffff;
+    dw 0xffffff;
+    dw 0xffffffff;
+    dw 0xffffffffff;
+    dw 0xffffffffffff;
+    dw 0xffffffffffffff;
+    dw 0xffffffffffffffff;
 }
 
 // Utility to get a pointer on an array of 2^i from i = 0 to 127.
