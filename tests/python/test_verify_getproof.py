@@ -16,8 +16,6 @@ from web3._utils.encoding import (
     pad_bytes,
 )
 from tools.py.utils import (
-    find_subsequence_metadata,
-    find_byte_subsequence,
     bytes_to_8_bytes_chunks,
     bytes_to_8_bytes_chunks_little,
 )

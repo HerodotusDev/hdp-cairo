@@ -1,6 +1,5 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.registers import get_label_location
-// from starkware.cairo.common.math import unsigned_div_rem as felt_divmod
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.dict import dict_write
@@ -51,6 +50,8 @@ func uint256_add{range_check_ptr}(a: Uint256, b: Uint256) -> (res: Uint256, carr
         }
     }
 }
+
+
 
 // Write the elements of the array as key in the dictionnary and assign the value 0 to each key.
 // Used to check that an element in the dict is present by checking dict[key] == 1.
@@ -133,6 +134,48 @@ func felt_divmod_2pow32{range_check_ptr}(value: felt) -> (q: felt, r: felt) {
     let range_check_ptr = range_check_ptr + 3;
 
     assert value = q * DIV_32 + r;
+    return (q, r);
+}
+
+// Computes x//8 and x%8 using range checks operations.
+// Adapted version of starkware.common.math.unsigned_div_rem with a fixed divisor of 2**32.
+// Assumption : value / 8 < RC_BOUND
+// params:
+//   x: the dividend.
+// returns:
+//   q: the quotient .
+//   r: the remainder.
+func felt_divmod_8{range_check_ptr}(value: felt) -> (q: felt, r: felt) {
+    let r = [range_check_ptr];
+    let q = [range_check_ptr + 1];
+    %{ ids.q, ids.r = divmod(ids.value, 8) %}
+    assert [range_check_ptr + 2] = 7 - r;
+    let range_check_ptr = range_check_ptr + 3;
+
+    assert value = q * 8 + r;
+    return (q, r);
+}
+
+// Returns q and r such that:
+//  0 <= q < rc_bound, 0 <= r < div and value = q * div + r.
+//
+// Assumption: 0 < div <= PRIME / rc_bound.
+// Prover assumption: value / div < rc_bound.
+// Modified version of unsigned_div_rem with inlined range checks.
+func felt_divmod{range_check_ptr}(value, div) -> (q: felt, r: felt) {
+    let r = [range_check_ptr];
+    let q = [range_check_ptr + 1];
+    %{
+        from starkware.cairo.common.math_utils import assert_integer
+        assert_integer(ids.div)
+        assert 0 < ids.div <= PRIME // range_check_builtin.bound, \
+            f'div={hex(ids.div)} is out of the valid range.'
+        ids.q, ids.r = divmod(ids.value, ids.div)
+    %}
+    assert [range_check_ptr + 2] = div - 1 - r;
+    let range_check_ptr = range_check_ptr + 3;
+
+    assert value = q * div + r;
     return (q, r);
 }
 
@@ -523,20 +566,4 @@ func pow2alloc127() -> (array: felt*) {
     dw 0x20000000000000000000000000000000;
     dw 0x40000000000000000000000000000000;
     dw 0x80000000000000000000000000000000;
-}
-
-// Returns an array such that array[i] = 0xff << (8 * i) for i in [0, 7].
-func byte_mask_64_array() -> (array: felt*) {
-    let (data_address) = get_label_location(mask_data);
-    return (data_address,);
-
-    mask_data:
-    dw 0xff;
-    dw 0xff00;
-    dw 0xff0000;
-    dw 0xff000000;
-    dw 0xff00000000;
-    dw 0xff0000000000;
-    dw 0xff000000000000;
-    dw 0xff00000000000000;
 }

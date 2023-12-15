@@ -1,9 +1,9 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.memcpy import memcpy
-from starkware.cairo.common.uint256 import Uint256
-from starkware.cairo.common.math import unsigned_div_rem as felt_divmod
+from starkware.cairo.common.uint256 import Uint256, uint256_pow2, uint256_unsigned_div_rem
 from starkware.cairo.common.alloc import alloc
+from src.libs.utils import felt_divmod_8, felt_divmod
 
 // Takes a 64 bit word in little endian, returns the byte at a given position as it would be in big endian.
 // Ie: word = b7 b6 b5 b4 b3 b2 b1 b0
@@ -11,34 +11,186 @@ from starkware.cairo.common.alloc import alloc
 func extract_byte_at_pos{bitwise_ptr: BitwiseBuiltin*}(
     word_64_little: felt, byte_position: felt, pow2_array: felt*
 ) -> felt {
+    tempvar pow = pow2_array[8 * byte_position];
     assert bitwise_ptr.x = word_64_little;
-    assert bitwise_ptr.y = 0xff * pow2_array[8 * byte_position];
-    let extracted_byte_at_pos = bitwise_ptr.x_and_y / pow2_array[8 * byte_position];
+    assert bitwise_ptr.y = 0xff * pow;
+    let extracted_byte_at_pos = bitwise_ptr.x_and_y / pow;
     tempvar bitwise_ptr = bitwise_ptr + BitwiseBuiltin.SIZE;
     return extracted_byte_at_pos;
 }
 
 // Takes a 64 bit word with little endian bytes, returns the nibble at a given position as it would be in big endian.
 // Input of the form: word_64_bits = n14 n15 n12 n13 n10 n11 n8 n9 n6 n7 n4 n5 n2 n3 n0 n1
-// returns ni such that i = 2 * byte_position + 1 if first_nibble != 0
-// returns ni such that i = 2 * byte_position if first_nibble = 0
+// returns ni such that :
+// i = 2 * byte_position if nibble_pos = 0
+// i = 2 * byte_position + 1 if nibble_pos != 0
+// nibble_pos is the position within the byte, first nibble of the byte is 0, second is 1 (here 1 <=> !=0 to avoid a range check).
 func extract_nibble_at_byte_pos{bitwise_ptr: BitwiseBuiltin*}(
-    word_64_little: felt, byte_pos: felt, first_nibble: felt, pow2_array: felt*
+    word_64_little: felt, byte_pos: felt, nibble_pos: felt, pow2_array: felt*
 ) -> felt {
-    if (first_nibble == 0) {
-        tempvar offset = pow2_array[8 * byte_pos + 4];
+    if (nibble_pos == 0) {
+        tempvar pow = pow2_array[8 * byte_pos + 4];
         assert bitwise_ptr.x = word_64_little;
-        assert bitwise_ptr.y = 0xf * offset;
-        let extracted_nibble_at_pos = bitwise_ptr.x_and_y / offset;
+        assert bitwise_ptr.y = 0xf * pow;
+        let extracted_nibble_at_pos = bitwise_ptr.x_and_y / pow;
         tempvar bitwise_ptr = bitwise_ptr + BitwiseBuiltin.SIZE;
         return extracted_nibble_at_pos;
     } else {
-        tempvar offset = pow2_array[8 * byte_pos];
+        tempvar pow = pow2_array[8 * byte_pos];
         assert bitwise_ptr.x = word_64_little;
-        assert bitwise_ptr.y = 0xf * pow2_array[offset];
-        let extracted_nibble_at_pos = bitwise_ptr.x_and_y / offset;
+        assert bitwise_ptr.y = 0xf * pow;
+        let extracted_nibble_at_pos = bitwise_ptr.x_and_y / pow;
         tempvar bitwise_ptr = bitwise_ptr + BitwiseBuiltin.SIZE;
         return extracted_nibble_at_pos;
+    }
+}
+
+func key_subset_to_uint256(key_subset: felt*, key_subset_len: felt) -> Uint256 {
+    if (key_subset_len == 1) {
+        let res = Uint256(low=key_subset[0], high=0);
+        return res;
+    }
+    if (key_subset_len == 2) {
+        let res = Uint256(low=key_subset[0] + key_subset[1] * 2 ** 64, high=0);
+        return res;
+    }
+    if (key_subset_len == 3) {
+        let res = Uint256(low=key_subset[0] + key_subset[1] * 2 ** 64, high=key_subset[2]);
+        return res;
+    }
+    if (key_subset_len == 4) {
+        let res = Uint256(
+            low=key_subset[0] + key_subset[1] * 2 ** 64,
+            high=key_subset[2] + key_subset[3] * 2 ** 64,
+        );
+        return res;
+    }
+    assert 1 = 0;
+    // Should never happen, key is at most 256 bits (4x64 bits words).
+    let res = Uint256(low=0, high=0);
+    return res;
+}
+// params:
+// key_subset : array of 64 bit words with little endian bytes, representing a subset of the key
+// key_subset_len : length of the subset in number of 64 bit words
+// key_subset_bytes_len : length of the subset in number of bytes
+// key subset is of the form [b7 b6 b5 b4 b3 b2 b1 b0, b15 b14 b13 b12 b11 b10 b9 b8, ...]
+// key_little : 256 bit key in little endian
+// key_little is of the form high = [b63, ..., b32] , low = [b31, ..., b0]
+func assert_subset_in_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
+    key_subset: felt*,
+    key_subset_len: felt,
+    key_subset_nibble_len: felt,
+    key_little: Uint256,
+    n_nibbles_already_checked: felt,
+    cut_nibble: felt,
+    pow2_array: felt*,
+) -> () {
+    alloc_locals;
+    let key_subset_256t = key_subset_to_uint256(key_subset, key_subset_len);
+    local key_subset_256: Uint256;
+
+    if (cut_nibble != 0) {
+        let (key_subset_256ltmp, _) = felt_divmod(key_subset_256t.low, 2 ** 4);
+        let (key_subset_256h, acc) = felt_divmod(key_subset_256t.high, 2 ** 4);
+        assert key_subset_256.low = key_subset_256ltmp + acc * 2 ** (128 - 4);
+        assert key_subset_256.high = key_subset_256h;
+        tempvar range_check_ptr = range_check_ptr;
+        // If fail, maybe cut first nibble of high part too.
+    } else {
+        assert key_subset_256.low = key_subset_256t.low;
+        assert key_subset_256.high = key_subset_256t.high;
+        tempvar range_check_ptr = range_check_ptr;
+    }
+    let (upow) = uint256_pow2(Uint256(n_nibbles_already_checked * 4, 0));
+    let (key_shifted, _) = uint256_unsigned_div_rem(key_little, upow);
+
+    assert key_subset_256.low = key_shifted.low;
+
+    if (key_subset_256.high != 0) {
+        // caution : high part must have less or equal 30 nibbles. for felt divmod.
+        let n_nibble_in_high_part = key_subset_nibble_len - 32;
+
+        let (_, key_high) = felt_divmod(key_shifted.high, pow2_array[4 * n_nibble_in_high_part]);
+        %{
+            print(f"\t N nibbles in right part : {ids.n_nibble_in_high_part}") 
+            print(f"\t orig key high : {hex(ids.key_little.high)}")
+            print(f"\t key shifted high : {hex(ids.key_shifted.high)}")
+            print(f"\t final key high : {hex(ids.key_high)}")
+            print(f"\t key subset high : {hex(ids.key_subset_256.high)}")
+        %}
+        assert key_subset_256.high = key_high;
+        return ();
+    } else {
+        return ();
+    }
+}
+
+// From a key with reverse little endian bytes of the form :
+// key = n62 n63 n60 n61 n58 n59 n56 n57 n54 n55 n52 n53 n50 n51 n48 n49 n46 n47 n44 n45 n42 n43 n40 n41 n38 n39 n36 n37 n34 n35 n32 n33 n30 n31 n28 n29 n26 n27 n24 n25 n22 n23 n20 n21 n18 n19 n16 n17 n14 n15 n12 n13 n10 n11 n8 n9 n6 n7 n4 n5 n2 n3 n0 n1
+// returns ni such that i = nibble_index
+// Since key is assumed to be in little endian, nibble index is ordered to start from the most significant nibble for the big endian representation,
+// ie : nibble_index = 0 => most significant nibble of key in big endian
+func extract_nibble_from_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
+    key: Uint256, nibble_index: felt, pow2_array: felt*
+) -> felt {
+    alloc_locals;
+    local get_nibble_from_low: felt;
+    local nibble_pos: felt;
+    %{
+        ids.get_nibble_from_low = 1 if 0 <= ids.nibble_index <= 31 else 0
+        ids.nibble_pos = ids.nibble_index % 2
+    %}
+    %{
+        print(f"Key low: {hex(ids.key.low)}")
+        print(f"Key high: {hex(ids.key.high)}")
+        print(f"nibble_index: {ids.nibble_index}")
+    %}
+    if (get_nibble_from_low != 0) {
+        if (nibble_pos != 0) {
+            %{ print(f"\t case 0 ") %}
+            assert [range_check_ptr] = 31 - nibble_index;
+            assert bitwise_ptr.x = key.low;
+            assert bitwise_ptr.y = 0xf * pow2_array[4 * (nibble_index - 1)];
+            let extracted_nibble_at_pos = bitwise_ptr.x_and_y / pow2_array[4 * (nibble_index - 1)];
+            tempvar range_check_ptr = range_check_ptr + 1;
+            tempvar bitwise_ptr = bitwise_ptr + BitwiseBuiltin.SIZE;
+            return extracted_nibble_at_pos;
+        } else {
+            %{ print(f"\t case 1 ") %}
+
+            assert [range_check_ptr] = 31 - nibble_index;
+            assert bitwise_ptr.x = key.low;
+            assert bitwise_ptr.y = 0xf * pow2_array[4 * nibble_index + 4];
+            let extracted_nibble_at_pos = bitwise_ptr.x_and_y / pow2_array[4 * nibble_index + 4];
+            tempvar range_check_ptr = range_check_ptr + 1;
+            tempvar bitwise_ptr = bitwise_ptr + BitwiseBuiltin.SIZE;
+            return extracted_nibble_at_pos;
+        }
+    } else {
+        if (nibble_pos != 0) {
+            %{ print(f"\t case 2 ") %}
+
+            assert [range_check_ptr] = 31 - (nibble_index - 32);
+            tempvar offset = pow2_array[4 * (nibble_index - 32)];
+            assert bitwise_ptr.x = key.high;
+            assert bitwise_ptr.y = 0xf * offset;
+            let extracted_nibble_at_pos = bitwise_ptr.x_and_y / offset;
+            tempvar range_check_ptr = range_check_ptr + 1;
+            tempvar bitwise_ptr = bitwise_ptr + BitwiseBuiltin.SIZE;
+            return extracted_nibble_at_pos;
+        } else {
+            %{ print(f"\t case 3 ") %}
+
+            assert [range_check_ptr] = 31 - (nibble_index - 32);
+            tempvar offset = pow2_array[4 * (nibble_index - 32) + 4];
+            assert bitwise_ptr.x = key.high;
+            assert bitwise_ptr.y = 0xf * offset;
+            let extracted_nibble_at_pos = bitwise_ptr.x_and_y / offset;
+            tempvar range_check_ptr = range_check_ptr + 1;
+            tempvar bitwise_ptr = bitwise_ptr + BitwiseBuiltin.SIZE;
+            return extracted_nibble_at_pos;
+        }
     }
 }
 
@@ -82,7 +234,7 @@ func extract_le_hash_from_le_64_chunks_array{range_check_ptr}(
     return (res,);
 }
 
-// From an array of 64 bit words in little endian, extract n bytes starting at start_word and start_offset.
+// From an array of 64 bit words in little endia bytesn, extract n bytes starting at start_word and start_offset.
 // array is of the form [b7 b6 b5 b4 b3 b2 b1 b0, b15 b14 b13 b12 b11 b10 b9 b8, ...]
 // start_word is the index of the first word to extract from (starting from 0)
 // start_offset is the offset in bytes from the start of the word (in [[0, 7]])
@@ -95,7 +247,7 @@ func extract_n_bytes_from_le_64_chunks_array{range_check_ptr}(
     alloc_locals;
     let (local res: felt*) = alloc();
 
-    let (q, n_ending_bytes) = felt_divmod(n_bytes, 8);
+    let (q, n_ending_bytes) = felt_divmod_8(n_bytes);
 
     local n_words: felt;
 
@@ -243,17 +395,6 @@ func array_copy(src: felt*, dst: felt*, n: felt, index: felt) {
     }
 }
 
-n_0xff:
-dw 0;
-dw 0xff;
-dw 0xffff;
-dw 0xffffff;
-dw 0xffffffff;
-dw 0xffffffffff;
-dw 0xffffffffffff;
-dw 0xffffffffffffff;
-dw 0xffffffffffffffff;
-
 func get_0xff_mask(n: felt) -> felt {
     let (_, pc) = get_fp_and_pc();
 
@@ -261,6 +402,87 @@ func get_0xff_mask(n: felt) -> felt {
     let data = pc + (n_0xff - pc_labelx);
 
     let res = [data + n];
+
+    return res;
+
+    n_0xff:
+    dw 0;
+    dw 0xff;
+    dw 0xffff;
+    dw 0xffffff;
+    dw 0xffffffff;
+    dw 0xffffffffff;
+    dw 0xffffffffffff;
+    dw 0xffffffffffffff;
+    dw 0xffffffffffffffff;
+}
+
+func get_nibble_mask(n: felt) -> felt {
+    let (_, pc) = get_fp_and_pc();
+
+    pc_labelx:
+    let data = pc + (n_0xf - pc_labelx);
+
+    let res = [data + n];
+
+    return res;
+
+    n_0xf:
+    dw 0;
+    dw 0xf;
+    dw 0xff;
+    dw 0xfff;
+    dw 0xffff;
+    dw 0xfffff;
+    dw 0xffffff;
+    dw 0xfffffff;
+    dw 0xffffffff;
+    dw 0xfffffffff;
+    dw 0xffffffffff;
+    dw 0xfffffffffff;
+    dw 0xffffffffffff;
+    dw 0xfffffffffffff;
+    dw 0xffffffffffffff;
+    dw 0xfffffffffffffff;
+    dw 0xffffffffffffffff;
+    dw 0xfffffffffffffffff;
+    dw 0xffffffffffffffffff;
+    dw 0xfffffffffffffffffff;
+    dw 0xffffffffffffffffffff;
+    dw 0xfffffffffffffffffffff;
+    dw 0xffffffffffffffffffffff;
+    dw 0xfffffffffffffffffffffff;
+    dw 0xffffffffffffffffffffffff;
+    dw 0xfffffffffffffffffffffffff;
+    dw 0xffffffffffffffffffffffffff;
+    dw 0xfffffffffffffffffffffffffff;
+    dw 0xffffffffffffffffffffffffffff;
+    dw 0xfffffffffffffffffffffffffffff;
+    dw 0xffffffffffffffffffffffffffffff;
+    dw 0xfffffffffffffffffffffffffffffff;
+    dw 0xffffffffffffffffffffffffffffffff;
+}
+
+// pow_nib:
+// dw
+
+// Returns nibble * 2**n as a Uint256.
+func pow_nibble{range_check_ptr}(nibble: felt, n: felt, pow2_array: felt*) -> Uint256 {
+    alloc_locals;
+    local low;
+    local high;
+    %{
+        from tools.py.utils import split_128
+        assert 0 <= ids.nibble <= 15, f"Weird nibble: {ids.nibble}"
+
+        ids.low, ids.high = split_128(ids.nibble * 2**ids.n)
+    %}
+
+    assert [range_check_ptr] = low;
+    assert [range_check_ptr + 1] = high;
+    tempvar range_check_ptr = range_check_ptr + 2;
+
+    let res = Uint256(low=low, high=high);
 
     return res;
 }
