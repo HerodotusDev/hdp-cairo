@@ -88,24 +88,53 @@ func assert_subset_in_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
 ) -> () {
     alloc_locals;
     let key_subset_256t = key_subset_to_uint256(key_subset, key_subset_len);
+    %{ print(f"key_susbet_uncut={hex(ids.key_subset_256t.low + ids.key_subset_256t.high*2**128)}") %}
+
     local key_subset_256: Uint256;
+    local key_subset_last_nibble: felt;
+
+    let (_, odd_checked_nibbles) = felt_divmod(n_nibbles_already_checked, 2);
 
     if (cut_nibble != 0) {
-        let (key_subset_256ltmp, _) = felt_divmod(key_subset_256t.low, 2 ** 4);
-        let (key_subset_256h, acc) = felt_divmod(key_subset_256t.high, 2 ** 4);
-        assert key_subset_256.low = key_subset_256ltmp + acc * 2 ** (128 - 4);
+        %{ print(f"Cut nibble") %}
+        let (key_subset_256ltmp, byte) = felt_divmod(key_subset_256t.low, 2 ** 8);
+        let (key_subset_256h, acc) = felt_divmod(key_subset_256t.high, 2 ** 8);
+        let (_, nibble) = felt_divmod(byte, 2 ** 4);
+        assert key_subset_256.low = key_subset_256ltmp + acc * 2 ** (128 - 8);
         assert key_subset_256.high = key_subset_256h;
+        assert key_subset_last_nibble = nibble;
         tempvar range_check_ptr = range_check_ptr;
-        // If fail, maybe cut first nibble of high part too.
     } else {
         assert key_subset_256.low = key_subset_256t.low;
         assert key_subset_256.high = key_subset_256t.high;
+        assert key_subset_last_nibble = 0;
         tempvar range_check_ptr = range_check_ptr;
     }
-    let (upow) = uint256_pow2(Uint256(n_nibbles_already_checked * 4, 0));
-    let (key_shifted, _) = uint256_unsigned_div_rem(key_little, upow);
+    %{ print(f"key_susbet_cutted={hex(ids.key_subset_256.low + ids.key_subset_256.high*2**128)}") %}
+    %{ print(f"key_little={hex(ids.key_little.low + ids.key_little.high*2**128)}") %}
 
-    assert key_subset_256.low = key_shifted.low;
+    local key_shifted: Uint256;
+    local key_shifted_last_nibble: felt;
+    if (odd_checked_nibbles != 0) {
+        let (upow) = uint256_pow2(Uint256((n_nibbles_already_checked + 1) * 4, 0));
+        let (key_shiftedt, rem) = uint256_unsigned_div_rem(key_little, upow);
+        let (upow_) = uint256_pow2(Uint256((n_nibbles_already_checked - 1) * 4, 0));
+        let (byte_u256, _) = uint256_unsigned_div_rem(rem, upow_);
+        let (_, nibble) = felt_divmod(byte_u256.low, 2 ** 4);
+        assert key_shifted.low = key_shiftedt.low;
+        assert key_shifted.high = key_shiftedt.high;
+        assert key_shifted_last_nibble = nibble;
+        tempvar range_check_ptr = range_check_ptr;
+    } else {
+        let (upow) = uint256_pow2(Uint256(n_nibbles_already_checked * 4, 0));
+        let (key_shiftedt, _) = uint256_unsigned_div_rem(key_little, upow);
+        assert key_shifted.low = key_shiftedt.low;
+        assert key_shifted.high = key_shiftedt.high;
+        assert key_shifted_last_nibble = 0;
+        tempvar range_check_ptr = range_check_ptr;
+    }
+
+    %{ print(f"key_shifted={hex(ids.key_shifted.low + ids.key_shifted.high*2**128)}") %}
 
     if (key_subset_256.high != 0) {
         // caution : high part must have less or equal 30 nibbles. for felt divmod.
@@ -119,9 +148,16 @@ func assert_subset_in_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
             print(f"\t final key high : {hex(ids.key_high)}")
             print(f"\t key subset high : {hex(ids.key_subset_256.high)}")
         %}
+
+        assert key_subset_256.low = key_shifted.low;
         assert key_subset_256.high = key_high;
+        assert key_subset_last_nibble = key_shifted_last_nibble;
         return ();
     } else {
+        let (_, key_low) = felt_divmod(key_shifted.low, pow2_array[4 * key_subset_nibble_len]);
+        assert key_subset_256.low = key_low;
+        assert key_subset_256.high = 0;
+        assert key_subset_last_nibble = key_shifted_last_nibble;
         return ();
     }
 }
