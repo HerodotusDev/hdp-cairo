@@ -37,11 +37,14 @@ func verify_mpt_proof{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr:
     pow2_array: felt*,
 ) -> (value: felt*, value_len: felt) {
     alloc_locals;
+    %{ print(f"\n\nNode index {ids.node_index+1}/{ids.mpt_proof_len}") %}
     if (node_index == mpt_proof_len - 1) {
         // Last node : item of interest is the value.
         // Check that the hash of the last node is the expected one.
         // Check that the final accumulated key is the expected one.
         let (node_hash: Uint256) = keccak(mpt_proof[node_index], mpt_proof_bytes_len[node_index]);
+        %{ print(f"node_hash : {hex(ids.node_hash.low + 2**128*ids.node_hash.high)}") %}
+        %{ print(f"hash_to_assert : {hex(ids.hash_to_assert.low + 2**128*ids.hash_to_assert.high)}") %}
         assert node_hash.low - hash_to_assert.low = 0;
         assert node_hash.high - hash_to_assert.high = 0;
 
@@ -294,7 +297,7 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
             }
         }
         tempvar n_nibbles_in_first_item = 2 * first_item_len - odd;
-
+        %{ print(f"n_nibbles_in_first_item : {ids.n_nibbles_in_first_item}") %}
         // Extract the key or key_end.
         let (local first_item_value_start_word, local first_item_value_start_offset) = felt_divmod(
             first_item_start_offset + 2 - odd, 8
@@ -305,7 +308,7 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
             rlp,
             first_item_value_start_word,
             first_item_value_start_offset,
-            first_item_len - 1,
+            first_item_len - 1 + odd,
             pow2_array,
         );
         %{
@@ -398,7 +401,7 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
                     %{ print(f"\t Branch case, key index = 1") %}
                     let (
                         second_item_value_start_word, second_item_value_start_offset
-                    ) = felt_divmod_8(second_item_value_starts_at_byte + 1);
+                    ) = felt_divmod_8(second_item_value_starts_at_byte);
                     assert item_of_interest_start_word = second_item_value_start_word;
                     assert item_of_interest_start_offset = second_item_value_start_offset;
                     assert range_check_ptr_f = range_check_ptr;
