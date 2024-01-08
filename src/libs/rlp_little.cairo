@@ -538,7 +538,9 @@ func jump_n_items_from_item{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
                 assert len_len_start_offset = prefix_start_offset + 1;
             }
 
-            let (len_len_bytes, len_len_n_words) = extract_n_bytes_from_le_64_chunks_array(
+            let (
+                len_len_bytes: felt*, len_len_n_words: felt
+            ) = extract_n_bytes_from_le_64_chunks_array(
                 rlp, len_len_start_word, len_len_start_offset, len_len, pow2_array
             );
             assert len_len_n_words = 1;
@@ -549,7 +551,7 @@ func jump_n_items_from_item{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
                 // No need to reverse, only one byte.
                 assert long_string_bytes_len = len_len_bytes[0];
             } else {
-                let (long_string_bytes_len_tmp) = word_reverse_endian_64(len_len_bytes);
+                let (long_string_bytes_len_tmp) = word_reverse_endian_64(len_len_bytes[0]);
                 assert long_string_bytes_len = long_string_bytes_len_tmp;
             }
 
