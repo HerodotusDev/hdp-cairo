@@ -3,7 +3,7 @@ from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.uint256 import Uint256, uint256_pow2, uint256_unsigned_div_rem
 from starkware.cairo.common.alloc import alloc
-from src.libs.utils import felt_divmod_8, felt_divmod, get_0xff_mask
+from src.libs.utils import felt_divmod_8, felt_divmod, get_0xff_mask, word_reverse_endian_64
 
 // Takes a 64 bit word in little endian, returns the byte at a given position as it would be in big endian.
 // Ie: word = b7 b6 b5 b4 b3 b2 b1 b0
@@ -428,5 +428,144 @@ func array_copy(src: felt*, dst: felt*, n: felt, index: felt) {
     } else {
         assert dst[index] = src[index];
         return array_copy(src=src, dst=dst, n=n, index=index + 1);
+    }
+}
+
+// Jumps n items in a rlp consisting of only single byte, short string and long string items.
+// params:
+// - rlp: little endian 8 bytes chunks.
+// - already_jumped_items: the number of items already jumped. Must be 0 at the first call.
+// - n_items_to_jump: the number of items to jump in the rlp.
+// - prefix_start_word: the word of the prefix to jump from.
+// - prefix_start_offset: the offset of the prefix to jump from.
+// - last_item_bytes_len: the number of bytes of the last item of the branch node. (Must correspond to the initial item bytes length if n_items_to_jump = 0, otherwise any value is fine)
+// - pow2_array: array of powers of 2.
+// returns:
+// - the word number of the item to jump to.
+// - the offset of the item to jump to.
+// - the number of bytes of the item to jump to.
+func jump_n_items_from_item{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
+    rlp: felt*,
+    already_jumped_items: felt,
+    n_items_to_jump: felt,
+    prefix_start_word: felt,
+    prefix_start_offset: felt,
+    last_item_bytes_len: felt,
+    pow2_array: felt*,
+) -> (start_word: felt, start_offset: felt, bytes_len: felt) {
+    alloc_locals;
+
+    if (already_jumped_items == n_items_to_jump) {
+        return (prefix_start_word, prefix_start_offset, last_item_bytes_len);
+    }
+
+    let item_prefix = extract_byte_at_pos(rlp[prefix_start_word], prefix_start_offset, pow2_array);
+    local item_type: felt;
+    %{
+        if 0x00 <= ids.item_prefix <= 0x7f:
+            ids.item_type = 0
+            #print(f"item : single byte")
+        elif 0x80 <= ids.item_prefix <= 0xb7:
+            ids.item_type = 1
+            #print(f"item : short string at item {ids.item_start_index} {ids.item_prefix - 0x80} bytes")
+        elif 0xb8 <= ids.second_item_prefix <= 0xbf:
+            ids.item_type = 2
+            #print(f"ong string (len_len {ids.second_item_prefix - 0xb7} bytes)")
+        else:
+            print(f"Unsupported item type {ids.item_prefix}. Only single bytes, short or long strings are supported.")
+    %}
+
+    if (item_type == 0) {
+        // Single byte. We need to go further by one byte.
+        assert [range_check_ptr] = 0x7f - item_prefix;
+        tempvar range_check_ptr = range_check_ptr + 1;
+        if (prefix_start_offset + 1 == 8) {
+            // We need to jump to the next word.
+            return jump_n_items_from_item(
+                rlp,
+                already_jumped_items + 1,
+                n_items_to_jump,
+                prefix_start_word + 1,
+                0,
+                1,
+                pow2_array,
+            );
+        } else {
+            return jump_n_items_from_item(
+                rlp,
+                already_jumped_items + 1,
+                n_items_to_jump,
+                prefix_start_word,
+                prefix_start_offset + 1,
+                1,
+                pow2_array,
+            );
+        }
+    } else {
+        if (item_type == 1) {
+            // Short string.
+            assert [range_check_ptr] = item_prefix - 0x80;
+            assert [range_check_ptr + 1] = 0xb7 - item_prefix;
+            tempvar range_check_ptr = range_check_ptr + 2;
+            tempvar short_string_bytes_len = item_prefix - 0x80;
+            let (next_item_start_word, next_item_start_offset) = felt_divmod_8(
+                prefix_start_word * 8 + prefix_start_offset + 1 + short_string_bytes_len
+            );
+            return jump_n_items_from_item(
+                rlp,
+                already_jumped_items + 1,
+                n_items_to_jump,
+                next_item_start_word,
+                next_item_start_offset,
+                short_string_bytes_len,
+                pow2_array,
+            );
+        } else {
+            // Long string.
+            assert [range_check_ptr] = item_prefix - 0xb8;
+            assert [range_check_ptr + 1] = 0xbf - item_prefix;
+            tempvar range_check_ptr = range_check_ptr + 2;
+            tempvar len_len = item_prefix - 0xb7;
+
+            local len_len_start_word: felt;
+            local len_len_start_offset: felt;
+
+            if (prefix_start_offset + 1 == 8) {
+                assert len_len_start_word = prefix_start_word + 1;
+                assert len_len_start_offset = 0;
+            } else {
+                assert len_len_start_word = prefix_start_word;
+                assert len_len_start_offset = prefix_start_offset + 1;
+            }
+
+            let (len_len_bytes, len_len_n_words) = extract_n_bytes_from_le_64_chunks_array(
+                rlp, len_len_start_word, len_len_start_offset, len_len, pow2_array
+            );
+            assert len_len_n_words = 1;
+
+            local long_string_bytes_len: felt;
+
+            if (len_len == 1) {
+                // No need to reverse, only one byte.
+                assert long_string_bytes_len = len_len_bytes[0];
+            } else {
+                let (long_string_bytes_len_tmp) = word_reverse_endian_64(len_len_bytes);
+                assert long_string_bytes_len = long_string_bytes_len_tmp;
+            }
+
+            let (next_item_start_word, next_item_start_offset) = felt_divmod_8(
+                prefix_start_word * 8 + prefix_start_offset + 1 + len_len + long_string_bytes_len
+            );
+
+            return jump_n_items_from_item(
+                rlp,
+                already_jumped_items + 1,
+                n_items_to_jump,
+                next_item_start_word,
+                next_item_start_offset,
+                long_string_bytes_len,
+                pow2_array,
+            );
+        }
     }
 }
