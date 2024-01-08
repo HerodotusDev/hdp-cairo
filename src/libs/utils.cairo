@@ -178,14 +178,14 @@ func felt_divmod{range_check_ptr}(value, div) -> (q: felt, r: felt) {
     return (q, r);
 }
 
-// A function to reverse the endianness of a 8 bytes (64 bits) integer.
+// A function to reverse the byte endianness of a 8 bytes (64 bits) integer.
 // The result will not make sense if word >= 2^64.
 // The implementation is directly inspired by the function word_reverse_endian
 // from the common library starkware.cairo.common.uint256 with three steps instead of four.
 // params:
 //   word: the 64 bits integer to reverse.
 // returns:
-//   res: the reversed integer.
+//   res: the byte-reversed integer.
 func word_reverse_endian_64{bitwise_ptr: BitwiseBuiltin*}(word: felt) -> (res: felt) {
     // Step 1.
     assert bitwise_ptr[0].x = word;
@@ -204,12 +204,12 @@ func word_reverse_endian_64{bitwise_ptr: BitwiseBuiltin*}(word: felt) -> (res: f
     return (res=word / 2 ** (8 + 16 + 32));
 }
 
-// A function to reverse the endianness of a 2 bytes (16 bits) integer using range checks operations.
+// A function to reverse the byte endianness of a 2 bytes (16 bits) integer using range checks operations.
 // Asuumes 0 <= word < 2^16.
 // params:
 //   word: the 16 bits integer to reverse.
 // returns:
-//   res: the reversed integer.
+//   res: the byte-reversed integer.
 func word_reverse_endian_16_RC{range_check_ptr}(word: felt) -> felt {
     %{
         word = ids.word
@@ -234,12 +234,12 @@ func word_reverse_endian_16_RC{range_check_ptr}(word: felt) -> felt {
     return b0 + b1 * 256;
 }
 
-// A function to reverse the endianness of a 3 bytes (24 bits) integer using range checks operations.
+// A function to reverse the byte endianness of a 3 bytes (24 bits) integer using range checks operations.
 // Asuumes 0 <= word < 2^24.
 // params:
 //   word: the 24 bits integer to reverse.
 // returns:
-//   res: the reversed integer.
+//   res: the byte-reversed integer.
 func word_reverse_endian_24_RC{range_check_ptr}(word: felt) -> felt {
     %{
         word = ids.word
@@ -267,12 +267,12 @@ func word_reverse_endian_24_RC{range_check_ptr}(word: felt) -> felt {
     return b0 + b1 * 256 + b2 * 256 ** 2;
 }
 
-// A function to reverse the endianness of a 4 bytes (32 bits) integer using range checks operations.
+// A function to reverse the byte endianness of a 4 bytes (32 bits) integer using range checks operations.
 // Asuumes 0 <= word < 2^32.
 // params:
 //   word: the 32 bits integer to reverse.
 // returns:
-//   res: the reversed integer.
+//   res: the byte-reversed integer.
 func word_reverse_endian_32_RC{range_check_ptr}(word: felt) -> felt {
     %{
         word = ids.word
@@ -303,12 +303,12 @@ func word_reverse_endian_32_RC{range_check_ptr}(word: felt) -> felt {
     return b0 + b1 * 256 + b2 * 256 ** 2 + b3 * 256 ** 3;
 }
 
-// A function to reverse the endianness of a 5 bytes (40 bits) integer using range checks operations.
+// A function to reverse the byte endianness of a 5 bytes (40 bits) integer using range checks operations.
 // Asuumes 0 <= word < 2^40.
 // params:
 //   word: the 40 bits integer to reverse.
 // returns:
-//   res: the reversed integer.
+//   res: the byte-reversed integer.
 func word_reverse_endian_40_RC{range_check_ptr}(word: felt) -> felt {
     %{
         word = ids.word
@@ -342,12 +342,12 @@ func word_reverse_endian_40_RC{range_check_ptr}(word: felt) -> felt {
     return b0 + b1 * 256 + b2 * 256 ** 2 + b3 * 256 ** 3 + b4 * 256 ** 4;
 }
 
-// A function to reverse the endianness of a 6 bytes (48 bits) integer using range checks operations.
+// A function to reverse the byte endianness of a 6 bytes (48 bits) integer using range checks operations.
 // Asuumes 0 <= word < 2^48.
 // params:
 //   word: the 48 bits integer to reverse.
 // returns:
-//   res: the reversed integer.
+//   res: the byte-reversed integer.
 func word_reverse_endian_48_RC{range_check_ptr}(word: felt) -> felt {
     %{
         word = ids.word
@@ -384,12 +384,12 @@ func word_reverse_endian_48_RC{range_check_ptr}(word: felt) -> felt {
     return b0 + b1 * 256 + b2 * 256 ** 2 + b3 * 256 ** 3 + b4 * 256 ** 4 + b5 * 256 ** 5;
 }
 
-// A function to reverse the endianness of a 7 bytes (56 bits) integer using range checks operations.
+// A function to reverse the byte endianness of a 7 bytes (56 bits) integer using range checks operations.
 // Asuumes 0 <= word < 2^56.
 // params:
 //   word: the 56 bits integer to reverse.
 // returns:
-//   res: the reversed integer.
+//   res: the byte-reversed integer.
 func word_reverse_endian_56_RC{range_check_ptr}(word: felt) -> felt {
     %{
         word = ids.word
