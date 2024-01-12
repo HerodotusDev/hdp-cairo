@@ -2,9 +2,12 @@
 pragma solidity ^0.8.0;
 
 import {AccessControl} from "openzeppelin-contracts/contracts/access/AccessControl.sol";
+import {MerkleProof} from "openzeppelin-contracts/contracts/utils/cryptography/MerkleProof.sol";
 import {IFactsRegistry} from "./interfaces/IFactsRegistry.sol";
 
 contract HreExecutionStore is AccessControl {
+    using MerkleProof for bytes32[];
+
     // Structs specific to the HRE execution
     struct BlockSampledDatalake {
         uint256 blockRangeStart;
@@ -97,9 +100,9 @@ contract HreExecutionStore is AccessControl {
     }
 
     function authenticateTaskExecution(
+        uint256 usedMMRsIdsPacked,
         bytes32 scheduledTasksBatchMerkleRoot,
         bytes32 batchResultsMerkleRoot,
-        uint256 leafIndex,
         bytes32[] memory batchInclusionMerkleProofOfTask,
         bytes32[] memory batchInclusionMerkleProofOfResult,
         bytes calldata computationalTaskSerialized,
@@ -115,6 +118,7 @@ contract HreExecutionStore is AccessControl {
         bytes32 gpsFactHash = keccak256(
             abi.encode(
                 PROGRAM_HASH,
+                usedMMRsIdsPacked,
                 scheduledTasksBatchMerkleRoot,
                 batchResultsMerkleRoot
             )
@@ -127,11 +131,19 @@ contract HreExecutionStore is AccessControl {
 
         // Ensure that the task is included in the batch, by verifying the Merkle proof
         bytes32 taskHash = keccak256(computationalTaskSerialized);
-
-        // TODO verify merkle proof
+        batchInclusionMerkleProofOfTask.verify(
+            scheduledTasksBatchMerkleRoot,
+            taskHash
+        );
 
         // Ensure that the task result is included in the batch, by verifying the Merkle proof
-        bytes32 taskResultHash = keccak256(computationalTaskResult);
+        bytes32 taskResultHash = keccak256(
+            abi.encode(taskHash, computationalTaskResult)
+        );
+        batchInclusionMerkleProofOfResult.verify(
+            batchInclusionMerkleProofOfResult,
+            taskResultHash
+        );
 
         // TODO verify merkle proof
 
