@@ -4,35 +4,20 @@ pragma solidity ^0.8.0;
 import {AccessControl} from "openzeppelin-contracts/contracts/access/AccessControl.sol";
 import {MerkleProof} from "openzeppelin-contracts/contracts/utils/cryptography/MerkleProof.sol";
 
-import {IFactsRegistry} from "./interfaces/IFactsRegistry.sol";
-import {ISharpFactsAggregator} from "./interfaces/ISharpFactsAggregator.sol";
-import {IAggregatorsFactory} from "./interfaces/IAggregatorsFactory.sol";
+import {IFactsRegistry} from "../interfaces/IFactsRegistry.sol";
+import {ISharpFactsAggregator} from "../interfaces/ISharpFactsAggregator.sol";
+import {IAggregatorsFactory} from "../interfaces/IAggregatorsFactory.sol";
+
+import {BlockSampledDatalake, BlockSampledDatalakeCodecs} from "./datatypes/BlockSampledDatalake.sol";
+import {IterativeDynamicLayoutDatalake, IterativeDynamicLayoutDatalakeCodecs} from "./datatypes/IterativeDynamicLayoutDatalake.sol";
+import {ComputationalTask, ComputationalTaskCodecs} from "./datatypes/ComputationalTask.sol";
 
 contract HreExecutionStore is AccessControl {
     using MerkleProof for bytes32[];
 
-    // Structs specific to the HRE execution
-    struct BlockSampledDatalake {
-        uint256 blockRangeStart;
-        uint256 blockRangeEnd;
-        uint256 sampledProperty;
-        uint256 increment;
-    }
-
-    struct IterativeDynamicLayoutDatalake {
-        uint256 blockNumber;
-        address account;
-        uint256 slotIndex;
-        uint256 initialKey;
-        uint256 keyBoundry;
-        uint256 increment;
-    }
-
-    struct ComputationalTask {
-        bytes32 datalakeCommitment;
-        uint256 aggregateFnId;
-        bytes aggregateFnCtx;
-    }
+    using BlockSampledDatalakeCodecs for BlockSampledDatalake;
+    using IterativeDynamicLayoutDatalakeCodecs for IterativeDynamicLayoutDatalake;
+    using ComputationalTaskCodecs for ComputationalTask;
 
     // Persistent struct
     enum TaskState {
@@ -94,34 +79,17 @@ contract HreExecutionStore is AccessControl {
         BlockSampledDatalake calldata blockSampledDatalake,
         ComputationalTask calldata computationalTask
     ) external {
-        bytes memory serializedDatalakeHeader = abi.encode(
-            blockSampledDatalake.blockRangeStart,
-            blockSampledDatalake.blockRangeEnd,
-            blockSampledDatalake.sampledProperty,
-            blockSampledDatalake.increment
-        );
-        bytes32 datalakeCommitment = keccak256(serializedDatalakeHeader);
-
-        // Ensure that the computed datalake commitment matches the one in the task
-        require(
-            datalakeCommitment == computationalTask.datalakeCommitment,
-            "HreExecutionStore: datalake commitment mismatch"
-        );
-
-        bytes memory computationalTaskSerialized = abi.encode(
-            blockSampledDatalake,
-            computationalTask
-        );
-        bytes32 taskHash = keccak256(computationalTaskSerialized);
+        bytes32 datalakeCommitment = blockSampledDatalake.commit();
+        bytes32 taskCommitment = computationalTask.commit(datalakeCommitment);
 
         // Ensure task is not already scheduled
         require(
-            computationalTaskResults[taskHash].state == TaskState.NONE,
+            computationalTaskResults[taskCommitment].state == TaskState.NONE,
             "HreExecutionStore: task is already scheduled"
         );
 
         // Store the task
-        computationalTaskResults[taskHash] = TaskInfo({
+        computationalTaskResults[taskCommitment] = TaskInfo({
             state: TaskState.SCHEDULED,
             result: ""
         });
