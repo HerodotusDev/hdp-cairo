@@ -1,4 +1,5 @@
 venv/
+**/venv/
 *profiling*
 __pycache__
 /build/*.json
