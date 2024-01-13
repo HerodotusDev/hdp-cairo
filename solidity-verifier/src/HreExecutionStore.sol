@@ -3,7 +3,10 @@ pragma solidity ^0.8.0;
 
 import {AccessControl} from "openzeppelin-contracts/contracts/access/AccessControl.sol";
 import {MerkleProof} from "openzeppelin-contracts/contracts/utils/cryptography/MerkleProof.sol";
+
 import {IFactsRegistry} from "./interfaces/IFactsRegistry.sol";
+import {ISharpFactsAggregator} from "./interfaces/ISharpFactsAggregator.sol";
+import {IAggregatorsFactory} from "./interfaces/IAggregatorsFactory.sol";
 
 contract HreExecutionStore is AccessControl {
     using MerkleProof for bytes32[];
@@ -42,13 +45,11 @@ contract HreExecutionStore is AccessControl {
         bytes result;
     }
 
+    // Events
+    event MmrRootCached(uint256 mmrId, uint256 mmrSize, bytes32 mmrRoot);
+
     // Roles
     bytes32 public constant PROVER_ROLE = keccak256("PROVER_ROLE");
-
-    // Sharp Facts Registry
-    IFactsRegistry public immutable FACTS_REGISTRY;
-
-    mapping(bytes32 => TaskInfo) public computationalTaskResults;
 
     bytes32 public constant PROGRAM_HASH =
         bytes32(
@@ -57,8 +58,36 @@ contract HreExecutionStore is AccessControl {
             )
         );
 
-    constructor(IFactsRegistry factsRegistry) {
+    // Sharp Facts Registry
+    IFactsRegistry public immutable FACTS_REGISTRY;
+    IAggregatorsFactory public immutable AGGREGATORS_FACTORY;
+
+    mapping(bytes32 => TaskInfo) public computationalTaskResults;
+
+    // mmr_id => mmr_size => mmr_root
+    mapping(uint256 => mapping(uint256 => bytes32)) public cachedMMRsRoots;
+
+    constructor(
+        IFactsRegistry factsRegistry,
+        IAggregatorsFactory aggregatorsFactory
+    ) {
         FACTS_REGISTRY = factsRegistry;
+        AGGREGATORS_FACTORY = aggregatorsFactory;
+    }
+
+    function cacheMmrRoot(uint256 mmrId) external {
+        ISharpFactsAggregator aggregator = AGGREGATORS_FACTORY.aggregatorsById(
+            mmrId
+        );
+        ISharpFactsAggregator.AggregatorState
+            memory aggregatorState = aggregator.aggregatorState();
+        cachedMMRsRoots[mmrId][aggregatorState.mmrSize] = aggregatorState
+            .poseidonMmrRoot;
+        emit MmrRootCached(
+            mmrId,
+            aggregatorState.mmrSize,
+            aggregatorState.poseidonMmrRoot
+        );
     }
 
     function requestExecutionOfTaskWithBlockSampledDatalake(
@@ -79,7 +108,6 @@ contract HreExecutionStore is AccessControl {
             "HreExecutionStore: datalake commitment mismatch"
         );
 
-        // TODO actually serialize it
         bytes memory computationalTaskSerialized = abi.encode(
             blockSampledDatalake,
             computationalTask
@@ -100,7 +128,7 @@ contract HreExecutionStore is AccessControl {
     }
 
     function authenticateTaskExecution(
-        uint256 usedMMRsIdsPacked,
+        uint256 usedMMRsPacked,
         bytes32 scheduledTasksBatchMerkleRoot,
         bytes32 batchResultsMerkleRoot,
         bytes32[] memory batchInclusionMerkleProofOfTask,
@@ -114,11 +142,14 @@ contract HreExecutionStore is AccessControl {
             "HreExecutionStore: caller is not the Prover"
         );
 
+        // Load MMRs roots
+        bytes32[] memory usedMmrRoots = _loadMmrRoots(usedMMRsPacked);
+
         // Compute GPS fact hash
         bytes32 gpsFactHash = keccak256(
             abi.encode(
                 PROGRAM_HASH,
-                usedMMRsIdsPacked,
+                usedMmrRoots,
                 scheduledTasksBatchMerkleRoot,
                 batchResultsMerkleRoot
             )
@@ -141,16 +172,30 @@ contract HreExecutionStore is AccessControl {
             abi.encode(taskHash, computationalTaskResult)
         );
         batchInclusionMerkleProofOfResult.verify(
-            batchInclusionMerkleProofOfResult,
+            batchResultsMerkleRoot,
             taskResultHash
         );
-
-        // TODO verify merkle proof
 
         // Store the task result
         computationalTaskResults[taskHash] = TaskInfo({
             state: TaskState.FINALIZED,
             result: computationalTaskResult
         });
+    }
+
+    function _loadMmrRoots(
+        uint256 usedMMRsPacked
+    ) internal view returns (bytes32[] memory) {
+        bytes32[] memory usedMmrRoots = new bytes32[](4);
+
+        // Load MMRs roots
+        for (uint256 i = 0; i < 4; i++) {
+            uint256 mmrId = (usedMMRsPacked >> (i * 64)) & 0xffffffffffffffff;
+            uint256 mmrSize = (usedMMRsPacked >> (i * 64 + 64)) &
+                0xffffffffffffffff;
+            usedMmrRoots[i] = cachedMMRsRoots[mmrId][mmrSize];
+        }
+
+        return usedMmrRoots;
     }
 }
