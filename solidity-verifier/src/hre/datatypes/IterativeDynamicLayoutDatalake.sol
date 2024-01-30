@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {DatalakeCode} from "./DatalakeCodes.sol";
+
 struct IterativeDynamicLayoutDatalake {
     uint256 blockNumber;
     address account;
@@ -16,6 +18,7 @@ library IterativeDynamicLayoutDatalakeCodecs {
     ) internal pure returns (bytes memory) {
         return
             abi.encode(
+                DatalakeCode.IterativeDynamicLayout,
                 datalake.blockNumber,
                 datalake.account,
                 datalake.slotIndex,
@@ -35,6 +38,7 @@ library IterativeDynamicLayoutDatalakeCodecs {
         bytes memory data
     ) internal pure returns (IterativeDynamicLayoutDatalake memory) {
         (
+            ,
             uint256 blockNumber,
             address account,
             uint256 slotIndex,
@@ -43,7 +47,15 @@ library IterativeDynamicLayoutDatalakeCodecs {
             uint256 increment
         ) = abi.decode(
                 data,
-                (uint256, address, uint256, uint256, uint256, uint256)
+                (
+                    DatalakeCode,
+                    uint256,
+                    address,
+                    uint256,
+                    uint256,
+                    uint256,
+                    uint256
+                )
             );
         return
             IterativeDynamicLayoutDatalake({

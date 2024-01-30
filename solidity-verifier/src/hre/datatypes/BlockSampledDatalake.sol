@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {DatalakeCode} from "./DatalakeCodes.sol";
+
 struct BlockSampledDatalake {
     uint256 blockRangeStart;
     uint256 blockRangeEnd;
@@ -14,6 +16,7 @@ library BlockSampledDatalakeCodecs {
     ) internal pure returns (bytes memory) {
         return
             abi.encode(
+                DatalakeCode.BlockSampled,
                 datalake.blockRangeStart,
                 datalake.blockRangeEnd,
                 datalake.increment,
@@ -51,11 +54,12 @@ library BlockSampledDatalakeCodecs {
         bytes memory data
     ) internal pure returns (BlockSampledDatalake memory) {
         (
+            ,
             uint256 blockRangeStart,
             uint256 blockRangeEnd,
             uint256 increment,
             bytes memory sampledProperty
-        ) = abi.decode(data, (uint256, uint256, uint256, bytes));
+        ) = abi.decode(data, (DatalakeCode, uint256, uint256, uint256, bytes));
         return
             BlockSampledDatalake({
                 blockRangeStart: blockRangeStart,
