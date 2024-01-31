@@ -10,7 +10,9 @@ CAIRO_PROGRAMS_FOLDERS = [
     "tests/cairo_programs/",
     "src/single_chunk_processor",
     "src/batch_storage_proof",
+    "src/hdp"
 ]
+
 BUILD_DIR = "build"
 PROFILING_DIR = os.path.join(BUILD_DIR, "profiling")
 COMPILED_FILES_DIR = os.path.join(BUILD_DIR, "compiled_cairo_files")
