@@ -3,6 +3,8 @@ from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 
+from src.hdp.types import HeaderProof
+
 func main{
     output_ptr: felt*,
     range_check_ptr,
@@ -11,6 +13,7 @@ func main{
     local results_root: Uint256;
     local tasks_root: Uint256; 
     local mmr_root: felt;
+    let (header_proofs: HeaderProof*) = alloc();
 
     %{
         ids.results_root.low = program_input["resultsRoot"]["low"]
@@ -18,6 +21,8 @@ func main{
         ids.tasks_root.low = program_input["tasksRoot"]["low"]
         ids.tasks_root.high = program_input["tasksRoot"]["high"]
         ids.mmr_root = program_input["mmrRoot"]
+
+        segments.gen_arg(ids.header_proofs, program_input["headerProofs"])
     
     %}
 
