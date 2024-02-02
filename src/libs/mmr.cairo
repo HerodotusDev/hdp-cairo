@@ -478,3 +478,42 @@ func bag_peaks{
     let (res_keccak) = uint256_reverse_endian(res_keccak);
     return (res_poseidon, res_keccak);
 }
+
+// Hashes the peaks of both MMRs together by computing H(peak1, H(peak2, H(peak3, ...))).
+// peak1 is the leftmost peak, peakN is the rightmost peak.
+// Params:
+// - peaks_poseidon: the peaks of the MMR to hash together
+// - peaks_len: the number of peaks to hash together
+// Returns:
+// - bag_peaks_poseidon: Poseidon(peak1, Poseidon(peak2, Poseidon(peak3, ...)))
+func bag_peaks_poseidon{
+    range_check_ptr,
+    poseidon_ptr: PoseidonBuiltin*,
+}(peaks_poseidon: felt*, peaks_len: felt) -> (
+    bag_peaks_poseidon: felt
+) {
+    alloc_locals;
+
+    let current_peak = [peaks_poseidon];
+
+    assert_le(1, peaks_len);
+    if (peaks_len == 1) {
+        return (current_peak, );
+    }
+
+    let (rec_poseidon) = bag_peaks_poseidon(peaks_poseidon + 1, peaks_len - 1);
+    let (res_poseidon) = poseidon_hash(current_peak, rec_poseidon);
+
+    return (bag_peaks_poseidon=res_poseidon);
+}
+
+func mmr_root_poseidon{
+    range_check_ptr,
+    poseidon_ptr: PoseidonBuiltin*,
+} (peaks_poseidon: felt*, mmr_size: felt, peaks_len: felt) -> (
+    mmr_root: felt
+) {
+    let (bag_peak) = bag_peaks_poseidon(peaks_poseidon, peaks_len);
+    let (root) = poseidon_hash(mmr_size, bag_peak);
+    return (mmr_root=root);
+}
