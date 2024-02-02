@@ -517,3 +517,50 @@ func mmr_root_poseidon{
     let (root) = poseidon_hash(mmr_size, bag_peak);
     return (mmr_root=root);
 }
+
+func hash_mmr_inclusion_proof{
+    range_check_ptr,
+    poseidon_ptr: PoseidonBuiltin*,
+    pow2_array: felt*,
+}(
+    element: felt,
+    height: felt,
+    position: felt,
+    inclusion_proof: felt*,
+    inclusion_proof_len: felt,
+) -> (peak: felt) {
+    alloc_locals;
+    if (inclusion_proof_len == 0) {
+        return (peak=element);
+    } 
+    
+    let position_height = compute_height_pre_alloc_pow2(position);
+    let next_height = compute_height_pre_alloc_pow2(position + 1);
+    // %{ print(f"position {ids.position}, h={ids.position_height}, nh={ids.next_height}") %}
+    if (next_height == position_height + 1) {
+        // We are in a right child
+        // %{ print(f"hashing right : {memory[ids.inclusion_proof + ids.inclusion_proof_index]}, {ids.element}") %}
+
+        let (element) = poseidon_hash([inclusion_proof], element);
+        return hash_mmr_inclusion_proof(
+            element,
+            height + 1,
+            position + 1,
+            inclusion_proof= inclusion_proof + 1,
+            inclusion_proof_len=inclusion_proof_len - 1,
+        );
+    } else {
+        // We are in a left child
+        // %{ print(f"hashing left : {ids.element}, {memory[ids.inclusion_proof + ids.inclusion_proof_index]}") %}
+        let (element) = poseidon_hash(element, [inclusion_proof]);
+        tempvar element = element;
+        tempvar position = position + pow2_array[height + 1];
+        return hash_mmr_inclusion_proof(
+            element,
+            height + 1,
+            position,
+            inclusion_proof= inclusion_proof + 1,
+            inclusion_proof_len=inclusion_proof_len - 1,
+        );
+    }
+}
