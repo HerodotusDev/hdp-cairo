@@ -19,7 +19,8 @@ from src.libs.mmr import (
     mmr_root_poseidon,
     hash_mmr_inclusion_proof,
     compute_height_pre_alloc_pow2 as compute_height,
-    assert_mmr_size_is_valid
+    assert_mmr_size_is_valid,
+    compute_peaks_positions
 )
 
 func verify_mmr_meta{
@@ -28,14 +29,17 @@ func verify_mmr_meta{
     pow2_array: felt*,
 } (mmr_meta: MMRMeta, mmr_peaks: felt*) {
     alloc_locals;
-    
+
     // ensure the mmr_size is valid
     assert_mmr_size_is_valid(mmr_meta.mmr_size);
+
+    // ensure the mmr_peaks_len is valid
+    let (_, peaks_len) = compute_peaks_positions(mmr_meta.mmr_size);
+    assert peaks_len = mmr_meta.mmr_peaks_len;
 
     // ensure the mmr_peaks recreate the passed mmr_root
     let (mmr_root) = mmr_root_poseidon(mmr_peaks, mmr_meta.mmr_size, mmr_meta.mmr_peaks_len);
     assert mmr_root = mmr_meta.mmr_root;
-
 
     return();
 }
