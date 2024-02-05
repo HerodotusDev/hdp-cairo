@@ -19,16 +19,23 @@ from src.libs.mmr import (
     mmr_root_poseidon,
     hash_mmr_inclusion_proof,
     compute_height_pre_alloc_pow2 as compute_height,
+    assert_mmr_size_is_valid
 )
 
 func verify_mmr_meta{
     range_check_ptr,
-    poseidon_ptr: PoseidonBuiltin*
+    poseidon_ptr: PoseidonBuiltin*,
+    pow2_array: felt*,
 } (mmr_meta: MMRMeta, mmr_peaks: felt*) {
-    let (mmr_root) = mmr_root_poseidon(mmr_peaks, mmr_meta.mmr_size, mmr_meta.mmr_peaks_len);
+    alloc_locals;
+    
+    // ensure the mmr_size is valid
+    assert_mmr_size_is_valid(mmr_meta.mmr_size);
 
-    // ensure we have passed a valid pair of mmr_root and peaks
+    // ensure the mmr_peaks recreate the passed mmr_root
+    let (mmr_root) = mmr_root_poseidon(mmr_peaks, mmr_meta.mmr_size, mmr_meta.mmr_peaks_len);
     assert mmr_root = mmr_meta.mmr_root;
+
 
     return();
 }
@@ -111,7 +118,7 @@ func main{
     let (rlp_headers: felt**) = alloc();
     let (mmr_proofs: felt**) = alloc();
     let pow2_array: felt* = pow2alloc127();
-// 
+ 
     %{
 
         def write_header_proofs(ptr, header_proofs):
@@ -156,7 +163,7 @@ func main{
     %}
     
     // Check 1: Ensure we have a valid pair of mmr_root and peaks
-    verify_mmr_meta(mmr_meta, mmr_peaks);
+    verify_mmr_meta{pow2_array=pow2_array}(mmr_meta, mmr_peaks);
 
     // Write the peaks to the dict if valid
     let (local peaks_dict) = default_dict_new(default_value=0);
