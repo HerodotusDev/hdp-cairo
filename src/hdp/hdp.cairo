@@ -33,6 +33,13 @@ func main{
     let pow2_array: felt* = pow2alloc127();
  
     %{
+
+        def hex_to_int_array(hex_array):
+            return [int(x, 16) for x in hex_array]
+
+        def hex_to_int(x):
+            return int(x, 16)
+
         def write_header_proofs(ptr, header_proofs):
             offset = 0
             for header in header_proofs:
@@ -42,12 +49,12 @@ func main{
                 memory[ptr._reference_value + offset + 3] = len(header["rlp_encoded_header"])
                 offset += 4 # increment the offset for fixed sized params
 
-        ids.results_root.low = program_input["results_root"]["low"]
-        ids.results_root.high = program_input["results_root"]["high"]
-        ids.tasks_root.low = program_input["tasks_root"]["low"]
-        ids.tasks_root.high = program_input["tasks_root"]["high"]
+        ids.results_root.low = hex_to_int(program_input["results_root"]["low"])
+        ids.results_root.high = hex_to_int(program_input["results_root"]["high"])
+        ids.tasks_root.low = hex_to_int(program_input["tasks_root"]["low"])
+        ids.tasks_root.high = hex_to_int(program_input["tasks_root"]["high"])
         
-        ids.mmr_meta.mmr_root = program_input['mmr_meta']['mmr_root']
+        ids.mmr_meta.mmr_root = hex_to_int(program_input['mmr_meta']['mmr_root'])
         ids.mmr_meta.mmr_size = program_input['mmr_meta']['mmr_size']
         ids.mmr_meta.mmr_peaks_len = len(program_input['mmr_meta']['mmr_peaks'])
 
@@ -55,18 +62,18 @@ func main{
         ids.header_proofs_len = len(program_input["header_proofs"])
 
         rlp_headers = [
-            header_proof['rlp_encoded_header'] 
+            hex_to_int_array(header_proof['rlp_encoded_header'])
             for header_proof in program_input['header_proofs']
         ]
 
         mmr_proofs = [
-            header_proof['mmr_inclusion_proof'] 
+            hex_to_int_array(header_proof['mmr_inclusion_proof'])
             for header_proof in program_input['header_proofs']
         ]
 
         segments.write_arg(ids.rlp_headers, rlp_headers)
         segments.write_arg(ids.mmr_proofs, mmr_proofs)
-        segments.write_arg(ids.mmr_peaks, program_input['mmr_meta']['mmr_peaks'])
+        segments.write_arg(ids.mmr_peaks, hex_to_int_array(program_input['mmr_meta']['mmr_peaks']))
 
     %}
     
@@ -92,9 +99,7 @@ func main{
         mmr_size=mmr_meta.mmr_size
     );
 
-    // Post Verification Checks: 
-    
-    // Ensure dict consistency
+    // Post Verification Checks: Ensure dict consistency
     default_dict_finalize(peaks_dict_start, peaks_dict, 0);
 
     [ap] = mmr_meta.mmr_root;
@@ -117,6 +122,7 @@ func main{
 
     return();
 }
+
 
 // This doesnt work, the issue arises once I try to write mmr_inclusion_proof or rlp header (dynamic sized arrays)
 // %{
