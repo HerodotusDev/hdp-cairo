@@ -9,6 +9,7 @@ from tools.py.block_header import (
     BlockHeader,
     BlockHeaderEIP1559,
     BlockHeaderShangai,
+    BlockHeaderDencun,
 )
 
 RPC_BATCH_MAX_SIZE = 1450
@@ -16,7 +17,7 @@ RPC_BATCH_MAX_SIZE = 1450
 
 def fetch_blocks_from_rpc_no_async(
     range_from: int, range_till: int, rpc_url: str, delay=0.1
-) -> List[Union[BlockHeader, BlockHeaderEIP1559, BlockHeaderShangai]]:
+) -> List[Union[BlockHeader, BlockHeaderEIP1559, BlockHeaderShangai, BlockHeaderDencun]]:
     """
     # Fetches blocks from RPC in batches of RPC_BATCH_MAX_SIZE
     # Returns a list of block headers
@@ -26,7 +27,7 @@ def fetch_blocks_from_rpc_no_async(
     #   rpc_url: str - the RPC url to fetch from
     #   delay: float - delay between RPC requests (in seconds)
     # Returns:
-    #   list - a list of block headers of type BlockHeader, BlockHeaderEIP1559 or BlockHeaderShangai
+    #   list - a list of block headers of type BlockHeader, BlockHeaderEIP1559, BlockHeaderShangai or BlockHeaderDencun
     """
     assert range_from > range_till, "Invalid range"
     number_of_blocks = range_from - range_till
@@ -61,7 +62,7 @@ def fetch_blocks_from_rpc_no_async(
         # print(results)
         for result in results:
             block_header: Union[
-                BlockHeader, BlockHeaderEIP1559, BlockHeaderShangai
+                BlockHeader, BlockHeaderEIP1559, BlockHeaderShangai, BlockHeaderDencun
             ] = build_block_header(result["result"])
             all_results.append(block_header)
 
