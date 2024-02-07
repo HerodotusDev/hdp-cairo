@@ -22,15 +22,24 @@ func main{
 }() {
     alloc_locals;
     local results_root: Uint256;
-    local tasks_root: Uint256; 
-    local header_proofs_len: felt;
-    local mmr_meta: MMRMeta;
+    local tasks_root: Uint256;
 
-    let (mmr_peaks: felt*) = alloc();
+    // Header Params
+    local header_proofs_len: felt;
     let (header_proofs: HeaderProof*) = alloc();
     let (rlp_headers: felt**) = alloc();
-    let (mmr_proofs: felt**) = alloc();
+    let (mmr_inclusion_proofs: felt**) = alloc();
+
+    // MMR Params
+    local mmr_meta: MMRMeta;
+    let (mmr_peaks: felt*) = alloc();
     let pow2_array: felt* = pow2alloc127();
+
+    // Account Params
+    local account_proof_len: felt;
+    // let (account_proofs: AccountProof*) = alloc();
+    // let (mpt_account_proofs
+
  
     %{
 
@@ -43,37 +52,37 @@ func main{
         def write_header_proofs(ptr, header_proofs):
             offset = 0
             for header in header_proofs:
-                memory[ptr._reference_value + offset] = header["mmr_id"]
-                memory[ptr._reference_value + offset + 1] = header["leaf_idx"]
-                memory[ptr._reference_value + offset + 2] = len(header["mmr_inclusion_proof"])
-                memory[ptr._reference_value + offset + 3] = len(header["rlp_encoded_header"])
-                offset += 4 # increment the offset for fixed sized params
+                memory[ptr._reference_value + offset] = header["leaf_idx"]
+                memory[ptr._reference_value + offset + 1] = len(header["mmr_inclusion_proof"])
+                memory[ptr._reference_value + offset + 2] = len(header["rlp_encoded_header"])
+                offset += 3 # increment the offset for fixed sized params
 
         ids.results_root.low = hex_to_int(program_input["results_root"]["low"])
         ids.results_root.high = hex_to_int(program_input["results_root"]["high"])
         ids.tasks_root.low = hex_to_int(program_input["tasks_root"]["low"])
         ids.tasks_root.high = hex_to_int(program_input["tasks_root"]["high"])
         
-        ids.mmr_meta.mmr_root = hex_to_int(program_input['mmr_meta']['mmr_root'])
-        ids.mmr_meta.mmr_size = program_input['mmr_meta']['mmr_size']
-        ids.mmr_meta.mmr_peaks_len = len(program_input['mmr_meta']['mmr_peaks'])
+        ids.mmr_meta.mmr_root = hex_to_int(program_input['header_batches'][0]['mmr_meta']['mmr_root'])
+        ids.mmr_meta.mmr_size = program_input['header_batches'][0]['mmr_meta']['mmr_size']
+        ids.mmr_meta.mmr_peaks_len = len(program_input['header_batches'][0]['mmr_meta']['mmr_peaks'])
+        ids.mmr_meta.mmr_id = program_input['header_batches'][0]['mmr_meta']['mmr_id']
 
-        write_header_proofs(ids.header_proofs, program_input["header_proofs"])
-        ids.header_proofs_len = len(program_input["header_proofs"])
+        write_header_proofs(ids.header_proofs, program_input['header_batches'][0]["headers"])
+        ids.header_proofs_len = len(program_input['header_batches'][0]["headers"])
 
         rlp_headers = [
             hex_to_int_array(header_proof['rlp_encoded_header'])
-            for header_proof in program_input['header_proofs']
+            for header_proof in program_input['header_batches'][0]['headers']
         ]
 
-        mmr_proofs = [
+        mmr_inclusion_proofs = [
             hex_to_int_array(header_proof['mmr_inclusion_proof'])
-            for header_proof in program_input['header_proofs']
+            for header_proof in program_input['header_batches'][0]['headers']
         ]
 
         segments.write_arg(ids.rlp_headers, rlp_headers)
-        segments.write_arg(ids.mmr_proofs, mmr_proofs)
-        segments.write_arg(ids.mmr_peaks, hex_to_int_array(program_input['mmr_meta']['mmr_peaks']))
+        segments.write_arg(ids.mmr_inclusion_proofs, mmr_inclusion_proofs)
+        segments.write_arg(ids.mmr_peaks, hex_to_int_array(program_input['header_batches'][0]['mmr_meta']['mmr_peaks']))
 
     %}
     
@@ -94,7 +103,7 @@ func main{
     }(
         header_proofs=header_proofs,
         rlp_headers=rlp_headers,
-        mmr_proofs=mmr_proofs,
+        mmr_inclusion_proofs=mmr_inclusion_proofs,
         header_proofs_len=header_proofs_len,
         mmr_size=mmr_meta.mmr_size
     );
