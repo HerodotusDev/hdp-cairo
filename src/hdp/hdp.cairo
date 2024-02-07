@@ -6,7 +6,7 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
 
-from src.hdp.types import HeaderProof, MMRMeta
+from src.hdp.types import HeaderProof, MMRMeta, AccountProof
 from src.hdp.mmr import verify_mmr_meta
 from src.hdp.header import verify_header_inclusion
 
@@ -37,9 +37,9 @@ func main{
 
     // Account Params
     local account_proof_len: felt;
-    // let (account_proofs: AccountProof*) = alloc();
-    // let (mpt_account_proofs
-
+    let (account_proofs: AccountProof*) = alloc();
+    let (mpt_account_proofs: felt***) = alloc();
+    let (mpt_account_proof_bytes_len: felt**) = alloc();
  
     %{
 
@@ -57,19 +57,27 @@ func main{
                 memory[ptr._reference_value + offset + 2] = len(header["rlp_encoded_header"])
                 offset += 3 # increment the offset for fixed sized params
 
+        def write_account_proofs(ptr, account_proofs):
+            offset = 0
+            for account in account_proofs:
+                memory[ptr._reference_value + offset] = account["block_number"]
+                memory[ptr._reference_value + offset + 1] = int(account["key"]["high"], 16)
+                memory[ptr._reference_value + offset + 2] = int(account["key"]["low"], 16)
+                memory[ptr._reference_value + offset + 3] = len(account["proof"])
+                offset += 4 # increment the offset for fixed sized params
+
         ids.results_root.low = hex_to_int(program_input["results_root"]["low"])
         ids.results_root.high = hex_to_int(program_input["results_root"]["high"])
         ids.tasks_root.low = hex_to_int(program_input["tasks_root"]["low"])
         ids.tasks_root.high = hex_to_int(program_input["tasks_root"]["high"])
         
+        # MMR Meta
         ids.mmr_meta.mmr_root = hex_to_int(program_input['header_batches'][0]['mmr_meta']['mmr_root'])
         ids.mmr_meta.mmr_size = program_input['header_batches'][0]['mmr_meta']['mmr_size']
         ids.mmr_meta.mmr_peaks_len = len(program_input['header_batches'][0]['mmr_meta']['mmr_peaks'])
         ids.mmr_meta.mmr_id = program_input['header_batches'][0]['mmr_meta']['mmr_id']
 
-        write_header_proofs(ids.header_proofs, program_input['header_batches'][0]["headers"])
-        ids.header_proofs_len = len(program_input['header_batches'][0]["headers"])
-
+        # Header Params
         rlp_headers = [
             hex_to_int_array(header_proof['rlp_encoded_header'])
             for header_proof in program_input['header_batches'][0]['headers']
@@ -80,9 +88,23 @@ func main{
             for header_proof in program_input['header_batches'][0]['headers']
         ]
 
+        ids.header_proofs_len = len(program_input['header_batches'][0]["headers"])
+        write_header_proofs(ids.header_proofs, program_input['header_batches'][0]["headers"])
         segments.write_arg(ids.rlp_headers, rlp_headers)
         segments.write_arg(ids.mmr_inclusion_proofs, mmr_inclusion_proofs)
         segments.write_arg(ids.mmr_peaks, hex_to_int_array(program_input['header_batches'][0]['mmr_meta']['mmr_peaks']))
+
+        # Account Params
+        ids.account_proof_len = len(program_input['accounts'])
+        write_account_proofs(ids.account_proofs, program_input['accounts'])
+        mpt_account_proof_bytes_len = [[len(proof) for proof in account["proof"]] for account in program_input['accounts']]
+        segments.write_arg(ids.mpt_account_proof_bytes_len, mpt_account_proof_bytes_len)
+
+        mpt_account_proofs = [
+            [hex_to_int_array(proof) for proof in account["proof"]]
+            for account in program_input['accounts']
+        ]
+        segments.write_arg(ids.mpt_account_proofs, mpt_account_proofs)
 
     %}
     

@@ -1,3 +1,5 @@
+from starkware.cairo.common.uint256 import Uint256
+
 struct HeaderProof {
     leaf_idx: felt,
     mmr_inclusion_proof_len: felt,
@@ -8,8 +10,7 @@ struct HeaderProof {
 
 struct AccountProof {
 	block: felt,
-	// key: Uint256,
-	proof_bytes_len: felt*,
+	key: Uint256,
 	proof_len: felt,
 }
 
