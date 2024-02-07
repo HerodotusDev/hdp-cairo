@@ -17,7 +17,7 @@ from src.hdp.types import (
 // Params:
 // - header_proofs: The header proofs to verify
 // - rlp_headers: The RLP encoded headers
-// - mmr_proofs: The MMR inclusion proofs
+// - mmr_inclusion_proofs: The MMR inclusion proofs
 // - header_proofs_len: The length of the header proofs
 // - mmr_size: The size of the MMR
 func verify_header_inclusion{
@@ -25,7 +25,7 @@ func verify_header_inclusion{
     poseidon_ptr: PoseidonBuiltin*,
     pow2_array: felt*,
     peaks_dict: DictAccess*,
-} (header_proofs: HeaderProof*, rlp_headers: felt**, mmr_proofs: felt**, header_proofs_len: felt, mmr_size: felt) {
+} (header_proofs: HeaderProof*, rlp_headers: felt**, mmr_inclusion_proofs: felt**, header_proofs_len: felt, mmr_size: felt) {
     if (header_proofs_len == 0) {
         return ();
     }
@@ -47,7 +47,7 @@ func verify_header_inclusion{
         return verify_header_inclusion(
             header_proofs=header_proofs,
             rlp_headers=rlp_headers,
-            mmr_proofs=mmr_proofs,
+            mmr_inclusion_proofs=mmr_inclusion_proofs,
             header_proofs_len=header_proof_idx,
             mmr_size=mmr_size
         );
@@ -58,7 +58,7 @@ func verify_header_inclusion{
         element=poseidon_hash,
         height=0,
         position=header_proofs[header_proof_idx].leaf_idx,
-        inclusion_proof=mmr_proofs[header_proof_idx],
+        inclusion_proof=mmr_inclusion_proofs[header_proof_idx],
         inclusion_proof_len=header_proofs[header_proof_idx].mmr_inclusion_proof_len
     );
 
@@ -69,7 +69,7 @@ func verify_header_inclusion{
     return verify_header_inclusion(
         header_proofs=header_proofs,
         rlp_headers=rlp_headers,
-        mmr_proofs=mmr_proofs,
+        mmr_inclusion_proofs=mmr_inclusion_proofs,
         header_proofs_len=header_proof_idx,
         mmr_size=mmr_size
     );
