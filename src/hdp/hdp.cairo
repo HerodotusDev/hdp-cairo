@@ -6,11 +6,10 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
 
-from src.hdp.types import HeaderProof, MMRMeta, AccountProof
+from src.hdp.types import HeaderProof, MMRMeta, Account
 from src.hdp.mmr import verify_mmr_meta
 from src.hdp.header import verify_header_inclusion
-from src.hdp.state_proofs import verify_account_proofs
-from src.hdp.utils import hash_n_addresses
+from src.hdp.account import init_accounts, verify_n_accounts
 
 from src.libs.utils import (
     pow2alloc127,
@@ -31,21 +30,15 @@ func main{
     // Header Params
     local header_proofs_len: felt;
     let (header_proofs: HeaderProof*) = alloc();
-    let (rlp_headers: felt**) = alloc();
-    let (mmr_inclusion_proofs: felt**) = alloc();
 
     // MMR Params
     local mmr_meta: MMRMeta;
     let (mmr_peaks: felt*) = alloc();
     let pow2_array: felt* = pow2alloc127();
 
-    // Account Params
-    local account_proof_len: felt;
-    let (account_addresses: felt**) = alloc();
-    let keys_little: Uint256* = alloc();
-    let (account_proofs: AccountProof*) = alloc();
-    let (mpt_account_proofs: felt***) = alloc();
-    let (mpt_account_proofs_bytes_len: felt**) = alloc();
+    // Account Params    
+    let (accounts: Account*) = alloc();
+    local accounts_len: felt;
 
     // For testing:
     local state_root: Uint256;
@@ -60,11 +53,21 @@ func main{
 
         def write_header_proofs(ptr, header_proofs):
             offset = 0
+            ids.header_proofs_len = len(header_proofs)
             for header in header_proofs:
                 memory[ptr._reference_value + offset] = header["leaf_idx"]
                 memory[ptr._reference_value + offset + 1] = len(header["mmr_inclusion_proof"])
                 memory[ptr._reference_value + offset + 2] = len(header["rlp_encoded_header"])
-                offset += 3 # increment the offset for fixed sized params
+                memory[ptr._reference_value + offset + 3] = segments.gen_arg(hex_to_int_array(header["mmr_inclusion_proof"]))
+                memory[ptr._reference_value + offset + 4] = segments.gen_arg(hex_to_int_array(header["rlp_encoded_header"]))
+                offset += 5
+
+        def write_mmr_meta(mmr_meta):
+            ids.mmr_meta.id = mmr_meta["mmr_id"]
+            ids.mmr_meta.root = hex_to_int(mmr_meta["mmr_root"])
+            ids.mmr_meta.size = mmr_meta["mmr_size"]
+            ids.mmr_meta.peaks_len = len(mmr_meta["mmr_peaks"])
+            ids.mmr_meta.peaks = segments.gen_arg(hex_to_int_array(mmr_meta["mmr_peaks"]))
 
         def write_account_proofs(ptr, account_proofs):
             offset = 0
@@ -73,7 +76,7 @@ func main{
                 # memory[ptr._reference_value + offset + 1] = int(account["key"]["high"], 16)
                 # memory[ptr._reference_value + offset + 2] = int(account["key"]["low"], 16)
                 memory[ptr._reference_value + offset + 1] = len(account["proof"])
-                offset += 2 # increment the offset for fixed sized params
+                offset += 2
 
         ids.results_root.low = hex_to_int(program_input["results_root"]["low"])
         ids.results_root.high = hex_to_int(program_input["results_root"]["high"])
@@ -81,50 +84,12 @@ func main{
         ids.tasks_root.high = hex_to_int(program_input["tasks_root"]["high"])
         
         # MMR Meta
-        ids.mmr_meta.mmr_root = hex_to_int(program_input['header_batches'][0]['mmr_meta']['mmr_root'])
-        ids.mmr_meta.mmr_size = program_input['header_batches'][0]['mmr_meta']['mmr_size']
-        ids.mmr_meta.mmr_peaks_len = len(program_input['header_batches'][0]['mmr_meta']['mmr_peaks'])
-        ids.mmr_meta.mmr_id = program_input['header_batches'][0]['mmr_meta']['mmr_id']
-
-        # Header Params
-        rlp_headers = [
-            hex_to_int_array(header_proof['rlp_encoded_header'])
-            for header_proof in program_input['header_batches'][0]['headers']
-        ]
-
-        mmr_inclusion_proofs = [
-            hex_to_int_array(header_proof['mmr_inclusion_proof'])
-            for header_proof in program_input['header_batches'][0]['headers']
-        ]
-
-        ids.header_proofs_len = len(program_input['header_batches'][0]["headers"])
+        write_mmr_meta(program_input['header_batches'][0]['mmr_meta'])
         write_header_proofs(ids.header_proofs, program_input['header_batches'][0]["headers"])
-        segments.write_arg(ids.rlp_headers, rlp_headers)
-        segments.write_arg(ids.mmr_inclusion_proofs, mmr_inclusion_proofs)
-        segments.write_arg(ids.mmr_peaks, hex_to_int_array(program_input['header_batches'][0]['mmr_meta']['mmr_peaks']))
 
         # Account Params
-        ids.account_proof_len = len(program_input['accounts'])
-
-        account_addresses = [
-            account['address']
-            for account in program_input['accounts']
-        ]
-
-        print(account_addresses)
-
-        segments.write_arg(ids.account_addresses, account_addresses)
-
-        write_account_proofs(ids.account_proofs, program_input['accounts'])
-        # mpt_account_proofs_bytes_len = [[len(proof) for proof in account["proof"]] for account in program_input['accounts']]
-        mpt_account_proofs_bytes_len = [[532, 532, 532, 532, 532, 340, 83, 112]]
-        segments.write_arg(ids.mpt_account_proofs_bytes_len, mpt_account_proofs_bytes_len)
-
-        mpt_account_proofs = [
-            [proof for proof in account["proof"]]
-            for account in program_input['accounts']
-        ]
-        segments.write_arg(ids.mpt_account_proofs, mpt_account_proofs)
+        ids.accounts_len = len(program_input['header_batches'][0]['accounts'])
+        # rest is written with init_accounts func call
 
         ## Mock state root goerli#10453879
         ids.state_root.low = 283314076601314822749695638260178520623
@@ -133,57 +98,47 @@ func main{
     %}
     
     // Check 1: Ensure we have a valid pair of mmr_root and peaks
-    //verify_mmr_meta{pow2_array=pow2_array}(mmr_meta, mmr_peaks);
+    verify_mmr_meta{pow2_array=pow2_array}(mmr_meta);
 
     // Write the peaks to the dict if valid
     let (local peaks_dict) = default_dict_new(default_value=0);
     tempvar peaks_dict_start = peaks_dict;
-    write_felt_array_to_dict_keys{dict_end=peaks_dict}(array=mmr_peaks, index=mmr_meta.mmr_peaks_len - 1);
+    write_felt_array_to_dict_keys{dict_end=peaks_dict}(array=mmr_meta.peaks, index=mmr_meta.peaks_len - 1);
 
     // Check 2: Ensure the header is contained in a peak, and that the peak is known
-    // verify_header_inclusion{
-    //     range_check_ptr=range_check_ptr,
-    //     poseidon_ptr=poseidon_ptr,
-    //     pow2_array=pow2_array,
-    //     peaks_dict=peaks_dict,
-    // }(
-    //     header_proofs=header_proofs,
-    //     rlp_headers=rlp_headers,
-    //     mmr_inclusion_proofs=mmr_inclusion_proofs,
-    //     header_proofs_len=header_proofs_len,
-    //     mmr_size=mmr_meta.mmr_size
-    // );
+    verify_header_inclusion{
+        range_check_ptr=range_check_ptr,
+        poseidon_ptr=poseidon_ptr,
+        pow2_array=pow2_array,
+        peaks_dict=peaks_dict,
+    }(
+        header_proofs=header_proofs,
+        header_proofs_len=header_proofs_len,
+        mmr_size=mmr_meta.size
+    );
 
-    hash_n_addresses(
-        addresses_64_little=account_addresses,
-        keys_little=keys_little,
-        n_addresses=1,
-        index=0,
+    init_accounts(
+        accounts=accounts,
+        n_accounts=accounts_len,
+        index=0
     );
 
     // Check 3: Ensure the account proofs are valid
-    verify_account_proofs{
+    verify_n_accounts{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
     }(
-        mpt_account_proofs=mpt_account_proofs,
-        mpt_account_proofs_bytes_len=mpt_account_proofs_bytes_len,
-        account_proofs=account_proofs,
-        keys_little=keys_little,
+        accounts=accounts,
+        accounts_len=accounts_len,
         hashes_to_assert=state_root,
-        account_proofs_len=account_proof_len,
         pow2_array=pow2_array,
     );
-
-
-
-
 
     // Post Verification Checks: Ensure dict consistency
     default_dict_finalize(peaks_dict_start, peaks_dict, 0);
 
-    [ap] = mmr_meta.mmr_root;
+    [ap] = mmr_meta.root;
     [ap] = [output_ptr], ap++;
 
     [ap] = results_root.low;
@@ -203,25 +158,3 @@ func main{
 
     return();
 }
-
-
-// This doesnt work, the issue arises once I try to write mmr_inclusion_proof or rlp header (dynamic sized arrays)
-// %{
-//      header_proofs = [
-//         [
-//             header_proof['mmr_id'],
-//             header_proof['leaf_idx'],
-//             len(header_proof['mmr_inclusion_proof']),
-//             len(header_proof['rlp_encoded_header']),
-//             header_proof['mmr_inclusion_proof'],
-//             header_proof['rlp_encoded_header'],
-            
-//         ]
-//         for header_proof in program_input['header_proofs']
-//     ]
-
-//     print(header_proofs)
-//     # ids.header_proofs = segments.gen_arg(header_proofs)
-//     segments.gen_arg(ids.header_proofs, header_proofs)
-
-// %}
