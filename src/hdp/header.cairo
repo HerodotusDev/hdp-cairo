@@ -20,7 +20,7 @@ from src.hdp.types import (
 // - mmr_inclusion_proofs: The MMR inclusion proofs
 // - header_proofs_len: The length of the header proofs
 // - mmr_size: The size of the MMR
-func verify_header_inclusion{
+func verify_headers_inclusion{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     pow2_array: felt*,
@@ -44,7 +44,7 @@ func verify_header_inclusion{
         let (contains_peak) = dict_read{dict_ptr=peaks_dict}(poseidon_hash);
         assert contains_peak = 1;
 
-        return verify_header_inclusion(
+        return verify_headers_inclusion(
             header_proofs=header_proofs,
             header_proofs_len=header_proof_idx,
             mmr_size=mmr_size
@@ -64,7 +64,7 @@ func verify_header_inclusion{
     let (contains_peak) = dict_read{dict_ptr=peaks_dict}(computed_peak);
     assert contains_peak = 1;
 
-    return verify_header_inclusion(
+    return verify_headers_inclusion(
         header_proofs=header_proofs,
         header_proofs_len=header_proof_idx,
         mmr_size=mmr_size

@@ -8,7 +8,7 @@ from starkware.cairo.common.default_dict import default_dict_new, default_dict_f
 
 from src.hdp.types import HeaderProof, MMRMeta, Account
 from src.hdp.mmr import verify_mmr_meta
-from src.hdp.header import verify_header_inclusion
+from src.hdp.header import verify_headers_inclusion
 from src.hdp.account import init_accounts, verify_n_accounts
 
 from src.libs.utils import (
@@ -98,7 +98,7 @@ func main{
     write_felt_array_to_dict_keys{dict_end=peaks_dict}(array=mmr_meta.peaks, index=mmr_meta.peaks_len - 1);
 
     // Check 2: Ensure the header is contained in a peak, and that the peak is known
-    verify_header_inclusion{
+    verify_headers_inclusion{
         range_check_ptr=range_check_ptr,
         poseidon_ptr=poseidon_ptr,
         pow2_array=pow2_array,
