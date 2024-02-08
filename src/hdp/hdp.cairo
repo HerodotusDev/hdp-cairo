@@ -40,9 +40,6 @@ func main{
     
     //Misc
     let pow2_array: felt* = pow2alloc127();
-
-    // For testing:
-    local state_root: Uint256;
  
     %{
 
@@ -83,9 +80,6 @@ func main{
         ids.accounts_len = len(program_input['header_batches'][0]['accounts'])
         # rest is written with init_accounts func call
 
-        ## Mock state root goerli#10453879
-        ids.state_root.low = 283314076601314822749695638260178520623
-        ids.state_root.high = 240475353290032105001659409645575665094
 
     %}
     
@@ -120,10 +114,10 @@ func main{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
+        header_proofs=header_proofs,
     }(
         accounts=accounts,
         accounts_len=accounts_len,
-        hashes_to_assert=state_root,
         pow2_array=pow2_array,
     );
 

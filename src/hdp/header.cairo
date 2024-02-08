@@ -1,4 +1,4 @@
-from starkware.cairo.common.cairo_builtins import PoseidonBuiltin
+from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.dict import dict_read
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash, poseidon_hash_many
@@ -69,5 +69,4 @@ func verify_headers_inclusion{
         header_proofs_len=header_proof_idx,
         mmr_size=mmr_size
     );
-    
 }
