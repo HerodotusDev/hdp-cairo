@@ -25,7 +25,7 @@ func verify_header_inclusion{
     poseidon_ptr: PoseidonBuiltin*,
     pow2_array: felt*,
     peaks_dict: DictAccess*,
-} (header_proofs: HeaderProof*, rlp_headers: felt**, mmr_inclusion_proofs: felt**, header_proofs_len: felt, mmr_size: felt) {
+} (header_proofs: HeaderProof*, header_proofs_len: felt, mmr_size: felt) {
     if (header_proofs_len == 0) {
         return ();
     }
@@ -34,7 +34,7 @@ func verify_header_inclusion{
     // compute the hash of the header
     let (poseidon_hash) = poseidon_hash_many(
         n=header_proofs[header_proof_idx].rlp_encoded_header_len, 
-        elements=rlp_headers[header_proof_idx]
+        elements=header_proofs[header_proof_idx].rlp_encoded_header
     );
 
     // a header can be the right-most peak
@@ -46,8 +46,6 @@ func verify_header_inclusion{
 
         return verify_header_inclusion(
             header_proofs=header_proofs,
-            rlp_headers=rlp_headers,
-            mmr_inclusion_proofs=mmr_inclusion_proofs,
             header_proofs_len=header_proof_idx,
             mmr_size=mmr_size
         );
@@ -58,7 +56,7 @@ func verify_header_inclusion{
         element=poseidon_hash,
         height=0,
         position=header_proofs[header_proof_idx].leaf_idx,
-        inclusion_proof=mmr_inclusion_proofs[header_proof_idx],
+        inclusion_proof=header_proofs[header_proof_idx].mmr_inclusion_proof,
         inclusion_proof_len=header_proofs[header_proof_idx].mmr_inclusion_proof_len
     );
 
@@ -68,8 +66,6 @@ func verify_header_inclusion{
 
     return verify_header_inclusion(
         header_proofs=header_proofs,
-        rlp_headers=rlp_headers,
-        mmr_inclusion_proofs=mmr_inclusion_proofs,
         header_proofs_len=header_proof_idx,
         mmr_size=mmr_size
     );

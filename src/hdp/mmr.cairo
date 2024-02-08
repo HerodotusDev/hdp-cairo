@@ -18,7 +18,7 @@ func verify_mmr_meta{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     pow2_array: felt*,
-} (mmr_meta: MMRMeta, mmr_peaks: felt*) {
+} (mmr_meta: MMRMeta) {
     alloc_locals;
 
     %{
@@ -26,19 +26,19 @@ func verify_mmr_meta{
     %}
 
     // ensure the mmr_size is valid
-    assert_mmr_size_is_valid(mmr_meta.mmr_size);
+    assert_mmr_size_is_valid(mmr_meta.size);
 
     // ensure the mmr_peaks_len is valid
-    let (_, peaks_len) = compute_peaks_positions(mmr_meta.mmr_size);
-    assert peaks_len = mmr_meta.mmr_peaks_len;
+    let (_, peaks_len) = compute_peaks_positions(mmr_meta.size);
+    assert peaks_len = mmr_meta.peaks_len;
 
     // ensure the mmr_peaks recreate the passed mmr_root
-    let (mmr_root) = mmr_root_poseidon(mmr_peaks, mmr_meta.mmr_size, mmr_meta.mmr_peaks_len);
-    assert 0 = mmr_meta.mmr_root - mmr_root;
+    let (mmr_root) = mmr_root_poseidon(mmr_meta.peaks, mmr_meta.size, mmr_meta.peaks_len);
+    assert 0 = mmr_meta.root - mmr_root;
 
     %{
-        print("HEX_MMR_ROOT:", hex(ids.mmr_meta.mmr_root))
-        print("DEC_MMR_ROOT:", ids.mmr_meta.mmr_root)
+        print("HEX_MMR_ROOT:", hex(ids.mmr_meta.root))
+        print("DEC_MMR_ROOT:", ids.mmr_meta.root)
         print("________________________________________________")
     %}
 
