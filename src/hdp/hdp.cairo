@@ -33,12 +33,13 @@ func main{
 
     // MMR Params
     local mmr_meta: MMRMeta;
-    let (mmr_peaks: felt*) = alloc();
-    let pow2_array: felt* = pow2alloc127();
 
     // Account Params    
     let (accounts: Account*) = alloc();
     local accounts_len: felt;
+    
+    //Misc
+    let pow2_array: felt* = pow2alloc127();
 
     // For testing:
     local state_root: Uint256;
@@ -68,15 +69,6 @@ func main{
             ids.mmr_meta.size = mmr_meta["mmr_size"]
             ids.mmr_meta.peaks_len = len(mmr_meta["mmr_peaks"])
             ids.mmr_meta.peaks = segments.gen_arg(hex_to_int_array(mmr_meta["mmr_peaks"]))
-
-        def write_account_proofs(ptr, account_proofs):
-            offset = 0
-            for account in account_proofs:
-                memory[ptr._reference_value + offset] = account["block_number"]
-                # memory[ptr._reference_value + offset + 1] = int(account["key"]["high"], 16)
-                # memory[ptr._reference_value + offset + 2] = int(account["key"]["low"], 16)
-                memory[ptr._reference_value + offset + 1] = len(account["proof"])
-                offset += 2
 
         ids.results_root.low = hex_to_int(program_input["results_root"]["low"])
         ids.results_root.high = hex_to_int(program_input["results_root"]["high"])
