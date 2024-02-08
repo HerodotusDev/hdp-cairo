@@ -2,8 +2,9 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
 from src.libs.mpt import verify_mpt_proof
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.builtin_keccak.keccak import keccak
-from src.hdp.types import Account, AccountProof
 from starkware.cairo.common.alloc import alloc
+from src.hdp.types import Account, AccountProof, HeaderProof
+from src.libs.block_header import extract_state_root_little
 
 // Initializes the accounts, ensuring that the passed address matches the key.
 // Params:
@@ -67,10 +68,10 @@ func verify_n_accounts{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*, 
     keccak_ptr: KeccakBuiltin*,
+    header_proofs: HeaderProof*,
 } (
     accounts: Account*,
     accounts_len: felt,
-    hashes_to_assert: Uint256,
     pow2_array: felt*,
 ) {
     if(accounts_len == 0) {
@@ -82,14 +83,12 @@ func verify_n_accounts{
     verify_account(
         account=accounts[account_idx],
         proof_idx=0,
-        hashes_to_assert=hashes_to_assert,
         pow2_array=pow2_array,
     );
 
     return verify_n_accounts(
         accounts=accounts,
         accounts_len=accounts_len - 1,
-        hashes_to_assert=hashes_to_assert,
         pow2_array=pow2_array,
     );
 }
@@ -104,15 +103,16 @@ func verify_account{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*, 
     keccak_ptr: KeccakBuiltin*,
+    header_proofs: HeaderProof*,
 } (
     account: Account,
     proof_idx: felt,
-    hashes_to_assert: Uint256,
     pow2_array: felt*,
 ) {
     if (proof_idx == account.proofs_len) {
         return ();
     }
+    let state_root = extract_state_root_little(header_proofs[proof_idx].rlp_encoded_header);
 
     let (value: felt*, value_len: felt) = verify_mpt_proof(
         mpt_proof=account.proofs[proof_idx].proof,
@@ -121,14 +121,13 @@ func verify_account{
         key_little=account.key,
         n_nibbles_already_checked=0,
         node_index=0,
-        hash_to_assert=hashes_to_assert,
+        hash_to_assert=state_root,
         pow2_array=pow2_array,
     );
 
     return verify_account(
         account=account,
         proof_idx=proof_idx + 1,
-        hashes_to_assert=hashes_to_assert,
         pow2_array=pow2_array,
     );
 }
