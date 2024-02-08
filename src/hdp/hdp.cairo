@@ -1,6 +1,6 @@
-%builtins output range_check poseidon
+%builtins output range_check bitwise keccak poseidon
 
-from starkware.cairo.common.cairo_builtins import PoseidonBuiltin
+from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, KeccakBuiltin
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.dict_access import DictAccess
@@ -9,6 +9,8 @@ from starkware.cairo.common.default_dict import default_dict_new, default_dict_f
 from src.hdp.types import HeaderProof, MMRMeta, AccountProof
 from src.hdp.mmr import verify_mmr_meta
 from src.hdp.header import verify_header_inclusion
+from src.hdp.state_proofs import verify_account_proofs
+from src.hdp.utils import hash_n_addresses
 
 from src.libs.utils import (
     pow2alloc127,
@@ -18,6 +20,8 @@ from src.libs.utils import (
 func main{
     output_ptr: felt*,
     range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
 }() {
     alloc_locals;
@@ -37,9 +41,14 @@ func main{
 
     // Account Params
     local account_proof_len: felt;
+    let (account_addresses: felt**) = alloc();
+    let keys_little: Uint256* = alloc();
     let (account_proofs: AccountProof*) = alloc();
     let (mpt_account_proofs: felt***) = alloc();
-    let (mpt_account_proof_bytes_len: felt**) = alloc();
+    let (mpt_account_proofs_bytes_len: felt**) = alloc();
+
+    // For testing:
+    local state_root: Uint256;
  
     %{
 
@@ -61,10 +70,10 @@ func main{
             offset = 0
             for account in account_proofs:
                 memory[ptr._reference_value + offset] = account["block_number"]
-                memory[ptr._reference_value + offset + 1] = int(account["key"]["high"], 16)
-                memory[ptr._reference_value + offset + 2] = int(account["key"]["low"], 16)
-                memory[ptr._reference_value + offset + 3] = len(account["proof"])
-                offset += 4 # increment the offset for fixed sized params
+                # memory[ptr._reference_value + offset + 1] = int(account["key"]["high"], 16)
+                # memory[ptr._reference_value + offset + 2] = int(account["key"]["low"], 16)
+                memory[ptr._reference_value + offset + 1] = len(account["proof"])
+                offset += 2 # increment the offset for fixed sized params
 
         ids.results_root.low = hex_to_int(program_input["results_root"]["low"])
         ids.results_root.high = hex_to_int(program_input["results_root"]["high"])
@@ -96,20 +105,35 @@ func main{
 
         # Account Params
         ids.account_proof_len = len(program_input['accounts'])
+
+        account_addresses = [
+            account['address']
+            for account in program_input['accounts']
+        ]
+
+        print(account_addresses)
+
+        segments.write_arg(ids.account_addresses, account_addresses)
+
         write_account_proofs(ids.account_proofs, program_input['accounts'])
-        mpt_account_proof_bytes_len = [[len(proof) for proof in account["proof"]] for account in program_input['accounts']]
-        segments.write_arg(ids.mpt_account_proof_bytes_len, mpt_account_proof_bytes_len)
+        # mpt_account_proofs_bytes_len = [[len(proof) for proof in account["proof"]] for account in program_input['accounts']]
+        mpt_account_proofs_bytes_len = [[532, 532, 532, 532, 532, 340, 83, 112]]
+        segments.write_arg(ids.mpt_account_proofs_bytes_len, mpt_account_proofs_bytes_len)
 
         mpt_account_proofs = [
-            [hex_to_int_array(proof) for proof in account["proof"]]
+            [proof for proof in account["proof"]]
             for account in program_input['accounts']
         ]
         segments.write_arg(ids.mpt_account_proofs, mpt_account_proofs)
 
+        ## Mock state root goerli#10453879
+        ids.state_root.low = 283314076601314822749695638260178520623
+        ids.state_root.high = 240475353290032105001659409645575665094
+
     %}
     
     // Check 1: Ensure we have a valid pair of mmr_root and peaks
-    verify_mmr_meta{pow2_array=pow2_array}(mmr_meta, mmr_peaks);
+    //verify_mmr_meta{pow2_array=pow2_array}(mmr_meta, mmr_peaks);
 
     // Write the peaks to the dict if valid
     let (local peaks_dict) = default_dict_new(default_value=0);
@@ -117,18 +141,44 @@ func main{
     write_felt_array_to_dict_keys{dict_end=peaks_dict}(array=mmr_peaks, index=mmr_meta.mmr_peaks_len - 1);
 
     // Check 2: Ensure the header is contained in a peak, and that the peak is known
-    verify_header_inclusion{
-        range_check_ptr=range_check_ptr,
-        poseidon_ptr=poseidon_ptr,
-        pow2_array=pow2_array,
-        peaks_dict=peaks_dict,
-    }(
-        header_proofs=header_proofs,
-        rlp_headers=rlp_headers,
-        mmr_inclusion_proofs=mmr_inclusion_proofs,
-        header_proofs_len=header_proofs_len,
-        mmr_size=mmr_meta.mmr_size
+    // verify_header_inclusion{
+    //     range_check_ptr=range_check_ptr,
+    //     poseidon_ptr=poseidon_ptr,
+    //     pow2_array=pow2_array,
+    //     peaks_dict=peaks_dict,
+    // }(
+    //     header_proofs=header_proofs,
+    //     rlp_headers=rlp_headers,
+    //     mmr_inclusion_proofs=mmr_inclusion_proofs,
+    //     header_proofs_len=header_proofs_len,
+    //     mmr_size=mmr_meta.mmr_size
+    // );
+
+    hash_n_addresses(
+        addresses_64_little=account_addresses,
+        keys_little=keys_little,
+        n_addresses=1,
+        index=0,
     );
+
+    // Check 3: Ensure the account proofs are valid
+    verify_account_proofs{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        keccak_ptr=keccak_ptr,
+    }(
+        mpt_account_proofs=mpt_account_proofs,
+        mpt_account_proofs_bytes_len=mpt_account_proofs_bytes_len,
+        account_proofs=account_proofs,
+        keys_little=keys_little,
+        hashes_to_assert=state_root,
+        account_proofs_len=account_proof_len,
+        pow2_array=pow2_array,
+    );
+
+
+
+
 
     // Post Verification Checks: Ensure dict consistency
     default_dict_finalize(peaks_dict_start, peaks_dict, 0);

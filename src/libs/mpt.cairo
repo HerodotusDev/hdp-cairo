@@ -312,7 +312,7 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
             pow2_array,
         );
         %{
-            print_array(ids.extracted_key_subset, ids.extracted_key_subset_len) 
+            #print_array(ids.extracted_key_subset, ids.extracted_key_subset_len) 
             print(f"nibbles already checked: {ids.n_nibbles_already_checked}")
         %}
         assert_subset_in_key(
