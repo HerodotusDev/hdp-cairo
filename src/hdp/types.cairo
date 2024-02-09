@@ -22,6 +22,11 @@ struct AccountProof {
     proof: felt**,
 }
 
+struct AccountState {
+    values: felt*,
+    values_len: felt,
+}
+
 struct MMRMeta {
     id: felt,
     root: felt,

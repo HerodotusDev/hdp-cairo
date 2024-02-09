@@ -3,7 +3,7 @@ from src.libs.mpt import verify_mpt_proof
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
-from src.hdp.types import Account, AccountProof, HeaderProof
+from src.hdp.types import Account, AccountProof, HeaderProof, AccountState
 from src.libs.block_header import extract_state_root_little
 
 // Initializes the accounts, ensuring that the passed address matches the key.
@@ -49,7 +49,6 @@ func init_accounts{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: Ke
 
         assert accounts[index] = account;
 
-
         return init_accounts(
             accounts=accounts,
             n_accounts=n_accounts,
@@ -62,7 +61,6 @@ func init_accounts{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: Ke
 // Params:
 // - accounts: the accounts to verify.
 // - accounts_len: the number of accounts to verify.
-// - hashes_to_assert: the hash to assert. Currently this is hardcoded to goerli#10453879
 // - pow2_array: the array of powers of 2.
 func verify_n_accounts{
     range_check_ptr,
@@ -72,6 +70,7 @@ func verify_n_accounts{
 } (
     accounts: Account*,
     accounts_len: felt,
+    accounts_states: AccountState**,
     pow2_array: felt*,
 ) {
     if(accounts_len == 0) {
@@ -80,15 +79,24 @@ func verify_n_accounts{
 
     let account_idx = accounts_len - 1;
 
-    verify_account(
+
+    // Question: 
+    // Am I supposed to allocate the account_states here? I am not able to make it work without another alloc, but I wonder if im wasting memory here, since I allocated the nested structure already in hdp
+    let account_states: AccountState* = alloc();
+    
+    let states = verify_account(
         account=accounts[account_idx],
+        account_states=account_states,
         proof_idx=0,
         pow2_array=pow2_array,
     );
+ 
+    assert accounts_states[account_idx] = states;
 
     return verify_n_accounts(
         accounts=accounts,
         accounts_len=accounts_len - 1,
+        accounts_states=accounts_states,
         pow2_array=pow2_array,
     );
 }
@@ -97,7 +105,6 @@ func verify_n_accounts{
 // Params:
 // - account: the account to verify.
 // - proof_idx: the index of the proof to verify.
-// - hashes_to_assert: state_root of the proof. Currently hardcoded to goerli#10453879
 // - pow2_array: the array of powers of 2.
 func verify_account{
     range_check_ptr,
@@ -106,12 +113,15 @@ func verify_account{
     header_proofs: HeaderProof*,
 } (
     account: Account,
+    account_states: AccountState*,
     proof_idx: felt,
     pow2_array: felt*,
-) {
+) -> AccountState* {
     if (proof_idx == account.proofs_len) {
-        return ();
+        return account_states;
     }
+
+    // get state_root from verified headers
     let state_root = extract_state_root_little(header_proofs[proof_idx].rlp_encoded_header);
 
     let (value: felt*, value_len: felt) = verify_mpt_proof(
@@ -125,8 +135,15 @@ func verify_account{
         pow2_array=pow2_array,
     );
 
+    // write verified account state
+    assert account_states[proof_idx] = AccountState(
+        values=value,
+        values_len=value_len,
+    );
+
     return verify_account(
         account=account,
+        account_states=account_states,
         proof_idx=proof_idx + 1,
         pow2_array=pow2_array,
     );

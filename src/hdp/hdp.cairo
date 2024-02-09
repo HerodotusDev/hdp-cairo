@@ -6,7 +6,7 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
 
-from src.hdp.types import HeaderProof, MMRMeta, Account
+from src.hdp.types import HeaderProof, MMRMeta, Account, AccountState
 from src.hdp.mmr import verify_mmr_meta
 from src.hdp.header import verify_headers_inclusion
 from src.hdp.account import init_accounts, verify_n_accounts
@@ -36,6 +36,7 @@ func main{
 
     // Account Params    
     let (accounts: Account*) = alloc();
+    let (accounts_states: AccountState**) = alloc();
     local accounts_len: felt;
     
     //Misc
@@ -118,6 +119,7 @@ func main{
     }(
         accounts=accounts,
         accounts_len=accounts_len,
+        accounts_states=accounts_states,
         pow2_array=pow2_array,
     );
 
@@ -130,7 +132,7 @@ func main{
     [ap] = results_root.low;
     [ap] = [output_ptr + 1], ap++;
 
-    [ap] = results_root.low;
+    [ap] = results_root.high;
     [ap] = [output_ptr + 2], ap++;
 
     [ap] = tasks_root.high;
