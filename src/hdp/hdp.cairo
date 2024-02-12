@@ -9,7 +9,7 @@ from starkware.cairo.common.default_dict import default_dict_new, default_dict_f
 from src.hdp.types import HeaderProof, MMRMeta, Account, AccountState
 from src.hdp.mmr import verify_mmr_meta
 from src.hdp.header import verify_headers_inclusion
-from src.hdp.account import init_accounts, verify_n_accounts
+from src.hdp.account import init_accounts, verify_n_accounts, get_account_balance, get_account_nonce, get_account_state_root, get_account_code_hash
 
 from src.libs.utils import (
     pow2alloc127,
@@ -123,6 +123,38 @@ func main{
         pow2_array=pow2_array,
     );
 
+    get_account_balance{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array
+    }(
+        rlp=accounts_states[0][0].values
+    );
+
+    get_account_nonce{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array
+    }(
+        rlp=accounts_states[0][0].values
+    );
+
+    get_account_state_root{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array
+    }(
+        rlp=accounts_states[0][0].values
+    );
+    
+    get_account_code_hash{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array
+    }(
+        rlp=accounts_states[0][0].values
+    );
+
     // Post Verification Checks: Ensure dict consistency
     default_dict_finalize(peaks_dict_start, peaks_dict, 0);
 
@@ -146,3 +178,18 @@ func main{
 
     return();
 }
+
+//C3E94F3D6F233288
+//32236F3D4FE9C322
+//22C3E94F3D6F2332
+
+// f84c808832236f3d4fe9c322a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421a0c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470
+
+
+// 0xa655cc1b171fe856
+// 0x6ef8c092e64583ff
+
+// 0xc0ad6c991be0485b
+// 0x21b463e3b52f6201
+
+// 0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421
