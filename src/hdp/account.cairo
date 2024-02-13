@@ -10,8 +10,8 @@ from src.libs.rlp_little import (
     extract_n_bytes_from_le_64_chunks_array,
 )
 
-from src.libs.utils import felt_divmod, felt_divmod_8
-from src.hdp.utils import le_u64_array_to_uint256
+from src.libs.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64
+from src.hdp.utils import be_u64_array_to_uint256, reverse_word_endianness
 
 
 // Initializes the accounts, ensuring that the passed address matches the key.
@@ -64,6 +64,56 @@ func init_accounts{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: Ke
         );
     }
 }
+
+// func init_slot_proofs{
+//     range_check_ptr,
+//     bitwise_ptr: BitwiseBuiltin*, 
+//     keccak_ptr: KeccakBuiltin*
+// } (accounts: Account*, n_accounts: felt, index: felt) {
+//      alloc_locals;
+//     if (index == n_accounts) {
+//         return ();
+//     } else {
+//         local account: Account;
+//         let (proofs: AccountProof*) = alloc();
+        
+//         %{
+//             def write_account(account_ptr, proofs_ptr, account):
+//                 memory[account_ptr._reference_value] = segments.gen_arg(account["address"])
+//                 memory[account_ptr._reference_value + 1] = account["key"]["low"]
+//                 memory[account_ptr._reference_value + 2] = account["key"]["high"]
+//                 memory[account_ptr._reference_value + 3] = len(account["proofs"])
+//                 memory[account_ptr._reference_value + 4] = proofs_ptr._reference_value
+
+//             def write_proofs(ptr, proofs):
+//                 offset = 0
+//                 for proof in proofs:
+//                     memory[ptr._reference_value + offset] = proof["block_number"]
+//                     memory[ptr._reference_value + offset + 1] = len(proof["proof"])
+//                     memory[ptr._reference_value + offset + 2] = segments.gen_arg(proof["proof_bytes_len"])
+//                     memory[ptr._reference_value + offset + 3] = segments.gen_arg(proof["proof"])
+//                     offset += 4
+
+//             account = program_input['header_batches'][0]["accounts"][ids.index]
+
+//             write_proofs(ids.proofs, account["proofs"])
+//             write_account(ids.account, ids.proofs, account)
+//         %}
+
+//         // ensure that address matches the key
+//         let (hash: Uint256) = keccak(account.address, 20);
+//         assert account.key.low = hash.low;
+//         assert account.key.high = hash.high;
+
+//         assert accounts[index] = account;
+
+//         return init_accounts(
+//             accounts=accounts,
+//             n_accounts=n_accounts,
+//             index=index + 1,
+//         );
+//     }
+// }
 
 // Verifies the validity of all of the accounts account_proofs
 // Params:
@@ -166,7 +216,7 @@ func get_account_nonce{
     alloc_locals;
     let (res, res_len) = decode_account_value(rlp=rlp, value_idx=0, item_starts_at_byte=2, counter=0);
 
-    let result = le_u64_array_to_uint256(
+    let result = be_u64_array_to_uint256(
         elements=res,
         elements_len=res_len
     );
@@ -189,12 +239,12 @@ func get_account_balance{
 
     let (res, res_len) = decode_account_value(rlp=rlp, value_idx=1, item_starts_at_byte=2, counter=0);
 
-    let result = le_u64_array_to_uint256(
+    let result = be_u64_array_to_uint256(
         elements=res,
         elements_len=res_len
     );
 
-    %{
+    %{  
         print("balance.high", ids.result.high)
         print("balance.low", ids.result.low)
     %}
@@ -212,7 +262,7 @@ func get_account_state_root{
 
     let (res, res_len) = decode_account_value(rlp=rlp, value_idx=2, item_starts_at_byte=2, counter=0);
 
-    let result = le_u64_array_to_uint256(
+    let result = be_u64_array_to_uint256(
         elements=res,
         elements_len=res_len
     );
@@ -235,7 +285,7 @@ func get_account_code_hash{
 
     let (res, res_len) = decode_account_value(rlp=rlp, value_idx=3, item_starts_at_byte=2, counter=0);
 
-    let result = le_u64_array_to_uint256(
+    let result = be_u64_array_to_uint256(
         elements=res,
         elements_len=res_len
     );
@@ -253,7 +303,7 @@ func get_account_code_hash{
 // Params:
 // - rlp: the rlp encoded account state
 // - value_idx: the index of the value to retrieve (nonce, balance, stateRoot, codeHash) as index
-// - item_starts_at_byte: the byte at which the item starts. Since the account is a list len 4, we can skip the first 2 bytes
+// - item_starts_at_byte: the byte at which the item starts. Since the two hashes are 32 bytes long, we know the list is going to be long, so we can skip the first 2 bytes
 // - counter: the current counter of the recursive function
 // Returns: LE 4bytes array of the value + the length of the array
 func decode_account_value{
@@ -263,53 +313,100 @@ func decode_account_value{
 } (rlp: felt*, value_idx: felt, item_starts_at_byte: felt, counter: felt) -> (res: felt*, res_len: felt) {
     alloc_locals;
 
+    // %{
+    //     print("Iteration: ", ids.counter)
+    //     print("item_starts_at_byte", ids.item_starts_at_byte)
+    // %}
+
     let (item_starts_at_word, item_start_offset) = felt_divmod(
         item_starts_at_byte, 8
     );
 
-    let current_item_prefix = extract_byte_at_pos(
-        rlp[item_starts_at_word], 
-        item_start_offset, pow2_array
+    // %{
+    //     print("item_starts_at_word", ids.item_starts_at_word)
+    //     print("item_start_offset", ids.item_start_offset)
+    // %}
+
+    let current_item = extract_byte_at_pos(
+        rlp[item_starts_at_word],
+        item_start_offset,
+        pow2_array
     );
 
-    tempvar current_item_len = current_item_prefix - 0x80;
-    tempvar next_item_starts_at_byte = item_starts_at_byte + 1 + current_item_len;
+    // %{
+    //     print("current_item", hex(ids.current_item))
+    // %}
+
+    local item_has_prefix: felt;
+
+    // We need to validate this hint via assert!!!
+    %{
+        # print("current_item", hex(ids.current_item))
+        if ids.current_item < 0x80:
+            ids.item_has_prefix = 0
+        else:
+            ids.item_has_prefix = 1
+    %}
+
+    local current_item_len: felt;
+
+    if (item_has_prefix == 1) {
+        assert [range_check_ptr] = current_item - 0x80; // validates item_has_prefix hint
+        current_item_len = current_item - 0x80;
+        tempvar next_item_starts_at_byte = item_starts_at_byte +  current_item_len + 1;
+    } else {
+        assert [range_check_ptr] = 0x7f - current_item; // validates item_has_prefix hint
+        current_item_len = 1;
+        tempvar next_item_starts_at_byte = item_starts_at_byte +  current_item_len;
+    }
+
+    let range_check_ptr = range_check_ptr + 1;
+    
+
+    // %{ print("next_item_starts_at_byte", ids.next_item_starts_at_byte) %}
 
     if (value_idx == counter) {
-        
-        // handle empty byte case
+        // handle empty bytes case
         if(current_item_len == 0) {
-            // ToDo: probably can be optimized
+            // %{ print("empty case") %}
             let (res: felt*) = alloc();
             assert res[0] = 0;
-
             return (res=res, res_len=1);
-        }
+        } 
 
-        // we still need to remove the prefix. Check if we're in last word byte
-        let (q, r) = felt_divmod_8(item_start_offset);
-        
-        if(r == 0) {
+        // handle prefix case
+        if (item_has_prefix == 1) {
+            // %{ print("prefix case") %}
+            let (word_idx, offset) = felt_divmod(
+                item_starts_at_byte + 1, 8
+            );
+            
             let (res, res_len) = extract_n_bytes_from_le_64_chunks_array(
                 array=rlp,
-                start_word=item_starts_at_word+1,
-                start_offset=0,
+                start_word=word_idx,
+                start_offset=offset,
                 n_bytes=current_item_len,
                 pow2_array=pow2_array
             );
 
-            return (res=res, res_len=res_len);
+            let (reverse_res: felt*) = alloc();
+
+            reverse_word_endianness(
+                values=res,
+                values_len=res_len,
+                remaining_bytes_len=current_item_len,
+                index=0,
+                result=reverse_res
+            );
+
+            return (res=reverse_res, res_len=res_len);
+        } else {
+            %{ print("single byte case") %}
+            // handle single byte case
+            let (res: felt*) = alloc();
+            assert res[0] = current_item;
+            return (res=res, res_len=1);
         }
-
-        let (res, res_len) = extract_n_bytes_from_le_64_chunks_array(
-            array=rlp,
-            start_word=item_starts_at_word,
-            start_offset=item_start_offset+1,
-            n_bytes=current_item_len,
-            pow2_array=pow2_array
-        );
-
-        return (res=res, res_len=res_len);
     }
 
     return decode_account_value(
