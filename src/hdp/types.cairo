@@ -34,3 +34,18 @@ struct MMRMeta {
 	peaks_len: felt,
 	peaks: felt*,
 }
+
+struct AccountSlot   {
+    account_id: felt,
+    slot: felt*,
+    key: Uint256,
+    proofs_len: felt,
+    proofs: AccountSlotProof*,
+}
+
+struct AccountSlotProof {
+    block_number: felt,
+    proof_len: felt,
+    proof_bytes_len: felt*,
+    proof: felt**,
+}

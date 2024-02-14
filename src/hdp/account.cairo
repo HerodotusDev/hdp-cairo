@@ -1,9 +1,9 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
 from src.libs.mpt import verify_mpt_proof
 from starkware.cairo.common.uint256 import Uint256
-from starkware.cairo.common.builtin_keccak.keccak import keccak
+from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_uint256s
 from starkware.cairo.common.alloc import alloc
-from src.hdp.types import Account, AccountProof, HeaderProof, AccountState
+from src.hdp.types import Account, AccountProof, HeaderProof, AccountState, AccountSlot, AccountSlotProof
 from src.libs.block_header import extract_state_root_little
 from src.libs.rlp_little import (
     extract_byte_at_pos,
@@ -65,55 +65,56 @@ func init_accounts{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: Ke
     }
 }
 
-// func init_slot_proofs{
-//     range_check_ptr,
-//     bitwise_ptr: BitwiseBuiltin*, 
-//     keccak_ptr: KeccakBuiltin*
-// } (accounts: Account*, n_accounts: felt, index: felt) {
-//      alloc_locals;
-//     if (index == n_accounts) {
-//         return ();
-//     } else {
-//         local account: Account;
-//         let (proofs: AccountProof*) = alloc();
+func init_account_slots{
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*, 
+    keccak_ptr: KeccakBuiltin*
+} (account_slots: AccountSlot*, n_account_slots: felt, index: felt) {
+     alloc_locals;
+    if (index == n_account_slots) {
+        return ();
+    } else {
+        local account_slot: AccountSlot;
+        let (proofs: AccountSlotProof*) = alloc();
         
-//         %{
-//             def write_account(account_ptr, proofs_ptr, account):
-//                 memory[account_ptr._reference_value] = segments.gen_arg(account["address"])
-//                 memory[account_ptr._reference_value + 1] = account["key"]["low"]
-//                 memory[account_ptr._reference_value + 2] = account["key"]["high"]
-//                 memory[account_ptr._reference_value + 3] = len(account["proofs"])
-//                 memory[account_ptr._reference_value + 4] = proofs_ptr._reference_value
+        %{
+            def write_account_slot(account_ptr, proofs_ptr, account):
+                memory[account_ptr._reference_value] = account["account_id"]
+                memory[account_ptr._reference_value + 1] =segments.gen_arg(account["slot"])
+                memory[account_ptr._reference_value + 2] = account["key"]["low"]
+                memory[account_ptr._reference_value + 3] = account["key"]["high"]
+                memory[account_ptr._reference_value + 4] = len(account["proofs"])
+                memory[account_ptr._reference_value + 5] = proofs_ptr._reference_value
 
-//             def write_proofs(ptr, proofs):
-//                 offset = 0
-//                 for proof in proofs:
-//                     memory[ptr._reference_value + offset] = proof["block_number"]
-//                     memory[ptr._reference_value + offset + 1] = len(proof["proof"])
-//                     memory[ptr._reference_value + offset + 2] = segments.gen_arg(proof["proof_bytes_len"])
-//                     memory[ptr._reference_value + offset + 3] = segments.gen_arg(proof["proof"])
-//                     offset += 4
+            def write_proofs(ptr, proofs):
+                offset = 0
+                for proof in proofs:
+                    memory[ptr._reference_value + offset] = proof["block_number"]
+                    memory[ptr._reference_value + offset + 1] = len(proof["proof"])
+                    memory[ptr._reference_value + offset + 2] = segments.gen_arg(proof["proof_bytes_len"])
+                    memory[ptr._reference_value + offset + 3] = segments.gen_arg(proof["proof"])
+                    offset += 4
 
-//             account = program_input['header_batches'][0]["accounts"][ids.index]
+            account_slot = program_input['header_batches'][0]["account_slots"][ids.index]
 
-//             write_proofs(ids.proofs, account["proofs"])
-//             write_account(ids.account, ids.proofs, account)
-//         %}
+            write_proofs(ids.proofs, account["proofs"])
+            write_account_slot(ids.account_slot, ids.proofs, account_slot)
+        %}
 
-//         // ensure that address matches the key
-//         let (hash: Uint256) = keccak(account.address, 20);
-//         assert account.key.low = hash.low;
-//         assert account.key.high = hash.high;
+        // ensure that address matches the key
+        let (hash: Uint256) = keccak(account_slot.slot, 32);
+        assert account_slot.key.low = hash.low;
+        assert account_slot.key.high = hash.high;
 
-//         assert accounts[index] = account;
+        assert account_slots[index] = account_slot;
 
-//         return init_accounts(
-//             accounts=accounts,
-//             n_accounts=n_accounts,
-//             index=index + 1,
-//         );
-//     }
-// }
+        return init_account_slots(
+            account_slots=account_slots,
+            n_account_slots=n_account_slots,
+            index=index + 1,
+        );
+    }
+}
 
 // Verifies the validity of all of the accounts account_proofs
 // Params:
@@ -389,8 +390,8 @@ func decode_account_value{
                 pow2_array=pow2_array
             );
 
+            // 
             let (reverse_res: felt*) = alloc();
-
             reverse_word_endianness(
                 values=res,
                 values_len=res_len,
@@ -401,7 +402,7 @@ func decode_account_value{
 
             return (res=reverse_res, res_len=res_len);
         } else {
-            %{ print("single byte case") %}
+            // %{ print("single byte case") %}
             // handle single byte case
             let (res: felt*) = alloc();
             assert res[0] = current_item;

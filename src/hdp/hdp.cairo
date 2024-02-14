@@ -6,10 +6,10 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
 
-from src.hdp.types import HeaderProof, MMRMeta, Account, AccountState
+from src.hdp.types import HeaderProof, MMRMeta, Account, AccountState, AccountSlot
 from src.hdp.mmr import verify_mmr_meta
 from src.hdp.header import verify_headers_inclusion
-from src.hdp.account import init_accounts, verify_n_accounts, get_account_balance, get_account_nonce, get_account_state_root, get_account_code_hash
+from src.hdp.account import init_accounts, verify_n_accounts, get_account_balance, get_account_nonce, get_account_state_root, get_account_code_hash, init_account_slots
 
 from src.libs.utils import (
     pow2alloc127,
@@ -36,8 +36,10 @@ func main{
 
     // Account Params    
     let (accounts: Account*) = alloc();
-    let (accounts_states: AccountState**) = alloc();
     local accounts_len: felt;
+    let (accounts_states: AccountState**) = alloc();
+    let (account_slots: AccountSlot*) = alloc();
+    local account_slots_len: felt;
     
     //Misc
     let pow2_array: felt* = pow2alloc127();
@@ -79,7 +81,9 @@ func main{
 
         # Account Params
         ids.accounts_len = len(program_input['header_batches'][0]['accounts'])
-        # rest is written with init_accounts func call
+        ids.account_slots_len = len(program_input['header_batches'][0]['account_slots'])
+        # rest is written with init_accounts & init_account_slots func call
+
 
 
     %}
@@ -110,6 +114,12 @@ func main{
         index=0
     );
 
+    init_account_slots(
+        account_slots=account_slots,
+        n_account_slots=account_slots_len,
+        index=0
+    );
+
     // Check 3: Ensure the account proofs are valid
     verify_n_accounts{
         range_check_ptr=range_check_ptr,
@@ -123,37 +133,37 @@ func main{
         pow2_array=pow2_array,
     );
 
-    get_account_balance{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array
-    }(
-        rlp=accounts_states[0][0].values
-    );
+    // get_account_balance{
+    //     range_check_ptr=range_check_ptr,
+    //     bitwise_ptr=bitwise_ptr,
+    //     pow2_array=pow2_array
+    // }(
+    //     rlp=accounts_states[0][0].values
+    // );
 
-    get_account_nonce{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array
-    }(
-        rlp=accounts_states[0][0].values
-    );
+    // get_account_nonce{
+    //     range_check_ptr=range_check_ptr,
+    //     bitwise_ptr=bitwise_ptr,
+    //     pow2_array=pow2_array
+    // }(
+    //     rlp=accounts_states[0][0].values
+    // );
 
-    get_account_state_root{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array
-    }(
-        rlp=accounts_states[0][0].values
-    );
+    // get_account_state_root{
+    //     range_check_ptr=range_check_ptr,
+    //     bitwise_ptr=bitwise_ptr,
+    //     pow2_array=pow2_array
+    // }(
+    //     rlp=accounts_states[0][0].values
+    // );
     
-    get_account_code_hash{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array
-    }(
-        rlp=accounts_states[0][0].values
-    );
+    // get_account_code_hash{
+    //     range_check_ptr=range_check_ptr,
+    //     bitwise_ptr=bitwise_ptr,
+    //     pow2_array=pow2_array
+    // }(
+    //     rlp=accounts_states[0][0].values
+    // );
 
     // Post Verification Checks: Ensure dict consistency
     default_dict_finalize(peaks_dict_start, peaks_dict, 0);
