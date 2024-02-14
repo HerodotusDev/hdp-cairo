@@ -9,16 +9,27 @@ from src.libs.utils import (
     word_reverse_endian_56_RC,
 )
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
+from starkware.cairo.common.alloc import alloc
 
-// function to convert a big endian u64 array to a uint256. 
-// it accepts up to 4x64 byte chunks
-func be_u64_array_to_uint256{
+
+func uint_le_u64_array_to_uint256{
+    range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*
-} (elements: felt*, elements_len: felt) -> Uint256 {
+} (elements: felt*, elements_len: felt, bytes_len: felt) -> Uint256 {
+    alloc_locals;
+    
+    let (local reversed_elements: felt*) = alloc();
+    reverse_word_endianness(
+        values=elements,
+        values_len=elements_len,
+        remaining_bytes_len=bytes_len,
+        index=0,
+        result=reversed_elements
+    );
 
     if (elements_len == 1) {
-        let low = elements[0];
+        let low = reversed_elements[0];
         let result = Uint256(
             low=low,
             high=0
@@ -27,8 +38,8 @@ func be_u64_array_to_uint256{
     }
 
     if (elements_len == 2) {
-        let low_1 = elements[0];
-        let low_2 = elements[1];
+        let low_1 = reversed_elements[0];
+        let low_2 = reversed_elements[1];
         let result = Uint256(
             low=low_1 * pow2_array[64] + low_2,
             high=0
@@ -37,9 +48,9 @@ func be_u64_array_to_uint256{
     }
     
     if (elements_len == 3) {
-        let high = elements[0];
-        let low_1 = elements[1];
-        let low_2 = elements[2];
+        let high = reversed_elements[0];
+        let low_1 = reversed_elements[1];
+        let low_2 = reversed_elements[2];
         let result = Uint256(
             low=low_1 * pow2_array[64] + low_2,
             high=high
@@ -50,10 +61,29 @@ func be_u64_array_to_uint256{
     // ensure we dont overflow
     assert elements_len = 4;
 
-    let high_1 = elements[0];
-    let high_2 = elements[1];
-    let low_1 = elements[2];
-    let low_2 = elements[3];
+    let high_1 = reversed_elements[0];
+    let high_2 = reversed_elements[1];
+    let low_1 = reversed_elements[2];
+    let low_2 = reversed_elements[3];
+
+    let result = Uint256(
+        low=low_1 * pow2_array[64] + low_2,
+        high=high_1 * pow2_array[64] + high_2
+    );
+    return result;
+    
+}
+
+func keccak_hash_array_to_uint256{
+    bitwise_ptr: BitwiseBuiltin*,
+    pow2_array: felt*
+} (elements: felt*, elements_len: felt) -> Uint256 {
+    assert elements_len = 4;
+
+    let low_1 = elements[1];
+    let low_2 = elements[0];
+    let high_1 = elements[3];
+    let high_2 = elements[2];
 
     let result = Uint256(
         low=low_1 * pow2_array[64] + low_2,
