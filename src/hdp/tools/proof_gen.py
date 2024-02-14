@@ -90,11 +90,10 @@ def get_slot_proof(
     trie_key = split_128(trie_key)
 
     address_little = bytes_to_8_bytes_chunks_little(bytes.fromhex(slot[2:]))
-    print(address_little)
-    accountProofbytes = [node for node in proof["accountProof"]]
+    accountProofbytes = [node for node in proof.storageProof[0].proof]
     accountProofbytes_len = [len(byte_proof) for byte_proof in accountProofbytes]
     accountProof = [bytes_to_8_bytes_chunks_little(node) for node in accountProofbytes]
-
+    print("Account Slot Proof:", accountProof)
     return CairoAccountMPTProof(
         address=address_little,
         trie_key=trie_key,
@@ -117,7 +116,6 @@ def format_proof_nodes(proof):
     trie_proof = []
     for rlp_node in proof:
         trie_proof.append(rlp.decode(bytes(rlp_node)))
-    print(trie_proof)
     return trie_proof
 
 
@@ -127,7 +125,6 @@ w3 = Web3(Web3.HTTPProvider(RPC_URL))
 
 address = 0x439c5305DA2548DBC3a04bb4B3d22322701B1cA8
 # address = 0xd3CdA913deB6f67967B99D67aCDFa1712C293601
-block_number = 10531709
+block_number = 10529663
 proof=get_slot_proof(address, block_number, RPC_URL, "0x0000000000000000000000000000000000000000000000000000000000000000")
 # proof=get_account_proof(address, block_number, RPC_URL)
-print(proof)
