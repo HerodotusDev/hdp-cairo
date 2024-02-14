@@ -9,7 +9,8 @@ from starkware.cairo.common.default_dict import default_dict_new, default_dict_f
 from src.hdp.types import HeaderProof, MMRMeta, Account, AccountState, AccountSlot
 from src.hdp.mmr import verify_mmr_meta
 from src.hdp.header import verify_headers_inclusion
-from src.hdp.account import init_accounts, verify_n_accounts, get_account_balance, get_account_nonce, get_account_state_root, get_account_code_hash, init_account_slots
+from src.hdp.account import init_accounts, verify_n_accounts, get_account_balance, get_account_nonce, get_account_state_root, get_account_code_hash
+from src.hdp.slots import init_account_slots, verify_n_account_slots
 
 from src.libs.utils import (
     pow2alloc127,
@@ -39,6 +40,7 @@ func main{
     local accounts_len: felt;
     let (accounts_states: AccountState**) = alloc();
     let (account_slots: AccountSlot*) = alloc();
+    let (account_slots_states: AccountState**) = alloc();
     local account_slots_len: felt;
     
     //Misc
@@ -84,8 +86,6 @@ func main{
         ids.account_slots_len = len(program_input['header_batches'][0]['account_slots'])
         # rest is written with init_accounts & init_account_slots func call
 
-
-
     %}
     
     // Check 1: Ensure we have a valid pair of mmr_root and peaks
@@ -130,6 +130,19 @@ func main{
         accounts=accounts,
         accounts_len=accounts_len,
         accounts_states=accounts_states,
+        pow2_array=pow2_array,
+    );
+
+    // Check 4: Ensure the account slot proofs are valid
+    verify_n_account_slots{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        keccak_ptr=keccak_ptr,
+        accounts_states=accounts_states,
+    }(
+        account_slots=account_slots,
+        account_slots_len=account_slots_len,
+        account_slots_states=account_slots_states,
         pow2_array=pow2_array,
     );
 
