@@ -19,7 +19,7 @@ from src.hdp.utils import keccak_hash_array_to_uint256, uint_le_u64_array_to_uin
 // - accounts: empty accounts array that the accounts will be writte too.
 // - n_accounts: the number of accounts to initialize.
 // - index: the current index of the account being initialized.
-func init_accounts{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(accounts: Account*, n_accounts: felt, index: felt) {
+func populate_account_segments{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(accounts: Account*, n_accounts: felt, index: felt) {
     alloc_locals;
     if (index == n_accounts) {
         return ();
@@ -57,7 +57,7 @@ func init_accounts{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: Ke
 
         assert accounts[index] = account;
 
-        return init_accounts(
+        return populate_account_segments(
             accounts=accounts,
             n_accounts=n_accounts,
             index=index + 1,

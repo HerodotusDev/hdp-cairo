@@ -14,7 +14,7 @@ from src.libs.rlp_little import (
 from src.libs.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64
 
 // Intializes and validates the account_slots
-func init_account_slots{
+func populate_account_slot_segments{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*, 
     keccak_ptr: KeccakBuiltin*
@@ -57,7 +57,7 @@ func init_account_slots{
 
         assert account_slots[index] = account_slot;
 
-        return init_account_slots(
+        return populate_account_slot_segments(
             account_slots=account_slots,
             n_account_slots=n_account_slots,
             index=index + 1,
