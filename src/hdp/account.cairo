@@ -1,7 +1,7 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
 from src.libs.mpt import verify_mpt_proof
 from starkware.cairo.common.uint256 import Uint256
-from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_uint256s
+from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
 from src.hdp.types import Account, AccountProof, HeaderProof, AccountState, AccountSlot, AccountSlotProof
 from src.libs.block_header import extract_state_root_little
@@ -10,8 +10,8 @@ from src.libs.rlp_little import (
     extract_n_bytes_from_le_64_chunks_array,
 )
 
-from src.libs.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64
-from src.hdp.utils import be_u64_array_to_uint256, reverse_word_endianness
+from src.libs.utils import felt_divmod
+from src.hdp.utils import keccak_hash_array_to_uint256, uint_le_u64_array_to_uint256
 
 
 // Initializes the accounts, ensuring that the passed address matches the key.
@@ -60,57 +60,6 @@ func init_accounts{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: Ke
         return init_accounts(
             accounts=accounts,
             n_accounts=n_accounts,
-            index=index + 1,
-        );
-    }
-}
-
-func init_account_slots{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*, 
-    keccak_ptr: KeccakBuiltin*
-} (account_slots: AccountSlot*, n_account_slots: felt, index: felt) {
-     alloc_locals;
-    if (index == n_account_slots) {
-        return ();
-    } else {
-        local account_slot: AccountSlot;
-        let (proofs: AccountSlotProof*) = alloc();
-        
-        %{
-            def write_account_slot(account_ptr, proofs_ptr, account):
-                memory[account_ptr._reference_value] = account["account_id"]
-                memory[account_ptr._reference_value + 1] =segments.gen_arg(account["slot"])
-                memory[account_ptr._reference_value + 2] = account["key"]["low"]
-                memory[account_ptr._reference_value + 3] = account["key"]["high"]
-                memory[account_ptr._reference_value + 4] = len(account["proofs"])
-                memory[account_ptr._reference_value + 5] = proofs_ptr._reference_value
-
-            def write_proofs(ptr, proofs):
-                offset = 0
-                for proof in proofs:
-                    memory[ptr._reference_value + offset] = proof["block_number"]
-                    memory[ptr._reference_value + offset + 1] = len(proof["proof"])
-                    memory[ptr._reference_value + offset + 2] = segments.gen_arg(proof["proof_bytes_len"])
-                    memory[ptr._reference_value + offset + 3] = segments.gen_arg(proof["proof"])
-                    offset += 4
-
-            account_slot = program_input['header_batches'][0]["account_slots"][ids.index]
-
-            write_proofs(ids.proofs, account["proofs"])
-            write_account_slot(ids.account_slot, ids.proofs, account_slot)
-        %}
-
-        // ensure that address matches the key
-        let (hash: Uint256) = keccak(account_slot.slot, 32);
-        assert account_slot.key.low = hash.low;
-        assert account_slot.key.high = hash.high;
-
-        assert account_slots[index] = account_slot;
-
-        return init_account_slots(
-            account_slots=account_slots,
-            n_account_slots=n_account_slots,
             index=index + 1,
         );
     }
@@ -183,6 +132,11 @@ func verify_account{
     // get state_root from verified headers
     let state_root = extract_state_root_little(header_proofs[proof_idx].rlp_encoded_header);
 
+    %{
+        print("stateRoot.high", hex(ids.state_root.high))
+        print("stateRoot.low", hex(ids.state_root.low))
+    %}
+
     let (value: felt*, value_len: felt) = verify_mpt_proof(
         mpt_proof=account.proofs[proof_idx].proof,
         mpt_proof_bytes_len=account.proofs[proof_idx].proof_bytes_len,
@@ -215,11 +169,12 @@ func get_account_nonce{
     pow2_array: felt*
 } (rlp: felt*) -> Uint256 {
     alloc_locals;
-    let (res, res_len) = decode_account_value(rlp=rlp, value_idx=0, item_starts_at_byte=2, counter=0);
+    let (res, res_len, bytes_len) = decode_account_value(rlp=rlp, value_idx=0, item_starts_at_byte=2, counter=0);
 
-    let result = be_u64_array_to_uint256(
+    let result = uint_le_u64_array_to_uint256(
         elements=res,
-        elements_len=res_len
+        elements_len=res_len,
+        bytes_len=bytes_len
     );
 
     %{
@@ -238,11 +193,12 @@ func get_account_balance{
 } (rlp: felt*) -> Uint256 {
     alloc_locals;
 
-    let (res, res_len) = decode_account_value(rlp=rlp, value_idx=1, item_starts_at_byte=2, counter=0);
+    let (res, res_len, bytes_len) = decode_account_value(rlp=rlp, value_idx=1, item_starts_at_byte=2, counter=0);
 
-    let result = be_u64_array_to_uint256(
+    let result = uint_le_u64_array_to_uint256(
         elements=res,
-        elements_len=res_len
+        elements_len=res_len,
+        bytes_len=bytes_len
     );
 
     %{  
@@ -261,14 +217,14 @@ func get_account_state_root{
 } (rlp: felt*) -> Uint256 {
     alloc_locals;
 
-    let (res, res_len) = decode_account_value(rlp=rlp, value_idx=2, item_starts_at_byte=2, counter=0);
+    let (res, res_len, _byte_len) = decode_account_value(rlp=rlp, value_idx=2, item_starts_at_byte=2, counter=0);
 
-    let result = be_u64_array_to_uint256(
+    let result = keccak_hash_array_to_uint256(
         elements=res,
         elements_len=res_len
     );
 
-      %{
+    %{
         print("stateRoot.high", hex(ids.result.high))
         print("stateRoot.low", hex(ids.result.low))
     %}
@@ -284,9 +240,9 @@ func get_account_code_hash{
 } (rlp: felt*) -> Uint256 {
     alloc_locals;
 
-    let (res, res_len) = decode_account_value(rlp=rlp, value_idx=3, item_starts_at_byte=2, counter=0);
+    let (res, res_len, _byte_len) = decode_account_value(rlp=rlp, value_idx=3, item_starts_at_byte=2, counter=0);
 
-    let result = be_u64_array_to_uint256(
+    let result = keccak_hash_array_to_uint256(
         elements=res,
         elements_len=res_len
     );
@@ -311,7 +267,7 @@ func decode_account_value{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*
-} (rlp: felt*, value_idx: felt, item_starts_at_byte: felt, counter: felt) -> (res: felt*, res_len: felt) {
+} (rlp: felt*, value_idx: felt, item_starts_at_byte: felt, counter: felt) -> (res: felt*, res_len: felt, bytes_len: felt) {
     alloc_locals;
 
     // %{
@@ -372,7 +328,7 @@ func decode_account_value{
             // %{ print("empty case") %}
             let (res: felt*) = alloc();
             assert res[0] = 0;
-            return (res=res, res_len=1);
+            return (res=res, res_len=1, bytes_len=1);
         } 
 
         // handle prefix case
@@ -390,23 +346,13 @@ func decode_account_value{
                 pow2_array=pow2_array
             );
 
-            // 
-            let (reverse_res: felt*) = alloc();
-            reverse_word_endianness(
-                values=res,
-                values_len=res_len,
-                remaining_bytes_len=current_item_len,
-                index=0,
-                result=reverse_res
-            );
-
-            return (res=reverse_res, res_len=res_len);
+            return (res=res, res_len=res_len, bytes_len=current_item_len);
         } else {
             // %{ print("single byte case") %}
             // handle single byte case
             let (res: felt*) = alloc();
             assert res[0] = current_item;
-            return (res=res, res_len=1);
+            return (res=res, res_len=1, bytes_len=1);
         }
     }
 
