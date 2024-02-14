@@ -20,7 +20,9 @@ contract AggregatorsFactoryTest is Test {
     // Important events
     event UpgradeProposal(SharpFactsAggregator newTemplate);
     event Upgrade(SharpFactsAggregator oldTemplate, SharpFactsAggregator newTemplate);
-    event AggregatorCreation(SharpFactsAggregator aggregator, uint256 newAggregatorId, uint256 detachedFromAggregatorId);
+    event AggregatorCreation(
+        SharpFactsAggregator aggregator, uint256 newAggregatorId, uint256 detachedFromAggregatorId
+    );
 
     function setUp() public {
         vm.createSelectFork(vm.rpcUrl("goerli"));
@@ -48,29 +50,19 @@ contract AggregatorsFactoryTest is Test {
         // Factory checks
         assertTrue(address(factory.aggregatorsById(1)) == address(aggregator));
         assertEq(factory.DELAY(), PROPOSAL_DELAY);
-        assertTrue(
-            aggregator.hasRole(keccak256("OPERATOR_ROLE"), address(factory))
-        );
+        assertTrue(aggregator.hasRole(keccak256("OPERATOR_ROLE"), address(factory)));
 
         // Aggregator roles checks
-        assertTrue(
-            aggregator.hasRole(keccak256("OPERATOR_ROLE"), address(this))
-        );
-        assertTrue(
-            aggregator.hasRole(keccak256("UNLOCKER_ROLE"), address(this))
-        );
+        assertTrue(aggregator.hasRole(keccak256("OPERATOR_ROLE"), address(this)));
+        assertTrue(aggregator.hasRole(keccak256("UNLOCKER_ROLE"), address(this)));
 
         aggregator.registerNewRange(42);
 
         aggregator.revokeRole(keccak256("UNLOCKER_ROLE"), address(this));
         aggregator.revokeRole(keccak256("OPERATOR_ROLE"), address(this));
 
-        assertFalse(
-            aggregator.hasRole(keccak256("OPERATOR_ROLE"), address(this))
-        );
-        assertFalse(
-            aggregator.hasRole(keccak256("UNLOCKER_ROLE"), address(this))
-        );
+        assertFalse(aggregator.hasRole(keccak256("OPERATOR_ROLE"), address(this)));
+        assertFalse(aggregator.hasRole(keccak256("UNLOCKER_ROLE"), address(this)));
 
         vm.expectRevert("Caller is not an operator");
         aggregator.registerNewRange(50);

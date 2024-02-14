@@ -44,19 +44,13 @@ contract AggregatorsFactory is AccessControl {
         0x06759138078831011e3bc0b4a135af21c008dda64586363531697207fb5a2bae;
 
     // keccak_hash(1, "brave new world")
-    bytes32 public constant KECCAK_MMR_INITIAL_ROOT =
-        0x5d8d23518dd388daa16925ff9475c5d1c06430d21e0422520d6a56402f42937b;
+    bytes32 public constant KECCAK_MMR_INITIAL_ROOT = 0x5d8d23518dd388daa16925ff9475c5d1c06430d21e0422520d6a56402f42937b;
 
     // Events
     event UpgradeProposal(SharpFactsAggregator newTemplate);
-    event Upgrade(
-        SharpFactsAggregator oldTemplate,
-        SharpFactsAggregator newTemplate
-    );
+    event Upgrade(SharpFactsAggregator oldTemplate, SharpFactsAggregator newTemplate);
     event AggregatorCreation(
-        SharpFactsAggregator aggregator,
-        uint256 newAggregatorId,
-        uint256 detachedFromAggregatorId
+        SharpFactsAggregator aggregator, uint256 newAggregatorId, uint256 detachedFromAggregatorId
     );
 
     /// Creates a new Factory contract and grants OPERATOR_ROLE to the deployer
@@ -70,10 +64,7 @@ contract AggregatorsFactory is AccessControl {
 
     /// @notice Reverts if the caller is not an operator
     modifier onlyOperator() {
-        require(
-            hasRole(OPERATOR_ROLE, _msgSender()),
-            "Caller is not an operator"
-        );
+        require(hasRole(OPERATOR_ROLE, _msgSender()), "Caller is not an operator");
         _;
     }
 
@@ -81,38 +72,24 @@ contract AggregatorsFactory is AccessControl {
      * Creates a new aggregator contract by cloning the template contract
      * @param aggregatorId The id of an existing aggregator to attach to (0 for none)
      */
-    function createAggregator(
-        uint256 aggregatorId
-    ) external onlyOperator returns (address) {
+    function createAggregator(uint256 aggregatorId) external onlyOperator returns (address) {
         SharpFactsAggregator.AggregatorState memory initialAggregatorState;
 
         if (aggregatorId != 0) {
             // Attach from existing aggregator
             require(aggregatorId <= aggregatorsCount, "Invalid aggregator ID");
 
-            address existingAggregatorAddr = address(
-                aggregatorsById[aggregatorId]
-            );
-            require(
-                existingAggregatorAddr != address(0),
-                "Aggregator not found"
-            );
+            address existingAggregatorAddr = address(aggregatorsById[aggregatorId]);
+            require(existingAggregatorAddr != address(0), "Aggregator not found");
 
-            SharpFactsAggregator existingAggregator = SharpFactsAggregator(
-                existingAggregatorAddr
-            );
+            SharpFactsAggregator existingAggregator = SharpFactsAggregator(existingAggregatorAddr);
 
-            (
-                bytes32 poseidonMmrRoot,
-                bytes32 keccakMmrRoot,
-                uint256 mmrSize,
-                bytes32 continuableParentHash
-            ) = existingAggregator.aggregatorState();
+            (bytes32 poseidonMmrRoot, bytes32 keccakMmrRoot, uint256 mmrSize, bytes32 continuableParentHash) =
+                existingAggregator.aggregatorState();
             initialAggregatorState.poseidonMmrRoot = poseidonMmrRoot;
             initialAggregatorState.keccakMmrRoot = keccakMmrRoot;
             initialAggregatorState.mmrSize = mmrSize;
-            initialAggregatorState
-                .continuableParentHash = continuableParentHash;
+            initialAggregatorState.continuableParentHash = continuableParentHash;
         } else {
             // Create a new aggregator (detach from existing ones)
             initialAggregatorState = SharpFactsAggregator.AggregatorState({
@@ -124,36 +101,24 @@ contract AggregatorsFactory is AccessControl {
         }
 
         // Initialize the newly created aggregator
-        bytes memory data = abi.encodeWithSignature(
-            "initialize((bytes32,bytes32,uint256,bytes32))",
-            initialAggregatorState
-        );
+        bytes memory data =
+            abi.encodeWithSignature("initialize((bytes32,bytes32,uint256,bytes32))", initialAggregatorState);
 
         // Clone the template contract
         address clone = Clones.clone(address(template));
 
         // The data is the encoded initialize function (with initial parameters)
-        (bool success, ) = clone.call(data);
+        (bool success,) = clone.call(data);
 
         require(success, "Aggregator initialization failed");
 
         aggregatorsById[++aggregatorsCount] = SharpFactsAggregator(clone);
 
-        emit AggregatorCreation(
-            SharpFactsAggregator(clone),
-            aggregatorsCount,
-            aggregatorId
-        );
+        emit AggregatorCreation(SharpFactsAggregator(clone), aggregatorsCount, aggregatorId);
 
         // Grant roles to the caller so that roles are not stuck in the Factory
-        SharpFactsAggregator(clone).grantRole(
-            keccak256("OPERATOR_ROLE"),
-            _msgSender()
-        );
-        SharpFactsAggregator(clone).grantRole(
-            keccak256("UNLOCKER_ROLE"),
-            _msgSender()
-        );
+        SharpFactsAggregator(clone).grantRole(keccak256("OPERATOR_ROLE"), _msgSender());
+        SharpFactsAggregator(clone).grantRole(keccak256("UNLOCKER_ROLE"), _msgSender());
 
         return clone;
     }
@@ -162,13 +127,8 @@ contract AggregatorsFactory is AccessControl {
      * Proposes an upgrade to the template (blank aggregator) contract
      * @param newTemplate The address of the new template contract to use for future aggregators
      */
-    function proposeUpgrade(
-        SharpFactsAggregator newTemplate
-    ) external onlyOperator {
-        upgrades[++upgradesCount] = UpgradeProposalTimelock(
-            block.timestamp + DELAY,
-            newTemplate
-        );
+    function proposeUpgrade(SharpFactsAggregator newTemplate) external onlyOperator {
+        upgrades[++upgradesCount] = UpgradeProposalTimelock(block.timestamp + DELAY, newTemplate);
 
         emit UpgradeProposal(newTemplate);
     }
@@ -188,10 +148,7 @@ contract AggregatorsFactory is AccessControl {
         template = SharpFactsAggregator(upgrades[updateId].newTemplate);
 
         // Clear timelock
-        upgrades[updateId] = UpgradeProposalTimelock(
-            0,
-            SharpFactsAggregator(address(0))
-        );
+        upgrades[updateId] = UpgradeProposalTimelock(0, SharpFactsAggregator(address(0)));
 
         emit Upgrade(SharpFactsAggregator(oldTemplate), template);
     }

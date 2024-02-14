@@ -13,30 +13,23 @@ struct IterativeDynamicLayoutDatalake {
 }
 
 library IterativeDynamicLayoutDatalakeCodecs {
-    function encode(
-        IterativeDynamicLayoutDatalake memory datalake
-    ) internal pure returns (bytes memory) {
-        return
-            abi.encode(
-                DatalakeCode.IterativeDynamicLayout,
-                datalake.blockNumber,
-                datalake.account,
-                datalake.slotIndex,
-                datalake.initialKey,
-                datalake.keyBoundry,
-                datalake.increment
-            );
+    function encode(IterativeDynamicLayoutDatalake memory datalake) internal pure returns (bytes memory) {
+        return abi.encode(
+            DatalakeCode.IterativeDynamicLayout,
+            datalake.blockNumber,
+            datalake.account,
+            datalake.slotIndex,
+            datalake.initialKey,
+            datalake.keyBoundry,
+            datalake.increment
+        );
     }
 
-    function commit(
-        IterativeDynamicLayoutDatalake memory datalake
-    ) internal pure returns (bytes32) {
+    function commit(IterativeDynamicLayoutDatalake memory datalake) internal pure returns (bytes32) {
         return keccak256(encode(datalake));
     }
 
-    function decode(
-        bytes memory data
-    ) internal pure returns (IterativeDynamicLayoutDatalake memory) {
+    function decode(bytes memory data) internal pure returns (IterativeDynamicLayoutDatalake memory) {
         (
             ,
             uint256 blockNumber,
@@ -45,26 +38,14 @@ library IterativeDynamicLayoutDatalakeCodecs {
             uint256 initialKey,
             uint256 keyBoundry,
             uint256 increment
-        ) = abi.decode(
-                data,
-                (
-                    DatalakeCode,
-                    uint256,
-                    address,
-                    uint256,
-                    uint256,
-                    uint256,
-                    uint256
-                )
-            );
-        return
-            IterativeDynamicLayoutDatalake({
-                blockNumber: blockNumber,
-                account: account,
-                slotIndex: slotIndex,
-                initialKey: initialKey,
-                keyBoundry: keyBoundry,
-                increment: increment
-            });
+        ) = abi.decode(data, (DatalakeCode, uint256, address, uint256, uint256, uint256, uint256));
+        return IterativeDynamicLayoutDatalake({
+            blockNumber: blockNumber,
+            account: account,
+            slotIndex: slotIndex,
+            initialKey: initialKey,
+            keyBoundry: keyBoundry,
+            increment: increment
+        });
     }
 }
