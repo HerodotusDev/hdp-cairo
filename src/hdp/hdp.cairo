@@ -6,12 +6,12 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
 
-from src.hdp.types import Header, HeaderProof, MMRMeta, Account, AccountState, AccountSlot
+from src.hdp.types import Header, HeaderProof, MMRMeta, Account, AccountState, AccountSlot, SlotState
 from src.hdp.mmr import verify_mmr_meta
 from src.hdp.header import verify_headers_inclusion
 from src.hdp.account import populate_account_segments, verify_n_accounts, get_account_balance, get_account_nonce, get_account_state_root, get_account_code_hash
 from src.hdp.slots import populate_account_slot_segments, verify_n_account_slots
-from src.hdp.memorizer import HeaderMemorizer
+from src.hdp.memorizer import HeaderMemorizer, AccountMemorizer
 from src.libs.utils import (
     pow2alloc127,
     write_felt_array_to_dict_keys
@@ -38,15 +38,17 @@ func main{
     // Account Params    
     let (accounts: Account*) = alloc();
     local accounts_len: felt;
-    let (accounts_states: AccountState**) = alloc();
+    let (account_states: AccountState*) = alloc();
     let (account_slots: AccountSlot*) = alloc();
     let (account_slots_states: AccountState**) = alloc();
     local account_slots_len: felt;
 
-    // Memorizer
+
+    let (slot_states: SlotState*) = alloc();
+
+    // Memorizers
     let (header_dict, header_dict_start) = HeaderMemorizer.initialize();
-
-
+    let (account_dict, account_dict_start) = AccountMemorizer.initialize();
     
     //Misc
     let pow2_array: felt* = pow2alloc127();
@@ -70,11 +72,9 @@ func main{
                 memory[ptr._reference_value + offset + 5] = segments.gen_arg(hex_to_int_array(header["mmr_proof"]))
                 offset += 5
     
-   %}
+    %}
     // if these hints are one hint, the compiler goes on strike.
     %{
-    
-    
         def write_mmr_meta(mmr_meta):
             ids.mmr_meta.id = mmr_meta["mmr_id"]
             ids.mmr_meta.root = hex_to_int(mmr_meta["mmr_root"])
@@ -90,6 +90,7 @@ func main{
         # MMR Meta
         write_mmr_meta(program_input['header_batches'][0]['mmr_meta'])
         write_headers(ids.headers, program_input['header_batches'][0]["headers"])
+
         # Account Params
         ids.accounts_len = len(program_input['header_batches'][0]['accounts'])
         ids.account_slots_len = len(program_input['header_batches'][0]['account_slots'])
@@ -131,31 +132,34 @@ func main{
     );
 
     // Check 3: Ensure the account proofs are valid
-    with header_dict {
-        verify_n_accounts{
-            range_check_ptr=range_check_ptr,
-            bitwise_ptr=bitwise_ptr,
-            keccak_ptr=keccak_ptr,
-            headers=headers,
-        }(
-            accounts=accounts,
-            accounts_len=accounts_len,
-            accounts_states=accounts_states,
-            pow2_array=pow2_array,
-        );
-    }
+    verify_n_accounts{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        keccak_ptr=keccak_ptr,
+        headers=headers,
+        header_dict=header_dict,
+        account_dict=account_dict,
+        pow2_array=pow2_array,
+    }(
+        accounts=accounts,
+        accounts_len=accounts_len,
+        account_states=account_states,
+        account_state_idx=0,
+    );
 
     // Check 4: Ensure the account slot proofs are valid
     verify_n_account_slots{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
-        accounts_states=accounts_states,
+        account_states=account_states,
+        account_dict=account_dict,
+        pow2_array=pow2_array,
     }(
         account_slots=account_slots,
         account_slots_len=account_slots_len,
-        account_slots_states=account_slots_states,
-        pow2_array=pow2_array,
+        slot_states=slot_states,
+        state_idx=0
     );
 
     get_account_balance{
@@ -163,7 +167,7 @@ func main{
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array
     }(
-        rlp=accounts_states[0][0].values
+        rlp=account_states[0].values
     );
 
     get_account_nonce{
@@ -171,7 +175,7 @@ func main{
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array
     }(
-        rlp=accounts_states[0][0].values
+        rlp=account_states[0].values
     );
 
     get_account_state_root{
@@ -179,7 +183,7 @@ func main{
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array
     }(
-        rlp=accounts_states[0][0].values
+        rlp=account_states[0].values
     );
     
     get_account_code_hash{
@@ -187,7 +191,7 @@ func main{
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array
     }(
-        rlp=accounts_states[0][0].values
+        rlp=account_states[0].values
     );
 
     // Post Verification Checks: Ensure dict consistency

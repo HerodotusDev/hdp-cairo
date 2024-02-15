@@ -13,7 +13,7 @@ from src.libs.rlp_little import (
 
 from src.libs.utils import felt_divmod
 from src.hdp.utils import keccak_hash_array_to_uint256, uint_le_u64_array_to_uint256
-from src.hdp.memorizer import HeaderMemorizer
+from src.hdp.memorizer import HeaderMemorizer, AccountMemorizer
 
 // Initializes the accounts, ensuring that the passed address matches the key.
 // Params:
@@ -78,11 +78,13 @@ func verify_n_accounts{
     poseidon_ptr: PoseidonBuiltin*,
     headers: Header*,
     header_dict: DictAccess*,
+    account_dict: DictAccess*,
+    pow2_array: felt*,
 } (
     accounts: Account*,
     accounts_len: felt,
-    accounts_states: AccountState**,
-    pow2_array: felt*,
+    account_states: AccountState*,
+    account_state_idx: felt,
 ) {
     alloc_locals;
     if(accounts_len == 0) {
@@ -90,26 +92,19 @@ func verify_n_accounts{
     }
 
     let account_idx = accounts_len - 1;
-
-
-    // Question: 
-    // Am I supposed to allocate the account_states here? I am not able to make it work without another alloc, but I wonder if im wasting memory here, since I allocated the nested structure already in hdp
-    let account_states: AccountState* = alloc();
     
-    let states = verify_account(
+    let account_state_idx = verify_account(
         account=accounts[account_idx],
         account_states=account_states,
+        account_state_idx=account_state_idx,
         proof_idx=0,
-        pow2_array=pow2_array,
     );
  
-    assert accounts_states[account_idx] = states;
-
     return verify_n_accounts(
         accounts=accounts,
         accounts_len=accounts_len - 1,
-        accounts_states=accounts_states,
-        pow2_array=pow2_array,
+        account_states=account_states,
+        account_state_idx=account_state_idx,
     );
 }
 
@@ -125,30 +120,29 @@ func verify_account{
     poseidon_ptr: PoseidonBuiltin*,
     headers: Header*,
     header_dict: DictAccess*,
+    account_dict: DictAccess*,
+    pow2_array: felt*,
 } (
     account: Account,
     account_states: AccountState*,
+    account_state_idx: felt,
     proof_idx: felt,
-    pow2_array: felt*,
-) -> AccountState* {
+) -> felt {
     alloc_locals;
     if (proof_idx == account.proofs_len) {
-        return account_states;
+        return account_state_idx;
     }
 
+    let account_proof = account.proofs[proof_idx];
+
     // get state_root from verified headers
-    let header = HeaderMemorizer.get(account.proofs[proof_idx].block_number);
+    let header = HeaderMemorizer.get(account_proof.block_number);
     let state_root = extract_state_root_little(headers[proof_idx].rlp);
 
-    %{
-        print("stateRoot.high", hex(ids.state_root.high))
-        print("stateRoot.low", hex(ids.state_root.low))
-    %}
-
     let (value: felt*, value_len: felt) = verify_mpt_proof(
-        mpt_proof=account.proofs[proof_idx].proof,
-        mpt_proof_bytes_len=account.proofs[proof_idx].proof_bytes_len,
-        mpt_proof_len=account.proofs[proof_idx].proof_len,
+        mpt_proof=account_proof.proof,
+        mpt_proof_bytes_len=account_proof.proof_bytes_len,
+        mpt_proof_len=account_proof.proof_len,
         key_little=account.key,
         n_nibbles_already_checked=0,
         node_index=0,
@@ -157,16 +151,19 @@ func verify_account{
     );
 
     // write verified account state
-    assert account_states[proof_idx] = AccountState(
+    assert account_states[account_state_idx] = AccountState(
         values=value,
         values_len=value_len,
     );
 
+    // add account to memorizer
+    AccountMemorizer.add(account.address, account_proof.block_number, account_state_idx);
+
     return verify_account(
         account=account,
         account_states=account_states,
+        account_state_idx=account_state_idx + 1,
         proof_idx=proof_idx + 1,
-        pow2_array=pow2_array,
     );
 }
 

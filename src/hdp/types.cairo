@@ -41,7 +41,7 @@ struct MMRMeta {
 }
 
 struct AccountSlot   {
-    account_id: felt,
+    address: felt*,
     slot: felt*,
     key: Uint256,
     proofs_len: felt,
@@ -53,4 +53,9 @@ struct AccountSlotProof {
     proof_len: felt,
     proof_bytes_len: felt*,
     proof: felt**,
+}
+
+struct SlotState {
+    low: felt,
+    high: felt,
 }
