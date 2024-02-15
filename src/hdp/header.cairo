@@ -5,9 +5,11 @@ from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash, pose
 
 from src.libs.mmr import hash_subtree_path
 from src.hdp.types import (
+    Header,
     HeaderProof,
     MMRMeta,
 )
+from src.libs.block_header import extract_block_number_big
 
 // Guard function that verifies the inclusion of headers in the MMR.
 // It ensures:
@@ -23,30 +25,38 @@ from src.hdp.types import (
 func verify_headers_inclusion{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
+    bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
     peaks_dict: DictAccess*,
-} (header_proofs: HeaderProof*, header_proofs_len: felt, mmr_size: felt) {
-    if (header_proofs_len == 0) {
+} (headers: Header*, headers_len: felt, mmr_size: felt) {
+    alloc_locals;
+    if (headers_len == 0) {
         return ();
     }
-    let header_proof_idx = header_proofs_len - 1;
+    let header_idx = headers_len - 1;
+
+    // let block_number = extract_block_number_big(headers[header_idx].rlp);
+
+    // %{
+    //     print(ids.block_number)
+    // %}
 
     // compute the hash of the header
     let (poseidon_hash) = poseidon_hash_many(
-        n=header_proofs[header_proof_idx].rlp_encoded_header_len, 
-        elements=header_proofs[header_proof_idx].rlp_encoded_header
+        n=headers[header_idx].rlp_len, 
+        elements=headers[header_idx].rlp
     );
 
     // a header can be the right-most peak
-    if (header_proofs[header_proof_idx].leaf_idx == mmr_size) {
+    if (headers[header_idx].proof.leaf_idx == mmr_size) {
 
         // instead of running an inclusion proof, we ensure its a known peak
         let (contains_peak) = dict_read{dict_ptr=peaks_dict}(poseidon_hash);
         assert contains_peak = 1;
 
         return verify_headers_inclusion(
-            header_proofs=header_proofs,
-            header_proofs_len=header_proof_idx,
+            headers=headers,
+            headers_len=header_idx,
             mmr_size=mmr_size
         );
     } 
@@ -55,9 +65,9 @@ func verify_headers_inclusion{
     let (computed_peak) = hash_subtree_path(
         element=poseidon_hash,
         height=0,
-        position=header_proofs[header_proof_idx].leaf_idx,
-        inclusion_proof=header_proofs[header_proof_idx].mmr_inclusion_proof,
-        inclusion_proof_len=header_proofs[header_proof_idx].mmr_inclusion_proof_len
+        position=headers[header_idx].proof.leaf_idx,
+        inclusion_proof=headers[header_idx].proof.mmr_path,
+        inclusion_proof_len=headers[header_idx].proof.mmr_path_len
     );
 
     // ensure the peak is included in the peaks dict, which contains the peaks of the mmr_root
@@ -65,8 +75,8 @@ func verify_headers_inclusion{
     assert contains_peak = 1;
 
     return verify_headers_inclusion(
-        header_proofs=header_proofs,
-        header_proofs_len=header_proof_idx,
+        headers=headers,
+        headers_len=header_idx,
         mmr_size=mmr_size
     );
 }

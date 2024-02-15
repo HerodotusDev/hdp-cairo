@@ -3,7 +3,7 @@ from src.libs.mpt import verify_mpt_proof
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
-from src.hdp.types import Account, AccountProof, HeaderProof, AccountState, AccountSlot, AccountSlotProof
+from src.hdp.types import Account, AccountProof, Header, AccountState, AccountSlot, AccountSlotProof
 from src.libs.block_header import extract_state_root_little
 from src.libs.rlp_little import (
     extract_byte_at_pos,
@@ -74,7 +74,7 @@ func verify_n_accounts{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*, 
     keccak_ptr: KeccakBuiltin*,
-    header_proofs: HeaderProof*,
+    headers: Header*,
 } (
     accounts: Account*,
     accounts_len: felt,
@@ -118,7 +118,7 @@ func verify_account{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*, 
     keccak_ptr: KeccakBuiltin*,
-    header_proofs: HeaderProof*,
+    headers: Header*,
 } (
     account: Account,
     account_states: AccountState*,
@@ -130,7 +130,7 @@ func verify_account{
     }
 
     // get state_root from verified headers
-    let state_root = extract_state_root_little(header_proofs[proof_idx].rlp_encoded_header);
+    let state_root = extract_state_root_little(headers[proof_idx].rlp);
 
     %{
         print("stateRoot.high", hex(ids.state_root.high))

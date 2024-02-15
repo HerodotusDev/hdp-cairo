@@ -6,7 +6,7 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
 
-from src.hdp.types import HeaderProof, MMRMeta, Account, AccountState, AccountSlot
+from src.hdp.types import Header, HeaderProof, MMRMeta, Account, AccountState, AccountSlot
 from src.hdp.mmr import verify_mmr_meta
 from src.hdp.header import verify_headers_inclusion
 from src.hdp.account import populate_account_segments, verify_n_accounts, get_account_balance, get_account_nonce, get_account_state_root, get_account_code_hash
@@ -29,8 +29,8 @@ func main{
     local tasks_root: Uint256;
 
     // Header Params
-    local header_proofs_len: felt;
-    let (header_proofs: HeaderProof*) = alloc();
+    local headers_len: felt;
+    let (headers: Header*) = alloc();
 
     // MMR Params
     local mmr_meta: MMRMeta;
@@ -47,24 +47,29 @@ func main{
     let pow2_array: felt* = pow2alloc127();
  
     %{
+        def hex_to_int(x):
+            return int(x, 16)
 
         def hex_to_int_array(hex_array):
             return [int(x, 16) for x in hex_array]
 
-        def hex_to_int(x):
-            return int(x, 16)
-
-        def write_header_proofs(ptr, header_proofs):
+        def write_headers(ptr, headers):
             offset = 0
-            ids.header_proofs_len = len(header_proofs)
-            for header in header_proofs:
-                memory[ptr._reference_value + offset] = header["leaf_idx"]
-                memory[ptr._reference_value + offset + 1] = len(header["mmr_inclusion_proof"])
-                memory[ptr._reference_value + offset + 2] = len(header["rlp_encoded_header"])
-                memory[ptr._reference_value + offset + 3] = segments.gen_arg(hex_to_int_array(header["mmr_inclusion_proof"]))
-                memory[ptr._reference_value + offset + 4] = segments.gen_arg(hex_to_int_array(header["rlp_encoded_header"]))
+            ids.headers_len = len(headers)
+            for header in headers:
+                memory[ptr._reference_value + offset] = segments.gen_arg(hex_to_int_array(header["rlp_encoded_header"]))
+                memory[ptr._reference_value + offset + 1] = len(header["rlp_encoded_header"])
+                memory[ptr._reference_value + offset + 2] = header["byte_len"]
+                memory[ptr._reference_value + offset + 3] = header["leaf_idx"]
+                memory[ptr._reference_value + offset + 4] = len(header["mmr_proof"])
+                memory[ptr._reference_value + offset + 5] = segments.gen_arg(hex_to_int_array(header["mmr_proof"]))
                 offset += 5
-
+    
+   %}
+    // if these hints are one hint, the compiler goes on strike.
+    %{
+    
+    
         def write_mmr_meta(mmr_meta):
             ids.mmr_meta.id = mmr_meta["mmr_id"]
             ids.mmr_meta.root = hex_to_int(mmr_meta["mmr_root"])
@@ -79,8 +84,7 @@ func main{
         
         # MMR Meta
         write_mmr_meta(program_input['header_batches'][0]['mmr_meta'])
-        write_header_proofs(ids.header_proofs, program_input['header_batches'][0]["headers"])
-
+        write_headers(ids.headers, program_input['header_batches'][0]["headers"])
         # Account Params
         ids.accounts_len = len(program_input['header_batches'][0]['accounts'])
         ids.account_slots_len = len(program_input['header_batches'][0]['account_slots'])
@@ -103,8 +107,8 @@ func main{
         pow2_array=pow2_array,
         peaks_dict=peaks_dict,
     }(
-        header_proofs=header_proofs,
-        header_proofs_len=header_proofs_len,
+        headers=headers,
+        headers_len=headers_len,
         mmr_size=mmr_meta.size
     );
 
@@ -125,7 +129,7 @@ func main{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
-        header_proofs=header_proofs,
+        headers=headers,
     }(
         accounts=accounts,
         accounts_len=accounts_len,
@@ -186,7 +190,7 @@ func main{
 
     [ap] = results_root.low;
     [ap] = [output_ptr + 1], ap++;
-//
+
     [ap] = results_root.high;
     [ap] = [output_ptr + 2], ap++;
 

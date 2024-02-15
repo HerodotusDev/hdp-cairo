@@ -2,10 +2,15 @@ from starkware.cairo.common.uint256 import Uint256
 
 struct HeaderProof {
     leaf_idx: felt,
-    mmr_inclusion_proof_len: felt,
-    rlp_encoded_header_len: felt,
-    mmr_inclusion_proof: felt*,
-    rlp_encoded_header: felt*,
+    mmr_path_len: felt,
+    mmr_path: felt*,
+}
+
+struct Header {
+    rlp: felt*,
+    rlp_len: felt,
+    byte_len: felt,
+    proof: HeaderProof,
 }
 
 struct Account {
