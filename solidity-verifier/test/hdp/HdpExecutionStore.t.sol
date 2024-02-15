@@ -64,7 +64,7 @@ contract HreExecutionStoreTest is Test {
         // Step 0. Create mock SHARP facts aggregator mmr id 24
         aggregatorsFactory.createAggregator(24, sharpFactsAggregator);
 
-        vm.startPrank(vm.addr(0));
+        vm.startPrank(vm.addr(1));
         hdp.grantRole(keccak256("PROVER_ROLE"), proverAddress);
         vm.stopPrank();
     }
