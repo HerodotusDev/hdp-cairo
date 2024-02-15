@@ -44,6 +44,8 @@ contract HreExecutionStoreTest is Test {
     using BlockSampledDatalakeCodecs for BlockSampledDatalake;
     using ComputationalTaskCodecs for ComputationalTask;
 
+    address proverAddress = address(12);
+
     HdpExecutionStore private hdp;
 
     IFactsRegistry private factsRegistry;
@@ -61,6 +63,10 @@ contract HreExecutionStoreTest is Test {
 
         // Step 0. Create mock SHARP facts aggregator mmr id 24
         aggregatorsFactory.createAggregator(24, sharpFactsAggregator);
+
+        vm.startPrank(vm.addr(0));
+        hdp.grantRole(keccak256("PROVER_ROLE"), proverAddress);
+        vm.stopPrank();
     }
 
     function test_requestExecutionOfTaskWithBlockSampledDatalake() public {
@@ -134,6 +140,8 @@ contract HreExecutionStoreTest is Test {
         // Check if the request is valid in the SHARP Facts Registry
         // If valid, Store the task result
         // TODO: Caller should be prover
+        bytes32 admin_role = hdp.getRoleAdmin(keccak256("PROVER_ROLE"));
+        vm.prank(proverAddress);
         hdp.authenticateTaskExecution(
             usedMMRsPacked,
             scheduledTasksBatchMerkleRoot,
