@@ -11,7 +11,7 @@ from src.hdp.mmr import verify_mmr_meta
 from src.hdp.header import verify_headers_inclusion
 from src.hdp.account import populate_account_segments, verify_n_accounts, get_account_balance, get_account_nonce, get_account_state_root, get_account_code_hash
 from src.hdp.slots import populate_account_slot_segments, verify_n_account_slots
-from src.hdp.memorizer import initialize_memorizer
+from src.hdp.memorizer import HeaderMemorizer
 from src.libs.utils import (
     pow2alloc127,
     write_felt_array_to_dict_keys
@@ -44,7 +44,7 @@ func main{
     local account_slots_len: felt;
 
     // Memorizer
-    let (header_dict, header_dict_start) = initialize_memorizer();
+    let (header_dict, header_dict_start) = HeaderMemorizer.initialize();
 
 
     
@@ -145,50 +145,50 @@ func main{
         );
     }
 
-    // // Check 4: Ensure the account slot proofs are valid
-    // verify_n_account_slots{
-    //     range_check_ptr=range_check_ptr,
-    //     bitwise_ptr=bitwise_ptr,
-    //     keccak_ptr=keccak_ptr,
-    //     accounts_states=accounts_states,
-    // }(
-    //     account_slots=account_slots,
-    //     account_slots_len=account_slots_len,
-    //     account_slots_states=account_slots_states,
-    //     pow2_array=pow2_array,
-    // );
+    // Check 4: Ensure the account slot proofs are valid
+    verify_n_account_slots{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        keccak_ptr=keccak_ptr,
+        accounts_states=accounts_states,
+    }(
+        account_slots=account_slots,
+        account_slots_len=account_slots_len,
+        account_slots_states=account_slots_states,
+        pow2_array=pow2_array,
+    );
 
-    // get_account_balance{
-    //     range_check_ptr=range_check_ptr,
-    //     bitwise_ptr=bitwise_ptr,
-    //     pow2_array=pow2_array
-    // }(
-    //     rlp=accounts_states[0][0].values
-    // );
+    get_account_balance{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array
+    }(
+        rlp=accounts_states[0][0].values
+    );
 
-    // get_account_nonce{
-    //     range_check_ptr=range_check_ptr,
-    //     bitwise_ptr=bitwise_ptr,
-    //     pow2_array=pow2_array
-    // }(
-    //     rlp=accounts_states[0][0].values
-    // );
+    get_account_nonce{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array
+    }(
+        rlp=accounts_states[0][0].values
+    );
 
-    // get_account_state_root{
-    //     range_check_ptr=range_check_ptr,
-    //     bitwise_ptr=bitwise_ptr,
-    //     pow2_array=pow2_array
-    // }(
-    //     rlp=accounts_states[0][0].values
-    // );
+    get_account_state_root{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array
+    }(
+        rlp=accounts_states[0][0].values
+    );
     
-    // get_account_code_hash{
-    //     range_check_ptr=range_check_ptr,
-    //     bitwise_ptr=bitwise_ptr,
-    //     pow2_array=pow2_array
-    // }(
-    //     rlp=accounts_states[0][0].values
-    // );
+    get_account_code_hash{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array
+    }(
+        rlp=accounts_states[0][0].values
+    );
 
     // Post Verification Checks: Ensure dict consistency
     default_dict_finalize(peaks_dict_start, peaks_dict, 0);

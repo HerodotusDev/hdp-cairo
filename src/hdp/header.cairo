@@ -11,7 +11,7 @@ from src.hdp.types import (
 )
 from src.libs.block_header import extract_block_number_big, reverse_block_header_chunks
 
-from src.hdp.memorizer import add_header
+from src.hdp.memorizer import HeaderMemorizer
 
 // Guard function that verifies the inclusion of headers in the MMR.
 // It ensures:
@@ -53,7 +53,7 @@ func verify_headers_inclusion{
 
         // add to memorizer
         let block_number = get_block_number(headers[header_idx]);
-        add_header(block_number=block_number, index=header_idx);
+        HeaderMemorizer.add(block_number=block_number, index=header_idx);
 
         return verify_headers_inclusion(
             headers=headers,
@@ -77,7 +77,7 @@ func verify_headers_inclusion{
 
     // add to memorizer
     let block_number = get_block_number(headers[header_idx]);
-    add_header(block_number=block_number, index=header_idx);
+    HeaderMemorizer.add(block_number=block_number, index=header_idx);
 
     return verify_headers_inclusion(
         headers=headers,

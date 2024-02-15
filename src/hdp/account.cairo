@@ -13,7 +13,7 @@ from src.libs.rlp_little import (
 
 from src.libs.utils import felt_divmod
 from src.hdp.utils import keccak_hash_array_to_uint256, uint_le_u64_array_to_uint256
-from src.hdp.memorizer import get_header
+from src.hdp.memorizer import HeaderMemorizer
 
 // Initializes the accounts, ensuring that the passed address matches the key.
 // Params:
@@ -137,7 +137,7 @@ func verify_account{
     }
 
     // get state_root from verified headers
-    let header = get_header(account.proofs[proof_idx].block_number);
+    let header = HeaderMemorizer.get(account.proofs[proof_idx].block_number);
     let state_root = extract_state_root_little(headers[proof_idx].rlp);
 
     %{
