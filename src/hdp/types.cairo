@@ -9,7 +9,7 @@ struct HeaderProof {
 struct Header {
     rlp: felt*,
     rlp_len: felt,
-    byte_len: felt,
+    bytes_len: felt,
     proof: HeaderProof,
 }
 

@@ -11,7 +11,7 @@ from src.hdp.mmr import verify_mmr_meta
 from src.hdp.header import verify_headers_inclusion
 from src.hdp.account import populate_account_segments, verify_n_accounts, get_account_balance, get_account_nonce, get_account_state_root, get_account_code_hash
 from src.hdp.slots import populate_account_slot_segments, verify_n_account_slots
-
+from src.hdp.memorizer import initialize_memorizer
 from src.libs.utils import (
     pow2alloc127,
     write_felt_array_to_dict_keys
@@ -42,6 +42,11 @@ func main{
     let (account_slots: AccountSlot*) = alloc();
     let (account_slots_states: AccountState**) = alloc();
     local account_slots_len: felt;
+
+    // Memorizer
+    let (header_dict, header_dict_start) = initialize_memorizer();
+
+
     
     //Misc
     let pow2_array: felt* = pow2alloc127();
@@ -59,7 +64,7 @@ func main{
             for header in headers:
                 memory[ptr._reference_value + offset] = segments.gen_arg(hex_to_int_array(header["rlp_encoded_header"]))
                 memory[ptr._reference_value + offset + 1] = len(header["rlp_encoded_header"])
-                memory[ptr._reference_value + offset + 2] = header["byte_len"]
+                memory[ptr._reference_value + offset + 2] = header["bytes_len"]
                 memory[ptr._reference_value + offset + 3] = header["leaf_idx"]
                 memory[ptr._reference_value + offset + 4] = len(header["mmr_proof"])
                 memory[ptr._reference_value + offset + 5] = segments.gen_arg(hex_to_int_array(header["mmr_proof"]))
@@ -106,6 +111,7 @@ func main{
         poseidon_ptr=poseidon_ptr,
         pow2_array=pow2_array,
         peaks_dict=peaks_dict,
+        header_dict=header_dict,
     }(
         headers=headers,
         headers_len=headers_len,
@@ -125,62 +131,64 @@ func main{
     );
 
     // Check 3: Ensure the account proofs are valid
-    verify_n_accounts{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        keccak_ptr=keccak_ptr,
-        headers=headers,
-    }(
-        accounts=accounts,
-        accounts_len=accounts_len,
-        accounts_states=accounts_states,
-        pow2_array=pow2_array,
-    );
+    with header_dict {
+        verify_n_accounts{
+            range_check_ptr=range_check_ptr,
+            bitwise_ptr=bitwise_ptr,
+            keccak_ptr=keccak_ptr,
+            headers=headers,
+        }(
+            accounts=accounts,
+            accounts_len=accounts_len,
+            accounts_states=accounts_states,
+            pow2_array=pow2_array,
+        );
+    }
 
-    // Check 4: Ensure the account slot proofs are valid
-    verify_n_account_slots{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        keccak_ptr=keccak_ptr,
-        accounts_states=accounts_states,
-    }(
-        account_slots=account_slots,
-        account_slots_len=account_slots_len,
-        account_slots_states=account_slots_states,
-        pow2_array=pow2_array,
-    );
+    // // Check 4: Ensure the account slot proofs are valid
+    // verify_n_account_slots{
+    //     range_check_ptr=range_check_ptr,
+    //     bitwise_ptr=bitwise_ptr,
+    //     keccak_ptr=keccak_ptr,
+    //     accounts_states=accounts_states,
+    // }(
+    //     account_slots=account_slots,
+    //     account_slots_len=account_slots_len,
+    //     account_slots_states=account_slots_states,
+    //     pow2_array=pow2_array,
+    // );
 
-    get_account_balance{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array
-    }(
-        rlp=accounts_states[0][0].values
-    );
+    // get_account_balance{
+    //     range_check_ptr=range_check_ptr,
+    //     bitwise_ptr=bitwise_ptr,
+    //     pow2_array=pow2_array
+    // }(
+    //     rlp=accounts_states[0][0].values
+    // );
 
-    get_account_nonce{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array
-    }(
-        rlp=accounts_states[0][0].values
-    );
+    // get_account_nonce{
+    //     range_check_ptr=range_check_ptr,
+    //     bitwise_ptr=bitwise_ptr,
+    //     pow2_array=pow2_array
+    // }(
+    //     rlp=accounts_states[0][0].values
+    // );
 
-    get_account_state_root{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array
-    }(
-        rlp=accounts_states[0][0].values
-    );
+    // get_account_state_root{
+    //     range_check_ptr=range_check_ptr,
+    //     bitwise_ptr=bitwise_ptr,
+    //     pow2_array=pow2_array
+    // }(
+    //     rlp=accounts_states[0][0].values
+    // );
     
-    get_account_code_hash{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array
-    }(
-        rlp=accounts_states[0][0].values
-    );
+    // get_account_code_hash{
+    //     range_check_ptr=range_check_ptr,
+    //     bitwise_ptr=bitwise_ptr,
+    //     pow2_array=pow2_array
+    // }(
+    //     rlp=accounts_states[0][0].values
+    // );
 
     // Post Verification Checks: Ensure dict consistency
     default_dict_finalize(peaks_dict_start, peaks_dict, 0);

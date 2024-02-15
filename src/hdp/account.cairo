@@ -1,4 +1,5 @@
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
+from starkware.cairo.common.dict_access import DictAccess
 from src.libs.mpt import verify_mpt_proof
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.builtin_keccak.keccak import keccak
@@ -12,7 +13,7 @@ from src.libs.rlp_little import (
 
 from src.libs.utils import felt_divmod
 from src.hdp.utils import keccak_hash_array_to_uint256, uint_le_u64_array_to_uint256
-
+from src.hdp.memorizer import get_header
 
 // Initializes the accounts, ensuring that the passed address matches the key.
 // Params:
@@ -74,13 +75,16 @@ func verify_n_accounts{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*, 
     keccak_ptr: KeccakBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
     headers: Header*,
+    header_dict: DictAccess*,
 } (
     accounts: Account*,
     accounts_len: felt,
     accounts_states: AccountState**,
     pow2_array: felt*,
 ) {
+    alloc_locals;
     if(accounts_len == 0) {
         return ();
     }
@@ -118,18 +122,22 @@ func verify_account{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*, 
     keccak_ptr: KeccakBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
     headers: Header*,
+    header_dict: DictAccess*,
 } (
     account: Account,
     account_states: AccountState*,
     proof_idx: felt,
     pow2_array: felt*,
 ) -> AccountState* {
+    alloc_locals;
     if (proof_idx == account.proofs_len) {
         return account_states;
     }
 
     // get state_root from verified headers
+    let header = get_header(account.proofs[proof_idx].block_number);
     let state_root = extract_state_root_little(headers[proof_idx].rlp);
 
     %{
