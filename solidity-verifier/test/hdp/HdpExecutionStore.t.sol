@@ -61,9 +61,6 @@ contract HreExecutionStoreTest is Test {
 
         // Step 0. Create mock SHARP facts aggregator mmr id 24
         aggregatorsFactory.createAggregator(24, sharpFactsAggregator);
-
-        // For testing, set msg.sender as prover
-        hdp.grantRole(keccak256("PROVER_ROLE"), address(this));
     }
 
     function test_requestExecutionOfTaskWithBlockSampledDatalake() public {
@@ -90,15 +87,35 @@ contract HreExecutionStoreTest is Test {
     }
 
     function test_authenticateTaskExecution() public {
-        // Request execution of task with block sampled datalake
+        // [1 Request = N Tasks] Request execution of task with block sampled datalake
         BlockSampledDatalake memory datalake = BlockSampledDatalake({
             blockRangeStart: 10399990,
             blockRangeEnd: 10400000,
             increment: 1,
             sampledProperty: BlockSampledDatalakeCodecs.encodeSampledPropertyForHeaderProp(15)
         });
-        ComputationalTask memory computationalTask =
+
+        ComputationalTask memory computationalTask1 =
             ComputationalTask({aggregateFnId: uint256(bytes32("avg")), aggregateFnCtx: ""});
+        ComputationalTask memory computationalTask2 =
+            ComputationalTask({aggregateFnId: uint256(bytes32("sum")), aggregateFnCtx: ""});
+
+        // =================================
+        // Emit the event in there when call request
+
+        bytes[] memory encodedDatalakes = new bytes[](2);
+        encodedDatalakes[0] = datalake.encode();
+        encodedDatalakes[1] = datalake.encode();
+
+        bytes[] memory computationalTasksSerialized = new bytes[](2);
+        computationalTasksSerialized[0] = computationalTask1.encode();
+        computationalTasksSerialized[1] = computationalTask2.encode();
+
+        // TODO: Get serialized result from Rust HDP
+        bytes[] memory computationalTasksResult = new bytes[](2);
+        computationalTasksResult[0] = bytes("result1");
+        computationalTasksResult[1] = bytes("result2");
+
         // =================================
 
         // Responses from HDP
@@ -113,10 +130,6 @@ contract HreExecutionStoreTest is Test {
         bytes32[] memory batchInclusionMerkleProofOfTask = new bytes32[](2);
         // proof of the result
         bytes32[] memory batchInclusionMerkleProofOfResult = new bytes32[](2);
-        // encoded task
-        bytes memory computationalTaskSerialized = computationalTask.encode();
-        // encoded result
-        bytes memory computationalTaskResult = datalake.encode();
 
         // Check if the request is valid in the SHARP Facts Registry
         // If valid, Store the task result
@@ -127,8 +140,8 @@ contract HreExecutionStoreTest is Test {
             batchResultsMerkleRoot,
             batchInclusionMerkleProofOfTask,
             batchInclusionMerkleProofOfResult,
-            computationalTaskSerialized,
-            computationalTaskResult
+            computationalTasksSerialized,
+            computationalTasksResult
         );
     }
 }

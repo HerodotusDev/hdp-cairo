@@ -98,8 +98,8 @@ contract HdpExecutionStore is AccessControl {
         bytes32 batchResultsMerkleRoot,
         bytes32[] memory batchInclusionMerkleProofOfTask,
         bytes32[] memory batchInclusionMerkleProofOfResult,
-        bytes calldata computationalTaskSerialized,
-        bytes calldata computationalTaskResult
+        bytes[] calldata computationalTasksSerialized,
+        bytes[] calldata computationalTasksResult
     ) external {
         // Ensure caller is the "Prover"
         require(hasRole(PROVER_ROLE, msg.sender), "HreExecutionStore: caller is not the Prover");
@@ -113,16 +113,22 @@ contract HdpExecutionStore is AccessControl {
         // Ensure GPS fact is registered
         require(FACTS_REGISTRY.isValid(gpsFactHash), "HreExecutionStore: GPS fact is not registered");
 
-        // Ensure that the task is included in the batch, by verifying the Merkle proof
-        bytes32 taskHash = keccak256(computationalTaskSerialized);
-        batchInclusionMerkleProofOfTask.verify(scheduledTasksBatchMerkleRoot, taskHash);
+        for (uint256 i = 0; i < computationalTasksSerialized.length; i++) {
+            bytes memory computationalTaskSerialized = computationalTasksSerialized[i];
+            bytes memory computationalTaskResult = computationalTasksResult[i];
 
-        // Ensure that the task result is included in the batch, by verifying the Merkle proof
-        bytes32 taskResultHash = keccak256(abi.encode(taskHash, computationalTaskResult));
-        batchInclusionMerkleProofOfResult.verify(batchResultsMerkleRoot, taskResultHash);
+            // Ensure that the task is included in the batch, by verifying the Merkle proof
+            bytes32 taskHash = keccak256(computationalTaskSerialized);
+            batchInclusionMerkleProofOfTask.verify(scheduledTasksBatchMerkleRoot, taskHash);
 
-        // Store the task result
-        computationalTaskResults[taskHash] = TaskInfo({state: TaskState.FINALIZED, result: computationalTaskResult});
+            // Ensure that the task result is included in the batch, by verifying the Merkle proof
+            bytes32 taskResultHash = keccak256(abi.encode(taskHash, computationalTaskResult));
+            batchInclusionMerkleProofOfResult.verify(batchResultsMerkleRoot, taskResultHash);
+
+             // Store the task result
+             computationalTaskResults[taskHash] = TaskInfo({state: TaskState.FINALIZED, result: computationalTaskResult});
+        }
+       
     }
 
     function _loadMmrRoots(uint256 usedMMRsPacked) internal view returns (bytes32[] memory) {
