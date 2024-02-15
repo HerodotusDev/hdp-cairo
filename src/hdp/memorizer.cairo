@@ -3,7 +3,9 @@ from starkware.cairo.common.default_dict import default_dict_new, default_dict_f
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash_single, poseidon_hash, poseidon_hash_many
 from starkware.cairo.common.dict import dict_write, dict_read
-from src.hdp.types import Header, AccountState
+from src.hdp.types import Header, AccountState, SlotState
+from starkware.cairo.common.uint256 import Uint256
+
 
 const MEMORIZER_DEFAULT = 100000000; // An arbitrary large number. We need to ensure each memorizer never contains >= number of elements.
 
@@ -35,7 +37,7 @@ namespace HeaderMemorizer {
         // if(index == MEMORIZER_DEFAULT) {
         //     assert 1 = 0;
         // }
-        
+
         return (header=headers[index]);
     }
 
@@ -85,6 +87,52 @@ namespace AccountMemorizer {
 
         return (account_state=account_states[index]);
     }
+}
+
+namespace SlotMemorizer {
+    func initialize{}() -> (slot_dict: DictAccess*, slot_dict_start: DictAccess*){
+        let (slot_dict) = default_dict_new(default_value=MEMORIZER_DEFAULT);
+        tempvar slot_dict_start = slot_dict;
+
+        return (slot_dict=slot_dict, slot_dict_start=slot_dict_start);
+    }
+
+    func add{
+        poseidon_ptr: PoseidonBuiltin*,
+        slot_dict: DictAccess*,
+    }(slot_key: Uint256, address: felt*, block_number: felt, index: felt){
+        let key = gen_slot_key(slot_key, address, block_number);
+
+        dict_write{dict_ptr=slot_dict}(key=key, new_value=index);
+        return ();
+    }
+
+    func get{
+        slot_dict: DictAccess*,
+        slot_states: SlotState*,
+        poseidon_ptr: PoseidonBuiltin*,
+    }(address: felt*, block_number: felt) -> (slot_state: SlotState){
+        let key = gen_account_key(address, block_number);
+        let (index) = dict_read{dict_ptr=slot_dict}(key);
+
+        // // ensure element exists
+        // if(index == MEMORIZER_DEFAULT) {
+        //     assert 1 = 0;
+        // }
+
+        return (slot_state=slot_states[index]);
+    }
+}
+
+// the account key is h(slot.key, account_key). 
+func gen_slot_key{
+    poseidon_ptr: PoseidonBuiltin*,
+}(slot_key: Uint256, address: felt*, block_number: felt) -> felt{
+    let account_key = gen_account_key(address, block_number);
+    let (h_key) = poseidon_hash(slot_key.low, slot_key.high);
+    let (res) = poseidon_hash(h_key, account_key);
+
+    return res;
 }
 
 // the account key is h(h(address), block_number). 

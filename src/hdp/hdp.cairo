@@ -11,7 +11,7 @@ from src.hdp.mmr import verify_mmr_meta
 from src.hdp.header import verify_headers_inclusion
 from src.hdp.account import populate_account_segments, verify_n_accounts, get_account_balance, get_account_nonce, get_account_state_root, get_account_code_hash
 from src.hdp.slots import populate_account_slot_segments, verify_n_account_slots
-from src.hdp.memorizer import HeaderMemorizer, AccountMemorizer
+from src.hdp.memorizer import HeaderMemorizer, AccountMemorizer, SlotMemorizer, MEMORIZER_DEFAULT
 from src.libs.utils import (
     pow2alloc127,
     write_felt_array_to_dict_keys
@@ -49,6 +49,7 @@ func main{
     // Memorizers
     let (header_dict, header_dict_start) = HeaderMemorizer.initialize();
     let (account_dict, account_dict_start) = AccountMemorizer.initialize();
+    let (slot_dict, slot_dict_start) = SlotMemorizer.initialize();
     
     //Misc
     let pow2_array: felt* = pow2alloc127();
@@ -154,6 +155,7 @@ func main{
         keccak_ptr=keccak_ptr,
         account_states=account_states,
         account_dict=account_dict,
+        slot_dict=slot_dict,
         pow2_array=pow2_array,
     }(
         account_slots=account_slots,
@@ -196,6 +198,9 @@ func main{
 
     // Post Verification Checks: Ensure dict consistency
     default_dict_finalize(peaks_dict_start, peaks_dict, 0);
+    default_dict_finalize(header_dict_start, header_dict, MEMORIZER_DEFAULT);
+    default_dict_finalize(account_dict_start, account_dict, MEMORIZER_DEFAULT);
+    default_dict_finalize(slot_dict_start, slot_dict, MEMORIZER_DEFAULT);
 
     [ap] = mmr_meta.root;
     [ap] = [output_ptr], ap++;

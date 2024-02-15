@@ -12,7 +12,7 @@ from src.libs.rlp_little import (
     extract_n_bytes_from_le_64_chunks_array,
 )
 
-from src.hdp.memorizer import AccountMemorizer
+from src.hdp.memorizer import SlotMemorizer, AccountMemorizer
 
 from src.libs.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64
 
@@ -80,6 +80,7 @@ func verify_n_account_slots{
     poseidon_ptr: PoseidonBuiltin*,
     account_states: AccountState*,
     account_dict: DictAccess*,
+    slot_dict: DictAccess*,
     pow2_array: felt*,
 } (
     account_slots: AccountSlot*,
@@ -120,6 +121,7 @@ func verify_account_slot{
     poseidon_ptr: PoseidonBuiltin*,
     account_states: AccountState*,
     account_dict: DictAccess*,
+    slot_dict: DictAccess*,
     pow2_array: felt*,
 } (
     account_slot: AccountSlot,
@@ -154,6 +156,8 @@ func verify_account_slot{
         low=value[0], // EVM word is always 32 bytes
         high=value[1],
     );
+
+    SlotMemorizer.add(account_slot.key, account_slot.address, slot_proof.block_number, state_idx);
 
     return verify_account_slot(
         account_slot=account_slot,
