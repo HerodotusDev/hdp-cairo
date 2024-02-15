@@ -66,7 +66,8 @@ contract HreExecutionStore is AccessControl {
 
     function requestExecutionOfTaskWithBlockSampledDatalake(
         BlockSampledDatalake calldata blockSampledDatalake,
-        ComputationalTask calldata computationalTask
+        ComputationalTask calldata computationalTask,
+        uint256 usedMMRsPacked
     ) external {
         bytes32 datalakeCommitment = blockSampledDatalake.commit();
         bytes32 taskCommitment = computationalTask.commit(datalakeCommitment);
@@ -79,6 +80,16 @@ contract HreExecutionStore is AccessControl {
 
         // Store the task
         computationalTaskResults[taskCommitment] = TaskInfo({state: TaskState.SCHEDULED, result: ""});
+        // Cache MMR roots used by the request
+        bytes32[] memory usedMmrRoots = new bytes32[](4);
+        for (uint256 i = 0; i < 4; i++) {
+            uint256 mmrId = (usedMMRsPacked >> (i * 64)) & 0xffffffffffffffff;
+            uint256 mmrSize = (usedMMRsPacked >> (i * 64 + 64)) & 0xffffffffffffffff;
+            ISharpFactsAggregator aggregator = AGGREGATORS_FACTORY.aggregatorsById(mmrId);
+            ISharpFactsAggregator.AggregatorState memory aggregatorState = aggregator.aggregatorState();
+            cachedMMRsRoots[mmrId][aggregatorState.mmrSize] = aggregatorState.poseidonMmrRoot;
+            emit MmrRootCached(mmrId, aggregatorState.mmrSize, aggregatorState.poseidonMmrRoot);
+        }
     }
 
     function authenticateTaskExecution(

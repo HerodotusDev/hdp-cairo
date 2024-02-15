@@ -30,10 +30,12 @@ contract MockAggregatorsFactory is IAggregatorsFactory {
 
 contract MockSharpFactsAggregator is ISharpFactsAggregator {
     function aggregatorState() external view returns (AggregatorState memory) {
+        // poseidon need to be padded to store in bytes32
+        bytes32 root = 0x067e9e103829fd281d8f72d911d8f7c4b146854f79a42a292be46f52a1404ca0;
         return AggregatorState({
-            poseidonMmrRoot: bytes32(0),
+            poseidonMmrRoot: root,
             keccakMmrRoot: bytes32(0),
-            mmrSize: 0,
+            mmrSize: 209371,
             continuableParentHash: bytes32(0)
         });
     }
@@ -50,21 +52,23 @@ contract HreExecutionStoreTest is Test {
     ISharpFactsAggregator private sharpFactsAggregator;
 
     function setUp() public {
+        // Registery for facts that has been processed through SHARP
         factsRegistry = new MockFactsRegistry();
+        // Factory for creating SHARP facts aggregators
         aggregatorsFactory = new MockAggregatorsFactory();
+        // Mock SHARP facts aggregator
         sharpFactsAggregator = new MockSharpFactsAggregator();
         hre = new HreExecutionStore(factsRegistry, aggregatorsFactory);
 
-        // Step 0. Prefill the mock facts registry
+        // Step 0. Create mock SHARP facts aggregator mmr id 24
         aggregatorsFactory.createAggregator(24, sharpFactsAggregator);
 
-        // Step 1. When HDP API received request (TS),
-        // it should cache the MMR ids relavant to the request (= batched tasks)
-        uint256 mmrId = 24;
-        hre.cacheMmrRoot(mmrId);
+        // For testing, set msg.sender as prover
+        hre.grantRole(keccak256("PROVER_ROLE"), address(this));
     }
 
     function test_requestExecutionOfTaskWithBlockSampledDatalake() public {
+        // Request execution of task with block sampled datalake
         BlockSampledDatalake memory datalake = BlockSampledDatalake({
             blockRangeStart: 10399990,
             blockRangeEnd: 10400000,
@@ -73,57 +77,59 @@ contract HreExecutionStoreTest is Test {
         });
         ComputationalTask memory computationalTask =
             ComputationalTask({aggregateFnId: uint256(bytes32("avg")), aggregateFnCtx: ""});
+        // =================================
 
-        hre.requestExecutionOfTaskWithBlockSampledDatalake(datalake, computationalTask);
+        // Emit the event in there when call request
+        // TODO: usedMMRsPacked format should be defined
+        hre.requestExecutionOfTaskWithBlockSampledDatalake(datalake, computationalTask, 24);
 
-        //     // FFI
-        //     bytes[] memory encodedDatalakes = new bytes[](4);
-        //     encodedDatalakes[0] = datalake.encode();
-        //     encodedDatalakes[1] = datalake.encode();
-        //     encodedDatalakes[2] = datalake.encode();
-        //     encodedDatalakes[3] = datalake.encode();
-
-        //     bytes[] memory encodedComputationalTasks = new bytes[](4);
-        //     encodedComputationalTasks[0] = ComputationalTask({
-        //         aggregateFnId: uint256(bytes32("avg")),
-        //         aggregateFnCtx: ""
-        //     }).encode();
-        //     encodedComputationalTasks[1] = ComputationalTask({
-        //         aggregateFnId: uint256(bytes32("sum")),
-        //         aggregateFnCtx: ""
-        //     }).encode();
-        //     encodedComputationalTasks[2] = ComputationalTask({
-        //         aggregateFnId: uint256(bytes32("min")),
-        //         aggregateFnCtx: ""
-        //     }).encode();
-        //     encodedComputationalTasks[3] = ComputationalTask({
-        //         aggregateFnId: uint256(bytes32("max")),
-        //         aggregateFnCtx: ""
-        //     }).encode();
-
-        //     (bytes32 tasksRoot, bytes32 resultsRoot) = processBatchThroughFFI(
-        //         encodedDatalakes,
-        //         encodedComputationalTasks
-        //     );
+        // =================================
+        // Step 3. Rust HDP and Cairo HDP is triggered due to the event
+        // SHARP Facts Registry should be registered with the new fact
+        // and updated to new facts emit event which listen by HDP server
+        // =================================
     }
 
-    // function processBatchThroughFFI(
-    //     bytes[] memory encodedDatalakes,
-    //     bytes[] memory encodedComputationalTasks
-    // ) internal returns (bytes32 tasksRoot, bytes32 resultsRoot) {
-    //     // Ensure length match
-    //     require(
-    //         encodedDatalakes.length == encodedComputationalTasks.length,
-    //         "Length mismatch"
-    //     );
+    function test_authenticateTaskExecution() public {
+        // Request execution of task with block sampled datalake
+        BlockSampledDatalake memory datalake = BlockSampledDatalake({
+            blockRangeStart: 10399990,
+            blockRangeEnd: 10400000,
+            increment: 1,
+            sampledProperty: BlockSampledDatalakeCodecs.encodeSampledPropertyForHeaderProp(15)
+        });
+        ComputationalTask memory computationalTask =
+            ComputationalTask({aggregateFnId: uint256(bytes32("avg")), aggregateFnCtx: ""});
+        // =================================
 
-    //     string[] memory inputsExtended = new string[](3);
-    //     inputsExtended[0] = "python3 ./helpers/printer.py";
-    //     inputsExtended[1] = string(abi.encode(encodedDatalakes));
-    //     inputsExtended[2] = string(abi.encode(encodedComputationalTasks));
+        // Responses from HDP
+        // encode with mmr id and mmr size
+        // TODO: usedMMRsPacked format should be defined
+        uint256 usedMMRsPacked = 24;
+        // root of tasks merkle tree
+        bytes32 scheduledTasksBatchMerkleRoot = bytes32(0);
+        // root of result merkle tree
+        bytes32 batchResultsMerkleRoot = bytes32(0);
+        // proof of the task
+        bytes32[] memory batchInclusionMerkleProofOfTask = new bytes32[](2);
+        // proof of the result
+        bytes32[] memory batchInclusionMerkleProofOfResult = new bytes32[](2);
+        // encoded task
+        bytes memory computationalTaskSerialized = computationalTask.encode();
+        // encoded result
+        bytes memory computationalTaskResult = datalake.encode();
 
-    //     console.logBytes(abi.encode(encodedDatalakes));
-    //     console.logBytes(abi.encode(encodedComputationalTasks));
-    //     bytes memory outputExtended = vm.ffi(inputsExtended);
-    // }
+        // Check if the request is valid in the SHARP Facts Registry
+        // If valid, Store the task result
+        // TODO: Caller should be prover
+        hre.authenticateTaskExecution(
+            usedMMRsPacked,
+            scheduledTasksBatchMerkleRoot,
+            batchResultsMerkleRoot,
+            batchInclusionMerkleProofOfTask,
+            batchInclusionMerkleProofOfResult,
+            computationalTaskSerialized,
+            computationalTaskResult
+        );
+    }
 }
