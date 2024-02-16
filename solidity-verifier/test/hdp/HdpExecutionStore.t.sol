@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
+import "forge-std/console.sol";
 
 import {HdpExecutionStore} from "../../src/hdp/HdpExecutionStore.sol";
 import {BlockSampledDatalake, BlockSampledDatalakeCodecs} from "../../src/hdp/datatypes/BlockSampledDatalakeCodecs.sol";
@@ -22,7 +23,10 @@ contract MockFactsRegistry is IFactsRegistry {
 contract MockAggregatorsFactory is IAggregatorsFactory {
     mapping(uint256 => ISharpFactsAggregator) public aggregatorsById;
 
-    function createAggregator(uint256 id, ISharpFactsAggregator aggregator) external {
+    function createAggregator(
+        uint256 id,
+        ISharpFactsAggregator aggregator
+    ) external {
         aggregatorsById[id] = aggregator;
     }
 }
@@ -31,12 +35,13 @@ contract MockSharpFactsAggregator is ISharpFactsAggregator {
     function aggregatorState() external view returns (AggregatorState memory) {
         // poseidon need to be padded to store in bytes32
         bytes32 root = 0x067e9e103829fd281d8f72d911d8f7c4b146854f79a42a292be46f52a1404ca0;
-        return AggregatorState({
-            poseidonMmrRoot: root,
-            keccakMmrRoot: bytes32(0),
-            mmrSize: 209371,
-            continuableParentHash: bytes32(0)
-        });
+        return
+            AggregatorState({
+                poseidonMmrRoot: root,
+                keccakMmrRoot: bytes32(0),
+                mmrSize: 209371,
+                continuableParentHash: bytes32(0)
+            });
     }
 }
 
@@ -64,9 +69,10 @@ contract HreExecutionStoreTest is Test {
         // Step 0. Create mock SHARP facts aggregator mmr id 24
         aggregatorsFactory.createAggregator(24, sharpFactsAggregator);
 
-        vm.startPrank(vm.addr(1));
-        hdp.grantRole(keccak256("PROVER_ROLE"), proverAddress);
-        vm.stopPrank();
+        assertTrue(hdp.hasRole(keccak256("OPERATOR_ROLE"), address(this)));
+        bytes32 admin_role = hdp.getRoleAdmin(keccak256("OPERATOR_ROLE"));
+        console.logBytes32(admin_role);
+        hdp.grantRole(keccak256("OPERATOR_ROLE"), proverAddress);
     }
 
     function test_requestExecutionOfTaskWithBlockSampledDatalake() public {
@@ -75,15 +81,22 @@ contract HreExecutionStoreTest is Test {
             blockRangeStart: 10399990,
             blockRangeEnd: 10400000,
             increment: 1,
-            sampledProperty: BlockSampledDatalakeCodecs.encodeSampledPropertyForHeaderProp(15)
+            sampledProperty: BlockSampledDatalakeCodecs
+                .encodeSampledPropertyForHeaderProp(15)
         });
-        ComputationalTask memory computationalTask =
-            ComputationalTask({aggregateFnId: uint256(bytes32("avg")), aggregateFnCtx: ""});
+        ComputationalTask memory computationalTask = ComputationalTask({
+            aggregateFnId: uint256(bytes32("avg")),
+            aggregateFnCtx: ""
+        });
         // =================================
 
         // Emit the event in there when call request
         // TODO: usedMMRsPacked format should be defined
-        hdp.requestExecutionOfTaskWithBlockSampledDatalake(datalake, computationalTask, 24);
+        hdp.requestExecutionOfTaskWithBlockSampledDatalake(
+            datalake,
+            computationalTask,
+            24
+        );
 
         // =================================
         // Step 3. Rust HDP and Cairo HDP is triggered due to the event
@@ -98,13 +111,18 @@ contract HreExecutionStoreTest is Test {
             blockRangeStart: 10399990,
             blockRangeEnd: 10400000,
             increment: 1,
-            sampledProperty: BlockSampledDatalakeCodecs.encodeSampledPropertyForHeaderProp(15)
+            sampledProperty: BlockSampledDatalakeCodecs
+                .encodeSampledPropertyForHeaderProp(15)
         });
 
-        ComputationalTask memory computationalTask1 =
-            ComputationalTask({aggregateFnId: uint256(bytes32("avg")), aggregateFnCtx: ""});
-        ComputationalTask memory computationalTask2 =
-            ComputationalTask({aggregateFnId: uint256(bytes32("sum")), aggregateFnCtx: ""});
+        ComputationalTask memory computationalTask1 = ComputationalTask({
+            aggregateFnId: uint256(bytes32("avg")),
+            aggregateFnCtx: ""
+        });
+        ComputationalTask memory computationalTask2 = ComputationalTask({
+            aggregateFnId: uint256(bytes32("sum")),
+            aggregateFnCtx: ""
+        });
 
         // =================================
         // Emit the event in there when call request
