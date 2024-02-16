@@ -157,8 +157,6 @@ contract HreExecutionStoreTest is Test {
 
         // Check if the request is valid in the SHARP Facts Registry
         // If valid, Store the task result
-        // TODO: Caller should be prover
-        bytes32 admin_role = hdp.getRoleAdmin(keccak256("PROVER_ROLE"));
         vm.prank(proverAddress);
         hdp.authenticateTaskExecution(
             usedMMRsPacked,

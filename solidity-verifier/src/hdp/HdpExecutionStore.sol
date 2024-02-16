@@ -152,7 +152,7 @@ contract HdpExecutionStore is AccessControl {
         // Ensure GPS fact is registered
         require(
             FACTS_REGISTRY.isValid(gpsFactHash),
-            "HreExecutionStore: GPS fact is not registered"
+            "HdpExecutionStore: GPS fact is not registered"
         );
 
         for (uint256 i = 0; i < computationalTasksSerialized.length; i++) {
