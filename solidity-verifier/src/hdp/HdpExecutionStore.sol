@@ -125,8 +125,7 @@ contract HdpExecutionStore is AccessControl {
         bytes[] calldata computationalTasksSerialized,
         bytes[] calldata computationalTasksResult
     ) external onlyOperator {
-        // Load MMRs roots
-        // TODO: How to get mmr size if cairo hdp not outputting it
+        // Load MMRs root
         bytes32 usedMmrRoot = _loadMmrRoot(usedMmrId, usedMmrSize);
 
         // Loop through all the tasks in the batch
@@ -138,14 +137,15 @@ contract HdpExecutionStore is AccessControl {
             bytes memory computationalTaskResult = computationalTasksResult[i];
 
             // Initialize an array of uint256 to store the program output
-            uint256[] memory programOutput = new uint256[](5);
+            uint256[] memory programOutput = new uint256[](6);
 
             // Assign values to the program output array
             programOutput[0] = uint256(usedMmrRoot);
-            programOutput[1] = uint256(batchResultsMerkleRootLow);
-            programOutput[2] = uint256(batchResultsMerkleRootHigh);
-            programOutput[3] = uint256(scheduledTasksBatchMerkleRootLow);
-            programOutput[4] = uint256(scheduledTasksBatchMerkleRootHigh);
+            programOutput[1] = uint256(usedMmrSize);
+            programOutput[2] = uint256(batchResultsMerkleRootLow);
+            programOutput[3] = uint256(batchResultsMerkleRootHigh);
+            programOutput[4] = uint256(scheduledTasksBatchMerkleRootLow);
+            programOutput[5] = uint256(scheduledTasksBatchMerkleRootHigh);
 
             // Compute program output hash
             bytes32 programOutputHash = keccak256(abi.encode(programOutput));
@@ -196,22 +196,23 @@ contract HdpExecutionStore is AccessControl {
         }
     }
 
-    // TODO: For sake of simplicity, we assume N tasks are included in 1 MMR for V1
-    function _loadMmrRoots(
-        uint256 usedMMRsPacked
-    ) internal view returns (bytes32[] memory) {
-        bytes32[] memory usedMmrRoots = new bytes32[](4);
+    // For sake of simplicity, we assume N tasks are included in 1 MMR for V1
+    // This function will needed in V2
+    // function _loadMmrRoots(
+    //     uint256 usedMMRsPacked
+    // ) internal view returns (bytes32[] memory) {
+    //     bytes32[] memory usedMmrRoots = new bytes32[](4);
 
-        // Load MMRs roots
-        for (uint256 i = 0; i < 4; i++) {
-            uint256 mmrId = (usedMMRsPacked >> (i * 64)) & 0xffffffffffffffff;
-            uint256 mmrSize = (usedMMRsPacked >> (i * 64 + 64)) &
-                0xffffffffffffffff;
-            usedMmrRoots[i] = cachedMMRsRoots[mmrId][mmrSize];
-        }
+    //     // Load MMRs roots
+    //     for (uint256 i = 0; i < 4; i++) {
+    //         uint256 mmrId = (usedMMRsPacked >> (i * 64)) & 0xffffffffffffffff;
+    //         uint256 mmrSize = (usedMMRsPacked >> (i * 64 + 64)) &
+    //             0xffffffffffffffff;
+    //         usedMmrRoots[i] = cachedMMRsRoots[mmrId][mmrSize];
+    //     }
 
-        return usedMmrRoots;
-    }
+    //     return usedMmrRoots;
+    // }
 
     // Load MMR root from cache with given mmrId and mmrSize
     function _loadMmrRoot(
