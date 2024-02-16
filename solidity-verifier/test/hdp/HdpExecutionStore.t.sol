@@ -177,5 +177,27 @@ contract HreExecutionStoreTest is Test {
             computationalTasksSerialized,
             computationalTasksResult
         );
+
+        // Check if the task state is FINALIZED
+        HdpExecutionStore.TaskStatus task1StatusAfter = hdp.getTaskStatus(
+            task1Commitment
+        );
+        assertEq(
+            uint(task1StatusAfter),
+            uint(HdpExecutionStore.TaskStatus.FINALIZED)
+        );
+        HdpExecutionStore.TaskStatus task2StatusAfter = hdp.getTaskStatus(
+            task2Commitment
+        );
+        assertEq(
+            uint(task2StatusAfter),
+            uint(HdpExecutionStore.TaskStatus.FINALIZED)
+        );
+
+        // Check if the task result is stored
+        bytes memory task1Result = hdp.getFinalizedTaskResult(task1Commitment);
+        assertEq(task1Result, computationalTasksResult[0]);
+        bytes memory task2Result = hdp.getFinalizedTaskResult(task2Commitment);
+        assertEq(task2Result, computationalTasksResult[1]);
     }
 }
