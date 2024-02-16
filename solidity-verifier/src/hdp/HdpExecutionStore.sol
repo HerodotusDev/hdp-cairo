@@ -14,51 +14,54 @@ import {ComputationalTask, ComputationalTaskCodecs} from "./datatypes/Computatio
 
 contract HdpExecutionStore is AccessControl {
     using MerkleProof for bytes32[];
-
     using BlockSampledDatalakeCodecs for BlockSampledDatalake;
     using IterativeDynamicLayoutDatalakeCodecs for IterativeDynamicLayoutDatalake;
     using ComputationalTaskCodecs for ComputationalTask;
 
-    // Persistent struct
-    enum TaskState {
+    /// @notice The status of a task
+    enum TaskStatus {
         NONE,
         SCHEDULED,
         FINALIZED
     }
 
-    struct TaskInfo {
-        TaskState state;
+    /// @notice The struct representing a task result
+    struct TaskResult {
+        TaskStatus status;
         bytes result;
     }
 
-    // Events
+    /// @notice emitted when a new task is scheduled
     event MmrRootCached(uint256 mmrId, uint256 mmrSize, bytes32 mmrRoot);
 
-    // Access control
+    /// @notice constant representing role of operator
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
+    /// @notice constant representing the hash of the Cairo HDP program
     bytes32 public constant PROGRAM_HASH =
         bytes32(
             uint256(
-                0x01eca36d586f5356fba096edbf7414017d51cd0ed24b8fde80f78b61a9216ed2
+                0x1e0a58cc90bb6708f3c36a9cc503ffdcc3488b9aa57ccdbf0c18ae69d1c76ea
             )
         );
 
-    // Sharp Facts Registry
-    IFactsRegistry public immutable FACTS_REGISTRY;
+    /// @notice interface to the facts registry of SHARP
+    IFactsRegistry public immutable SHARP_FACTS_REGISTRY;
+
+    /// @notice interface to the aggregators factory
     IAggregatorsFactory public immutable AGGREGATORS_FACTORY;
 
-    mapping(bytes32 => TaskInfo) public computationalTaskResults;
+    /// @notice mapping of task result hash => task
+    mapping(bytes32 => TaskResult) public cachedTasksResult;
 
-    // mmr_id => mmr_size => mmr_root
+    /// @notice mapping of mmr id => mmr size => mmr root
     mapping(uint256 => mapping(uint256 => bytes32)) public cachedMMRsRoots;
 
-    /// Create a new HdpExecutionStore and grants OPERATOR_ROLE to the deployer
     constructor(
         IFactsRegistry factsRegistry,
         IAggregatorsFactory aggregatorsFactory
     ) {
-        FACTS_REGISTRY = factsRegistry;
+        SHARP_FACTS_REGISTRY = factsRegistry;
         AGGREGATORS_FACTORY = aggregatorsFactory;
 
         _setRoleAdmin(OPERATOR_ROLE, OPERATOR_ROLE);
@@ -74,7 +77,9 @@ contract HdpExecutionStore is AccessControl {
         _;
     }
 
-    function _cacheMmrRoot(uint256 mmrId) internal {
+    /// @notice Caches the MMR root for a given MMR id
+    /// @notice Get MMR size and root from the aggregator and cache it
+    function cacheMmrRoot(uint256 mmrId) public {
         ISharpFactsAggregator aggregator = AGGREGATORS_FACTORY.aggregatorsById(
             mmrId
         );
@@ -82,6 +87,7 @@ contract HdpExecutionStore is AccessControl {
             memory aggregatorState = aggregator.aggregatorState();
         cachedMMRsRoots[mmrId][aggregatorState.mmrSize] = aggregatorState
             .poseidonMmrRoot;
+
         emit MmrRootCached(
             mmrId,
             aggregatorState.mmrSize,
@@ -89,28 +95,30 @@ contract HdpExecutionStore is AccessControl {
         );
     }
 
+    /// @notice Requests the execution of a task with a block sampled datalake
+    /// @param usedMmrId The MMR id used to compute task
     function requestExecutionOfTaskWithBlockSampledDatalake(
         BlockSampledDatalake calldata blockSampledDatalake,
         ComputationalTask calldata computationalTask,
-        uint256 usedMMRId
+        uint256 usedMmrId
     ) external {
         bytes32 datalakeCommitment = blockSampledDatalake.commit();
         bytes32 taskCommitment = computationalTask.commit(datalakeCommitment);
 
         // Ensure task is not already scheduled
         require(
-            computationalTaskResults[taskCommitment].state == TaskState.NONE,
+            cachedTasksResult[taskCommitment].status == TaskStatus.NONE,
             "HreExecutionStore: task is already scheduled"
         );
 
-        // Store the task
-        computationalTaskResults[taskCommitment] = TaskInfo({
-            state: TaskState.SCHEDULED,
+        // Store the task result
+        cachedTasksResult[taskCommitment] = TaskResult({
+            status: TaskStatus.SCHEDULED,
             result: ""
         });
 
         // Cache MMR root
-        _cacheMmrRoot(usedMMRId);
+        cacheMmrRoot(usedMmrId);
     }
 
     function authenticateTaskExecution(
@@ -157,7 +165,7 @@ contract HdpExecutionStore is AccessControl {
 
             // Ensure GPS fact is registered
             require(
-                FACTS_REGISTRY.isValid(gpsFactHash),
+                SHARP_FACTS_REGISTRY.isValid(gpsFactHash),
                 "HdpExecutionStore: GPS fact is not registered"
             );
 
@@ -189,36 +197,37 @@ contract HdpExecutionStore is AccessControl {
             );
 
             // Store the task result
-            computationalTaskResults[taskHash] = TaskInfo({
-                state: TaskState.FINALIZED,
+            cachedTasksResult[taskResultHash] = TaskResult({
+                status: TaskStatus.FINALIZED,
                 result: computationalTaskResult
             });
         }
     }
 
-    // For sake of simplicity, we assume N tasks are included in 1 MMR for V1
-    // This function will needed in V2
-    // function _loadMmrRoots(
-    //     uint256 usedMMRsPacked
-    // ) internal view returns (bytes32[] memory) {
-    //     bytes32[] memory usedMmrRoots = new bytes32[](4);
-
-    //     // Load MMRs roots
-    //     for (uint256 i = 0; i < 4; i++) {
-    //         uint256 mmrId = (usedMMRsPacked >> (i * 64)) & 0xffffffffffffffff;
-    //         uint256 mmrSize = (usedMMRsPacked >> (i * 64 + 64)) &
-    //             0xffffffffffffffff;
-    //         usedMmrRoots[i] = cachedMMRsRoots[mmrId][mmrSize];
-    //     }
-
-    //     return usedMmrRoots;
-    // }
-
-    // Load MMR root from cache with given mmrId and mmrSize
+    /// @notice Load MMR root from cache with given mmrId and mmrSize
     function _loadMmrRoot(
         uint256 mmrId,
         uint256 mmrSize
     ) internal view returns (bytes32) {
         return cachedMMRsRoots[mmrId][mmrSize];
+    }
+
+    /// @notice Returns the result of a finalized task
+    function getFinalizedTaskResult(
+        bytes32 taskResultHash
+    ) external view returns (bytes memory) {
+        // Ensure task is finalized
+        require(
+            cachedTasksResult[taskResultHash].status == TaskStatus.FINALIZED,
+            "HdpExecutionStore: task is not finalized"
+        );
+        return cachedTasksResult[taskResultHash].result;
+    }
+
+    /// @notice Returns the status of a task
+    function getTaskStatus(
+        bytes32 taskResultHash
+    ) external view returns (TaskStatus) {
+        return cachedTasksResult[taskResultHash].status;
     }
 }

@@ -33,7 +33,6 @@ contract MockAggregatorsFactory is IAggregatorsFactory {
 
 contract MockSharpFactsAggregator is ISharpFactsAggregator {
     function aggregatorState() external view returns (AggregatorState memory) {
-        // poseidon need to be padded to store in bytes32
         bytes32 root = 0x067e9e103829fd281d8f72d911d8f7c4b146854f79a42a292be46f52a1404ca0;
         return
             AggregatorState({
@@ -75,36 +74,7 @@ contract HreExecutionStoreTest is Test {
         hdp.grantRole(keccak256("OPERATOR_ROLE"), proverAddress);
     }
 
-    function test_requestExecutionOfTaskWithBlockSampledDatalake() public {
-        // Request execution of task with block sampled datalake
-        BlockSampledDatalake memory datalake = BlockSampledDatalake({
-            blockRangeStart: 10399990,
-            blockRangeEnd: 10400000,
-            increment: 1,
-            sampledProperty: BlockSampledDatalakeCodecs
-                .encodeSampledPropertyForHeaderProp(15)
-        });
-        ComputationalTask memory computationalTask = ComputationalTask({
-            aggregateFnId: uint256(bytes32("avg")),
-            aggregateFnCtx: ""
-        });
-        // =================================
-
-        // Emit the event in there when call request
-        hdp.requestExecutionOfTaskWithBlockSampledDatalake(
-            datalake,
-            computationalTask,
-            24
-        );
-
-        // =================================
-        // Step 3. Rust HDP and Cairo HDP is triggered due to the event
-        // SHARP Facts Registry should be registered with the new fact
-        // and updated to new facts emit event which listen by HDP server
-        // =================================
-    }
-
-    function test_authenticateTaskExecution() public {
+    function test_ExecutionOfTaskWithBlockSampledDatalake() public {
         // [1 Request = N Tasks] Request execution of task with block sampled datalake
         BlockSampledDatalake memory datalake = BlockSampledDatalake({
             blockRangeStart: 10399990,
@@ -122,19 +92,54 @@ contract HreExecutionStoreTest is Test {
             aggregateFnId: uint256(bytes32("sum")),
             aggregateFnCtx: ""
         });
-
         // =================================
-        // Emit the event in there when call request
 
+        // Emit the event in there when call request
+        hdp.requestExecutionOfTaskWithBlockSampledDatalake(
+            datalake,
+            computationalTask1,
+            24
+        );
+
+        // Emit the event in there when call request
+        hdp.requestExecutionOfTaskWithBlockSampledDatalake(
+            datalake,
+            computationalTask2,
+            24
+        );
+
+        // Compute commitment of the datalake and the task
+        bytes32 datalakeCommitment = datalake.commit();
+        bytes32 task1Commitment = computationalTask1.commit(datalakeCommitment);
+        bytes32 task2Commitment = computationalTask2.commit(datalakeCommitment);
+
+        // Check if the task state is PENDING
+        HdpExecutionStore.TaskStatus task1Status = hdp.getTaskStatus(
+            task1Commitment
+        );
+        assertEq(
+            uint(task1Status),
+            uint(HdpExecutionStore.TaskStatus.SCHEDULED)
+        );
+        HdpExecutionStore.TaskStatus task2Status = hdp.getTaskStatus(
+            task2Commitment
+        );
+        assertEq(
+            uint(task2Status),
+            uint(HdpExecutionStore.TaskStatus.SCHEDULED)
+        );
+
+        // Encode datalakes
         bytes[] memory encodedDatalakes = new bytes[](2);
         encodedDatalakes[0] = datalake.encode();
         encodedDatalakes[1] = datalake.encode();
 
+        // Encode tasks
         bytes[] memory computationalTasksSerialized = new bytes[](2);
         computationalTasksSerialized[0] = computationalTask1.encode();
         computationalTasksSerialized[1] = computationalTask2.encode();
 
-        // TODO: Get serialized result from Rust HDP
+        // TODO: Get serialized result
         bytes[] memory computationalTasksResult = new bytes[](2);
         computationalTasksResult[0] = bytes("result1");
         computationalTasksResult[1] = bytes("result2");
