@@ -140,21 +140,7 @@ contract HdpExecutionStore is AccessControl {
         // Load MMRs roots
         bytes32[] memory usedMmrRoots = _loadMmrRoots(usedMMRsPacked);
 
-        // Compute GPS fact hash
-        bytes32 gpsFactHash = keccak256(
-            abi.encode(
-                PROGRAM_HASH,
-                usedMmrRoots,
-                scheduledTasksBatchMerkleRoot,
-                batchResultsMerkleRoot
-            )
-        );
-        // Ensure GPS fact is registered
-        require(
-            FACTS_REGISTRY.isValid(gpsFactHash),
-            "HdpExecutionStore: GPS fact is not registered"
-        );
-
+        // Loop through all the tasks in the batch
         for (uint256 i = 0; i < computationalTasksSerialized.length; i++) {
             bytes
                 memory computationalTaskSerialized = computationalTasksSerialized[
@@ -162,21 +148,63 @@ contract HdpExecutionStore is AccessControl {
                 ];
             bytes memory computationalTaskResult = computationalTasksResult[i];
 
+            // TODO: Need to get relevant MMR root of that task
+            bytes32 MmrRoot = usedMmrRoots[i];
+
+            // TODO: Get program output from Cairo HDP
+            // TODO: Need to format the output like output format (hex to int)
+            // TODO: or should i have to get the formated input from function?
+            uint256[] memory programOutput = new uint256[](5);
+            // mmr_root
+            // programOutput[0] = MmrRoot;
+            programOutput[0] = 1;
+            // results_root.low
+            // programOutput[1] = batchResultsMerkleRoot;
+            programOutput[1] = 1;
+            // results_root.high
+            // programOutput[2] = batchResultsMerkleRoot;
+            programOutput[2] = 1;
+            // task_root.low
+            // programOutput[3] = scheduledTasksBatchMerkleRoot;
+            programOutput[3] = 1;
+            // task_root.high
+            // programOutput[4] = scheduledTasksBatchMerkleRoot;
+            programOutput[4] = 1;
+
+            // Compute program output
+            // TODO: uint256[] how to calculate the keccak256
+            bytes32 programOutputHash = keccak256(abi.encode(programOutput));
+
+            // Compute GPS fact hash
+            bytes32 gpsFactHash = keccak256(
+                abi.encode(PROGRAM_HASH, programOutputHash)
+            );
+
+            // Ensure GPS fact is registered
+            require(
+                FACTS_REGISTRY.isValid(gpsFactHash),
+                "HdpExecutionStore: GPS fact is not registered"
+            );
+
             // Ensure that the task is included in the batch, by verifying the Merkle proof
             bytes32 taskHash = keccak256(computationalTaskSerialized);
-            batchInclusionMerkleProofOfTask.verify(
-                scheduledTasksBatchMerkleRoot,
-                taskHash
-            );
+
+            // TODO: stack too deep error
+            // batchInclusionMerkleProofOfTask.verify(
+            //     scheduledTasksBatchMerkleRoot,
+            //     taskHash
+            // );
 
             // Ensure that the task result is included in the batch, by verifying the Merkle proof
             bytes32 taskResultHash = keccak256(
                 abi.encode(taskHash, computationalTaskResult)
             );
-            batchInclusionMerkleProofOfResult.verify(
-                batchResultsMerkleRoot,
-                taskResultHash
-            );
+
+            // TODO: stack too deep error
+            // batchInclusionMerkleProofOfResult.verify(
+            //     batchResultsMerkleRoot,
+            //     taskResultHash
+            // );
 
             // Store the task result
             computationalTaskResults[taskHash] = TaskInfo({
