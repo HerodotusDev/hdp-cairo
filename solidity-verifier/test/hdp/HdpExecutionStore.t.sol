@@ -91,7 +91,6 @@ contract HreExecutionStoreTest is Test {
         // =================================
 
         // Emit the event in there when call request
-        // TODO: usedMMRsPacked format should be defined
         hdp.requestExecutionOfTaskWithBlockSampledDatalake(
             datalake,
             computationalTask,
@@ -142,14 +141,17 @@ contract HreExecutionStoreTest is Test {
 
         // =================================
 
-        // Responses from HDP
-        // encode with mmr id and mmr size
-        // TODO: usedMMRsPacked format should be defined
-        uint256 usedMMRsPacked = 24;
+        // Output from Cairo Program
+        uint256 usedMmrId = 24;
+        uint256 usedMmrSize = 209371;
         // root of tasks merkle tree
-        bytes32 scheduledTasksBatchMerkleRoot = bytes32(0);
+        uint128 scheduledTasksBatchMerkleRootLow = 0x3333;
+        uint128 scheduledTasksBatchMerkleRootHigh = 0x4444;
         // root of result merkle tree
-        bytes32 batchResultsMerkleRoot = bytes32(0);
+        uint128 batchResultsMerkleRootLow = 0x1111;
+        uint128 batchResultsMerkleRootHigh = 0x2222;
+
+        // Fetch from Rust HDP
         // proof of the task
         bytes32[] memory batchInclusionMerkleProofOfTask = new bytes32[](2);
         // proof of the result
@@ -159,9 +161,12 @@ contract HreExecutionStoreTest is Test {
         // If valid, Store the task result
         vm.prank(proverAddress);
         hdp.authenticateTaskExecution(
-            usedMMRsPacked,
-            scheduledTasksBatchMerkleRoot,
-            batchResultsMerkleRoot,
+            usedMmrId,
+            usedMmrSize,
+            batchResultsMerkleRootLow,
+            batchResultsMerkleRootHigh,
+            scheduledTasksBatchMerkleRootLow,
+            scheduledTasksBatchMerkleRootHigh,
             batchInclusionMerkleProofOfTask,
             batchInclusionMerkleProofOfResult,
             computationalTasksSerialized,

@@ -74,7 +74,7 @@ contract HdpExecutionStore is AccessControl {
         _;
     }
 
-    function cacheMmrRoot(uint256 mmrId) external {
+    function _cacheMmrRoot(uint256 mmrId) internal {
         ISharpFactsAggregator aggregator = AGGREGATORS_FACTORY.aggregatorsById(
             mmrId
         );
@@ -92,7 +92,7 @@ contract HdpExecutionStore is AccessControl {
     function requestExecutionOfTaskWithBlockSampledDatalake(
         BlockSampledDatalake calldata blockSampledDatalake,
         ComputationalTask calldata computationalTask,
-        uint256 usedMMRsPacked
+        uint256 usedMMRId
     ) external {
         bytes32 datalakeCommitment = blockSampledDatalake.commit();
         bytes32 taskCommitment = computationalTask.commit(datalakeCommitment);
@@ -108,37 +108,26 @@ contract HdpExecutionStore is AccessControl {
             state: TaskState.SCHEDULED,
             result: ""
         });
-        // Cache MMR roots used by the request
-        bytes32[] memory usedMmrRoots = new bytes32[](4);
-        for (uint256 i = 0; i < 4; i++) {
-            uint256 mmrId = (usedMMRsPacked >> (i * 64)) & 0xffffffffffffffff;
-            uint256 mmrSize = (usedMMRsPacked >> (i * 64 + 64)) &
-                0xffffffffffffffff;
-            ISharpFactsAggregator aggregator = AGGREGATORS_FACTORY
-                .aggregatorsById(mmrId);
-            ISharpFactsAggregator.AggregatorState
-                memory aggregatorState = aggregator.aggregatorState();
-            cachedMMRsRoots[mmrId][aggregatorState.mmrSize] = aggregatorState
-                .poseidonMmrRoot;
-            emit MmrRootCached(
-                mmrId,
-                aggregatorState.mmrSize,
-                aggregatorState.poseidonMmrRoot
-            );
-        }
+
+        // Cache MMR root
+        _cacheMmrRoot(usedMMRId);
     }
 
     function authenticateTaskExecution(
-        uint256 usedMMRsPacked,
-        bytes32 scheduledTasksBatchMerkleRoot,
-        bytes32 batchResultsMerkleRoot,
+        uint256 usedMmrId,
+        uint256 usedMmrSize,
+        uint128 batchResultsMerkleRootLow,
+        uint128 batchResultsMerkleRootHigh,
+        uint128 scheduledTasksBatchMerkleRootLow,
+        uint128 scheduledTasksBatchMerkleRootHigh,
         bytes32[] memory batchInclusionMerkleProofOfTask,
         bytes32[] memory batchInclusionMerkleProofOfResult,
         bytes[] calldata computationalTasksSerialized,
         bytes[] calldata computationalTasksResult
     ) external onlyOperator {
         // Load MMRs roots
-        bytes32[] memory usedMmrRoots = _loadMmrRoots(usedMMRsPacked);
+        // TODO: How to get mmr size if cairo hdp not outputting it
+        bytes32 usedMmrRoot = _loadMmrRoot(usedMmrId, usedMmrSize);
 
         // Loop through all the tasks in the batch
         for (uint256 i = 0; i < computationalTasksSerialized.length; i++) {
@@ -148,31 +137,17 @@ contract HdpExecutionStore is AccessControl {
                 ];
             bytes memory computationalTaskResult = computationalTasksResult[i];
 
-            // TODO: Need to get relevant MMR root of that task
-            bytes32 MmrRoot = usedMmrRoots[i];
-
-            // TODO: Get program output from Cairo HDP
-            // TODO: Need to format the output like output format (hex to int)
-            // TODO: or should i have to get the formated input from function?
+            // Initialize an array of uint256 to store the program output
             uint256[] memory programOutput = new uint256[](5);
-            // mmr_root
-            // programOutput[0] = MmrRoot;
-            programOutput[0] = 1;
-            // results_root.low
-            // programOutput[1] = batchResultsMerkleRoot;
-            programOutput[1] = 1;
-            // results_root.high
-            // programOutput[2] = batchResultsMerkleRoot;
-            programOutput[2] = 1;
-            // task_root.low
-            // programOutput[3] = scheduledTasksBatchMerkleRoot;
-            programOutput[3] = 1;
-            // task_root.high
-            // programOutput[4] = scheduledTasksBatchMerkleRoot;
-            programOutput[4] = 1;
 
-            // Compute program output
-            // TODO: uint256[] how to calculate the keccak256
+            // Assign values to the program output array
+            programOutput[0] = uint256(usedMmrRoot);
+            programOutput[1] = uint256(batchResultsMerkleRootLow);
+            programOutput[2] = uint256(batchResultsMerkleRootHigh);
+            programOutput[3] = uint256(scheduledTasksBatchMerkleRootLow);
+            programOutput[4] = uint256(scheduledTasksBatchMerkleRootHigh);
+
+            // Compute program output hash
             bytes32 programOutputHash = keccak256(abi.encode(programOutput));
 
             // Compute GPS fact hash
@@ -186,25 +161,32 @@ contract HdpExecutionStore is AccessControl {
                 "HdpExecutionStore: GPS fact is not registered"
             );
 
+            // Encode result merkle root
+            bytes32 batchResultsMerkleRoot = bytes32(
+                (uint256(batchResultsMerkleRootHigh) << 128) |
+                    uint256(batchResultsMerkleRootLow)
+            );
+
+            bytes32 scheduledTasksBatchMerkleRoot = bytes32(
+                (uint256(scheduledTasksBatchMerkleRootHigh) << 128) |
+                    uint256(scheduledTasksBatchMerkleRootLow)
+            );
+
             // Ensure that the task is included in the batch, by verifying the Merkle proof
             bytes32 taskHash = keccak256(computationalTaskSerialized);
-
-            // TODO: stack too deep error
-            // batchInclusionMerkleProofOfTask.verify(
-            //     scheduledTasksBatchMerkleRoot,
-            //     taskHash
-            // );
+            batchInclusionMerkleProofOfTask.verify(
+                scheduledTasksBatchMerkleRoot,
+                taskHash
+            );
 
             // Ensure that the task result is included in the batch, by verifying the Merkle proof
             bytes32 taskResultHash = keccak256(
                 abi.encode(taskHash, computationalTaskResult)
             );
-
-            // TODO: stack too deep error
-            // batchInclusionMerkleProofOfResult.verify(
-            //     batchResultsMerkleRoot,
-            //     taskResultHash
-            // );
+            batchInclusionMerkleProofOfResult.verify(
+                batchResultsMerkleRoot,
+                taskResultHash
+            );
 
             // Store the task result
             computationalTaskResults[taskHash] = TaskInfo({
@@ -214,6 +196,7 @@ contract HdpExecutionStore is AccessControl {
         }
     }
 
+    // TODO: For sake of simplicity, we assume N tasks are included in 1 MMR for V1
     function _loadMmrRoots(
         uint256 usedMMRsPacked
     ) internal view returns (bytes32[] memory) {
@@ -228,5 +211,13 @@ contract HdpExecutionStore is AccessControl {
         }
 
         return usedMmrRoots;
+    }
+
+    // Load MMR root from cache with given mmrId and mmrSize
+    function _loadMmrRoot(
+        uint256 mmrId,
+        uint256 mmrSize
+    ) internal view returns (bytes32) {
+        return cachedMMRsRoots[mmrId][mmrSize];
     }
 }
