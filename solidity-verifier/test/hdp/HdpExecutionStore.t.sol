@@ -12,6 +12,7 @@ import {IFactsRegistry} from "../../src/interfaces/IFactsRegistry.sol";
 import {ISharpFactsAggregator} from "../../src/interfaces/ISharpFactsAggregator.sol";
 import {IAggregatorsFactory} from "../../src/interfaces/IAggregatorsFactory.sol";
 import {Uint256Splitter} from "../../src/lib/Uint256Splitter.sol";
+import {Utf8ToHexString} from "../../src/lib/Utf8ToHexString.sol";
 
 contract MockFactsRegistry is IFactsRegistry {
     mapping(bytes32 => bool) public isValid;
@@ -225,10 +226,20 @@ contract HreExecutionStoreTest is Test {
             "Length mismatch"
         );
 
-        string[] memory inputsExtended = new string[](3);
-        inputsExtended[0] = "hdp run";
-        inputsExtended[1] = string(abi.encode(encodedDatalakes));
-        inputsExtended[2] = string(abi.encode(encodedComputationalTasks));
+        // Concatenate all elements into two big hexadecimal strings
+        string memory datalakesHex = Utf8ToHexString.concatenateAndConvert(
+            encodedDatalakes
+        );
+        string memory tasksHex = Utf8ToHexString.concatenateAndConvert(
+            encodedComputationalTasks
+        );
+
+        string[] memory inputsExtended = new string[](4);
+        // TODO: not generalized path
+        inputsExtended[0] = "/Users/piapark/.cargo/bin/hdp";
+        inputsExtended[1] = "run";
+        inputsExtended[2] = datalakesHex;
+        inputsExtended[3] = tasksHex;
 
         bytes memory outputExtended = vm.ffi(inputsExtended);
     }
