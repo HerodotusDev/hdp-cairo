@@ -11,6 +11,7 @@ import {ComputationalTask, ComputationalTaskCodecs} from "../../src/hdp/datatype
 import {IFactsRegistry} from "../../src/interfaces/IFactsRegistry.sol";
 import {ISharpFactsAggregator} from "../../src/interfaces/ISharpFactsAggregator.sol";
 import {IAggregatorsFactory} from "../../src/interfaces/IAggregatorsFactory.sol";
+import {Uint256Splitter} from "../../src/lib/Uint256Splitter.sol";
 
 contract MockFactsRegistry is IFactsRegistry {
     mapping(bytes32 => bool) public isValid;
@@ -146,15 +147,28 @@ contract HreExecutionStoreTest is Test {
 
         // =================================
 
+        (bytes32 tasksRoot, bytes32 resultsRoot) = processBatchThroughFFI(
+            encodedDatalakes,
+            computationalTasksSerialized
+        );
+
+        uint256 tasksRootUint = uint256(tasksRoot);
+        (uint256 tasksRootLow, uint256 tasksRootHigh) = Uint256Splitter
+            .split128(tasksRootUint);
+
+        uint256 resultsRootUint = uint256(resultsRoot);
+        (uint256 resultsRootLow, uint256 resultsRootHigh) = Uint256Splitter
+            .split128(resultsRootUint);
+
         // Output from Cairo Program
         uint256 usedMmrId = 24;
         uint256 usedMmrSize = 209371;
         // root of tasks merkle tree
-        uint128 scheduledTasksBatchMerkleRootLow = 0x3333;
-        uint128 scheduledTasksBatchMerkleRootHigh = 0x4444;
+        uint128 scheduledTasksBatchMerkleRootLow = uint128(tasksRootLow);
+        uint128 scheduledTasksBatchMerkleRootHigh = uint128(tasksRootHigh);
         // root of result merkle tree
-        uint128 batchResultsMerkleRootLow = 0x1111;
-        uint128 batchResultsMerkleRootHigh = 0x2222;
+        uint128 batchResultsMerkleRootLow = uint128(resultsRootLow);
+        uint128 batchResultsMerkleRootHigh = uint128(resultsRootHigh);
 
         // Fetch from Rust HDP
         // proof of the task
@@ -199,5 +213,23 @@ contract HreExecutionStoreTest is Test {
         assertEq(task1Result, computationalTasksResult[0]);
         bytes memory task2Result = hdp.getFinalizedTaskResult(task2Commitment);
         assertEq(task2Result, computationalTasksResult[1]);
+    }
+
+    function processBatchThroughFFI(
+        bytes[] memory encodedDatalakes,
+        bytes[] memory encodedComputationalTasks
+    ) internal returns (bytes32 tasksRoot, bytes32 resultsRoot) {
+        // Ensure length match
+        require(
+            encodedDatalakes.length == encodedComputationalTasks.length,
+            "Length mismatch"
+        );
+
+        string[] memory inputsExtended = new string[](3);
+        inputsExtended[0] = "hdp run";
+        inputsExtended[1] = string(abi.encode(encodedDatalakes));
+        inputsExtended[2] = string(abi.encode(encodedComputationalTasks));
+
+        bytes memory outputExtended = vm.ffi(inputsExtended);
     }
 }
