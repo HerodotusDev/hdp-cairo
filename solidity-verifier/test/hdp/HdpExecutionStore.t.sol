@@ -12,7 +12,6 @@ import {IFactsRegistry} from "../../src/interfaces/IFactsRegistry.sol";
 import {ISharpFactsAggregator} from "../../src/interfaces/ISharpFactsAggregator.sol";
 import {IAggregatorsFactory} from "../../src/interfaces/IAggregatorsFactory.sol";
 import {Uint256Splitter} from "../../src/lib/Uint256Splitter.sol";
-import {Utf8ToHexString} from "../../src/lib/Utf8ToHexString.sol";
 
 contract MockFactsRegistry is IFactsRegistry {
     mapping(bytes32 => bool) public isValid;
@@ -170,13 +169,9 @@ contract HreExecutionStoreTest is Test {
         // Encode datalakes
         bytes[] memory encodedDatalakes = new bytes[](4);
         encodedDatalakes[0] = datalake.encode();
-        console.logBytes(encodedDatalakes[0]);
         encodedDatalakes[1] = datalake.encode();
-        console.logBytes(encodedDatalakes[1]);
         encodedDatalakes[2] = datalake.encode();
-        console.logBytes(encodedDatalakes[2]);
         encodedDatalakes[3] = datalake.encode();
-        console.logBytes(encodedDatalakes[3]);
 
         // Encode tasks
         bytes[] memory computationalTasksSerialized = new bytes[](4);
@@ -196,8 +191,8 @@ contract HreExecutionStoreTest is Test {
         //     computationalTasksSerialized
         // );
 
-        bytes32 tasksRoot = 0x3c0b44ce1a088b9d620fd1ccdef308c8f83b5cd6d37256f136527b58bcea2396;
-        bytes32 resultsRoot = 0xff9a062745c3a640111e796d912a883033106b2a8a194e9c9dade55edb3241c0;
+        bytes32 tasksRoot = 0x3e9e89351322b1e2dce3a766303f50797d6faeaf58d4175eaaa519770453a4f1;
+        bytes32 resultsRoot = 0x147ed0b4f5fe3b4fed7db00142e639de72fa741b40355898d2f66996cd557bbb;
 
         uint256 tasksRootUint = uint256(tasksRoot);
         (uint256 tasksRootLow, uint256 tasksRootHigh) = Uint256Splitter
@@ -228,15 +223,15 @@ contract HreExecutionStoreTest is Test {
         ] = 0xdaeb56b4fed841576996ff1710a1fa0f1b2f8a4ff73c3b0b1453db93bd7868e5;
         InclusionMerkleProofOfTask1[
             1
-        ] = 0x92ea91795d77463d12593c3f42647799c9ffb82a91565a9e7a81be5360ce80e6;
+        ] = 0x185ef0e2af28c57afed0f4d0a2f4c1d8a5d91a303819c13fd7847b213fb25aaf;
         batchInclusionMerkleProofOfTasks[0] = InclusionMerkleProofOfTask1;
         bytes32[] memory InclusionMerkleProofOfTask2 = new bytes32[](2);
         InclusionMerkleProofOfTask2[
             0
-        ] = 0x83e5c05e645f433031b3c2123d7ec5ac00262571c5ed8e8af486c9e9784b46e2;
+        ] = 0x6019bcfc2e4ee019364f70c25f2632f52babb5875780e62ed5f5fdf09fbc361c;
         InclusionMerkleProofOfTask2[
             1
-        ] = 0x92ea91795d77463d12593c3f42647799c9ffb82a91565a9e7a81be5360ce80e6;
+        ] = 0x185ef0e2af28c57afed0f4d0a2f4c1d8a5d91a303819c13fd7847b213fb25aaf;
         batchInclusionMerkleProofOfTasks[1] = InclusionMerkleProofOfTask2;
         bytes32[] memory InclusionMerkleProofOfTask3 = new bytes32[](2);
         InclusionMerkleProofOfTask3[
@@ -244,15 +239,15 @@ contract HreExecutionStoreTest is Test {
         ] = 0xefe80ee09ad6352ebb1bc03ce4be55ba8ba5660d992478647a1e9a5d85739c14;
         InclusionMerkleProofOfTask3[
             1
-        ] = 0x7f1980e96fa0c75307e26c175d19a2f46f424f30f355e38e988977d521a6b772;
+        ] = 0x200418e5706f9ef2e6bc3795371df8a00aa8076a7f57b24ec9f434a39a997511;
         batchInclusionMerkleProofOfTasks[2] = InclusionMerkleProofOfTask3;
         bytes32[] memory InclusionMerkleProofOfTask4 = new bytes32[](2);
         InclusionMerkleProofOfTask4[
             0
-        ] = 0x6019bcfc2e4ee019364f70c25f2632f52babb5875780e62ed5f5fdf09fbc361c;
+        ] = 0x83e5c05e645f433031b3c2123d7ec5ac00262571c5ed8e8af486c9e9784b46e2;
         InclusionMerkleProofOfTask4[
             1
-        ] = 0x7f1980e96fa0c75307e26c175d19a2f46f424f30f355e38e988977d521a6b772;
+        ] = 0x200418e5706f9ef2e6bc3795371df8a00aa8076a7f57b24ec9f434a39a997511;
         batchInclusionMerkleProofOfTasks[3] = InclusionMerkleProofOfTask4;
 
         // proof of the result
@@ -265,7 +260,7 @@ contract HreExecutionStoreTest is Test {
         ] = 0xfe1ff2228e787f8aebe51c3c66d268b750d002c5ad01eec8e95263decce2db51;
         InclusionMerkleProofOfResult1[
             1
-        ] = 0x76ea4d4b233cc5d64c4c20890f455d26714a137d278745db622a53aed4fce786;
+        ] = 0x9a288c7072b2704bd59780c0d78e287451a0a942976d54278b5633d34c05003a;
         batchInclusionMerkleProofOfResults[0] = InclusionMerkleProofOfResult1;
         bytes32[] memory InclusionMerkleProofOfResult2 = new bytes32[](2);
         InclusionMerkleProofOfResult2[
@@ -299,21 +294,17 @@ contract HreExecutionStoreTest is Test {
         computationalTasksResult[3] = bytes32(uint256(11683168316831682560));
 
         // Testing purpose, insert the fact into the registry
-        bytes32[] memory factHashs = get_fact_hash(
+        bytes32 factHash = getFactHash(
             usedMmrId,
             usedMmrSize,
             batchResultsMerkleRootLow,
             batchResultsMerkleRootHigh,
             scheduledTasksBatchMerkleRootLow,
-            scheduledTasksBatchMerkleRootHigh,
-            batchInclusionMerkleProofOfTasks,
-            batchInclusionMerkleProofOfResults,
-            computationalTasksSerialized,
-            computationalTasksResult
+            scheduledTasksBatchMerkleRootHigh
         );
-        for (uint256 i = 0; i < factHashs.length; i++) {
-            factsRegistry.markValid(factHashs[i]);
-        }
+        factsRegistry.markValid(factHash);
+        bool is_valid = factsRegistry.isValid(factHash);
+        assertEq(is_valid, true);
 
         // Check if the request is valid in the SHARP Facts Registry
         // If valid, Store the task result
@@ -372,63 +363,50 @@ contract HreExecutionStoreTest is Test {
         assertEq(task4Result, computationalTasksResult[3]);
     }
 
-    function get_fact_hash(
+    function getFactHash(
         uint256 usedMmrId,
         uint256 usedMmrSize,
         uint128 batchResultsMerkleRootLow,
         uint128 batchResultsMerkleRootHigh,
         uint128 scheduledTasksBatchMerkleRootLow,
-        uint128 scheduledTasksBatchMerkleRootHigh,
-        bytes32[][] memory batchInclusionMerkleProofOfTasks,
-        bytes32[][] memory batchInclusionMerkleProofOfResults,
-        bytes[] memory computationalTasksSerialized,
-        bytes32[] memory computationalTasksResult
-    ) internal returns (bytes32[] memory) {
-        bytes32[] memory gpsFactHashs = new bytes32[](
-            computationalTasksSerialized.length
+        uint128 scheduledTasksBatchMerkleRootHigh
+    ) internal returns (bytes32) {
+        // Load MMRs root
+        bytes32 usedMmrRoot = hdp.loadMmrRoot(usedMmrId, usedMmrSize);
+        console.logBytes32(usedMmrRoot);
+        // Initialize an array of uint256 to store the program output
+        uint256[] memory programOutput = new uint256[](6);
+
+        // Assign values to the program output array
+        programOutput[0] = uint256(usedMmrRoot);
+        console.logBytes32(usedMmrRoot);
+        programOutput[1] = uint256(usedMmrSize);
+        console.logUint(usedMmrSize);
+        programOutput[2] = uint256(batchResultsMerkleRootLow);
+        console.logUint(batchResultsMerkleRootLow);
+        programOutput[3] = uint256(batchResultsMerkleRootHigh);
+        console.logUint(batchResultsMerkleRootHigh);
+        programOutput[4] = uint256(scheduledTasksBatchMerkleRootLow);
+        console.logUint(scheduledTasksBatchMerkleRootLow);
+        programOutput[5] = uint256(scheduledTasksBatchMerkleRootHigh);
+        console.logUint(scheduledTasksBatchMerkleRootHigh);
+
+        // Compute program output hash
+        bytes32 programOutputHash = keccak256(abi.encode(programOutput));
+
+        // Compute GPS fact hash
+        bytes32 gpsFactHash = keccak256(
+            abi.encode(
+                bytes32(
+                    uint256(
+                        0x1e0a58cc90bb6708f3c36a9cc503ffdcc3488b9aa57ccdbf0c18ae69d1c76ea
+                    )
+                ),
+                programOutputHash
+            )
         );
 
-        // Loop through all the tasks in the batch
-        for (uint256 i = 0; i < computationalTasksSerialized.length; i++) {
-            bytes
-                memory computationalTaskSerialized = computationalTasksSerialized[
-                    i
-                ];
-            bytes32 computationalTaskResult = computationalTasksResult[i];
-            bytes32[]
-                memory batchInclusionMerkleProofOfTask = batchInclusionMerkleProofOfTasks[
-                    i
-                ];
-            bytes32[]
-                memory batchInclusionMerkleProofOfResult = batchInclusionMerkleProofOfResults[
-                    i
-                ];
-
-            // Initialize an array of uint256 to store the program output
-            uint256[] memory programOutput = new uint256[](6);
-
-            // Assign values to the program output array
-            programOutput[0] = uint256(
-                0x067e9e103829fd281d8f72d911d8f7c4b146854f79a42a292be46f52a1404ca0
-            );
-            programOutput[1] = uint256(usedMmrSize);
-            programOutput[2] = uint256(batchResultsMerkleRootLow);
-            programOutput[3] = uint256(batchResultsMerkleRootHigh);
-            programOutput[4] = uint256(scheduledTasksBatchMerkleRootLow);
-            programOutput[5] = uint256(scheduledTasksBatchMerkleRootHigh);
-
-            // Compute program output hash
-            bytes32 programOutputHash = keccak256(abi.encode(programOutput));
-
-            // Compute GPS fact hash
-            bytes32 gpsFactHash = keccak256(
-                abi.encode(hdp.PROGRAM_HASH, programOutputHash)
-            );
-
-            gpsFactHashs[i] = gpsFactHash;
-        }
-
-        return gpsFactHashs;
+        return gpsFactHash;
     }
 
     // function processBatchThroughFFI(

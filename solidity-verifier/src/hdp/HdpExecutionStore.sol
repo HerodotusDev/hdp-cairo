@@ -134,7 +134,32 @@ contract HdpExecutionStore is AccessControl {
         bytes32[] calldata computationalTasksResult
     ) external onlyOperator {
         // Load MMRs root
-        bytes32 usedMmrRoot = _loadMmrRoot(usedMmrId, usedMmrSize);
+        bytes32 usedMmrRoot = loadMmrRoot(usedMmrId, usedMmrSize);
+
+        // Initialize an array of uint256 to store the program output
+        uint256[] memory programOutput = new uint256[](6);
+
+        // Assign values to the program output array
+        programOutput[0] = uint256(usedMmrRoot);
+        programOutput[1] = uint256(usedMmrSize);
+        programOutput[2] = uint256(batchResultsMerkleRootLow);
+        programOutput[3] = uint256(batchResultsMerkleRootHigh);
+        programOutput[4] = uint256(scheduledTasksBatchMerkleRootLow);
+        programOutput[5] = uint256(scheduledTasksBatchMerkleRootHigh);
+
+        // Compute program output hash
+        bytes32 programOutputHash = keccak256(abi.encode(programOutput));
+
+        // Compute GPS fact hash
+        bytes32 gpsFactHash = keccak256(
+            abi.encode(PROGRAM_HASH, programOutputHash)
+        );
+
+        // Ensure GPS fact is registered
+        require(
+            SHARP_FACTS_REGISTRY.isValid(gpsFactHash),
+            "HdpExecutionStore: GPS fact is not registered"
+        );
 
         // Loop through all the tasks in the batch
         for (uint256 i = 0; i < computationalTasksSerialized.length; i++) {
@@ -152,31 +177,6 @@ contract HdpExecutionStore is AccessControl {
                     i
                 ];
 
-            // Initialize an array of uint256 to store the program output
-            uint256[] memory programOutput = new uint256[](6);
-
-            // Assign values to the program output array
-            programOutput[0] = uint256(usedMmrRoot);
-            programOutput[1] = uint256(usedMmrSize);
-            programOutput[2] = uint256(batchResultsMerkleRootLow);
-            programOutput[3] = uint256(batchResultsMerkleRootHigh);
-            programOutput[4] = uint256(scheduledTasksBatchMerkleRootLow);
-            programOutput[5] = uint256(scheduledTasksBatchMerkleRootHigh);
-
-            // Compute program output hash
-            bytes32 programOutputHash = keccak256(abi.encode(programOutput));
-
-            // Compute GPS fact hash
-            bytes32 gpsFactHash = keccak256(
-                abi.encode(PROGRAM_HASH, programOutputHash)
-            );
-
-            // Ensure GPS fact is registered
-            require(
-                SHARP_FACTS_REGISTRY.isValid(gpsFactHash),
-                "HdpExecutionStore: GPS fact is not registered"
-            );
-
             // Encode result merkle root
             bytes32 batchResultsMerkleRoot = bytes32(
                 (uint256(batchResultsMerkleRootHigh) << 128) |
@@ -190,18 +190,26 @@ contract HdpExecutionStore is AccessControl {
 
             // Ensure that the task is included in the batch, by verifying the Merkle proof
             bytes32 taskHash = keccak256(computationalTaskSerialized);
-            batchInclusionMerkleProofOfTask.verify(
+            bool is_verified_task = batchInclusionMerkleProofOfTask.verify(
                 scheduledTasksBatchMerkleRoot,
                 taskHash
+            );
+            require(
+                is_verified_task,
+                "HdpExecutionStore: task is not included in the batch"
             );
 
             // Ensure that the task result is included in the batch, by verifying the Merkle proof
             bytes32 taskResultHash = keccak256(
                 abi.encode(taskHash, computationalTaskResult)
             );
-            batchInclusionMerkleProofOfResult.verify(
+            bool is_verified_result = batchInclusionMerkleProofOfResult.verify(
                 batchResultsMerkleRoot,
                 taskResultHash
+            );
+            require(
+                is_verified_result,
+                "HdpExecutionStore: task result is not included in the batch"
             );
 
             // Store the task result
@@ -213,10 +221,10 @@ contract HdpExecutionStore is AccessControl {
     }
 
     /// @notice Load MMR root from cache with given mmrId and mmrSize
-    function _loadMmrRoot(
+    function loadMmrRoot(
         uint256 mmrId,
         uint256 mmrSize
-    ) internal view returns (bytes32) {
+    ) public view returns (bytes32) {
         return cachedMMRsRoots[mmrId][mmrSize];
     }
 
