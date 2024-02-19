@@ -2,6 +2,29 @@
 pragma solidity ^0.8.0;
 
 library Utf8ToHexString {
+    function concatenateBytesArray(
+        bytes[] memory arrayOfBytes
+    ) public pure returns (string memory) {
+        bytes memory concatenatedBytes;
+        for (uint i = 0; i < arrayOfBytes.length; i++) {
+            concatenatedBytes = abi.encodePacked(
+                concatenatedBytes,
+                arrayOfBytes[i]
+            );
+        }
+        return string(concatenatedBytes);
+    }
+
+    function bytesArrayToString(
+        bytes[] memory data
+    ) public pure returns (string memory) {
+        bytes memory buffer;
+        for (uint i = 0; i < data.length; i++) {
+            buffer = abi.encodePacked(buffer, data[i]);
+        }
+        return string(buffer);
+    }
+
     function concatenateAndConvert(
         bytes[] memory data
     ) internal pure returns (string memory) {

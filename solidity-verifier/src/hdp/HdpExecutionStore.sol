@@ -28,7 +28,7 @@ contract HdpExecutionStore is AccessControl {
     /// @notice The struct representing a task result
     struct TaskResult {
         TaskStatus status;
-        bytes result;
+        bytes32 result;
     }
 
     /// @notice emitted when a new task is scheduled
@@ -128,10 +128,10 @@ contract HdpExecutionStore is AccessControl {
         uint128 batchResultsMerkleRootHigh,
         uint128 scheduledTasksBatchMerkleRootLow,
         uint128 scheduledTasksBatchMerkleRootHigh,
-        bytes32[] memory batchInclusionMerkleProofOfTask,
-        bytes32[] memory batchInclusionMerkleProofOfResult,
+        bytes32[][] memory batchInclusionMerkleProofOfTasks,
+        bytes32[][] memory batchInclusionMerkleProofOfResults,
         bytes[] calldata computationalTasksSerialized,
-        bytes[] calldata computationalTasksResult
+        bytes32[] calldata computationalTasksResult
     ) external onlyOperator {
         // Load MMRs root
         bytes32 usedMmrRoot = _loadMmrRoot(usedMmrId, usedMmrSize);
@@ -142,7 +142,15 @@ contract HdpExecutionStore is AccessControl {
                 memory computationalTaskSerialized = computationalTasksSerialized[
                     i
                 ];
-            bytes memory computationalTaskResult = computationalTasksResult[i];
+            bytes32 computationalTaskResult = computationalTasksResult[i];
+            bytes32[]
+                memory batchInclusionMerkleProofOfTask = batchInclusionMerkleProofOfTasks[
+                    i
+                ];
+            bytes32[]
+                memory batchInclusionMerkleProofOfResult = batchInclusionMerkleProofOfResults[
+                    i
+                ];
 
             // Initialize an array of uint256 to store the program output
             uint256[] memory programOutput = new uint256[](6);
@@ -215,7 +223,7 @@ contract HdpExecutionStore is AccessControl {
     /// @notice Returns the result of a finalized task
     function getFinalizedTaskResult(
         bytes32 taskResultHash
-    ) external view returns (bytes memory) {
+    ) external view returns (bytes32) {
         // Ensure task is finalized
         require(
             cachedTasksResult[taskResultHash].status == TaskStatus.FINALIZED,
