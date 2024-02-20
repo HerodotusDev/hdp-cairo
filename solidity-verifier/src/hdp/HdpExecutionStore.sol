@@ -205,12 +205,12 @@ contract HdpExecutionStore is AccessControl {
                 HexStringConverter.toHex(taskCommitment)
             );
             // Ensure that the task is included in the batch, by verifying the Merkle proof
-            bool is_verified_task = batchInclusionMerkleProofOfTask.verify(
+            bool isVerifiedTask = batchInclusionMerkleProofOfTask.verify(
                 scheduledTasksBatchMerkleRoot,
                 taskMerkleLeaf
             );
             require(
-                is_verified_task,
+                isVerifiedTask,
                 "HdpExecutionStore: task is not included in the batch"
             );
 
@@ -222,12 +222,12 @@ contract HdpExecutionStore is AccessControl {
                 HexStringConverter.toHex(taskResultCommitment)
             );
             // Ensure that the task result is included in the batch, by verifying the Merkle proof
-            bool is_verified_result = batchInclusionMerkleProofOfResult.verify(
+            bool isVerifiedResult = batchInclusionMerkleProofOfResult.verify(
                 batchResultsMerkleRoot,
                 taskResultMerkleLeaf
             );
             require(
-                is_verified_result,
+                isVerifiedResult,
                 "HdpExecutionStore: task result is not included in the batch"
             );
 
