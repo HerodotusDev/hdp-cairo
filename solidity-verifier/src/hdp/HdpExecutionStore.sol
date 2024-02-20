@@ -249,32 +249,29 @@ contract HdpExecutionStore is AccessControl {
 
     /// @notice Returns the result of a finalized task
     function getFinalizedTaskResult(
-        bytes32 taskResultHash
+        bytes32 taskCommitment
     ) external view returns (bytes32) {
         // Ensure task is finalized
         require(
-            cachedTasksResult[taskResultHash].status == TaskStatus.FINALIZED,
+            cachedTasksResult[taskCommitment].status == TaskStatus.FINALIZED,
             "HdpExecutionStore: task is not finalized"
         );
-        return cachedTasksResult[taskResultHash].result;
+        return cachedTasksResult[taskCommitment].result;
     }
 
     /// @notice Returns the status of a task
     function getTaskStatus(
-        bytes32 taskResultHash
+        bytes32 taskCommitment
     ) external view returns (TaskStatus) {
-        return cachedTasksResult[taskResultHash].status;
+        return cachedTasksResult[taskCommitment].status;
     }
 
+    /// @notice Returns the leaf of standard merkle tree
     function standardLeafHash(
         string memory value
     ) public pure returns (bytes32) {
-        // First hash: encode the value and hash it
         bytes32 firstHash = keccak256(abi.encode(value));
-
-        // Second hash: hash the result of the first hash
         bytes32 leaf = keccak256(abi.encode(firstHash));
-
         return leaf;
     }
 }
