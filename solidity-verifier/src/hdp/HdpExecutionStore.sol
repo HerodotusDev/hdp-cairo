@@ -13,6 +13,9 @@ import {IterativeDynamicLayoutDatalake, IterativeDynamicLayoutDatalakeCodecs} fr
 import {ComputationalTask, ComputationalTaskCodecs} from "./datatypes/ComputationalTaskCodecs.sol";
 import {HexStringConverter} from "../lib/HexStringConverter.sol";
 
+/// @title HdpExecutionStore
+/// @author Herodotus Dev
+/// @notice A contract to store the execution results of HDP tasks
 contract HdpExecutionStore is AccessControl {
     using MerkleProof for bytes32[];
     using BlockSampledDatalakeCodecs for BlockSampledDatalake;
@@ -97,7 +100,7 @@ contract HdpExecutionStore is AccessControl {
     }
 
     /// @notice Requests the execution of a task with a block sampled datalake
-    /// @param usedMmrId The MMR id used to compute task
+    /// @param usedMmrId The id of the MMR used to compute task
     function requestExecutionOfTaskWithBlockSampledDatalake(
         BlockSampledDatalake calldata blockSampledDatalake,
         ComputationalTask calldata computationalTask,
@@ -122,6 +125,18 @@ contract HdpExecutionStore is AccessControl {
         cacheMmrRoot(usedMmrId);
     }
 
+    /// @notice Authenticates the execution of a task is finalized
+    ///     by verifying the FactRegistry and Merkle proofs
+    /// @param usedMmrId The id of the MMR used to compute task
+    /// @param usedMmrSize The size of the MMR used to compute task
+    /// @param batchResultsMerkleRootLow The low 128 bits of the results Merkle root
+    /// @param batchResultsMerkleRootHigh The high 128 bits of the results Merkle root
+    /// @param scheduledTasksBatchMerkleRootLow The low 128 bits of the tasks Merkle root
+    /// @param scheduledTasksBatchMerkleRootHigh The high 128 bits of the tasks Merkle root
+    /// @param batchInclusionMerkleProofOfTasks The Merkle proof of the tasks
+    /// @param batchInclusionMerkleProofOfResults The Merkle proof of the results
+    /// @param computationalTasksResult The result of the computational tasks
+    /// @param taskCommitments The commitment of the tasks
     function authenticateTaskExecution(
         uint256 usedMmrId,
         uint256 usedMmrSize,
@@ -132,7 +147,7 @@ contract HdpExecutionStore is AccessControl {
         bytes32[][] memory batchInclusionMerkleProofOfTasks,
         bytes32[][] memory batchInclusionMerkleProofOfResults,
         bytes32[] calldata computationalTasksResult,
-        bytes32[] calldata taskHashes
+        bytes32[] calldata taskCommitments
     ) external onlyOperator {
         // Load MMRs root
         bytes32 usedMmrRoot = loadMmrRoot(usedMmrId, usedMmrSize);
@@ -174,21 +189,21 @@ contract HdpExecutionStore is AccessControl {
                     i
                 ];
 
-            // Encode result merkle root
+            // Convert the low and high 128 bits to a single 256 bit value
             bytes32 batchResultsMerkleRoot = bytes32(
                 (uint256(batchResultsMerkleRootHigh) << 128) |
                     uint256(batchResultsMerkleRootLow)
             );
-
             bytes32 scheduledTasksBatchMerkleRoot = bytes32(
                 (uint256(scheduledTasksBatchMerkleRootHigh) << 128) |
                     uint256(scheduledTasksBatchMerkleRootLow)
             );
-            bytes32 taskHash = taskHashes[i];
-            bytes32 taskMerkleLeaf = standardLeafHash(
-                HexStringConverter.toHex(taskHash)
-            );
 
+            // Compute the Merkle leaf of the task
+            bytes32 taskCommitment = taskCommitments[i];
+            bytes32 taskMerkleLeaf = standardLeafHash(
+                HexStringConverter.toHex(taskCommitment)
+            );
             // Ensure that the task is included in the batch, by verifying the Merkle proof
             bool is_verified_task = batchInclusionMerkleProofOfTask.verify(
                 scheduledTasksBatchMerkleRoot,
@@ -199,12 +214,14 @@ contract HdpExecutionStore is AccessControl {
                 "HdpExecutionStore: task is not included in the batch"
             );
 
-            bytes32 taskResultHash = keccak256(
-                abi.encode(taskHash, computationalTaskResult)
+            // Compute the Merkle leaf of the task result
+            bytes32 taskResultCommitment = keccak256(
+                abi.encode(taskCommitment, computationalTaskResult)
             );
             bytes32 taskResultMerkleLeaf = standardLeafHash(
-                HexStringConverter.toHex(taskResultHash)
+                HexStringConverter.toHex(taskResultCommitment)
             );
+            // Ensure that the task result is included in the batch, by verifying the Merkle proof
             bool is_verified_result = batchInclusionMerkleProofOfResult.verify(
                 batchResultsMerkleRoot,
                 taskResultMerkleLeaf
@@ -215,7 +232,7 @@ contract HdpExecutionStore is AccessControl {
             );
 
             // Store the task result
-            cachedTasksResult[taskHash] = TaskResult({
+            cachedTasksResult[taskCommitment] = TaskResult({
                 status: TaskStatus.FINALIZED,
                 result: computationalTaskResult
             });

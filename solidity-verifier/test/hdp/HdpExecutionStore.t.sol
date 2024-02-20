@@ -136,6 +136,7 @@ contract HreExecutionStoreTest is Test {
         bytes32 task2Commitment = computationalTask2.commit(datalakeCommitment);
         bytes32 task3Commitment = computationalTask3.commit(datalakeCommitment);
         bytes32 task4Commitment = computationalTask4.commit(datalakeCommitment);
+
         assertEq(
             datalakeCommitment,
             bytes32(
@@ -220,39 +221,30 @@ contract HreExecutionStoreTest is Test {
         computationalTasksSerialized[2] = computationalTask3.encode();
         computationalTasksSerialized[3] = computationalTask4.encode();
 
-        bytes32[] memory taskHashes = new bytes32[](4);
-        taskHashes[0] = task1Commitment;
-        taskHashes[1] = task2Commitment;
-        taskHashes[2] = task3Commitment;
-        taskHashes[3] = task4Commitment;
-
         // =================================
 
         // Response from cli
 
+        // Evaluation Result Key from cli
+        bytes32[] memory taskCommitments = new bytes32[](4);
+        taskCommitments[0] = task1Commitment;
+        taskCommitments[1] = task2Commitment;
+        taskCommitments[2] = task3Commitment;
+        taskCommitments[3] = task4Commitment;
+
+        // Evaluation Result value from cli
+        bytes32[] memory computationalTasksResult = new bytes32[](4);
+        computationalTasksResult[0] = bytes32(uint256(11683168316831682560));
+        computationalTasksResult[1] = bytes32(uint256(1180000000000000000000));
+        computationalTasksResult[2] = bytes32(uint256(10000000000000000000));
+        computationalTasksResult[3] = bytes32(uint256(17000000000000000000));
+
+        // Tasks and Results Merkle Tree Information
+
         bytes32 tasksRoot = 0x772a7bb6877855fdde90d6d8bddde781e23d08cea8cd32822c839e1061732626;
         bytes32 resultsRoot = 0xc1371339523fe5d5e3082a4eda5cbf1d5d2ec2960af43b64e0cfb140c9be9448;
 
-        uint256 tasksRootUint = uint256(tasksRoot);
-        (uint256 tasksRootLow, uint256 tasksRootHigh) = Uint256Splitter
-            .split128(tasksRootUint);
-
-        uint256 resultsRootUint = uint256(resultsRoot);
-        (uint256 resultsRootLow, uint256 resultsRootHigh) = Uint256Splitter
-            .split128(resultsRootUint);
-
-        // Output from Cairo Program
-        uint256 usedMmrId = 24;
-        uint256 usedMmrSize = 209371;
-        // root of tasks merkle tree
-        uint128 scheduledTasksBatchMerkleRootLow = uint128(tasksRootLow);
-        uint128 scheduledTasksBatchMerkleRootHigh = uint128(tasksRootHigh);
-        // root of result merkle tree
-        uint128 batchResultsMerkleRootLow = uint128(resultsRootLow);
-        uint128 batchResultsMerkleRootHigh = uint128(resultsRootHigh);
-
-        // Fetch from Rust HDP
-        // proof of the task
+        // proof of the tasks merkle tree
         bytes32[][] memory batchInclusionMerkleProofOfTasks = new bytes32[][](
             4
         );
@@ -326,15 +318,27 @@ contract HreExecutionStoreTest is Test {
         ] = 0x15242a688e06db6ab78e51ecfb61e3a82c39f7e2ebd32c49bb71294dbf0f7a32;
         batchInclusionMerkleProofOfResults[3] = InclusionMerkleProofOfResult4;
 
-        bytes32[] memory computationalTasksResult = new bytes32[](4);
-        computationalTasksResult[0] = bytes32(uint256(11683168316831682560));
-        computationalTasksResult[1] = bytes32(uint256(1180000000000000000000));
-        computationalTasksResult[2] = bytes32(uint256(10000000000000000000));
-        computationalTasksResult[3] = bytes32(uint256(17000000000000000000));
+        // Convert to Cairo input format
+        uint256 tasksRootUint = uint256(tasksRoot);
+        (uint256 tasksRootLow, uint256 tasksRootHigh) = Uint256Splitter
+            .split128(tasksRootUint);
+        uint256 resultsRootUint = uint256(resultsRoot);
+        (uint256 resultsRootLow, uint256 resultsRootHigh) = Uint256Splitter
+            .split128(resultsRootUint);
+        // root of tasks merkle tree
+        uint128 scheduledTasksBatchMerkleRootLow = uint128(tasksRootLow);
+        uint128 scheduledTasksBatchMerkleRootHigh = uint128(tasksRootHigh);
+        // root of result merkle tree
+        uint128 batchResultsMerkleRootLow = uint128(resultsRootLow);
+        uint128 batchResultsMerkleRootHigh = uint128(resultsRootHigh);
+
+        // MMR metadata
+        uint256 usedMmrId = 24;
+        uint256 usedMmrSize = 209371;
 
         // =================================
 
-        // Testing purpose, insert the fact into the registry
+        // Mocking Cairo Program, insert the fact into the registry
         bytes32 factHash = getFactHash(
             usedMmrId,
             usedMmrSize,
@@ -360,7 +364,7 @@ contract HreExecutionStoreTest is Test {
             batchInclusionMerkleProofOfTasks,
             batchInclusionMerkleProofOfResults,
             computationalTasksResult,
-            taskHashes
+            taskCommitments
         );
 
         // Check if the task state is FINALIZED
