@@ -11,6 +11,7 @@ import {IAggregatorsFactory} from "../interfaces/IAggregatorsFactory.sol";
 import {BlockSampledDatalake, BlockSampledDatalakeCodecs} from "./datatypes/BlockSampledDatalakeCodecs.sol";
 import {IterativeDynamicLayoutDatalake, IterativeDynamicLayoutDatalakeCodecs} from "./datatypes/IterativeDynamicLayoutDatalakeCodecs.sol";
 import {ComputationalTask, ComputationalTaskCodecs} from "./datatypes/ComputationalTaskCodecs.sol";
+import {HexStringConverter} from "../lib/HexStringConverter.sol";
 
 contract HdpExecutionStore is AccessControl {
     using MerkleProof for bytes32[];
@@ -130,8 +131,8 @@ contract HdpExecutionStore is AccessControl {
         uint128 scheduledTasksBatchMerkleRootHigh,
         bytes32[][] memory batchInclusionMerkleProofOfTasks,
         bytes32[][] memory batchInclusionMerkleProofOfResults,
-        bytes[] calldata computationalTasksSerialized,
-        bytes32[] calldata computationalTasksResult
+        bytes32[] calldata computationalTasksResult,
+        bytes32[] calldata taskHashes
     ) external onlyOperator {
         // Load MMRs root
         bytes32 usedMmrRoot = loadMmrRoot(usedMmrId, usedMmrSize);
@@ -162,11 +163,7 @@ contract HdpExecutionStore is AccessControl {
         );
 
         // Loop through all the tasks in the batch
-        for (uint256 i = 0; i < computationalTasksSerialized.length; i++) {
-            bytes
-                memory computationalTaskSerialized = computationalTasksSerialized[
-                    i
-                ];
+        for (uint256 i = 0; i < computationalTasksResult.length; i++) {
             bytes32 computationalTaskResult = computationalTasksResult[i];
             bytes32[]
                 memory batchInclusionMerkleProofOfTask = batchInclusionMerkleProofOfTasks[
@@ -187,25 +184,30 @@ contract HdpExecutionStore is AccessControl {
                 (uint256(scheduledTasksBatchMerkleRootHigh) << 128) |
                     uint256(scheduledTasksBatchMerkleRootLow)
             );
+            bytes32 taskHash = taskHashes[i];
+            bytes32 taskMerkleLeaf = standardLeafHash(
+                HexStringConverter.toHex(taskHash)
+            );
 
             // Ensure that the task is included in the batch, by verifying the Merkle proof
-            bytes32 taskHash = keccak256(computationalTaskSerialized);
             bool is_verified_task = batchInclusionMerkleProofOfTask.verify(
                 scheduledTasksBatchMerkleRoot,
-                taskHash
+                taskMerkleLeaf
             );
             require(
                 is_verified_task,
                 "HdpExecutionStore: task is not included in the batch"
             );
 
-            // Ensure that the task result is included in the batch, by verifying the Merkle proof
             bytes32 taskResultHash = keccak256(
                 abi.encode(taskHash, computationalTaskResult)
             );
+            bytes32 taskResultMerkleLeaf = standardLeafHash(
+                HexStringConverter.toHex(taskResultHash)
+            );
             bool is_verified_result = batchInclusionMerkleProofOfResult.verify(
                 batchResultsMerkleRoot,
-                taskResultHash
+                taskResultMerkleLeaf
             );
             require(
                 is_verified_result,
@@ -213,7 +215,7 @@ contract HdpExecutionStore is AccessControl {
             );
 
             // Store the task result
-            cachedTasksResult[taskResultHash] = TaskResult({
+            cachedTasksResult[taskHash] = TaskResult({
                 status: TaskStatus.FINALIZED,
                 result: computationalTaskResult
             });
@@ -245,5 +247,17 @@ contract HdpExecutionStore is AccessControl {
         bytes32 taskResultHash
     ) external view returns (TaskStatus) {
         return cachedTasksResult[taskResultHash].status;
+    }
+
+    function standardLeafHash(
+        string memory value
+    ) public pure returns (bytes32) {
+        // First hash: encode the value and hash it
+        bytes32 firstHash = keccak256(abi.encode(value));
+
+        // Second hash: hash the result of the first hash
+        bytes32 leaf = keccak256(abi.encode(firstHash));
+
+        return leaf;
     }
 }

@@ -12,6 +12,7 @@ import {IFactsRegistry} from "../../src/interfaces/IFactsRegistry.sol";
 import {ISharpFactsAggregator} from "../../src/interfaces/ISharpFactsAggregator.sol";
 import {IAggregatorsFactory} from "../../src/interfaces/IAggregatorsFactory.sol";
 import {Uint256Splitter} from "../../src/lib/Uint256Splitter.sol";
+import {HexStringConverter} from "../../src/lib/HexStringConverter.sol";
 
 contract MockFactsRegistry is IFactsRegistry {
     mapping(bytes32 => bool) public isValid;
@@ -70,15 +71,15 @@ contract HreExecutionStoreTest is Test {
         aggregatorsFactory.createAggregator(24, sharpFactsAggregator);
 
         assertTrue(hdp.hasRole(keccak256("OPERATOR_ROLE"), address(this)));
-        bytes32 admin_role = hdp.getRoleAdmin(keccak256("OPERATOR_ROLE"));
-        console.logBytes32(admin_role);
+
         hdp.grantRole(keccak256("OPERATOR_ROLE"), proverAddress);
     }
 
     function test_ExecutionOfTaskWithBlockSampledDatalake() public {
+        // Note: Step 1. HDP Server receives a request
         // [1 Request = N Tasks] Request execution of task with block sampled datalake
         BlockSampledDatalake memory datalake = BlockSampledDatalake({
-            blockRangeStart: 10399990,
+            blockRangeStart: 10399900,
             blockRangeEnd: 10400000,
             increment: 1,
             sampledProperty: BlockSampledDatalakeCodecs
@@ -101,42 +102,72 @@ contract HreExecutionStoreTest is Test {
             aggregateFnId: uint256(bytes32("max")),
             aggregateFnCtx: ""
         });
+
         // =================================
 
-        // Emit the event in there when call request
+        // Note: Step 2. HDP Server call [`requestExecutionOfTaskWithBlockSampledDatalake`] before processing
         hdp.requestExecutionOfTaskWithBlockSampledDatalake(
             datalake,
             computationalTask1,
             24
         );
-
-        // Emit the event in there when call request
         hdp.requestExecutionOfTaskWithBlockSampledDatalake(
             datalake,
             computationalTask2,
             24
         );
-        // Emit the event in there when call request
         hdp.requestExecutionOfTaskWithBlockSampledDatalake(
             datalake,
             computationalTask3,
             24
         );
-        // Emit the event in there when call request
         hdp.requestExecutionOfTaskWithBlockSampledDatalake(
             datalake,
             computationalTask4,
             24
         );
 
-        // Compute commitment of the datalake and the task
+        // =================================
+
+        // Note: This step is mocking requestExecutionOfTaskWithBlockSampledDatalake
+        // create identifier to check request done correctly
         bytes32 datalakeCommitment = datalake.commit();
         bytes32 task1Commitment = computationalTask1.commit(datalakeCommitment);
         bytes32 task2Commitment = computationalTask2.commit(datalakeCommitment);
         bytes32 task3Commitment = computationalTask3.commit(datalakeCommitment);
         bytes32 task4Commitment = computationalTask4.commit(datalakeCommitment);
+        assertEq(
+            datalakeCommitment,
+            bytes32(
+                0x1b7096196e2e7022ef6030726ba512384512b9fd483c7a1e53f88a2411dbdff9
+            )
+        );
+        assertEq(
+            task1Commitment,
+            bytes32(
+                0x1e2311a8fce262c0dd562a3a8f2941dde20456e4648513c027e57d9a2e42a0fd
+            )
+        );
+        assertEq(
+            task2Commitment,
+            bytes32(
+                0xdc5a74b4a205ded78770a65ac344e719d8dfccf9785cb04f6a0660d94f1db15e
+            )
+        );
+        assertEq(
+            task3Commitment,
+            bytes32(
+                0x61af66bad6d54996439357d980be477385a6535493d4590bc3a86625cc750e5a
+            )
+        );
+        assertEq(
+            task4Commitment,
+            bytes32(
+                0x5e5d94142d4abb2d117ee80ad1fdb8f147a0cb3f48d1b4cd02135a1eb21b1c35
+            )
+        );
 
-        // Check if the task state is PENDING
+        // Check the task state is PENDING
         HdpExecutionStore.TaskStatus task1Status = hdp.getTaskStatus(
             task1Commitment
         );
@@ -166,6 +197,15 @@ contract HreExecutionStoreTest is Test {
             uint(HdpExecutionStore.TaskStatus.SCHEDULED)
         );
 
+        // =================================
+
+        // Note: Step 3. HDP Server process the request sending the tasks to the Rust HDP
+        // This step is mocking cli call to Rust HDP
+
+        // Request to cli
+
+        // =================================
+
         // Encode datalakes
         bytes[] memory encodedDatalakes = new bytes[](4);
         encodedDatalakes[0] = datalake.encode();
@@ -176,23 +216,22 @@ contract HreExecutionStoreTest is Test {
         // Encode tasks
         bytes[] memory computationalTasksSerialized = new bytes[](4);
         computationalTasksSerialized[0] = computationalTask1.encode();
-        console.logBytes(computationalTasksSerialized[0]);
         computationalTasksSerialized[1] = computationalTask2.encode();
-        console.logBytes(computationalTasksSerialized[1]);
         computationalTasksSerialized[2] = computationalTask3.encode();
-        console.logBytes(computationalTasksSerialized[2]);
         computationalTasksSerialized[3] = computationalTask4.encode();
-        console.logBytes(computationalTasksSerialized[3]);
+
+        bytes32[] memory taskHashes = new bytes32[](4);
+        taskHashes[0] = task1Commitment;
+        taskHashes[1] = task2Commitment;
+        taskHashes[2] = task3Commitment;
+        taskHashes[3] = task4Commitment;
 
         // =================================
 
-        // (bytes32 tasksRoot, bytes32 resultsRoot) = processBatchThroughFFI(
-        //     encodedDatalakes,
-        //     computationalTasksSerialized
-        // );
+        // Response from cli
 
-        bytes32 tasksRoot = 0x3e9e89351322b1e2dce3a766303f50797d6faeaf58d4175eaaa519770453a4f1;
-        bytes32 resultsRoot = 0x147ed0b4f5fe3b4fed7db00142e639de72fa741b40355898d2f66996cd557bbb;
+        bytes32 tasksRoot = 0x772a7bb6877855fdde90d6d8bddde781e23d08cea8cd32822c839e1061732626;
+        bytes32 resultsRoot = 0xc1371339523fe5d5e3082a4eda5cbf1d5d2ec2960af43b64e0cfb140c9be9448;
 
         uint256 tasksRootUint = uint256(tasksRoot);
         (uint256 tasksRootLow, uint256 tasksRootHigh) = Uint256Splitter
@@ -223,31 +262,31 @@ contract HreExecutionStoreTest is Test {
         ] = 0xdaeb56b4fed841576996ff1710a1fa0f1b2f8a4ff73c3b0b1453db93bd7868e5;
         InclusionMerkleProofOfTask1[
             1
-        ] = 0x185ef0e2af28c57afed0f4d0a2f4c1d8a5d91a303819c13fd7847b213fb25aaf;
+        ] = 0x395cbedd6ffad46de3d5dfa879d46c3b9767fbdeb61b80fbe0f352b8da9436aa;
         batchInclusionMerkleProofOfTasks[0] = InclusionMerkleProofOfTask1;
         bytes32[] memory InclusionMerkleProofOfTask2 = new bytes32[](2);
         InclusionMerkleProofOfTask2[
             0
-        ] = 0x6019bcfc2e4ee019364f70c25f2632f52babb5875780e62ed5f5fdf09fbc361c;
+        ] = 0xefe80ee09ad6352ebb1bc03ce4be55ba8ba5660d992478647a1e9a5d85739c14;
         InclusionMerkleProofOfTask2[
             1
-        ] = 0x185ef0e2af28c57afed0f4d0a2f4c1d8a5d91a303819c13fd7847b213fb25aaf;
+        ] = 0x395cbedd6ffad46de3d5dfa879d46c3b9767fbdeb61b80fbe0f352b8da9436aa;
         batchInclusionMerkleProofOfTasks[1] = InclusionMerkleProofOfTask2;
         bytes32[] memory InclusionMerkleProofOfTask3 = new bytes32[](2);
         InclusionMerkleProofOfTask3[
             0
-        ] = 0xefe80ee09ad6352ebb1bc03ce4be55ba8ba5660d992478647a1e9a5d85739c14;
+        ] = 0x83e5c05e645f433031b3c2123d7ec5ac00262571c5ed8e8af486c9e9784b46e2;
         InclusionMerkleProofOfTask3[
             1
-        ] = 0x200418e5706f9ef2e6bc3795371df8a00aa8076a7f57b24ec9f434a39a997511;
+        ] = 0x0e4c976d1270b096d54f626eb869c5492e858e95c0a0c791ad98465870829794;
         batchInclusionMerkleProofOfTasks[2] = InclusionMerkleProofOfTask3;
         bytes32[] memory InclusionMerkleProofOfTask4 = new bytes32[](2);
         InclusionMerkleProofOfTask4[
             0
-        ] = 0x83e5c05e645f433031b3c2123d7ec5ac00262571c5ed8e8af486c9e9784b46e2;
+        ] = 0x6019bcfc2e4ee019364f70c25f2632f52babb5875780e62ed5f5fdf09fbc361c;
         InclusionMerkleProofOfTask4[
             1
-        ] = 0x200418e5706f9ef2e6bc3795371df8a00aa8076a7f57b24ec9f434a39a997511;
+        ] = 0x0e4c976d1270b096d54f626eb869c5492e858e95c0a0c791ad98465870829794;
         batchInclusionMerkleProofOfTasks[3] = InclusionMerkleProofOfTask4;
 
         // proof of the result
@@ -260,23 +299,23 @@ contract HreExecutionStoreTest is Test {
         ] = 0xfe1ff2228e787f8aebe51c3c66d268b750d002c5ad01eec8e95263decce2db51;
         InclusionMerkleProofOfResult1[
             1
-        ] = 0x9a288c7072b2704bd59780c0d78e287451a0a942976d54278b5633d34c05003a;
+        ] = 0x61cc85832a6c21a82e382f2ee3e6463ad010cadf33d48d7ac218f86f6dcbd391;
         batchInclusionMerkleProofOfResults[0] = InclusionMerkleProofOfResult1;
         bytes32[] memory InclusionMerkleProofOfResult2 = new bytes32[](2);
         InclusionMerkleProofOfResult2[
             0
-        ] = 0x30979630f4683a16bbaa655005717e678488bf03648fb99df9719f45506878d2;
+        ] = 0x64e5fda40eb8f1bd3e6fcaf42b6c51be9df9e316b8161d279b837962bedd2050;
         InclusionMerkleProofOfResult2[
             1
-        ] = 0x76ea4d4b233cc5d64c4c20890f455d26714a137d278745db622a53aed4fce786;
+        ] = 0x61cc85832a6c21a82e382f2ee3e6463ad010cadf33d48d7ac218f86f6dcbd391;
         batchInclusionMerkleProofOfResults[1] = InclusionMerkleProofOfResult2;
         bytes32[] memory InclusionMerkleProofOfResult3 = new bytes32[](2);
         InclusionMerkleProofOfResult3[
             0
-        ] = 0x64e5fda40eb8f1bd3e6fcaf42b6c51be9df9e316b8161d279b837962bedd2050;
+        ] = 0x30979630f4683a16bbaa655005717e678488bf03648fb99df9719f45506878d2;
         InclusionMerkleProofOfResult3[
             1
-        ] = 0xb2b545f46a4e0cebf7c9f807092c655250ee3ed393deaf8b7d5dc76b30c06680;
+        ] = 0x15242a688e06db6ab78e51ecfb61e3a82c39f7e2ebd32c49bb71294dbf0f7a32;
         batchInclusionMerkleProofOfResults[2] = InclusionMerkleProofOfResult3;
         bytes32[] memory InclusionMerkleProofOfResult4 = new bytes32[](2);
         InclusionMerkleProofOfResult4[
@@ -284,14 +323,16 @@ contract HreExecutionStoreTest is Test {
         ] = 0xa453776e9580b25b9117a8eb1ed970f4b3e01998e947561f253108749d1cf4a8;
         InclusionMerkleProofOfResult4[
             1
-        ] = 0xb2b545f46a4e0cebf7c9f807092c655250ee3ed393deaf8b7d5dc76b30c06680;
+        ] = 0x15242a688e06db6ab78e51ecfb61e3a82c39f7e2ebd32c49bb71294dbf0f7a32;
         batchInclusionMerkleProofOfResults[3] = InclusionMerkleProofOfResult4;
 
         bytes32[] memory computationalTasksResult = new bytes32[](4);
-        computationalTasksResult[0] = bytes32(uint256(17000000000000000000));
+        computationalTasksResult[0] = bytes32(uint256(11683168316831682560));
         computationalTasksResult[1] = bytes32(uint256(1180000000000000000000));
         computationalTasksResult[2] = bytes32(uint256(10000000000000000000));
-        computationalTasksResult[3] = bytes32(uint256(11683168316831682560));
+        computationalTasksResult[3] = bytes32(uint256(17000000000000000000));
+
+        // =================================
 
         // Testing purpose, insert the fact into the registry
         bytes32 factHash = getFactHash(
@@ -318,8 +359,8 @@ contract HreExecutionStoreTest is Test {
             scheduledTasksBatchMerkleRootHigh,
             batchInclusionMerkleProofOfTasks,
             batchInclusionMerkleProofOfResults,
-            computationalTasksSerialized,
-            computationalTasksResult
+            computationalTasksResult,
+            taskHashes
         );
 
         // Check if the task state is FINALIZED
@@ -370,26 +411,19 @@ contract HreExecutionStoreTest is Test {
         uint128 batchResultsMerkleRootHigh,
         uint128 scheduledTasksBatchMerkleRootLow,
         uint128 scheduledTasksBatchMerkleRootHigh
-    ) internal returns (bytes32) {
+    ) internal view returns (bytes32) {
         // Load MMRs root
         bytes32 usedMmrRoot = hdp.loadMmrRoot(usedMmrId, usedMmrSize);
-        console.logBytes32(usedMmrRoot);
         // Initialize an array of uint256 to store the program output
         uint256[] memory programOutput = new uint256[](6);
 
         // Assign values to the program output array
         programOutput[0] = uint256(usedMmrRoot);
-        console.logBytes32(usedMmrRoot);
         programOutput[1] = uint256(usedMmrSize);
-        console.logUint(usedMmrSize);
         programOutput[2] = uint256(batchResultsMerkleRootLow);
-        console.logUint(batchResultsMerkleRootLow);
         programOutput[3] = uint256(batchResultsMerkleRootHigh);
-        console.logUint(batchResultsMerkleRootHigh);
         programOutput[4] = uint256(scheduledTasksBatchMerkleRootLow);
-        console.logUint(scheduledTasksBatchMerkleRootLow);
         programOutput[5] = uint256(scheduledTasksBatchMerkleRootHigh);
-        console.logUint(scheduledTasksBatchMerkleRootHigh);
 
         // Compute program output hash
         bytes32 programOutputHash = keccak256(abi.encode(programOutput));
@@ -408,41 +442,4 @@ contract HreExecutionStoreTest is Test {
 
         return gpsFactHash;
     }
-
-    // function processBatchThroughFFI(
-    //     bytes[] memory encodedDatalakes,
-    //     bytes[] memory encodedComputationalTasks
-    // ) internal returns (bytes32 tasksRoot, bytes32 resultsRoot) {
-    //     // Ensure length match
-    //     require(
-    //         encodedDatalakes.length == encodedComputationalTasks.length,
-    //         "Length mismatch"
-    //     );
-
-    //     // Concatenate all elements into two big hexadecimal strings
-    //     // TODO:not
-    //     // string memory datalakesHex = Utf8ToHexString.concatenateBytesArray(
-    //     //     encodedDatalakes
-    //     // );
-    //     // string memory tasksHex = Utf8ToHexString.concatenateBytesArray(
-    //     //     encodedComputationalTasks
-    //     // );
-
-    //     string[] memory inputsExtended = new string[](5);
-    //     // TODO: not generalized path
-    //     inputsExtended[0] = "/Users/piapark/.cargo/bin/hdp";
-    //     inputsExtended[1] = "run";
-    //     inputsExtended[
-    //         2
-    //     ] = "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000018000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000060617667000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006073756d00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000606d696e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000606d6178000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000000";
-    //     inputsExtended[
-    //         3
-    //     ] = "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000001800000000000000000000000000000000000000000000000000000000000000280000000000000000000000000000000000000000000000000000000000000038000000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000009eb09c00000000000000000000000000000000000000000000000000000000009eb100000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000002010f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000009eb09c00000000000000000000000000000000000000000000000000000000009eb100000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000002010f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000009eb09c00000000000000000000000000000000000000000000000000000000009eb100000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000002010f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000009eb09c00000000000000000000000000000000000000000000000000000000009eb100000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000002010f000000000000000000000000000000000000000000000000000000000000";
-    //     inputsExtended[
-    //         4
-    //     ] = "https://eth-goerli.g.alchemy.com/v2/OcJWF4RZDjyeCWGSmWChIlMEV28LtA5c";
-
-    //     bytes memory outputExtended = vm.ffi(inputsExtended);
-    //     console.logBytes(outputExtended);
-    // }
 }
