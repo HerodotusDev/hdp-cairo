@@ -108,23 +108,19 @@ contract HreExecutionStoreTest is Test {
         // Note: Step 2. HDP Server call [`requestExecutionOfTaskWithBlockSampledDatalake`] before processing
         hdp.requestExecutionOfTaskWithBlockSampledDatalake(
             datalake,
-            computationalTask1,
-            24
+            computationalTask1
         );
         hdp.requestExecutionOfTaskWithBlockSampledDatalake(
             datalake,
-            computationalTask2,
-            24
+            computationalTask2
         );
         hdp.requestExecutionOfTaskWithBlockSampledDatalake(
             datalake,
-            computationalTask3,
-            24
+            computationalTask3
         );
         hdp.requestExecutionOfTaskWithBlockSampledDatalake(
             datalake,
-            computationalTask4,
-            24
+            computationalTask4
         );
 
         // =================================
@@ -338,6 +334,9 @@ contract HreExecutionStoreTest is Test {
 
         // =================================
 
+        // Cache MMR root
+        hdp.cacheMmrRoot(usedMmrId);
+
         // Mocking Cairo Program, insert the fact into the registry
         bytes32 factHash = getFactHash(
             usedMmrId,
@@ -350,6 +349,8 @@ contract HreExecutionStoreTest is Test {
         factsRegistry.markValid(factHash);
         bool is_valid = factsRegistry.isValid(factHash);
         assertEq(is_valid, true);
+
+        // =================================
 
         // Check if the request is valid in the SHARP Facts Registry
         // If valid, Store the task result

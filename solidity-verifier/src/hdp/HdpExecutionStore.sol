@@ -100,11 +100,11 @@ contract HdpExecutionStore is AccessControl {
     }
 
     /// @notice Requests the execution of a task with a block sampled datalake
-    /// @param usedMmrId The id of the MMR used to compute task
+    /// @param blockSampledDatalake The block sampled datalake
+    /// @param computationalTask The computational task
     function requestExecutionOfTaskWithBlockSampledDatalake(
         BlockSampledDatalake calldata blockSampledDatalake,
-        ComputationalTask calldata computationalTask,
-        uint256 usedMmrId
+        ComputationalTask calldata computationalTask
     ) external {
         bytes32 datalakeCommitment = blockSampledDatalake.commit();
         bytes32 taskCommitment = computationalTask.commit(datalakeCommitment);
@@ -120,9 +120,6 @@ contract HdpExecutionStore is AccessControl {
             status: TaskStatus.SCHEDULED,
             result: ""
         });
-
-        // Cache MMR root
-        cacheMmrRoot(usedMmrId);
     }
 
     /// @notice Authenticates the execution of a task is finalized
