@@ -46,7 +46,7 @@ library HexStringConverter {
         );
     }
 
-    function toHex(bytes32 data) public pure returns (string memory) {
+    function toHex(bytes32 data) internal pure returns (string memory) {
         return
             string(
                 abi.encodePacked(
