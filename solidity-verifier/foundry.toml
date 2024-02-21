@@ -6,6 +6,7 @@ gas_reports = ["*"]
 optimizer = true
 optimizer_runs = 20000
 ffi = true
+viaIR = true
 
 [rpc_endpoints]
 goerli = "${GOERLI_RPC_URL}"
