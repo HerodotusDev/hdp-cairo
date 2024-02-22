@@ -409,6 +409,51 @@ contract HreExecutionStoreTest is Test {
         assertEq(task4Result, computationalTasksResult[3]);
     }
 
+    function testFactHashWithServer() public {
+        uint256 usedMmrId = 1;
+        uint256 usedMmrSize = 2397;
+        uint256 taskMerkleRoot = uint256(
+            bytes32(
+                0x730f1037780b3b53cfaecdb95fc648ce719479a58afd4325a62b0c5e09e83090
+            )
+        );
+        (uint256 taskRootLow, uint256 taskRootHigh) = Uint256Splitter.split128(
+            taskMerkleRoot
+        );
+        uint128 scheduledTasksBatchMerkleRootLow = 0x719479a58afd4325a62b0c5e09e83090;
+        uint128 scheduledTasksBatchMerkleRootHigh = 0x730f1037780b3b53cfaecdb95fc648ce;
+        assertEq(scheduledTasksBatchMerkleRootLow, taskRootLow);
+        assertEq(scheduledTasksBatchMerkleRootHigh, taskRootHigh);
+
+        uint256 resultMerkleRoot = uint256(
+            bytes32(
+                0xb65f3b91a4ee075433cc735ce53857b0fe215e96c83498ff6eaba24e09892e4b
+            )
+        );
+        (uint256 resultRootLow, uint256 resultRootHigh) = Uint256Splitter
+            .split128(resultMerkleRoot);
+        uint128 batchResultsMerkleRootLow = 0xfe215e96c83498ff6eaba24e09892e4b;
+        uint128 batchResultsMerkleRootHigh = 0xb65f3b91a4ee075433cc735ce53857b0;
+        assertEq(batchResultsMerkleRootLow, resultRootLow);
+        assertEq(batchResultsMerkleRootHigh, resultRootHigh);
+
+        bytes32 factHash = getFactHash(
+            usedMmrId,
+            usedMmrSize,
+            batchResultsMerkleRootLow,
+            batchResultsMerkleRootHigh,
+            scheduledTasksBatchMerkleRootLow,
+            scheduledTasksBatchMerkleRootHigh
+        );
+
+        assertEq(
+            factHash,
+            bytes32(
+                0x0cbe06fd748ba4f3517eebe5e8549528f970c1dc7ec8344908b6682c6230c9e9
+            )
+        );
+    }
+
     function getFactHash(
         uint256 usedMmrId,
         uint256 usedMmrSize,
