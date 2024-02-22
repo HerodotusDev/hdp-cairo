@@ -45,7 +45,7 @@ contract HdpExecutionStore is AccessControl {
     bytes32 public constant PROGRAM_HASH =
         bytes32(
             uint256(
-                0x1e0a58cc90bb6708f3c36a9cc503ffdcc3488b9aa57ccdbf0c18ae69d1c76ea
+                0x66154754a3e3a07b6bb7f1a6c2259703621f4d1f616b5f4ae74d9863d74fba9
             )
         );
 
