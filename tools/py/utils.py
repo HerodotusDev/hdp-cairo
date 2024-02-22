@@ -45,6 +45,13 @@ def bytes_to_8_bytes_chunks(input_bytes):
     big_endian_ints = [int.from_bytes(chunk, byteorder="big") for chunk in byte_chunks]
     return big_endian_ints
 
+def bytes_to_16_bytes_chunks(input_bytes):
+    # Split the input_bytes into 8-byte chunks
+    byte_chunks = [input_bytes[i : i + 16] for i in range(0, len(input_bytes), 16)]
+    # Convert each chunk to big-endian integers
+    big_endian_ints = [int.from_bytes(chunk, byteorder="big") for chunk in byte_chunks]
+    return big_endian_ints
+
 
 def write_to_json(filename, data):
     """Helper function to write data to a json file"""

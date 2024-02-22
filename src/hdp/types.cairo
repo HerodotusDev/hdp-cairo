@@ -59,3 +59,30 @@ struct SlotState {
     low: felt,
     high: felt,
 }
+
+struct BlockSampledHeader {
+    block_range_start: felt,
+    block_range_end: felt,
+    increment: felt,
+    property: felt,
+    hash: Uint256,
+}
+
+struct BlockSampledAccount {
+    block_range_start: felt,
+    block_range_end: felt,
+    increment: felt,
+    address: felt*,
+    property: felt,
+    hash: Uint256,
+}
+
+struct BlockSampledAccountSlot {
+    block_range_start: felt,
+    block_range_end: felt,
+    increment: felt,
+    address: felt*,
+    slot: felt*,
+    property: felt,
+    hash: Uint256,
+}
