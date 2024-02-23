@@ -6,20 +6,7 @@ from starkware.cairo.common.bitwise import bitwise_xor
 from src.libs.utils import word_reverse_endian_64, word_reverse_endian_16_RC
 from src.hdp.types import BlockSampledHeader, BlockSampledAccount, BlockSampledAccountSlot
 
-func hash_block_sampled{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
-} (input: felt*, input_bytes_len: felt) -> (hash: Uint256) {
-    alloc_locals;
-
-    let (hash: Uint256) = keccak(input, input_bytes_len);
-
-    %{
-        print(f"hash_block_sampled: {hex(ids.hash.high)} {hex(ids.hash.low)}")
-    %}
-
-    return (hash=hash);
-}
-
+// Creates a BlockSampledHeader from the input bytes
 func decode_header_input{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -27,11 +14,7 @@ func decode_header_input{
 }(input: felt*, input_bytes_len: felt) -> BlockSampledHeader {
     alloc_locals;
 
-    let (hash) = hash_block_sampled{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        keccak_ptr=keccak_ptr   
-    }(input=input, input_bytes_len=input_bytes_len);
+    let (hash: Uint256) = keccak(input, input_bytes_len);
 
     let (block_range_start, block_range_end, increment) = extract_constant_params{
         range_check_ptr=range_check_ptr
@@ -52,6 +35,7 @@ func decode_header_input{
     ));
 }
 
+// Creates a BlockSampledAccount from the input bytes
 func decode_account_input{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -59,11 +43,7 @@ func decode_account_input{
 }(input: felt*, input_bytes_len: felt) -> BlockSampledAccount {
     alloc_locals;
 
-    let (hash) = hash_block_sampled{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        keccak_ptr=keccak_ptr   
-    }(input=input, input_bytes_len=input_bytes_len);
+    let (hash: Uint256) = keccak(input, input_bytes_len);
 
     let (block_range_start, block_range_end, increment) = extract_constant_params{
         range_check_ptr=range_check_ptr
@@ -91,6 +71,7 @@ func decode_account_input{
     ));
 }
 
+// Creates a BlockSampledAccountSlot from the input bytes
 func decode_account_slot_input{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -98,11 +79,7 @@ func decode_account_slot_input{
 }(input: felt*, input_bytes_len: felt) -> BlockSampledAccountSlot {
     alloc_locals;
 
-    let (hash) = hash_block_sampled{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        keccak_ptr=keccak_ptr   
-    }(input=input, input_bytes_len=input_bytes_len);
+    let (hash: Uint256) = keccak(input, input_bytes_len);
 
     let (block_range_start, block_range_end, increment) = extract_constant_params{
         range_check_ptr=range_check_ptr

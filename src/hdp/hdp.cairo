@@ -5,6 +5,8 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
+from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
+from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
 
 from src.hdp.types import Header, HeaderProof, MMRMeta, Account, AccountState, AccountSlot, SlotState, BlockSampledAccountSlot, ComputationalTask
 from src.hdp.mmr import verify_mmr_meta
@@ -29,7 +31,6 @@ func main{
 }() {
     alloc_locals;
     local results_root: Uint256;
-    local tasks_root: Uint256;
 
     // Header Params
     local headers_len: felt;
@@ -45,7 +46,6 @@ func main{
     let (account_slots: AccountSlot*) = alloc();
     let (account_slots_states: AccountState**) = alloc();
     local account_slots_len: felt;
-
 
     let (slot_states: SlotState*) = alloc();
 
@@ -94,8 +94,6 @@ func main{
 
         ids.results_root.low = hex_to_int(program_input["results_root"]["low"])
         ids.results_root.high = hex_to_int(program_input["results_root"]["high"])
-        ids.tasks_root.low = hex_to_int(program_input["tasks_root"]["low"])
-        ids.tasks_root.high = hex_to_int(program_input["tasks_root"]["high"])
         
         # MMR Meta
         write_mmr_meta(program_input['header_batches'][0]['mmr_meta'])
@@ -140,6 +138,11 @@ func main{
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
     } (task_input, task_bytes_len, block_sampled_account_slot);
+
+    let tasks_root = hash_tasks_root{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+    } (task.hash);
 
     // Check 2: Ensure the header is contained in a peak, and that the peak is known
     verify_headers_inclusion{
@@ -255,4 +258,49 @@ func main{
     let output_ptr = output_ptr + 5;
 
     return();
+}
+
+func hash_tasks_root{
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
+}(hash: Uint256) -> Uint256 {
+    alloc_locals;
+    let (first_round_input) = alloc();
+    let first_round_input_start = first_round_input;
+
+    // convert to felts
+    keccak_add_uint256{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        inputs=first_round_input
+    }(
+        num=hash,
+        bigend=0
+    );
+
+    // hash first round
+    let (first_hash) = keccak(first_round_input_start, 32);
+
+    let (second_round_input) = alloc();
+    let second_round_input_start = second_round_input;
+    keccak_add_uint256{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        inputs=second_round_input
+    }(
+        num=first_hash,
+        bigend=0
+    );
+
+    let (result) = keccak_bigend(second_round_input_start, 32);
+
+   
+    %{
+        print(f"result.low: {hex(ids.result.low)}")
+        print(f"result.high: {hex(ids.result.high)}")
+    
+    %}
+
+    return result;
 }
