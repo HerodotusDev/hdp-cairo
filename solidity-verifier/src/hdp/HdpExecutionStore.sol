@@ -42,12 +42,7 @@ contract HdpExecutionStore is AccessControl {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
     /// @notice constant representing the hash of the Cairo HDP program
-    bytes32 public constant PROGRAM_HASH =
-        bytes32(
-            uint256(
-                0x1c8cc7762ed906ffd62867aa102adce05db50358a0224524f657ef23d0b7a5
-            )
-        );
+    bytes32 public constant PROGRAM_HASH = 0x001c8cc7762ed906ffd62867aa102adce05db50358a0224524f657ef23d0b7a5;
 
     /// @notice interface to the facts registry of SHARP
     IFactsRegistry public immutable SHARP_FACTS_REGISTRY;

@@ -648,23 +648,28 @@ contract HreExecutionStoreTest is Test {
 
         // Assign values to the program output array
         programOutput[0] = uint256(usedMmrRoot);
+        console.logBytes32(usedMmrRoot);
+        console.logUint(programOutput[0]);
         programOutput[1] = uint256(usedMmrSize);
+        console.logUint(programOutput[1]);
         programOutput[2] = uint256(batchResultsMerkleRootLow);
+        console.logUint( programOutput[2]);
         programOutput[3] = uint256(batchResultsMerkleRootHigh);
+        console.logUint(programOutput[3]);
         programOutput[4] = uint256(scheduledTasksBatchMerkleRootLow);
+        console.logUint( programOutput[4] );
         programOutput[5] = uint256(scheduledTasksBatchMerkleRootHigh);
+        console.logUint( programOutput[5]);
 
         // Compute program output hash
         bytes32 programOutputHash = keccak256(abi.encode(programOutput));
+        console.logBytes32(programOutputHash);
 
         // Compute GPS fact hash
+        bytes32 programHash = 0x001c8cc7762ed906ffd62867aa102adce05db50358a0224524f657ef23d0b7a5;
         bytes32 gpsFactHash = keccak256(
             abi.encode(
-                bytes32(
-                    uint256(
-                        0x1c8cc7762ed906ffd62867aa102adce05db50358a0224524f657ef23d0b7a5
-                    )
-                ),
+                programHash,
                 programOutputHash
             )
         );
