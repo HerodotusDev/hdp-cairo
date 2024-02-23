@@ -6,7 +6,7 @@ from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.bitwise import bitwise_xor
 from src.libs.utils import word_reverse_endian_64, word_reverse_endian_16_RC
-from src.hdp.types import BlockSampledHeader, BlockSampledAccount
+from src.hdp.types import BlockSampledHeader, BlockSampledAccount, BlockSampledAccountSlot
 
 func hash_block_sampled{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
@@ -93,6 +93,47 @@ func decode_account_input{
     ));
 }
 
+func decode_slot_input{
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
+}(input: felt*, input_bytes_len: felt) -> BlockSampledAccountSlot {
+    alloc_locals;
+
+    let (hash) = hash_block_sampled{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        keccak_ptr=keccak_ptr   
+    }(input=input, input_bytes_len=input_bytes_len);
+
+    let (block_range_start, block_range_end, increment) = extract_constant_params{
+        range_check_ptr=range_check_ptr
+    }(input=input);
+
+    let (id, address) = extract_id_and_address{
+        bitwise_ptr=bitwise_ptr
+    }(chunk_one=[input + 24], chunk_two=[input + 25], chunk_three=[input + 26]);
+
+    assert id = 3; // enforces slot type
+   
+    let (slot: felt*) = alloc();
+
+    extract_slot{
+        bitwise_ptr=bitwise_ptr
+    }(chunks=input + 26, idx=0, max_idx=4, slot=slot);
+
+
+    return (BlockSampledAccountSlot(
+        block_range_start=block_range_start,
+        block_range_end=block_range_end,
+        increment=increment,
+        address=address,
+        slot=slot,
+        hash=hash
+    ));
+}
+
+
 func main{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -111,21 +152,27 @@ func main{
         # header_prop
         #dl_bytes =bytes.fromhex("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000009eb09c00000000000000000000000000000000000000000000000000000000009eb100000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000002010f000000000000000000000000000000000000000000000000000000000000")
         # account
-        dl_bytes = bytes.fromhex("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000009eb09c00000000000000000000000000000000000000000000000000000000009eb100000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000016025b38da6a701c568545dcfcb03fcb875f56beddc40300000000000000000000")
-        le_input = bytes_to_8_bytes_chunks_little(dl_bytes)
+        #dl_bytes = bytes.fromhex("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000009eb09c00000000000000000000000000000000000000000000000000000000009eb100000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000016025b38da6a701c568545dcfcb03fcb875f56beddc40300000000000000000000")
 
-        print([hex(val) for val in bytes_to_8_bytes_chunks_little(bytes.fromhex("5B38Da6a701c568545dCfcB03FcB875f56beddC4"))])
+        # slot
+        dl_bytes = bytes.fromhex("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000009eb09c00000000000000000000000000000000000000000000000000000000009eb100000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000035035b38da6a701c568545dcfcb03fcb875f56beddc4339bee47335c234581644b387f7f0d28db05ad5b092e1152fc70647d559cef220000000000000000000000")
+
+        slot = bytes_to_8_bytes_chunks_little(bytes.fromhex("339bee47335c234581644b387f7f0d28db05ad5b092e1152fc70647d559cef22"))
+
+        le_input = bytes_to_8_bytes_chunks_little(dl_bytes)
 
         be_input = bytes_to_8_bytes_chunks(dl_bytes)
 
         input_hex = [hex(val) for val in le_input]
+        slot_hex = [hex(val) for val in slot]
         print(f"input: {input_hex}")
+        print(f"slot: {slot_hex}")
 
         ids.input_bytes_len = len(dl_bytes)
         ids.input = segments.gen_arg(le_input)
     %}
 
-    let header = decode_account_input{
+    let header = decode_slot_input{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr
@@ -134,6 +181,31 @@ func main{
     return ();
 }
 
+func extract_slot{
+    bitwise_ptr: BitwiseBuiltin*,
+} (chunks: felt*, idx: felt, max_idx: felt, slot: felt*) {
+
+    if(idx == max_idx) {
+        return ();
+    }
+
+    assert bitwise_ptr[0].x = [chunks];
+    assert bitwise_ptr[0].y = 0xffffff0000000000;
+    tempvar least_sig_bytes = bitwise_ptr[0].x_and_y / 0x10000000000;
+
+    assert bitwise_ptr[1].x = [chunks + 1]; 
+    assert bitwise_ptr[1].y = 0x000000ffffffffff;
+    tempvar most_significant_bytes = bitwise_ptr[1].x_and_y * 0x1000000;
+
+    assert [slot + idx] = most_significant_bytes + least_sig_bytes;
+
+    let slot_new = most_significant_bytes + least_sig_bytes;
+
+    let bitwise_ptr = bitwise_ptr + 2 * BitwiseBuiltin.SIZE;
+    return extract_slot{
+        bitwise_ptr=bitwise_ptr
+    }(chunks=chunks + 1, idx=idx + 1, max_idx=max_idx, slot=slot);
+}
 
 // Used for decoding the sampled property of block sampled headers. 
 // Accepted types: Account or AccountSlot

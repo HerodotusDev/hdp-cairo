@@ -83,6 +83,5 @@ struct BlockSampledAccountSlot {
     increment: felt,
     address: felt*,
     slot: felt*,
-    property: felt,
     hash: Uint256,
 }
