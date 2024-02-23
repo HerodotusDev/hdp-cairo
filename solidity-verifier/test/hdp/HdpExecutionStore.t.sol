@@ -593,26 +593,26 @@ contract HreExecutionStoreTest is Test {
         hdp.cacheMmrRoot(usedMmrId);
         uint256 taskMerkleRoot = uint256(
             bytes32(
-                0x730f1037780b3b53cfaecdb95fc648ce719479a58afd4325a62b0c5e09e83090
+                0x83b27e75443413a5448492c13d84d7220dd8bd3298d431b62cb265082c6a5b3a
             )
         );
         (uint256 taskRootLow, uint256 taskRootHigh) = Uint256Splitter.split128(
             taskMerkleRoot
         );
-        uint128 scheduledTasksBatchMerkleRootLow = 0x719479a58afd4325a62b0c5e09e83090;
-        uint128 scheduledTasksBatchMerkleRootHigh = 0x730f1037780b3b53cfaecdb95fc648ce;
+        uint128 scheduledTasksBatchMerkleRootLow = 0x0dd8bd3298d431b62cb265082c6a5b3a;
+        uint128 scheduledTasksBatchMerkleRootHigh = 0x83b27e75443413a5448492c13d84d722;
         assertEq(scheduledTasksBatchMerkleRootLow, taskRootLow);
         assertEq(scheduledTasksBatchMerkleRootHigh, taskRootHigh);
 
         uint256 resultMerkleRoot = uint256(
             bytes32(
-                0xb65f3b91a4ee075433cc735ce53857b0fe215e96c83498ff6eaba24e09892e4b
+                0x2c6ddb07ef2382d01b317fc9843ba2b35006a55e878b83547138a6f6eb340cb0
             )
         );
         (uint256 resultRootLow, uint256 resultRootHigh) = Uint256Splitter
             .split128(resultMerkleRoot);
-        uint128 batchResultsMerkleRootLow = 0xfe215e96c83498ff6eaba24e09892e4b;
-        uint128 batchResultsMerkleRootHigh = 0xb65f3b91a4ee075433cc735ce53857b0;
+        uint128 batchResultsMerkleRootLow = 0x5006a55e878b83547138a6f6eb340cb0;
+        uint128 batchResultsMerkleRootHigh = 0x2c6ddb07ef2382d01b317fc9843ba2b3;
         assertEq(batchResultsMerkleRootLow, resultRootLow);
         assertEq(batchResultsMerkleRootHigh, resultRootHigh);
 
@@ -628,7 +628,7 @@ contract HreExecutionStoreTest is Test {
         assertEq(
             factHash,
             bytes32(
-                0xdee781e2d8113849ef4c2259a0dc06f151a5f157f8f88e7341c42014d5f0b339
+                0xa2be519ab42d2967ae42a0a809220979013047deb77358665ec72ad0f007b004
             )
         );
     }
@@ -662,7 +662,7 @@ contract HreExecutionStoreTest is Test {
         console.logUint( programOutput[5]);
 
         // Compute program output hash
-        bytes32 programOutputHash = keccak256(abi.encode(programOutput));
+        bytes32 programOutputHash = keccak256(abi.encodePacked(programOutput));
         console.logBytes32(programOutputHash);
 
         // Compute GPS fact hash

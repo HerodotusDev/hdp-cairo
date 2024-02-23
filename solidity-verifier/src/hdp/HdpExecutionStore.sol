@@ -156,7 +156,7 @@ contract HdpExecutionStore is AccessControl {
         programOutput[5] = uint256(scheduledTasksBatchMerkleRootHigh);
 
         // Compute program output hash
-        bytes32 programOutputHash = keccak256(abi.encode(programOutput));
+        bytes32 programOutputHash = keccak256(abi.encodePacked(programOutput));
 
         // Compute GPS fact hash
         bytes32 gpsFactHash = keccak256(
