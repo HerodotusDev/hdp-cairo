@@ -1,5 +1,3 @@
-%builtins range_check bitwise keccak
-
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
@@ -93,7 +91,7 @@ func decode_account_input{
     ));
 }
 
-func decode_slot_input{
+func decode_account_slot_input{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
@@ -133,54 +131,14 @@ func decode_slot_input{
     ));
 }
 
-
-func main{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
-}() {
-    alloc_locals;
-
-    local input_bytes_len: felt;
-    local input: felt*;
-
-    %{
-        from tools.py.utils import (
-            bytes_to_8_bytes_chunks,
-            bytes_to_8_bytes_chunks_little,
-        )
-        # header_prop
-        #dl_bytes =bytes.fromhex("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000009eb09c00000000000000000000000000000000000000000000000000000000009eb100000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000002010f000000000000000000000000000000000000000000000000000000000000")
-        # account
-        #dl_bytes = bytes.fromhex("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000009eb09c00000000000000000000000000000000000000000000000000000000009eb100000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000016025b38da6a701c568545dcfcb03fcb875f56beddc40300000000000000000000")
-
-        # slot
-        dl_bytes = bytes.fromhex("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000009eb09c00000000000000000000000000000000000000000000000000000000009eb100000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000035035b38da6a701c568545dcfcb03fcb875f56beddc4339bee47335c234581644b387f7f0d28db05ad5b092e1152fc70647d559cef220000000000000000000000")
-
-        slot = bytes_to_8_bytes_chunks_little(bytes.fromhex("339bee47335c234581644b387f7f0d28db05ad5b092e1152fc70647d559cef22"))
-
-        le_input = bytes_to_8_bytes_chunks_little(dl_bytes)
-
-        be_input = bytes_to_8_bytes_chunks(dl_bytes)
-
-        input_hex = [hex(val) for val in le_input]
-        slot_hex = [hex(val) for val in slot]
-        print(f"input: {input_hex}")
-        print(f"slot: {slot_hex}")
-
-        ids.input_bytes_len = len(dl_bytes)
-        ids.input = segments.gen_arg(le_input)
-    %}
-
-    let header = decode_slot_input{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        keccak_ptr=keccak_ptr
-    }(input=input, input_bytes_len=input_bytes_len);
-
-    return ();
-}
-
+// Extracts the slot from the le 8-byte chunks
+// We need to mask and shift the chunks to extract the le encoded slot
+// We want to keep le 8-byte chunks because we need to keccak the slot to derive the key
+// Inputs:
+// chunks: chunks ref pointing to the first relevant chunk
+// idx: current iteration 
+// max_idx: max number of iterations (should be 4, one for each 8-byte chunk)
+// slot: the resulting slot
 func extract_slot{
     bitwise_ptr: BitwiseBuiltin*,
 } (chunks: felt*, idx: felt, max_idx: felt, slot: felt*) {

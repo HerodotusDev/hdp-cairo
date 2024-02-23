@@ -6,7 +6,7 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
 
-from src.hdp.types import Header, HeaderProof, MMRMeta, Account, AccountState, AccountSlot, SlotState
+from src.hdp.types import Header, HeaderProof, MMRMeta, Account, AccountState, AccountSlot, SlotState, BlockSampledAccountSlot, ComputationalTask
 from src.hdp.mmr import verify_mmr_meta
 from src.hdp.header import verify_headers_inclusion
 from src.hdp.account import populate_account_segments, verify_n_accounts, get_account_balance, get_account_nonce, get_account_state_root, get_account_code_hash
@@ -16,6 +16,9 @@ from src.libs.utils import (
     pow2alloc127,
     write_felt_array_to_dict_keys
 )
+
+from src.hdp.compiler.block_sampled import decode_account_slot_input
+from src.hdp.tasks.task import init_with_block_sampled_account_slot
 
 func main{
     output_ptr: felt*,
@@ -51,6 +54,12 @@ func main{
     let (account_dict, account_dict_start) = AccountMemorizer.initialize();
     let (slot_dict, slot_dict_start) = SlotMemorizer.initialize();
     
+    // Task and Datalake
+    let (task_input: felt*) = alloc();
+    let (data_lake_input: felt*) = alloc();
+    local task_bytes_len: felt;
+    local data_lake_bytes_len: felt;
+
     //Misc
     let pow2_array: felt* = pow2alloc127();
  
@@ -97,6 +106,16 @@ func main{
         ids.account_slots_len = len(program_input['header_batches'][0]['account_slots'])
         # rest is written with populate_account_segments & populate_account_slot_segments func call
 
+
+        # Task and Datalake
+        task_input = hex_to_int_array(program_input['header_batches'][0]['task']['computational_task'])
+        task_bytes_len = program_input['header_batches'][0]['task']['computational_task_bytes_len']
+        data_lake = hex_to_int_array(program_input['header_batches'][0]['task']['data_lake'])
+        data_lake_bytes_len = program_input['header_batches'][0]['task']['data_lake_bytes_len']
+        segments.write_arg(ids.task_input, task_input)
+        ids.task_bytes_len = task_bytes_len
+        segments.write_arg(ids.data_lake_input, data_lake)
+        ids.data_lake_bytes_len = data_lake_bytes_len
     %}
     
     // Check 1: Ensure we have a valid pair of mmr_root and peaks
@@ -106,6 +125,21 @@ func main{
     let (local peaks_dict) = default_dict_new(default_value=0);
     tempvar peaks_dict_start = peaks_dict;
     write_felt_array_to_dict_keys{dict_end=peaks_dict}(array=mmr_meta.peaks, index=mmr_meta.peaks_len - 1);
+
+    // local block_sampled_account_slot: BlockSampledAccountSlot;
+    // let task: ComputationalTask;
+
+    let block_sampled_account_slot = decode_account_slot_input{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        keccak_ptr=keccak_ptr,
+    } (input=data_lake_input, input_bytes_len=data_lake_bytes_len);
+
+    let task = init_with_block_sampled_account_slot{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        keccak_ptr=keccak_ptr,
+    } (task_input, task_bytes_len, block_sampled_account_slot);
 
     // Check 2: Ensure the header is contained in a peak, and that the peak is known
     verify_headers_inclusion{
