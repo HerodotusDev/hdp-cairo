@@ -35,12 +35,12 @@ contract MockAggregatorsFactory is IAggregatorsFactory {
 
 contract MockSharpFactsAggregator is ISharpFactsAggregator {
     function aggregatorState() external pure returns (AggregatorState memory) {
-        bytes32 root = 0x067e9e103829fd281d8f72d911d8f7c4b146854f79a42a292be46f52a1404ca0;
+        bytes32 root = 0x0614c2c4abb1e3b1f4a2c69c320b10cb78466800b62ee52a8476f9986925ac06;
         return
             AggregatorState({
                 poseidonMmrRoot: root,
                 keccakMmrRoot: bytes32(0),
-                mmrSize: 209371,
+                mmrSize: 2397,
                 continuableParentHash: bytes32(0)
             });
     }
@@ -67,8 +67,8 @@ contract HreExecutionStoreTest is Test {
         sharpFactsAggregator = new MockSharpFactsAggregator();
         hdp = new HdpExecutionStore(factsRegistry, aggregatorsFactory);
 
-        // Step 0. Create mock SHARP facts aggregator mmr id 24
-        aggregatorsFactory.createAggregator(24, sharpFactsAggregator);
+        // Step 0. Create mock SHARP facts aggregator mmr id 1
+        aggregatorsFactory.createAggregator(1, sharpFactsAggregator);
 
         assertTrue(hdp.hasRole(keccak256("OPERATOR_ROLE"), address(this)));
 
@@ -329,8 +329,8 @@ contract HreExecutionStoreTest is Test {
         uint128 batchResultsMerkleRootHigh = uint128(resultsRootHigh);
 
         // MMR metadata
-        uint256 usedMmrId = 24;
-        uint256 usedMmrSize = 209371;
+        uint256 usedMmrId = 1;
+        uint256 usedMmrSize = 2397;
 
         // =================================
 
@@ -412,6 +412,7 @@ contract HreExecutionStoreTest is Test {
     function testFactHashWithServer() public {
         uint256 usedMmrId = 1;
         uint256 usedMmrSize = 2397;
+        hdp.cacheMmrRoot(usedMmrId);
         uint256 taskMerkleRoot = uint256(
             bytes32(
                 0x730f1037780b3b53cfaecdb95fc648ce719479a58afd4325a62b0c5e09e83090
@@ -449,7 +450,7 @@ contract HreExecutionStoreTest is Test {
         assertEq(
             factHash,
             bytes32(
-                0x0cbe06fd748ba4f3517eebe5e8549528f970c1dc7ec8344908b6682c6230c9e9
+                0xba56b880a36c71a9411019adc8d514717fcca28896740a83408882138e9109a4
             )
         );
     }
@@ -462,7 +463,7 @@ contract HreExecutionStoreTest is Test {
         uint128 scheduledTasksBatchMerkleRootLow,
         uint128 scheduledTasksBatchMerkleRootHigh
     ) internal view returns (bytes32) {
-        // Load MMRs root
+        // Load MMRs root  
         bytes32 usedMmrRoot = hdp.loadMmrRoot(usedMmrId, usedMmrSize);
         // Initialize an array of uint256 to store the program output
         uint256[] memory programOutput = new uint256[](6);
@@ -483,7 +484,7 @@ contract HreExecutionStoreTest is Test {
             abi.encode(
                 bytes32(
                     uint256(
-                        0x66154754a3e3a07b6bb7f1a6c2259703621f4d1f616b5f4ae74d9863d74fba9
+                        0x01e0a58cc90bb6708f3c36a9cc503ffdcc3488b9aa57ccdbf0c18ae69d1c76ea
                     )
                 ),
                 programOutputHash
