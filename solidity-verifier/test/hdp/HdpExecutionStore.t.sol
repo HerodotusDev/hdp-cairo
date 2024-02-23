@@ -628,7 +628,7 @@ contract HreExecutionStoreTest is Test {
         assertEq(
             factHash,
             bytes32(
-                0xba56b880a36c71a9411019adc8d514717fcca28896740a83408882138e9109a4
+                0xdee781e2d8113849ef4c2259a0dc06f151a5f157f8f88e7341c42014d5f0b339
             )
         );
     }
@@ -662,7 +662,7 @@ contract HreExecutionStoreTest is Test {
             abi.encode(
                 bytes32(
                     uint256(
-                        0x01e0a58cc90bb6708f3c36a9cc503ffdcc3488b9aa57ccdbf0c18ae69d1c76ea
+                        0x1c8cc7762ed906ffd62867aa102adce05db50358a0224524f657ef23d0b7a5
                     )
                 ),
                 programOutputHash
