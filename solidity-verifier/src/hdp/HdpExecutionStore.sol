@@ -35,8 +35,11 @@ contract HdpExecutionStore is AccessControl {
         bytes32 result;
     }
 
-    /// @notice emitted when a new task is scheduled
+    /// @notice emitted when a new MMR root is cached
     event MmrRootCached(uint256 mmrId, uint256 mmrSize, bytes32 mmrRoot);
+
+    /// @notice emitted when a new task is scheduled
+    event TaskWithBlockSampledDatalakeScheduled(BlockSampledDatalake datalake, ComputationalTask task);
 
     /// @notice constant representing role of operator
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
@@ -115,6 +118,11 @@ contract HdpExecutionStore is AccessControl {
             status: TaskStatus.SCHEDULED,
             result: ""
         });
+
+        emit TaskWithBlockSampledDatalakeScheduled(
+            blockSampledDatalake,
+            computationalTask
+        );
     }
 
     /// @notice Authenticates the execution of a task is finalized
