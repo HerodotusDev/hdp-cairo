@@ -4,21 +4,21 @@ from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.bitwise import bitwise_xor
 from src.libs.utils import word_reverse_endian_64, word_reverse_endian_16_RC
-from src.hdp.types import BlockSampledHeader, BlockSampledAccount, BlockSampledAccountSlot, ComputationalTask
+from src.hdp.types import BlockSampledDataLake, ComputationalTask
 
-func init_with_block_sampled_account_slot{
+func init_with_block_sampled{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
-}(task_input: felt*, task_input_bytes_len: felt, block_sampled_account_slot: BlockSampledAccountSlot) -> ComputationalTask {
+}(task_input: felt*, task_input_bytes_len: felt, block_sampled: BlockSampledDataLake) -> ComputationalTask {
     alloc_locals;
     let (data_lake_hash_low, data_lake_hash_high, aggregate_fn_id) = extract_params{
         range_check_ptr=range_check_ptr,
     }(input=task_input);
 
     // ensure task contains correct data lake hash
-    assert data_lake_hash_low = block_sampled_account_slot.hash.low;
-    assert data_lake_hash_high = block_sampled_account_slot.hash.high;
+    assert data_lake_hash_low = block_sampled.hash.low;
+    assert data_lake_hash_high = block_sampled.hash.high;
 
     let (hash) = keccak(task_input, task_input_bytes_len);
 
