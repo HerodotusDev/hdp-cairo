@@ -80,11 +80,6 @@ namespace AccountMemorizer {
         let key = gen_account_key(address, block_number);
         let (index) = dict_read{dict_ptr=account_dict}(key);
 
-        // // ensure element exists
-        // if(index == MEMORIZER_DEFAULT) {
-        //     assert 1 = 0;
-        // }
-
         return (account_state=account_states[index]);
     }
 }

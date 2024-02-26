@@ -167,98 +167,114 @@ func verify_account{
     );
 }
 
-// retrieves the account nonce from rlp encoded account state
-func get_account_nonce{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*
-} (rlp: felt*) -> Uint256 {
-    alloc_locals;
-    let (res, res_len, bytes_len) = decode_account_value(rlp=rlp, value_idx=0, item_starts_at_byte=2, counter=0);
+namespace AccountReader {
+    // retrieves the account nonce from rlp encoded account state
+    func get_nonce{
+        range_check_ptr,
+        bitwise_ptr: BitwiseBuiltin*,
+        pow2_array: felt*
+    } (rlp: felt*) -> Uint256 {
+        alloc_locals;
+        let (res, res_len, bytes_len) = decode_account_value(rlp=rlp, value_idx=0, item_starts_at_byte=2, counter=0);
 
-    let result = uint_le_u64_array_to_uint256(
-        elements=res,
-        elements_len=res_len,
-        bytes_len=bytes_len
-    );
+        let result = uint_le_u64_array_to_uint256(
+            elements=res,
+            elements_len=res_len,
+            bytes_len=bytes_len
+        );
 
-    %{
-        print("nonce.high", ids.result.high)
-        print("nonce.low", ids.result.low)
-    %}
+        %{
+            print("nonce.high", ids.result.high)
+            print("nonce.low", ids.result.low)
+        %}
 
-    return result;
+        return result;
+    }
+
+    // retrieves the account balance from rlp encoded account state
+    func get_balance{
+        range_check_ptr,
+        bitwise_ptr: BitwiseBuiltin*,
+        pow2_array: felt*
+    } (rlp: felt*) -> Uint256 {
+        alloc_locals;
+
+        let (res, res_len, bytes_len) = decode_account_value(rlp=rlp, value_idx=1, item_starts_at_byte=2, counter=0);
+
+        let result = uint_le_u64_array_to_uint256(
+            elements=res,
+            elements_len=res_len,
+            bytes_len=bytes_len
+        );
+
+        %{  
+            print("balance.high", ids.result.high)
+            print("balance.low", ids.result.low)
+        %}
+
+        return result;
+    }
+
+    // retrieves the account state root from rlp encoded account state
+    func get_state_root{
+        range_check_ptr,
+        bitwise_ptr: BitwiseBuiltin*,
+        pow2_array: felt*
+    } (rlp: felt*) -> Uint256 {
+        alloc_locals;
+
+        let (res, res_len, _byte_len) = decode_account_value(rlp=rlp, value_idx=2, item_starts_at_byte=2, counter=0);
+
+        let result = keccak_hash_array_to_uint256(
+            elements=res,
+            elements_len=res_len
+        );
+
+        %{
+            print("stateRoot.high", hex(ids.result.high))
+            print("stateRoot.low", hex(ids.result.low))
+        %}
+
+        return result;
+    }
+
+    // retrieves the account code hash from rlp encoded account state
+    func get_code_hash{
+        range_check_ptr,
+        bitwise_ptr: BitwiseBuiltin*,
+        pow2_array: felt*
+    } (rlp: felt*) -> Uint256 {
+        alloc_locals;
+
+        let (res, res_len, _byte_len) = decode_account_value(rlp=rlp, value_idx=3, item_starts_at_byte=2, counter=0);
+
+        let result = keccak_hash_array_to_uint256(
+            elements=res,
+            elements_len=res_len
+        );
+
+        return result;
+    }
+
+    func get_by_index{
+        range_check_ptr,
+        bitwise_ptr: BitwiseBuiltin*,
+        pow2_array: felt*
+    } (rlp: felt*, value_idx: felt) -> Uint256 {
+        alloc_locals;
+
+        let (res, res_len, bytes_len) = decode_account_value(rlp=rlp, value_idx=value_idx, item_starts_at_byte=2, counter=0);
+
+        let result = uint_le_u64_array_to_uint256(
+            elements=res,
+            elements_len=res_len,
+            bytes_len=bytes_len
+        );
+
+        return result;
+    }
 }
 
-// retrieves the account balance from rlp encoded account state
-func get_account_balance{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*
-} (rlp: felt*) -> Uint256 {
-    alloc_locals;
-
-    let (res, res_len, bytes_len) = decode_account_value(rlp=rlp, value_idx=1, item_starts_at_byte=2, counter=0);
-
-    let result = uint_le_u64_array_to_uint256(
-        elements=res,
-        elements_len=res_len,
-        bytes_len=bytes_len
-    );
-
-    %{  
-        print("balance.high", ids.result.high)
-        print("balance.low", ids.result.low)
-    %}
-
-    return result;
-}
-
-// retrieves the account state root from rlp encoded account state
-func get_account_state_root{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*
-} (rlp: felt*) -> Uint256 {
-    alloc_locals;
-
-    let (res, res_len, _byte_len) = decode_account_value(rlp=rlp, value_idx=2, item_starts_at_byte=2, counter=0);
-
-    let result = keccak_hash_array_to_uint256(
-        elements=res,
-        elements_len=res_len
-    );
-
-    %{
-        print("stateRoot.high", hex(ids.result.high))
-        print("stateRoot.low", hex(ids.result.low))
-    %}
-
-    return result;
-}
-
-// retrieves the account code hash from rlp encoded account state
-func get_account_code_hash{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*
-} (rlp: felt*) -> Uint256 {
-    alloc_locals;
-
-    let (res, res_len, _byte_len) = decode_account_value(rlp=rlp, value_idx=3, item_starts_at_byte=2, counter=0);
-
-    let result = keccak_hash_array_to_uint256(
-        elements=res,
-        elements_len=res_len
-    );
-
-    %{
-        print("codehash.high", hex(ids.result.high))
-        print("codehash.low", hex(ids.result.low))
-    %}
-
-    return result;
-}
 
 // function for decoding account values from rlp encoded account state
 // this function does not check for the validity of the rlp encoding, as this was already done in the mpt proof verification

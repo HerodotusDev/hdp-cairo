@@ -5,7 +5,7 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
 from src.hdp.types import AccountState, AccountSlotProof, SlotState, AccountSlot
-from src.hdp.account import get_account_state_root
+from src.hdp.account import AccountReader
 
 from src.libs.rlp_little import (
     extract_byte_at_pos,
@@ -138,7 +138,7 @@ func verify_account_slot{
 
     // get state_root from verified headers
     let (account_state) = AccountMemorizer.get(account_slot.address, slot_proof.block_number);
-    let state_root = get_account_state_root(account_state.values);
+    let state_root = AccountReader.get_state_root(account_state.values);
  
     let (value: felt*, _value_len: felt) = verify_mpt_proof(
         mpt_proof=slot_proof.proof,

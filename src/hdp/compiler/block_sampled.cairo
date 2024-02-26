@@ -1,10 +1,15 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
 from starkware.cairo.common.uint256 import Uint256
+from starkware.cairo.common.dict_access import DictAccess
+
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.bitwise import bitwise_xor
 from src.libs.utils import word_reverse_endian_64, word_reverse_endian_16_RC
-from src.hdp.types import BlockSampledDataLake
+from src.hdp.types import BlockSampledDataLake, AccountState, BlockSampledComputationalTask
+from src.hdp.memorizer import AccountMemorizer
+from src.hdp.account import AccountReader
+
 
 // Creates a BlockSampled from the input bytes
 func decode_block_sampled{
@@ -217,4 +222,80 @@ func extract_constant_params{
     let (increment) = word_reverse_endian_64([input + 15]);
 
     return (block_range_start=block_range_start, block_range_end=block_range_end, increment=increment);
+}
+
+namespace BlockSampledReader {
+    func fetch_data_points{
+        range_check_ptr,
+        poseidon_ptr: PoseidonBuiltin*,
+        bitwise_ptr: BitwiseBuiltin*,
+        account_dict: DictAccess*,
+        account_states: AccountState*,
+        pow2_array: felt*,
+    }(task: BlockSampledComputationalTask) -> (Uint256*, felt) {
+        alloc_locals;
+        
+        let (data_points: Uint256*) = alloc();
+        let property_id = task.datalake.properties[0];
+
+        if(property_id == 1) {
+            // Header - Unimplemented!
+            assert 0 = 1;
+        }
+
+        if(property_id == 2) {
+            // Account
+            let data_points_len = fetch_account_data_points{
+                range_check_ptr=range_check_ptr,
+                poseidon_ptr=poseidon_ptr,
+                bitwise_ptr=bitwise_ptr,
+                account_dict=account_dict,
+                account_states=account_states,
+                pow2_array=pow2_array,
+            }(datalake=task.datalake, index=0, data_points=data_points);
+
+            return (data_points, data_points_len);
+        }
+
+        if(property_id == 3) {
+            // Account Slot - Unimplemented!
+            assert 0 = 1;
+        } else {
+            assert 0 = 1; // Invalid property_id
+        }
+
+        return (data_points, 0);
+    }
+}
+
+func fetch_account_data_points{
+    range_check_ptr,
+    poseidon_ptr: PoseidonBuiltin*,
+    bitwise_ptr: BitwiseBuiltin*,
+    account_dict: DictAccess*,
+    account_states: AccountState*,
+    pow2_array: felt*,
+}(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
+    alloc_locals;
+
+    let current_block_number = datalake.block_range_start + index * datalake.increment;
+
+    let (account_state) = AccountMemorizer.get(
+        address=datalake.properties + 1, // address starts at 1
+        block_number=current_block_number
+    );
+
+    let data_point = AccountReader.get_by_index{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array,
+    }(rlp=account_state.values, value_idx=[datalake.properties + 4]); // value idx is at 4
+
+    assert [data_points + index] = data_point;
+
+    if(current_block_number == datalake.block_range_end) {
+        return index + 1;
+    }
+
+    return fetch_account_data_points(datalake=datalake, index=index + 1, data_points=data_points);
 }

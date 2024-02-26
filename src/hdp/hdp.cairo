@@ -8,10 +8,10 @@ from starkware.cairo.common.default_dict import default_dict_new, default_dict_f
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
 
-from src.hdp.types import Header, HeaderProof, MMRMeta, Account, AccountState, AccountSlot, SlotState, BlockSampledDataLake, ComputationalTask
+from src.hdp.types import Header, HeaderProof, MMRMeta, Account, AccountState, AccountSlot, SlotState, BlockSampledDataLake, BlockSampledComputationalTask
 from src.hdp.mmr import verify_mmr_meta
 from src.hdp.header import verify_headers_inclusion
-from src.hdp.account import populate_account_segments, verify_n_accounts, get_account_balance, get_account_nonce, get_account_state_root, get_account_code_hash
+from src.hdp.account import populate_account_segments, verify_n_accounts
 from src.hdp.slots import populate_account_slot_segments, verify_n_account_slots
 from src.hdp.memorizer import HeaderMemorizer, AccountMemorizer, SlotMemorizer, MEMORIZER_DEFAULT
 from src.libs.utils import (
@@ -20,7 +20,7 @@ from src.libs.utils import (
 )
 
 from src.hdp.compiler.block_sampled import decode_block_sampled
-from src.hdp.tasks.task import init_with_block_sampled
+from src.hdp.tasks.task import init_with_block_sampled, execute_block_sampled
 
 func main{
     output_ptr: felt*,
@@ -127,23 +127,6 @@ func main{
     tempvar peaks_dict_start = peaks_dict;
     write_felt_array_to_dict_keys{dict_end=peaks_dict}(array=mmr_meta.peaks, index=mmr_meta.peaks_len - 1);
 
-    let block_sampled_data_lake = decode_block_sampled{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        keccak_ptr=keccak_ptr,
-    } (input=data_lake_input, input_bytes_len=data_lake_bytes_len, sample_type=3);
-
-    let task = init_with_block_sampled{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        keccak_ptr=keccak_ptr,
-    } (task_input, task_bytes_len, block_sampled_data_lake);
-
-    let tasks_root = hash_tasks_root{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-    } (task.hash);
-
     // Check 2: Ensure the header is contained in a peak, and that the peak is known
     verify_headers_inclusion{
         range_check_ptr=range_check_ptr,
@@ -201,37 +184,33 @@ func main{
         state_idx=0
     );
 
-    get_account_balance{
+    let block_sampled_data_lake = decode_block_sampled{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array
+        keccak_ptr=keccak_ptr,
+    } (input=data_lake_input, input_bytes_len=data_lake_bytes_len, sample_type=2);
+
+    let task = init_with_block_sampled{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        keccak_ptr=keccak_ptr,
+    } (task_input, task_bytes_len, block_sampled_data_lake);
+
+    let res = execute_block_sampled{
+        range_check_ptr=range_check_ptr,
+        poseidon_ptr=poseidon_ptr,
+        bitwise_ptr=bitwise_ptr,
+        account_dict=account_dict,
+        account_states=account_states,
+        pow2_array=pow2_array,
     }(
-        rlp=account_states[0].values
+        task=task,
     );
 
-    get_account_nonce{
+    let tasks_root = hash_tasks_root{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array
-    }(
-        rlp=account_states[0].values
-    );
-
-    get_account_state_root{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array
-    }(
-        rlp=account_states[0].values
-    );
-    
-    get_account_code_hash{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array
-    }(
-        rlp=account_states[0].values
-    );
+    } (task.hash);
 
     // Post Verification Checks: Ensure dict consistency
     default_dict_finalize(peaks_dict_start, peaks_dict, 0);
