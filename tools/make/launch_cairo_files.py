@@ -10,7 +10,9 @@ CAIRO_PROGRAMS_FOLDERS = [
     "tests/cairo_programs/",
     "src/single_chunk_processor",
     "src/batch_storage_proof",
-    "src/hdp"
+    "src/hdp",
+    "src/hdp/compiler",
+    "src/hdp/tasks"
 ]
 
 BUILD_DIR = "build"

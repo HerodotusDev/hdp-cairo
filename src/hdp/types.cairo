@@ -59,3 +59,35 @@ struct SlotState {
     low: felt,
     high: felt,
 }
+
+struct BlockSampledHeader {
+    block_range_start: felt,
+    block_range_end: felt,
+    increment: felt,
+    property: felt,
+    hash: Uint256,
+}
+
+struct BlockSampledAccount {
+    block_range_start: felt,
+    block_range_end: felt,
+    increment: felt,
+    address: felt*,
+    property: felt,
+    hash: Uint256,
+}
+
+struct BlockSampledAccountSlot {
+    block_range_start: felt,
+    block_range_end: felt,
+    increment: felt,
+    address: felt*,
+    slot: felt*,
+    hash: Uint256,
+}
+
+struct ComputationalTask {
+    aggregate_fn_id: felt, // avg=0, sum=1, min=2, max=3
+    // aggregateFnCtx: felt*,
+    hash: Uint256,
+}
