@@ -31,10 +31,10 @@ func populate_account_slot_segments{
         
         %{
             def write_account_slot(account_ptr, proofs_ptr, account):
-                memory[account_ptr._reference_value] = segments.gen_arg(account["address"])
-                memory[account_ptr._reference_value + 1] =segments.gen_arg(account["slot"])
-                memory[account_ptr._reference_value + 2] = account["key"]["low"]
-                memory[account_ptr._reference_value + 3] = account["key"]["high"]
+                memory[account_ptr._reference_value] = segments.gen_arg(hex_to_int_array(account["address"]))
+                memory[account_ptr._reference_value + 1] =segments.gen_arg(hex_to_int_array(account["slot"]))
+                memory[account_ptr._reference_value + 2] = hex_to_int(account["key"]["low"])
+                memory[account_ptr._reference_value + 3] = hex_to_int(account["key"]["high"])
                 memory[account_ptr._reference_value + 4] = len(account["proofs"])
                 memory[account_ptr._reference_value + 5] = proofs_ptr._reference_value
 
@@ -44,7 +44,7 @@ func populate_account_slot_segments{
                     memory[ptr._reference_value + offset] = proof["block_number"]
                     memory[ptr._reference_value + offset + 1] = len(proof["proof"])
                     memory[ptr._reference_value + offset + 2] = segments.gen_arg(proof["proof_bytes_len"])
-                    memory[ptr._reference_value + offset + 3] = segments.gen_arg(proof["proof"])
+                    memory[ptr._reference_value + offset + 3] = segments.gen_arg(nested_hex_to_int_array(proof["proof"]))
                     offset += 4
 
             account_slot = program_input['header_batches'][0]["account_slots"][ids.index]

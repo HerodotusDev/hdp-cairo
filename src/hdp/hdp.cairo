@@ -8,7 +8,7 @@ from starkware.cairo.common.default_dict import default_dict_new, default_dict_f
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
 
-from src.hdp.types import Header, HeaderProof, MMRMeta, Account, AccountState, AccountSlot, SlotState, BlockSampledAccountSlot, ComputationalTask
+from src.hdp.types import Header, HeaderProof, MMRMeta, Account, AccountState, AccountSlot, SlotState, BlockSampledDataLake, ComputationalTask
 from src.hdp.mmr import verify_mmr_meta
 from src.hdp.header import verify_headers_inclusion
 from src.hdp.account import populate_account_segments, verify_n_accounts, get_account_balance, get_account_nonce, get_account_state_root, get_account_code_hash
@@ -19,8 +19,8 @@ from src.libs.utils import (
     write_felt_array_to_dict_keys
 )
 
-from src.hdp.compiler.block_sampled import decode_account_slot_input
-from src.hdp.tasks.task import init_with_block_sampled_account_slot
+from src.hdp.compiler.block_sampled import decode_block_sampled
+from src.hdp.tasks.task import init_with_block_sampled
 
 func main{
     output_ptr: felt*,
@@ -70,6 +70,9 @@ func main{
         def hex_to_int_array(hex_array):
             return [int(x, 16) for x in hex_array]
 
+        def nested_hex_to_int_array(hex_array):
+            return [[int(x, 16) for x in y] for y in hex_array]
+
         def write_headers(ptr, headers):
             offset = 0
             ids.headers_len = len(headers)
@@ -106,10 +109,10 @@ func main{
 
 
         # Task and Datalake
-        task_input = hex_to_int_array(program_input['header_batches'][0]['task']['computational_task'])
-        task_bytes_len = program_input['header_batches'][0]['task']['computational_task_bytes_len']
-        data_lake = hex_to_int_array(program_input['header_batches'][0]['task']['data_lake'])
-        data_lake_bytes_len = program_input['header_batches'][0]['task']['data_lake_bytes_len']
+        task_input = hex_to_int_array(program_input['header_batches'][0]['tasks'][0]['computational_task'])
+        task_bytes_len = program_input['header_batches'][0]['tasks'][0]['computational_task_bytes_len']
+        data_lake = hex_to_int_array(program_input['header_batches'][0]['tasks'][0]['data_lake'])
+        data_lake_bytes_len = program_input['header_batches'][0]['tasks'][0]['data_lake_bytes_len']
         segments.write_arg(ids.task_input, task_input)
         ids.task_bytes_len = task_bytes_len
         segments.write_arg(ids.data_lake_input, data_lake)
@@ -124,20 +127,17 @@ func main{
     tempvar peaks_dict_start = peaks_dict;
     write_felt_array_to_dict_keys{dict_end=peaks_dict}(array=mmr_meta.peaks, index=mmr_meta.peaks_len - 1);
 
-    // local block_sampled_account_slot: BlockSampledAccountSlot;
-    // let task: ComputationalTask;
-
-    let block_sampled_account_slot = decode_account_slot_input{
+    let block_sampled_data_lake = decode_block_sampled{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
-    } (input=data_lake_input, input_bytes_len=data_lake_bytes_len);
+    } (input=data_lake_input, input_bytes_len=data_lake_bytes_len, sample_type=3);
 
-    let task = init_with_block_sampled_account_slot{
+    let task = init_with_block_sampled{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
-    } (task_input, task_bytes_len, block_sampled_account_slot);
+    } (task_input, task_bytes_len, block_sampled_data_lake);
 
     let tasks_root = hash_tasks_root{
         range_check_ptr=range_check_ptr,
