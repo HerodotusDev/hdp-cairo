@@ -64,7 +64,7 @@ struct BlockSampledDataLake {
     block_range_start: felt,
     block_range_end: felt,
     increment: felt,
-    sample_type: felt, // header=1, account=2, accountSlot=3
+    property_type: felt, // header=1, account=2, accountSlot=3
     properties: felt*,
     hash: Uint256,
 }

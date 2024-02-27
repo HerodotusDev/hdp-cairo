@@ -19,8 +19,8 @@ from src.libs.utils import (
     write_felt_array_to_dict_keys
 )
 
-from src.hdp.compiler.block_sampled import decode_block_sampled
-from src.hdp.tasks.task import init_with_block_sampled, execute_block_sampled
+// from src.hdp.compiler.block_sampled import BlockSampled
+from src.hdp.tasks.block_sampled import BlockSampledTask
 
 func main{
     output_ptr: felt*,
@@ -55,10 +55,16 @@ func main{
     let (slot_dict, slot_dict_start) = SlotMemorizer.initialize();
     
     // Task and Datalake
-    let (task_input: felt*) = alloc();
-    let (data_lake_input: felt*) = alloc();
-    local task_bytes_len: felt;
-    local data_lake_bytes_len: felt;
+    local block_sampled_tasks_len: felt;
+    let (block_sampled_tasks_input: felt**) = alloc();
+    let (block_sampled_tasks_bytes_len) = alloc();
+
+    let (block_sampled_data_lakes_input: felt**) = alloc();
+    let (block_sampled_data_lakes_bytes_len) = alloc();
+    let (block_sampled_tasks: BlockSampledComputationalTask*) = alloc();
+
+    let (results: Uint256*) = alloc();
+
 
     //Misc
     let pow2_array: felt* = pow2alloc127();
@@ -104,19 +110,25 @@ func main{
 
         # Account Params
         ids.accounts_len = len(program_input['header_batches'][0]['accounts'])
-        ids.account_slots_len = len(program_input['header_batches'][0]['account_slots'])
+        ids.account_slots_len = len(program_input['header_batches'][0]['storage_items'])
         # rest is written with populate_account_segments & populate_account_slot_segments func call
 
-
         # Task and Datalake
-        task_input = hex_to_int_array(program_input['header_batches'][0]['tasks'][0]['computational_task'])
-        task_bytes_len = program_input['header_batches'][0]['tasks'][0]['computational_task_bytes_len']
-        data_lake = hex_to_int_array(program_input['header_batches'][0]['tasks'][0]['data_lake'])
-        data_lake_bytes_len = program_input['header_batches'][0]['tasks'][0]['data_lake_bytes_len']
-        segments.write_arg(ids.task_input, task_input)
-        ids.task_bytes_len = task_bytes_len
-        segments.write_arg(ids.data_lake_input, data_lake)
-        ids.data_lake_bytes_len = data_lake_bytes_len
+        tasks_input, data_lakes_input, tasks_bytes_len, data_lake_bytes_len = ([], [], [], [])
+        block_sampled_tasks = filtered_tasks = [task for task in program_input['header_batches'][0]['tasks'] if task["datalake_type"] == 0]
+
+        for task in block_sampled_tasks:
+            tasks_input.append(hex_to_int_array(task["computational_task"]))
+            tasks_bytes_len.append(task["computational_task_bytes_len"])
+            data_lakes_input.append(hex_to_int_array(task["data_lake"]))
+            data_lake_bytes_len.append(task["data_lake_bytes_len"])
+        
+        segments.write_arg(ids.block_sampled_tasks_input, tasks_input)
+        segments.write_arg(ids.block_sampled_tasks_bytes_len, tasks_bytes_len)
+        segments.write_arg(ids.block_sampled_data_lakes_input, data_lakes_input)
+        segments.write_arg(ids.block_sampled_data_lakes_bytes_len, data_lake_bytes_len)
+
+        ids.block_sampled_tasks_len = len(block_sampled_tasks)
     %}
     
     // Check 1: Ensure we have a valid pair of mmr_root and peaks
@@ -184,33 +196,38 @@ func main{
         state_idx=0
     );
 
-    let block_sampled_data_lake = decode_block_sampled{
+    BlockSampledTask.init{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
-    } (input=data_lake_input, input_bytes_len=data_lake_bytes_len, sample_type=2);
+        block_sampled_tasks=block_sampled_tasks,
+    } (
+        block_sampled_tasks_input, 
+        block_sampled_tasks_bytes_len,
+        block_sampled_data_lakes_input,
+        block_sampled_data_lakes_bytes_len,
+        block_sampled_tasks_len,
+        0
+    );
 
-    let task = init_with_block_sampled{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        keccak_ptr=keccak_ptr,
-    } (task_input, task_bytes_len, block_sampled_data_lake);
-
-    let res = execute_block_sampled{
+    BlockSampledTask.execute{
         range_check_ptr=range_check_ptr,
         poseidon_ptr=poseidon_ptr,
         bitwise_ptr=bitwise_ptr,
         account_dict=account_dict,
         account_states=account_states,
         pow2_array=pow2_array,
+        tasks=block_sampled_tasks,
     }(
-        task=task,
+        results=results,
+        tasks_len=block_sampled_tasks_len,
+        index=0
     );
 
-    let tasks_root = hash_tasks_root{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-    } (task.hash);
+    // let tasks_root = hash_tasks_root{
+    //     range_check_ptr=range_check_ptr,
+    //     bitwise_ptr=bitwise_ptr,
+    // } (task.hash);
 
     // Post Verification Checks: Ensure dict consistency
     default_dict_finalize(peaks_dict_start, peaks_dict, 0);
@@ -227,10 +244,10 @@ func main{
     [ap] = results_root.high;
     [ap] = [output_ptr + 2], ap++;
 
-    [ap] = tasks_root.high;
+    [ap] = results_root.high;
     [ap] = [output_ptr + 3], ap++;
 
-    [ap] = tasks_root.low;
+    [ap] = results_root.low;
     [ap] = [output_ptr + 4], ap++;
 
     [ap] = output_ptr + 5, ap++;
