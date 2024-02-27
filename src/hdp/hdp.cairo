@@ -19,8 +19,8 @@ from src.libs.utils import (
     write_felt_array_to_dict_keys
 )
 
-// from src.hdp.compiler.block_sampled import BlockSampled
 from src.hdp.tasks.block_sampled import BlockSampledTask
+from src.hdp.merkle import compute_root_mock
 
 func main{
     output_ptr: felt*,
@@ -30,7 +30,7 @@ func main{
     poseidon_ptr: PoseidonBuiltin*,
 }() {
     alloc_locals;
-    local results_root: Uint256;
+    // local results_root: Uint256;
 
     // Header Params
     local headers_len: felt;
@@ -101,8 +101,8 @@ func main{
             ids.mmr_meta.peaks_len = len(mmr_meta["mmr_peaks"])
             ids.mmr_meta.peaks = segments.gen_arg(hex_to_int_array(mmr_meta["mmr_peaks"]))
 
-        ids.results_root.low = hex_to_int(program_input["results_root"]["low"])
-        ids.results_root.high = hex_to_int(program_input["results_root"]["high"])
+        #ids.results_root.low = hex_to_int(program_input["results_root"]["low"])
+        #ids.results_root.high = hex_to_int(program_input["results_root"]["high"])
         
         # MMR Meta
         write_mmr_meta(program_input['header_batches'][0]['mmr_meta'])
@@ -224,10 +224,23 @@ func main{
         index=0
     );
 
-    // let tasks_root = hash_tasks_root{
-    //     range_check_ptr=range_check_ptr,
-    //     bitwise_ptr=bitwise_ptr,
-    // } (task.hash);
+    let tasks_root = compute_root_mock{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        keccak_ptr=keccak_ptr,
+    } (block_sampled_tasks[0].hash);
+
+    let results_root = compute_root_mock{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        keccak_ptr=keccak_ptr,
+    } (results[0]);
+
+    %{
+        print(f"Tasks Root: {hex(ids.tasks_root.low)} {hex(ids.tasks_root.high)}")
+        print(f"Results Root: {hex(ids.results_root.low)} {hex(ids.results_root.high)}")
+    
+    %}
 
     // Post Verification Checks: Ensure dict consistency
     default_dict_finalize(peaks_dict_start, peaks_dict, 0);
@@ -244,59 +257,14 @@ func main{
     [ap] = results_root.high;
     [ap] = [output_ptr + 2], ap++;
 
-    [ap] = results_root.high;
+    [ap] = tasks_root.low;
     [ap] = [output_ptr + 3], ap++;
 
-    [ap] = results_root.low;
+    [ap] = tasks_root.high;
     [ap] = [output_ptr + 4], ap++;
 
     [ap] = output_ptr + 5, ap++;
     let output_ptr = output_ptr + 5;
 
     return();
-}
-
-func hash_tasks_root{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
-}(hash: Uint256) -> Uint256 {
-    alloc_locals;
-    let (first_round_input) = alloc();
-    let first_round_input_start = first_round_input;
-
-    // convert to felts
-    keccak_add_uint256{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        inputs=first_round_input
-    }(
-        num=hash,
-        bigend=0
-    );
-
-    // hash first round
-    let (first_hash) = keccak(first_round_input_start, 32);
-
-    let (second_round_input) = alloc();
-    let second_round_input_start = second_round_input;
-    keccak_add_uint256{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        inputs=second_round_input
-    }(
-        num=first_hash,
-        bigend=0
-    );
-
-    let (result) = keccak_bigend(second_round_input_start, 32);
-
-   
-    %{
-        print(f"result.low: {hex(ids.result.low)}")
-        print(f"result.high: {hex(ids.result.high)}")
-    
-    %}
-
-    return result;
 }
