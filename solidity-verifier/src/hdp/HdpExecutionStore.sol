@@ -202,7 +202,7 @@ contract HdpExecutionStore is AccessControl {
             // Compute the Merkle leaf of the task
             bytes32 taskCommitment = taskCommitments[i];
             bytes32 taskMerkleLeaf = standardLeafHash(
-                HexStringConverter.toHex(taskCommitment)
+                taskCommitment
             );
             // Ensure that the task is included in the batch, by verifying the Merkle proof
             bool isVerifiedTask = batchInclusionMerkleProofOfTask.verify(
@@ -219,7 +219,7 @@ contract HdpExecutionStore is AccessControl {
                 abi.encode(taskCommitment, computationalTaskResult)
             );
             bytes32 taskResultMerkleLeaf = standardLeafHash(
-                HexStringConverter.toHex(taskResultCommitment)
+               taskResultCommitment
             );
             // Ensure that the task result is included in the batch, by verifying the Merkle proof
             bool isVerifiedResult = batchInclusionMerkleProofOfResult.verify(
@@ -268,7 +268,7 @@ contract HdpExecutionStore is AccessControl {
 
     /// @notice Returns the leaf of standard merkle tree
     function standardLeafHash(
-        string memory value
+        bytes32 value
     ) public pure returns (bytes32) {
         bytes32 firstHash = keccak256(abi.encode(value));
         bytes32 leaf = keccak256(abi.encode(firstHash));
