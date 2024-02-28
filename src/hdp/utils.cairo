@@ -1,4 +1,4 @@
-from starkware.cairo.common.uint256 import Uint256
+from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from src.libs.utils import (
     word_reverse_endian_64, 
     word_reverse_endian_16_RC, 
@@ -8,9 +8,10 @@ from src.libs.utils import (
     word_reverse_endian_48_RC,
     word_reverse_endian_56_RC,
 )
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
 from starkware.cairo.common.alloc import alloc
-
+from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
+from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256s
 
 func uint_le_u64_array_to_uint256{
     range_check_ptr,
@@ -153,4 +154,41 @@ func reverse_word_endianness{
     assert [result] = reversed;
     return reverse_word_endianness(values=values, values_len=values_len, remaining_bytes_len=remaining_bytes_len-8, index=index + 1, result=result+1);
     
+}
+
+func compute_results_entry{
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
+} (task_hash: Uint256, result: Uint256) -> Uint256 {
+    alloc_locals;
+
+    // before hashing we need to reverse the endianness
+    let (result_le) = uint256_reverse_endian(result);
+
+    let (values_uint: Uint256*) = alloc();
+    assert [values_uint] = task_hash;
+    assert [values_uint + Uint256.SIZE] = result_le;
+
+    let (values_felt) = alloc();
+    let values_felt_start = values_felt;
+
+    // convert to felts
+    keccak_add_uint256s{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        inputs=values_felt
+    }(
+        n_elements=2,
+        elements=values_uint,
+        bigend=0
+    );
+
+    let (res_id) = keccak(values_felt_start, 64);
+
+    %{
+        print(f"Result Entry: {hex(ids.res_id.high)} {hex(ids.res_id.high)}")
+    %}
+
+    return (res_id);
 }

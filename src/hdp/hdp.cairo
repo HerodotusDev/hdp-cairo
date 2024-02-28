@@ -21,6 +21,7 @@ from src.libs.utils import (
 
 from src.hdp.tasks.block_sampled import BlockSampledTask
 from src.hdp.merkle import compute_root_mock
+from src.hdp.utils import compute_results_entry
 
 func main{
     output_ptr: felt*,
@@ -230,16 +231,22 @@ func main{
         keccak_ptr=keccak_ptr,
     } (block_sampled_tasks[0].hash);
 
+    let results_entry = compute_results_entry{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        keccak_ptr=keccak_ptr,
+    } (block_sampled_tasks[0].hash, results[0]);
+
     let results_root = compute_root_mock{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
-    } (results[0]);
+    } (results_entry);
 
     %{
+        print(f"Result Entry: {hex(ids.results_entry.low)} {hex(ids.results_entry.high)}")    
         print(f"Tasks Root: {hex(ids.tasks_root.low)} {hex(ids.tasks_root.high)}")
         print(f"Results Root: {hex(ids.results_root.low)} {hex(ids.results_root.high)}")
-    
     %}
 
     // Post Verification Checks: Ensure dict consistency

@@ -40,11 +40,5 @@ func compute_root_mock{
     );
 
     let (result) = keccak_bigend(second_round_input_start, 32);
-
-    %{
-        print(f"result.low: {hex(ids.result.low)}")
-        print(f"result.high: {hex(ids.result.high)}")
-    %}
-
     return result;
 }
