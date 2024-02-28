@@ -22,6 +22,11 @@ func init_block_sampled{
 
     let (hash: Uint256) = keccak(input, input_bytes_len);
 
+    %{
+        print(f"DataLakeCommitment: {hex(ids.hash.low)} {hex(ids.hash.high)}")
+    
+    %}
+
     let (block_range_start, block_range_end, increment) = extract_constant_params{
         range_check_ptr=range_check_ptr
     }(input=input);
@@ -287,6 +292,7 @@ func fetch_account_data_points{
         block_number=current_block_number
     );
 
+    // Todo: this breaks when selecting state_root or code_hash
     let data_point = AccountReader.get_by_index{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,

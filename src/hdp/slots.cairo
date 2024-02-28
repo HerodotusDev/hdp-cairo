@@ -47,7 +47,7 @@ func populate_account_slot_segments{
                     memory[ptr._reference_value + offset + 3] = segments.gen_arg(nested_hex_to_int_array(proof["proof"]))
                     offset += 4
 
-            account_slot = program_input['header_batches'][0]["storage_items"][ids.index]
+            account_slot = program_input["storages"][ids.index]
 
             write_proofs(ids.proofs, account_slot["proofs"])
             write_account_slot(ids.account_slot, ids.proofs, account_slot)

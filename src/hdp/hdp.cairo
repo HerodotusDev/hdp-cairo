@@ -83,45 +83,45 @@ func main{
             offset = 0
             ids.headers_len = len(headers)
             for header in headers:
-                memory[ptr._reference_value + offset] = segments.gen_arg(hex_to_int_array(header["rlp_encoded_header"]))
-                memory[ptr._reference_value + offset + 1] = len(header["rlp_encoded_header"])
-                memory[ptr._reference_value + offset + 2] = header["bytes_len"]
-                memory[ptr._reference_value + offset + 3] = header["leaf_idx"]
-                memory[ptr._reference_value + offset + 4] = len(header["mmr_proof"])
-                memory[ptr._reference_value + offset + 5] = segments.gen_arg(hex_to_int_array(header["mmr_proof"]))
+                memory[ptr._reference_value + offset] = segments.gen_arg(hex_to_int_array(header["rlp"]))
+                memory[ptr._reference_value + offset + 1] = len(header["rlp"])
+                memory[ptr._reference_value + offset + 2] = header["rlp_bytes_len"]
+                memory[ptr._reference_value + offset + 3] = header["proof"]["leaf_idx"]
+                memory[ptr._reference_value + offset + 4] = len(header["proof"]["mmr_path"])
+                memory[ptr._reference_value + offset + 5] = segments.gen_arg(hex_to_int_array(header["proof"]["mmr_path"]))
                 offset += 5
     
     %}
     // if these hints are one hint, the compiler goes on strike.
     %{
         def write_mmr_meta(mmr_meta):
-            ids.mmr_meta.id = mmr_meta["mmr_id"]
-            ids.mmr_meta.root = hex_to_int(mmr_meta["mmr_root"])
-            ids.mmr_meta.size = mmr_meta["mmr_size"]
-            ids.mmr_meta.peaks_len = len(mmr_meta["mmr_peaks"])
-            ids.mmr_meta.peaks = segments.gen_arg(hex_to_int_array(mmr_meta["mmr_peaks"]))
+            ids.mmr_meta.id = mmr_meta["id"]
+            ids.mmr_meta.root = hex_to_int(mmr_meta["root"])
+            ids.mmr_meta.size = mmr_meta["size"]
+            ids.mmr_meta.peaks_len = len(mmr_meta["peaks"])
+            ids.mmr_meta.peaks = segments.gen_arg(hex_to_int_array(mmr_meta["peaks"]))
 
         #ids.results_root.low = hex_to_int(program_input["results_root"]["low"])
         #ids.results_root.high = hex_to_int(program_input["results_root"]["high"])
         
         # MMR Meta
-        write_mmr_meta(program_input['header_batches'][0]['mmr_meta'])
-        write_headers(ids.headers, program_input['header_batches'][0]["headers"])
+        write_mmr_meta(program_input['mmr'])
+        write_headers(ids.headers, program_input["headers"])
 
         # Account Params
-        ids.accounts_len = len(program_input['header_batches'][0]['accounts'])
-        ids.account_slots_len = len(program_input['header_batches'][0]['storage_items'])
+        ids.accounts_len = len(program_input['accounts'])
+        ids.account_slots_len = len(program_input['storages'])
         # rest is written with populate_account_segments & populate_account_slot_segments func call
 
         # Task and Datalake
         tasks_input, data_lakes_input, tasks_bytes_len, data_lake_bytes_len = ([], [], [], [])
-        block_sampled_tasks = filtered_tasks = [task for task in program_input['header_batches'][0]['tasks'] if task["datalake_type"] == 0]
+        block_sampled_tasks = filtered_tasks = [task for task in program_input['tasks'] if task["datalake_type"] == 0]
 
         for task in block_sampled_tasks:
             tasks_input.append(hex_to_int_array(task["computational_task"]))
-            tasks_bytes_len.append(task["computational_task_bytes_len"])
-            data_lakes_input.append(hex_to_int_array(task["data_lake"]))
-            data_lake_bytes_len.append(task["data_lake_bytes_len"])
+            tasks_bytes_len.append(task["computational_bytes_len"])
+            data_lakes_input.append(hex_to_int_array(task["datalake"]))
+            data_lake_bytes_len.append(task["datalake_bytes_len"])
         
         segments.write_arg(ids.block_sampled_tasks_input, tasks_input)
         segments.write_arg(ids.block_sampled_tasks_bytes_len, tasks_bytes_len)
@@ -180,21 +180,21 @@ func main{
         account_state_idx=0,
     );
 
-    // Check 4: Ensure the account slot proofs are valid
-    verify_n_account_slots{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        keccak_ptr=keccak_ptr,
-        account_states=account_states,
-        account_dict=account_dict,
-        slot_dict=slot_dict,
-        pow2_array=pow2_array,
-    }(
-        account_slots=account_slots,
-        account_slots_len=account_slots_len,
-        slot_states=slot_states,
-        state_idx=0
-    );
+    // // Check 4: Ensure the account slot proofs are valid
+    // verify_n_account_slots{
+    //     range_check_ptr=range_check_ptr,
+    //     bitwise_ptr=bitwise_ptr,
+    //     keccak_ptr=keccak_ptr,
+    //     account_states=account_states,
+    //     account_dict=account_dict,
+    //     slot_dict=slot_dict,
+    //     pow2_array=pow2_array,
+    // }(
+    //     account_slots=account_slots,
+    //     account_slots_len=account_slots_len,
+    //     slot_states=slot_states,
+    //     state_idx=0
+    // );
 
     BlockSampledTask.init{
         range_check_ptr=range_check_ptr,

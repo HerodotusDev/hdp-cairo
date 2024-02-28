@@ -31,8 +31,8 @@ func populate_account_segments{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, ke
         %{
             def write_account(account_ptr, proofs_ptr, account):
                 memory[account_ptr._reference_value] = segments.gen_arg(hex_to_int_array(account["address"]))
-                memory[account_ptr._reference_value + 1] = hex_to_int(account["key"]["low"])
-                memory[account_ptr._reference_value + 2] = hex_to_int(account["key"]["high"])
+                memory[account_ptr._reference_value + 1] = hex_to_int(account["account_key"]["low"])
+                memory[account_ptr._reference_value + 2] = hex_to_int(account["account_key"]["high"])
                 memory[account_ptr._reference_value + 3] = len(account["proofs"])
                 memory[account_ptr._reference_value + 4] = proofs_ptr._reference_value
 
@@ -45,7 +45,7 @@ func populate_account_segments{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, ke
                     memory[ptr._reference_value + offset + 3] = segments.gen_arg(nested_hex_to_int_array(proof["proof"]))
                     offset += 4
 
-            account = program_input['header_batches'][0]["accounts"][ids.index]
+            account = program_input["accounts"][ids.index]
 
             write_proofs(ids.proofs, account["proofs"])
             write_account(ids.account, ids.proofs, account)
