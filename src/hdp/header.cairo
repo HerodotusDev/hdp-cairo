@@ -10,58 +10,7 @@ from src.hdp.types import (
     MMRMeta,
 )
 from src.libs.block_header import extract_block_number_big, reverse_block_header_chunks
-
 from src.hdp.memorizer import HeaderMemorizer
-
-// Initializes the accounts, ensuring that the passed address matches the key.
-// Params:
-// - accounts: empty accounts array that the accounts will be writte too.
-// - n_accounts: the number of accounts to initialize.
-// - index: the current index of the account being initialized.
-func populate_header_segments{
-    range_check_ptr, 
-}(headers: Header*, n_headers: felt, index: felt) {
-    alloc_locals;
-    if (index == n_headers) {
-        return ();
-    } else {
-        local header: Header;
-        local header_proof: HeaderProof;
-        
-        %{
-            def write_header(header_ptr, header_proof_ptr, header):
-                memory[header_ptr._reference_value] = segments.gen_arg(hex_to_int_array(header["rlp"]))
-                memory[header_ptr._reference_value + 1] = len(header["rlp"])
-                memory[header_ptr._reference_value + 2] = header["rlp_bytes_len"]
-                memory[header_ptr._reference_value + 3] = header_proof_ptr
-
-            header = program_input["headers"][ids.index]
-
-            print(ids.index)
-            print(header)
-
-            ids.header_proof.leaf_idx = header["proof"]["leaf_idx"]
-            ids.header_proof.mmr_path_len = len(header["proof"]["mmr_path"])
-            ids.header_proof.mmr_path = segments.gen_arg(hex_to_int_array(header["proof"]["mmr_path"]))
-
-            #write_proof(ids.header_proof, header)
-            write_header(ids.header, ids.header_proof, header)
-
-        %}
-
-        assert headers[index] = header;
-
-        %{
-            print("next")
-        %}
-
-        return populate_header_segments(
-            headers=headers,
-            n_headers=n_headers,
-            index=index + 1,
-        );
-    }
-}
 
 // Guard function that verifies the inclusion of headers in the MMR.
 // It ensures:
@@ -98,7 +47,7 @@ func verify_headers_inclusion{
     %}
 
     // a header can be the right-most peak
-    if (headers[index].leaf_idx == mmr_size) {
+    if (headers[index].proof.leaf_idx == mmr_size) {
 
         // instead of running an inclusion proof, we ensure its a known peak
         let (contains_peak) = dict_read{dict_ptr=peaks_dict}(poseidon_hash);
@@ -124,9 +73,9 @@ func verify_headers_inclusion{
     let (computed_peak) = hash_subtree_path(
         element=poseidon_hash,
         height=0,
-        position=headers[index].leaf_idx,
-        inclusion_proof=headers[index].mmr_path,
-        inclusion_proof_len=headers[index].mmr_path_len
+        position=headers[index].proof.leaf_idx,
+        inclusion_proof=headers[index].proof.mmr_path,
+        inclusion_proof_len=headers[index].proof.mmr_path_len
     );
 
     // ensure the peak is included in the peaks dict, which contains the peaks of the mmr_root
@@ -135,9 +84,6 @@ func verify_headers_inclusion{
 
     // add to memorizer
     let block_number = get_block_number(headers[index]);
-    %{
-        print(f"Writing: {ids.block_number} - Hash: {hex(poseidon_hash)} - Index: {ids.index}")
-    %}
     HeaderMemorizer.add(block_number=block_number, index=index);
 
 

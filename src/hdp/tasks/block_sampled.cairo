@@ -74,19 +74,6 @@ namespace BlockSampledTask {
 
         let (data_points, data_points_len) = fetch_data_points(tasks[index]);
 
-        let d0 = data_points[0];
-        let d1 = data_points[1];
-        let d2 = data_points[2];
-        let d3 = data_points[3];
-
-        %{
-            print(f"execute_block_sampled")
-            print(f"data_points: {ids.d0.low} {ids.d0.high}")
-            print(f"data_points: {ids.d1.low} {ids.d1.high}")
-            print(f"data_points: {ids.d2.low} {ids.d2.high}")
-            print(f"data_points: {ids.d3.low} {ids.d3.high}")
-        %}
-
         if (tasks[index].aggregate_fn_id == 0){
             assert 0 = 1; // avg unimplemented
         }

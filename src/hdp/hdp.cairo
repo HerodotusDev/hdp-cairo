@@ -10,7 +10,7 @@ from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
 
 from src.hdp.types import Header, HeaderProof, MMRMeta, Account, AccountState, AccountSlot, SlotState, BlockSampledDataLake, BlockSampledComputationalTask
 from src.hdp.mmr import verify_mmr_meta
-from src.hdp.header import verify_headers_inclusion, populate_header_segments
+from src.hdp.header import verify_headers_inclusion
 from src.hdp.account import populate_account_segments, verify_n_accounts
 from src.hdp.slots import populate_account_slot_segments, verify_n_account_slots
 from src.hdp.memorizer import HeaderMemorizer, AccountMemorizer, SlotMemorizer, MEMORIZER_DEFAULT
@@ -86,12 +86,11 @@ func main{
             ids.headers_len = len(headers)
 
             for header in headers:
-                print("Offest", offset)
-                memory[ptr._reference_value + offset] = len(header["rlp"])
-                memory[ptr._reference_value + offset + 1] = header["rlp_bytes_len"]
-                memory[ptr._reference_value + offset + 2] = header["proof"]["leaf_idx"]
-                memory[ptr._reference_value + offset + 3] = len(header["proof"]["mmr_path"])
-                memory[ptr._reference_value + offset + 4] = segments.gen_arg(hex_to_int_array(header["rlp"]))
+                memory[ptr._reference_value + offset] = segments.gen_arg(hex_to_int_array(header["rlp"]))
+                memory[ptr._reference_value + offset + 1] = len(header["rlp"])
+                memory[ptr._reference_value + offset + 2] = header["rlp_bytes_len"]
+                memory[ptr._reference_value + offset + 3] = header["proof"]["leaf_idx"]
+                memory[ptr._reference_value + offset + 4] = len(header["proof"]["mmr_path"])
                 memory[ptr._reference_value + offset + 5] = segments.gen_arg(hex_to_int_array(header["proof"]["mmr_path"]))
                 offset += 6
     

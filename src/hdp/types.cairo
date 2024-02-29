@@ -7,13 +7,10 @@ struct HeaderProof {
 }
 
 struct Header {
+    rlp: felt*,
     rlp_len: felt,
     bytes_len: felt,
-    leaf_idx: felt,
-    mmr_path_len: felt,
-    rlp: felt*,
-    mmr_path: felt*,
-    // proof: HeaderProof,
+    proof: HeaderProof,
 }
 
 struct Account {
