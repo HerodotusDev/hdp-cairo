@@ -265,13 +265,38 @@ namespace AccountReader {
 
         let (res, res_len, bytes_len) = decode_account_value(rlp=rlp, value_idx=value_idx, item_starts_at_byte=2, counter=0);
 
-        let result = uint_le_u64_array_to_uint256(
-            elements=res,
-            elements_len=res_len,
-            bytes_len=bytes_len
-        );
+        local is_hash: felt;
+        %{
+            # We need to ensure we decode the felt* in the correct format
+            if ids.value_idx <= 1:
+                # Int Value: nonce=0, balance=1
+                ids.is_hash = 0
+            else:
+                # Hash Value: stateRoot=2, codeHash=3
+                ids.is_hash = 1
+        %}
 
-        return result;
+        if (is_hash == 0) {
+            assert [range_check_ptr] = 1 - value_idx; // validates is_hash hint
+            tempvar range_check_ptr = range_check_ptr + 1;
+            let result = uint_le_u64_array_to_uint256(
+                elements=res,
+                elements_len=res_len,
+                bytes_len=bytes_len
+            );
+
+
+            return result;
+        } else {
+            assert [range_check_ptr] = value_idx - 2; // validates is_hash hint
+            tempvar range_check_ptr = range_check_ptr + 1;
+            let result = keccak_hash_array_to_uint256(
+                elements=res,
+                elements_len=res_len
+            );
+
+            return result;
+        }
     }
 }
 

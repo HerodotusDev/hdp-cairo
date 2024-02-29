@@ -114,8 +114,6 @@ func main{
 
         # Header Params
         ids.headers_len = len(program_input["headers"])
-
-        print("HeadersLen:", ids.headers_len)
         write_headers(ids.headers, program_input["headers"])
 
         # Account Params
@@ -148,15 +146,6 @@ func main{
     let (local peaks_dict) = default_dict_new(default_value=0);
     tempvar peaks_dict_start = peaks_dict;
     write_felt_array_to_dict_keys{dict_end=peaks_dict}(array=mmr_meta.peaks, index=mmr_meta.peaks_len - 1);
-
-    //Write headers to memory
-    // populate_header_segments{
-    //     range_check_ptr=range_check_ptr,
-    // } (
-    //     headers=headers, 
-    //     n_headers=headers_len, 
-    //     index=0
-    // );
 
     // Check 2: Ensure the header is contained in a peak, and that the peak is known
     verify_headers_inclusion{
