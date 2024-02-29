@@ -67,7 +67,7 @@ contract HreExecutionStoreTest is Test {
         sharpFactsAggregator = new MockSharpFactsAggregator();
         hdp = new HdpExecutionStore(factsRegistry, aggregatorsFactory);
 
-        // Step 0. Create mock SHARP facts aggregator mmr id 1
+        // Step 0. Create mock SHARP facts aggregator mmr id 2
         aggregatorsFactory.createAggregator(2, sharpFactsAggregator);
 
         assertTrue(hdp.hasRole(keccak256("OPERATOR_ROLE"), address(this)));
@@ -217,6 +217,7 @@ contract HreExecutionStoreTest is Test {
             scheduledTasksBatchMerkleRootLow,
             scheduledTasksBatchMerkleRootHigh
         );
+        console.logBytes32(factHash);
         factsRegistry.markValid(factHash);
         bool is_valid = factsRegistry.isValid(factHash);
         assertEq(is_valid, true);
