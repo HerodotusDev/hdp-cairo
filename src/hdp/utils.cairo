@@ -186,9 +186,5 @@ func compute_results_entry{
 
     let (res_id) = keccak(values_felt_start, 64);
 
-    %{
-        print(f"Result Entry: {hex(ids.res_id.high)} {hex(ids.res_id.high)}")
-    %}
-
     return (res_id);
 }

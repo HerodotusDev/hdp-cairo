@@ -137,7 +137,7 @@ func verify_account{
 
     // get state_root from verified headers
     let header = HeaderMemorizer.get(account_proof.block_number);
-    let state_root = extract_state_root_little(headers[proof_idx].rlp);
+    let state_root = extract_state_root_little(header.rlp);
 
     let (value: felt*, value_len: felt) = verify_mpt_proof(
         mpt_proof=account_proof.proof,

@@ -299,7 +299,7 @@ func fetch_account_data_points{
         pow2_array=pow2_array,
     }(rlp=account_state.values, value_idx=[datalake.properties + 4]); // value idx is at 4
 
-    assert [data_points + index] = data_point;
+    assert [data_points + index * Uint256.SIZE] = data_point;
 
     if(current_block_number == datalake.block_range_end) {
         return index + 1;

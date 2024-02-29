@@ -21,8 +21,10 @@ namespace HeaderMemorizer {
         poseidon_ptr: PoseidonBuiltin*,
         header_dict: DictAccess*,
     }(block_number: felt, index: felt){
-        let key = gen_header_key(block_number);
-        dict_write{dict_ptr=header_dict}(key=key, new_value=index);
+        %{
+            print("Add header to memorizer: ", ids.block_number, " -> ", ids.index)
+        %}
+        dict_write{dict_ptr=header_dict}(key=block_number, new_value=index);
         return ();
     }
 
@@ -30,15 +32,17 @@ namespace HeaderMemorizer {
         header_dict: DictAccess*,
         headers: Header*,
         poseidon_ptr: PoseidonBuiltin*,
-    }(block_height: felt) -> (header: Header){
-        let key = gen_header_key(block_height);
-        let (index) = dict_read{dict_ptr=header_dict}(key);
+    }(block_number: felt) -> Header{
+        let (index) = dict_read{dict_ptr=header_dict}(block_number);
         // ensure element exists
         // if(index == MEMORIZER_DEFAULT) {
         //     assert 1 = 0;
         // }
+        %{
+            print("get header to memorizer: ", ids.block_number, " -> ", ids.index)
+        %}
 
-        return (header=headers[index]);
+        return (headers[index]);
     }
 
     func exists{

@@ -10,7 +10,7 @@ from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
 
 from src.hdp.types import Header, HeaderProof, MMRMeta, Account, AccountState, AccountSlot, SlotState, BlockSampledDataLake, BlockSampledComputationalTask
 from src.hdp.mmr import verify_mmr_meta
-from src.hdp.header import verify_headers_inclusion
+from src.hdp.header import verify_headers_inclusion, populate_header_segments
 from src.hdp.account import populate_account_segments, verify_n_accounts
 from src.hdp.slots import populate_account_slot_segments, verify_n_account_slots
 from src.hdp.memorizer import HeaderMemorizer, AccountMemorizer, SlotMemorizer, MEMORIZER_DEFAULT
@@ -31,7 +31,8 @@ func main{
     poseidon_ptr: PoseidonBuiltin*,
 }() {
     alloc_locals;
-    // local results_root: Uint256;
+    local expected_results_root: Uint256;
+    local expected_tasks_root: Uint256;
 
     // Header Params
     local headers_len: felt;
@@ -83,14 +84,16 @@ func main{
         def write_headers(ptr, headers):
             offset = 0
             ids.headers_len = len(headers)
+
             for header in headers:
-                memory[ptr._reference_value + offset] = segments.gen_arg(hex_to_int_array(header["rlp"]))
-                memory[ptr._reference_value + offset + 1] = len(header["rlp"])
-                memory[ptr._reference_value + offset + 2] = header["rlp_bytes_len"]
-                memory[ptr._reference_value + offset + 3] = header["proof"]["leaf_idx"]
-                memory[ptr._reference_value + offset + 4] = len(header["proof"]["mmr_path"])
+                print("Offest", offset)
+                memory[ptr._reference_value + offset] = len(header["rlp"])
+                memory[ptr._reference_value + offset + 1] = header["rlp_bytes_len"]
+                memory[ptr._reference_value + offset + 2] = header["proof"]["leaf_idx"]
+                memory[ptr._reference_value + offset + 3] = len(header["proof"]["mmr_path"])
+                memory[ptr._reference_value + offset + 4] = segments.gen_arg(hex_to_int_array(header["rlp"]))
                 memory[ptr._reference_value + offset + 5] = segments.gen_arg(hex_to_int_array(header["proof"]["mmr_path"]))
-                offset += 5
+                offset += 6
     
     %}
     // if these hints are one hint, the compiler goes on strike.
@@ -102,11 +105,18 @@ func main{
             ids.mmr_meta.peaks_len = len(mmr_meta["peaks"])
             ids.mmr_meta.peaks = segments.gen_arg(hex_to_int_array(mmr_meta["peaks"]))
 
-        #ids.results_root.low = hex_to_int(program_input["results_root"]["low"])
-        #ids.results_root.high = hex_to_int(program_input["results_root"]["high"])
+        ids.expected_results_root.low = hex_to_int(program_input["results_root"]["low"])
+        ids.expected_results_root.high = hex_to_int(program_input["results_root"]["high"])
+        ids.expected_tasks_root.low = hex_to_int(program_input["tasks_root"]["low"])
+        ids.expected_tasks_root.high = hex_to_int(program_input["tasks_root"]["high"])
         
         # MMR Meta
         write_mmr_meta(program_input['mmr'])
+
+        # Header Params
+        ids.headers_len = len(program_input["headers"])
+
+        print("HeadersLen:", ids.headers_len)
         write_headers(ids.headers, program_input["headers"])
 
         # Account Params
@@ -140,6 +150,15 @@ func main{
     tempvar peaks_dict_start = peaks_dict;
     write_felt_array_to_dict_keys{dict_end=peaks_dict}(array=mmr_meta.peaks, index=mmr_meta.peaks_len - 1);
 
+    //Write headers to memory
+    // populate_header_segments{
+    //     range_check_ptr=range_check_ptr,
+    // } (
+    //     headers=headers, 
+    //     n_headers=headers_len, 
+    //     index=0
+    // );
+
     // Check 2: Ensure the header is contained in a peak, and that the peak is known
     verify_headers_inclusion{
         range_check_ptr=range_check_ptr,
@@ -149,8 +168,9 @@ func main{
         header_dict=header_dict,
     }(
         headers=headers,
-        headers_len=headers_len,
-        mmr_size=mmr_meta.size
+        mmr_size=mmr_meta.size,
+        n_headers=headers_len,
+        index=0
     );
 
     populate_account_segments(
@@ -231,11 +251,18 @@ func main{
         keccak_ptr=keccak_ptr,
     } (block_sampled_tasks[0].hash);
 
+    assert expected_tasks_root.low = tasks_root.low;
+    assert expected_tasks_root.high = tasks_root.high;
+
     let results_entry = compute_results_entry{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
     } (block_sampled_tasks[0].hash, results[0]);
+    
+    %{
+        print(f"Result Entry: {hex(ids.results_entry.low)} {hex(ids.results_entry.high)}")    
+    %}
 
     let results_root = compute_root_mock{
         range_check_ptr=range_check_ptr,
@@ -244,10 +271,12 @@ func main{
     } (results_entry);
 
     %{
-        print(f"Result Entry: {hex(ids.results_entry.low)} {hex(ids.results_entry.high)}")    
         print(f"Tasks Root: {hex(ids.tasks_root.low)} {hex(ids.tasks_root.high)}")
         print(f"Results Root: {hex(ids.results_root.low)} {hex(ids.results_root.high)}")
     %}
+
+    assert expected_results_root.low = results_root.low;
+    assert expected_results_root.high = results_root.high;
 
     // Post Verification Checks: Ensure dict consistency
     default_dict_finalize(peaks_dict_start, peaks_dict, 0);
