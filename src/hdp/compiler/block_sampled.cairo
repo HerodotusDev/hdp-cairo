@@ -24,7 +24,6 @@ func init_block_sampled{
 
     %{
         print(f"DataLakeCommitment: {hex(ids.hash.low)} {hex(ids.hash.high)}")
-    
     %}
 
     let (block_range_start, block_range_end, increment) = extract_constant_params{
@@ -307,3 +306,4 @@ func fetch_account_data_points{
 
     return fetch_account_data_points(datalake=datalake, index=index + 1, data_points=data_points);
 }
+

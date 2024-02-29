@@ -8,6 +8,7 @@ from src.libs.utils import word_reverse_endian_64, word_reverse_endian_16_RC
 from src.hdp.types import BlockSampledDataLake, BlockSampledComputationalTask, AccountState
 from src.hdp.compiler.block_sampled import init_block_sampled, fetch_data_points
 from src.hdp.tasks.sum import compute_sum
+from src.hdp.tasks.avg import compute_avg
 
 namespace BlockSampledTask {
     func init{
@@ -75,7 +76,22 @@ namespace BlockSampledTask {
         let (data_points, data_points_len) = fetch_data_points(tasks[index]);
 
         if (tasks[index].aggregate_fn_id == 0){
-            assert 0 = 1; // avg unimplemented
+            let result = compute_avg{
+                range_check_ptr=range_check_ptr,    
+            }(values=data_points, values_len=data_points_len);
+
+            %{
+                print(f"Computing Average")
+                print(f"result: {ids.result.low} {ids.result.high}")
+            %}
+
+            assert [results] = result;
+
+            return execute(
+                results=results + Uint256.SIZE,
+                tasks_len=tasks_len,
+                index=index + 1,
+            );
         }
 
         if (tasks[index].aggregate_fn_id == 1){
@@ -84,7 +100,7 @@ namespace BlockSampledTask {
             }(values=data_points, values_len=data_points_len);
 
             %{
-                print(f"execute_block_sampled")
+                print(f"Computing Sum")
                 print(f"result: {ids.result.low} {ids.result.high}")
             %}
 

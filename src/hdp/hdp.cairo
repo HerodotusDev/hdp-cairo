@@ -275,20 +275,23 @@ func main{
     [ap] = mmr_meta.root;
     [ap] = [output_ptr], ap++;
 
-    [ap] = results_root.low;
+    [ap] = mmr_meta.size;
     [ap] = [output_ptr + 1], ap++;
 
-    [ap] = results_root.high;
+    [ap] = results_root.low;
     [ap] = [output_ptr + 2], ap++;
 
-    [ap] = tasks_root.low;
+    [ap] = results_root.high;
     [ap] = [output_ptr + 3], ap++;
 
-    [ap] = tasks_root.high;
+    [ap] = tasks_root.low;
     [ap] = [output_ptr + 4], ap++;
 
-    [ap] = output_ptr + 5, ap++;
-    let output_ptr = output_ptr + 5;
+    [ap] = tasks_root.high;
+    [ap] = [output_ptr + 5], ap++;
+
+    [ap] = output_ptr + 6, ap++;
+    let output_ptr = output_ptr + 6;
 
     return();
 }

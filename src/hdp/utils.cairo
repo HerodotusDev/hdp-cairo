@@ -13,6 +13,8 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256s
 
+
+// ToDo: Investigate. This seems to break on big numbers
 func uint_le_u64_array_to_uint256{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
