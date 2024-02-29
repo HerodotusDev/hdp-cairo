@@ -285,7 +285,6 @@ namespace AccountReader {
                 bytes_len=bytes_len
             );
 
-
             return result;
         } else {
             assert [range_check_ptr] = value_idx - 2; // validates is_hash hint

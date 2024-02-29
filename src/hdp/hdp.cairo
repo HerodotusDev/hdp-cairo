@@ -126,9 +126,9 @@ func main{
         block_sampled_tasks = filtered_tasks = [task for task in program_input['tasks'] if task["datalake_type"] == 0]
 
         for task in block_sampled_tasks:
-            tasks_input.append(hex_to_int_array(task["computational_task"]))
-            tasks_bytes_len.append(task["computational_bytes_len"])
-            data_lakes_input.append(hex_to_int_array(task["datalake"]))
+            tasks_input.append(hex_to_int_array(task["encoded_task"]))
+            tasks_bytes_len.append(task["task_bytes_len"])
+            data_lakes_input.append(hex_to_int_array(task["encoded_datalake"]))
             data_lake_bytes_len.append(task["datalake_bytes_len"])
         
         segments.write_arg(ids.block_sampled_tasks_input, tasks_input)
