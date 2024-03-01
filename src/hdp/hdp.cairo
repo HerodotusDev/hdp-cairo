@@ -20,7 +20,7 @@ from src.libs.utils import (
 )
 
 from src.hdp.tasks.block_sampled import BlockSampledTask
-from src.hdp.merkle import compute_root_mock
+from src.hdp.merkle import compute_tasks_root, compute_results_root
 from src.hdp.utils import compute_results_entry
 
 func main{
@@ -233,36 +233,25 @@ func main{
         index=0
     );
 
-    let tasks_root = compute_root_mock{
+    let tasks_root = compute_tasks_root{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
-    } (block_sampled_tasks[0].hash);
+    } (tasks=block_sampled_tasks, tasks_len=block_sampled_tasks_len);
 
-    assert expected_tasks_root.low = tasks_root.low;
-    assert expected_tasks_root.high = tasks_root.high;
-
-    let results_entry = compute_results_entry{
+    let results_root = compute_results_root{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
-    } (block_sampled_tasks[0].hash, results[0]);
-    
-    %{
-        print(f"Result Entry: {hex(ids.results_entry.low)} {hex(ids.results_entry.high)}")    
-    %}
-
-    let results_root = compute_root_mock{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        keccak_ptr=keccak_ptr,
-    } (results_entry);
+    } (tasks=block_sampled_tasks, results=results, tasks_len=block_sampled_tasks_len);
 
     %{
         print(f"Tasks Root: {hex(ids.tasks_root.low)} {hex(ids.tasks_root.high)}")
         print(f"Results Root: {hex(ids.results_root.low)} {hex(ids.results_root.high)}")
     %}
 
+    assert expected_tasks_root.low = tasks_root.low;
+    assert expected_tasks_root.high = tasks_root.high;
     assert expected_results_root.low = results_root.low;
     assert expected_results_root.high = results_root.high;
 
