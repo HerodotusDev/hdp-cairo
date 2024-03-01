@@ -44,7 +44,7 @@ func uint_le_u64_array_to_uint256{
         let low_1 = reversed_elements[0];
         let low_2 = reversed_elements[1];
         let result = Uint256(
-            low=low_1 * pow2_array[64] + low_2,
+            low=low_1 * pow2_array[bytes_len - 1] + low_2,
             high=0
         );
         return result;
@@ -71,7 +71,7 @@ func uint_le_u64_array_to_uint256{
 
     let result = Uint256(
         low=low_1 * pow2_array[64] + low_2,
-        high=high_1 * pow2_array[64] + high_2
+        high=high_1 * pow2_array[bytes_len - 1] + high_2
     );
     return result;
     
