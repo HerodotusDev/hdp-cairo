@@ -129,14 +129,21 @@ func double_hash_leafs{
     }
 
     let tree_idx = tree_len - 1 - index;
-
-    // %{
-    //     print("Double HAsh Leafs:")
-    //     print("tree_idx: ", ids.tree_idx)
-    //     print("index: ", ids.index)
-    // %}
-
     let leaf_hash = compute_leaf_hash(leafs[index]);
+
+    %{
+        def flip(val):
+            val = hex(val)[2:]
+            # Convert hex string to bytes
+            byte_data = bytes.fromhex(val)
+            num = int.from_bytes(byte_data, byteorder="little")
+
+            return num
+
+        leaf_hash = flip(ids.leaf_hash.low) * 2**128 + flip(ids.leaf_hash.high)
+        print(f"Adding Leaf: {hex(leaf_hash)} -> Index: {ids.tree_idx}")
+    %}
+
     assert tree[tree_len - 1 - index] = leaf_hash;
 
     return double_hash_leafs(
@@ -157,15 +164,26 @@ func hash_pair{
     
     // ToDo: I think we can get away with handling this in a hint
     %{
-        left = ids.left.high * 2**128 + ids.left.low
-        right = ids.right.high * 2**128 + ids.right.low
+
+        def flip(val):
+            val = hex(val)[2:]
+            # Convert hex string to bytes
+            byte_data = bytes.fromhex(val)
+            num = int.from_bytes(byte_data, byteorder="little")
+
+            return num
+
+        left = flip(ids.left.low) * 2**128 + flip(ids.left.high)
+        right = flip(ids.right.low) * 2**128 + flip(ids.right.high)
+        print(f"Left:{hex(left)}")
+        print(f"RIGHT:{hex(right)}")
 
         if left < right:
-            ids.is_left_smaller = 0
+            ids.is_left_smaller = 1
             print(f"H({hex(left)}, {hex(right)})")
         else:
             print(f"H({hex(right)}, {hex(left)})")
-            ids.is_left_smaller = 1
+            ids.is_left_smaller = 0
     %}
 
     if(is_left_smaller == 1) {
@@ -184,6 +202,11 @@ func hash_pair{
         elements=pair
     );
 
+    %{
+        hash_val = flip(ids.res.low) * 2**128 + flip(ids.res.high)
+        print(f"Node hash: {hex(hash_val)}")
+    %}
+
     return (res);
 }
 
@@ -198,10 +221,10 @@ func main{
     let leafs_len = 5;
 
     assert leafs[0] = Uint256(1,0);
-    assert leafs[1] = Uint256(1,0);
-    assert leafs[2] = Uint256(1,0);
+    assert leafs[1] = Uint256(2,0);
+    assert leafs[2] = Uint256(4,0);
     assert leafs[3] = Uint256(1,0);
-    assert leafs[4] = Uint256(1,0);
+    assert leafs[4] = Uint256(122,0);
 
     compute_merkle_root{
         range_check_ptr=range_check_ptr,
