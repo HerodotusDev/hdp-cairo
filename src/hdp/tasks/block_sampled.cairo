@@ -64,6 +64,8 @@ namespace BlockSampledTask {
         bitwise_ptr: BitwiseBuiltin*,
         account_dict: DictAccess*,
         account_states: AccountState*,
+        storage_dict: DictAccess*,
+        storage_items: Uint256*,
         pow2_array: felt*,
         tasks: BlockSampledComputationalTask*,
     }(results: Uint256*, tasks_len: felt, index: felt) {

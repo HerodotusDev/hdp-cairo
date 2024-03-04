@@ -55,11 +55,6 @@ struct AccountSlotProof {
     proof: felt**,
 }
 
-struct SlotState {
-    low: felt,
-    high: felt,
-}
-
 struct BlockSampledDataLake {
     block_range_start: felt,
     block_range_end: felt,

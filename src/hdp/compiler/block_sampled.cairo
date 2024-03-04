@@ -7,7 +7,7 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.bitwise import bitwise_xor
 from src.libs.utils import word_reverse_endian_64, word_reverse_endian_16_RC
 from src.hdp.types import BlockSampledDataLake, AccountState, BlockSampledComputationalTask
-from src.hdp.memorizer import AccountMemorizer
+from src.hdp.memorizer import AccountMemorizer, StorageMemorizer
 from src.hdp.account import AccountReader
 
 
@@ -120,6 +120,8 @@ func fetch_data_points{
     bitwise_ptr: BitwiseBuiltin*,
     account_dict: DictAccess*,
     account_states: AccountState*,
+    storage_dict: DictAccess*,
+    storage_items: Uint256*,
     pow2_array: felt*,
 }(task: BlockSampledComputationalTask) -> (Uint256*, felt) {
     alloc_locals;
@@ -148,7 +150,16 @@ func fetch_data_points{
 
     if(property_type == 3) {
         // Account Slot - Unimplemented!
-        assert 0 = 1;
+        let data_points_len = fetch_storage_data_points{
+            range_check_ptr=range_check_ptr,
+            poseidon_ptr=poseidon_ptr,
+            bitwise_ptr=bitwise_ptr,
+            storage_dict=storage_dict,
+            storage_items=storage_items,
+            pow2_array=pow2_array,
+        }(datalake=task.datalake, index=0, data_points=data_points);
+
+        return (data_points, data_points_len);
     } else {
         assert 0 = 1; // Invalid property_type
     }
@@ -307,3 +318,29 @@ func fetch_account_data_points{
     return fetch_account_data_points(datalake=datalake, index=index + 1, data_points=data_points);
 }
 
+func fetch_storage_data_points{
+    range_check_ptr,
+    poseidon_ptr: PoseidonBuiltin*,
+    bitwise_ptr: BitwiseBuiltin*,
+    storage_dict: DictAccess*,
+    storage_items: Uint256*,
+    pow2_array: felt*,
+}(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
+    alloc_locals;
+
+    let current_block_number = datalake.block_range_start + index * datalake.increment;
+    
+    let (data_point) = StorageMemorizer.get(
+        storage_slot=datalake.properties + 4, // slot is idx [4-7] 
+        address=datalake.properties + 1, // address is idx [1-3]
+        block_number=current_block_number
+    );
+
+    assert [data_points + index * Uint256.SIZE] = data_point;
+
+    if(current_block_number == datalake.block_range_end) {
+        return index + 1;
+    }
+
+    return fetch_storage_data_points(datalake=datalake, index=index + 1, data_points=data_points);
+}

@@ -8,12 +8,12 @@ from starkware.cairo.common.default_dict import default_dict_new, default_dict_f
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
 
-from src.hdp.types import Header, HeaderProof, MMRMeta, Account, AccountState, AccountSlot, SlotState, BlockSampledDataLake, BlockSampledComputationalTask
+from src.hdp.types import Header, HeaderProof, MMRMeta, Account, AccountState, AccountSlot, BlockSampledDataLake, BlockSampledComputationalTask
 from src.hdp.mmr import verify_mmr_meta
 from src.hdp.header import verify_headers_inclusion
 from src.hdp.account import populate_account_segments, verify_n_accounts
 from src.hdp.slots import populate_account_slot_segments, verify_n_account_slots
-from src.hdp.memorizer import HeaderMemorizer, AccountMemorizer, SlotMemorizer, MEMORIZER_DEFAULT
+from src.hdp.memorizer import HeaderMemorizer, AccountMemorizer, StorageMemorizer, MEMORIZER_DEFAULT
 from src.libs.utils import (
     pow2alloc127,
     write_felt_array_to_dict_keys
@@ -49,12 +49,12 @@ func main{
     let (account_slots_states: AccountState**) = alloc();
     local account_slots_len: felt;
 
-    let (slot_states: SlotState*) = alloc();
+    let (storage_items: Uint256*) = alloc();
 
     // Memorizers
     let (header_dict, header_dict_start) = HeaderMemorizer.initialize();
     let (account_dict, account_dict_start) = AccountMemorizer.initialize();
-    let (slot_dict, slot_dict_start) = SlotMemorizer.initialize();
+    let (storage_dict, storage_dict_start) = StorageMemorizer.initialize();
     
     // Task and Datalake
     local block_sampled_tasks_len: felt;
@@ -189,21 +189,21 @@ func main{
         account_state_idx=0,
     );
 
-    // // Check 4: Ensure the account slot proofs are valid
-    // verify_n_account_slots{
-    //     range_check_ptr=range_check_ptr,
-    //     bitwise_ptr=bitwise_ptr,
-    //     keccak_ptr=keccak_ptr,
-    //     account_states=account_states,
-    //     account_dict=account_dict,
-    //     slot_dict=slot_dict,
-    //     pow2_array=pow2_array,
-    // }(
-    //     account_slots=account_slots,
-    //     account_slots_len=account_slots_len,
-    //     slot_states=slot_states,
-    //     state_idx=0
-    // );
+    // Check 4: Ensure the account slot proofs are valid
+    verify_n_account_slots{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        keccak_ptr=keccak_ptr,
+        account_states=account_states,
+        account_dict=account_dict,
+        storage_dict=storage_dict,
+        pow2_array=pow2_array,
+    }(
+        account_slots=account_slots,
+        account_slots_len=account_slots_len,
+        storage_items=storage_items,
+        state_idx=0
+    );
 
     BlockSampledTask.init{
         range_check_ptr=range_check_ptr,
@@ -225,6 +225,8 @@ func main{
         bitwise_ptr=bitwise_ptr,
         account_dict=account_dict,
         account_states=account_states,
+        storage_dict=storage_dict,
+        storage_items=storage_items,
         pow2_array=pow2_array,
         tasks=block_sampled_tasks,
     }(
@@ -259,7 +261,7 @@ func main{
     default_dict_finalize(peaks_dict_start, peaks_dict, 0);
     default_dict_finalize(header_dict_start, header_dict, MEMORIZER_DEFAULT);
     default_dict_finalize(account_dict_start, account_dict, MEMORIZER_DEFAULT);
-    default_dict_finalize(slot_dict_start, slot_dict, MEMORIZER_DEFAULT);
+    default_dict_finalize(storage_dict_start, storage_dict, MEMORIZER_DEFAULT);
 
     [ap] = mmr_meta.root;
     [ap] = [output_ptr], ap++;

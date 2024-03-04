@@ -27,5 +27,3 @@ func compute_avg{
 
     return (result);
 }
-
-

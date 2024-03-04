@@ -4,7 +4,7 @@ from src.libs.mpt import verify_mpt_proof
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
-from src.hdp.types import AccountState, AccountSlotProof, SlotState, AccountSlot
+from src.hdp.types import AccountState, AccountSlotProof, AccountSlot
 from src.hdp.account import AccountReader
 
 from src.libs.rlp_little import (
@@ -12,9 +12,10 @@ from src.libs.rlp_little import (
     extract_n_bytes_from_le_64_chunks_array,
 )
 
-from src.hdp.memorizer import SlotMemorizer, AccountMemorizer
+from src.hdp.memorizer import StorageMemorizer, AccountMemorizer
 
 from src.libs.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64
+from src.hdp.utils import uint_le_u64_array_to_uint256, decode_rlp_word_to_uint256
 
 // Intializes and validates the account_slots
 func populate_account_slot_segments{
@@ -33,8 +34,8 @@ func populate_account_slot_segments{
             def write_account_slot(account_ptr, proofs_ptr, account):
                 memory[account_ptr._reference_value] = segments.gen_arg(hex_to_int_array(account["address"]))
                 memory[account_ptr._reference_value + 1] =segments.gen_arg(hex_to_int_array(account["slot"]))
-                memory[account_ptr._reference_value + 2] = hex_to_int(account["key"]["low"])
-                memory[account_ptr._reference_value + 3] = hex_to_int(account["key"]["high"])
+                memory[account_ptr._reference_value + 2] = hex_to_int(account["storage_key"]["low"])
+                memory[account_ptr._reference_value + 3] = hex_to_int(account["storage_key"]["high"])
                 memory[account_ptr._reference_value + 4] = len(account["proofs"])
                 memory[account_ptr._reference_value + 5] = proofs_ptr._reference_value
 
@@ -80,23 +81,27 @@ func verify_n_account_slots{
     poseidon_ptr: PoseidonBuiltin*,
     account_states: AccountState*,
     account_dict: DictAccess*,
-    slot_dict: DictAccess*,
+    storage_dict: DictAccess*,
     pow2_array: felt*,
 } (
     account_slots: AccountSlot*,
     account_slots_len: felt,
-    slot_states: SlotState*,
+    storage_items: Uint256*,
     state_idx: felt,
 ) {
     if(account_slots_len == 0) {
         return ();
     }
 
+    %{
+        print("slots:",ids.account_slots_len) 
+    %}
+
     let account_slot_idx = account_slots_len - 1;
     
     let state_idx = verify_account_slot(
         account_slot=account_slots[account_slot_idx],
-        slot_states=slot_states,
+        storage_items=storage_items,
         proof_idx=0,
         state_idx=state_idx
     );
@@ -104,7 +109,7 @@ func verify_n_account_slots{
     return verify_n_account_slots(
         account_slots=account_slots,
         account_slots_len=account_slots_len - 1,
-        slot_states=slot_states,
+        storage_items=storage_items,
         state_idx=state_idx
     );
 }
@@ -121,11 +126,11 @@ func verify_account_slot{
     poseidon_ptr: PoseidonBuiltin*,
     account_states: AccountState*,
     account_dict: DictAccess*,
-    slot_dict: DictAccess*,
+    storage_dict: DictAccess*,
     pow2_array: felt*,
 } (
     account_slot: AccountSlot,
-    slot_states: SlotState*,
+    storage_items: Uint256*,
     proof_idx: felt,
     state_idx: felt
 ) -> felt {
@@ -134,13 +139,14 @@ func verify_account_slot{
         return state_idx;
     }
 
+
     let slot_proof = account_slot.proofs[proof_idx];
 
     // get state_root from verified headers
     let (account_state) = AccountMemorizer.get(account_slot.address, slot_proof.block_number);
     let state_root = AccountReader.get_state_root(account_state.values);
  
-    let (value: felt*, _value_len: felt) = verify_mpt_proof(
+    let (value: felt*, value_bytes_len: felt) = verify_mpt_proof(
         mpt_proof=slot_proof.proof,
         mpt_proof_bytes_len=slot_proof.proof_bytes_len,
         mpt_proof_len=slot_proof.proof_len,
@@ -150,18 +156,15 @@ func verify_account_slot{
         hash_to_assert=state_root,
         pow2_array=pow2_array,
     );
+    
+    let decoded_value = decode_rlp_word_to_uint256(value, value_bytes_len);
+    assert storage_items[state_idx] = decoded_value;
 
-    // write verified account state
-    assert slot_states[state_idx] = SlotState(
-        low=value[0], // EVM word is always 32 bytes
-        high=value[1],
-    );
-
-    SlotMemorizer.add(account_slot.key, account_slot.address, slot_proof.block_number, state_idx);
+    StorageMemorizer.add(account_slot.slot, account_slot.address, slot_proof.block_number, state_idx);
 
     return verify_account_slot(
         account_slot=account_slot,
-        slot_states=slot_states,
+        storage_items=storage_items,
         proof_idx=proof_idx + 1,
         state_idx=state_idx + 1
     );

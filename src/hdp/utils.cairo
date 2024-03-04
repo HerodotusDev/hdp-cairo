@@ -13,6 +13,8 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256s
 
+from src.libs.rlp_little import extract_byte_at_pos, extract_n_bytes_from_le_64_chunks_array
+
 
 // ToDo: Investigate. This seems to break on big numbers
 func uint_le_u64_array_to_uint256{
@@ -189,4 +191,42 @@ func compute_results_entry{
     let (res_id) = keccak(values_felt_start, 64);
 
     return (res_id);
+}
+
+func decode_rlp_word_to_uint256{
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    pow2_array: felt*
+}(elements: felt*, elements_bytes_len: felt) -> Uint256 {
+    alloc_locals;
+    if (elements_bytes_len == 1) {
+        let result = Uint256(
+            low=elements[0],
+            high=0
+        );
+        return result;
+    }
+
+    let prefix = extract_byte_at_pos(elements[0], 0, pow2_array);
+    local result_bytes_len = prefix - 0x80;
+
+    let (result_chunks, result_len) = extract_n_bytes_from_le_64_chunks_array(
+        array=elements,
+        start_word=0,
+        start_offset=1,
+        n_bytes=result_bytes_len,
+        pow2_array=pow2_array
+    );
+
+    let result = uint_le_u64_array_to_uint256(
+        elements=result_chunks,
+        elements_len=result_len,
+        bytes_len=result_bytes_len
+    );
+
+    %{
+        print("res: ", ids.result.low, ids.result.high, "\n")
+    %}
+
+    return result;
 }

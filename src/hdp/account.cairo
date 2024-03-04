@@ -91,6 +91,10 @@ func verify_n_accounts{
         return ();
     }
 
+    %{
+        print("Account:",ids.accounts_len) 
+    %}
+
     let account_idx = accounts_len - 1;
     
     let account_state_idx = verify_account(
@@ -132,6 +136,10 @@ func verify_account{
     if (proof_idx == account.proofs_len) {
         return account_state_idx;
     }
+
+    %{
+        print("Account proof idx:",ids.proof_idx) 
+    %}
 
     let account_proof = account.proofs[proof_idx];
 
