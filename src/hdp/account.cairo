@@ -183,11 +183,6 @@ namespace AccountReader {
             elements_len=res_len
         );
 
-        %{
-            print("stateRoot.high", hex(ids.result.high))
-            print("stateRoot.low", hex(ids.result.low))
-        %}
-
         return result;
     }
 
@@ -204,11 +199,9 @@ namespace AccountReader {
         %{
             # We need to ensure we decode the felt* in the correct format
             if ids.value_idx <= 1:
-                print("Int Value: nonce=0, balance=1")
                 # Int Value: nonce=0, balance=1
                 ids.is_hash = 0
             else:
-                print("Hash Value")
                 # Hash Value: stateRoot=2, codeHash=3
                 ids.is_hash = 1
         %}

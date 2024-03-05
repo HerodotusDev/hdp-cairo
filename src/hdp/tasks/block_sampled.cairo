@@ -57,7 +57,7 @@ namespace BlockSampledTask {
         }
     }
 
-    // Executes the aggregate_fn of the passed task
+    // Executes the aggregate_fn of the passed tasks
     func execute{
         range_check_ptr,
         poseidon_ptr: PoseidonBuiltin*,
@@ -121,7 +121,6 @@ namespace BlockSampledTask {
         return ();
 
     }
-
 }
 
 

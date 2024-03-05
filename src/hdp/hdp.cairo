@@ -116,10 +116,9 @@ func main{
         ids.headers_len = len(program_input["headers"])
         write_headers(ids.headers, program_input["headers"])
 
-        # Account Params
+        # Account + Storage Params
         ids.accounts_len = len(program_input['accounts'])
         ids.storage_items_len = len(program_input['storages'])
-        # rest is written with populate_account_segments & populate_storage_item_segments func call
 
         # Task and Datalake
         tasks_input, data_lakes_input, tasks_bytes_len, data_lake_bytes_len = ([], [], [], [])
@@ -204,7 +203,8 @@ func main{
         storage_values=storage_values,
         state_idx=0
     );
-
+    
+    // Verified data is now in memorizer, and can be used for further computation
     BlockSampledTask.init{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
@@ -252,6 +252,7 @@ func main{
         print(f"Results Root: {hex(ids.results_root.low)} {hex(ids.results_root.high)}")
     %}
 
+    // Post Verification Checks: Ensure the roots match the expected roots
     assert expected_tasks_root.low = tasks_root.low;
     assert expected_tasks_root.high = tasks_root.high;
     assert expected_results_root.low = results_root.low;

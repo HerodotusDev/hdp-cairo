@@ -8,6 +8,8 @@ from starkware.cairo.common.uint256 import Uint256
 
 const MEMORIZER_DEFAULT = 100000000; // An arbitrary large number. We need to ensure each memorizer never contains >= number of elements.
 
+//Memorizer is very incomplete. It is just a sketch of how it could look like.
+
 namespace HeaderMemorizer {
     func initialize{}() -> (header_dict: DictAccess*, header_dict_start: DictAccess*){
         let (header_dict) = default_dict_new(default_value=MEMORIZER_DEFAULT);
@@ -20,9 +22,6 @@ namespace HeaderMemorizer {
         poseidon_ptr: PoseidonBuiltin*,
         header_dict: DictAccess*,
     }(block_number: felt, index: felt){
-        %{
-            print("Add header to memorizer: ", ids.block_number, " -> ", ids.index)
-        %}
         dict_write{dict_ptr=header_dict}(key=block_number, new_value=index);
         return ();
     }
@@ -32,14 +31,12 @@ namespace HeaderMemorizer {
         headers: Header*,
         poseidon_ptr: PoseidonBuiltin*,
     }(block_number: felt) -> Header{
+        alloc_locals;
         let (index) = dict_read{dict_ptr=header_dict}(block_number);
-        // ensure element exists
-        // if(index == MEMORIZER_DEFAULT) {
-        //     assert 1 = 0;
-        // }
-        %{
-            print("get header to memorizer: ", ids.block_number, " -> ", ids.index)
-        %}
+        
+        if(index == MEMORIZER_DEFAULT) {
+            assert 1 = 0;
+        }
 
         return (headers[index]);
     }
@@ -67,8 +64,13 @@ namespace AccountMemorizer {
         account_values: AccountValues*,
         poseidon_ptr: PoseidonBuiltin*,
     }(address: felt*, block_number: felt) -> (account_value: AccountValues){
+        alloc_locals;
         let key = gen_account_key(address, block_number);
         let (index) = dict_read{dict_ptr=account_dict}(key);
+
+        if(index == MEMORIZER_DEFAULT) {
+            assert 1 = 0;
+        }
 
         return (account_value=account_values[index]);
     }
@@ -97,16 +99,20 @@ namespace StorageMemorizer {
         storage_values: Uint256*,
         poseidon_ptr: PoseidonBuiltin*,
     }(storage_slot: felt*, address: felt*, block_number: felt) -> (storage_value: Uint256){
+        alloc_locals;
         let key = gen_storage_key(storage_slot, address, block_number);
-
         let (index) = dict_read{dict_ptr=storage_dict}(key);
-
+        
+        if(index == MEMORIZER_DEFAULT) {
+            assert 1 = 0;
+        }
 
         return (storage_value=storage_values[index]);
     }
 }
 
-// the account key is h(slot.key, account_key). 
+// the account key is h(slot.key, account_key).
+// ToDo: too much hashing
 func gen_storage_key{
     poseidon_ptr: PoseidonBuiltin*,
 }(storage_slot: felt*, address: felt*, block_number: felt) -> felt{
@@ -119,7 +125,8 @@ func gen_storage_key{
     return res;
 }
 
-// the account key is h(h(address), block_number). 
+// the account key is h(h(address), block_number).
+// ToDo: too much hashing
 func gen_account_key{
     poseidon_ptr: PoseidonBuiltin*,
 }(address: felt*, block_number: felt) -> felt{

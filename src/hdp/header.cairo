@@ -42,10 +42,6 @@ func verify_headers_inclusion{
         elements=headers[index].rlp
     );
 
-    %{
-        poseidon_hash = ids.poseidon_hash
-    %}
-
     // a header can be the right-most peak
     if (headers[index].proof.leaf_idx == mmr_size) {
 
@@ -55,10 +51,6 @@ func verify_headers_inclusion{
 
         // add to memorizer
         let block_number = get_block_number(headers[index]);
-
-        %{
-            print(f"Writing: {ids.block_number} - Hash: {hex(ids.poseidon_hash)} - Index: {ids.index}")
-        %}
         HeaderMemorizer.add(block_number=block_number, index=index);
 
         return verify_headers_inclusion(
@@ -67,8 +59,8 @@ func verify_headers_inclusion{
             n_headers=n_headers,
             index=index + 1
         );
-    } 
-    tempvar hash = poseidon_hash;
+    }
+
     // compute the peak of the header
     let (computed_peak) = hash_subtree_path(
         element=poseidon_hash,
@@ -86,7 +78,6 @@ func verify_headers_inclusion{
     let block_number = get_block_number(headers[index]);
     HeaderMemorizer.add(block_number=block_number, index=index);
 
-
     return verify_headers_inclusion(
         headers=headers,
         mmr_size=mmr_size,
@@ -102,7 +93,7 @@ func get_block_number{
     pow2_array: felt*
 } (header: Header) -> felt {
     alloc_locals;
-    // this is super inefficient, since we reverse all header chunks
+    // this is inefficient, since we reverse all header chunks, instead of the relevant ones
     let (reversed, _n_felts) = reverse_block_header_chunks(header.bytes_len, header.rlp);
     let block_number = extract_block_number_big(reversed);
     return block_number;

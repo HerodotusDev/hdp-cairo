@@ -1,18 +1,14 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.dict_access import DictAccess
-
-from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
+from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.bitwise import bitwise_xor
 from src.libs.utils import word_reverse_endian_64, word_reverse_endian_16_RC
 from src.hdp.types import BlockSampledDataLake, AccountValues, BlockSampledComputationalTask
 from src.hdp.memorizer import AccountMemorizer, StorageMemorizer
 from src.hdp.account import AccountReader
 
-
-
-// Creates a BlockSampled from the input bytes
+// Creates a BlockSampledDataLake from the input bytes
 func init_block_sampled{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -21,11 +17,6 @@ func init_block_sampled{
     alloc_locals;
 
     let (hash: Uint256) = keccak(input, input_bytes_len);
-
-    %{
-        print(f"DataLakeCommitment: {hex(ids.hash.low)} {hex(ids.hash.high)}")
-    %}
-
     let (block_range_start, block_range_end, increment) = extract_constant_params{
         range_check_ptr=range_check_ptr
     }(input=input);
@@ -101,6 +92,7 @@ func init_block_sampled{
             bitwise_ptr=bitwise_ptr
         }(chunks=input + 26, idx=0, max_idx=4, slot=properties, slot_offset=4);
     } else {
+        assert 0 = 1; // Invalid property_type
         tempvar bitwise_ptr = bitwise_ptr;
     }
 
@@ -114,6 +106,7 @@ func init_block_sampled{
     ));
 }
 
+// Collects the data points for BlocKSampledDataLakes
 func fetch_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
@@ -149,7 +142,7 @@ func fetch_data_points{
     }
 
     if(property_type == 3) {
-        // Account Slot - Unimplemented!
+        // Account Slot
         let data_points_len = fetch_storage_data_points{
             range_check_ptr=range_check_ptr,
             poseidon_ptr=poseidon_ptr,
@@ -258,6 +251,11 @@ func extract_sample_id_and_address{
     return (id=type_id, address=address);
 }
 
+// Decodes the constant parameters of the block sampled data lake
+// Inputs:
+// input: le 8-byte chunks
+// Outputs:
+// block_range_start, block_range_end, increment
 func extract_constant_params{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -285,6 +283,11 @@ func extract_constant_params{
     return (block_range_start=block_range_start, block_range_end=block_range_end, increment=increment);
 }
 
+// Collects the account data points defined in the datalake from the memorizer recursivly
+// Inputs:
+// datalake: the datalake to sample
+// index: the current index of the data_points array
+// data_points: outputs, array of values
 func fetch_account_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
@@ -302,7 +305,6 @@ func fetch_account_data_points{
         block_number=current_block_number
     );
 
-    // Todo: this breaks when selecting state_root or code_hash
     let data_point = AccountReader.get_by_index{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
@@ -311,6 +313,7 @@ func fetch_account_data_points{
 
     assert [data_points + index * Uint256.SIZE] = data_point;
 
+    // ToDo: this results in an endless loop if block_range_start % increment != block_range_end % increment
     if(current_block_number == datalake.block_range_end) {
         return index + 1;
     }
@@ -318,6 +321,11 @@ func fetch_account_data_points{
     return fetch_account_data_points(datalake=datalake, index=index + 1, data_points=data_points);
 }
 
+// Collects the storage data points defined in the datalake from the memorizer recursivly
+// Inputs:
+// datalake: the datalake to sample
+// index: the current index of the data_points array
+// data_points: outputs, array of values
 func fetch_storage_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
@@ -338,6 +346,7 @@ func fetch_storage_data_points{
 
     assert [data_points + index * Uint256.SIZE] = data_point;
 
+    // ToDo: this results in an endless loop if block_range_start % increment != block_range_end % increment
     if(current_block_number == datalake.block_range_end) {
         return index + 1;
     }

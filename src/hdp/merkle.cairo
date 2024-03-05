@@ -1,15 +1,14 @@
-// %builtins range_check bitwise keccak
-
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
-from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend, keccak_uint256s
+from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_uint256s
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
 from src.hdp.types import BlockSampledComputationalTask
 from src.hdp.utils import compute_results_entry
-
 from starkware.cairo.common.alloc import alloc
-
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 
+// Creates the leaf hash for a given value. This can be a task or a result entry.
+// Leafs are double hashed, so h(h(value)) is returned.
+// ToDo: Need to get rid of this back and forth Uint256 conversions. Super ugly.
 func compute_leaf_hash{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -31,6 +30,7 @@ func compute_leaf_hash{
 
     // hash first round
     let (first_hash) = keccak(first_round_input_start, 32);
+
     let (second_round_input) = alloc();
     let second_round_input_start = second_round_input;
     keccak_add_uint256{
@@ -46,6 +46,13 @@ func compute_leaf_hash{
     return result;
 }
 
+// Computes the results merkle root
+// Inputs:
+//  - tasks: The tasks that were sampled
+//  - results: The results of the tasks
+//  - tasks_len: The number of tasks & results. These are the same length always
+// Outputs:
+//  - The merkle root of the results
 func compute_results_root{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -54,6 +61,7 @@ func compute_results_root{
     let (tree: Uint256*) = alloc();
     let tree_len = 2 * tasks_len - 1;
 
+    // create leaf hashes and populate the tree
     double_hash_results{
         range_check_ptr=range_check_ptr,
         tree=tree,
@@ -65,6 +73,7 @@ func compute_results_root{
         index=0
     );
 
+    // builds merkle tree
     compute_merkle_root_inner{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
@@ -75,6 +84,7 @@ func compute_results_root{
         index=0
     );
 
+    // reverse endianess to compare in solidity
     let (root) = uint256_reverse_endian{
         bitwise_ptr=bitwise_ptr,
     }(
@@ -85,6 +95,12 @@ func compute_results_root{
 
 }
 
+// Computes the tasks merkle root
+// Inputs:
+//  - tasks: The tasks that were sampled
+//  - tasks_len: The number of tasks
+// Outputs:
+//  - The merkle root of the tasks
 func compute_tasks_root{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -93,6 +109,7 @@ func compute_tasks_root{
     let (tree: Uint256*) = alloc();
     let tree_len = 2 * tasks_len - 1;
 
+    // create leaf hashes and populate the tree
     double_hash_tasks{
         range_check_ptr=range_check_ptr,
         tree=tree,
@@ -113,6 +130,7 @@ func compute_tasks_root{
         index=0
     );
 
+    // reverse endianess to use in solidity
     let (root) = uint256_reverse_endian{
         bitwise_ptr=bitwise_ptr,
     }(
@@ -122,6 +140,7 @@ func compute_tasks_root{
     return (root);
 }
 
+// Implements the merkle tree building logic. This follows the unordered StandardMerkleTree implementation of OpenZeppelin
 func compute_merkle_root_inner{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -148,6 +167,7 @@ func compute_merkle_root_inner{
     
 }
 
+// Double hashes the tasks
 func double_hash_tasks{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -170,6 +190,7 @@ func double_hash_tasks{
     );
 }
 
+// Double hashes the results
 func double_hash_results{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -194,6 +215,8 @@ func double_hash_results{
     );
 }
 
+// Hashes a pair value in the merkle tree.
+// The pair is ordered by the value of the left and right elements.
 func hash_pair{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -203,10 +226,10 @@ func hash_pair{
     let (pair: Uint256*) = alloc();
     local is_left_smaller: felt;
     
-    // ToDo: I think we can get away with handling this in a hint
+    // ToDo: I think we can get away with handling this in a hint. Or could this be exploited somehow?
     %{
 
-        def flip(val):
+        def flip_endianess(val):
             val = hex(val)[2:]
             # Convert hex string to bytes
             byte_data = bytes.fromhex(val)
@@ -215,11 +238,10 @@ func hash_pair{
             return num
 
         # In LE Uint256, the low and high are reversed
-        left = flip(ids.left.low) * 2**128 + flip(ids.left.high)
-        right = flip(ids.right.low) * 2**128 + flip(ids.right.high)
-        print(f"Left:{hex(left)}")
-        print(f"RIGHT:{hex(right)}")
+        left = flip_endianess(ids.left.low) * 2**128 + flip_endianess(ids.left.high)
+        right = flip_endianess(ids.right.low) * 2**128 + flip_endianess(ids.right.high)
 
+        # Compare the values to derive correct hashing order
         if left < right:
             ids.is_left_smaller = 1
             print(f"H({hex(left)}, {hex(right)})")
@@ -244,10 +266,10 @@ func hash_pair{
         elements=pair
     );
 
-    %{
-        hash_val = flip(ids.res.low) * 2**128 + flip(ids.res.high)
-        print(f"Node hash: {hex(hash_val)}")
-    %}
+    // %{
+    //     hash_val = flip(ids.res.low) * 2**128 + flip(ids.res.high)
+    //     print(f"Node hash: {hex(hash_val)}")
+    // %}
 
     return (res);
 }
