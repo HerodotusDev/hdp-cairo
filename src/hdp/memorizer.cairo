@@ -94,15 +94,15 @@ namespace StorageMemorizer {
 
     func get{
         storage_dict: DictAccess*,
-        storage_items: Uint256*,
+        storage_values: Uint256*,
         poseidon_ptr: PoseidonBuiltin*,
-    }(storage_slot: felt*, address: felt*, block_number: felt) -> (storage_item: Uint256){
+    }(storage_slot: felt*, address: felt*, block_number: felt) -> (storage_value: Uint256){
         let key = gen_storage_key(storage_slot, address, block_number);
 
         let (index) = dict_read{dict_ptr=storage_dict}(key);
 
 
-        return (storage_item=storage_items[index]);
+        return (storage_value=storage_values[index]);
     }
 }
 

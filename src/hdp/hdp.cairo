@@ -8,11 +8,11 @@ from starkware.cairo.common.default_dict import default_dict_new, default_dict_f
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
 
-from src.hdp.types import Header, HeaderProof, MMRMeta, Account, AccountState, AccountSlot, BlockSampledDataLake, BlockSampledComputationalTask
+from src.hdp.types import Header, HeaderProof, MMRMeta, Account, AccountState, StorageItem, BlockSampledDataLake, BlockSampledComputationalTask
 from src.hdp.mmr import verify_mmr_meta
 from src.hdp.header import verify_headers_inclusion
 from src.hdp.account import populate_account_segments, verify_n_accounts
-from src.hdp.slots import populate_account_slot_segments, verify_n_account_slots
+from src.hdp.storage_item import populate_storage_item_segments, verify_n_storage_items
 from src.hdp.memorizer import HeaderMemorizer, AccountMemorizer, StorageMemorizer, MEMORIZER_DEFAULT
 from src.libs.utils import (
     pow2alloc127,
@@ -45,11 +45,11 @@ func main{
     let (accounts: Account*) = alloc();
     local accounts_len: felt;
     let (account_states: AccountState*) = alloc();
-    let (account_slots: AccountSlot*) = alloc();
-    let (account_slots_states: AccountState**) = alloc();
-    local account_slots_len: felt;
+    let (storage_items: StorageItem*) = alloc();
+    let (storage_items_states: AccountState**) = alloc();
+    local storage_items_len: felt;
 
-    let (storage_items: Uint256*) = alloc();
+    let (storage_values: Uint256*) = alloc();
 
     // Memorizers
     let (header_dict, header_dict_start) = HeaderMemorizer.initialize();
@@ -118,8 +118,8 @@ func main{
 
         # Account Params
         ids.accounts_len = len(program_input['accounts'])
-        ids.account_slots_len = len(program_input['storages'])
-        # rest is written with populate_account_segments & populate_account_slot_segments func call
+        ids.storage_items_len = len(program_input['storages'])
+        # rest is written with populate_account_segments & populate_storage_item_segments func call
 
         # Task and Datalake
         tasks_input, data_lakes_input, tasks_bytes_len, data_lake_bytes_len = ([], [], [], [])
@@ -167,9 +167,9 @@ func main{
         index=0
     );
 
-    populate_account_slot_segments(
-        account_slots=account_slots,
-        n_account_slots=account_slots_len,
+    populate_storage_item_segments(
+        storage_items=storage_items,
+        n_storage_items=storage_items_len,
         index=0
     );
 
@@ -190,7 +190,7 @@ func main{
     );
 
     // Check 4: Ensure the account slot proofs are valid
-    verify_n_account_slots{
+    verify_n_storage_items{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
@@ -199,9 +199,9 @@ func main{
         storage_dict=storage_dict,
         pow2_array=pow2_array,
     }(
-        account_slots=account_slots,
-        account_slots_len=account_slots_len,
         storage_items=storage_items,
+        storage_items_len=storage_items_len,
+        storage_values=storage_values,
         state_idx=0
     );
 
@@ -226,7 +226,7 @@ func main{
         account_dict=account_dict,
         account_states=account_states,
         storage_dict=storage_dict,
-        storage_items=storage_items,
+        storage_values=storage_values,
         pow2_array=pow2_array,
         tasks=block_sampled_tasks,
     }(

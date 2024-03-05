@@ -40,15 +40,15 @@ struct MMRMeta {
 	peaks: felt*,
 }
 
-struct AccountSlot   {
+struct StorageItem   {
     address: felt*,
     slot: felt*,
     key: Uint256,
     proofs_len: felt,
-    proofs: AccountSlotProof*,
+    proofs: StorageItemProof*,
 }
 
-struct AccountSlotProof {
+struct StorageItemProof {
     block_number: felt,
     proof_len: felt,
     proof_bytes_len: felt*,

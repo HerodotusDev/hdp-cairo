@@ -121,7 +121,7 @@ func fetch_data_points{
     account_dict: DictAccess*,
     account_states: AccountState*,
     storage_dict: DictAccess*,
-    storage_items: Uint256*,
+    storage_values: Uint256*,
     pow2_array: felt*,
 }(task: BlockSampledComputationalTask) -> (Uint256*, felt) {
     alloc_locals;
@@ -155,7 +155,7 @@ func fetch_data_points{
             poseidon_ptr=poseidon_ptr,
             bitwise_ptr=bitwise_ptr,
             storage_dict=storage_dict,
-            storage_items=storage_items,
+            storage_values=storage_values,
             pow2_array=pow2_array,
         }(datalake=task.datalake, index=0, data_points=data_points);
 
@@ -323,7 +323,7 @@ func fetch_storage_data_points{
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     storage_dict: DictAccess*,
-    storage_items: Uint256*,
+    storage_values: Uint256*,
     pow2_array: felt*,
 }(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     alloc_locals;

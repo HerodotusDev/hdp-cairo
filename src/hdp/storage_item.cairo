@@ -4,7 +4,7 @@ from src.libs.mpt import verify_mpt_proof
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
-from src.hdp.types import AccountState, AccountSlotProof, AccountSlot
+from src.hdp.types import AccountState, StorageItemProof, StorageItem
 from src.hdp.account import AccountReader
 
 from src.libs.rlp_little import (
@@ -17,21 +17,21 @@ from src.hdp.memorizer import StorageMemorizer, AccountMemorizer
 from src.libs.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64
 from src.hdp.utils import uint_le_u64_array_to_uint256, decode_rlp_word_to_uint256
 
-// Intializes and validates the account_slots
-func populate_account_slot_segments{
+// Intializes and validates the storage_items
+func populate_storage_item_segments{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*, 
     keccak_ptr: KeccakBuiltin*
-} (account_slots: AccountSlot*, n_account_slots: felt, index: felt) {
+} (storage_items: StorageItem*, n_storage_items: felt, index: felt) {
      alloc_locals;
-    if (index == n_account_slots) {
+    if (index == n_storage_items) {
         return ();
     } else {
-        local account_slot: AccountSlot;
-        let (proofs: AccountSlotProof*) = alloc();
+        local storage_item: StorageItem;
+        let (proofs: StorageItemProof*) = alloc();
         
         %{
-            def write_account_slot(account_ptr, proofs_ptr, account):
+            def write_storage_item(account_ptr, proofs_ptr, account):
                 memory[account_ptr._reference_value] = segments.gen_arg(hex_to_int_array(account["address"]))
                 memory[account_ptr._reference_value + 1] =segments.gen_arg(hex_to_int_array(account["slot"]))
                 memory[account_ptr._reference_value + 2] = hex_to_int(account["storage_key"]["low"])
@@ -48,33 +48,33 @@ func populate_account_slot_segments{
                     memory[ptr._reference_value + offset + 3] = segments.gen_arg(nested_hex_to_int_array(proof["proof"]))
                     offset += 4
 
-            account_slot = program_input["storages"][ids.index]
+            storage_item = program_input["storages"][ids.index]
 
-            write_proofs(ids.proofs, account_slot["proofs"])
-            write_account_slot(ids.account_slot, ids.proofs, account_slot)
+            write_proofs(ids.proofs, storage_item["proofs"])
+            write_storage_item(ids.storage_item, ids.proofs, storage_item)
         %}
 
         // ensure that address matches the key
-        let (hash: Uint256) = keccak(account_slot.slot, 32);
-        assert account_slot.key.low = hash.low;
-        assert account_slot.key.high = hash.high;
+        let (hash: Uint256) = keccak(storage_item.slot, 32);
+        assert storage_item.key.low = hash.low;
+        assert storage_item.key.high = hash.high;
 
-        assert account_slots[index] = account_slot;
+        assert storage_items[index] = storage_item;
 
-        return populate_account_slot_segments(
-            account_slots=account_slots,
-            n_account_slots=n_account_slots,
+        return populate_storage_item_segments(
+            storage_items=storage_items,
+            n_storage_items=n_storage_items,
             index=index + 1,
         );
     }
 }
 
-// Verifies the validity of all of the accounts account_slots
+// Verifies the validity of all of the accounts storage_items
 // Params:
-// - account_slots: the account_slots to verify.
-// - account_slots_len: the number of account_slots to verify.
+// - storage_items: the storage_items to verify.
+// - storage_items_len: the number of storage_items to verify.
 // - pow2_array: the array of powers of 2.
-func verify_n_account_slots{
+func verify_n_storage_items{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*, 
     keccak_ptr: KeccakBuiltin*,
@@ -84,42 +84,42 @@ func verify_n_account_slots{
     storage_dict: DictAccess*,
     pow2_array: felt*,
 } (
-    account_slots: AccountSlot*,
-    account_slots_len: felt,
-    storage_items: Uint256*,
+    storage_items: StorageItem*,
+    storage_items_len: felt,
+    storage_values: Uint256*,
     state_idx: felt,
 ) {
-    if(account_slots_len == 0) {
+    if(storage_items_len == 0) {
         return ();
     }
 
     %{
-        print("slots:",ids.account_slots_len) 
+        print("slots:",ids.storage_items_len) 
     %}
 
-    let account_slot_idx = account_slots_len - 1;
+    let storage_item_idx = storage_items_len - 1;
     
-    let state_idx = verify_account_slot(
-        account_slot=account_slots[account_slot_idx],
-        storage_items=storage_items,
+    let state_idx = verify_storage_item(
+        storage_item=storage_items[storage_item_idx],
+        storage_values=storage_values,
         proof_idx=0,
         state_idx=state_idx
     );
 
-    return verify_n_account_slots(
-        account_slots=account_slots,
-        account_slots_len=account_slots_len - 1,
+    return verify_n_storage_items(
         storage_items=storage_items,
+        storage_items_len=storage_items_len - 1,
+        storage_values=storage_values,
         state_idx=state_idx
     );
 }
 
 // Verifies the validity of an account's slot_proofs
 // Params:
-// - account_slot: the slot to verify.
+// - storage_item: the storage slot to verify.
 // - proof_idx: the index of the proof to verify.
 // - pow2_array: the array of powers of 2.
-func verify_account_slot{
+func verify_storage_item{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*, 
     keccak_ptr: KeccakBuiltin*,
@@ -129,28 +129,28 @@ func verify_account_slot{
     storage_dict: DictAccess*,
     pow2_array: felt*,
 } (
-    account_slot: AccountSlot,
-    storage_items: Uint256*,
+    storage_item: StorageItem,
+    storage_values: Uint256*,
     proof_idx: felt,
     state_idx: felt
 ) -> felt {
     alloc_locals;
-    if (proof_idx == account_slot.proofs_len) {
+    if (proof_idx == storage_item.proofs_len) {
         return state_idx;
     }
 
 
-    let slot_proof = account_slot.proofs[proof_idx];
+    let slot_proof = storage_item.proofs[proof_idx];
 
     // get state_root from verified headers
-    let (account_state) = AccountMemorizer.get(account_slot.address, slot_proof.block_number);
+    let (account_state) = AccountMemorizer.get(storage_item.address, slot_proof.block_number);
     let state_root = AccountReader.get_state_root(account_state.values);
  
     let (value: felt*, value_bytes_len: felt) = verify_mpt_proof(
         mpt_proof=slot_proof.proof,
         mpt_proof_bytes_len=slot_proof.proof_bytes_len,
         mpt_proof_len=slot_proof.proof_len,
-        key_little=account_slot.key,
+        key_little=storage_item.key,
         n_nibbles_already_checked=0,
         node_index=0,
         hash_to_assert=state_root,
@@ -158,13 +158,13 @@ func verify_account_slot{
     );
     
     let decoded_value = decode_rlp_word_to_uint256(value, value_bytes_len);
-    assert storage_items[state_idx] = decoded_value;
+    assert storage_values[state_idx] = decoded_value;
 
-    StorageMemorizer.add(account_slot.slot, account_slot.address, slot_proof.block_number, state_idx);
+    StorageMemorizer.add(storage_item.slot, storage_item.address, slot_proof.block_number, state_idx);
 
-    return verify_account_slot(
-        account_slot=account_slot,
-        storage_items=storage_items,
+    return verify_storage_item(
+        storage_item=storage_item,
+        storage_values=storage_values,
         proof_idx=proof_idx + 1,
         state_idx=state_idx + 1
     );
