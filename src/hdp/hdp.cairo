@@ -8,7 +8,7 @@ from starkware.cairo.common.default_dict import default_dict_new, default_dict_f
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
 
-from src.hdp.types import Header, HeaderProof, MMRMeta, Account, AccountState, StorageItem, BlockSampledDataLake, BlockSampledComputationalTask
+from src.hdp.types import Header, HeaderProof, MMRMeta, Account, AccountValues, StorageItem, BlockSampledDataLake, BlockSampledComputationalTask
 from src.hdp.mmr import verify_mmr_meta
 from src.hdp.header import verify_headers_inclusion
 from src.hdp.account import populate_account_segments, verify_n_accounts
@@ -43,13 +43,13 @@ func main{
 
     // Account Params    
     let (accounts: Account*) = alloc();
+    let (account_values: AccountValues*) = alloc();
     local accounts_len: felt;
-    let (account_states: AccountState*) = alloc();
-    let (storage_items: StorageItem*) = alloc();
-    let (storage_items_states: AccountState**) = alloc();
-    local storage_items_len: felt;
 
+    // Storage Params
+    let (storage_items: StorageItem*) = alloc();
     let (storage_values: Uint256*) = alloc();
+    local storage_items_len: felt;
 
     // Memorizers
     let (header_dict, header_dict_start) = HeaderMemorizer.initialize();
@@ -185,8 +185,8 @@ func main{
     }(
         accounts=accounts,
         accounts_len=accounts_len,
-        account_states=account_states,
-        account_state_idx=0,
+        account_values=account_values,
+        account_value_idx=0,
     );
 
     // Check 4: Ensure the account slot proofs are valid
@@ -194,7 +194,7 @@ func main{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
-        account_states=account_states,
+        account_values=account_values,
         account_dict=account_dict,
         storage_dict=storage_dict,
         pow2_array=pow2_array,
@@ -224,7 +224,7 @@ func main{
         poseidon_ptr=poseidon_ptr,
         bitwise_ptr=bitwise_ptr,
         account_dict=account_dict,
-        account_states=account_states,
+        account_values=account_values,
         storage_dict=storage_dict,
         storage_values=storage_values,
         pow2_array=pow2_array,

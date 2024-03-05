@@ -4,7 +4,7 @@ from src.libs.mpt import verify_mpt_proof
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
-from src.hdp.types import AccountState, StorageItemProof, StorageItem
+from src.hdp.types import AccountValues, StorageItemProof, StorageItem
 from src.hdp.account import AccountReader
 
 from src.libs.rlp_little import (
@@ -79,7 +79,7 @@ func verify_n_storage_items{
     bitwise_ptr: BitwiseBuiltin*, 
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    account_states: AccountState*,
+    account_values: AccountValues*,
     account_dict: DictAccess*,
     storage_dict: DictAccess*,
     pow2_array: felt*,
@@ -124,7 +124,7 @@ func verify_storage_item{
     bitwise_ptr: BitwiseBuiltin*, 
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    account_states: AccountState*,
+    account_values: AccountValues*,
     account_dict: DictAccess*,
     storage_dict: DictAccess*,
     pow2_array: felt*,
@@ -143,8 +143,8 @@ func verify_storage_item{
     let slot_proof = storage_item.proofs[proof_idx];
 
     // get state_root from verified headers
-    let (account_state) = AccountMemorizer.get(storage_item.address, slot_proof.block_number);
-    let state_root = AccountReader.get_state_root(account_state.values);
+    let (account_value) = AccountMemorizer.get(storage_item.address, slot_proof.block_number);
+    let state_root = AccountReader.get_state_root(account_value.values);
  
     let (value: felt*, value_bytes_len: felt) = verify_mpt_proof(
         mpt_proof=slot_proof.proof,

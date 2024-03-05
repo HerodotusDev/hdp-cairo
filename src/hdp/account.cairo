@@ -4,7 +4,7 @@ from src.libs.mpt import verify_mpt_proof
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
-from src.hdp.types import Account, AccountProof, Header, AccountState
+from src.hdp.types import Account, AccountProof, Header, AccountValues
 from src.libs.block_header import extract_state_root_little
 from src.libs.rlp_little import (
     extract_byte_at_pos,
@@ -83,8 +83,8 @@ func verify_n_accounts{
 } (
     accounts: Account*,
     accounts_len: felt,
-    account_states: AccountState*,
-    account_state_idx: felt,
+    account_values: AccountValues*,
+    account_value_idx: felt,
 ) {
     alloc_locals;
     if(accounts_len == 0) {
@@ -93,18 +93,18 @@ func verify_n_accounts{
 
     let account_idx = accounts_len - 1;
     
-    let account_state_idx = verify_account(
+    let account_value_idx = verify_account(
         account=accounts[account_idx],
-        account_states=account_states,
-        account_state_idx=account_state_idx,
+        account_values=account_values,
+        account_value_idx=account_value_idx,
         proof_idx=0,
     );
  
     return verify_n_accounts(
         accounts=accounts,
         accounts_len=accounts_len - 1,
-        account_states=account_states,
-        account_state_idx=account_state_idx,
+        account_values=account_values,
+        account_value_idx=account_value_idx,
     );
 }
 
@@ -124,13 +124,13 @@ func verify_account{
     pow2_array: felt*,
 } (
     account: Account,
-    account_states: AccountState*,
-    account_state_idx: felt,
+    account_values: AccountValues*,
+    account_value_idx: felt,
     proof_idx: felt,
 ) -> felt {
     alloc_locals;
     if (proof_idx == account.proofs_len) {
-        return account_state_idx;
+        return account_value_idx;
     }
 
     let account_proof = account.proofs[proof_idx];
@@ -151,18 +151,18 @@ func verify_account{
     );
 
     // write verified account state
-    assert account_states[account_state_idx] = AccountState(
+    assert account_values[account_value_idx] = AccountValues(
         values=value,
         values_len=value_len,
     );
 
     // add account to memorizer
-    AccountMemorizer.add(account.address, account_proof.block_number, account_state_idx);
+    AccountMemorizer.add(account.address, account_proof.block_number, account_value_idx);
 
     return verify_account(
         account=account,
-        account_states=account_states,
-        account_state_idx=account_state_idx + 1,
+        account_values=account_values,
+        account_value_idx=account_value_idx + 1,
         proof_idx=proof_idx + 1,
     );
 }

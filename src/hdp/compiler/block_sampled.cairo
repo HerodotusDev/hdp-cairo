@@ -6,7 +6,7 @@ from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.bitwise import bitwise_xor
 from src.libs.utils import word_reverse_endian_64, word_reverse_endian_16_RC
-from src.hdp.types import BlockSampledDataLake, AccountState, BlockSampledComputationalTask
+from src.hdp.types import BlockSampledDataLake, AccountValues, BlockSampledComputationalTask
 from src.hdp.memorizer import AccountMemorizer, StorageMemorizer
 from src.hdp.account import AccountReader
 
@@ -119,7 +119,7 @@ func fetch_data_points{
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     account_dict: DictAccess*,
-    account_states: AccountState*,
+    account_values: AccountValues*,
     storage_dict: DictAccess*,
     storage_values: Uint256*,
     pow2_array: felt*,
@@ -141,7 +141,7 @@ func fetch_data_points{
             poseidon_ptr=poseidon_ptr,
             bitwise_ptr=bitwise_ptr,
             account_dict=account_dict,
-            account_states=account_states,
+            account_values=account_values,
             pow2_array=pow2_array,
         }(datalake=task.datalake, index=0, data_points=data_points);
 
@@ -290,14 +290,14 @@ func fetch_account_data_points{
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     account_dict: DictAccess*,
-    account_states: AccountState*,
+    account_values: AccountValues*,
     pow2_array: felt*,
 }(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     alloc_locals;
 
     let current_block_number = datalake.block_range_start + index * datalake.increment;
 
-    let (account_state) = AccountMemorizer.get(
+    let (account_value) = AccountMemorizer.get(
         address=datalake.properties + 1, // address starts at 1
         block_number=current_block_number
     );
@@ -307,7 +307,7 @@ func fetch_account_data_points{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array,
-    }(rlp=account_state.values, value_idx=[datalake.properties + 4]); // value idx is at 4
+    }(rlp=account_value.values, value_idx=[datalake.properties + 4]); // value idx is at 4
 
     assert [data_points + index * Uint256.SIZE] = data_point;
 

@@ -27,7 +27,7 @@ struct AccountProof {
     proof: felt**,
 }
 
-struct AccountState {
+struct AccountValues {
     values: felt*,
     values_len: felt,
 }
