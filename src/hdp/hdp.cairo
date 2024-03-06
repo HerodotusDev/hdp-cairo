@@ -29,6 +29,24 @@ func main{
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
 }() {
+    run{
+        output_ptr=output_ptr,
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        keccak_ptr=keccak_ptr,
+        poseidon_ptr=poseidon_ptr,
+    }();
+
+    return ();
+}
+
+func run{
+    output_ptr: felt*,
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
+}() {
     alloc_locals;
     local expected_results_root: Uint256;
     local expected_tasks_root: Uint256;
@@ -71,6 +89,11 @@ func main{
     let pow2_array: felt* = pow2alloc127();
  
     %{
+        debug_mode = False
+        def conditional_print(*args):
+            if debug_mode:
+                print(*args)
+
         def hex_to_int(x):
             return int(x, 16)
 

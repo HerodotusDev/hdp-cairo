@@ -88,7 +88,7 @@ func assert_subset_in_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
 ) -> () {
     alloc_locals;
     let key_subset_256t = key_subset_to_uint256(key_subset, key_subset_len);
-    %{ print(f"key_susbet_uncut={hex(ids.key_subset_256t.low + ids.key_subset_256t.high*2**128)}") %}
+    %{ conditional_print(f"key_susbet_uncut={hex(ids.key_subset_256t.low + ids.key_subset_256t.high*2**128)}") %}
 
     local key_subset_256: Uint256;
     local key_subset_last_nibble: felt;
@@ -96,7 +96,7 @@ func assert_subset_in_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     let (_, odd_checked_nibbles) = felt_divmod(n_nibbles_already_checked, 2);
 
     if (cut_nibble != 0) {
-        %{ print(f"Cut nibble") %}
+        %{ conditional_print(f"Cut nibble") %}
         let (key_subset_256ltmp, byte) = felt_divmod(key_subset_256t.low, 2 ** 8);
         let (key_subset_256h, acc) = felt_divmod(key_subset_256t.high, 2 ** 8);
         let (_, nibble) = felt_divmod(byte, 2 ** 4);
@@ -110,8 +110,8 @@ func assert_subset_in_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
         assert key_subset_last_nibble = 0;
         tempvar range_check_ptr = range_check_ptr;
     }
-    %{ print(f"key_susbet_cutted={hex(ids.key_subset_256.low + ids.key_subset_256.high*2**128)}") %}
-    %{ print(f"key_little={hex(ids.key_little.low + ids.key_little.high*2**128)}") %}
+    %{ conditional_print(f"key_susbet_cutted={hex(ids.key_subset_256.low + ids.key_subset_256.high*2**128)}") %}
+    %{ conditional_print(f"key_little={hex(ids.key_little.low + ids.key_little.high*2**128)}") %}
 
     local key_shifted: Uint256;
     local key_shifted_last_nibble: felt;
@@ -134,7 +134,7 @@ func assert_subset_in_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
         tempvar range_check_ptr = range_check_ptr;
     }
 
-    %{ print(f"key_shifted={hex(ids.key_shifted.low + ids.key_shifted.high*2**128)}") %}
+    %{ conditional_print(f"key_shifted={hex(ids.key_shifted.low + ids.key_shifted.high*2**128)}") %}
 
     if (key_subset_256.high != 0) {
         // caution : high part must have less or equal 30 nibbles. for felt divmod.
@@ -142,11 +142,11 @@ func assert_subset_in_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
         let (_, key_high) = bitwise_divmod{bitwise_ptr=bitwise_ptr}(key_shifted.high, pow2_array[4 * n_nibble_in_high_part]);
 
         %{
-            print(f"\t N nibbles in right part : {ids.n_nibble_in_high_part}") 
-            print(f"\t orig key high : {hex(ids.key_little.high)}")
-            print(f"\t key shifted high : {hex(ids.key_shifted.high)}")
-            print(f"\t final key high : {hex(ids.key_high)}")
-            print(f"\t key subset high : {hex(ids.key_subset_256.high)}")
+            conditional_print(f"\t N nibbles in right part : {ids.n_nibble_in_high_part}") 
+            conditional_print(f"\t orig key high : {hex(ids.key_little.high)}")
+            conditional_print(f"\t key shifted high : {hex(ids.key_shifted.high)}")
+            conditional_print(f"\t final key high : {hex(ids.key_high)}")
+            conditional_print(f"\t key subset high : {hex(ids.key_subset_256.high)}")
         %}
 
         assert key_subset_256.low = key_shifted.low;
@@ -178,13 +178,13 @@ func extract_nibble_from_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
         ids.nibble_pos = ids.nibble_index % 2
     %}
     %{
-        print(f"Key low: {hex(ids.key.low)}")
-        print(f"Key high: {hex(ids.key.high)}")
-        print(f"nibble_index: {ids.nibble_index}")
+        conditional_print(f"Key low: {hex(ids.key.low)}")
+        conditional_print(f"Key high: {hex(ids.key.high)}")
+        conditional_print(f"nibble_index: {ids.nibble_index}")
     %}
     if (get_nibble_from_low != 0) {
         if (nibble_pos != 0) {
-            %{ print(f"\t case 0 ") %}
+            %{ conditional_print(f"\t case 0 ") %}
             assert [range_check_ptr] = 31 - nibble_index;
             assert bitwise_ptr.x = key.low;
             assert bitwise_ptr.y = 0xf * pow2_array[4 * (nibble_index - 1)];
@@ -193,7 +193,7 @@ func extract_nibble_from_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
             tempvar bitwise_ptr = bitwise_ptr + BitwiseBuiltin.SIZE;
             return extracted_nibble_at_pos;
         } else {
-            %{ print(f"\t case 1 ") %}
+            %{ conditional_print(f"\t case 1 ") %}
 
             assert [range_check_ptr] = 31 - nibble_index;
             assert bitwise_ptr.x = key.low;
@@ -205,7 +205,7 @@ func extract_nibble_from_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
         }
     } else {
         if (nibble_pos != 0) {
-            %{ print(f"\t case 2 ") %}
+            %{ conditional_print(f"\t case 2 ") %}
 
             assert [range_check_ptr] = 31 - (nibble_index - 32);
             tempvar offset = pow2_array[4 * (nibble_index - 32)];
@@ -216,7 +216,7 @@ func extract_nibble_from_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
             tempvar bitwise_ptr = bitwise_ptr + BitwiseBuiltin.SIZE;
             return extracted_nibble_at_pos;
         } else {
-            %{ print(f"\t case 3 ") %}
+            %{ conditional_print(f"\t case 3 ") %}
 
             assert [range_check_ptr] = 31 - (nibble_index - 32);
             tempvar offset = pow2_array[4 * (nibble_index - 32) + 4];
@@ -238,13 +238,13 @@ func extract_nibble_from_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
 func extract_n_bytes_at_pos{bitwise_ptr: BitwiseBuiltin*}(
     word_64_little: felt, pos: felt, n: felt, pow2_array: felt*
 ) -> felt {
-    %{ print(f"extracting {ids.n} bytes at pos {ids.pos} from {hex(ids.word_64_little)}") %}
+    %{ conditional_print(f"extracting {ids.n} bytes at pos {ids.pos} from {hex(ids.word_64_little)}") %}
     let x_mask = get_0xff_mask(n);
-    %{ print(f"x_mask for len {ids.n}: {hex(ids.x_mask)}") %}
+    %{ conditional_print(f"x_mask for len {ids.n}: {hex(ids.x_mask)}") %}
     assert bitwise_ptr[0].x = word_64_little;
     assert bitwise_ptr[0].y = x_mask * pow2_array[8 * (pos)];
     tempvar res = bitwise_ptr[0].x_and_y;
-    %{ print(f"tmp : {hex(ids.res)}") %}
+    %{ conditional_print(f"tmp : {hex(ids.res)}") %}
     tempvar extracted_bytes = bitwise_ptr[0].x_and_y / pow2_array[8 * pos];
     tempvar bitwise_ptr = bitwise_ptr + BitwiseBuiltin.SIZE;
     return extracted_bytes;
@@ -304,13 +304,13 @@ func extract_n_bytes_from_le_64_chunks_array{range_check_ptr}(
     }
 
     // %{
-    //     print(f"Start word: {ids.start_word}, start_offset: {ids.start_offset}, n_bytes: {ids.n_bytes}")
-    //     print(f"n_words={ids.n_words} n_ending_bytes={ids.n_ending_bytes} \n")
+    //     conditional_print(f"Start word: {ids.start_word}, start_offset: {ids.start_offset}, n_bytes: {ids.n_bytes}")
+    //     conditional_print(f"n_words={ids.n_words} n_ending_bytes={ids.n_ending_bytes} \n")
     // %}
 
     // Handle trivial case where start_offset = 0., words can be copied directly.
     if (start_offset == 0) {
-        // %{ print(f"copying {ids.q} words... ") %}
+        // %{ conditional_print(f"copying {ids.q} words... ") %}
         array_copy(src=array + start_word, dst=res, n=q, index=0);
         if (n_ending_bytes != 0) {
             let (_, last_word) = felt_divmod(array[start_word + q], pow2_array[8 * n_ending_bytes]);
@@ -330,13 +330,13 @@ func extract_n_bytes_from_le_64_chunks_array{range_check_ptr}(
         local avl_bytes_in_first_word = 8 - start_offset;
         %{ ids.needs_next_word = 1 if ids.n_bytes > ids.avl_bytes_in_first_word else 0 %}
         if (needs_next_word == 0) {
-            // %{ print(f"current_word={hex(ids.current_word)}") %}
+            // %{ conditional_print(f"current_word={hex(ids.current_word)}") %}
             let (_, last_word) = felt_divmod(current_word, pow2_array[8 * n_ending_bytes]);
             assert res[0] = last_word;
             return (res, 1);
         } else {
-            // %{ print(f"needs next word, avl_bytes_in_first_word={ids.avl_bytes_in_first_word}") %}
-            // %{ print(f"current_word={hex(ids.current_word)}") %}
+            // %{ conditional_print(f"needs next word, avl_bytes_in_first_word={ids.avl_bytes_in_first_word}") %}
+            // %{ conditional_print(f"current_word={hex(ids.current_word)}") %}
 
             let (_, last_word) = felt_divmod(
                 array[start_word + 1], pow2_array[8 * (n_bytes - 8 + start_offset)]
@@ -348,7 +348,7 @@ func extract_n_bytes_from_le_64_chunks_array{range_check_ptr}(
 
     // %{
     //     from math import log2
-    //     print(f"pow_acc = 2**{log2(ids.pow_acc)}, pow_cut = 2**{log2(ids.pow_cut)}")
+    //     conditional_print(f"pow_acc = 2**{log2(ids.pow_acc)}, pow_cut = 2**{log2(ids.pow_cut)}")
     // %}
     local range_check_ptr = range_check_ptr;
     local n_words_to_handle_in_loop;
@@ -367,7 +367,7 @@ func extract_n_bytes_from_le_64_chunks_array{range_check_ptr}(
     let i = [ap - 1];
     let n_words_handled = [ap - 2];
     let current_word = [ap - 3];
-    // %{ print(f"enter loop : {ids.i} {ids.n_words_handled}/{ids.n_words}") %}
+    // %{ conditional_print(f"enter loop : {ids.i} {ids.n_words_handled}/{ids.n_words}") %}
     %{ memory[ap] = 1 if (ids.n_words_to_handle_in_loop - ids.n_words_handled) == 0 else 0 %}
     jmp end_loop if [ap] != 0, ap++;
 
@@ -376,7 +376,7 @@ func extract_n_bytes_from_le_64_chunks_array{range_check_ptr}(
     let r = [ap + 1];
     %{
         ids.q, ids.r = divmod(memory[ids.array + ids.start_word + ids.i], ids.pow_cut)
-        #print(f"val={memory[ids.array + ids.start_word + ids.i]} q={ids.q} r={ids.r}")
+        #conditional_print(f"val={memory[ids.array + ids.start_word + ids.i]} q={ids.q} r={ids.r}")
     %}
     ap += 2;
     tempvar offset = 3 * n_words_handled;
@@ -387,7 +387,7 @@ func extract_n_bytes_from_le_64_chunks_array{range_check_ptr}(
     // done inlining felt_divmod.
 
     assert res[n_words_handled] = current_word + r * pow_acc;
-    // %{ print(f"new word : {memory[ids.res + ids.n_words_handled]}") %}
+    // %{ conditional_print(f"new word : {memory[ids.res + ids.n_words_handled]}") %}
     [ap] = q, ap++;
     [ap] = n_words_handled + 1, ap++;
     [ap] = i + 1, ap++;
@@ -398,7 +398,7 @@ func extract_n_bytes_from_le_64_chunks_array{range_check_ptr}(
     tempvar range_check_ptr = range_check_ptr + 3 * n_words_handled;
 
     if (n_ending_bytes != 0) {
-        // %{ print(f"handling last word...") %}
+        // %{ conditional_print(f"handling last word...") %}
         let (current_word, _) = felt_divmod(array[start_word + n_words_handled], pow_cut);
         local needs_next_word: felt;
         local avl_bytes_in_word = 8 - start_offset;
@@ -464,15 +464,15 @@ func jump_n_items_from_item{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     %{
         if 0x00 <= ids.item_prefix <= 0x7f:
             ids.item_type = 0
-            #print(f"item : single byte")
+            #conditional_print(f"item : single byte")
         elif 0x80 <= ids.item_prefix <= 0xb7:
             ids.item_type = 1
-            #print(f"item : short string at item {ids.item_start_index} {ids.item_prefix - 0x80} bytes")
+            #conditional_print(f"item : short string at item {ids.item_start_index} {ids.item_prefix - 0x80} bytes")
         elif 0xb8 <= ids.second_item_prefix <= 0xbf:
             ids.item_type = 2
-            #print(f"ong string (len_len {ids.second_item_prefix - 0xb7} bytes)")
+            #conditional_print(f"ong string (len_len {ids.second_item_prefix - 0xb7} bytes)")
         else:
-            print(f"Unsupported item type {ids.item_prefix}. Only single bytes, short or long strings are supported.")
+            conditional_print(f"Unsupported item type {ids.item_prefix}. Only single bytes, short or long strings are supported.")
     %}
 
     if (item_type == 0) {

@@ -37,14 +37,18 @@ func verify_mpt_proof{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr:
     pow2_array: felt*,
 ) -> (value: felt*, value_len: felt) {
     alloc_locals;
-    %{ print(f"\n\nNode index {ids.node_index+1}/{ids.mpt_proof_len}") %}
+    %{ 
+        debug_mode = False
+        conditional_print(f"\n\nNode index {ids.node_index+1}/{ids.mpt_proof_len}") 
+        
+    %}
     if (node_index == mpt_proof_len - 1) {
         // Last node : item of interest is the value.
         // Check that the hash of the last node is the expected one.
         // Check that the final accumulated key is the expected one.
         let (node_hash: Uint256) = keccak(mpt_proof[node_index], mpt_proof_bytes_len[node_index]);
-        %{ print(f"node_hash : {hex(ids.node_hash.low + 2**128*ids.node_hash.high)}") %}
-        %{ print(f"hash_to_assert : {hex(ids.hash_to_assert.low + 2**128*ids.hash_to_assert.high)}") %}
+        %{ conditional_print(f"node_hash : {hex(ids.node_hash.low + 2**128*ids.node_hash.high)}") %}
+        %{ conditional_print(f"hash_to_assert : {hex(ids.hash_to_assert.low + 2**128*ids.hash_to_assert.high)}") %}
         assert node_hash.low - hash_to_assert.low = 0;
         assert node_hash.high - hash_to_assert.high = 0;
 
@@ -63,11 +67,11 @@ func verify_mpt_proof{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr:
         // Check that the hash of the current node is the expected one.
 
         let (node_hash: Uint256) = keccak(mpt_proof[node_index], mpt_proof_bytes_len[node_index]);
-        %{ print(f"node_hash : {hex(ids.node_hash.low + 2**128*ids.node_hash.high)}") %}
-        %{ print(f"hash_to_assert : {hex(ids.hash_to_assert.low + 2**128*ids.hash_to_assert.high)}") %}
+        %{ conditional_print(f"node_hash : {hex(ids.node_hash.low + 2**128*ids.node_hash.high)}") %}
+        %{ conditional_print(f"hash_to_assert : {hex(ids.hash_to_assert.low + 2**128*ids.hash_to_assert.high)}") %}
         assert node_hash.low - hash_to_assert.low = 0;
         assert node_hash.high - hash_to_assert.high = 0;
-        %{ print(f"\t Hash assert for node {ids.node_index} passed.") %}
+        %{ conditional_print(f"\t Hash assert for node {ids.node_index} passed.") %}
         let (n_nibbles_checked, item_of_interest, item_of_interest_len) = decode_node_list_lazy(
             rlp=mpt_proof[node_index],
             bytes_len=mpt_proof_bytes_len[node_index],
@@ -107,12 +111,12 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     %{
         if 0xc0 <= ids.list_prefix <= 0xf7:
             ids.long_short_list = 0
-            print("List type : short")
+            conditional_print("List type : short")
         elif 0xf8 <= ids.list_prefix <= 0xff:
             ids.long_short_list = 1
-            print("List type: long")
+            conditional_print("List type: long")
         else:
-            print("Not a list.")
+            conditional_print("Not a list.")
     %}
     local first_item_start_offset: felt;
     local list_len: felt;  // Bytes length of the list. (not including the prefix)
@@ -132,15 +136,15 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
         assert list_len = list_prefix - 0xc0;
     }
     // At this point, if input is neither a long nor a short list, then the range check will fail.
-    // %{ print("list_len", ids.list_len) %}
-    // %{ print("first word", memory[ids.rlp]) %}
+    // %{ conditional_print("list_len", ids.list_len) %}
+    // %{ conditional_print("first word", memory[ids.rlp]) %}
     assert [range_check_ptr + 2] = 7 - first_item_start_offset;
     // We now need to differentiate between the type of nodes: extension/leaf or branch.
 
-    // %{ print("first item starts at byte", ids.first_item_start_offset) %}
+    // %{ conditional_print("first item starts at byte", ids.first_item_start_offset) %}
     let first_item_prefix = extract_byte_at_pos(rlp[0], first_item_start_offset, pow2_array);
 
-    // %{ print("First item prefix", hex(ids.first_item_prefix)) %}
+    // %{ conditional_print("First item prefix", hex(ids.first_item_prefix)) %}
     // Regardless of leaf, extension or branch, the first item should always be less than 32 bytes so a short string :
     // 0-55 bytes string long
     // (range [0x80, 0xb7] (dec. [128, 183])).
@@ -149,32 +153,32 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     tempvar range_check_ptr = range_check_ptr + 5;
     tempvar first_item_len = first_item_prefix - 0x80;
     tempvar second_item_starts_at_byte = first_item_start_offset + 1 + first_item_len;
-    // %{ print("first item len:", ids.first_item_len, "bytes") %}
-    // %{ print("second_item_starts_at_byte", ids.second_item_starts_at_byte) %}
+    // %{ conditional_print("first item len:", ids.first_item_len, "bytes") %}
+    // %{ conditional_print("second_item_starts_at_byte", ids.second_item_starts_at_byte) %}
     let (second_item_starts_at_word, second_item_start_offset) = felt_divmod(
         second_item_starts_at_byte, 8
     );
-    // %{ print("second_item_starts_at_word", ids.second_item_starts_at_word) %}
-    // %{ print("second_item_start_offset", ids.second_item_start_offset) %}
-    // %{ print("second_item_first_word", memory[ids.rlp + ids.second_item_starts_at_word]) %}
+    // %{ conditional_print("second_item_starts_at_word", ids.second_item_starts_at_word) %}
+    // %{ conditional_print("second_item_start_offset", ids.second_item_start_offset) %}
+    // %{ conditional_print("second_item_first_word", memory[ids.rlp + ids.second_item_starts_at_word]) %}
 
     let second_item_prefix = extract_byte_at_pos(
         rlp[second_item_starts_at_word], second_item_start_offset, pow2_array
     );
-    // %{ print("second_item_prefix", hex(ids.second_item_prefix)) %}
+    // %{ conditional_print("second_item_prefix", hex(ids.second_item_prefix)) %}
     local second_item_type: felt;
     %{
         if 0x00 <= ids.second_item_prefix <= 0x7f:
             ids.second_item_type = 0
-            print(f"2nd item : single byte")
+            conditional_print(f"2nd item : single byte")
         elif 0x80 <= ids.second_item_prefix <= 0xb7:
             ids.second_item_type = 1
-            print(f"2nd item : short string {ids.second_item_prefix - 0x80} bytes")
+            conditional_print(f"2nd item : short string {ids.second_item_prefix - 0x80} bytes")
         elif 0xb8 <= ids.second_item_prefix <= 0xbf:
             ids.second_item_type = 2
-            print(f"2nd item : long string (len_len {ids.second_item_prefix - 0xb7} bytes)")
+            conditional_print(f"2nd item : long string (len_len {ids.second_item_prefix - 0xb7} bytes)")
         else:
-            print(f"2nd item : unknown type {ids.second_item_prefix}")
+            conditional_print(f"2nd item : unknown type {ids.second_item_prefix}")
     %}
 
     local second_item_bytes_len;
@@ -214,7 +218,7 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
             %{ ids.second_item_long_string_len_fits_into_current_word = (7 - ids.end_of_len_virtual_offset) >= 0 %}
 
             if (second_item_long_string_len_fits_into_current_word != 0) {
-                // %{ print(f"Len len {ids.len_len} fits into current word.") %}
+                // %{ conditional_print(f"Len len {ids.len_len} fits into current word.") %}
                 // len_len bytes can be extracted from the current word.
                 assert [range_check_ptr + 2] = 7 - end_of_len_virtual_offset;
 
@@ -237,13 +241,13 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
                     tempvar bitwise_ptr = bitwise_ptr;
                 }
 
-                %{ print(f"second_item_long_string_len : {ids.second_item_bytes_len} bytes") %}
+                %{ conditional_print(f"second_item_long_string_len : {ids.second_item_bytes_len} bytes") %}
                 assert third_item_starts_at_byte = second_item_starts_at_byte + 1 + len_len +
                     second_item_bytes_len;
                 assert range_check_ptr_f = range_check_ptr + 3;
                 assert bitwise_ptr_f = bitwise_ptr;
             } else {
-                %{ print("Len len doesn't fit into current word.") %}
+                %{ conditional_print("Len len doesn't fit into current word.") %}
                 // Very unlikely. But fix anyway.
                 assert [range_check_ptr + 2] = end_of_len_virtual_offset - 8;
                 assert range_check_ptr_f = range_check_ptr + 3;
@@ -259,11 +263,11 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     }
     let range_check_ptr = range_check_ptr_f;
     let bitwise_ptr = bitwise_ptr_f;
-    // %{ print(f"second_item_bytes_len : {ids.second_item_bytes_len} bytes") %}
-    // %{ print(f"third item starts at byte {ids.third_item_starts_at_byte}") %}
+    // %{ conditional_print(f"second_item_bytes_len : {ids.second_item_bytes_len} bytes") %}
+    // %{ conditional_print(f"third item starts at byte {ids.third_item_starts_at_byte}") %}
 
     if (third_item_starts_at_byte == bytes_len) {
-        %{ print("two items => Leaf/Extension case") %}
+        %{ conditional_print("two items => Leaf/Extension case") %}
 
         // Node's list has only 2 items : it's a leaf or an extension.
         // Regardless, we need to decode the first item (key or key_end) and the second item (hash or value).
@@ -275,13 +279,13 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
         %{
             prefix = ids.first_item_prefix
             if prefix == 0:
-                print("First item is an extension node, even number of nibbles")
+                conditional_print("First item is an extension node, even number of nibbles")
             elif prefix == 1:
-                print("First item is an extension node, odd number of nibbles")
+                conditional_print("First item is an extension node, odd number of nibbles")
             elif prefix == 2:
-                print("First item is a leaf node, even number of nibbles")
+                conditional_print("First item is a leaf node, even number of nibbles")
             elif prefix == 3:
-                print("First item is a leaf node, odd number of nibbles")
+                conditional_print("First item is a leaf node, odd number of nibbles")
             else:
                 raise Exception(f"Unknown prefix {prefix} for MPT node with 2 items")
         %}
@@ -297,7 +301,7 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
             }
         }
         tempvar n_nibbles_in_first_item = 2 * first_item_len - odd;
-        %{ print(f"n_nibbles_in_first_item : {ids.n_nibbles_in_first_item}") %}
+        %{ conditional_print(f"n_nibbles_in_first_item : {ids.n_nibbles_in_first_item}") %}
         // Extract the key or key_end.
         let (local first_item_value_start_word, local first_item_value_start_offset) = felt_divmod(
             first_item_start_offset + 2 - odd, 8
@@ -312,8 +316,8 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
             pow2_array,
         );
         %{
-            #print_array(ids.extracted_key_subset, ids.extracted_key_subset_len) 
-            print(f"nibbles already checked: {ids.n_nibbles_already_checked}")
+            #conditional_print_array(ids.extracted_key_subset, ids.extracted_key_subset_len) 
+            conditional_print(f"nibbles already checked: {ids.n_nibbles_already_checked}")
         %}
         assert_subset_in_key(
             key_subset=extracted_key_subset,
@@ -355,7 +359,7 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     } else {
         // Node has more than 2 items : it's a branch.
         if (last_node != 0) {
-            %{ print(f"Branch case, last node : yes") %}
+            %{ conditional_print(f"Branch case, last node : yes") %}
 
             // Branch is the last node in the proof. We need to extract the last item (17th).
             // Key should already be fully checked at this point.
@@ -376,21 +380,21 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
 
             return (n_nibbles_already_checked, last_item, last_item_bytes_len);
         } else {
-            %{ print(f"Branch case, last node : no") %}
+            %{ conditional_print(f"Branch case, last node : no") %}
             // Branch is not the last node in the proof. We need to extract the hash corresponding to the next nibble of the key.
 
             // Get the next nibble of the key.
             let next_key_nibble = extract_nibble_from_key(
                 key_little, n_nibbles_already_checked, pow2_array
             );
-            %{ print(f"Next Key nibble {ids.next_key_nibble}") %}
+            %{ conditional_print(f"Next Key nibble {ids.next_key_nibble}") %}
             local item_of_interest_start_word: felt;
             local item_of_interest_start_offset: felt;
             local range_check_ptr_f;
             local bitwise_ptr_f: BitwiseBuiltin*;
             if (next_key_nibble == 0) {
                 // Store coordinates of the first item's value.
-                %{ print(f"\t Branch case, key index = 0") %}
+                %{ conditional_print(f"\t Branch case, key index = 0") %}
                 assert item_of_interest_start_word = 0;
                 assert item_of_interest_start_offset = first_item_start_offset + 1;
                 assert range_check_ptr_f = range_check_ptr;
@@ -398,7 +402,7 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
             } else {
                 if (next_key_nibble == 1) {
                     // Store coordinates of the second item's value.
-                    %{ print(f"\t Branch case, key index = 1") %}
+                    %{ conditional_print(f"\t Branch case, key index = 1") %}
                     let (
                         second_item_value_start_word, second_item_value_start_offset
                     ) = felt_divmod_8(second_item_value_starts_at_byte);
@@ -409,7 +413,7 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
                 } else {
                     if (next_key_nibble == 2) {
                         // Store coordinates of the third item's value.
-                        %{ print(f"\t Branch case, key index = 2") %}
+                        %{ conditional_print(f"\t Branch case, key index = 2") %}
                         let (
                             third_item_value_start_word, third_item_value_start_offset
                         ) = felt_divmod_8(third_item_starts_at_byte + 1);
@@ -419,7 +423,7 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
                         assert bitwise_ptr_f = bitwise_ptr;
                     } else {
                         // Store coordinates of the item's value at index next_key_nibble != (0, 1, 2).
-                        %{ print(f"\t Branch case, key index {ids.next_key_nibble}") %}
+                        %{ conditional_print(f"\t Branch case, key index {ids.next_key_nibble}") %}
                         let (third_item_start_word, third_item_start_offset) = felt_divmod(
                             third_item_starts_at_byte, 8
                         );
@@ -487,12 +491,12 @@ func jump_branch_node_till_element_at_index{range_check_ptr, bitwise_ptr: Bitwis
     %{
         if 0x00 <= ids.item_prefix <= 0x7f:
             ids.item_type = 0
-            #print(f"item : single byte")
+            #conditional_print(f"item : single byte")
         elif 0x80 <= ids.item_prefix <= 0xb7:
             ids.item_type = 1
-            #print(f"item : short string at item {ids.item_start_index} {ids.item_prefix - 0x80} bytes")
+            #conditional_print(f"item : short string at item {ids.item_start_index} {ids.item_prefix - 0x80} bytes")
         else:
-            print(f"item : unknown type {ids.item_prefix} for a branch node. Should be single byte or short string only.")
+            conditional_print(f"item : unknown type {ids.item_prefix} for a branch node. Should be single byte or short string only.")
     %}
 
     if (item_type == 0) {

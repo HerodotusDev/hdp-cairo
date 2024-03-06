@@ -25,6 +25,7 @@ func main{
         )
         import rlp
 
+        # Test cases for decode_rlp_word_to_uint256 at every byte length
         decode_rlp_word_to_uint256 = [
             0x66,
             0x9388,
@@ -110,14 +111,11 @@ func test_decode_rlp_word_to_uint256_inner{
         def write_case_values(value):
             print("Testing:", hex(value), " - Case:", ids.case)
             (low, high) = split_128(value)
-            #print("Res:", hex(low), hex(high))
             ids.expected.low = low
             ids.expected.high = high
             rlp_value = rlp.encode(value)
             ids.bytes_len = len(rlp_value)
-            #print("bytes_len: ", ids.bytes_len)
             chunks = bytes_to_8_bytes_chunks_little(rlp_value)
-            #print("chunks: ", [hex(chunk) for chunk in chunks])
             segments.write_arg(ids.chunks, chunks)    
 
         write_case_values(decode_rlp_word_to_uint256[ids.case])

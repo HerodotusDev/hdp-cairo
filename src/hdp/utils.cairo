@@ -84,14 +84,14 @@ func unbalanced_le_u64_array_to_be_uint256{
         ids.ls_size = ids.bytes_len % 8 
     %}
     assert bytes_len = 8 * (elements_len - 1) + ls_size;
+    
+    // create shift values
+    let r_shift = pow2_array[(8 - ls_size) * 8];
+    let l_shift = pow2_array[ls_size * 8];
 
     // create masks for left and right side
-    let rs_mask = pow2_array[(8 - ls_size) * 8] - 1;
+    let rs_mask = r_shift - 1;
     let ls_mask = (pow2_array[64] - 1) - rs_mask;
-
-    // create shift values
-    let l_shift = pow2_array[ls_size * 8];
-    let r_shift = pow2_array[(8 - ls_size) * 8];
 
     let (shifted_values) = alloc();
 
