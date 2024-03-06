@@ -27,7 +27,7 @@ struct AccountProof {
     proof: felt**,
 }
 
-struct AccountState {
+struct AccountValues {
     values: felt*,
     values_len: felt,
 }
@@ -40,54 +40,33 @@ struct MMRMeta {
 	peaks: felt*,
 }
 
-struct AccountSlot   {
+struct StorageItem   {
     address: felt*,
     slot: felt*,
     key: Uint256,
     proofs_len: felt,
-    proofs: AccountSlotProof*,
+    proofs: StorageItemProof*,
 }
 
-struct AccountSlotProof {
+struct StorageItemProof {
     block_number: felt,
     proof_len: felt,
     proof_bytes_len: felt*,
     proof: felt**,
 }
 
-struct SlotState {
-    low: felt,
-    high: felt,
-}
-
-struct BlockSampledHeader {
+struct BlockSampledDataLake {
     block_range_start: felt,
     block_range_end: felt,
     increment: felt,
-    property: felt,
+    property_type: felt, // header=1, account=2, accountSlot=3
+    properties: felt*,
     hash: Uint256,
 }
 
-struct BlockSampledAccount {
-    block_range_start: felt,
-    block_range_end: felt,
-    increment: felt,
-    address: felt*,
-    property: felt,
-    hash: Uint256,
-}
-
-struct BlockSampledAccountSlot {
-    block_range_start: felt,
-    block_range_end: felt,
-    increment: felt,
-    address: felt*,
-    slot: felt*,
-    hash: Uint256,
-}
-
-struct ComputationalTask {
+struct BlockSampledComputationalTask {
     aggregate_fn_id: felt, // avg=0, sum=1, min=2, max=3
     // aggregateFnCtx: felt*,
     hash: Uint256,
+    datalake: BlockSampledDataLake,
 }

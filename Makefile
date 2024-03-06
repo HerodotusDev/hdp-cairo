@@ -20,6 +20,10 @@ test:
 	@echo "Run all tests in tests/cairo_programs" 
 	./tools/make/launch_cairo_files.py -test
 
+test-hdp:
+	@echo "Run all tests in tests/cairo_programs" 
+	./tools/make/launch_cairo_files.py -test_hdp
+
 run-pie:
 	@echo "A script to select, compile & run one Cairo file"
 	@echo "Outputs a cairo PIE object"

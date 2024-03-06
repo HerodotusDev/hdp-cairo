@@ -42,6 +42,7 @@ class CairoRunner:
         )
         parser.add_argument("-pie", action="store_true", help="Create PIE object")
         parser.add_argument("-test", action="store_true", help="Run all tests")
+        parser.add_argument("-test_hdp", action="store_true", help="Run hdp tests")
         return parser.parse_args()
 
     def setup_autocomplete(self):
@@ -121,7 +122,7 @@ class CairoRunner:
             print(f"Compiling {self.filename_dot_cairo} ... ")
             compiled_path = os.path.join(COMPILED_FILES_DIR, f"{self.filename}.json")
             return_code = os.system(
-                f"cairo-compile {self.filename_dot_cairo_path} --output {compiled_path}"
+                f"cairo-compile {self.filename_dot_cairo_path} --output {compiled_path} --proof_mode"
             )
 
             if return_code == 0:
@@ -180,6 +181,26 @@ class CairoRunner:
                 print(f"Test {self.filename_dot_cairo} passed.")
         print(f"All tests passed.")
 
+    def test_hdp(self):
+        """Run HDP tests."""
+        tests_files = get_files_from_folders(["tests/hdp"], ".cairo")
+        for test_file in tests_files:
+            self.filename_dot_cairo_path = test_file
+            self.filename_dot_cairo = os.path.basename(test_file)
+            self.filename = self.filename_dot_cairo.removesuffix(".cairo")
+            self.compile_cairo_file()
+            run_command = self.construct_run_command(
+                os.path.join(COMPILED_FILES_DIR, f"{self.filename}.json")
+            )
+            return_code = os.system(run_command)
+            if return_code != 0:
+                print(f"### Test {self.filename_dot_cairo} failed.")
+                print(f"### Aborting tests.")
+                return
+            else:
+                print(f"Test {self.filename_dot_cairo} passed.")
+        print(f"All HDP tests passed.")
+
     def run_profiling_tool(self):
         """Run the profiling tool for the selected Cairo file."""
         print(f"Running profiling tool for {self.filename_dot_cairo} ... ")
@@ -192,5 +213,7 @@ if __name__ == "__main__":
     x = CairoRunner()
     if x.args.test:
         x.test()
+    elif x.args.test_hdp:
+        x.test_hdp()
     else:
         x.run()

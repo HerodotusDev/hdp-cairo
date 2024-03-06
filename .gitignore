@@ -27,3 +27,6 @@ package-lock.json
 src/.DS_Store
 
 solidity-verifier/lib/*
+
+# whitelist hdp fixtures
+!tests/hdp/fixtures/*.json

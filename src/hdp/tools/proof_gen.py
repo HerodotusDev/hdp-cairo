@@ -120,11 +120,11 @@ def format_proof_nodes(proof):
 
 
     
-RPC_URL = "https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"
+RPC_URL = "https://sepolia.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"
 w3 = Web3(Web3.HTTPProvider(RPC_URL))
 
-address = 0x439c5305DA2548DBC3a04bb4B3d22322701B1cA8
+address = 0x6d79869a0ada1857723E2d47CB9C77f49EC73207
 # address = 0xd3CdA913deB6f67967B99D67aCDFa1712C293601
-block_number = 10529663
-proof=get_slot_proof(address, block_number, RPC_URL, "0x0000000000000000000000000000000000000000000000000000000000000000")
+block_number = 5421584
+proof=get_slot_proof(address, block_number, RPC_URL, "0x0000000000000000000000000000000000000000000000000000000000000003")
 # proof=get_account_proof(address, block_number, RPC_URL)

@@ -4,7 +4,7 @@ from src.libs.mpt import verify_mpt_proof
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
-from src.hdp.types import Account, AccountProof, Header, AccountState, AccountSlot, AccountSlotProof
+from src.hdp.types import Account, AccountProof, Header, AccountValues
 from src.libs.block_header import extract_state_root_little
 from src.libs.rlp_little import (
     extract_byte_at_pos,
@@ -12,7 +12,7 @@ from src.libs.rlp_little import (
 )
 
 from src.libs.utils import felt_divmod
-from src.hdp.utils import keccak_hash_array_to_uint256, uint_le_u64_array_to_uint256
+from src.hdp.utils import keccak_hash_array_to_uint256, le_u64_array_to_be_uint256
 from src.hdp.memorizer import HeaderMemorizer, AccountMemorizer
 
 // Initializes the accounts, ensuring that the passed address matches the key.
@@ -30,9 +30,9 @@ func populate_account_segments{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, ke
         
         %{
             def write_account(account_ptr, proofs_ptr, account):
-                memory[account_ptr._reference_value] = segments.gen_arg(account["address"])
-                memory[account_ptr._reference_value + 1] = account["key"]["low"]
-                memory[account_ptr._reference_value + 2] = account["key"]["high"]
+                memory[account_ptr._reference_value] = segments.gen_arg(hex_to_int_array(account["address"]))
+                memory[account_ptr._reference_value + 1] = hex_to_int(account["account_key"]["low"])
+                memory[account_ptr._reference_value + 2] = hex_to_int(account["account_key"]["high"])
                 memory[account_ptr._reference_value + 3] = len(account["proofs"])
                 memory[account_ptr._reference_value + 4] = proofs_ptr._reference_value
 
@@ -42,10 +42,10 @@ func populate_account_segments{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, ke
                     memory[ptr._reference_value + offset] = proof["block_number"]
                     memory[ptr._reference_value + offset + 1] = len(proof["proof"])
                     memory[ptr._reference_value + offset + 2] = segments.gen_arg(proof["proof_bytes_len"])
-                    memory[ptr._reference_value + offset + 3] = segments.gen_arg(proof["proof"])
+                    memory[ptr._reference_value + offset + 3] = segments.gen_arg(nested_hex_to_int_array(proof["proof"]))
                     offset += 4
 
-            account = program_input['header_batches'][0]["accounts"][ids.index]
+            account = program_input["accounts"][ids.index]
 
             write_proofs(ids.proofs, account["proofs"])
             write_account(ids.account, ids.proofs, account)
@@ -83,8 +83,8 @@ func verify_n_accounts{
 } (
     accounts: Account*,
     accounts_len: felt,
-    account_states: AccountState*,
-    account_state_idx: felt,
+    account_values: AccountValues*,
+    account_value_idx: felt,
 ) {
     alloc_locals;
     if(accounts_len == 0) {
@@ -93,18 +93,18 @@ func verify_n_accounts{
 
     let account_idx = accounts_len - 1;
     
-    let account_state_idx = verify_account(
+    let account_value_idx = verify_account(
         account=accounts[account_idx],
-        account_states=account_states,
-        account_state_idx=account_state_idx,
+        account_values=account_values,
+        account_value_idx=account_value_idx,
         proof_idx=0,
     );
  
     return verify_n_accounts(
         accounts=accounts,
         accounts_len=accounts_len - 1,
-        account_states=account_states,
-        account_state_idx=account_state_idx,
+        account_values=account_values,
+        account_value_idx=account_value_idx,
     );
 }
 
@@ -124,20 +124,20 @@ func verify_account{
     pow2_array: felt*,
 } (
     account: Account,
-    account_states: AccountState*,
-    account_state_idx: felt,
+    account_values: AccountValues*,
+    account_value_idx: felt,
     proof_idx: felt,
 ) -> felt {
     alloc_locals;
     if (proof_idx == account.proofs_len) {
-        return account_state_idx;
+        return account_value_idx;
     }
 
     let account_proof = account.proofs[proof_idx];
 
     // get state_root from verified headers
     let header = HeaderMemorizer.get(account_proof.block_number);
-    let state_root = extract_state_root_little(headers[proof_idx].rlp);
+    let state_root = extract_state_root_little(header.rlp);
 
     let (value: felt*, value_len: felt) = verify_mpt_proof(
         mpt_proof=account_proof.proof,
@@ -151,113 +151,82 @@ func verify_account{
     );
 
     // write verified account state
-    assert account_states[account_state_idx] = AccountState(
+    assert account_values[account_value_idx] = AccountValues(
         values=value,
         values_len=value_len,
     );
 
     // add account to memorizer
-    AccountMemorizer.add(account.address, account_proof.block_number, account_state_idx);
+    AccountMemorizer.add(account.address, account_proof.block_number, account_value_idx);
 
     return verify_account(
         account=account,
-        account_states=account_states,
-        account_state_idx=account_state_idx + 1,
+        account_values=account_values,
+        account_value_idx=account_value_idx + 1,
         proof_idx=proof_idx + 1,
     );
 }
 
-// retrieves the account nonce from rlp encoded account state
-func get_account_nonce{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*
-} (rlp: felt*) -> Uint256 {
-    alloc_locals;
-    let (res, res_len, bytes_len) = decode_account_value(rlp=rlp, value_idx=0, item_starts_at_byte=2, counter=0);
+namespace AccountReader {
+    // retrieves the account state root from rlp encoded account state
+    func get_state_root{
+        range_check_ptr,
+        bitwise_ptr: BitwiseBuiltin*,
+        pow2_array: felt*
+    } (rlp: felt*) -> Uint256 {
+        alloc_locals;
 
-    let result = uint_le_u64_array_to_uint256(
-        elements=res,
-        elements_len=res_len,
-        bytes_len=bytes_len
-    );
+        let (res, res_len, _byte_len) = decode_account_value(rlp=rlp, value_idx=2, item_starts_at_byte=2, counter=0);
 
-    %{
-        print("nonce.high", ids.result.high)
-        print("nonce.low", ids.result.low)
-    %}
+        let result = keccak_hash_array_to_uint256(
+            elements=res,
+            elements_len=res_len
+        );
 
-    return result;
-}
+        return result;
+    }
 
-// retrieves the account balance from rlp encoded account state
-func get_account_balance{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*
-} (rlp: felt*) -> Uint256 {
-    alloc_locals;
+    func get_by_index{
+        range_check_ptr,
+        bitwise_ptr: BitwiseBuiltin*,
+        pow2_array: felt*
+    } (rlp: felt*, value_idx: felt) -> Uint256 {
+        alloc_locals;
 
-    let (res, res_len, bytes_len) = decode_account_value(rlp=rlp, value_idx=1, item_starts_at_byte=2, counter=0);
+        let (res, res_len, bytes_len) = decode_account_value(rlp=rlp, value_idx=value_idx, item_starts_at_byte=2, counter=0);
 
-    let result = uint_le_u64_array_to_uint256(
-        elements=res,
-        elements_len=res_len,
-        bytes_len=bytes_len
-    );
+        local is_hash: felt;
+        %{
+            # We need to ensure we decode the felt* in the correct format
+            if ids.value_idx <= 1:
+                # Int Value: nonce=0, balance=1
+                ids.is_hash = 0
+            else:
+                # Hash Value: stateRoot=2, codeHash=3
+                ids.is_hash = 1
+        %}
 
-    %{  
-        print("balance.high", ids.result.high)
-        print("balance.low", ids.result.low)
-    %}
+        if (is_hash == 0) {
+            assert [range_check_ptr] = 1 - value_idx; // validates is_hash hint
+            tempvar range_check_ptr = range_check_ptr + 1;
+            let result = le_u64_array_to_be_uint256(
+                elements=res,
+                elements_len=res_len,
+                bytes_len=bytes_len
+            );
 
-    return result;
-}
+            return result;
+        } else {
+            assert [range_check_ptr] = value_idx - 2; // validates is_hash hint
+            tempvar range_check_ptr = range_check_ptr + 1;
+            let result = keccak_hash_array_to_uint256(
+                elements=res,
+                elements_len=res_len
+            );
 
-// retrieves the account state root from rlp encoded account state
-func get_account_state_root{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*
-} (rlp: felt*) -> Uint256 {
-    alloc_locals;
-
-    let (res, res_len, _byte_len) = decode_account_value(rlp=rlp, value_idx=2, item_starts_at_byte=2, counter=0);
-
-    let result = keccak_hash_array_to_uint256(
-        elements=res,
-        elements_len=res_len
-    );
-
-    %{
-        print("stateRoot.high", hex(ids.result.high))
-        print("stateRoot.low", hex(ids.result.low))
-    %}
-
-    return result;
-}
-
-// retrieves the account code hash from rlp encoded account state
-func get_account_code_hash{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*
-} (rlp: felt*) -> Uint256 {
-    alloc_locals;
-
-    let (res, res_len, _byte_len) = decode_account_value(rlp=rlp, value_idx=3, item_starts_at_byte=2, counter=0);
-
-    let result = keccak_hash_array_to_uint256(
-        elements=res,
-        elements_len=res_len
-    );
-
-    %{
-        print("codehash.high", hex(ids.result.high))
-        print("codehash.low", hex(ids.result.low))
-    %}
-
-    return result;
+            return result;
+        }
+    }
 }
 
 // function for decoding account values from rlp encoded account state
@@ -275,29 +244,15 @@ func decode_account_value{
 } (rlp: felt*, value_idx: felt, item_starts_at_byte: felt, counter: felt) -> (res: felt*, res_len: felt, bytes_len: felt) {
     alloc_locals;
 
-    // %{
-    //     print("Iteration: ", ids.counter)
-    //     print("item_starts_at_byte", ids.item_starts_at_byte)
-    // %}
-
     let (item_starts_at_word, item_start_offset) = felt_divmod(
         item_starts_at_byte, 8
     );
-
-    // %{
-    //     print("item_starts_at_word", ids.item_starts_at_word)
-    //     print("item_start_offset", ids.item_start_offset)
-    // %}
 
     let current_item = extract_byte_at_pos(
         rlp[item_starts_at_word],
         item_start_offset,
         pow2_array
     );
-
-    // %{
-    //     print("current_item", hex(ids.current_item))
-    // %}
 
     local item_has_prefix: felt;
 
