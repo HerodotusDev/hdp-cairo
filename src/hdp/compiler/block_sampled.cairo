@@ -92,7 +92,6 @@ func init_block_sampled{
             bitwise_ptr=bitwise_ptr
         }(chunks=input + 26, idx=0, max_idx=4, slot=properties, slot_offset=4);
     } else {
-        assert 0 = 1; // Invalid property_type
         tempvar bitwise_ptr = bitwise_ptr;
     }
 

@@ -6,7 +6,7 @@ from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
 from src.hdp.types import AccountValues, StorageItemProof, StorageItem
 from src.hdp.account import AccountReader
-
+from src.hdp.utils import decode_rlp_word_to_uint256
 from src.libs.rlp_little import (
     extract_byte_at_pos,
     extract_n_bytes_from_le_64_chunks_array,
@@ -15,7 +15,6 @@ from src.libs.rlp_little import (
 from src.hdp.memorizer import StorageMemorizer, AccountMemorizer
 
 from src.libs.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64
-from src.hdp.utils import uint_le_u64_array_to_uint256, decode_rlp_word_to_uint256
 
 // Intializes and validates the storage_items
 func populate_storage_item_segments{

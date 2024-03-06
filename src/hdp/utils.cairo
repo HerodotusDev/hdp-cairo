@@ -93,25 +93,17 @@ func unbalanced_le_u64_array_to_be_uint256{
     let l_shift = pow2_array[ls_size * 8];
     let r_shift = pow2_array[(8 - ls_size) * 8];
 
-    %{ 
-        print("bytes_len", ids.bytes_len)
-        print("elements_len", ids.elements_len)
-        print("ls_size: ", ids.ls_size)
-        print("rs_mask: ", hex(ids.rs_mask))
-        print("ls_mask: ", hex(ids.ls_mask))
-    %}
-
-
     let (shifted_values) = alloc();
 
     mask_and_shift{
+        range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array,
         ls_mask=ls_mask,
         rs_mask=rs_mask,
         l_shift=l_shift,
         r_shift=r_shift
-    }(values=reversed_elements, results=shifted_values, values_len=elements_len, index=0);
+    }(values=reversed_elements, results=shifted_values, values_len=elements_len);
     
     if (elements_len == 3) {
         let hlsb = shifted_values[0];
@@ -138,8 +130,6 @@ func unbalanced_le_u64_array_to_be_uint256{
         high=hmsb * pow2_array[64] + hlsb
     );
     return result;
-
-
 }
 
 // Converts a balances LE 8-byte chunks to BE Uint256
@@ -209,78 +199,80 @@ func balanced_le_u64_array_to_be_uint256{
     
 }
 
+// Masks and shifts values according to the masks and shifts provided
 func mask_and_shift{
+    range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
     ls_mask: felt,
     rs_mask: felt,
     l_shift: felt,
     r_shift: felt
-}(values: felt*, results: felt*, values_len: felt, index: felt) {
+}(values: felt*, results: felt*, values_len: felt) {
     alloc_locals;
 
-    if (values_len == index + 1) {
-        return ();
+    //we should use with 3 or 4 values only. Not sure if needs to be enforced though
+    assert [range_check_ptr] = values_len - 3;
+    let range_check_ptr = range_check_ptr + 1;
+
+    // get most significant chunk
+    assert bitwise_ptr[0].x = values[0]; 
+    assert bitwise_ptr[0].y = ls_mask;
+    assert [results] = bitwise_ptr[0].x_and_y / r_shift;
+    let bitwise_ptr = bitwise_ptr + BitwiseBuiltin.SIZE;
+
+    // get middle chunks
+    let results = mask_and_shift_inner{
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array,
+        ls_mask=ls_mask,
+        rs_mask=rs_mask,
+        l_shift=l_shift,
+        r_shift=r_shift,
+    }(values=values, results=results + 1, values_len=values_len, index=0);
+
+    // get least significant chunk
+    assert bitwise_ptr[0].x = values[values_len - 2]; 
+    assert bitwise_ptr[0].y = rs_mask;
+    let left = bitwise_ptr[0].x_and_y * l_shift;
+    let bitwise_ptr = bitwise_ptr + BitwiseBuiltin.SIZE;
+
+    let right = values[values_len - 1];
+    assert [results] = left + right;
+
+    return ();
+}
+
+// Masks and shifts the inner values
+func mask_and_shift_inner{
+    bitwise_ptr: BitwiseBuiltin*,
+    pow2_array: felt*,
+    ls_mask: felt,
+    rs_mask: felt,
+    l_shift: felt,
+    r_shift: felt,
+}(values: felt*, results: felt*, values_len: felt, index: felt) -> felt* {
+    if(index + 2 == values_len) {
+        return (results);
     }
-
-    if(index == 0) {
-        assert bitwise_ptr[0].x = values[index]; 
-        assert bitwise_ptr[0].y = ls_mask;
-        assert [results] = bitwise_ptr[0].x_and_y / r_shift;
-        tempvar bitwise_ptr = bitwise_ptr + BitwiseBuiltin.SIZE;
-        tempvar results = results + 1;
-    } else {
-        tempvar bitwise_ptr = bitwise_ptr;
-        tempvar results = results;
-    }
-
-    let v0 = values[index];
-    let v1 = values[index + 1];
-
-    %{
-        print("word_left: ", hex(ids.v0))
-        print("word_right: ", hex(ids.v1))
-    %}
 
     assert bitwise_ptr[0].x = values[index]; 
     assert bitwise_ptr[0].y = rs_mask;
     let left = bitwise_ptr[0].x_and_y * l_shift;
-
-    if(index + 2 == values_len) {
-        let right = values[index + 1];
-        assert [results] = left + right;
-        let bitwise_ptr = bitwise_ptr + BitwiseBuiltin.SIZE;
-
-        %{
-            print("left: ", hex(ids.left))
-            print("right: ", hex(ids.right))
-            print("val: ", hex(ids.left + ids.right))
-        %}
-
-        return ();
-    }
 
     assert bitwise_ptr[1].x = values[index + 1]; 
     assert bitwise_ptr[1].y = ls_mask;
     let right = bitwise_ptr[1].x_and_y / r_shift;
 
     let bitwise_ptr = bitwise_ptr + 2 * BitwiseBuiltin.SIZE;
-
     assert [results] = left + right;
 
-    %{
-        print("left: ", hex(ids.left))
-        print("right: ", hex(ids.right))
-        print("val: ", hex(ids.left + ids.right))
-    %}
-
-    return mask_and_shift(
+    return mask_and_shift_inner(
         values=values,
         results=results + 1,
         values_len=values_len,
         index=index + 1,
     );
-
 }
 
 // ToDo: Investigate endianess again. This works though
@@ -322,43 +314,57 @@ func reverse_word_endianness{
     if (remaining_bytes_len == 1) {
         let res = values[index];
         assert [result] = res;
-        return reverse_word_endianness(values=values, values_len=values_len, remaining_bytes_len=remaining_bytes_len-1, index=index + 1, result=result);
+
+        assert values_len = index + 1;
+        return ();
     }
     if (remaining_bytes_len == 2) {
         let reversed = word_reverse_endian_16_RC(values[index]);
         tempvar range_check_ptr = range_check_ptr;
         assert [result] = reversed;
-        return reverse_word_endianness(values=values, values_len=values_len, remaining_bytes_len=remaining_bytes_len-2, index=index + 1, result=result);
+
+        assert values_len = index + 1;
+        return ();
     }
     if (remaining_bytes_len == 3) {
         let reversed = word_reverse_endian_24_RC(values[index]);
         tempvar range_check_ptr = range_check_ptr;
         assert [result] = reversed;
-        return reverse_word_endianness(values=values, values_len=values_len, remaining_bytes_len=remaining_bytes_len-3, index=index + 1, result=result);
+
+        assert values_len = index + 1;
+        return ();
     }
     if (remaining_bytes_len == 4) {
         let reversed = word_reverse_endian_32_RC(values[index]);
         tempvar range_check_ptr = range_check_ptr;
         assert [result] = reversed;
-        return reverse_word_endianness(values=values, values_len=values_len, remaining_bytes_len=remaining_bytes_len-4, index=index + 1, result=result);
+
+        assert values_len = index + 1;
+        return ();
     }
     if (remaining_bytes_len == 5) {
         let reversed = word_reverse_endian_40_RC(values[index]);
         tempvar range_check_ptr = range_check_ptr;
         assert [result] = reversed;
-        return reverse_word_endianness(values=values, values_len=values_len, remaining_bytes_len=remaining_bytes_len-5, index=index + 1, result=result);
+
+        assert values_len = index + 1;
+        return ();
     }
     if (remaining_bytes_len == 6) {
         let reversed = word_reverse_endian_48_RC(values[index]);
         tempvar range_check_ptr = range_check_ptr;
         assert [result] = reversed;
-        return reverse_word_endianness(values=values, values_len=values_len, remaining_bytes_len=remaining_bytes_len-6, index=index + 1, result=result);
+
+        assert values_len = index + 1;
+        return ();
     }
     if (remaining_bytes_len == 7) {
         let reversed = word_reverse_endian_56_RC(values[index]);
         tempvar range_check_ptr = range_check_ptr;
         assert [result] = reversed;
-        return reverse_word_endianness(values=values, values_len=values_len, remaining_bytes_len=remaining_bytes_len-7, index=index + 1, result=result);
+
+        assert values_len = index + 1;
+        return ();
     }
 
     let val = values[index];
@@ -366,7 +372,6 @@ func reverse_word_endianness{
 
     assert [result] = reversed;
     return reverse_word_endianness(values=values, values_len=values_len, remaining_bytes_len=remaining_bytes_len-8, index=index + 1, result=result+1);
-    
 }
 
 // computes the result entry. This maps the result to a task_hash/id. It computes h(task_hash, result), which is a leaf in the results tree.
@@ -429,13 +434,6 @@ func decode_rlp_word_to_uint256{
         return result;
     }
 
-    let e0 = elements[0];
-
-    %{
-        print("e0: ", hex(ids.e0))
-    
-    %}
-
     // fetch length from rlp prefix
     let prefix = extract_byte_at_pos{
         bitwise_ptr=bitwise_ptr,
@@ -449,16 +447,6 @@ func decode_rlp_word_to_uint256{
         n_bytes=result_bytes_len,
         pow2_array=pow2_array
     );
-
-    let r0 = result_chunks[0];
-    let r1 = result_chunks[1];
-    let r2 = result_chunks[2];
-
-    // %{
-    //     print("r0: ", hex(ids.r0))
-    //     print("r1: ", hex(ids.r1))
-    //     print("r2: ", hex(ids.r2))
-    // %}
 
     // convert to uint256
     let result = le_u64_array_to_be_uint256(

@@ -12,7 +12,7 @@ func compute_avg{
     let (result, remainder) = uint256_signed_div_rem(sum, divisor);
     local round_up: felt;
 
-    // ToDo: Unsafe hint for now. 
+    // ToDo: Unsafe hint for now. Worst-case is incorrect rounding. 
     %{
         if ((ids.remainder.high * 2**128 + ids.remainder.low) / ids.values_len) >= 0.5:
             ids.round_up = 1

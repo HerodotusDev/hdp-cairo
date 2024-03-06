@@ -6,7 +6,6 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
-from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
 
 from src.hdp.types import Header, HeaderProof, MMRMeta, Account, AccountValues, StorageItem, BlockSampledDataLake, BlockSampledComputationalTask
 from src.hdp.mmr import verify_mmr_meta
