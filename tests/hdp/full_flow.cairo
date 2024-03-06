@@ -18,19 +18,15 @@ func main{
         import json
 
         directory_path = 'tests/hdp/fixtures/'
-
         json_files = [file for file in os.listdir(directory_path) if file.endswith('.json')]
         data_list = []
 
         ids.tests_len = len(json_files)
-
         for json_file in json_files:
             file_path = os.path.join(directory_path, json_file)
             with open(file_path, 'r') as file:
                 data = json.load(file)
                 data_list.append(data)
-        
-        
     %}
 
     run_tests{
