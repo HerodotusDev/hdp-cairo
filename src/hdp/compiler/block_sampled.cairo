@@ -188,8 +188,6 @@ func extract_and_write_slot{
 
     assert [slot + slot_offset + idx] = most_significant_bytes + least_sig_bytes;
 
-    let slot_new = most_significant_bytes + least_sig_bytes;
-
     let bitwise_ptr = bitwise_ptr + 2 * BitwiseBuiltin.SIZE;
     return extract_and_write_slot{
         bitwise_ptr=bitwise_ptr
