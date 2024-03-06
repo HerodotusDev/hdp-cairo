@@ -30,3 +30,4 @@ solidity-verifier/lib/*
 
 # whitelist hdp fixtures
 !tests/hdp/fixtures/*.json
+!src/hdp/hdp_input.json
