@@ -189,7 +189,7 @@ class CairoRunner:
             if test_file == "tests/hdp/test_vectors.cairo":
                 continue
 
-            # if test_file != "tests/hdp/block_sampled_task.cairo":
+            # if test_file != "tests/hdp/merkle.cairo":
             #     continue
 
             self.filename_dot_cairo_path = test_file

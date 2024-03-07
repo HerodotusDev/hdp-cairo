@@ -6,46 +6,6 @@ from src.hdp.utils import compute_results_entry
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 
-// Creates the leaf hash for a given value. This can be a task or a result entry.
-// Leafs are double hashed, so h(h(value)) is returned.
-// ToDo: Need to get rid of this back and forth Uint256 conversions. Super ugly.
-func compute_leaf_hash{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
-}(value: Uint256) -> Uint256 {
-    alloc_locals;
-    let (first_round_input) = alloc();
-    let first_round_input_start = first_round_input;
-
-    // convert to felts
-    keccak_add_uint256{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        inputs=first_round_input
-    }(
-        num=value,
-        bigend=0
-    );
-
-    // hash first round
-    let (first_hash) = keccak(first_round_input_start, 32);
-
-    let (second_round_input) = alloc();
-    let second_round_input_start = second_round_input;
-    keccak_add_uint256{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        inputs=second_round_input
-    }(
-        num=first_hash,
-        bigend=0
-    );
-
-    let (result) = keccak(second_round_input_start, 32);
-    return result;
-}
-
 // Computes the results merkle root
 // Inputs:
 //  - tasks: The tasks that were sampled
@@ -58,42 +18,53 @@ func compute_results_root{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
 }(tasks: BlockSampledComputationalTask*, results: Uint256*, tasks_len: felt) -> Uint256 {
-    let (tree: Uint256*) = alloc();
-    let tree_len = 2 * tasks_len - 1;
+    alloc_locals;
+    let (local leafs: Uint256*) = alloc();
 
-    // create leaf hashes and populate the tree
-    double_hash_results{
-        range_check_ptr=range_check_ptr,
-        tree=tree,
-        results=results,
-        tasks=tasks
-    }(
-        n_tasks=tasks_len,
-        tree_len=tree_len,
-        index=0
-    );
-
-    // builds merkle tree
-    compute_merkle_root_inner{
+    compute_results_entries{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
-        tree=tree
+        leafs=leafs,
     }(
-        tree_range=tree_len - tasks_len - 1,
+        tasks=tasks,
+        results=results,
+        tasks_len=tasks_len,
         index=0
     );
 
-    // reverse endianess to compare in solidity
-    let (root) = uint256_reverse_endian{
+    return compute_merkle_root{
+        range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
+        keccak_ptr=keccak_ptr,
     }(
-        num=tree[0]
+        leafs=leafs,
+        leafs_len=tasks_len
     );
-
-    return (root);
-
 }
+
+// Computes the results entry the results. 
+func compute_results_entries{
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
+    leafs: Uint256*,    
+}(tasks: BlockSampledComputationalTask*, results: Uint256*, tasks_len: felt, index: felt) {
+    if(index == tasks_len) {
+        return ();
+    }
+
+    let entry_hash = compute_results_entry(tasks[index].hash, results[index]);
+    assert leafs[index] = entry_hash;
+
+    return compute_results_entries(
+        tasks=tasks,
+        results=results,
+        tasks_len=tasks_len,
+        index=index+1
+    );
+}
+
 
 // Computes the tasks merkle root
 // Inputs:
@@ -106,19 +77,48 @@ func compute_tasks_root{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
 }(tasks: BlockSampledComputationalTask*, tasks_len: felt) -> Uint256 {
-    let (tree: Uint256*) = alloc();
-    let tree_len = 2 * tasks_len - 1;
+    alloc_locals;
+    let (local leafs: Uint256*) = alloc();
 
-    // create leaf hashes and populate the tree
-    double_hash_tasks{
+    // copy the leafs to a new array.
+    // ToDo: is this a shallow copy or deep copy?
+    tempvar i = 0;
+    copy_loop:
+        let i = [ap - 1];
+        if(i == tasks_len) {
+            jmp end_loop;
+        }
+
+        assert leafs[i] = tasks[i].hash;
+        [ap] = i + 1, ap++;
+        jmp copy_loop;
+    end_loop:
+
+    return compute_merkle_root{
         range_check_ptr=range_check_ptr,
-        tree=tree,
-        tasks=tasks
+        bitwise_ptr=bitwise_ptr,
+        keccak_ptr=keccak_ptr,
     }(
-        n_tasks=tasks_len,
-        tree_len=tree_len,
-        index=0
+        leafs=leafs,
+        leafs_len=tasks_len
     );
+}
+
+func compute_merkle_root{
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
+}(leafs: Uint256*, leafs_len: felt) -> Uint256 {
+    let (tree: Uint256*) = alloc();
+    let tree_len = 2 * leafs_len - 1;
+
+    // writes to tree
+    compute_leaf_hashes{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        keccak_ptr=keccak_ptr,
+        tree=tree,
+    }(leafs=leafs, leafs_len=leafs_len, tree_len=tree_len, index=0);
 
     compute_merkle_root_inner{
         range_check_ptr=range_check_ptr,
@@ -126,7 +126,7 @@ func compute_tasks_root{
         keccak_ptr=keccak_ptr,
         tree=tree
     }(
-        tree_range=tree_len - tasks_len - 1,
+        tree_range=tree_len - leafs_len - 1,
         index=0
     );
 
@@ -167,54 +167,65 @@ func compute_merkle_root_inner{
     
 }
 
-// Double hashes the tasks
+// Double hashes the results
 // ToDo: would be nice to have a generic double hash function
-func double_hash_tasks{
+func compute_leaf_hashes{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     tree: Uint256*,
-    tasks: BlockSampledComputationalTask*,
-}(n_tasks: felt, tree_len: felt, index: felt) {
-    if(index == n_tasks) {
+}(leafs: Uint256*, leafs_len: felt, tree_len: felt, index: felt) {
+    if(index == leafs_len) {
         return ();
     }
 
-    let leaf_hash = compute_leaf_hash(tasks[index].hash);
-
+    let leaf_hash = compute_leaf_hash_inner(leafs[index]);
     assert tree[tree_len - 1 - index] = leaf_hash;
 
-    return double_hash_tasks(
-        n_tasks=n_tasks,
+    return compute_leaf_hashes(
+        leafs=leafs,
+        leafs_len=leafs_len,
         tree_len=tree_len,
         index=index+1
     );
 }
 
-// Double hashes the results
-// ToDo: would be nice to have a generic double hash function
-func double_hash_results{
+// Double keccak hashes the leaf to create the leaf hash
+func compute_leaf_hash_inner{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
-    tree: Uint256*,
-    results: Uint256*,
-    tasks: BlockSampledComputationalTask*,
-}(n_tasks: felt, tree_len: felt, index: felt) {
-    if(index == n_tasks) {
-        return ();
-    }
+}(leaf: Uint256) -> Uint256 {
+    alloc_locals;
+    let (first_round_input) = alloc();
+    let first_round_input_start = first_round_input;
 
-    let entry_hash = compute_results_entry(tasks[index].hash, results[index]);
-    let leaf_hash = compute_leaf_hash(entry_hash);
-
-    assert tree[tree_len - 1 - index] = leaf_hash;
-
-    return double_hash_results(
-        n_tasks=n_tasks,
-        tree_len=tree_len,
-        index=index+1
+    // convert to felts
+    keccak_add_uint256{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        inputs=first_round_input
+    }(
+        num=leaf,
+        bigend=0
     );
+
+    // hash first round
+    let (first_hash) = keccak(first_round_input_start, 32);
+
+    let (second_round_input) = alloc();
+    let second_round_input_start = second_round_input;
+    keccak_add_uint256{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        inputs=second_round_input
+    }(
+        num=first_hash,
+        bigend=0
+    );
+
+    let (leaf_hash) = keccak(second_round_input_start, 32);
+    return (leaf_hash);
 }
 
 // Hashes a pair value in the merkle tree.
