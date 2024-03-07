@@ -168,6 +168,7 @@ func compute_merkle_root_inner{
 }
 
 // Double hashes the tasks
+// ToDo: would be nice to have a generic double hash function
 func double_hash_tasks{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -191,6 +192,7 @@ func double_hash_tasks{
 }
 
 // Double hashes the results
+// ToDo: would be nice to have a generic double hash function
 func double_hash_results{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -230,9 +232,13 @@ func hash_pair{
     %{
 
         def flip_endianess(val):
-            val = hex(val)[2:]
+            val_hex = hex(val)[2:]
+
+            if len(val_hex) % 2:
+                val_hex = '0' + val_hex
+
             # Convert hex string to bytes
-            byte_data = bytes.fromhex(val)
+            byte_data = bytes.fromhex(val_hex)
             num = int.from_bytes(byte_data, byteorder="little")
 
             return num
@@ -265,11 +271,6 @@ func hash_pair{
         n_elements=2, 
         elements=pair
     );
-
-    // %{
-    //     hash_val = flip(ids.res.low) * 2**128 + flip(ids.res.high)
-    //     print(f"Node hash: {hex(hash_val)}")
-    // %}
 
     return (res);
 }
