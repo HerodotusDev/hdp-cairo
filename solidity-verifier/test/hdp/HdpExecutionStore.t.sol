@@ -35,12 +35,12 @@ contract MockAggregatorsFactory is IAggregatorsFactory {
 
 contract MockSharpFactsAggregator is ISharpFactsAggregator {
     function aggregatorState() external pure returns (AggregatorState memory) {
-        bytes32 root = 0x0614c2c4abb1e3b1f4a2c69c320b10cb78466800b62ee52a8476f9986925ac06;
+        bytes32 root = 0x010985193855d9de012ae065d02e15676aa2cce031b18290d3b48fb8e410d3bc;
         return
             AggregatorState({
                 poseidonMmrRoot: root,
                 keccakMmrRoot: bytes32(0),
-                mmrSize: 2397,
+                mmrSize: 56994,
                 continuableParentHash: bytes32(0)
             });
     }
@@ -155,7 +155,7 @@ contract HreExecutionStoreTest is Test {
             abi.encode(taskCommitment, computationalTasksResult[0])
         );
 
-        console.logBytes32(taskResultCommitment1);
+        assertEq(taskResultCommitment1, bytes32(0xa2ce858689a998d85b8f821f32e971556146d097d8033948d9b9bac978cedc9d));
 
         // Tasks and Results Merkle Tree Information
         // proof of the tasks merkle tree
@@ -217,7 +217,7 @@ contract HreExecutionStoreTest is Test {
             scheduledTasksBatchMerkleRootLow,
             scheduledTasksBatchMerkleRootHigh
         );
-        console.logBytes32(factHash);
+        assertEq(factHash, bytes32(0x744b5ab7e51882cc2cbb67316a4d9056cc4a699a696a4e3d480c053ee2974888));
         factsRegistry.markValid(factHash);
         bool is_valid = factsRegistry.isValid(factHash);
         assertEq(is_valid, true);
@@ -280,7 +280,7 @@ contract HreExecutionStoreTest is Test {
         bytes32 programOutputHash = keccak256(abi.encodePacked(programOutput));
 
         // Compute GPS fact hash
-        bytes32 programHash = 0x001c8cc7762ed906ffd62867aa102adce05db50358a0224524f657ef23d0b7a5;
+        bytes32 programHash = 0x06023b57a1f6ff60c0fc53f0f45c6939fee84749bf8c1e798451003b7a9a6806;
         bytes32 gpsFactHash = keccak256(
             abi.encode(
                 programHash,
