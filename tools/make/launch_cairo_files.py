@@ -185,6 +185,13 @@ class CairoRunner:
         """Run HDP tests."""
         tests_files = get_files_from_folders(["tests/hdp"], ".cairo")
         for test_file in tests_files:
+            # Skip the vectors test file.
+            if test_file == "tests/hdp/test_vectors.cairo":
+                continue
+
+            # if test_file != "tests/hdp/block_sampled_task.cairo":
+            #     continue
+
             self.filename_dot_cairo_path = test_file
             self.filename_dot_cairo = os.path.basename(test_file)
             self.filename = self.filename_dot_cairo.removesuffix(".cairo")

@@ -30,13 +30,13 @@ namespace BlockSampledTask {
 
             let datalake = init_block_sampled(datalakes_input[index], datalakes_bytes_len[index], property_type);
            
-            let (data_lake_hash_low, data_lake_hash_high, aggregate_fn_id) = extract_params{
+            let (datalake_hash_low, datalake_hash_high, aggregate_fn_id) = extract_params{
                 range_check_ptr=range_check_ptr,
             }(input=tasks_input[index]);
 
             // ensure task contains correct data lake hash
-            assert data_lake_hash_low = datalake.hash.low;
-            assert data_lake_hash_high = datalake.hash.high;
+            assert datalake_hash_low = datalake.hash.low;
+            assert datalake_hash_high = datalake.hash.high;
 
             let (hash) = keccak(tasks_input[index], tasks_bytes_len[index]);
 
@@ -127,7 +127,7 @@ namespace BlockSampledTask {
 // Internal Functions:
 func extract_params{
     range_check_ptr,
-}(input: felt*) -> (data_lake_hash_low: felt, data_lake_hash_high: felt, aggregate_fn_id: felt) {
+}(input: felt*) -> (datalake_hash_low: felt, datalake_hash_high: felt, aggregate_fn_id: felt) {
     alloc_locals;
     // HeaderProp Input Layout:
     // 0-3: data_lake_hash
@@ -135,8 +135,8 @@ func extract_params{
     // 8-: aggregate_fn_ctx -> Unimplemented!
     
     // Copy data_lake_hash
-    let data_lake_hash_low = [input] + [input + 1] * 0x10000000000000000;
-    let data_lake_hash_high = [input + 2] + [input + 3] * 0x10000000000000000;
+    let datalake_hash_low = [input] + [input + 1] * 0x10000000000000000;
+    let datalake_hash_high = [input + 2] + [input + 3] * 0x10000000000000000;
    
     // ensure aggregate_fn_id is not overflowing
     assert [ input + 5] = 0;
@@ -145,26 +145,26 @@ func extract_params{
 
     //"avg".encode(uft-8).to_le()
     if(task == 0x677661) {
-        return (data_lake_hash_low=data_lake_hash_low, data_lake_hash_high=data_lake_hash_high, aggregate_fn_id=0);
+        return (datalake_hash_low=datalake_hash_low, datalake_hash_high=datalake_hash_high, aggregate_fn_id=0);
     }
 
     //"sum".encode(uft-8).to_le()
     if(task == 0x6D7573) {
-        return (data_lake_hash_low=data_lake_hash_low, data_lake_hash_high=data_lake_hash_high, aggregate_fn_id=1);
+        return (datalake_hash_low=datalake_hash_low, datalake_hash_high=datalake_hash_high, aggregate_fn_id=1);
     }
     
     //"min".encode(uft-8).to_le()
     if(task == 0x6E696D) { 
-        return (data_lake_hash_low=data_lake_hash_low, data_lake_hash_high=data_lake_hash_high, aggregate_fn_id=2);
+        return (datalake_hash_low=datalake_hash_low, datalake_hash_high=datalake_hash_high, aggregate_fn_id=2);
     }
     
     //"max".encode(uft-8).to_le()
     if(task == 0x78616D) {
-        return (data_lake_hash_low=data_lake_hash_low, data_lake_hash_high=data_lake_hash_high, aggregate_fn_id=3);
+        return (datalake_hash_low=datalake_hash_low, datalake_hash_high=datalake_hash_high, aggregate_fn_id=3);
     }
 
     // Terminate on invalid aggregate_fn_id
     assert 0 = 1;
 
-    return (data_lake_hash_low=data_lake_hash_low, data_lake_hash_high=data_lake_hash_high, aggregate_fn_id=3);
+    return (datalake_hash_low=datalake_hash_low, datalake_hash_high=datalake_hash_high, aggregate_fn_id=3);
 }

@@ -17,6 +17,7 @@ func init_block_sampled{
     alloc_locals;
 
     let (hash: Uint256) = keccak(input, input_bytes_len);
+
     let (block_range_start, block_range_end, increment) = extract_constant_params{
         range_check_ptr=range_check_ptr
     }(input=input);

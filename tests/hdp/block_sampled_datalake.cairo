@@ -1,7 +1,7 @@
 %builtins range_check bitwise keccak
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, KeccakBuiltin
 from src.hdp.compiler.block_sampled import init_block_sampled
-from tests.hdp.test_vectors import get_block_sampled_header_test_vector, get_block_sampled_account_test_vector, get_block_sampled_storage_test_vector
+from tests.hdp.test_vectors import BlockSampledDataLakeMocker
 from src.hdp.types import BlockSampledDataLake
 
 func main{
@@ -25,15 +25,15 @@ func test_block_sampled_datalake_decoding{
 }() {
     alloc_locals;
 
-    let (header_input, header_input_bytes_len, header_expected_datalake, header_property_type) = get_block_sampled_header_test_vector();
+    let (header_input, header_input_bytes_len, header_expected_datalake, header_property_type) = BlockSampledDataLakeMocker.get_header_property();
     let header_datalake = init_block_sampled(header_input, header_input_bytes_len, header_property_type);
     block_sampled_datalake_eq(header_datalake, header_expected_datalake, header_property_type);
 
-    let (account_input, account_input_bytes_len, account_expected_datalake, account_property_type) = get_block_sampled_account_test_vector();
+    let (account_input, account_input_bytes_len, account_expected_datalake, account_property_type) = BlockSampledDataLakeMocker.get_account_property();
     let account_datalake = init_block_sampled(account_input, account_input_bytes_len, account_property_type);
     block_sampled_datalake_eq(account_datalake, account_expected_datalake, account_property_type);
 
-    let (storage_input, storage_input_bytes_len, storage_expected_datalake, storage_property_type) = get_block_sampled_storage_test_vector();
+    let (storage_input, storage_input_bytes_len, storage_expected_datalake, storage_property_type) = BlockSampledDataLakeMocker.get_storage_property();
     let storage_datalake = init_block_sampled(storage_input, storage_input_bytes_len, storage_property_type);
     block_sampled_datalake_eq(storage_datalake, storage_expected_datalake, storage_property_type);
 
