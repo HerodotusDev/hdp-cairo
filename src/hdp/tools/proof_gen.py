@@ -9,7 +9,7 @@
 from web3._utils.encoding import (
     pad_bytes,
 )
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 import json
 from tools.py.fetch_block_headers import get_block_header
 from tools.py.utils import (
@@ -41,6 +41,13 @@ class CairoAccountMPTProof:
     #     # Custom formatting for readability
     #     return json.dumps(asdict(self), indent=4)
 
+def int_list_to_hex_str_list(int_list):
+    return [hex(x) for x in int_list]
+
+def convert_to_hex_dict(low_high_tuple):
+    low, high = low_high_tuple
+    return {"low": hex(low), "high": hex(high)}
+
 def get_account_proof(
     address: int, block_number: int, RPC_URL: str
 ) -> CairoAccountMPTProof:
@@ -62,55 +69,23 @@ def get_account_proof(
     accountProofbytes = [node for node in proof["accountProof"]]
     accountProofbytes_len = [len(byte_proof) for byte_proof in accountProofbytes]
     accountProof = [bytes_to_8_bytes_chunks_little(node) for node in accountProofbytes]
+    
 
     return CairoAccountMPTProof(
         address=address_little,
         trie_key=trie_key,
         block_number=block_number,
         proof_bytes_len=accountProofbytes_len,
-        proof=accountProof,
+        proof=proof,
     )
 
-def get_slot_proof(
-    address: int, block_number: int, RPC_URL: str, slot: str
-) -> CairoAccountMPTProof:
-    w3 = Web3(Web3.HTTPProvider(RPC_URL))
-
-    trie_key =  keccak(bytes.fromhex(slot[2:]))
-    block = get_block_header(block_number, RPC_URL)
-    proof = w3.eth.get_proof(
-        w3.toChecksumAddress(address),
-        [int(slot, 16)],
-        block_number,
-    )
-
-    verify_account_proof(proof.storageProof[0].proof, trie_key, proof.storageHash)
-
-    trie_key = reverse_endian_256(int(trie_key.hex(), 16))
-    trie_key = split_128(trie_key)
-
-    address_little = bytes_to_8_bytes_chunks_little(bytes.fromhex(slot[2:]))
-    accountProofbytes = [node for node in proof.storageProof[0].proof]
-    accountProofbytes_len = [len(byte_proof) for byte_proof in accountProofbytes]
-    accountProof = [bytes_to_8_bytes_chunks_little(node) for node in accountProofbytes]
-    print("Account Slot Proof:", accountProof)
-    return CairoAccountMPTProof(
-        address=address_little,
-        trie_key=trie_key,
-        block_number=block_number,
-        proof_bytes_len=accountProofbytes_len,
-        proof=accountProof,
-    )
-# ):
 
 def verify_account_proof(proof, key, root):
     result = HexaryTrie.get_from_proof(
         root, key, format_proof_nodes(proof)
     )
 
-    print("Proof Valid! Result:", result.hex())
-
-
+    print("Proof Valid! Result:", int(rlp.decode(result).hex(), 16))
 
 def format_proof_nodes(proof):
     trie_proof = []
@@ -123,8 +98,6 @@ def format_proof_nodes(proof):
 RPC_URL = "https://sepolia.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"
 w3 = Web3(Web3.HTTPProvider(RPC_URL))
 
-address = 0x6d79869a0ada1857723E2d47CB9C77f49EC73207
-# address = 0xd3CdA913deB6f67967B99D67aCDFa1712C293601
-block_number = 5421584
-proof=get_slot_proof(address, block_number, RPC_URL, "0x0000000000000000000000000000000000000000000000000000000000000003")
-# proof=get_account_proof(address, block_number, RPC_URL)
+address = "0x4d6bcd482715b543aefcfc2a49963628e6c959bc" # ERC20 https://sepolia.etherscan.io/address/0x4D6bCD482715B543aEfcfC2A49963628E6c959Bc
+block_number = 5434826
+

@@ -38,7 +38,7 @@ func verify_mpt_proof{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr:
 ) -> (value: felt*, value_len: felt) {
     alloc_locals;
     %{ 
-        debug_mode = False
+        debug_mode = True
         conditional_print(f"\n\nNode index {ids.node_index+1}/{ids.mpt_proof_len}") 
         
     %}

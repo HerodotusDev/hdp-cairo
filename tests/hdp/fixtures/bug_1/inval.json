@@ -1,11 +1,11 @@
 {
     "results_root": {
-        "low": "0x5502100e12a6c4fe984a06957138a10e",
-        "high": "0x10303e3ecee0390549ab42d193d80d76"
+        "low": "0x93ccb5fe6f8110bfdf33a967a2721c80",
+        "high": "0x91419f1267ac103ea3f01a0dbf943ee5"
     },
     "tasks_root": {
-        "low": "0x1e42aadaa7995267f197b225ed60f1d6",
-        "high": "0x117221bd36b28c6c231bf9fbcd1909b2"
+        "low": "0x60f72b95c24fc8a943e3b0fe5b8366a4",
+        "high": "0x5adae47bddcc5fe11247147a8a3fb942"
     },
     "headers": [{
         "rlp": ["0xcd49599a04b02f9", "0xe1db5df5e97eb951", "0x72fada28be611c51", "0x42a29dfa7efb46c7", "0x4dcc1da0518c8a14", "0xb585ab7a5dc7dee8", "0x4512d31ad4ccb667", "0x42a1f013748a941b", "0x8b00944793d440fd", "0xaaed140e2c992f3b", "0xaa9c54ec2b662c6e", "0x8cece234a3a0f18d", "0xb216db82d60f2b54", "0xcafb0b4712b83bb5", "0xe25d3ba0eeb16f5", "0x273dc29da0f05266", "0xa67a3aaec762dade", "0xf87c0bb1bb39eda6", "0xbca9e5152c94751b", "0xa7e15a0e01ecacf", "0x8d9311c9c47d6e62", "0x3b0c726ba066d03c", "0x772317368e4378bf", "0x1b98a8ba0a458", "0x504b02890e00214a", "0x48254ab172463918", "0x4405100210081020", "0x8200e85c00801104", "0x820b0a041020000", "0xa30294c4060911c8", "0x2080a12612000018", "0x50002cb040309005", "0x410be500168200d0", "0x6185a3061a011ac0", "0x3c004b2040400a4", "0x207202c029800250", "0x4182640248823284", "0x689042094110c1c", "0x22c080a1cd060a68", "0xd4040001dc864808", "0x8064e3110225d0c2", "0xe4612040010200e0", "0x4c445cc70b000230", "0x48124245d4308180", "0x87a500086a200802", "0xc15000842800250", "0x810e800c8880600a", "0x10c84d1232009344", "0x28804e6819049", "0xc60d219e9010280", "0x75025e4100901240", "0x836205b008d3800a", "0x1600000400e01412", "0x21024422206250d2", "0x6122130a109a4c08", "0x460388020312f0", "0xc90184caed528380", "0x6584bb039a8380c3", "0xe91aa1a080f4a0e9", "0x5bcc910e92c73c4d", "0x15880de4ddb8cf92", "0x4f3c40f59fe870c1", "0x883574f17c17", "0x684000000000000", "0x6ba3b84fa08e4a9b", "0x4b238aa17cf33d60", "0x6e3e4c6ed6521889", "0x56111c7a64492a35", "0xc83b4cd13c3", "0x3f4a00000b80484", "0x42de8098c5cfb565", "0x10b7f264b6d111bd", "0x24d5ac97e95d7b49", "0x907177ae5714"],
@@ -44,25 +44,26 @@
     }],
     "storages": [{
         "address": ["0x43b5152748cd6b4d", "0x283696492afcfcae", "0xbc59c9e6"],
-        "slot": ["0x41dc2e28bfd534e0", "0x36a63f7c6f4f5fd8", "0x3cc7c5d96f54656d", "0xa6a96e8ee843a9cf"],
+        "slot": ["0x75e989010620638b", "0xd096a09dc49f10d5", "0x1b3521cc436f474d", "0x4a32abf249dae6e"],
         "storage_key": {
-            "low": "0x2e4d69bf6c1443faf8038ff8af2f8275",
-            "high": "0x9ccae3d2713d40dd9e7533e7bf9b7794"
+            "low": "0xa661af83c3d302ece373f09175860eee",
+            "high": "0x46198c6cce9ba0dc533f4d0667b38b5f"
         },
         "proofs": [{
             "block_number": 5434826,
-            "proof_bytes_len": [243, 44],
+            "proof_bytes_len": [243, 83, 47],
             "proof": [
                 ["0x802a81077aa0f1f8", "0xfc44092a139f5132", "0xe4dee2dabeb72940", "0x82788fa8d183c24c", "0x3aa0808080707564", "0xe955ea19da0977", "0xf06e29434b5f275d", "0x2026e1ca79343208", "0x80a7bdeae527629e", "0xe7d98e971387a080", "0x9a580254e3b8599e", "0xb2f67e24b0744b33", "0xd49377c55f7efa8f", "0xfd5641dcaea0a39e", "0x10a16638f6843abb", "0x98eca8d51a7ca10d", "0xaad3ec1cc3dc6585", "0xf2a08080802f6645", "0xd6f9da9a2eff4e2f", "0x40f9768ed73f2bd", "0x9efb7211c5fe2014", "0x8093a84c8f02d131", "0x9896bd80df9bf3a0", "0x30e8b86edb6e0d5", "0x48c5eb7e47237de", "0x5301013155c89773", "0xf499c4fd2daaa048", "0x40d00fffbf29cb8d", "0x48b871142dc4c143", "0x95c5bc78b8f620fe", "0x8057f5"],
-                ["0x8ff8af2f8235a0eb", "0x69bf6c1443faf803", "0x33e7bf9b77942e4d", "0xe3d2713d40dd9e75", "0xc22b1a0b88899cca", "0x50ec"]
+                ["0x80808080808051f8", "0xa080808080808080", "0x257f74222453883a", "0x6bca873cdf10d786", "0xf81b02323783c8ba", "0x22e89fdce921ec0e", "0x5fdb7b634d656da0", "0xaa1333d1020265a7", "0xab0d96402383b02f", "0x282f1afeafbdf484", "0x80801b"],
+                ["0xf09175860e20a0ee", "0xaf83c3d302ece373", "0x4d0667b38b5fa661", "0x8c6cce9ba0dc533f", "0xd1d2b7528b8c4619", "0xb0f70fe1ad"]
             ]
         }]
     }],
     "tasks": [{
         "task_bytes_len": 128,
-        "encoded_task": ["0x3b472f08f0f1813b", "0xbd258c951a3eeba9", "0xbe67c519373f9f9a", "0x70f160a43dc95f5", "0x677661", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x6000000000000000", "0x0", "0x0", "0x0", "0x0"],
+        "encoded_task": ["0x80d34e67b591f440", "0x4e0de1cdbb958897", "0x94b2b67185a8f3ef", "0xce41365bde01cbef", "0x677661", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x6000000000000000", "0x0", "0x0", "0x0", "0x0"],
         "datalake_bytes_len": 256,
-        "encoded_datalake": ["0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0xcaed520000000000", "0x0", "0x0", "0x0", "0xcaed520000000000", "0x0", "0x0", "0x0", "0x100000000000000", "0x0", "0x0", "0x0", "0xa000000000000000", "0x0", "0x0", "0x0", "0x3500000000000000", "0xb5152748cd6b4d03", "0x3696492afcfcae43", "0xd534e0bc59c9e628", "0x4f5fd841dc2e28bf", "0x54656d36a63f7c6f", "0x43a9cf3cc7c5d96f", "0xa6a96e8ee8", "0x0"],
+        "encoded_datalake": ["0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0xcaed520000000000", "0x0", "0x0", "0x0", "0xcaed520000000000", "0x0", "0x0", "0x0", "0x100000000000000", "0x0", "0x0", "0x0", "0xa000000000000000", "0x0", "0x0", "0x0", "0x3500000000000000", "0xb5152748cd6b4d03", "0x3696492afcfcae43", "0x20638bbc59c9e628", "0x9f10d575e9890106", "0x6f474dd096a09dc4", "0x9dae6e1b3521cc43", "0x4a32abf24", "0x0"],
         "datalake_type": 0,
         "property_type": 3
     }]
