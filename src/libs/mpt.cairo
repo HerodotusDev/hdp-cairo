@@ -37,10 +37,9 @@ func verify_mpt_proof{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr:
     pow2_array: felt*,
 ) -> (value: felt*, value_len: felt) {
     alloc_locals;
-    %{ 
+    %{
         debug_mode = True
-        conditional_print(f"\n\nNode index {ids.node_index+1}/{ids.mpt_proof_len}") 
-        
+        conditional_print(f"\n\nNode index {ids.node_index+1}/{ids.mpt_proof_len}")
     %}
     if (node_index == mpt_proof_len - 1) {
         // Last node : item of interest is the value.
@@ -209,56 +208,46 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
             // Long string.
             assert [range_check_ptr] = second_item_prefix - 0xb8;
             assert [range_check_ptr + 1] = 0xbf - second_item_prefix;
-
+            tempvar range_check_ptr = range_check_ptr + 2;
             tempvar len_len = second_item_prefix - 0xb7;
             assert second_item_value_starts_at_byte = second_item_starts_at_byte + 1 + len_len;
-            tempvar end_of_len_virtual_offset = second_item_start_offset + 1 + len_len;
-
-            local second_item_long_string_len_fits_into_current_word: felt;
-            %{ ids.second_item_long_string_len_fits_into_current_word = (7 - ids.end_of_len_virtual_offset) >= 0 %}
-
-            if (second_item_long_string_len_fits_into_current_word != 0) {
-                // %{ conditional_print(f"Len len {ids.len_len} fits into current word.") %}
-                // len_len bytes can be extracted from the current word.
-                assert [range_check_ptr + 2] = 7 - end_of_len_virtual_offset;
-
-                if (len_len == 1) {
-                    // No need to reverse endian since it's a single byte.
-                    let second_item_long_string_len = extract_byte_at_pos(
-                        rlp[second_item_starts_at_word], second_item_start_offset + 1, pow2_array
-                    );
-                    assert second_item_bytes_len = second_item_long_string_len;
-                    tempvar bitwise_ptr = bitwise_ptr;
-                } else {
-                    let second_item_long_string_len_little = extract_n_bytes_at_pos(
-                        rlp[second_item_starts_at_word],
-                        second_item_start_offset,
-                        len_len,
-                        pow2_array,
-                    );
-                    let (tmp) = word_reverse_endian_64(second_item_long_string_len_little);
-                    assert second_item_bytes_len = tmp / pow2_array[64 - 8 * len_len];
-                    tempvar bitwise_ptr = bitwise_ptr;
-                }
-
-                %{ conditional_print(f"second_item_long_string_len : {ids.second_item_bytes_len} bytes") %}
-                assert third_item_starts_at_byte = second_item_starts_at_byte + 1 + len_len +
-                    second_item_bytes_len;
-                assert range_check_ptr_f = range_check_ptr + 3;
-                assert bitwise_ptr_f = bitwise_ptr;
+            let (second_item_len_len_start_word, second_item_len_len_start_offset) = felt_divmod_8(
+                second_item_starts_at_byte + 1
+            );
+            if (len_len == 1) {
+                // No need to reverse endian since it's a single byte.
+                let second_item_long_string_len = extract_byte_at_pos(
+                    rlp[second_item_len_len_start_word],
+                    second_item_len_len_start_offset,
+                    pow2_array,
+                );
+                assert second_item_bytes_len = second_item_long_string_len;
+                tempvar bitwise_ptr = bitwise_ptr;
+                tempvar range_check_ptr = range_check_ptr;
             } else {
-                %{ conditional_print("Len len doesn't fit into current word.") %}
-                // Very unlikely. But fix anyway.
-                assert [range_check_ptr + 2] = end_of_len_virtual_offset - 8;
-                assert range_check_ptr_f = range_check_ptr + 3;
-                assert bitwise_ptr_f = bitwise_ptr;
+                let (
+                    second_item_long_string_len_ptr, n_words
+                ) = extract_n_bytes_from_le_64_chunks_array(
+                    array=rlp,
+                    start_word=second_item_len_len_start_word,
+                    start_offset=second_item_len_len_start_offset,
+                    n_bytes=len_len,
+                    pow2_array=pow2_array,
+                );
+                assert n_words = 1;  // Extremely large size for long strings forbidden.
 
-                let n_bytes_to_extract_from_next_word = end_of_len_virtual_offset - 8;  // end_of_len_virtual_offset%8
-                let n_bytes_to_extract_from_current_word = len_len -
-                    n_bytes_to_extract_from_next_word;
-                assert len_len = n_bytes_to_extract_from_next_word +
-                    n_bytes_to_extract_from_current_word;
+                let second_item_long_string_len = [second_item_long_string_len_ptr];
+                let (tmp) = word_reverse_endian_64(second_item_long_string_len);
+                assert second_item_bytes_len = tmp / pow2_array[64 - 8 * len_len];
+                tempvar bitwise_ptr = bitwise_ptr;
+                tempvar range_check_ptr = range_check_ptr;
             }
+
+            %{ conditional_print(f"second_item_long_string_len : {ids.second_item_bytes_len} bytes") %}
+            assert third_item_starts_at_byte = second_item_starts_at_byte + 1 + len_len +
+                second_item_bytes_len;
+            assert range_check_ptr_f = range_check_ptr;
+            assert bitwise_ptr_f = bitwise_ptr;
         }
     }
     let range_check_ptr = range_check_ptr_f;
@@ -464,7 +453,7 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
 // Jumps on a branch until index i is reached.
 // params:
 // - rlp: the branch node as an array of little endian 8 bytes chunks.
-// - item_start_index: the index of the  item to jump from.
+// - item_start_index: the index of the item to jump from.
 // - target_index: the index of the item to jump to.
 // - prefix_start_word: the word of the prefix to jump from. (Must correspond to item_start_index)
 // - prefix_start_offset: the offset of the prefix to jump from. (Must correspond to item_start_index)
