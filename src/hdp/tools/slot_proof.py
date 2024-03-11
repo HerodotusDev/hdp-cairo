@@ -64,7 +64,9 @@ def get_slot_proof(
         block_number,
     )
 
+
     verify_account_proof(proof.storageProof[0].proof, storage_key, proof.storageHash)
+    print(proof)
 
     storage_key = reverse_endian_256(int(storage_key.hex(), 16))
     storage_key = split_128(storage_key)
@@ -103,8 +105,8 @@ def format_proof_nodes(proof):
 RPC_URL = "https://sepolia.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"
 w3 = Web3(Web3.HTTPProvider(RPC_URL))
 
-address = "0x4d6bcd482715b543aefcfc2a49963628e6c959bc" # ERC20 https://sepolia.etherscan.io/address/0x4D6bCD482715B543aEfcfC2A49963628E6c959Bc
-block_number = 5434826
+address = "0x779877A7B0D9E8603169DdbD7836e478b4624789" # ERC20 https://sepolia.etherscan.io/address/0x4D6bCD482715B543aEfcfC2A49963628E6c959Bc
+block_number = 5415971
 
 
 def gen_invalid_slot_example():
@@ -112,22 +114,22 @@ def gen_invalid_slot_example():
         address, 
         block_number, 
         RPC_URL, 
-        "0x8b6320060189e975d5109fc49da096d04d476f43cc21351b6eae9d24bf2aa304" # _balanceOf for 0x345696b3A0DB63784EE59Bae1dA95758ff615bc5
+        "0x012f2f19fa1e989598070d3fd9f41474c8923f5c22ffe675638be3c13b8ad07d" # _balanceOf for 0x345696b3A0DB63784EE59Bae1dA95758ff615bc5
     )
     print("\nCairo Inputs:")
     print(export_to_json(proof))
 
 
-def gen_valid_slot_example():
-    proof = get_slot_proof(
-        address, 
-        block_number, 
-        RPC_URL, 
-        "0xe034d5bf282edc41d85f4f6f7c3fa6366d65546fd9c5c73ccfa943e88e6ea9a6" # _balanceOf for 0xe2Aafbf1889087C1383E43625AF7433D4fad9824
-    )
+# def gen_valid_slot_example():
+#     proof = get_slot_proof(
+#         address, 
+#         block_number, 
+#         RPC_URL, 
+#         "0xe034d5bf282edc41d85f4f6f7c3fa6366d65546fd9c5c73ccfa943e88e6ea9a6" # _balanceOf for 0xe2Aafbf1889087C1383E43625AF7433D4fad9824
+#     )
 
-    print("\nCairo Inputs:")
-    print(export_to_json(proof))
+#     print("\nCairo Inputs:")
+#     print(export_to_json(proof))
 
 gen_invalid_slot_example()
 # gen_valid_slot_example()
