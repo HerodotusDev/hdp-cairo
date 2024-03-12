@@ -13,11 +13,26 @@ func main{
     alloc_locals;
     let pow2_array: felt* = pow2alloc128();
 
+    %{ print("Testing Homestead Block") %}
     test_header_decoding{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array
-    }(block_number=8150001);
+    }(block_number=150001);
+
+    %{ print("Testing London Block (EIP-1559)") %}
+    test_header_decoding{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array
+    }(block_number=12965001);
+   
+    %{ print("Testing Shanghai Block") %}
+    test_header_decoding{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array
+    }(block_number=17034871);
 
     return ();
 }
@@ -30,7 +45,6 @@ func test_header_decoding{
     alloc_locals;
 
     let (rlp) = alloc();
-
     local expected_parent_hash: Uint256;
     local expected_uncles_hash: Uint256;
     let (expected_coinbase) = alloc();
@@ -43,7 +57,6 @@ func test_header_decoding{
     local expected_gas_used: Uint256;
     local expected_timestamp: Uint256;
     local expected_nonce: Uint256;
-
 
     %{
         from tests.python.test_header_decoding import fetch_header_dict
