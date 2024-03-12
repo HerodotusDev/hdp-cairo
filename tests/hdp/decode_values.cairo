@@ -4,7 +4,7 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
 from starkware.cairo.common.uint256 import Uint256, uint256_eq
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
-from src.hdp.utils import le_u64_array_to_be_uint256, decode_rlp_word_to_uint256
+from src.hdp.utils import le_u64_array_to_uint256, decode_rlp_word_to_uint256
 from src.libs.utils import pow2alloc127
 
 func main{
@@ -21,6 +21,7 @@ func main{
             bytes_to_8_bytes_chunks_little,
             split_128,
             reverse_endian_256,
+            reverse_endian,
             bytes_to_8_bytes_chunks,
         )
         import rlp
@@ -68,7 +69,13 @@ func main{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array
-    }(decode_rlp_word_to_uint256_len,0);
+    }(decode_rlp_word_to_uint256_len,0, 0);
+
+     test_decode_rlp_word_to_uint256{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array
+    }(decode_rlp_word_to_uint256_len,0, 1);
 
     return ();
 }
@@ -78,7 +85,7 @@ func test_decode_rlp_word_to_uint256{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
-}(case_len: felt, index: felt) {
+}(case_len: felt, index: felt, to_be: felt) {
 
     if(index == case_len) {
         return ();
@@ -87,11 +94,12 @@ func test_decode_rlp_word_to_uint256{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array
-    }(case=index);
+    }(case=index, to_be=to_be);
 
     return test_decode_rlp_word_to_uint256(
         case_len=case_len,
-        index=index + 1
+        index=index + 1,
+        to_be=to_be
     );
 }
 
@@ -99,7 +107,7 @@ func test_decode_rlp_word_to_uint256_inner{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
-}(case: felt) {
+}(case: felt, to_be: felt) {
     alloc_locals;
 
     let (chunks: felt*) = alloc();
@@ -109,10 +117,16 @@ func test_decode_rlp_word_to_uint256_inner{
     %{
         # Writes input and expected value to cairo
         def write_case_values(value):
-            print("Testing:", hex(value), " - Case:", ids.case)
-            (low, high) = split_128(value)
-            ids.expected.low = low
-            ids.expected.high = high
+            if ids.to_be == 1:
+                (low, high) = split_128(value)
+                ids.expected.low = low
+                ids.expected.high = high
+            else:
+                reversed_value = reverse_endian(value)
+                (low, high) = split_128(reversed_value)
+                ids.expected.low = high
+                ids.expected.high = low
+
             rlp_value = rlp.encode(value)
             ids.bytes_len = len(rlp_value)
             chunks = bytes_to_8_bytes_chunks_little(rlp_value)
@@ -121,7 +135,7 @@ func test_decode_rlp_word_to_uint256_inner{
         write_case_values(decode_rlp_word_to_uint256[ids.case])
     %}
 
-    let result = decode_rlp_word_to_uint256(chunks, bytes_len);
+    let result = decode_rlp_word_to_uint256(chunks, bytes_len, to_be);
 
     assert result.low = expected.low;
     assert result.high = expected.high;

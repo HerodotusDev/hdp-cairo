@@ -7,7 +7,7 @@ from starkware.cairo.common.alloc import alloc
 from src.hdp.types import Account, AccountProof, Header, AccountValues
 from src.libs.block_header import extract_state_root_little
 from src.hdp.rlp import retrieve_rlp_element_via_idx
-from src.hdp.utils import keccak_hash_array_to_uint256, le_u64_array_to_be_uint256
+from src.hdp.utils import keccak_hash_array_to_uint256, le_u64_array_to_uint256
 from src.hdp.memorizer import HeaderMemorizer, AccountMemorizer
 
 // Initializes the accounts, ensuring that the passed address matches the key.
@@ -204,10 +204,11 @@ namespace AccountReader {
         if (is_hash == 0) {
             assert [range_check_ptr] = 1 - value_idx; // validates is_hash hint
             tempvar range_check_ptr = range_check_ptr + 1;
-            let result = le_u64_array_to_be_uint256(
+            let result = le_u64_array_to_uint256(
                 elements=res,
                 elements_len=res_len,
-                bytes_len=bytes_len
+                bytes_len=bytes_len,
+                to_be=1
             );
 
             return result;
