@@ -19,6 +19,16 @@ def from_uint256(a):
 def reverse_endian_256(x: int):
     return int.from_bytes(x.to_bytes(32, "big"), "little")
 
+def reverse_endian(x: int):
+    hex_str = hex(x)[2:]
+    return int.from_bytes(bytes.fromhex(hex_str), "little")
+
+
+def reverse_endian_bytes(x: bytes):
+    return int.from_bytes(x, "little")
+
+def reverse_and_split_256_bytes(x: bytes):
+    return split_128(reverse_endian_bytes(x))
 
 def rpc_request(url, rpc_request):
     headers = {"Content-Type": "application/json"}
