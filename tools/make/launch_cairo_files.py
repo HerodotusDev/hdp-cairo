@@ -188,8 +188,8 @@ class CairoRunner:
             # Skip the vectors test file.
             if test_file == "tests/hdp/test_vectors.cairo":
                 continue
-
-            # if test_file != "tests/hdp/merkle.cairo":
+            
+            # if test_file != "tests/hdp/decode_values.cairo":
             #     continue
 
             self.filename_dot_cairo_path = test_file

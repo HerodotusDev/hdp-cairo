@@ -35,6 +35,10 @@ namespace HeaderReader {
             return get_bloom_filter(rlp);
         }
 
+        if(field == 12) {
+            return get_dynamic_field_bytes(rlp, 12);
+        }
+
         assert 1 = 0;
         return (value=rlp, value_len=0, bytes_len=0);
     }
@@ -85,7 +89,7 @@ namespace HeaderReader {
         %{
             if ids.field <= 6:
                 ids.to_be = 0
-            elif ids.field == 13:
+            elif ids.field == 13 or ids.field == 16 or ids.field == 19:
                 ids.to_be = 0
             else:
                 ids.to_be = 1

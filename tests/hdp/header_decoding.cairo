@@ -34,20 +34,12 @@ func main{
         pow2_array=pow2_array
     }(block_number=17034871);
 
-    // Sepolia tests
-    // %{ print("Testing Pre-Dencun Block") %}
-    // test_header_decoding{
-    //     range_check_ptr=range_check_ptr,
-    //     bitwise_ptr=bitwise_ptr,
-    //     pow2_array=pow2_array
-    // }(block_number=5187022);
-
-    // %{ print("Testing Dencun Block") %}
-    // test_header_decoding{
-    //     range_check_ptr=range_check_ptr,
-    //     bitwise_ptr=bitwise_ptr,
-    //     pow2_array=pow2_array
-    // }(block_number=5476434);
+    %{ print("Testing Dencun Block") %}
+    test_header_decoding{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array
+    }(block_number=19427930);
 
     return ();
 }
@@ -73,6 +65,12 @@ func test_header_decoding{
     local expected_gas_limit: Uint256;
     local expected_gas_used: Uint256;
     local expected_timestamp: Uint256;
+
+    let (expected_extra_data) = alloc();
+    local expected_extra_data_len: felt;
+    local expected_extra_data_bytes_len: felt;
+    local expected_mix_hash: Uint256;
+
     local expected_nonce: Uint256;
     local expected_base_fee_per_gas: Uint256;
     local expected_withdrawls_root: Uint256;
@@ -100,18 +98,32 @@ func test_header_decoding{
         segments.write_arg(ids.expected_bloom_filter, header['bloom'])
         ids.expected_difficulty.low = header['difficulty']
         ids.expected_number.low = header['number']
+        ids.expected_number.high = 0
         ids.expected_gas_limit.low = header['gas_limit']
+        ids.expected_gas_limit.high = 0
         ids.expected_gas_used.low = header['gas_used']
+        ids.expected_gas_used.high = 0
         ids.expected_timestamp.low = header['timestamp']
+        ids.expected_timestamp.high = 0
+        segments.write_arg(ids.expected_extra_data, header['extra_data']['bytes'])
+        ids.expected_extra_data_len = header['extra_data']['len']
+        ids.expected_extra_data_bytes_len = header['extra_data']['bytes_len']
+
+        ids.expected_mix_hash.low = header['mix_hash']["low"]
+        ids.expected_mix_hash.high = header['mix_hash']["high"]
+
         ids.expected_nonce.low = header['nonce']
+        ids.expected_nonce.high = 0
         ids.header_type = header["type"]
 
         if ids.header_type >=1 :
             ids.expected_base_fee_per_gas.low = header['base_fee_per_gas']
-        elif ids.header_type >= 2:
+        
+        if ids.header_type >= 2:
             ids.expected_withdrawls_root.low = header['withdrawls_root']["low"]
             ids.expected_withdrawls_root.high = header['withdrawls_root']["high"]
-        elif ids.header_type >= 3:
+        
+        if ids.header_type >= 3:
             ids.expected_blob_gas_used.low = header['blob_gas_used']
             ids.expected_excess_blob_gas.low = header['excess_blob_gas']
             ids.expected_parent_beacon_root.low = header['parent_beacon_block_root']["low"]
@@ -167,7 +179,20 @@ func test_header_decoding{
     assert timestamp.low = expected_timestamp.low;
     assert timestamp.high = expected_timestamp.high;
 
-    // missing extraData + mixHash
+    let (extra_data, extra_data_len, extra_data_bytes_len) = HeaderReader.get_felt_fields(rlp, 12);
+
+    compare_extra_data(
+        expected_extra_data=expected_extra_data,
+        expected_extra_data_len=expected_extra_data_len,
+        expected_extra_data_bytes_len=expected_extra_data_bytes_len,
+        extra_data=extra_data,
+        extra_data_len=extra_data_len,
+        extra_data_bytes_len=extra_data_bytes_len
+    );
+
+    let mix_hash = HeaderReader.get_field(rlp, 13);
+    assert mix_hash.low = expected_mix_hash.low;
+    assert mix_hash.high = expected_mix_hash.high;
 
     let nonce = HeaderReader.get_field(rlp, 14);
     assert nonce.low = expected_nonce.low;
@@ -207,6 +232,7 @@ func test_header_decoding{
 
     local impl_dencun: felt;
     %{ ids.impl_dencun = 1 if ids.header_type >= 3 else 0 %}
+    
     if(impl_dencun == 1){
         let blob_gas_used = HeaderReader.get_field(rlp, 17);
         assert blob_gas_used.low = expected_blob_gas_used.low;
@@ -245,6 +271,34 @@ func compare_bloom_filter(expected_bloom_filter: felt*, bloom_filter: felt*, val
         }
 
         assert expected_bloom_filter[i] = bloom_filter[i];
+        [ap] = i + 1, ap++;
+        jmp assert_loop;
+    end_loop:
+
+    return ();
+}
+
+func compare_extra_data(
+    expected_extra_data: felt*,
+    expected_extra_data_len: felt,
+    expected_extra_data_bytes_len: felt,
+    extra_data: felt*,
+    extra_data_len: felt,
+    extra_data_bytes_len: felt    
+) {
+    alloc_locals;
+    
+    assert expected_extra_data_len = extra_data_len;
+    assert expected_extra_data_bytes_len = extra_data_bytes_len;
+
+    tempvar i = 0;
+    assert_loop:
+        let i = [ap - 1];
+        if(i == expected_extra_data_len) {
+            jmp end_loop;
+        }
+
+        assert expected_extra_data[i] = extra_data[i];
         [ap] = i + 1, ap++;
         jmp assert_loop;
     end_loop:

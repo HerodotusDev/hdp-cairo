@@ -30,29 +30,29 @@ func le_u64_array_to_uint256{
 
     if(elements_len == 1) {
         assert value = Uint256(
-            low=0,
-            high=elements[0]
+            low=elements[0],
+            high=0,
         );
     }
 
     if(elements_len == 2) {
          assert value = Uint256(
-            low=0,
-            high=elements[1] * pow2_array[64] + elements[0]
+            low=elements[1] * pow2_array[64] + elements[0],
+            high=0,
         );
     }
 
     if(elements_len == 3) {
         assert value = Uint256(
-            low=elements[2],
-            high=elements[1] * pow2_array[64] + elements[0]
+            low=elements[1] * pow2_array[64] + elements[0],
+            high=elements[2],
         );
     }
 
     if(elements_len == 4) {
          assert value = Uint256(
-            low=elements[3] * pow2_array[64] + elements[2],
-            high=elements[1] * pow2_array[64] + elements[0]
+            low=elements[1] * pow2_array[64] + elements[0],
+            high=elements[3] * pow2_array[64] + elements[2],
         );
     }
 
@@ -74,23 +74,26 @@ func bytewise_endian_flip{
 } (value: Uint256, bytes_len: felt) -> Uint256 {
     
     // value <= 16 bytes
-    if(value.low == 0) {
-        let (value_high_rev) = word_reverse_endian(value.high);
-        let low = value_high_rev / pow2_array[(16 - bytes_len) * 8];
+    if(value.high == 0) {
+        let (value_low_rev) = word_reverse_endian(value.low);
+        let low = value_low_rev / pow2_array[(16 - bytes_len) * 8];
+
         return (Uint256(
             low=low,
             high=0
         ));
     } else {
+
         // value >= 17 bytes
         assert [range_check_ptr] = bytes_len - 17;
         let range_check_ptr = range_check_ptr + 1;
         let (value_high_rev) = word_reverse_endian(value.high);
         let (value_low_rev) = word_reverse_endian(value.low);
+
         let devisor = pow2_array[(32 - bytes_len) * 8];
 
-        let (low_right, trash) = felt_divmod(value_low_rev, devisor);
-        let (high, low_left) = felt_divmod(value_high_rev, devisor);
+        let (high, low_left) = felt_divmod(value_low_rev, devisor);
+        let (low_right, trash) = felt_divmod(value_high_rev, devisor);
         let low = low_left * pow2_array[(bytes_len - 16) * 8] + low_right;
 
         return (Uint256(
@@ -173,22 +176,10 @@ func decode_rlp_word_to_uint256{
     alloc_locals;
     // if its a single byte, we can just return it
     if (elements_bytes_len == 1) {
-
-        if(to_be == 1) {
-            %{print("Converting to BE")%}
-            let result = Uint256(
-                low=elements[0],
-                high=0
-            );
-            return result;
-        } else {
-            %{print("Stays as LE")%}
-            let result = Uint256(
-                low=0,
-                high=elements[0]
-            );
-            return result;
-        }
+        return (Uint256(
+            low=elements[0],
+            high=0
+        ));
     }
 
     // fetch length from rlp prefix

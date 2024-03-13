@@ -4,6 +4,7 @@ from starkware.cairo.common.poseidon_hash import poseidon_hash_many, poseidon_ha
 from tools.py.utils import bytes_to_8_bytes_chunks, bytes_to_8_bytes_chunks_little, split_128, reverse_endian_256, reverse_endian_bytes, reverse_and_split_256_bytes
 from dotenv import load_dotenv
 import os
+import math
 
 
 GOERLI = "goerli"
@@ -56,6 +57,15 @@ def fetch_header_dict(block_number):
     block_dict["gas_limit"] = block.gasLimit
     block_dict["gas_used"] = block.gasUsed
     block_dict["timestamp"] = block.timestamp
+    block_dict["extra_data"] = {
+        "bytes": bytes_to_8_bytes_chunks_little(block.extraData),
+        "bytes_len": len(block.extraData),
+        "len": math.ceil(len(block.extraData) / 8)
+    }
+
+    (low, high) = reverse_and_split_256_bytes(block.mixHash)
+    block_dict["mix_hash"] = {"low": low, "high": high}
+
     block_dict["nonce"] = int.from_bytes(block.nonce, "big")
 
     if type(block) is BlockHeader:
