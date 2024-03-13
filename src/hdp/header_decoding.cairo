@@ -20,6 +20,25 @@ namespace HeaderReader {
         return get_address_value(rlp, 8, 6);
     }
 
+    func get_felt_fields{
+        range_check_ptr,
+        bitwise_ptr: BitwiseBuiltin*,
+        pow2_array: felt*
+    }(rlp: felt*, field: felt) -> (value: felt*, value_len: felt, bytes_len: felt) {
+
+        if(field == 2) {
+            let value = get_address_value(rlp, 8, 6);
+            return (value=value, value_len=3, bytes_len=20);
+        }
+
+        if(field == 6) {
+            return get_bloom_filter(rlp);
+        }
+
+        assert 1 = 0;
+        return (value=rlp, value_len=0, bytes_len=0);
+    }
+
     func get_field{
         range_check_ptr,
         bitwise_ptr: BitwiseBuiltin*,
@@ -56,13 +75,17 @@ namespace HeaderReader {
             // not implemented
             assert 1 = 0;
         }
+        //mixData
+        if(field == 12) {
+            assert 1 = 0;
+        }
 
          // ToDo: make sound!
         local to_be: felt;
         %{
             if ids.field <= 6:
                 ids.to_be = 0
-            elif ids.field == 12 or ids.field == 13:
+            elif ids.field == 13:
                 ids.to_be = 0
             else:
                 ids.to_be = 1
@@ -151,4 +174,13 @@ func get_address_value{
     assert [addr + 2] = rlp_3_right * pow2_array[shifter] + rlp_2_left;
 
     return (addr);
+}
+
+func get_bloom_filter{
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    pow2_array: felt*
+} (rlp: felt*,) -> (value: felt*, value_len: felt, bytes_len: felt) {
+    // the bloom filter always seems to start at byte 192, so we can increment the pointer and return
+    return (value=rlp + 24, value_len=32, bytes_len=256);
 }

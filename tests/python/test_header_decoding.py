@@ -24,10 +24,12 @@ def fetch_header(block_number):
 
 def fetch_header_dict(block_number):
     block = fetch_header(block_number)
+    rlp = bytes_to_8_bytes_chunks_little(block.raw_rlp())
+    bloom = bytes_to_8_bytes_chunks_little(block.logsBloom.to_bytes(256, "big"))
 
-    print(block)
     block_dict = {
-        "rlp": bytes_to_8_bytes_chunks_little(block.raw_rlp()),
+        "rlp": rlp,
+        "bloom": bloom,
     }
    
     # LE

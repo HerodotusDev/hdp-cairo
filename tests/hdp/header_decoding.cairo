@@ -67,6 +67,7 @@ func test_header_decoding{
     local expected_state_root: Uint256;
     local expected_tx_root: Uint256;
     local expected_receipts_root: Uint256;
+    let (expected_bloom_filter) = alloc();
     local expected_difficulty: Uint256;
     local expected_number: Uint256;
     local expected_gas_limit: Uint256;
@@ -96,6 +97,7 @@ func test_header_decoding{
         ids.expected_tx_root.high = header['tx_root']["high"]
         ids.expected_receipts_root.low = header['receipts_root']["low"]
         ids.expected_receipts_root.high = header['receipts_root']["high"]
+        segments.write_arg(ids.expected_bloom_filter, header['bloom'])
         ids.expected_difficulty.low = header['difficulty']
         ids.expected_number.low = header['number']
         ids.expected_gas_limit.low = header['gas_limit']
@@ -142,7 +144,8 @@ func test_header_decoding{
     assert receipts_root.low = expected_receipts_root.low;
     assert receipts_root.high = expected_receipts_root.high;
 
-    // missing logsBloom
+    let (bloom_filter, value_len, bytes_len) = HeaderReader.get_felt_fields(rlp, 6);
+    compare_bloom_filter(expected_bloom_filter=expected_bloom_filter, bloom_filter=bloom_filter, value_len=value_len, bytes_len=bytes_len);
 
     let difficulty = HeaderReader.get_field(rlp, 7);
     assert difficulty.low = expected_difficulty.low;
@@ -224,6 +227,27 @@ func test_header_decoding{
         tempvar bitwise_ptr = bitwise_ptr;
         tempvar pow2_array = pow2_array;
     }
+
+    return ();
+}
+
+func compare_bloom_filter(expected_bloom_filter: felt*, bloom_filter: felt*, value_len: felt, bytes_len: felt) {
+    alloc_locals;
+    
+    assert value_len = 32;
+    assert bytes_len = 256;
+
+    tempvar i = 0;
+    assert_loop:
+        let i = [ap - 1];
+        if(i == 32) {
+            jmp end_loop;
+        }
+
+        assert expected_bloom_filter[i] = bloom_filter[i];
+        [ap] = i + 1, ap++;
+        jmp assert_loop;
+    end_loop:
 
     return ();
 }
