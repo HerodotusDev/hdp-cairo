@@ -92,10 +92,6 @@ func verify_n_storage_items{
         return ();
     }
 
-    %{
-        print("slots:",ids.storage_items_len) 
-    %}
-
     let storage_item_idx = storage_items_len - 1;
     
     let state_idx = verify_storage_item(
@@ -144,8 +140,6 @@ func verify_storage_item{
     // get state_root from verified headers
     let (account_value) = AccountMemorizer.get(storage_item.address, slot_proof.block_number);
     let state_root = AccountReader.get_state_root(account_value.values);
-
-    %{print("Verifying Storage Item:")%}
  
     let (value: felt*, value_bytes_len: felt) = verify_mpt_proof(
         mpt_proof=slot_proof.proof,

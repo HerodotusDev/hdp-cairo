@@ -16,7 +16,7 @@ namespace BlockSampledDataLakeMocker {
             ids.datalake.block_range_end = 5382815
             ids.datalake.increment = 1
             ids.datalake.property_type = 1
-            ids.datalake.properties = segments.gen_arg([8])
+            ids.datalake.properties = segments.gen_arg([1, 8])
             ids.datalake.hash.low = 107436943091682614843991191375763387426
             ids.datalake.hash.high = 43197761823970343188211903881620784812
 

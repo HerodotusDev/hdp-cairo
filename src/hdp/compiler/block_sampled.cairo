@@ -4,8 +4,9 @@ from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
 from src.libs.utils import word_reverse_endian_64, word_reverse_endian_16_RC
-from src.hdp.types import BlockSampledDataLake, AccountValues, BlockSampledComputationalTask
-from src.hdp.memorizer import AccountMemorizer, StorageMemorizer
+from src.hdp.types import BlockSampledDataLake, AccountValues, BlockSampledComputationalTask, Header
+from src.hdp.memorizer import AccountMemorizer, StorageMemorizer, HeaderMemorizer
+from src.hdp.header import HeaderReader
 from src.hdp.account import AccountReader
 
 // Creates a BlockSampledDataLake from the input bytes
@@ -31,8 +32,9 @@ func init_block_sampled{
         assert [range_check_ptr] = 0x01ff - chunk_one; // assert selected property_type matches input
         tempvar range_check_ptr = range_check_ptr + 1;
 
+        assert [properties] =0x1; 
         // bootleg bitshift. 0x01 is a know value (property_type), the rest is the property
-        assert [properties] = chunk_one - 0x100; 
+        assert [properties + 1] = chunk_one - 0x100; 
 
         // im unable to the the range_check_ptr rebinding to work here, so we return here for now
         return (BlockSampledDataLake(
@@ -115,6 +117,8 @@ func fetch_data_points{
     account_values: AccountValues*,
     storage_dict: DictAccess*,
     storage_values: Uint256*,
+    header_dict: DictAccess*,
+    headers: Header*,
     pow2_array: felt*,
 }(task: BlockSampledComputationalTask) -> (Uint256*, felt) {
     alloc_locals;
@@ -122,35 +126,39 @@ func fetch_data_points{
     let (data_points: Uint256*) = alloc();
     let property_type = task.datalake.properties[0];
 
+    %{
+        print("property_type: ", ids.property_type)
+    %}
+
     if(property_type == 1) {
-        // Header - Unimplemented!
-        assert 0 = 1;
+        // Header
+        let data_points_len = fetch_header_data_points(
+            datalake=task.datalake, 
+            index=0, 
+            data_points=data_points
+        );
+
+        return (data_points, data_points_len);
     }
 
     if(property_type == 2) {
         // Account
-        let data_points_len = fetch_account_data_points{
-            range_check_ptr=range_check_ptr,
-            poseidon_ptr=poseidon_ptr,
-            bitwise_ptr=bitwise_ptr,
-            account_dict=account_dict,
-            account_values=account_values,
-            pow2_array=pow2_array,
-        }(datalake=task.datalake, index=0, data_points=data_points);
+        let data_points_len = fetch_account_data_points(
+            datalake=task.datalake, 
+            index=0, 
+            data_points=data_points
+        );
 
         return (data_points, data_points_len);
     }
 
     if(property_type == 3) {
         // Account Slot
-        let data_points_len = fetch_storage_data_points{
-            range_check_ptr=range_check_ptr,
-            poseidon_ptr=poseidon_ptr,
-            bitwise_ptr=bitwise_ptr,
-            storage_dict=storage_dict,
-            storage_values=storage_values,
-            pow2_array=pow2_array,
-        }(datalake=task.datalake, index=0, data_points=data_points);
+        let data_points_len = fetch_storage_data_points(
+            datalake=task.datalake, 
+            index=0, 
+            data_points=data_points
+        );
 
         return (data_points, data_points_len);
     } else {
@@ -350,4 +358,35 @@ func fetch_storage_data_points{
     }
 
     return fetch_storage_data_points(datalake=datalake, index=index + 1, data_points=data_points);
+}
+
+func fetch_header_data_points{
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    header_dict: DictAccess*,
+    headers: Header*,
+    pow2_array: felt*,
+}(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
+    alloc_locals;
+
+    let current_block_number = datalake.block_range_start + index * datalake.increment;
+    
+    let header = HeaderMemorizer.get(
+        block_number=current_block_number
+    );
+
+    let data_point = HeaderReader.get_field{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array,
+    }(rlp=header.rlp, field=[datalake.properties + 1]);
+
+    assert [data_points + index * Uint256.SIZE] = data_point;
+
+    // ToDo: this results in an endless loop if block_range_start % increment != block_range_end % increment
+    if(current_block_number == datalake.block_range_end) {
+        return index + 1;
+    }
+
+    return fetch_header_data_points(datalake=datalake, index=index + 1, data_points=data_points);
 }

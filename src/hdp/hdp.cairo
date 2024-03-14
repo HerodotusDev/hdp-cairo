@@ -244,6 +244,8 @@ func run{
         account_values=account_values,
         storage_dict=storage_dict,
         storage_values=storage_values,
+        header_dict=header_dict,
+        headers=headers,
         pow2_array=pow2_array,
         tasks=block_sampled_tasks,
     }(results=results, tasks_len=block_sampled_tasks_len, index=0);

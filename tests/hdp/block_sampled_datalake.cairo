@@ -50,6 +50,7 @@ func block_sampled_datalake_eq(a: BlockSampledDataLake, b: BlockSampledDataLake,
 
     if(property_type == 1) {
         assert a.properties[0] = b.properties[0];
+        assert a.properties[1] = b.properties[1];
     }
 
     if(property_type == 2) {

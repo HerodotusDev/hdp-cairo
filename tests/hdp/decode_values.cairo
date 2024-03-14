@@ -125,7 +125,6 @@ func test_decode_rlp_word_to_uint256_inner{
             else:
                 reversed_value = reverse_endian(value)
                 (low, high) = split_128(reversed_value)
-                print(low, high)
                 ids.expected.low = low
                 ids.expected.high = high
 

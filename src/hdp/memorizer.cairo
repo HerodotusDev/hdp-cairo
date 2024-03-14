@@ -19,7 +19,6 @@ namespace HeaderMemorizer {
     }
 
     func add{
-        poseidon_ptr: PoseidonBuiltin*,
         header_dict: DictAccess*,
     }(block_number: felt, index: felt){
         dict_write{dict_ptr=header_dict}(key=block_number, new_value=index);
@@ -29,7 +28,6 @@ namespace HeaderMemorizer {
     func get{
         header_dict: DictAccess*,
         headers: Header*,
-        poseidon_ptr: PoseidonBuiltin*,
     }(block_number: felt) -> Header{
         alloc_locals;
         let (index) = dict_read{dict_ptr=header_dict}(block_number);

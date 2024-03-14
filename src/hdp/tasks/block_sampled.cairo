@@ -5,7 +5,7 @@ from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.bitwise import bitwise_xor
 from src.libs.utils import word_reverse_endian_64, word_reverse_endian_16_RC
-from src.hdp.types import BlockSampledDataLake, BlockSampledComputationalTask, AccountValues
+from src.hdp.types import BlockSampledDataLake, BlockSampledComputationalTask, AccountValues, Header
 from src.hdp.compiler.block_sampled import init_block_sampled, fetch_data_points
 from src.hdp.tasks.sum import compute_sum
 from src.hdp.tasks.avg import compute_avg
@@ -66,6 +66,8 @@ namespace BlockSampledTask {
         account_values: AccountValues*,
         storage_dict: DictAccess*,
         storage_values: Uint256*,
+        header_dict: DictAccess*,
+        headers: Header*,
         pow2_array: felt*,
         tasks: BlockSampledComputationalTask*,
     }(results: Uint256*, tasks_len: felt, index: felt) {

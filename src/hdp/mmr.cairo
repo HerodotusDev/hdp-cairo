@@ -21,10 +21,6 @@ func verify_mmr_meta{
 } (mmr_meta: MMRMeta) {
     alloc_locals;
 
-    %{
-        print("Verifying MMR meta")
-    %}
-
     // ensure the mmr_size is valid
     assert_mmr_size_is_valid(mmr_meta.size);
 
@@ -35,12 +31,6 @@ func verify_mmr_meta{
     // ensure the mmr_peaks recreate the passed mmr_root
     let (mmr_root) = mmr_root_poseidon(mmr_meta.peaks, mmr_meta.size, mmr_meta.peaks_len);
     assert 0 = mmr_meta.root - mmr_root;
-
-    %{
-        print("HEX_MMR_ROOT:", hex(ids.mmr_meta.root))
-        print("DEC_MMR_ROOT:", ids.mmr_meta.root)
-        print("________________________________________________")
-    %}
 
     return();
 }
