@@ -117,7 +117,7 @@ func test_decode_rlp_word_to_uint256_inner{
     %{
         # Writes input and expected value to cairo
         def write_case_values(value):
-            print(f"Writing case {ids.case} with value {hex(value)}")
+            #print(f"Writing case {ids.case} with value {hex(value)}")
             if ids.to_be == 1:
                 (low, high) = split_128(value)
                 ids.expected.low = low
@@ -140,8 +140,8 @@ func test_decode_rlp_word_to_uint256_inner{
     let result = decode_rlp_word_to_uint256(chunks, bytes_len, to_be);
 
     %{
-        print(f"Expect: {hex(ids.expected.low)} {hex(ids.expected.high)}")
-        print(f"Result: {hex(ids.result.low)} {hex(ids.result.high)}")
+        #print(f"Expect: {hex(ids.expected.low)} {hex(ids.expected.high)}")
+        #print(f"Result: {hex(ids.result.low)} {hex(ids.result.high)}")
     %}
 
     assert result.low = expected.low;

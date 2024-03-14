@@ -9,6 +9,7 @@ from src.libs.block_header import extract_state_root_little
 from src.hdp.rlp import retrieve_rlp_element_via_idx
 from src.hdp.utils import keccak_hash_array_to_uint256, le_u64_array_to_uint256
 from src.hdp.memorizer import HeaderMemorizer, AccountMemorizer
+from src.hdp.header import HeaderReader
 
 // Initializes the accounts, ensuring that the passed address matches the key.
 // Params:
@@ -132,7 +133,7 @@ func verify_account{
 
     // get state_root from verified headers
     let header = HeaderMemorizer.get(account_proof.block_number);
-    let state_root = extract_state_root_little(header.rlp);
+    let state_root = HeaderReader.get_state_root(header.rlp);
 
     let (value: felt*, value_len: felt) = verify_mpt_proof(
         mpt_proof=account_proof.proof,

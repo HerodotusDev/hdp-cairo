@@ -3,7 +3,7 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256
 
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
-from src.hdp.header_decoding import HeaderReader
+from src.hdp.header import HeaderReader
 from src.libs.utils import pow2alloc128
 
 func main{
