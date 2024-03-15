@@ -7,6 +7,12 @@ from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
 
+// Verifiers:
+from src.hdp.verifiers.account_verifier import populate_account_segments, verify_n_accounts
+from src.hdp.verifiers.storage_item_verifier import populate_storage_item_segments, verify_n_storage_items
+from src.hdp.verifiers.header_verifier import verify_headers_inclusion
+from src.hdp.verifiers.mmr_verifier import verify_mmr_meta
+
 from src.hdp.types import (
     Header,
     HeaderProof,
@@ -17,10 +23,7 @@ from src.hdp.types import (
     BlockSampledDataLake,
     BlockSampledComputationalTask,
 )
-from src.hdp.mmr import verify_mmr_meta
-from src.hdp.header import verify_headers_inclusion
-from src.hdp.account import populate_account_segments, verify_n_accounts
-from src.hdp.storage_item import populate_storage_item_segments, verify_n_storage_items
+
 from src.hdp.memorizer import HeaderMemorizer, AccountMemorizer, StorageMemorizer, MEMORIZER_DEFAULT
 from src.libs.utils import pow2alloc128, write_felt_array_to_dict_keys
 

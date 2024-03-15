@@ -375,7 +375,7 @@ func fetch_header_data_points{
         block_number=current_block_number
     );
 
-    let data_point = HeaderReader.get_field{
+    let data_point = HeaderReader.get_field_by_index{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array,
