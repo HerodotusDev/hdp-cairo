@@ -1,24 +1,10 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
-from starkware.cairo.common.uint256 import Uint256, word_reverse_endian, uint256_reverse_endian
-from src.libs.utils import (
-    word_reverse_endian_64, 
-    word_reverse_endian_16_RC, 
-    word_reverse_endian_24_RC,
-    word_reverse_endian_32_RC,
-    word_reverse_endian_40_RC,
-    word_reverse_endian_48_RC,
-    word_reverse_endian_56_RC,
-)
-from src.libs.utils import felt_divmod
-
+from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256s
 
-from src.libs.rlp_little import extract_byte_at_pos, extract_n_bytes_from_le_64_chunks_array, key_subset_to_uint256
-
-
-
+// ToDo: deprecate
 func keccak_hash_array_to_uint256{
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*

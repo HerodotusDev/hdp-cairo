@@ -3,12 +3,11 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.bitwise import bitwise_xor
-from src.libs.utils import word_reverse_endian_64, word_reverse_endian_16_RC
+
 from src.hdp.types import BlockSampledDataLake, BlockSampledComputationalTask, AccountValues, Header
-from src.hdp.compiler.block_sampled import init_block_sampled, fetch_data_points
-from src.hdp.tasks.sum import compute_sum
-from src.hdp.tasks.avg import compute_avg
+from src.hdp.datalakes.block_sampled_datalake import init_block_sampled, fetch_data_points
+from src.hdp.tasks.aggregate_functions.sum import compute_sum
+from src.hdp.tasks.aggregate_functions.avg import compute_avg
 
 namespace BlockSampledTask {
     func init{
@@ -25,6 +24,7 @@ namespace BlockSampledTask {
 
             local property_type;
             %{
+                # ToDo: This is bad design
                 ids.property_type = block_sampled_tasks[ids.index]["property_type"]
             %}
 

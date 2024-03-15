@@ -1,4 +1,4 @@
-from src.hdp.tasks.sum import compute_sum
+from src.hdp.tasks.aggregate_functions.sum import compute_sum
 from starkware.cairo.common.uint256 import Uint256, felt_to_uint256, uint256_signed_div_rem, uint256_add
 from starkware.cairo.common.alloc import alloc
 

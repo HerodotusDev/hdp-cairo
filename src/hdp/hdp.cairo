@@ -15,21 +15,18 @@ from src.hdp.verifiers.mmr_verifier import verify_mmr_meta
 
 from src.hdp.types import (
     Header,
-    HeaderProof,
     MMRMeta,
     Account,
     AccountValues,
     StorageItem,
-    BlockSampledDataLake,
     BlockSampledComputationalTask,
 )
 
 from src.hdp.memorizer import HeaderMemorizer, AccountMemorizer, StorageMemorizer, MEMORIZER_DEFAULT
 from src.libs.utils import pow2alloc128, write_felt_array_to_dict_keys
 
-from src.hdp.tasks.block_sampled import BlockSampledTask
+from src.hdp.tasks.block_sampled_task import BlockSampledTask
 from src.hdp.merkle import compute_tasks_root, compute_results_root
-from src.hdp.utils import compute_results_entry
 
 func main{
     output_ptr: felt*,
