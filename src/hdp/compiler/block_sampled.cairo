@@ -6,8 +6,9 @@ from starkware.cairo.common.alloc import alloc
 from src.libs.utils import word_reverse_endian_64, word_reverse_endian_16_RC
 from src.hdp.types import BlockSampledDataLake, AccountValues, BlockSampledComputationalTask, Header
 from src.hdp.memorizer import AccountMemorizer, StorageMemorizer, HeaderMemorizer
-from src.hdp.header import HeaderReader
-from src.hdp.account import AccountReader
+
+from src.hdp.decoders.header_decoder import HeaderDecoder
+from src.hdp.decoders.account_decoder import AccountDecoder
 
 // Creates a BlockSampledDataLake from the input bytes
 func init_block_sampled{
@@ -311,7 +312,7 @@ func fetch_account_data_points{
         block_number=current_block_number
     );
 
-    let data_point = AccountReader.get_by_index{
+    let data_point = AccountDecoder.get_by_index{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array,
@@ -375,7 +376,7 @@ func fetch_header_data_points{
         block_number=current_block_number
     );
 
-    let data_point = HeaderReader.get_field_by_index{
+    let data_point = HeaderDecoder.get_field_by_index{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array,

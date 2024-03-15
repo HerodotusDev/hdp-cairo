@@ -6,10 +6,11 @@ from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
 from src.hdp.types import Account, AccountProof, Header, AccountValues
 from src.libs.block_header import extract_state_root_little
-from src.hdp.rlp import retrieve_rlp_element_via_idx
-from src.hdp.utils import keccak_hash_array_to_uint256, le_u64_array_to_uint256
+from src.hdp.rlp import retrieve_from_rlp_list_via_idx, le_u64_array_to_uint256
+from src.hdp.utils import keccak_hash_array_to_uint256
 from src.hdp.memorizer import HeaderMemorizer, AccountMemorizer
-from src.hdp.header import HeaderReader
+
+from src.hdp.decoders.header_decoder import HeaderDecoder
 
 // Initializes the accounts, ensuring that the passed address matches the key.
 // Params:
@@ -133,7 +134,7 @@ func verify_account{
 
     // get state_root from verified headers
     let header = HeaderMemorizer.get(account_proof.block_number);
-    let state_root = HeaderReader.get_state_root(header.rlp);
+    let state_root = HeaderDecoder.get_state_root(header.rlp);
 
     let (value: felt*, value_len: felt) = verify_mpt_proof(
         mpt_proof=account_proof.proof,

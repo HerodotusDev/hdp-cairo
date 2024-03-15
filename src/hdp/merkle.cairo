@@ -261,9 +261,9 @@ func hash_pair{
         # Compare the values to derive correct hashing order
         if left < right:
             ids.is_left_smaller = 1
-            print(f"H({hex(left)}, {hex(right)})")
+            #print(f"H({hex(left)}, {hex(right)})")
         else:
-            print(f"H({hex(right)}, {hex(left)})")
+            #print(f"H({hex(right)}, {hex(left)})")
             ids.is_left_smaller = 0
     %}
 

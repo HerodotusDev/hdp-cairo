@@ -5,14 +5,14 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
 from src.hdp.types import AccountValues, StorageItemProof, StorageItem
-from src.hdp.account import AccountReader
-from src.hdp.utils import decode_rlp_word_to_uint256
+from src.hdp.rlp import decode_rlp_word_to_uint256
 from src.libs.rlp_little import (
     extract_byte_at_pos,
     extract_n_bytes_from_le_64_chunks_array,
 )
 
 from src.hdp.memorizer import StorageMemorizer, AccountMemorizer
+from src.hdp.decoders.account_decoder import AccountDecoder
 
 from src.libs.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64
 
@@ -139,7 +139,7 @@ func verify_storage_item{
 
     // get state_root from verified headers
     let (account_value) = AccountMemorizer.get(storage_item.address, slot_proof.block_number);
-    let state_root = AccountReader.get_state_root(account_value.values);
+    let state_root = AccountDecoder.get_state_root(account_value.values);
  
     let (value: felt*, value_bytes_len: felt) = verify_mpt_proof(
         mpt_proof=slot_proof.proof,

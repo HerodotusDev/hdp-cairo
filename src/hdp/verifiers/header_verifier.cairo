@@ -6,10 +6,8 @@ from starkware.cairo.common.alloc import alloc
 
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash, poseidon_hash_many
 from starkware.cairo.common.uint256 import Uint256
-from src.hdp.utils import le_u64_array_to_uint256
-from src.hdp.rlp import retrieve_rlp_element_via_idx
+from src.hdp.rlp import retrieve_from_rlp_list_via_idx, le_u64_array_to_uint256
 from src.libs.utils import felt_divmod
-from src.hdp.header import HeaderReader
 from src.libs.mmr import hash_subtree_path
 from src.hdp.types import (
     Header,
@@ -18,6 +16,8 @@ from src.hdp.types import (
 )
 from src.libs.block_header import extract_block_number_big, reverse_block_header_chunks
 from src.hdp.memorizer import HeaderMemorizer
+
+from src.hdp.decoders.header_decoder import HeaderDecoder
 
 // Guard function that verifies the inclusion of headers in the MMR.
 // It ensures:
@@ -57,7 +57,7 @@ func verify_headers_inclusion{
         assert contains_peak = 1;
 
         // add to memorizer
-        let block_number = HeaderReader.get_block_number(headers[index].rlp);
+        let block_number = HeaderDecoder.get_block_number(headers[index].rlp);
         HeaderMemorizer.add(block_number=block_number, index=index);
 
         return verify_headers_inclusion(
@@ -82,7 +82,7 @@ func verify_headers_inclusion{
     assert contains_peak = 1;
 
     // add to memorizer
-    let block_number = HeaderReader.get_block_number(headers[index].rlp);
+    let block_number = HeaderDecoder.get_block_number(headers[index].rlp);
     HeaderMemorizer.add(block_number=block_number, index=index);
 
     return verify_headers_inclusion(

@@ -6,8 +6,7 @@ from starkware.cairo.common.alloc import alloc
 
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash, poseidon_hash_many
 from starkware.cairo.common.uint256 import Uint256
-from src.hdp.utils import le_u64_array_to_uint256
-from src.hdp.rlp import retrieve_rlp_element_via_idx
+from src.hdp.rlp import retrieve_from_rlp_list_via_idx, le_u64_array_to_uint256
 from src.libs.utils import felt_divmod
 
 from src.libs.mmr import hash_subtree_path
@@ -19,7 +18,7 @@ from src.hdp.types import (
 from src.libs.block_header import extract_block_number_big, reverse_block_header_chunks
 from src.hdp.memorizer import HeaderMemorizer
 
-namespace HeaderReader {
+namespace HeaderDecoder {
     func get_coinbase{
         range_check_ptr,
         bitwise_ptr: BitwiseBuiltin*,
@@ -142,7 +141,7 @@ namespace HeaderReader {
         let start_byte = 448; // 20 + 5*32 + 256 + encoding bytes
         let field_idx = field - 7; // we have 7 static fields that we skip
         
-        let (res, res_len, bytes_len) = retrieve_rlp_element_via_idx(
+        let (res, res_len, bytes_len) = retrieve_from_rlp_list_via_idx(
             rlp=rlp,
             value_idx=field_idx,
             item_starts_at_byte=start_byte,
