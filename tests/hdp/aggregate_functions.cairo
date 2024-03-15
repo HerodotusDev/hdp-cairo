@@ -1,6 +1,6 @@
 %builtins range_check
-from src.hdp.tasks.sum import compute_sum
-from src.hdp.tasks.avg import compute_avg
+from src.hdp.tasks.aggregate_functions.sum import compute_sum
+from src.hdp.tasks.aggregate_functions.avg import compute_avg
 
 from starkware.cairo.common.uint256 import Uint256, uint256_eq
 from starkware.cairo.common.alloc import alloc

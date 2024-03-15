@@ -4,7 +4,7 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
 from starkware.cairo.common.uint256 import Uint256, uint256_eq
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
-from src.hdp.utils import le_u64_array_to_uint256, decode_rlp_word_to_uint256
+from src.hdp.rlp import le_u64_array_to_uint256, decode_rlp_word_to_uint256
 from src.libs.utils import pow2alloc127
 
 func main{

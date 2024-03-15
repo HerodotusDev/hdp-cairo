@@ -1,9 +1,11 @@
-from tests.hdp.block_sampled_datalake import block_sampled_datalake_eq
+from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, KeccakBuiltin
-from src.hdp.tasks.block_sampled import BlockSampledTask, extract_params
-from starkware.cairo.common.alloc import alloc
+
+from tests.hdp.block_sampled_datalake import block_sampled_datalake_eq
 from tests.hdp.test_vectors import BlockSampledTaskMocker
+
+from src.hdp.tasks.block_sampled_task import BlockSampledTask, extract_params
 from src.hdp.types import BlockSampledDataLake, BlockSampledComputationalTask
 from src.hdp.merkle import compute_tasks_root
 
