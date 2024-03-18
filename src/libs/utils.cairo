@@ -52,6 +52,139 @@ func uint256_add{range_check_ptr}(a: Uint256, b: Uint256) -> (res: Uint256, carr
     }
 }
 
+// Retrieves the lowest Uin256 value from a Uint256 array.
+// Params:
+//   uint256_array: the array of Uint256 to search the minimum value.
+//   len: the length of the array.
+// returns:
+//   res: the minimum value of the array.
+// Completeness assumptions :
+// - The array has valid Uint256 values in big endian representation.
+// If len == 0, the function returns 0.
+func uint256_min_be{range_check_ptr}(uint256_array: Uint256*, len: felt) -> Uint256 {
+    if (len == 0) {
+        let res = Uint256(low=0, high=0);
+        return res;
+    }
+    alloc_locals;
+    local min_index: felt;
+    local array: felt* = cast(uint256_array, felt*);
+    %{
+        array = []
+        index=0
+        for i in range(ids.len):
+            array.append(memory[ids.array+index+i] + memory[ids.array+index+i+1] * 2**128)
+            index+=1
+        min_index, min_value = min(enumerate(array), key=lambda x: x[1])
+        ids.min_index = min_index
+    %}
+    // Assert index is in [0, len[
+    assert [range_check_ptr] = min_index;
+    assert [range_check_ptr + 1] = len - 1 - min_index;
+
+    // Get supposed min value from array.
+    local res: Uint256 = uint256_array[min_index];
+
+    %{ index=0 %}
+    tempvar range_check_ptr = range_check_ptr + 2;
+    tempvar arr: felt* = cast(array, felt*);
+
+    loop:
+    let range_check_ptr = [ap - 2];
+    let arr: felt* = cast([ap - 1], felt*);
+
+    %{ memory[ap] = 1 if index == ids.len else 0 %}
+    jmp end if [ap] != 0, ap++;
+    let val_low = [arr];
+    let val_high = [arr + 1];
+    // %{ print(f"res({ids.res.low}, {ids.res.high}) should be <= val({ids.val_low}, {ids.val_high})") %}
+
+    // Inlined starkware.cairo.common.uint256.uint256_lt in assert mode.
+    if (val_high == res.high) {
+        // If high parts are the same, assert res.low <= val.low
+        assert [range_check_ptr] = val_low - res.low;
+    } else {
+        // If high parts are different, assert res.high <= val.high
+        assert [range_check_ptr] = val_high - res.high;
+    }
+    [ap] = range_check_ptr + 1, ap++;
+    [ap] = arr + Uint256.SIZE, ap++;
+    %{ index+=1 %}
+    jmp loop;
+
+    end:
+    let range_check_ptr = [ap - 3];
+    let arr: felt* = cast([ap - 2], felt*);
+    assert cast(arr, felt) - cast(array, felt) = len * Uint256.SIZE;
+    return res;
+}
+
+// Retrieves the largest Uin256 value from a Uint256 array.
+// Params:
+//   uint256_array: the array of Uint256 to search the maximum value.
+//   len: the length of the array.
+// returns:
+//   res: the maximum value of the array.
+// Completeness assumptions :
+// - The array has valid Uint256 values in big endian representation.
+// If len == 0, the function returns 0.
+func uint256_max_be{range_check_ptr}(uint256_array: Uint256*, len: felt) -> Uint256 {
+    if (len == 0) {
+        let res = Uint256(low=0, high=0);
+        return res;
+    }
+    alloc_locals;
+    local max_index: felt;
+    local array: felt* = cast(uint256_array, felt*);
+    %{
+        array = []
+        index=0
+        for i in range(ids.len):
+            array.append(memory[ids.array+index+i] + memory[ids.array+index+i+1] * 2**128)
+            index+=1
+        max_index, max_value = max(enumerate(array), key=lambda x: x[1])
+        ids.max_index = max_index
+    %}
+    // Assert index is in [0, len[
+    assert [range_check_ptr] = max_index;
+    assert [range_check_ptr + 1] = len - 1 - max_index;
+
+    // Get supposed max value from array.
+    local res: Uint256 = uint256_array[max_index];
+
+    %{ index=0 %}
+    tempvar range_check_ptr = range_check_ptr + 2;
+    tempvar arr: felt* = cast(array, felt*);
+
+    loop:
+    let range_check_ptr = [ap - 2];
+    let arr: felt* = cast([ap - 1], felt*);
+    %{ memory[ap] = 1 if index == ids.len else 0 %}
+    jmp end if [ap] != 0, ap++;
+    let val_low = [arr];
+    let val_high = [arr + 1];
+    // %{ print(f"res({ids.res.low}, {ids.res.high}) should be >= val({ids.val_low}, {ids.val_high})") %}
+
+    // Inlined starkware.cairo.common.uint256.uint256_lt in assert mode.
+    if (val_high == res.high) {
+        // If high parts are the same, assert val_low <= res_low
+        assert [range_check_ptr] = res.low - val_low;
+    } else {
+        // If high parts are different, assert val_high <= res_high
+        assert [range_check_ptr] = res.high - val_high;
+    }
+    [ap] = range_check_ptr + 1, ap++;
+    [ap] = arr + Uint256.SIZE, ap++;
+    %{ index+=1 %}
+    jmp loop;
+
+    end:
+    // Offset is increased by 1 due to the ap++ in the exit instruction.
+    let range_check_ptr = [ap - 3];
+    let arr: felt* = cast([ap - 2], felt*);
+    assert cast(arr, felt) - cast(array, felt) = len * Uint256.SIZE;
+    return res;
+}
 // Write the elements of the array as key in the dictionnary and assign the value 0 to each key.
 // Used to check that an element in the dict is present by checking dict[key] == 1.
 // Use with a default_dict with default_value = 0.
