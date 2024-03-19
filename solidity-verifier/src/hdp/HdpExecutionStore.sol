@@ -39,13 +39,17 @@ contract HdpExecutionStore is AccessControl {
     event MmrRootCached(uint256 mmrId, uint256 mmrSize, bytes32 mmrRoot);
 
     /// @notice emitted when a new task is scheduled
-    event TaskWithBlockSampledDatalakeScheduled(BlockSampledDatalake datalake, ComputationalTask task);
+    event TaskWithBlockSampledDatalakeScheduled(
+        BlockSampledDatalake datalake,
+        ComputationalTask task
+    );
 
     /// @notice constant representing role of operator
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
     /// @notice constant representing the pedersen hash of the Cairo HDP program
-    bytes32 public constant PROGRAM_HASH = 0x06023b57a1f6ff60c0fc53f0f45c6939fee84749bf8c1e798451003b7a9a6806;
+    bytes32 public constant PROGRAM_HASH =
+        0x0099423699f60ef2e51458ec9890eb9ee3ea011067337b8009ab6adcbac6148e;
     /// @notice interface to the facts registry of SHARP
     IFactsRegistry public immutable SHARP_FACTS_REGISTRY;
 
@@ -200,9 +204,7 @@ contract HdpExecutionStore is AccessControl {
 
             // Compute the Merkle leaf of the task
             bytes32 taskCommitment = taskCommitments[i];
-            bytes32 taskMerkleLeaf = standardLeafHash(
-                taskCommitment
-            );
+            bytes32 taskMerkleLeaf = standardLeafHash(taskCommitment);
             // Ensure that the task is included in the batch, by verifying the Merkle proof
             bool isVerifiedTask = batchInclusionMerkleProofOfTask.verify(
                 scheduledTasksBatchMerkleRoot,
@@ -218,7 +220,7 @@ contract HdpExecutionStore is AccessControl {
                 abi.encode(taskCommitment, computationalTaskResult)
             );
             bytes32 taskResultMerkleLeaf = standardLeafHash(
-               taskResultCommitment
+                taskResultCommitment
             );
             // Ensure that the task result is included in the batch, by verifying the Merkle proof
             bool isVerifiedResult = batchInclusionMerkleProofOfResult.verify(
@@ -266,9 +268,7 @@ contract HdpExecutionStore is AccessControl {
     }
 
     /// @notice Returns the leaf of standard merkle tree
-    function standardLeafHash(
-        bytes32 value
-    ) public pure returns (bytes32) {
+    function standardLeafHash(bytes32 value) public pure returns (bytes32) {
         bytes32 firstHash = keccak256(abi.encode(value));
         bytes32 leaf = keccak256(abi.encode(firstHash));
         return leaf;

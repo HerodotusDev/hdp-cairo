@@ -75,7 +75,7 @@ contract HreExecutionStoreTest is Test {
         hdp.grantRole(keccak256("OPERATOR_ROLE"), proverAddress);
     }
 
-     function test_SingleBlockSingleBlockSampledDatalake() public {
+    function test_SingleBlockSingleBlockSampledDatalake() public {
         // Note: Step 1. HDP Server receives a request
         // [1 Request = N Tasks] Request execution of task with block sampled datalake
         BlockSampledDatalake memory datalake = BlockSampledDatalake({
@@ -83,7 +83,10 @@ contract HreExecutionStoreTest is Test {
             blockRangeEnd: 4952100,
             increment: 1,
             sampledProperty: BlockSampledDatalakeCodecs
-                .encodeSampledPropertyForAccount(address(0x7f2C6f930306D3AA736B3A6C6A98f512F74036D4), uint8(0))
+                .encodeSampledPropertyForAccount(
+                    address(0x7f2C6f930306D3AA736B3A6C6A98f512F74036D4),
+                    uint8(0)
+                )
         });
 
         ComputationalTask memory computationalTask = ComputationalTask({
@@ -105,14 +108,14 @@ contract HreExecutionStoreTest is Test {
         // create identifier to check request done correctly
         bytes32 datalakeCommitment = datalake.commit();
         bytes32 taskCommitment = computationalTask.commit(datalakeCommitment);
-      
+
         assertEq(
             taskCommitment,
             bytes32(
                 0x46296bc9cb11408bfa46c5c31a542f12242db2412ee2217b4e8add2bc1927d0b
             )
         );
-      
+
         // Check the task state is PENDING
         HdpExecutionStore.TaskStatus task1Status = hdp.getTaskStatus(
             taskCommitment
@@ -155,16 +158,20 @@ contract HreExecutionStoreTest is Test {
             abi.encode(taskCommitment, computationalTasksResult[0])
         );
 
-        assertEq(taskResultCommitment1, bytes32(0xa2ce858689a998d85b8f821f32e971556146d097d8033948d9b9bac978cedc9d));
+        assertEq(
+            taskResultCommitment1,
+            bytes32(
+                0xa2ce858689a998d85b8f821f32e971556146d097d8033948d9b9bac978cedc9d
+            )
+        );
 
         // Tasks and Results Merkle Tree Information
         // proof of the tasks merkle tree
         bytes32[][] memory batchInclusionMerkleProofOfTasks = new bytes32[][](
             1
         );
-        bytes32[] memory InclusionMerkleProofOfTask1 = new bytes32[](0);     
+        bytes32[] memory InclusionMerkleProofOfTask1 = new bytes32[](0);
         batchInclusionMerkleProofOfTasks[0] = InclusionMerkleProofOfTask1;
-     
 
         // proof of the result
         bytes32[][] memory batchInclusionMerkleProofOfResults = new bytes32[][](
@@ -173,7 +180,6 @@ contract HreExecutionStoreTest is Test {
         bytes32[] memory InclusionMerkleProofOfResult1 = new bytes32[](0);
         batchInclusionMerkleProofOfResults[0] = InclusionMerkleProofOfResult1;
 
-       
         uint256 taskMerkleRoot = uint256(
             bytes32(
                 0x0030ce873e657283a8e03a3e83ba95a0bf1ad049e8ac1cb8148280aca2b1adc7
@@ -217,7 +223,12 @@ contract HreExecutionStoreTest is Test {
             scheduledTasksBatchMerkleRootLow,
             scheduledTasksBatchMerkleRootHigh
         );
-        assertEq(factHash, bytes32(0x744b5ab7e51882cc2cbb67316a4d9056cc4a699a696a4e3d480c053ee2974888));
+        assertEq(
+            factHash,
+            bytes32(
+                0x0209c77553b707b8545cdb4efa711a4e1e81748e7e98d4704756658bc89e5203
+            )
+        );
         factsRegistry.markValid(factHash);
         bool is_valid = factsRegistry.isValid(factHash);
         assertEq(is_valid, true);
@@ -254,7 +265,6 @@ contract HreExecutionStoreTest is Test {
         assertEq(task1Result, computationalTasksResult[0]);
     }
 
-
     function getFactHash(
         uint256 usedMmrId,
         uint256 usedMmrSize,
@@ -263,7 +273,7 @@ contract HreExecutionStoreTest is Test {
         uint128 scheduledTasksBatchMerkleRootLow,
         uint128 scheduledTasksBatchMerkleRootHigh
     ) internal view returns (bytes32) {
-        // Load MMRs root  
+        // Load MMRs root
         bytes32 usedMmrRoot = hdp.loadMmrRoot(usedMmrId, usedMmrSize);
         // Initialize an array of uint256 to store the program output
         uint256[] memory programOutput = new uint256[](6);
@@ -280,12 +290,9 @@ contract HreExecutionStoreTest is Test {
         bytes32 programOutputHash = keccak256(abi.encodePacked(programOutput));
 
         // Compute GPS fact hash
-        bytes32 programHash = 0x06023b57a1f6ff60c0fc53f0f45c6939fee84749bf8c1e798451003b7a9a6806;
+        bytes32 programHash = 0x0099423699f60ef2e51458ec9890eb9ee3ea011067337b8009ab6adcbac6148e;
         bytes32 gpsFactHash = keccak256(
-            abi.encode(
-                programHash,
-                programOutputHash
-            )
+            abi.encode(programHash, programOutputHash)
         );
 
         return gpsFactHash;
