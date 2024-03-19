@@ -424,10 +424,19 @@ contract HdpExecutionStoreTest is Test {
         // =================================
 
         // Cache MMR root
-        hdp.cacheMmrRoot(usedMmrId);
+        hdp2.cacheMmrRoot(usedMmrId);
+
+        bytes32 loadRoot = hdp2.loadMmrRoot(usedMmrId, usedMmrSize);
+
+        assertEq(
+            loadRoot,
+            bytes32(
+                0x012638c701c5d7a48787bf56db397fa6a02b62a900f24528e0b33f2de64fc6f5
+            )
+        );
 
         // Mocking Cairo Program, insert the fact into the registry
-        bytes32 factHash = getFactHash(
+        bytes32 factHash = getFactHash2(
             usedMmrId,
             usedMmrSize,
             batchResultsMerkleRootLow,
@@ -450,6 +459,7 @@ contract HdpExecutionStoreTest is Test {
         // Check if the request is valid in the SHARP Facts Registry
         // If valid, Store the task result
         vm.prank(proverAddress);
+
         hdp2.authenticateTaskExecution(
             usedMmrId,
             usedMmrSize,
@@ -487,6 +497,39 @@ contract HdpExecutionStoreTest is Test {
     ) internal view returns (bytes32) {
         // Load MMRs root
         bytes32 usedMmrRoot = hdp.loadMmrRoot(usedMmrId, usedMmrSize);
+        // Initialize an array of uint256 to store the program output
+        uint256[] memory programOutput = new uint256[](6);
+
+        // Assign values to the program output array
+        programOutput[0] = uint256(usedMmrRoot);
+        programOutput[1] = uint256(usedMmrSize);
+        programOutput[2] = uint256(batchResultsMerkleRootLow);
+        programOutput[3] = uint256(batchResultsMerkleRootHigh);
+        programOutput[4] = uint256(scheduledTasksBatchMerkleRootLow);
+        programOutput[5] = uint256(scheduledTasksBatchMerkleRootHigh);
+
+        // Compute program output hash
+        bytes32 programOutputHash = keccak256(abi.encodePacked(programOutput));
+
+        // Compute GPS fact hash
+        bytes32 programHash = 0x0099423699f60ef2e51458ec9890eb9ee3ea011067337b8009ab6adcbac6148e;
+        bytes32 gpsFactHash = keccak256(
+            abi.encode(programHash, programOutputHash)
+        );
+
+        return gpsFactHash;
+    }
+
+    function getFactHash2(
+        uint256 usedMmrId,
+        uint256 usedMmrSize,
+        uint128 batchResultsMerkleRootLow,
+        uint128 batchResultsMerkleRootHigh,
+        uint128 scheduledTasksBatchMerkleRootLow,
+        uint128 scheduledTasksBatchMerkleRootHigh
+    ) internal view returns (bytes32) {
+        // Load MMRs root
+        bytes32 usedMmrRoot = hdp2.loadMmrRoot(usedMmrId, usedMmrSize);
         // Initialize an array of uint256 to store the program output
         uint256[] memory programOutput = new uint256[](6);
 
