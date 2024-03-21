@@ -38,6 +38,9 @@ func verify_mpt_proof{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr:
 ) -> (value: felt*, value_len: felt) {
     alloc_locals;
     %{
+        def conditional_print(*args):
+            if debug_mode:
+                print(*args)
         debug_mode = False
         conditional_print(f"\n\nNode index {ids.node_index+1}/{ids.mpt_proof_len}")
     %}
@@ -144,14 +147,35 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     let first_item_prefix = extract_byte_at_pos(rlp[0], first_item_start_offset, pow2_array);
 
     // %{ conditional_print("First item prefix", hex(ids.first_item_prefix)) %}
-    // Regardless of leaf, extension or branch, the first item should always be less than 32 bytes so a short string :
+    // Regardless of leaf, extension or branch, the first item should always be less than 32 bytes so a short string / single byte :
     // 0-55 bytes string long
     // (range [0x80, 0xb7] (dec. [128, 183])).
-    assert [range_check_ptr + 3] = first_item_prefix - 0x80;
-    assert [range_check_ptr + 4] = 0xb7 - first_item_prefix;
-    tempvar range_check_ptr = range_check_ptr + 5;
-    tempvar first_item_len = first_item_prefix - 0x80;
-    tempvar second_item_starts_at_byte = first_item_start_offset + 1 + first_item_len;
+
+    local first_item_type;
+    local first_item_len;
+    local second_item_starts_at_byte;
+    %{
+        if 0 <= ids.first_item_prefix <= 0x7f:
+            ids.first_item_type = 0 # Single byte
+        elif 0x80 <= ids.first_item_prefix <= 0xb7:
+            ids.first_item_type = 1 # Short string
+        else:
+            print(f"Unsupported first item type for prefix {ids.first_item_prefix=}")
+    %}
+    if (first_item_type != 0) {
+        // Short string
+        assert [range_check_ptr + 3] = first_item_prefix - 0x80;
+        assert [range_check_ptr + 4] = 0xb7 - first_item_prefix;
+        assert first_item_len = first_item_prefix - 0x80;
+        assert second_item_starts_at_byte = first_item_start_offset + 1 + first_item_len;
+        tempvar range_check_ptr = range_check_ptr + 5;
+    } else {
+        // Single byte
+        assert [range_check_ptr + 3] = 0x7f - first_item_prefix;
+        assert first_item_len = 1;
+        assert second_item_starts_at_byte = first_item_start_offset + first_item_len;
+        tempvar range_check_ptr = range_check_ptr + 4;
+    }
     // %{ conditional_print("first item len:", ids.first_item_len, "bytes") %}
     // %{ conditional_print("second_item_starts_at_byte", ids.second_item_starts_at_byte) %}
     let (second_item_starts_at_word, second_item_start_offset) = felt_divmod(
