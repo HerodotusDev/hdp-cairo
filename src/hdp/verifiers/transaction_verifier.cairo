@@ -65,6 +65,25 @@ func verify_transaction{
 
     let len_len = tx_string_prefix - 0xb7;
     let version_byte_index = tx_string_start_offset + len_len + 1;
+
+    %{ print("Version Byte Index:", ids.version_byte_index)%} 
+
+    // Hashing seems to work!
+    // tempvar range_check_ptr = range_check_ptr + 2;
+    // let (tx_list_starts_at_word, tx_list_start_offset) = felt_divmod(
+    //     version_byte_index, 8
+    // );
+    // let tx_bytes_len = bytes_len[value_node_index] - version_byte_index;
+    // let (res, res_len) = extract_n_bytes_from_le_64_chunks_array(
+    //     array=proof[value_node_index],
+    //     start_word=tx_list_starts_at_word,
+    //     start_offset=tx_list_start_offset,
+    //     n_bytes=tx_bytes_len,
+    //     pow2_array=pow2_array
+    // );
+    // let (hash: Uint256) = keccak(res, tx_bytes_len);
+    // %{ print("Hash:", hex(ids.hash.low), hex(ids.hash.high)) %}
+
     let version_byte = extract_byte_at_pos(proof[value_node_index][0], version_byte_index, pow2_array);
     assert [range_check_ptr + 2] = 0x04 - version_byte;
 
@@ -83,29 +102,44 @@ func verify_transaction{
 
     let len_len = list_start - 0xf7;
     let tx_item_start_idx = version_byte_index + 2 + len_len; // version_byte_index + 1 for version byte. + 1 for long list prefix. + len_len for length prefix.
-
-    %{
-        print("TX Item Start Idx:", ids.tx_item_start_idx)
-    %}
+    let rlp_bytes_len = bytes_len[value_node_index] - tx_item_start_idx;
 
     let (tx_items_starts_at_word, tx_items_start_offset) = felt_divmod(
         tx_item_start_idx, 8
     );
-    
-    local tx_bytes_len = bytes_len[value_node_index] - tx_item_start_idx;
 
-    let (res, res_len) = extract_n_bytes_from_le_64_chunks_array(
+    let (rlp, rlp_len) = extract_n_bytes_from_le_64_chunks_array(
         array=proof[value_node_index],
         start_word=tx_items_starts_at_word,
         start_offset=tx_items_start_offset,
-        n_bytes=tx_bytes_len,
+        n_bytes=rlp_bytes_len,
         pow2_array=pow2_array
     );
 
+    let (res, res_len, res_bytes_len) = retrieve_from_rlp_list_via_idx{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array,
+    }(
+        rlp=rlp,
+        value_idx=3,
+        item_starts_at_byte=0,
+        counter=0,
+    );
+
+    let r0 = res[0];
+    // let r1 = res[1];
+    // let r2 = res[2];
+    // let r3 = res[3];
 
     %{
         print("Res Len:", ids.res_len)
+        print("Res Bytes Len:", ids.res_bytes_len)
+        print("Res0:", ids.r0)
     %}
+        // print("Res0:", ids.r1)
+        // print("Res0:", ids.r2)
+        // print("Res0:", ids.r3)
 
 
     return ();
