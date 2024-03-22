@@ -1,16 +1,25 @@
-%builtins range_check
+%builtins range_check bitwise
 
 from starkware.cairo.common.alloc import alloc
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 
-from src.libs.utils import uint256_min_be, uint256_max_be, Uint256
+from src.libs.utils import uint256_min_be, uint256_max_be, uint256_min_le, uint256_max_le, Uint256
+from starkware.cairo.common.uint256 import uint256_reverse_endian
 
-func main{range_check_ptr}() {
+func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
     alloc_locals;
-    let (local arr: felt*) = alloc();
+    let (local arr_be: felt*) = alloc();
+    local res_min: Uint256;
+    local res_max: Uint256;
     local len;
 
     %{
-        arr = [(1, 0), (2, 2), (2, 3)]
+        from tools.py.utils import reverse_endian_256, from_uint256, split_128
+        import random
+        arr = [random.randint(0, 2**256-1) for _ in range(3)]
+        res_min = split_128(min(arr))
+        res_max = split_128(max(arr))
+        arr_be = [split_128(x) for x in arr]
         def write_uint256_array(ptr, array):
             counter = 0
             for uint in array:
@@ -18,15 +27,31 @@ func main{range_check_ptr}() {
                 memory[ptr+counter+1] = uint[1]
                 counter += 2
 
-        write_uint256_array(ids.arr, arr)
-        ids.len = len(arr)
+        write_uint256_array(ids.arr_be, arr_be)
+        ids.len = len(arr_be)
     %}
-    let res = uint256_min_be(cast(arr, Uint256*), len);
-    assert res.low = 1;
-    assert res.high = 0;
+    let res = uint256_min_be(cast(arr_be, Uint256*), len);
+    assert res.low = res_min.low;
+    assert res.high = res_min.high;
 
-    let res = uint256_max_be(cast(arr, Uint256*), len);
-    assert res.low = 2;
-    assert res.high = 3;
+    let res = uint256_max_be(cast(arr_be, Uint256*), len);
+    assert res.low = res_max.low;
+    assert res.high = res_max.high;
+
+    let (local arr_le: felt*) = alloc();
+
+    %{
+        arr_le = [split_128(reverse_endian_256(from_uint256(x))) for x in arr_be]
+        write_uint256_array(ids.arr_le, arr_le)
+    %}
+
+    let res = uint256_min_le(cast(arr_le, Uint256*), len);
+    assert res.low = res_min.low;
+    assert res.high = res_min.high;
+
+    let res = uint256_max_le(cast(arr_le, Uint256*), len);
+    assert res.low = res_max.low;
+    assert res.high = res_max.high;
+
     return ();
 }
