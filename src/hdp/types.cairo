@@ -55,6 +55,21 @@ struct StorageItemProof {
     proof: felt**,
 }
 
+struct Transaction {
+    rlp: felt*,
+    rlp_len: felt,
+    bytes_len: felt,
+    // value_start_byte: felt, 
+    proof: TransactionProof,
+}
+
+struct TransactionProof {
+    block_number: felt,
+    proof_len: felt,
+    proof_bytes_len: felt*,
+    proof: felt**,
+}
+
 struct BlockSampledDataLake {
     block_range_start: felt,
     block_range_end: felt,

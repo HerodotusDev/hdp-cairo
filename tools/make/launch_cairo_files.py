@@ -12,7 +12,8 @@ CAIRO_PROGRAMS_FOLDERS = [
     "src/batch_storage_proof",
     "src/hdp",
     "src/hdp/datalakes",
-    "src/hdp/tasks"
+    "src/hdp/tasks",
+    "src/hdp/decoders",
 ]
 
 BUILD_DIR = "build"
@@ -189,8 +190,8 @@ class CairoRunner:
             if test_file == "tests/hdp/test_vectors.cairo":
                 continue
             
-            # if test_file != "tests/hdp/decode_values.cairo":
-            #     continue
+            if test_file != "tests/hdp/header_decoder.cairo":
+                continue
 
             self.filename_dot_cairo_path = test_file
             self.filename_dot_cairo = os.path.basename(test_file)

@@ -60,6 +60,7 @@ namespace HeaderDecoder {
             return get_bloom_filter(rlp);
         }
 
+        //extraData
         if(field == 12) {
             return get_dynamic_field_bytes(rlp, 12);
         }
