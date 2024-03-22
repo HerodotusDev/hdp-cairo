@@ -286,8 +286,12 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
         // Regardless, we need to decode the first item (key or key_end) and the second item (hash or value).
         // actual item value starts at byte first_item_start_offset + 1 (after the prefix)
         // Get the very first nibble.
+
+        // Ensure first_item_type is either 0 or 1.
+        assert (first_item_type - 1) * (first_item_type) = 0;
+
         let first_item_prefix = extract_nibble_at_byte_pos(
-            rlp[0], first_item_start_offset + 1, 0, pow2_array
+            rlp[0], first_item_start_offset + first_item_type, 0, pow2_array
         );
         %{
             prefix = ids.first_item_prefix
@@ -317,7 +321,7 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
         %{ conditional_print(f"n_nibbles_in_first_item : {ids.n_nibbles_in_first_item}") %}
         // Extract the key or key_end.
         let (local first_item_value_start_word, local first_item_value_start_offset) = felt_divmod(
-            first_item_start_offset + 2 - odd, 8
+            first_item_start_offset + first_item_type + 1 - odd, 8
         );
         let (
             extracted_key_subset, extracted_key_subset_len
@@ -325,22 +329,50 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
             rlp,
             first_item_value_start_word,
             first_item_value_start_offset,
-            first_item_len - 1 + odd,
+            first_item_len - first_item_type + odd,
             pow2_array,
         );
         %{
             #conditional_print_array(ids.extracted_key_subset, ids.extracted_key_subset_len) 
             conditional_print(f"nibbles already checked: {ids.n_nibbles_already_checked}")
         %}
-        assert_subset_in_key(
-            key_subset=extracted_key_subset,
-            key_subset_len=extracted_key_subset_len,
-            key_subset_nibble_len=n_nibbles_in_first_item,
-            key_little=key_little,
-            n_nibbles_already_checked=n_nibbles_already_checked,
-            cut_nibble=odd,
-            pow2_array=pow2_array,
-        );
+
+        if (first_item_type != 0) {
+            // If the first item is not a single byte, verify subset in key.
+            assert_subset_in_key(
+                key_subset=extracted_key_subset,
+                key_subset_len=extracted_key_subset_len,
+                key_subset_nibble_len=n_nibbles_in_first_item,
+                key_little=key_little,
+                n_nibbles_already_checked=n_nibbles_already_checked,
+                cut_nibble=odd,
+                pow2_array=pow2_array,
+            );
+            tempvar range_check_ptr = range_check_ptr;
+            tempvar bitwise_ptr = bitwise_ptr;
+            tempvar pow2_array = pow2_array;
+        } else {
+            // if the first item is a single byte, skip subset verification and assert n_nibbles_already_checked == n_nibbles_in_key
+            local key_bits;
+            with pow2_array {
+                if (key_little.high != 0) {
+                    let key_bit_high = get_felt_bitlength(key_little.high);
+                    assert key_bits = 128 + key_bit_high;
+                } else {
+                    let key_bit_low = get_felt_bitlength(key_little.low);
+                    assert key_bits = key_bit_low;
+                }
+            }
+            let (n_nibbles_in_key, remainder) = felt_divmod(key_bits, 4);
+            assert remainder = 0;
+            assert n_nibbles_in_key = n_nibbles_already_checked;
+            tempvar range_check_ptr = range_check_ptr;
+            tempvar bitwise_ptr = bitwise_ptr;
+            tempvar pow2_array = pow2_array;
+        }
+        let range_check_ptr = range_check_ptr;
+        let bitwise_ptr = bitwise_ptr;
+        let pow2_array = pow2_array;
 
         // Extract the hash or value.
 
