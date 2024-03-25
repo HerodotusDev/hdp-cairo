@@ -20,9 +20,11 @@ from src.hdp.types import (
     AccountValues,
     StorageItem,
     BlockSampledComputationalTask,
+    TransactionProof,
+    Transaction
 )
 
-from src.hdp.memorizer import HeaderMemorizer, AccountMemorizer, StorageMemorizer, MEMORIZER_DEFAULT
+from src.hdp.memorizer import HeaderMemorizer, AccountMemorizer, StorageMemorizer, TransactionMemorizer, MEMORIZER_DEFAULT
 from src.libs.utils import pow2alloc128, write_felt_array_to_dict_keys
 
 from src.hdp.tasks.block_sampled_task import BlockSampledTask
@@ -74,10 +76,16 @@ func run{
     let (storage_values: Uint256*) = alloc();
     local storage_items_len: felt;
 
+    // Transaction Params
+    let (transaction_proofs: TransactionProof*) = alloc();
+    let (transactions: Transaction*) = alloc();
+    local transaction_proof_len: felt;
+
     // Memorizers
     let (header_dict, header_dict_start) = HeaderMemorizer.initialize();
     let (account_dict, account_dict_start) = AccountMemorizer.initialize();
     let (storage_dict, storage_dict_start) = StorageMemorizer.initialize();
+    let (transaction_dict, transaction_dict_start) = TransactionMemorizer.initialize();
 
     // Task and Datalake
     local block_sampled_tasks_len: felt;
@@ -120,6 +128,21 @@ func run{
                 memory[ptr._reference_value + offset + 4] = len(header["proof"]["mmr_path"])
                 memory[ptr._reference_value + offset + 5] = segments.gen_arg(hex_to_int_array(header["proof"]["mmr_path"]))
                 offset += 6
+
+        def write_tx_proofs(ptr, tx_proofs):
+            offset = 0
+            ids.transaction_proof_len = len(tx_proofs)
+
+            for tx_proof in tx_proofs:
+                memory[ptr._reference_value + offset] = tx_proof["block_number"]
+                memory[ptr._reference_value + offset + 1] = len(tx_proof["proof"])
+                memory[ptr._reference_value + offset + 2] = segments.gen_arg(tx_proof["proof_bytes_len"])
+                memory[ptr._reference_value + offset + 3] = segments.gen_arg(tx_proof["proof"])
+                memory[ptr._reference_value + offset + 4] = tx_proof["key"]["low"]
+                memory[ptr._reference_value + offset + 5] = tx_proof["key"]["high"]
+                offset += 6
+
+
     %}
     // if these hints are one hint, the compiler goes on strike.
     %{
@@ -139,12 +162,14 @@ func run{
         write_mmr_meta(program_input['mmr'])
 
         # Header Params
-        ids.headers_len = len(program_input["headers"])
         write_headers(ids.headers, program_input["headers"])
 
         # Account + Storage Params
         ids.accounts_len = len(program_input['accounts'])
         ids.storage_items_len = len(program_input['storages'])
+
+        # Transaction params
+        write_tx_proofs(ids.transaction_proofs, program_input["transactions"])
 
         # Task and Datalake
         tasks_input, data_lakes_input, tasks_bytes_len, data_lake_bytes_len = ([], [], [], [])

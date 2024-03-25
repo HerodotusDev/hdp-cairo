@@ -59,8 +59,7 @@ struct Transaction {
     rlp: felt*,
     rlp_len: felt,
     bytes_len: felt,
-    // value_start_byte: felt, 
-    proof: TransactionProof,
+    version: felt,
 }
 
 struct TransactionProof {
@@ -68,6 +67,7 @@ struct TransactionProof {
     proof_len: felt,
     proof_bytes_len: felt*,
     proof: felt**,
+    key: Uint256,
 }
 
 struct BlockSampledDataLake {
