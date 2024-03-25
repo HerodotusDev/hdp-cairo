@@ -3,8 +3,13 @@
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 
-from src.libs.utils import uint256_min_be, uint256_max_be, uint256_min_le, uint256_max_le, Uint256
-from starkware.cairo.common.uint256 import uint256_reverse_endian
+from src.hdp.tasks.aggregate_functions.min_max import (
+    uint256_min_be,
+    uint256_max_be,
+    uint256_min_le,
+    uint256_max_le,
+)
+from starkware.cairo.common.uint256 import uint256_reverse_endian, Uint256
 
 func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
     alloc_locals;
@@ -17,6 +22,8 @@ func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
         from tools.py.utils import reverse_endian_256, from_uint256, split_128
         import random
         arr = [random.randint(0, 2**256-1) for _ in range(3)]
+        arr.append(min(arr)+1)
+        arr.append(max(arr)-1)
         res_min = split_128(min(arr))
         res_max = split_128(max(arr))
         arr_be = [split_128(x) for x in arr]
