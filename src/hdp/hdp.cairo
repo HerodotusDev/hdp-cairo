@@ -12,6 +12,7 @@ from src.hdp.verifiers.account_verifier import populate_account_segments, verify
 from src.hdp.verifiers.storage_item_verifier import populate_storage_item_segments, verify_n_storage_items
 from src.hdp.verifiers.header_verifier import verify_headers_inclusion
 from src.hdp.verifiers.mmr_verifier import verify_mmr_meta
+from src.hdp.verifiers.transaction_verifier import verify_n_transaction_proofs
 
 from src.hdp.types import (
     Header,
@@ -244,6 +245,23 @@ func run{
         storage_items_len=storage_items_len,
         storage_values=storage_values,
         state_idx=0,
+    );
+
+    // Check 5: Verify the transaction proofs
+    verify_n_transaction_proofs{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        poseidon_ptr=poseidon_ptr,
+        keccak_ptr=keccak_ptr,
+        transactions=transactions,
+        transaction_dict=transaction_dict,
+        headers=headers,
+        header_dict=header_dict,
+        pow2_array=pow2_array
+    }(
+        tx_proofs=transaction_proofs, 
+        tx_proofs_len=transaction_proof_len, 
+        index=0
     );
 
     // Verified data is now in memorizer, and can be used for further computation

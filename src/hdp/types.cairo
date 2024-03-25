@@ -64,8 +64,8 @@ struct Transaction {
 
 struct TransactionProof {
     block_number: felt,
-    proof_len: felt,
-    proof_bytes_len: felt*,
+    len: felt,
+    bytes_len: felt*,
     proof: felt**,
     key: Uint256,
 }
