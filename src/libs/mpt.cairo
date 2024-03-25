@@ -11,68 +11,7 @@ from src.libs.rlp_little import (
     assert_subset_in_key,
     extract_nibble_from_key,
 )
-from src.libs.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64
-
-
-func verify_mpt_content{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(
-    mpt_proof: felt**,
-    mpt_proof_bytes_len: felt*,
-    mpt_proof_len: felt,
-    key_little: Uint256,
-    n_nibbles_already_checked: felt,
-    node_index: felt,
-    hash_to_assert: Uint256,
-    pow2_array: felt*,
-) {
-    alloc_locals;
-    %{
-        debug_mode = True
-        conditional_print(f"\n\nNode index {ids.node_index+1}/{ids.mpt_proof_len}")
-    %}
-    if (node_index == mpt_proof_len - 1) {
-        // Last node : item of interest is the value.
-        // Check that the hash of the last node is the expected one.
-        // Check that the final accumulated key is the expected one.
-        let (node_hash: Uint256) = keccak(mpt_proof[node_index], mpt_proof_bytes_len[node_index]);
-        %{ conditional_print(f"node_hash : {hex(ids.node_hash.low + 2**128*ids.node_hash.high)}") %}
-        %{ conditional_print(f"hash_to_assert : {hex(ids.hash_to_assert.low + 2**128*ids.hash_to_assert.high)}") %}
-        assert node_hash.low - hash_to_assert.low = 0;
-        assert node_hash.high - hash_to_assert.high = 0;
-
-        // Proof is valid, but we dont encode yet.
-
-        return ();
-    } else {
-        // Not last node : item of interest is the hash of the next node.
-        // Check that the hash of the current node is the expected one.
-
-        let (node_hash: Uint256) = keccak(mpt_proof[node_index], mpt_proof_bytes_len[node_index]);
-        %{ conditional_print(f"node_hash : {hex(ids.node_hash.low + 2**128*ids.node_hash.high)}") %}
-        %{ conditional_print(f"hash_to_assert : {hex(ids.hash_to_assert.low + 2**128*ids.hash_to_assert.high)}") %}
-        assert node_hash.low - hash_to_assert.low = 0;
-        assert node_hash.high - hash_to_assert.high = 0;
-        %{ conditional_print(f"\t Hash assert for node {ids.node_index} passed.") %}
-        let (n_nibbles_checked, item_of_interest, item_of_interest_len) = decode_node_list_lazy(
-            rlp=mpt_proof[node_index],
-            bytes_len=mpt_proof_bytes_len[node_index],
-            pow2_array=pow2_array,
-            last_node=0,
-            key_little=key_little,
-            n_nibbles_already_checked=n_nibbles_already_checked,
-        );
-
-        return verify_mpt_content(
-            mpt_proof=mpt_proof,
-            mpt_proof_bytes_len=mpt_proof_bytes_len,
-            mpt_proof_len=mpt_proof_len,
-            key_little=key_little,
-            n_nibbles_already_checked=n_nibbles_checked,
-            node_index=node_index + 1,
-            hash_to_assert=[cast(item_of_interest, Uint256*)],
-            pow2_array=pow2_array,
-        );
-    }
-}
+from src.libs.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64, get_felt_bitlength
 
 // Verify a Merkle Patricia Tree proof.
 // params:
@@ -152,63 +91,6 @@ func verify_mpt_proof{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr:
             pow2_array=pow2_array,
         );
     }
-}
-
-func nibble_padding_unwrap{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*
-}(rlp: felt*, bytes_len: felt) -> (value_item_prefix: felt, value_item_start_offset: felt) {
-    alloc_locals;
-    
-    let list_prefix = extract_byte_at_pos(rlp[0], 0, pow2_array);
-    local long_short_list: felt;  // 0 for short, !=0 for long.
-    %{
-        if 0xc0 <= ids.list_prefix <= 0xf7:
-            ids.long_short_list = 0
-            conditional_print("List type : short")
-        elif 0xf8 <= ids.list_prefix <= 0xff:
-            ids.long_short_list = 1
-            conditional_print("List type: long")
-        else:
-            conditional_print("Not a list.")
-    %}
-    local wrapper_prefix_offset: felt;
-    local list_len: felt;  // Bytes length of the list. (not including the prefix)
-
-    if (long_short_list != 0) {
-        // Long list.
-        assert [range_check_ptr] = list_prefix - 0xf8;
-        assert [range_check_ptr + 1] = 0xff - list_prefix;
-        let len_len = list_prefix - 0xf7;
-        assert wrapper_prefix_offset = 1 + len_len;
-        assert list_len = bytes_len - len_len - 1;
-    } else {
-        // Short list.
-        assert [range_check_ptr] = list_prefix - 0xc0;
-        assert [range_check_ptr + 1] = 0xf7 - list_prefix;
-        assert wrapper_prefix_offset = 1;
-        assert list_len = list_prefix - 0xc0;
-    }
-    // At this point, if input is neither a long nor a short list, then the range check will fail.
-    // %{ conditional_print("list_len", ids.list_len) %}
-    // %{ conditional_print("first word", memory[ids.rlp]) %}
-    assert [range_check_ptr + 2] = 7 - wrapper_prefix_offset;
-    let range_check_ptr = range_check_ptr + 3;
-
-    let wrapper_prefix = extract_byte_at_pos(rlp[0], wrapper_prefix_offset, pow2_array);
-
-    if(wrapper_prefix == 0x20) {
-        assert wrapper_prefix = 0x20; // useless but need to add something
-    }  else {
-        assert wrapper_prefix = 0x30; // this should be 0x30 + nibble len
-    }
-
-    let value_item_start_offset = wrapper_prefix_offset + 1;
-    let value_item_prefix = extract_byte_at_pos(rlp[0], value_item_start_offset, pow2_array);
-
-    
-    return (value_item_prefix, value_item_start_offset);
 }
 
 func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
