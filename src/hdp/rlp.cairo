@@ -33,42 +33,130 @@ func retrieve_from_rlp_list_via_idx{
         pow2_array
     );
 
-    local item_has_prefix: felt;
+    local item_type: felt;
     %{
-        if ids.current_item < 0x80:
-            ids.item_has_prefix = 0
+        # print("current item:", hex(ids.current_item))
+        if ids.current_item <= 0x7f:
+            ids.item_type = 0 # single byte
+        elif 0x80 <= ids.current_item <= 0xb6:
+            ids.item_type = 1 # short string
+        elif 0xb7 <= ids.current_item <= 0xbf:
+            ids.item_type = 2 # long string
+        elif 0xc0 <= ids.current_item <= 0xf7:
+            ids.item_type = 3 # short list
+        elif 0xf8 <= ids.current_item <= 0xff:
+            ids.item_type = 4 # long list
         else:
-            ids.item_has_prefix = 1
+            assert False, "Invalid RLP item"
+
+        # print("item type:", ids.item_type)
     %}
 
     local current_item_len: felt;
-
-    if (item_has_prefix == 1) {
-        assert [range_check_ptr] = current_item - 0x80; // validates item_has_prefix hint
-        current_item_len = current_item - 0x80;
-        tempvar next_item_starts_at_byte = item_starts_at_byte +  current_item_len + 1;
+    local current_value_starts_at_byte: felt;
+    local next_item_starts_at_byte: felt;
+    if (item_type == 0) {
+        assert [range_check_ptr] = 0x7f - current_item;
+        assert current_item_len = 1;
+        assert current_value_starts_at_byte = item_starts_at_byte;
+        assert next_item_starts_at_byte = current_value_starts_at_byte + current_item_len;
+        tempvar range_check_ptr = range_check_ptr + 1;
     } else {
-        assert [range_check_ptr] = 0x7f - current_item; // validates item_has_prefix hint
-        current_item_len = 1;
-        tempvar next_item_starts_at_byte = item_starts_at_byte +  current_item_len;
+        tempvar range_check_ptr = range_check_ptr;
     }
 
-    let range_check_ptr = range_check_ptr + 1;
+    if(item_type == 1) {
+        assert [range_check_ptr] = current_item - 0x80;
+        assert [range_check_ptr + 1] = 0xb7 - current_item;
+        assert current_item_len = current_item - 0x80;
+        assert current_value_starts_at_byte = item_starts_at_byte + 1;
+        assert next_item_starts_at_byte = current_value_starts_at_byte + current_item_len;
+
+        tempvar range_check_ptr = range_check_ptr + 2;
+    } else {
+        tempvar range_check_ptr = range_check_ptr;
+    }
+
+    if(item_type == 2) {
+        assert [range_check_ptr] = current_item - 0xb7;
+        assert [range_check_ptr + 1] = 0xbf - current_item;
+        tempvar range_check_ptr = range_check_ptr + 2;
+        let len_len = current_item - 0xb7;
+        assert current_value_starts_at_byte = item_starts_at_byte + len_len + 1;
+        let (current_item_len_list, list_len) = extract_n_bytes_from_le_64_chunks_array(
+            array=rlp,
+            start_word=item_starts_at_word,
+            start_offset=item_start_offset + 1,
+            n_bytes=len_len,
+            pow2_array=pow2_array
+        );
+        assert list_len = 1; // limit length to u64
+        assert current_item_len = current_item_len_list[0];
+        assert next_item_starts_at_byte = current_value_starts_at_byte +  current_item_len;
+        tempvar range_check_ptr = range_check_ptr;
+    } else {
+        tempvar range_check_ptr = range_check_ptr;
+    }
+    
+    if(item_type == 3) {
+        assert [range_check_ptr] = current_item - 0xc0;
+        assert [range_check_ptr + 1] = 0xf7 - current_item;
+        tempvar range_check_ptr = range_check_ptr + 2;
+
+        let len_len = current_item - 0xc0;
+        assert current_value_starts_at_byte = item_starts_at_byte + len_len + 1;
+        if (len_len == 0) {
+            assert next_item_starts_at_byte = item_starts_at_byte + 1;
+            tempvar range_check_ptr = range_check_ptr;
+        } else {
+            let (current_item_len_list, list_len) = extract_n_bytes_from_le_64_chunks_array(
+                array=rlp,
+                start_word=item_starts_at_word,
+                start_offset=item_start_offset + 1,
+                n_bytes=len_len,
+                pow2_array=pow2_array
+            );
+            assert list_len = 1; // limit length to u64
+            assert current_item_len = current_item_len_list[0];
+            assert next_item_starts_at_byte = current_value_starts_at_byte + current_item_len;
+            tempvar range_check_ptr = range_check_ptr;
+        }
+    } else {
+        tempvar range_check_ptr = range_check_ptr;
+    }
+
+    if(item_type == 4) {
+        assert [range_check_ptr] = current_item - 0xf8;
+        assert [range_check_ptr + 1] = 0xff - current_item;
+        tempvar range_check_ptr = range_check_ptr + 2;
+        let len_len = current_item - 0xf8;
+        assert current_value_starts_at_byte = item_starts_at_byte + len_len + 1;
+        let (current_item_len_list, list_len) = extract_n_bytes_from_le_64_chunks_array(
+            array=rlp,
+            start_word=item_starts_at_word,
+            start_offset=item_start_offset + 1,
+            n_bytes=len_len,
+            pow2_array=pow2_array
+        );
+        assert list_len = 1; // limit max length to u64
+        assert current_item_len = current_item_len_list[0];
+
+        assert next_item_starts_at_byte = current_value_starts_at_byte + current_item_len;
+        tempvar range_check_ptr = range_check_ptr;
+    } else {
+        tempvar range_check_ptr = range_check_ptr;
+    }
+
     
     if (value_idx == counter) {
-        // handle empty bytes case
         if(current_item_len == 0) {
             let (res: felt*) = alloc();
             assert res[0] = 0;
             return (res=res, res_len=1, bytes_len=1);
-        } 
-
-        // handle prefix case
-        if (item_has_prefix == 1) {
+        } else {
             let (word_idx, offset) = felt_divmod(
-                item_starts_at_byte + 1, 8
+                current_value_starts_at_byte, 8
             );
-            
             let (res, res_len) = extract_n_bytes_from_le_64_chunks_array(
                 array=rlp,
                 start_word=word_idx,
@@ -78,11 +166,6 @@ func retrieve_from_rlp_list_via_idx{
             );
 
             return (res=res, res_len=res_len, bytes_len=current_item_len);
-        } else {
-            // handle single byte case
-            let (res: felt*) = alloc();
-            assert res[0] = current_item;
-            return (res=res, res_len=1, bytes_len=1);
         }
     }
 
