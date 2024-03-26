@@ -107,6 +107,7 @@ func retrieve_from_rlp_list_via_idx{
         assert current_value_starts_at_byte = item_starts_at_byte + len_len + 1;
         if (len_len == 0) {
             assert next_item_starts_at_byte = item_starts_at_byte + 1;
+            assert current_item_len = len_len;
             tempvar range_check_ptr = range_check_ptr;
         } else {
             let (current_item_len_list, list_len) = extract_n_bytes_from_le_64_chunks_array(

@@ -59,7 +59,7 @@ struct Transaction {
     rlp: felt*,
     rlp_len: felt,
     bytes_len: felt,
-    version: felt,
+    type: felt,
 }
 
 struct TransactionProof {

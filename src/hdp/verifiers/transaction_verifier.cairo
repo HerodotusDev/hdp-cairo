@@ -19,6 +19,8 @@ from src.libs.rlp_little import (
 from src.hdp.types import TransactionProof, Transaction, Header
 from src.hdp.memorizer import HeaderMemorizer, TransactionMemorizer
 
+from src.hdp.decoders.transaction_decoder import TransactionReader, TransactionConsensusReader
+
 func verify_n_transaction_proofs{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -56,7 +58,7 @@ func verify_n_transaction_proofs{
         pow2_array=pow2_array,
     );
 
-    let version_byte = extract_byte_at_pos(tx_str[0], 0, pow2_array);
+    let tx_type = extract_byte_at_pos(tx_str[0], 0, pow2_array);
 
     let long_list_prefix = extract_byte_at_pos(tx_str[0], 1, pow2_array);
     // Signature has 65 byte already, so tx must be a long list
@@ -82,7 +84,7 @@ func verify_n_transaction_proofs{
         rlp=rlp,
         rlp_len=rlp_len,
         bytes_len=bytes_len,
-        version=version_byte
+        type=tx_type
     );
 
     // ToDo: Decode nonce and sender
@@ -90,7 +92,11 @@ func verify_n_transaction_proofs{
     assert sender[0] = 0;
     assert sender[1] = 0;
     assert sender[2] = 0;
-    TransactionMemorizer.add(sender, 0, index);
+
+    TransactionConsensusReader.get_signer_addrs(transactions[index]);
+
+    let nonce = TransactionReader.get_nonce(rlp);
+    TransactionMemorizer.add(sender, nonce, index);
 
     return verify_n_transaction_proofs(
         tx_proofs=tx_proofs,
@@ -131,7 +137,7 @@ func verify_n_transaction_proofs{
 //         pow2_array=pow2_array,
 //     );
 
-//     let version_byte = extract_byte_at_pos(tx_str[0], 0, pow2_array);
+//     let tx_type = extract_byte_at_pos(tx_str[0], 0, pow2_array);
 
 //     let long_list_prefix = extract_byte_at_pos(tx_str[0], 1, pow2_array);
 //     // Signature has 65 byte already, so tx must be a long list
@@ -162,16 +168,16 @@ func verify_n_transaction_proofs{
     // // receive long string. 
 
     // let len_len = tx_string_prefix - 0xb7;
-    // let version_byte_index = tx_string_start_offset + len_len + 1;
+    // let tx_type_index = tx_string_start_offset + len_len + 1;
 
-    // %{ print("Version Byte Index:", ids.version_byte_index)%} 
+    // %{ print("Version Byte Index:", ids.tx_type_index)%} 
 
     // Hashing seems to work!
     // tempvar range_check_ptr = range_check_ptr + 2;
     // let (tx_list_starts_at_word, tx_list_start_offset) = felt_divmod(
-    //     version_byte_index, 8
+    //     tx_type_index, 8
     // );
-    // let tx_bytes_len = bytes_len[value_node_index] - version_byte_index;
+    // let tx_bytes_len = bytes_len[value_node_index] - tx_type_index;
     // let (res, res_len) = extract_n_bytes_from_le_64_chunks_array(
     //     array=proof[value_node_index],
     //     start_word=tx_list_starts_at_word,
@@ -182,13 +188,13 @@ func verify_n_transaction_proofs{
     // let (hash: Uint256) = keccak(res, tx_bytes_len);
     // %{ print("Hash:", hex(ids.hash.low), hex(ids.hash.high)) %}
 
-    // let version_byte = extract_byte_at_pos(proof[value_node_index][0], version_byte_index, pow2_array);
-    // assert [range_check_ptr + 2] = 0x04 - version_byte;
+    // let tx_type = extract_byte_at_pos(proof[value_node_index][0], tx_type_index, pow2_array);
+    // assert [range_check_ptr + 2] = 0x04 - tx_type;
 
     // let range_check_ptr = range_check_ptr + 3;
 
     // let (tx_list_starts_at_word, tx_list_start_offset) = felt_divmod(
-    //     version_byte_index + 1, 8
+    //     tx_type_index + 1, 8
     // );
 
     // // Assert long list is in string
@@ -199,7 +205,7 @@ func verify_n_transaction_proofs{
     // tempvar range_check_ptr = range_check_ptr + 2;
 
     // let len_len = list_start - 0xf7;
-    // let tx_item_start_idx = version_byte_index + 2 + len_len; // version_byte_index + 1 for version byte. + 1 for long list prefix. + len_len for length prefix.
+    // let tx_item_start_idx = tx_type_index + 2 + len_len; // tx_type_index + 1 for version byte. + 1 for long list prefix. + len_len for length prefix.
     // let rlp_bytes_len = bytes_len[value_node_index] - tx_item_start_idx;
 
     // let (tx_items_starts_at_word, tx_items_start_offset) = felt_divmod(
