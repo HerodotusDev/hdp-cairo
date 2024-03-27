@@ -4,6 +4,15 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256s
 
+from src.libs.utils import (
+    word_reverse_endian_16_RC,
+    word_reverse_endian_24_RC,
+    word_reverse_endian_32_RC,
+    word_reverse_endian_40_RC,
+    word_reverse_endian_48_RC,
+    word_reverse_endian_56_RC
+)
+
 // ToDo: deprecate
 func keccak_hash_array_to_uint256{
     bitwise_ptr: BitwiseBuiltin*,
@@ -60,4 +69,32 @@ func compute_results_entry{
     let (res_id) = keccak(values_felt_start, 64);
 
     return (res_id);
+}
+
+// reverses the endianness of chunk up to 56 bytes long
+func reverse_small_chunk_endianess{range_check_ptr}(word: felt, bytes_len: felt) -> felt{
+    if(bytes_len == 1) {
+        return word;
+    }
+    if(bytes_len == 2) {
+        return word_reverse_endian_16_RC{range_check_ptr=range_check_ptr}(word);
+    }
+    if(bytes_len == 3) {
+        return word_reverse_endian_24_RC{range_check_ptr=range_check_ptr}(word);
+    }
+    if(bytes_len == 4) {
+        return word_reverse_endian_32_RC{range_check_ptr=range_check_ptr}(word);
+    }
+    if(bytes_len == 5) {
+        return word_reverse_endian_40_RC{range_check_ptr=range_check_ptr}(word);
+    }
+    if(bytes_len == 6) {
+        return word_reverse_endian_48_RC{range_check_ptr=range_check_ptr}(word);
+    }
+    if(bytes_len == 7) {
+        return word_reverse_endian_56_RC{range_check_ptr=range_check_ptr}(word);
+    }
+
+    assert 1 = 0;
+    return 0;
 }

@@ -23,7 +23,8 @@ from src.hdp.types import Transaction
 //     10: Access List
 //     11: Max Fee Per Gas
 //     12: Max Priority Fee Per Gas
-//     13: Blob Versioned Hashes
+//     13: Max Fee Per Blob Gas
+//     14: Blob Versioned Hashes
 namespace TransactionReader {
     func get_nonce{
         range_check_ptr,
@@ -54,7 +55,7 @@ namespace TransactionReader {
             assert 1 = 0; // returns as felt
         }
 
-        if(field == 13) {
+        if(field == 14) {
             assert 1 = 0; // returns as felt
         }
 
