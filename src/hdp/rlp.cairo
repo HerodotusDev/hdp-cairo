@@ -42,9 +42,9 @@ func retrieve_from_rlp_list_via_idx{
             ids.item_type = 1 # short string
         elif 0xb7 <= ids.current_item <= 0xbf:
             ids.item_type = 2 # long string
-        elif 0xc0 <= ids.current_item <= 0xf7:
+        elif 0xc0 <= ids.current_item <= 0xf6:
             ids.item_type = 3 # short list
-        elif 0xf8 <= ids.current_item <= 0xff:
+        elif 0xf7 <= ids.current_item <= 0xff:
             ids.item_type = 4 # long list
         else:
             assert False, "Invalid RLP item"
