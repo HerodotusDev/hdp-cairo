@@ -7,6 +7,8 @@ from starkware.cairo.common.uint256 import (
     uint256_reverse_endian,
 )
 
+from src.libs.utils import uint256_add, uint256_sub
+
 const TRUE = 1;
 const FALSE = 0;
 
@@ -35,10 +37,10 @@ func count_if{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     array: Uint256*, len: felt, op: felt, value: Uint256
 ) -> (res: felt) {
     alloc_locals;
+    %{ from tools.py.utils import uint256_reverse_endian %}
     %{
-        from tools.py.utils import uint256_reverse_endian 
-        print(f"{COUNTIFOP(ids.op)}")
-        print(f"value={ids.value.low + 2**128* ids.value.high}")
+        #print(f"{COUNTIFOP(ids.op)}")
+        #print(f"value={ids.value.low + 2**128* ids.value.high}")
     %}
     if (op == COUNT_IF.EQ) {
         let res = count_if_eq(array, len, value);
@@ -64,6 +66,11 @@ func count_if{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     return (res=-1);
 }
 
+// Computes sum (arr[i] == value)
+// Assumptions :
+// Array is in little endian.
+// Value is in big endian.
+// Comparison is made in big endian.
 func count_if_eq{bitwise_ptr: BitwiseBuiltin*}(array: Uint256*, len: felt, value: Uint256) -> (
     res: felt
 ) {
@@ -108,7 +115,7 @@ func count_if_eq{bitwise_ptr: BitwiseBuiltin*}(array: Uint256*, len: felt, value
     return (res=count);
 }
 
-// Computes sum ( arr[i] != value)
+// Computes sum (arr[i] != value)
 // Assumptions :
 // Array is in little endian.
 // Value is in big endian.
@@ -171,6 +178,8 @@ func count_if_gt{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     }
     alloc_locals;
 
+    let (local value_plus_one: Uint256, _) = uint256_add(value, Uint256(1, 0));
+    let (local val_plus_one_le: Uint256) = uint256_reverse_endian(value_plus_one);
     let (local val_le: Uint256) = uint256_reverse_endian(value);
     %{ index=0 %}
     tempvar range_check_ptr = range_check_ptr;
@@ -191,16 +200,50 @@ func count_if_gt{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
 
     if ([ap - 1] != FALSE) {
         // Assert array[i] > value <=> value < array[i] <=> value + 1 <= array[i]
-        let val_low = val_low + 1;
-        if (val_low == val_le.low) {
-            [ap] = range_check_ptr, ap++;
-            [ap] = bitwise_ptr, ap++;
+        if (val_low == val_plus_one_le.low) {
+            // If high parts match, only reverse low part.
+            assert bitwise_ptr[0].x = val_high;
+            assert bitwise_ptr[0].y = 0x00ff00ff00ff00ff00ff00ff00ff00ff;
+            tempvar word = val_high + (2 ** 16 - 1) * bitwise_ptr[0].x_and_y;
+            assert bitwise_ptr[1].x = word;
+            assert bitwise_ptr[1].y = 0x00ffff0000ffff0000ffff0000ffff00;
+            tempvar word = word + (2 ** 32 - 1) * bitwise_ptr[1].x_and_y;
+            assert bitwise_ptr[2].x = word;
+            assert bitwise_ptr[2].y = 0x00ffffffff00000000ffffffff000000;
+            tempvar word = word + (2 ** 64 - 1) * bitwise_ptr[2].x_and_y;
+            assert bitwise_ptr[3].x = word;
+            assert bitwise_ptr[3].y = 0x00ffffffffffffffff00000000000000;
+            tempvar word = word + (2 ** 128 - 1) * bitwise_ptr[3].x_and_y;
+
+            tempvar val_low = word / 2 ** (8 + 16 + 32 + 64);
+            // assert val_low >= value_plus_one.low
+            assert [range_check_ptr] = val_low - value_plus_one.low;
+            [ap] = range_check_ptr + 1, ap++;
+            [ap] = bitwise_ptr + 4 * BitwiseBuiltin.SIZE, ap++;
             [ap] = count + 1, ap++;
             [ap] = arr + Uint256.SIZE, ap++;
             jmp loop;
         } else {
-            [ap] = range_check_ptr, ap++;
-            [ap] = bitwise_ptr, ap++;
+            // If high part don't match, assert array[i]_high >= value_high.
+            // Reverse the endianness of high part.
+
+            assert bitwise_ptr[0].x = val_low;
+            assert bitwise_ptr[0].y = 0x00ff00ff00ff00ff00ff00ff00ff00ff;
+            tempvar word = val_low + (2 ** 16 - 1) * bitwise_ptr[0].x_and_y;
+            assert bitwise_ptr[1].x = word;
+            assert bitwise_ptr[1].y = 0x00ffff0000ffff0000ffff0000ffff00;
+            tempvar word = word + (2 ** 32 - 1) * bitwise_ptr[1].x_and_y;
+            assert bitwise_ptr[2].x = word;
+            assert bitwise_ptr[2].y = 0x00ffffffff00000000ffffffff000000;
+            tempvar word = word + (2 ** 64 - 1) * bitwise_ptr[2].x_and_y;
+            assert bitwise_ptr[3].x = word;
+            assert bitwise_ptr[3].y = 0x00ffffffffffffffff00000000000000;
+            tempvar word = word + (2 ** 128 - 1) * bitwise_ptr[3].x_and_y;
+            tempvar val_high = word / 2 ** (8 + 16 + 32 + 64);
+            // assert val_high >= value_high
+            assert [range_check_ptr] = val_high - value_plus_one.high;
+            [ap] = range_check_ptr + 1, ap++;
+            [ap] = bitwise_ptr + 4 * BitwiseBuiltin.SIZE, ap++;
             [ap] = count + 1, ap++;
             [ap] = arr + Uint256.SIZE, ap++;
             jmp loop;
@@ -208,14 +251,45 @@ func count_if_gt{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     } else {
         // Assert array[i] <= value
         if (val_low == val_le.low) {
-            [ap] = range_check_ptr, ap++;
-            [ap] = bitwise_ptr, ap++;
+            assert bitwise_ptr[0].x = val_high;
+            assert bitwise_ptr[0].y = 0x00ff00ff00ff00ff00ff00ff00ff00ff;
+            tempvar word = val_high + (2 ** 16 - 1) * bitwise_ptr[0].x_and_y;
+            assert bitwise_ptr[1].x = word;
+            assert bitwise_ptr[1].y = 0x00ffff0000ffff0000ffff0000ffff00;
+            tempvar word = word + (2 ** 32 - 1) * bitwise_ptr[1].x_and_y;
+            assert bitwise_ptr[2].x = word;
+            assert bitwise_ptr[2].y = 0x00ffffffff00000000ffffffff000000;
+            tempvar word = word + (2 ** 64 - 1) * bitwise_ptr[2].x_and_y;
+            assert bitwise_ptr[3].x = word;
+            assert bitwise_ptr[3].y = 0x00ffffffffffffffff00000000000000;
+            tempvar word = word + (2 ** 128 - 1) * bitwise_ptr[3].x_and_y;
+
+            tempvar val_low = word / 2 ** (8 + 16 + 32 + 64);
+            // assert value_low >= val_low
+            assert [range_check_ptr] = value.low - val_low;
+            [ap] = range_check_ptr + 1, ap++;
+            [ap] = bitwise_ptr + 4 * BitwiseBuiltin.SIZE, ap++;
             [ap] = count, ap++;
             [ap] = arr + Uint256.SIZE, ap++;
             jmp loop;
         } else {
-            [ap] = range_check_ptr, ap++;
-            [ap] = bitwise_ptr, ap++;
+            assert bitwise_ptr[0].x = val_low;
+            assert bitwise_ptr[0].y = 0x00ff00ff00ff00ff00ff00ff00ff00ff;
+            tempvar word = val_low + (2 ** 16 - 1) * bitwise_ptr[0].x_and_y;
+            assert bitwise_ptr[1].x = word;
+            assert bitwise_ptr[1].y = 0x00ffff0000ffff0000ffff0000ffff00;
+            tempvar word = word + (2 ** 32 - 1) * bitwise_ptr[1].x_and_y;
+            assert bitwise_ptr[2].x = word;
+            assert bitwise_ptr[2].y = 0x00ffffffff00000000ffffffff000000;
+            tempvar word = word + (2 ** 64 - 1) * bitwise_ptr[2].x_and_y;
+            assert bitwise_ptr[3].x = word;
+            assert bitwise_ptr[3].y = 0x00ffffffffffffffff00000000000000;
+            tempvar word = word + (2 ** 128 - 1) * bitwise_ptr[3].x_and_y;
+            tempvar val_high = word / 2 ** (8 + 16 + 32 + 64);
+            assert [range_check_ptr] = value.high - val_high;
+
+            [ap] = range_check_ptr + 1, ap++;
+            [ap] = bitwise_ptr + 4 * BitwiseBuiltin.SIZE, ap++;
             [ap] = count, ap++;
             [ap] = arr + Uint256.SIZE, ap++;
             jmp loop;
@@ -243,9 +317,10 @@ func count_if_ge{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     }
     alloc_locals;
 
+    let (local val_min_one: Uint256) = uint256_sub(value, Uint256(low=1, high=0));
+    let (local val_min_one_le: Uint256) = uint256_reverse_endian(val_min_one);
     let (local val_le: Uint256) = uint256_reverse_endian(value);
 
-    %{ print(f"{ids.val_le.low=}, {ids.val_le.high=}") %}
     %{ index=0 %}
     tempvar range_check_ptr = range_check_ptr;
     tempvar bitwise_ptr = bitwise_ptr;
@@ -261,38 +336,97 @@ func count_if_ge{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     jmp end if [ap] != 0, ap++;
     let val_low = [arr];
     let val_high = [arr + 1];
-    %{
-        #print(f"{index=}/{ids.len}, {ids.count=}")
-        index+=1
-    %}
+    %{ index+=1 %}
     %{ memory[ap] = ids.TRUE if uint256_reverse_endian(memory[ids.arr] + 2**128 * memory[ids.arr+1]) >= ids.value.low + 2**128 * ids.value.high else ids.FALSE %}
     ap += 1;
     if ([ap - 1] != FALSE) {
         // Assert array[i] >= value
         if (val_low == val_le.low) {
-            [ap] = range_check_ptr, ap++;
-            [ap] = bitwise_ptr, ap++;
+            // If high parts match, compare low parts.
+            assert bitwise_ptr[0].x = val_high;
+            assert bitwise_ptr[0].y = 0x00ff00ff00ff00ff00ff00ff00ff00ff;
+            tempvar word = val_high + (2 ** 16 - 1) * bitwise_ptr[0].x_and_y;
+            assert bitwise_ptr[1].x = word;
+            assert bitwise_ptr[1].y = 0x00ffff0000ffff0000ffff0000ffff00;
+            tempvar word = word + (2 ** 32 - 1) * bitwise_ptr[1].x_and_y;
+            assert bitwise_ptr[2].x = word;
+            assert bitwise_ptr[2].y = 0x00ffffffff00000000ffffffff000000;
+            tempvar word = word + (2 ** 64 - 1) * bitwise_ptr[2].x_and_y;
+            assert bitwise_ptr[3].x = word;
+            assert bitwise_ptr[3].y = 0x00ffffffffffffffff00000000000000;
+            tempvar word = word + (2 ** 128 - 1) * bitwise_ptr[3].x_and_y;
+
+            tempvar val_low = word / 2 ** (8 + 16 + 32 + 64);
+            assert [range_check_ptr] = val_low - value.low;
+            [ap] = range_check_ptr + 1, ap++;
+            [ap] = bitwise_ptr + 4 * BitwiseBuiltin.SIZE, ap++;
             [ap] = count + 1, ap++;
             [ap] = arr + Uint256.SIZE, ap++;
             jmp loop;
         } else {
-            [ap] = range_check_ptr, ap++;
-            [ap] = bitwise_ptr, ap++;
+            assert bitwise_ptr[0].x = val_low;
+            assert bitwise_ptr[0].y = 0x00ff00ff00ff00ff00ff00ff00ff00ff;
+            tempvar word = val_low + (2 ** 16 - 1) * bitwise_ptr[0].x_and_y;
+            assert bitwise_ptr[1].x = word;
+            assert bitwise_ptr[1].y = 0x00ffff0000ffff0000ffff0000ffff00;
+            tempvar word = word + (2 ** 32 - 1) * bitwise_ptr[1].x_and_y;
+            assert bitwise_ptr[2].x = word;
+            assert bitwise_ptr[2].y = 0x00ffffffff00000000ffffffff000000;
+            tempvar word = word + (2 ** 64 - 1) * bitwise_ptr[2].x_and_y;
+            assert bitwise_ptr[3].x = word;
+            assert bitwise_ptr[3].y = 0x00ffffffffffffffff00000000000000;
+            tempvar word = word + (2 ** 128 - 1) * bitwise_ptr[3].x_and_y;
+            tempvar val_high = word / 2 ** (8 + 16 + 32 + 64);
+            assert [range_check_ptr] = val_high - value.high;
+            [ap] = range_check_ptr + 1, ap++;
+            [ap] = bitwise_ptr + 4 * BitwiseBuiltin.SIZE, ap++;
             [ap] = count + 1, ap++;
             [ap] = arr + Uint256.SIZE, ap++;
             jmp loop;
         }
     } else {
-        // Assert array[i] <= value
-        if (val_low == val_le.low) {
-            [ap] = range_check_ptr, ap++;
-            [ap] = bitwise_ptr, ap++;
+        // Assert array[i] < value <=> array[i] <= value - 1
+        if (val_low == val_min_one_le.low) {
+            // If high part match, compare low part.
+            // Reverse low part to compare it.
+            assert bitwise_ptr[0].x = val_high;
+            assert bitwise_ptr[0].y = 0x00ff00ff00ff00ff00ff00ff00ff00ff;
+            tempvar word = val_high + (2 ** 16 - 1) * bitwise_ptr[0].x_and_y;
+            assert bitwise_ptr[1].x = word;
+            assert bitwise_ptr[1].y = 0x00ffff0000ffff0000ffff0000ffff00;
+            tempvar word = word + (2 ** 32 - 1) * bitwise_ptr[1].x_and_y;
+            assert bitwise_ptr[2].x = word;
+            assert bitwise_ptr[2].y = 0x00ffffffff00000000ffffffff000000;
+            tempvar word = word + (2 ** 64 - 1) * bitwise_ptr[2].x_and_y;
+            assert bitwise_ptr[3].x = word;
+            assert bitwise_ptr[3].y = 0x00ffffffffffffffff00000000000000;
+            tempvar word = word + (2 ** 128 - 1) * bitwise_ptr[3].x_and_y;
+
+            tempvar val_low = word / 2 ** (8 + 16 + 32 + 64);
+            assert [range_check_ptr] = val_min_one.low - val_low;
+            [ap] = range_check_ptr + 1, ap++;
+            [ap] = bitwise_ptr + 4 * BitwiseBuiltin.SIZE, ap++;
             [ap] = count, ap++;
             [ap] = arr + Uint256.SIZE, ap++;
             jmp loop;
         } else {
-            [ap] = range_check_ptr, ap++;
-            [ap] = bitwise_ptr, ap++;
+            assert bitwise_ptr[0].x = val_low;
+            assert bitwise_ptr[0].y = 0x00ff00ff00ff00ff00ff00ff00ff00ff;
+            tempvar word = val_low + (2 ** 16 - 1) * bitwise_ptr[0].x_and_y;
+            assert bitwise_ptr[1].x = word;
+            assert bitwise_ptr[1].y = 0x00ffff0000ffff0000ffff0000ffff00;
+            tempvar word = word + (2 ** 32 - 1) * bitwise_ptr[1].x_and_y;
+            assert bitwise_ptr[2].x = word;
+            assert bitwise_ptr[2].y = 0x00ffffffff00000000ffffffff000000;
+            tempvar word = word + (2 ** 64 - 1) * bitwise_ptr[2].x_and_y;
+            assert bitwise_ptr[3].x = word;
+            assert bitwise_ptr[3].y = 0x00ffffffffffffffff00000000000000;
+            tempvar word = word + (2 ** 128 - 1) * bitwise_ptr[3].x_and_y;
+            tempvar val_high = word / 2 ** (8 + 16 + 32 + 64);
+
+            assert [range_check_ptr] = val_min_one.high - val_high;
+            [ap] = range_check_ptr + 1, ap++;
+            [ap] = bitwise_ptr + 4 * BitwiseBuiltin.SIZE, ap++;
             [ap] = count, ap++;
             [ap] = arr + Uint256.SIZE, ap++;
             jmp loop;
@@ -321,7 +455,9 @@ func count_if_lt{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     }
     alloc_locals;
 
-    let (local val_le: Uint256) = uint256_reverse_endian(Uint256(value.low + 1, value.high));
+    let (local val_min_one: Uint256) = uint256_sub(value, Uint256(1, 0));
+    let (local val_min_one_le: Uint256) = uint256_reverse_endian(val_min_one);
+    let (local val_le: Uint256) = uint256_reverse_endian(Uint256(value.low, value.high));
     %{ index=0 %}
     tempvar range_check_ptr = range_check_ptr;
     tempvar bitwise_ptr = bitwise_ptr;
@@ -329,45 +465,109 @@ func count_if_lt{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     tempvar arr: felt* = cast(array, felt*);
 
     loop:
+    let range_check_ptr = [ap - 4];
+    let bitwise_ptr = cast([ap - 3], BitwiseBuiltin*);
     let count = [ap - 2];
     let arr = cast([ap - 1], felt*);
     %{ memory[ap] = 1 if index == ids.len else 0 %}
     jmp end if [ap] != 0, ap++;
     let val_low = [arr];
     let val_high = [arr + 1];
-    %{
-        #print(f"{index=}/{ids.len}, {ids.count=}")
-        index+=1
-    %}
+    %{ index+=1 %}
     %{ memory[ap] = ids.TRUE if uint256_reverse_endian(memory[ids.arr] + 2**128 * memory[ids.arr+1]) < ids.value.low + 2**128 * ids.value.high else ids.FALSE %}
     ap += 1;
 
     if ([ap - 1] != FALSE) {
-        // Assert array[i] < value <=> value > array[i] <=> value >= array[i] + 1
-        if (val_low == val_le.low) {
-            [ap] = range_check_ptr, ap++;
-            [ap] = bitwise_ptr, ap++;
+        // Assert array[i] < value <=> array[i] <= value - 1
+        if (val_low == val_min_one_le.low) {
+            // High part match. Compare low parts.
+            assert bitwise_ptr[0].x = val_high;
+            assert bitwise_ptr[0].y = 0x00ff00ff00ff00ff00ff00ff00ff00ff;
+            tempvar word = val_high + (2 ** 16 - 1) * bitwise_ptr[0].x_and_y;
+            assert bitwise_ptr[1].x = word;
+            assert bitwise_ptr[1].y = 0x00ffff0000ffff0000ffff0000ffff00;
+            tempvar word = word + (2 ** 32 - 1) * bitwise_ptr[1].x_and_y;
+            assert bitwise_ptr[2].x = word;
+            assert bitwise_ptr[2].y = 0x00ffffffff00000000ffffffff000000;
+            tempvar word = word + (2 ** 64 - 1) * bitwise_ptr[2].x_and_y;
+            assert bitwise_ptr[3].x = word;
+            assert bitwise_ptr[3].y = 0x00ffffffffffffffff00000000000000;
+            tempvar word = word + (2 ** 128 - 1) * bitwise_ptr[3].x_and_y;
+
+            tempvar val_low = word / 2 ** (8 + 16 + 32 + 64);
+
+            assert [range_check_ptr] = val_min_one.low - val_low;
+            [ap] = range_check_ptr + 1, ap++;
+            [ap] = bitwise_ptr + 4 * BitwiseBuiltin.SIZE, ap++;
             [ap] = count + 1, ap++;
             [ap] = arr + Uint256.SIZE, ap++;
             jmp loop;
         } else {
-            [ap] = range_check_ptr, ap++;
-            [ap] = bitwise_ptr, ap++;
+            assert bitwise_ptr[0].x = val_low;
+            assert bitwise_ptr[0].y = 0x00ff00ff00ff00ff00ff00ff00ff00ff;
+            tempvar word = val_low + (2 ** 16 - 1) * bitwise_ptr[0].x_and_y;
+            assert bitwise_ptr[1].x = word;
+            assert bitwise_ptr[1].y = 0x00ffff0000ffff0000ffff0000ffff00;
+            tempvar word = word + (2 ** 32 - 1) * bitwise_ptr[1].x_and_y;
+            assert bitwise_ptr[2].x = word;
+            assert bitwise_ptr[2].y = 0x00ffffffff00000000ffffffff000000;
+            tempvar word = word + (2 ** 64 - 1) * bitwise_ptr[2].x_and_y;
+            assert bitwise_ptr[3].x = word;
+            assert bitwise_ptr[3].y = 0x00ffffffffffffffff00000000000000;
+            tempvar word = word + (2 ** 128 - 1) * bitwise_ptr[3].x_and_y;
+            tempvar val_high = word / 2 ** (8 + 16 + 32 + 64);
+            assert [range_check_ptr] = val_min_one.high - val_high;
+            [ap] = range_check_ptr + 1, ap++;
+            [ap] = bitwise_ptr + 4 * BitwiseBuiltin.SIZE, ap++;
             [ap] = count + 1, ap++;
             [ap] = arr + Uint256.SIZE, ap++;
             jmp loop;
         }
     } else {
-        // Assert array[i] <= value
+        // Assert array[i] >= value
         if (val_low == val_le.low) {
-            [ap] = range_check_ptr, ap++;
-            [ap] = bitwise_ptr, ap++;
+            // if high parts match, assert array[i]_low >= value_low.
+            // Reverse the endianness of low part.
+            assert bitwise_ptr[0].x = val_high;
+            assert bitwise_ptr[0].y = 0x00ff00ff00ff00ff00ff00ff00ff00ff;
+            tempvar word = val_high + (2 ** 16 - 1) * bitwise_ptr[0].x_and_y;
+            assert bitwise_ptr[1].x = word;
+            assert bitwise_ptr[1].y = 0x00ffff0000ffff0000ffff0000ffff00;
+            tempvar word = word + (2 ** 32 - 1) * bitwise_ptr[1].x_and_y;
+            assert bitwise_ptr[2].x = word;
+            assert bitwise_ptr[2].y = 0x00ffffffff00000000ffffffff000000;
+            tempvar word = word + (2 ** 64 - 1) * bitwise_ptr[2].x_and_y;
+            assert bitwise_ptr[3].x = word;
+            assert bitwise_ptr[3].y = 0x00ffffffffffffffff00000000000000;
+            tempvar word = word + (2 ** 128 - 1) * bitwise_ptr[3].x_and_y;
+            tempvar val_low_be = word / 2 ** (8 + 16 + 32 + 64);
+            // Asserts val_low_be >= value.low.
+            assert [range_check_ptr] = val_low_be - value.low;
+            [ap] = range_check_ptr + 1, ap++;
+            [ap] = bitwise_ptr + 4 * BitwiseBuiltin.SIZE, ap++;
             [ap] = count, ap++;
             [ap] = arr + Uint256.SIZE, ap++;
             jmp loop;
         } else {
-            [ap] = range_check_ptr, ap++;
-            [ap] = bitwise_ptr, ap++;
+            // if high parts are different, assert array[i]_high >= value_high.
+            // Reverse the endianness of high part.
+            assert bitwise_ptr[0].x = val_low;
+            assert bitwise_ptr[0].y = 0x00ff00ff00ff00ff00ff00ff00ff00ff;
+            tempvar word = val_low + (2 ** 16 - 1) * bitwise_ptr[0].x_and_y;
+            assert bitwise_ptr[1].x = word;
+            assert bitwise_ptr[1].y = 0x00ffff0000ffff0000ffff0000ffff00;
+            tempvar word = word + (2 ** 32 - 1) * bitwise_ptr[1].x_and_y;
+            assert bitwise_ptr[2].x = word;
+            assert bitwise_ptr[2].y = 0x00ffffffff00000000ffffffff000000;
+            tempvar word = word + (2 ** 64 - 1) * bitwise_ptr[2].x_and_y;
+            assert bitwise_ptr[3].x = word;
+            assert bitwise_ptr[3].y = 0x00ffffffffffffffff00000000000000;
+            tempvar word = word + (2 ** 128 - 1) * bitwise_ptr[3].x_and_y;
+            tempvar val_high_be = word / 2 ** (8 + 16 + 32 + 64);
+            assert [range_check_ptr] = val_high_be - value.high;
+
+            [ap] = range_check_ptr + 1, ap++;
+            [ap] = bitwise_ptr + 4 * BitwiseBuiltin.SIZE, ap++;
             [ap] = count, ap++;
             [ap] = arr + Uint256.SIZE, ap++;
             jmp loop;
@@ -395,7 +595,10 @@ func count_if_le{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     }
     alloc_locals;
 
+    let (local val_plus_one: Uint256, carry) = uint256_add(value, Uint256(1, 0));
+    assert carry = 0;
     let (local val_le: Uint256) = uint256_reverse_endian(value);
+    let (local val_plus_one_le: Uint256) = uint256_reverse_endian(val_plus_one);
     %{ index=0 %}
     tempvar range_check_ptr = range_check_ptr;
     tempvar bitwise_ptr = bitwise_ptr;
@@ -409,39 +612,95 @@ func count_if_le{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     jmp end if [ap] != 0, ap++;
     let val_low = [arr];
     let val_high = [arr + 1];
-    %{
-        #print(f"{index=}/{ids.len}, {ids.count=}")
-        index+=1
-    %}
+    %{ index+=1 %}
     %{ memory[ap] = ids.TRUE if uint256_reverse_endian(memory[ids.arr] + 2**128 * memory[ids.arr+1]) <= ids.value.low + 2**128 * ids.value.high else ids.FALSE %}
     ap += 1;
 
     if ([ap - 1] != FALSE) {
         // Assert array[i] <= value
         if (val_low == val_le.low) {
-            [ap] = range_check_ptr, ap++;
-            [ap] = bitwise_ptr, ap++;
+            // If high part matches, assert array[i]_low <= value_low
+            // Reverse the endianness of low part.
+            assert bitwise_ptr[0].x = val_high;
+            assert bitwise_ptr[0].y = 0x00ff00ff00ff00ff00ff00ff00ff00ff;
+            tempvar word = val_high + (2 ** 16 - 1) * bitwise_ptr[0].x_and_y;
+            assert bitwise_ptr[1].x = word;
+            assert bitwise_ptr[1].y = 0x00ffff0000ffff0000ffff0000ffff00;
+            tempvar word = word + (2 ** 32 - 1) * bitwise_ptr[1].x_and_y;
+            assert bitwise_ptr[2].x = word;
+            assert bitwise_ptr[2].y = 0x00ffffffff00000000ffffffff000000;
+            tempvar word = word + (2 ** 64 - 1) * bitwise_ptr[2].x_and_y;
+            assert bitwise_ptr[3].x = word;
+            assert bitwise_ptr[3].y = 0x00ffffffffffffffff00000000000000;
+            tempvar word = word + (2 ** 128 - 1) * bitwise_ptr[3].x_and_y;
+            tempvar val_low_be = word / 2 ** (8 + 16 + 32 + 64);
+            // Asserts val_low_be <= value.low.
+            assert [range_check_ptr] = value.low - val_low_be;
+            [ap] = range_check_ptr + 1, ap++;
+            [ap] = bitwise_ptr + 4 * BitwiseBuiltin.SIZE, ap++;
             [ap] = count + 1, ap++;
             [ap] = arr + Uint256.SIZE, ap++;
             jmp loop;
         } else {
-            [ap] = range_check_ptr, ap++;
-            [ap] = bitwise_ptr, ap++;
+            assert bitwise_ptr[0].x = val_low;
+            assert bitwise_ptr[0].y = 0x00ff00ff00ff00ff00ff00ff00ff00ff;
+            tempvar word = val_low + (2 ** 16 - 1) * bitwise_ptr[0].x_and_y;
+            assert bitwise_ptr[1].x = word;
+            assert bitwise_ptr[1].y = 0x00ffff0000ffff0000ffff0000ffff00;
+            tempvar word = word + (2 ** 32 - 1) * bitwise_ptr[1].x_and_y;
+            assert bitwise_ptr[2].x = word;
+            assert bitwise_ptr[2].y = 0x00ffffffff00000000ffffffff000000;
+            tempvar word = word + (2 ** 64 - 1) * bitwise_ptr[2].x_and_y;
+            assert bitwise_ptr[3].x = word;
+            assert bitwise_ptr[3].y = 0x00ffffffffffffffff00000000000000;
+            tempvar word = word + (2 ** 128 - 1) * bitwise_ptr[3].x_and_y;
+            tempvar val_high_be = word / 2 ** (8 + 16 + 32 + 64);
+            assert [range_check_ptr] = value.high - val_high_be;
+            [ap] = range_check_ptr + 1, ap++;
+            [ap] = bitwise_ptr + 4 * BitwiseBuiltin.SIZE, ap++;
             [ap] = count + 1, ap++;
             [ap] = arr + Uint256.SIZE, ap++;
             jmp loop;
         }
     } else {
-        // Assert array[i] <= value
-        if (val_low == val_le.low) {
-            [ap] = range_check_ptr, ap++;
-            [ap] = bitwise_ptr, ap++;
+        // Assert array[i] > value <=> array[i] >= value + 1
+        if (val_low == val_plus_one_le.low) {
+            assert bitwise_ptr[0].x = val_high;
+            assert bitwise_ptr[0].y = 0x00ff00ff00ff00ff00ff00ff00ff00ff;
+            tempvar word = val_high + (2 ** 16 - 1) * bitwise_ptr[0].x_and_y;
+            assert bitwise_ptr[1].x = word;
+            assert bitwise_ptr[1].y = 0x00ffff0000ffff0000ffff0000ffff00;
+            tempvar word = word + (2 ** 32 - 1) * bitwise_ptr[1].x_and_y;
+            assert bitwise_ptr[2].x = word;
+            assert bitwise_ptr[2].y = 0x00ffffffff00000000ffffffff000000;
+            tempvar word = word + (2 ** 64 - 1) * bitwise_ptr[2].x_and_y;
+            assert bitwise_ptr[3].x = word;
+            assert bitwise_ptr[3].y = 0x00ffffffffffffffff00000000000000;
+            tempvar word = word + (2 ** 128 - 1) * bitwise_ptr[3].x_and_y;
+            tempvar val_low_be = word / 2 ** (8 + 16 + 32 + 64);
+            assert [range_check_ptr] = val_low_be - val_plus_one.low;
+            [ap] = range_check_ptr + 1, ap++;
+            [ap] = bitwise_ptr + 4 * BitwiseBuiltin.SIZE, ap++;
             [ap] = count, ap++;
             [ap] = arr + Uint256.SIZE, ap++;
             jmp loop;
         } else {
-            [ap] = range_check_ptr, ap++;
-            [ap] = bitwise_ptr, ap++;
+            assert bitwise_ptr[0].x = val_low;
+            assert bitwise_ptr[0].y = 0x00ff00ff00ff00ff00ff00ff00ff00ff;
+            tempvar word = val_low + (2 ** 16 - 1) * bitwise_ptr[0].x_and_y;
+            assert bitwise_ptr[1].x = word;
+            assert bitwise_ptr[1].y = 0x00ffff0000ffff0000ffff0000ffff00;
+            tempvar word = word + (2 ** 32 - 1) * bitwise_ptr[1].x_and_y;
+            assert bitwise_ptr[2].x = word;
+            assert bitwise_ptr[2].y = 0x00ffffffff00000000ffffffff000000;
+            tempvar word = word + (2 ** 64 - 1) * bitwise_ptr[2].x_and_y;
+            assert bitwise_ptr[3].x = word;
+            assert bitwise_ptr[3].y = 0x00ffffffffffffffff00000000000000;
+            tempvar word = word + (2 ** 128 - 1) * bitwise_ptr[3].x_and_y;
+            tempvar val_high_be = word / 2 ** (8 + 16 + 32 + 64);
+            assert [range_check_ptr] = val_high_be - val_plus_one.high;
+            [ap] = range_check_ptr + 1, ap++;
+            [ap] = bitwise_ptr + 4 * BitwiseBuiltin.SIZE, ap++;
             [ap] = count, ap++;
             [ap] = arr + Uint256.SIZE, ap++;
             jmp loop;

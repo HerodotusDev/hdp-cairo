@@ -6,13 +6,14 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from src.hdp.tasks.aggregate_functions.count_if import count_if
 from starkware.cairo.common.uint256 import uint256_reverse_endian, Uint256
 
+const TEST_ARRAY_SIZE = 16;
+const N_TESTS = 1000;
 func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
     alloc_locals;
     let (local arrs: felt**) = alloc();
     let (local ops: felt*) = alloc();
     let (local values: felt*) = alloc();
     let (local expected: felt*) = alloc();
-    local n_tests = 100;
     %{
         from tools.py.utils import uint256_reverse_endian, from_uint256, split_128, flatten
         import random
@@ -54,12 +55,22 @@ func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
         ops = []
         values = []
         expected = []
-        for i in range(ids.n_tests):
+        for i in range(ids.N_TESTS):
             op = random.choice(list(COUNTIFOP))
             ops.append(op.value)
-            arr=[random.randint(0, 32) for _ in range(64)]
+            if i % 2 == 0:
+                arr=[random.randint(0, 8) for _ in range(ids.TEST_ARRAY_SIZE)]
+                value = random.randint(0, 8)
+
+            else:
+                if i % 3 == 0:
+                    arr=[random.randint(2**128, 2**256-1) for _ in range(ids.TEST_ARRAY_SIZE)]
+                    value = random.randint(2**128, 2**256-1)
+                else:
+                    arr=[random.randint(0, 2**256-1) for _ in range(ids.TEST_ARRAY_SIZE)]
+                    value = random.choice(arr)
+
             arrs.append(flatten([split_128(uint256_reverse_endian(x)) for x in arr]))
-            value = random.randint(0, 32)
             values.extend(split_128(value))
             expected.append(count_if(arr, op, value))
 
@@ -68,7 +79,7 @@ func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
         segments.write_arg(ids.values, values)
         segments.write_arg(ids.expected, expected)
     %}
-    test_count_if(cast(arrs, Uint256**), ops, cast(values, Uint256*), expected, 0, n_tests);
+    test_count_if(cast(arrs, Uint256**), ops, cast(values, Uint256*), expected, 0, N_TESTS);
     return ();
 }
 
@@ -86,8 +97,8 @@ func test_count_if{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
 func test_count_if_inner{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     arr: Uint256*, op: felt, value: Uint256, expected: felt
 ) {
-    let (res) = count_if(arr, 64, op, value);
-    %{ print(f"{ids.res=}, {ids.expected=}") %}
+    let (res) = count_if(arr, TEST_ARRAY_SIZE, op, value);
+    // %{ print(f"{ids.res=}, {ids.expected=}") %}
     assert res = expected;
     return ();
 }
