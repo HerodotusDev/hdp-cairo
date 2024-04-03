@@ -37,8 +37,8 @@ func count_if{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     array: Uint256*, len: felt, op: felt, value: Uint256
 ) -> (res: felt) {
     alloc_locals;
-    %{ from tools.py.utils import uint256_reverse_endian %}
     %{
+        from tools.py.utils import uint256_reverse_endian
         #print(f"{COUNTIFOP(ids.op)}")
         #print(f"value={ids.value.low + 2**128* ids.value.high}")
     %}

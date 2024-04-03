@@ -9,7 +9,10 @@ from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
 
 // Verifiers:
 from src.hdp.verifiers.account_verifier import populate_account_segments, verify_n_accounts
-from src.hdp.verifiers.storage_item_verifier import populate_storage_item_segments, verify_n_storage_items
+from src.hdp.verifiers.storage_item_verifier import (
+    populate_storage_item_segments,
+    verify_n_storage_items,
+)
 from src.hdp.verifiers.header_verifier import verify_headers_inclusion
 from src.hdp.verifiers.mmr_verifier import verify_mmr_meta
 

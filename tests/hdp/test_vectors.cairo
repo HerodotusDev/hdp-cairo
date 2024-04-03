@@ -3,8 +3,12 @@ from starkware.cairo.common.alloc import alloc
 from src.hdp.types import BlockSampledDataLake, BlockSampledComputationalTask
 
 namespace BlockSampledDataLakeMocker {
-    
-    func get_header_property() -> (datalake_input: felt*, datalake_input_bytes_len: felt, datalake: BlockSampledDataLake, property_type: felt) {
+    func get_header_property() -> (
+        datalake_input: felt*,
+        datalake_input_bytes_len: felt,
+        datalake: BlockSampledDataLake,
+        property_type: felt,
+    ) {
         alloc_locals;
 
         let (datalake_input: felt*) = alloc();
@@ -25,15 +29,15 @@ namespace BlockSampledDataLakeMocker {
             segments.write_arg(ids.datalake_input, datalake_input)
         %}
 
-        return (
-            datalake_input,
-            datalake_bytes_len,
-            datalake,
-            1
-        );
+        return (datalake_input, datalake_bytes_len, datalake, 1);
     }
 
-    func get_account_property() -> (datalake_input: felt*, datalake_input_bytes_len: felt, datalake: BlockSampledDataLake, property_type: felt) {
+    func get_account_property() -> (
+        datalake_input: felt*,
+        datalake_input_bytes_len: felt,
+        datalake: BlockSampledDataLake,
+        property_type: felt,
+    ) {
         alloc_locals;
 
         let (datalake_input) = alloc();
@@ -54,15 +58,15 @@ namespace BlockSampledDataLakeMocker {
             segments.write_arg(ids.datalake_input, datalake_input)
         %}
 
-        return (
-            datalake_input,
-            datalake_bytes_len,
-            datalake,
-            2
-        );
+        return (datalake_input, datalake_bytes_len, datalake, 2);
     }
 
-    func get_storage_property() -> (datalake_input: felt*, datalake_input_bytes_len: felt, datalake: BlockSampledDataLake, property_type: felt) {
+    func get_storage_property() -> (
+        datalake_input: felt*,
+        datalake_input_bytes_len: felt,
+        datalake: BlockSampledDataLake,
+        property_type: felt,
+    ) {
         alloc_locals;
 
         let (datalake_input) = alloc();
@@ -83,23 +87,18 @@ namespace BlockSampledDataLakeMocker {
             segments.write_arg(ids.datalake_input, datalake_input)
         %}
 
-        return (
-            datalake_input,
-            datalake_bytes_len,
-            datalake,
-            3
-        );
+        return (datalake_input, datalake_bytes_len, datalake, 3);
     }
 }
 
 namespace BlockSampledTaskMocker {
     func get_account_task() -> (
-        tasks: BlockSampledComputationalTask*, 
-        tasks_inputs: felt**, 
-        tasks_bytes_len: felt*, 
-        datalakes_inputs: felt**, 
+        tasks: BlockSampledComputationalTask*,
+        tasks_inputs: felt**,
+        tasks_bytes_len: felt*,
+        datalakes_inputs: felt**,
         datalakes_bytes_len: felt*,
-        n_tasks: felt
+        n_tasks: felt,
     ) {
         alloc_locals;
 
@@ -108,7 +107,9 @@ namespace BlockSampledTaskMocker {
             block_sampled_tasks = [{'property_type': 2 }]
         %}
 
-        let (account_input, account_input_bytes_len, account_expected_datalake, _) = BlockSampledDataLakeMocker.get_account_property();
+        let (
+            account_input, account_input_bytes_len, account_expected_datalake, _
+        ) = BlockSampledDataLakeMocker.get_account_property();
 
         let (datalakes_inputs: felt**) = alloc();
         let (datalakes_bytes_len: felt*) = alloc();
@@ -116,11 +117,14 @@ namespace BlockSampledTaskMocker {
         assert [datalakes_bytes_len] = account_input_bytes_len;
 
         let task = BlockSampledComputationalTask(
-            aggregate_fn_id=0, //avg
-            hash=Uint256(low=158898310564618704562379562851344787004, high=106587905216569571485640678560526641216),
-            datalake=account_expected_datalake
+            aggregate_fn_id=0,
+            hash=Uint256(
+                low=158898310564618704562379562851344787004,
+                high=106587905216569571485640678560526641216,
+            ),
+            datalake=account_expected_datalake,
         );
-        
+
         let (tasks: BlockSampledComputationalTask*) = alloc();
         assert [tasks] = task;
 
@@ -134,17 +138,12 @@ namespace BlockSampledTaskMocker {
             segments.write_arg(ids.tasks_bytes_len, tasks_bytes_len)
         %}
 
-        return (
-            tasks,
-            tasks_inputs,
-            tasks_bytes_len,
-            datalakes_inputs,
-            datalakes_bytes_len,
-            1
-        );
+        return (tasks, tasks_inputs, tasks_bytes_len, datalakes_inputs, datalakes_bytes_len, 1);
     }
 
-    func get_avg_params() -> (input: felt*, hash_low: felt, hash_high: felt, aggregate_fn_id: felt) {
+    func get_avg_params() -> (
+        input: felt*, hash_low: felt, hash_high: felt, aggregate_fn_id: felt
+    ) {
         let (params) = alloc();
         %{
             avg_param = [0x7b57a805b1991c7e,0xa25f1b72f077813f,0x8c59e10a5510fa64,0xca0ed388358a01bf,0x677661,0x0,0x0,0x0,0x0,0x0,0x0,0x6000000000000000,0x0,0x0,0x0,0x0]
@@ -157,7 +156,9 @@ namespace BlockSampledTaskMocker {
 
         return (params, datalake_hash_low, datalake_hash_high, aggregate_fn_id);
     }
-    func get_sum_params() -> (input: felt*, hash_low: felt, hash_high: felt, aggregate_fn_id: felt) {
+    func get_sum_params() -> (
+        input: felt*, hash_low: felt, hash_high: felt, aggregate_fn_id: felt
+    ) {
         let (params) = alloc();
         %{
             avg_param = [0x7b57a805b1991c7e,0xa25f1b72f077813f,0x8c59e10a5510fa64,0xca0ed388358a01bf,0x6d7573,0x0,0x0,0x0,0x0,0x0,0x0,0x6000000000000000,0x0,0x0,0x0,0x0]
@@ -171,7 +172,9 @@ namespace BlockSampledTaskMocker {
         return (params, datalake_hash_low, datalake_hash_high, aggregate_fn_id);
     }
 
-    func get_min_params() -> (input: felt*, hash_low: felt, hash_high: felt, aggregate_fn_id: felt) {
+    func get_min_params() -> (
+        input: felt*, hash_low: felt, hash_high: felt, aggregate_fn_id: felt
+    ) {
         let (params) = alloc();
         %{
             avg_param = [0xed3d140441724ef1, 0x90fec1bdd5a2342a, 0x43c796f33033209a, 0xd9c318e200d6db8f, 0x6e696d, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x6000000000000000, 0x0, 0x0, 0x0, 0x0]
@@ -185,7 +188,9 @@ namespace BlockSampledTaskMocker {
         return (params, datalake_hash_low, datalake_hash_high, aggregate_fn_id);
     }
 
-    func get_max_params() -> (input: felt*, hash_low: felt, hash_high: felt, aggregate_fn_id: felt) {
+    func get_max_params() -> (
+        input: felt*, hash_low: felt, hash_high: felt, aggregate_fn_id: felt
+    ) {
         let (params) = alloc();
         %{
             avg_param = [0xed3d140441724ef1, 0x90fec1bdd5a2342a, 0x43c796f33033209a, 0xd9c318e200d6db8f, 0x78616d, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x6000000000000000, 0x0, 0x0, 0x0, 0x0]
@@ -199,7 +204,3 @@ namespace BlockSampledTaskMocker {
         return (params, datalake_hash_low, datalake_hash_high, aggregate_fn_id);
     }
 }
-
-
-
-

@@ -12,7 +12,7 @@ CAIRO_PROGRAMS_FOLDERS = [
     "src/batch_storage_proof",
     "src/hdp",
     "src/hdp/datalakes",
-    "src/hdp/tasks"
+    "src/hdp/tasks",
 ]
 
 BUILD_DIR = "build"
@@ -188,7 +188,7 @@ class CairoRunner:
             # Skip the vectors test file.
             if test_file == "tests/hdp/test_vectors.cairo":
                 continue
-            
+
             # if test_file != "tests/hdp/decode_values.cairo":
             #     continue
 

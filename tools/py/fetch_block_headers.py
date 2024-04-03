@@ -17,7 +17,9 @@ RPC_BATCH_MAX_SIZE = 1450
 
 def fetch_blocks_from_rpc_no_async(
     range_from: int, range_till: int, rpc_url: str, delay=0.1
-) -> List[Union[BlockHeader, BlockHeaderEIP1559, BlockHeaderShangai, BlockHeaderDencun]]:
+) -> List[
+    Union[BlockHeader, BlockHeaderEIP1559, BlockHeaderShangai, BlockHeaderDencun]
+]:
     """
     # Fetches blocks from RPC in batches of RPC_BATCH_MAX_SIZE
     # Returns a list of block headers

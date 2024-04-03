@@ -5,10 +5,9 @@ from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256s
 
 // ToDo: deprecate
-func keccak_hash_array_to_uint256{
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*
-} (elements: felt*, elements_len: felt) -> Uint256 {
+func keccak_hash_array_to_uint256{bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    elements: felt*, elements_len: felt
+) -> Uint256 {
     assert elements_len = 4;
 
     let low_1 = elements[1];
@@ -16,10 +15,7 @@ func keccak_hash_array_to_uint256{
     let high_1 = elements[3];
     let high_2 = elements[2];
 
-    let result = Uint256(
-        low=low_1 * pow2_array[64] + low_2,
-        high=high_1 * pow2_array[64] + high_2
-    );
+    let result = Uint256(low=low_1 * pow2_array[64] + low_2, high=high_1 * pow2_array[64] + high_2);
     return result;
 }
 
@@ -30,10 +26,8 @@ func keccak_hash_array_to_uint256{
 // Outputs:
 // - the result entry
 func compute_results_entry{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
-} (task_hash: Uint256, result: Uint256) -> Uint256 {
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
+}(task_hash: Uint256, result: Uint256) -> Uint256 {
     alloc_locals;
 
     // before hashing we need to reverse the endianness
@@ -48,14 +42,8 @@ func compute_results_entry{
 
     // convert to felts
     keccak_add_uint256s{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        inputs=values_felt
-    }(
-        n_elements=2,
-        elements=values_uint,
-        bigend=0
-    );
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, inputs=values_felt
+    }(n_elements=2, elements=values_uint, bigend=0);
 
     let (res_id) = keccak(values_felt_start, 64);
 

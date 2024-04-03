@@ -6,3 +6,4 @@ python-dotenv
 pysha3
 web3
 trie
+black

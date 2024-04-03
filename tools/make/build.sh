@@ -12,18 +12,23 @@ process_cairo_file() {
         echo "Compiling $cairo_file using cairo-compile ..."
         cairo-compile "$cairo_file" --output "build/compiled_cairo_files/$filename.json"
     fi
+    local status=$?
+    if [ $status -eq 0 ]; then
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - Successfully compiled $1"
+    else
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - Failed to compile $1"
+        return $status
+    fi
 }
 
-cairo_files=$(find ./src -name "*.cairo")
+export -f process_cairo_file
 
-for cairo_file in $cairo_files
-do
-    process_cairo_file "$cairo_file"
-done
+# Use --halt now,fail=1 to return non-zero if any task fails
+find ./src ./tests/cairo_programs -name "*.cairo" | parallel --halt now,fail=1 process_cairo_file
 
-cairo_files=$(find ./tests/cairo_programs -name "*.cairo")
+# Capture the exit status of parallel
+exit_status=$?
 
-for cairo_file in $cairo_files
-do
-    process_cairo_file "$cairo_file"
-done
+# Exit with the captured status
+echo "Parallel execution exited with status: $exit_status"
+exit $exit_status

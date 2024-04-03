@@ -486,19 +486,16 @@ func bag_peaks{
 // - peaks_len: the number of peaks to hash together
 // Returns:
 // - bag_peaks_poseidon: Poseidon(peak1, Poseidon(peak2, Poseidon(peak3, ...)))
-func bag_peaks_poseidon{
-    range_check_ptr,
-    poseidon_ptr: PoseidonBuiltin*,
-}(peaks_poseidon: felt*, peaks_len: felt) -> (
-    bag_peaks_poseidon: felt
-) {
+func bag_peaks_poseidon{range_check_ptr, poseidon_ptr: PoseidonBuiltin*}(
+    peaks_poseidon: felt*, peaks_len: felt
+) -> (bag_peaks_poseidon: felt) {
     alloc_locals;
 
     let current_peak = [peaks_poseidon];
 
     assert_le(1, peaks_len);
     if (peaks_len == 1) {
-        return (current_peak, );
+        return (current_peak,);
     }
 
     let (rec_poseidon) = bag_peaks_poseidon(peaks_poseidon + 1, peaks_len - 1);
@@ -514,12 +511,9 @@ func bag_peaks_poseidon{
 // - peaks_len: the number of peaks to hash together
 // Returns:
 // - mmr_root: Poseidon(mmr_size, Poseidon(peak1, Poseidon(peak2, Poseidon(peak3, ...))))
-func mmr_root_poseidon{
-    range_check_ptr,
-    poseidon_ptr: PoseidonBuiltin*,
-} (peaks_poseidon: felt*, mmr_size: felt, peaks_len: felt) -> (
-    mmr_root: felt
-) {
+func mmr_root_poseidon{range_check_ptr, poseidon_ptr: PoseidonBuiltin*}(
+    peaks_poseidon: felt*, mmr_size: felt, peaks_len: felt
+) -> (mmr_root: felt) {
     let (bag_peak) = bag_peaks_poseidon(peaks_poseidon, peaks_len);
     let (root) = poseidon_hash(mmr_size, bag_peak);
     return (mmr_root=root);
@@ -534,33 +528,26 @@ func mmr_root_poseidon{
 // - inclusion_proof_len: felt - the length of the inclusion_proof
 // Returns:
 // - peak: felt - the root of the subtree, which should be a peak in the MMR if valid
-func hash_subtree_path{
-    range_check_ptr,
-    poseidon_ptr: PoseidonBuiltin*,
-    pow2_array: felt*,
-}(
-    element: felt,
-    height: felt,
-    position: felt,
-    inclusion_proof: felt*,
-    inclusion_proof_len: felt,
+func hash_subtree_path{range_check_ptr, poseidon_ptr: PoseidonBuiltin*, pow2_array: felt*}(
+    element: felt, height: felt, position: felt, inclusion_proof: felt*, inclusion_proof_len: felt
 ) -> (peak: felt) {
     alloc_locals;
     if (inclusion_proof_len == 0) {
         return (peak=element);
-    } 
-    
+    }
+
     let position_height = compute_height_pre_alloc_pow2(position);
     let next_height = compute_height_pre_alloc_pow2(position + 1);
-    if (next_height == position_height + 1) { 
+    if (next_height == position_height + 1) {
         // element is the right child
         let (element) = poseidon_hash([inclusion_proof], element);
 
+        // since we are the right child, we only increment for the next iteration
         return hash_subtree_path(
             element,
             height + 1,
-            position + 1, // since we are the right child, we only increment for the next iteration
-            inclusion_proof= inclusion_proof + 1,
+            position + 1,
+            inclusion_proof=inclusion_proof + 1,
             inclusion_proof_len=inclusion_proof_len - 1,
         );
     } else {
@@ -568,12 +555,13 @@ func hash_subtree_path{
         let (element) = poseidon_hash(element, [inclusion_proof]);
 
         tempvar element = element;
-        tempvar position = position + pow2_array[height + 1]; // since we are the left child, we need to derive the next position
+        tempvar position = position + pow2_array[height + 1];  // since we are the left child, we need to derive the next position
+
         return hash_subtree_path(
             element,
             height + 1,
             position,
-            inclusion_proof= inclusion_proof + 1,
+            inclusion_proof=inclusion_proof + 1,
             inclusion_proof_len=inclusion_proof_len - 1,
         );
     }

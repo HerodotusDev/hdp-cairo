@@ -6,46 +6,31 @@ from tests.hdp.test_vectors import BlockSampledTaskMocker
 from src.hdp.merkle import compute_tasks_root, compute_results_root, hash_pair, compute_merkle_root
 from src.hdp.utils import compute_results_entry
 
-func main{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
-}() {
-    
+func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}() {
     computes_output_roots{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        keccak_ptr=keccak_ptr,
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
     }();
     hash_pair_sorting{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        keccak_ptr=keccak_ptr,
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
     }();
 
     compute_merkle_root_test{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        keccak_ptr=keccak_ptr,
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
     }();
 
     return ();
 }
 
 func computes_output_roots{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
 }() {
     alloc_locals;
 
-    let (tasks,_,_,_,_,tasks_len) = BlockSampledTaskMocker.get_account_task();
+    let (tasks, _, _, _, _, tasks_len) = BlockSampledTaskMocker.get_account_task();
 
     let tasks_root = compute_tasks_root{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        keccak_ptr=keccak_ptr,
-    } (tasks, tasks_len);
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
+    }(tasks, tasks_len);
 
     assert tasks_root.low = 25249885786962326550128618884562747073;
     assert tasks_root.high = 303705675233408676159998938613428017230;
@@ -56,7 +41,6 @@ func computes_output_roots{
     assert results_entry.low = 52590437381030883083081982142525279579;
     assert results_entry.high = 305080544191682781037295485062205375969;
 
-
     let (results: Uint256*) = alloc();
     assert [results] = result;
 
@@ -65,15 +49,11 @@ func computes_output_roots{
     assert results_root.low = 328630078149447953936045244953643482176;
     assert results_root.high = 260038522591081060757806935135508368687;
 
-
-    return (); 
+    return ();
 }
 
-func hash_pair_sorting{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
-}() {
+func hash_pair_sorting{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(
+    ) {
     alloc_locals;
 
     let a = Uint256(low=100, high=0);
@@ -97,9 +77,7 @@ func hash_pair_sorting{
 }
 
 func compute_merkle_root_test{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
 }() {
     alloc_locals;
 
@@ -150,7 +128,6 @@ func compute_merkle_root_test{
     let root_five = compute_merkle_root(leafs, 5);
     assert root_five.high = 0x76a558f4880fd37907a3c306516dcb3e;
     assert root_five.low = 0x680616d84e8950d8050923bdd6ee51a7;
-
 
     return ();
 }

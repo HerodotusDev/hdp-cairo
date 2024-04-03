@@ -24,6 +24,10 @@ test-hdp:
 	@echo "Run all tests in tests/cairo_programs" 
 	./tools/make/launch_cairo_files.py -test_hdp
 
+format-cairo:
+	@echo "Format all .cairo files"
+	./tools/make/format_cairo_files.sh
+
 run-pie:
 	@echo "A script to select, compile & run one Cairo file"
 	@echo "Outputs a cairo PIE object"
