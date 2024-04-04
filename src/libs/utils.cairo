@@ -3,13 +3,20 @@ from starkware.cairo.common.registers import get_label_location
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.dict import dict_write
-from starkware.cairo.common.uint256 import Uint256, SHIFT
+from starkware.cairo.common.uint256 import (
+    Uint256,
+    SHIFT,
+    word_reverse_endian,
+    uint256_reverse_endian,
+    ALL_ONES,
+)
 from starkware.cairo.common.registers import get_fp_and_pc
 
 const DIV_32 = 2 ** 32;
 const DIV_32_MINUS_1 = DIV_32 - 1;
 
-// Fast version of common.uint256.uint256_add.
+// Adds two integers. Returns the result as a 256-bit integer and the (1-bit) carry.
+// Strictly equivalent and faster version of common.uint256.uint256_add using the same whitelisted hint.
 func uint256_add{range_check_ptr}(a: Uint256, b: Uint256) -> (res: Uint256, carry: felt) {
     alloc_locals;
     local carry_low: felt;
@@ -48,6 +55,53 @@ func uint256_add{range_check_ptr}(a: Uint256, b: Uint256) -> (res: Uint256, carr
             assert [range_check_ptr - 2] = res.low;
             assert [range_check_ptr - 1] = res.high;
             return (res, 0);
+        }
+    }
+}
+
+// Subtracts two integers. Returns the result as a 256-bit integer.
+// Strictly equivalent and faster version of common.uint256.uint256_sub using uint256_add's whitelisted hint.
+func uint256_sub{range_check_ptr}(a: Uint256, b: Uint256) -> (res: Uint256) {
+    alloc_locals;
+    // Reference "b" as -b.
+    local b: Uint256 = Uint256(ALL_ONES - b.low + 1, ALL_ONES - b.high);
+    // Computes a + (-b)
+    local carry_low: felt;
+    local carry_high: felt;
+    %{
+        sum_low = ids.a.low + ids.b.low
+        ids.carry_low = 1 if sum_low >= ids.SHIFT else 0
+        sum_high = ids.a.high + ids.b.high + ids.carry_low
+        ids.carry_high = 1 if sum_high >= ids.SHIFT else 0
+    %}
+
+    if (carry_low != 0) {
+        if (carry_high != 0) {
+            tempvar range_check_ptr = range_check_ptr + 2;
+            tempvar res = Uint256(low=a.low + b.low - SHIFT, high=a.high + b.high + 1 - SHIFT);
+            assert [range_check_ptr - 2] = res.low;
+            assert [range_check_ptr - 1] = res.high;
+            return (res,);
+        } else {
+            tempvar range_check_ptr = range_check_ptr + 2;
+            tempvar res = Uint256(low=a.low + b.low - SHIFT, high=a.high + b.high + 1);
+            assert [range_check_ptr - 2] = res.low;
+            assert [range_check_ptr - 1] = res.high;
+            return (res,);
+        }
+    } else {
+        if (carry_high != 0) {
+            tempvar range_check_ptr = range_check_ptr + 2;
+            tempvar res = Uint256(low=a.low + b.low, high=a.high + b.high - SHIFT);
+            assert [range_check_ptr - 2] = res.low;
+            assert [range_check_ptr - 1] = res.high;
+            return (res,);
+        } else {
+            tempvar range_check_ptr = range_check_ptr + 2;
+            tempvar res = Uint256(low=a.low + b.low, high=a.high + b.high);
+            assert [range_check_ptr - 2] = res.low;
+            assert [range_check_ptr - 1] = res.high;
+            return (res,);
         }
     }
 }

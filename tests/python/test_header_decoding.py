@@ -1,7 +1,19 @@
 from tools.py.fetch_block_headers import fetch_blocks_from_rpc_no_async
-from tools.py.block_header import BlockHeader, BlockHeaderEIP1559, BlockHeaderShangai, BlockHeaderDencun
+from tools.py.block_header import (
+    BlockHeader,
+    BlockHeaderEIP1559,
+    BlockHeaderShangai,
+    BlockHeaderDencun,
+)
 from starkware.cairo.common.poseidon_hash import poseidon_hash_many, poseidon_hash
-from tools.py.utils import bytes_to_8_bytes_chunks, bytes_to_8_bytes_chunks_little, split_128, reverse_endian_256, reverse_endian_bytes, reverse_and_split_256_bytes
+from tools.py.utils import (
+    bytes_to_8_bytes_chunks,
+    bytes_to_8_bytes_chunks_little,
+    split_128,
+    uint256_reverse_endian,
+    reverse_endian_bytes,
+    reverse_and_split_256_bytes,
+)
 from dotenv import load_dotenv
 import os
 import math
@@ -17,11 +29,15 @@ RPC_URL = (
 )
 RPC_URL = "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"
 
+
 def fetch_header(block_number):
     blocks = fetch_blocks_from_rpc_no_async(block_number + 1, block_number - 1, RPC_URL)
     block = blocks[1]
-    assert block.number == block_number, f"Block number mismatch {block.number} != {block_number}"
+    assert (
+        block.number == block_number
+    ), f"Block number mismatch {block.number} != {block_number}"
     return block
+
 
 def fetch_header_dict(block_number):
     block = fetch_header(block_number)
@@ -32,7 +48,7 @@ def fetch_header_dict(block_number):
         "rlp": rlp,
         "bloom": bloom,
     }
-   
+
     # LE
     (low, high) = reverse_and_split_256_bytes(block.parentHash)
     block_dict["parent_hash"] = {"low": low, "high": high}
@@ -60,7 +76,7 @@ def fetch_header_dict(block_number):
     block_dict["extra_data"] = {
         "bytes": bytes_to_8_bytes_chunks_little(block.extraData),
         "bytes_len": len(block.extraData),
-        "len": math.ceil(len(block.extraData) / 8)
+        "len": math.ceil(len(block.extraData) / 8),
     }
 
     (low, high) = reverse_and_split_256_bytes(block.mixHash)
@@ -79,7 +95,7 @@ def fetch_header_dict(block_number):
 
     if block_dict["type"] >= 1:
         block_dict["base_fee_per_gas"] = block.baseFeePerGas
-    
+
     if block_dict["type"] >= 2:
         (low, high) = reverse_and_split_256_bytes(block.withdrawalsRoot)
         block_dict["withdrawls_root"] = {"low": low, "high": high}
