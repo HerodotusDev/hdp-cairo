@@ -108,13 +108,13 @@ func compute_merkle_root_test{
     %{
         from tools.py.utils import (
             split_128,
-            reverse_endian_256,
+            uint256_reverse_endian,
         )
 
         # converts values to little endian and writes them to memory.
         def write_vals(ptr, values):
             for (i, value) in enumerate(values):
-                reversed_value = reverse_endian_256(value)
+                reversed_value = uint256_reverse_endian(value)
                 (low, high) = split_128(reversed_value)
                 memory[ptr._reference_value + i * 2] = low
                 memory[ptr._reference_value + i * 2 + 1] = high

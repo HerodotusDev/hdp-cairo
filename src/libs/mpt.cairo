@@ -11,7 +11,7 @@ from src.libs.rlp_little import (
     assert_subset_in_key,
     extract_nibble_from_key,
 )
-from src.libs.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64
+from src.libs.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64, get_felt_bitlength
 
 // Verify a Merkle Patricia Tree proof.
 // params:

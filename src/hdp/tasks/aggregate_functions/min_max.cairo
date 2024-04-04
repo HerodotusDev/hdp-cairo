@@ -161,13 +161,13 @@ func uint256_min_le{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     local min_index: felt;
     local array: felt* = cast(uint256_array, felt*);
     %{
-        from tools.py.utils import reverse_endian_256
+        from tools.py.utils import uint256_reverse_endian
         array = []
         index=0
         for i in range(ids.len):
             array.append(memory[ids.array+index+i] + memory[ids.array+index+i+1] * 2**128)
             index+=1
-        array = [reverse_endian_256(x) for x in array]
+        array = [uint256_reverse_endian(x) for x in array]
         min_index, min_value = min(enumerate(array), key=lambda x: x[1])
         ids.min_index = min_index
     %}
@@ -268,13 +268,13 @@ func uint256_max_le{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     local max_index: felt;
     local array: felt* = cast(uint256_array, felt*);
     %{
-        from tools.py.utils import reverse_endian_256
+        from tools.py.utils import uint256_reverse_endian
         array = []
         index=0
         for i in range(ids.len):
             array.append(memory[ids.array+index+i] + memory[ids.array+index+i+1] * 2**128)
             index+=1
-        array = [reverse_endian_256(x) for x in array]
+        array = [uint256_reverse_endian(x) for x in array]
         max_index, max_value = max(enumerate(array), key=lambda x: x[1])
         ids.max_index = max_index
     %}

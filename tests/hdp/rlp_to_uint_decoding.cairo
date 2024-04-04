@@ -20,7 +20,6 @@ func main{
         from tools.py.utils import (
             bytes_to_8_bytes_chunks_little,
             split_128,
-            reverse_endian_256,
             reverse_endian,
             bytes_to_8_bytes_chunks,
         )

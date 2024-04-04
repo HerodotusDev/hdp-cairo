@@ -19,7 +19,7 @@ func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
     local len;
 
     %{
-        from tools.py.utils import reverse_endian_256, from_uint256, split_128
+        from tools.py.utils import uint256_reverse_endian, from_uint256, split_128
         import random
         arr = [random.randint(0, 2**256-1) for _ in range(3)]
         arr.append(min(arr)+1)
@@ -48,7 +48,7 @@ func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
     let (local arr_le: felt*) = alloc();
 
     %{
-        arr_le = [split_128(reverse_endian_256(from_uint256(x))) for x in arr_be]
+        arr_le = [split_128(uint256_reverse_endian(from_uint256(x))) for x in arr_be]
         write_uint256_array(ids.arr_le, arr_le)
     %}
 
