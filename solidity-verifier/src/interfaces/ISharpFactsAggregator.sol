@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
+/// @notice Interface for the SharpFactsAggregator.
 interface ISharpFactsAggregator {
     struct AggregatorState {
         bytes32 poseidonMmrRoot;

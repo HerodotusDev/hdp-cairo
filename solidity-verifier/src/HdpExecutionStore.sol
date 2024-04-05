@@ -9,11 +9,20 @@ import {ISharpFactsAggregator} from "./interfaces/ISharpFactsAggregator.sol";
 import {IAggregatorsFactory} from "./interfaces/IAggregatorsFactory.sol";
 
 import {BlockSampledDatalake, BlockSampledDatalakeCodecs} from "./datatypes/BlockSampledDatalakeCodecs.sol";
-import {
-    IterativeDynamicLayoutDatalake,
-    IterativeDynamicLayoutDatalakeCodecs
-} from "./datatypes/IterativeDynamicLayoutDatalakeCodecs.sol";
+import {IterativeDynamicLayoutDatalake} from "./datatypes/IterativeDynamicLayoutDatalakeCodecs.sol";
+import {IterativeDynamicLayoutDatalakeCodecs} from "./datatypes/IterativeDynamicLayoutDatalakeCodecs.sol";
 import {ComputationalTask, ComputationalTaskCodecs} from "./datatypes/ComputationalTaskCodecs.sol";
+
+/// Caller is not authorized to perform the action
+error Unauthorized();
+/// Task is already registered
+error DoubleRegistration();
+/// Fact doesn't exist in the registry
+error InvalidFact();
+/// Element is not in the batch
+error NotInBatch();
+/// Task is not finalized
+error NotFinalized();
 
 /// @title HdpExecutionStore
 /// @author Herodotus Dev
@@ -70,7 +79,7 @@ contract HdpExecutionStore is AccessControl {
 
     /// @notice Reverts if the caller is not an operator
     modifier onlyOperator() {
-        require(hasRole(OPERATOR_ROLE, _msgSender()), "Caller is not an operator");
+        if (!hasRole(OPERATOR_ROLE, _msgSender())) revert Unauthorized();
         _;
     }
 
@@ -95,9 +104,9 @@ contract HdpExecutionStore is AccessControl {
         bytes32 taskCommitment = computationalTask.commit(datalakeCommitment);
 
         // Ensure task is not already scheduled
-        require(
-            cachedTasksResult[taskCommitment].status == TaskStatus.NONE, "HreExecutionStore: task is already scheduled"
-        );
+        if (cachedTasksResult[taskCommitment].status != TaskStatus.NONE) {
+            revert DoubleRegistration();
+        }
 
         // Store the task result
         cachedTasksResult[taskCommitment] = TaskResult({status: TaskStatus.SCHEDULED, result: ""});
@@ -111,10 +120,10 @@ contract HdpExecutionStore is AccessControl {
     /// @param usedMmrSize The size of the MMR used to compute task
     /// @param batchResultsMerkleRootLow The low 128 bits of the results Merkle root
     /// @param batchResultsMerkleRootHigh The high 128 bits of the results Merkle root
-    /// @param scheduledTasksBatchMerkleRootLow The low 128 bits of the tasks Merkle root
-    /// @param scheduledTasksBatchMerkleRootHigh The high 128 bits of the tasks Merkle root
-    /// @param batchInclusionMerkleProofOfTasks The Merkle proof of the tasks
-    /// @param batchInclusionMerkleProofOfResults The Merkle proof of the results
+    /// @param batchTasksMerkleRootLow The low 128 bits of the tasks Merkle root
+    /// @param batchTasksMerkleRootHigh The high 128 bits of the tasks Merkle root
+    /// @param batchInclusionProofsOfTasks The Merkle proof of the tasks
+    /// @param batchInclusionProofsOfResults The Merkle proof of the results
     /// @param computationalTasksResult The result of the computational tasks
     /// @param taskCommitments The commitment of the tasks
     function authenticateTaskExecution(
@@ -122,10 +131,10 @@ contract HdpExecutionStore is AccessControl {
         uint256 usedMmrSize,
         uint128 batchResultsMerkleRootLow,
         uint128 batchResultsMerkleRootHigh,
-        uint128 scheduledTasksBatchMerkleRootLow,
-        uint128 scheduledTasksBatchMerkleRootHigh,
-        bytes32[][] memory batchInclusionMerkleProofOfTasks,
-        bytes32[][] memory batchInclusionMerkleProofOfResults,
+        uint128 batchTasksMerkleRootLow,
+        uint128 batchTasksMerkleRootHigh,
+        bytes32[][] memory batchInclusionProofsOfTasks,
+        bytes32[][] memory batchInclusionProofsOfResults,
         bytes32[] calldata computationalTasksResult,
         bytes32[] calldata taskCommitments
     ) external onlyOperator {
@@ -140,8 +149,8 @@ contract HdpExecutionStore is AccessControl {
         programOutput[1] = uint256(usedMmrSize);
         programOutput[2] = uint256(batchResultsMerkleRootLow);
         programOutput[3] = uint256(batchResultsMerkleRootHigh);
-        programOutput[4] = uint256(scheduledTasksBatchMerkleRootLow);
-        programOutput[5] = uint256(scheduledTasksBatchMerkleRootHigh);
+        programOutput[4] = uint256(batchTasksMerkleRootLow);
+        programOutput[5] = uint256(batchTasksMerkleRootHigh);
 
         // Compute program output hash
         bytes32 programOutputHash = keccak256(abi.encodePacked(programOutput));
@@ -150,34 +159,41 @@ contract HdpExecutionStore is AccessControl {
         bytes32 gpsFactHash = keccak256(abi.encode(PROGRAM_HASH, programOutputHash));
 
         // Ensure GPS fact is registered
-        require(SHARP_FACTS_REGISTRY.isValid(gpsFactHash), "HdpExecutionStore: GPS fact is not registered");
+        if (!SHARP_FACTS_REGISTRY.isValid(gpsFactHash)) {
+            revert InvalidFact();
+        }
 
         // Loop through all the tasks in the batch
         for (uint256 i = 0; i < computationalTasksResult.length; i++) {
             bytes32 computationalTaskResult = computationalTasksResult[i];
-            bytes32[] memory batchInclusionMerkleProofOfTask = batchInclusionMerkleProofOfTasks[i];
-            bytes32[] memory batchInclusionMerkleProofOfResult = batchInclusionMerkleProofOfResults[i];
+            bytes32[] memory batchInclusionProofsOfTask = batchInclusionProofsOfTasks[i];
+            bytes32[] memory batchInclusionProofsOfResult = batchInclusionProofsOfResults[i];
 
             // Convert the low and high 128 bits to a single 256 bit value
             bytes32 batchResultsMerkleRoot =
                 bytes32((uint256(batchResultsMerkleRootHigh) << 128) | uint256(batchResultsMerkleRootLow));
-            bytes32 scheduledTasksBatchMerkleRoot =
-                bytes32((uint256(scheduledTasksBatchMerkleRootHigh) << 128) | uint256(scheduledTasksBatchMerkleRootLow));
+            bytes32 batchTasksMerkleRoot =
+                bytes32((uint256(batchTasksMerkleRootHigh) << 128) | uint256(batchTasksMerkleRootLow));
 
             // Compute the Merkle leaf of the task
             bytes32 taskCommitment = taskCommitments[i];
             bytes32 taskMerkleLeaf = standardLeafHash(taskCommitment);
             // Ensure that the task is included in the batch, by verifying the Merkle proof
-            bool isVerifiedTask = batchInclusionMerkleProofOfTask.verify(scheduledTasksBatchMerkleRoot, taskMerkleLeaf);
-            require(isVerifiedTask, "HdpExecutionStore: task is not included in the batch");
+            bool isVerifiedTask = batchInclusionProofsOfTask.verify(batchTasksMerkleRoot, taskMerkleLeaf);
+
+            if (!isVerifiedTask) {
+                revert NotInBatch();
+            }
 
             // Compute the Merkle leaf of the task result
             bytes32 taskResultCommitment = keccak256(abi.encode(taskCommitment, computationalTaskResult));
             bytes32 taskResultMerkleLeaf = standardLeafHash(taskResultCommitment);
             // Ensure that the task result is included in the batch, by verifying the Merkle proof
-            bool isVerifiedResult =
-                batchInclusionMerkleProofOfResult.verify(batchResultsMerkleRoot, taskResultMerkleLeaf);
-            require(isVerifiedResult, "HdpExecutionStore: task result is not included in the batch");
+            bool isVerifiedResult = batchInclusionProofsOfResult.verify(batchResultsMerkleRoot, taskResultMerkleLeaf);
+
+            if (!isVerifiedResult) {
+                revert NotInBatch();
+            }
 
             // Store the task result
             cachedTasksResult[taskCommitment] =
@@ -193,9 +209,9 @@ contract HdpExecutionStore is AccessControl {
     /// @notice Returns the result of a finalized task
     function getFinalizedTaskResult(bytes32 taskCommitment) external view returns (bytes32) {
         // Ensure task is finalized
-        require(
-            cachedTasksResult[taskCommitment].status == TaskStatus.FINALIZED, "HdpExecutionStore: task is not finalized"
-        );
+        if (cachedTasksResult[taskCommitment].status != TaskStatus.FINALIZED) {
+            revert NotFinalized();
+        }
         return cachedTasksResult[taskCommitment].result;
     }
 
