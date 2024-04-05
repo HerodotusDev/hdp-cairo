@@ -13,23 +13,13 @@ contract HdpExecutionStoreDeployer is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        IFactsRegistry factsRegistry = IFactsRegistry(
-            vm.envAddress("FACTS_REGISTRY_ADDRESS")
-        );
-        IAggregatorsFactory aggregatorsFactory = IAggregatorsFactory(
-            vm.envAddress("AGGREGATORS_FACTORY_ADDRESS")
-        );
+        IFactsRegistry factsRegistry = IFactsRegistry(vm.envAddress("FACTS_REGISTRY_ADDRESS"));
+        IAggregatorsFactory aggregatorsFactory = IAggregatorsFactory(vm.envAddress("AGGREGATORS_FACTORY_ADDRESS"));
 
         // Deploy the HdpExecutionStore
-        HdpExecutionStore hdpExecutionStore = new HdpExecutionStore(
-            factsRegistry,
-            aggregatorsFactory
-        );
+        HdpExecutionStore hdpExecutionStore = new HdpExecutionStore(factsRegistry, aggregatorsFactory);
 
-        console.log(
-            "HdpExecutionStore deployed at: ",
-            address(hdpExecutionStore)
-        );
+        console.log("HdpExecutionStore deployed at: ", address(hdpExecutionStore));
 
         vm.stopBroadcast();
     }
