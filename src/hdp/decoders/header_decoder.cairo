@@ -5,7 +5,7 @@ from starkware.cairo.common.dict import dict_read
 from starkware.cairo.common.alloc import alloc
 
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash, poseidon_hash_many
-from starkware.cairo.common.uint256 import Uint256
+from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from src.hdp.rlp import retrieve_from_rlp_list_via_idx, le_u64_array_to_uint256
 from src.libs.utils import felt_divmod
 
@@ -40,7 +40,8 @@ namespace HeaderDecoder {
         bitwise_ptr: BitwiseBuiltin*,
         pow2_array: felt*
     }(rlp: felt*) -> felt {
-        let value = get_dynamic_field(rlp, 8, 1);
+        let value_le = get_dynamic_field(rlp, 8);
+        let (value) = uint256_reverse_endian(value_le);
         assert value.high = 0x0; // u128 is sufficient for the time being
         return value.low;
     }
@@ -72,7 +73,7 @@ namespace HeaderDecoder {
         range_check_ptr,
         bitwise_ptr: BitwiseBuiltin*,
         pow2_array: felt*
-    }(rlp: felt*, field: felt, ) -> Uint256 {
+    }(rlp: felt*, field: felt) -> Uint256 {
         alloc_locals;
         
         //parent LE
@@ -109,28 +110,17 @@ namespace HeaderDecoder {
             assert 1 = 0;
         }
 
-         // ToDo: make sound!
-        local to_be: felt;
-        %{
-            if ids.field <= 6: # hashes we keep in LE.
-                ids.to_be = 0
-            elif ids.field == 13 or ids.field == 16 or ids.field == 19: # these are also hashes
-                ids.to_be = 0
-            else:
-                ids.to_be = 1
-        %}
-
         // field is part of the dynamic section
-        return get_dynamic_field(rlp, field, to_be);
+        return get_dynamic_field(rlp, field);
     }
 
     func get_dynamic_field{
         range_check_ptr,
         bitwise_ptr: BitwiseBuiltin*,
         pow2_array: felt*
-    }(rlp: felt*, field: felt, to_be: felt) -> Uint256 {
+    }(rlp: felt*, field: felt) -> Uint256 {
         let (value, value_len, bytes_len) = get_dynamic_field_bytes(rlp, field);
-        return le_u64_array_to_uint256(value, value_len, bytes_len, to_be);
+        return le_u64_array_to_uint256(value, value_len, bytes_len);
     }
 
     func get_dynamic_field_bytes{

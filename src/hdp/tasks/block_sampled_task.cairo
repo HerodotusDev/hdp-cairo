@@ -100,8 +100,9 @@ namespace BlockSampledTask {
 
         if (tasks[index].aggregate_fn_id == 1){
             let result = compute_sum{
-                range_check_ptr=range_check_ptr,    
-            }(values=data_points, values_len=data_points_len);
+                range_check_ptr=range_check_ptr,
+                bitwise_ptr=bitwise_ptr,
+            }(values_le=data_points, values_len=data_points_len);
 
             %{
                 print(f"Computing Sum")

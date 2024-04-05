@@ -152,7 +152,7 @@ func verify_storage_item{
         pow2_array=pow2_array,
     );
     
-    let decoded_value = decode_rlp_word_to_uint256(value, value_bytes_len, 1);
+    let decoded_value = decode_rlp_word_to_uint256(value, value_bytes_len);
     assert storage_values[state_idx] = decoded_value;
 
     StorageMemorizer.add(storage_item.slot, storage_item.address, slot_proof.block_number, state_idx);

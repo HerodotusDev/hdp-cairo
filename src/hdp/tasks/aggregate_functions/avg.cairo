@@ -1,9 +1,12 @@
 from src.hdp.tasks.aggregate_functions.sum import compute_sum
 from starkware.cairo.common.uint256 import Uint256, felt_to_uint256, uint256_signed_div_rem, uint256_add
 from starkware.cairo.common.alloc import alloc
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
+
 
 func compute_avg{
-    range_check_ptr
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*
 }(values: Uint256*, values_len: felt) -> Uint256 {
     alloc_locals;
     let sum = compute_sum(values, values_len);

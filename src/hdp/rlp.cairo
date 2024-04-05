@@ -219,7 +219,7 @@ func shift_for_le_uint256{
     let r = [ap + 1];
     %{
         ids.q, ids.r = divmod(memory[ids.value + ids.i], ids.devisor)
-        print(f"val={memory[ids.value + ids.i]} q={ids.q} r={ids.r} i={ids.i}")
+        #print(f"val={memory[ids.value + ids.i]} q={ids.q} r={ids.r} i={ids.i}")
     %}
     ap += 2;
     tempvar offset = 3 * n_processed_words;
