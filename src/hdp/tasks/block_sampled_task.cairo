@@ -8,6 +8,14 @@ from src.hdp.types import BlockSampledDataLake, BlockSampledComputationalTask, A
 from src.hdp.datalakes.block_sampled_datalake import init_block_sampled, fetch_data_points
 from src.hdp.tasks.aggregate_functions.sum import compute_sum
 from src.hdp.tasks.aggregate_functions.avg import compute_avg
+from src.hdp.tasks.aggregate_functions.min_max import uint256_min_le, uint256_max_le
+
+namespace AGGREGATE_FN {
+    const AVG = 0;
+    const SUM = 1;
+    const MIN = 2;
+    const MAX = 3;
+}
 
 namespace BlockSampledTask {
     func init{
@@ -79,16 +87,8 @@ namespace BlockSampledTask {
 
         let (data_points, data_points_len) = fetch_data_points(tasks[index]);
 
-        if (tasks[index].aggregate_fn_id == 0){
-            let result = compute_avg{
-                range_check_ptr=range_check_ptr,    
-            }(values=data_points, values_len=data_points_len);
-
-            %{
-                print(f"Computing Average")
-                print(f"result: {ids.result.low} {ids.result.high}")
-            %}
-
+        if (tasks[index].aggregate_fn_id == AGGREGATE_FN.AVG){
+            let result = compute_avg(values=data_points, values_len=data_points_len);
             assert [results] = result;
 
             return execute(
@@ -98,17 +98,30 @@ namespace BlockSampledTask {
             );
         }
 
-        if (tasks[index].aggregate_fn_id == 1){
-            let result = compute_sum{
-                range_check_ptr=range_check_ptr,
-                bitwise_ptr=bitwise_ptr,
-            }(values_le=data_points, values_len=data_points_len);
+        if(tasks[index].aggregate_fn_id == AGGREGATE_FN.SUM){
+            let result = compute_sum(values_le=data_points, values_len=data_points_len);
+            assert [results] = result;
 
-            %{
-                print(f"Computing Sum")
-                print(f"result: {ids.result.low} {ids.result.high}")
-            %}
+            return execute(
+                results=results + Uint256.SIZE,
+                tasks_len=tasks_len,
+                index=index + 1,
+            );
+        }
 
+        if(tasks[index].aggregate_fn_id == AGGREGATE_FN.MIN){
+            let result = uint256_min_le(data_points, data_points_len);
+            assert [results] = result;
+
+            return execute(
+                results=results + Uint256.SIZE,
+                tasks_len=tasks_len,
+                index=index + 1,
+            );
+        }
+
+        if(tasks[index].aggregate_fn_id == AGGREGATE_FN.MAX){
+            let result = uint256_max_le(data_points, data_points_len);
             assert [results] = result;
 
             return execute(
@@ -148,22 +161,22 @@ func extract_params{
 
     //"avg".encode(uft-8).to_le()
     if(task == 0x677661) {
-        return (datalake_hash_low=datalake_hash_low, datalake_hash_high=datalake_hash_high, aggregate_fn_id=0);
+        return (datalake_hash_low=datalake_hash_low, datalake_hash_high=datalake_hash_high, aggregate_fn_id=AGGREGATE_FN.AVG);
     }
 
     //"sum".encode(uft-8).to_le()
     if(task == 0x6D7573) {
-        return (datalake_hash_low=datalake_hash_low, datalake_hash_high=datalake_hash_high, aggregate_fn_id=1);
+        return (datalake_hash_low=datalake_hash_low, datalake_hash_high=datalake_hash_high, aggregate_fn_id=AGGREGATE_FN.SUM);
     }
     
     //"min".encode(uft-8).to_le()
     if(task == 0x6E696D) { 
-        return (datalake_hash_low=datalake_hash_low, datalake_hash_high=datalake_hash_high, aggregate_fn_id=2);
+        return (datalake_hash_low=datalake_hash_low, datalake_hash_high=datalake_hash_high, aggregate_fn_id=AGGREGATE_FN.MIN);
     }
     
     //"max".encode(uft-8).to_le()
     if(task == 0x78616D) {
-        return (datalake_hash_low=datalake_hash_low, datalake_hash_high=datalake_hash_high, aggregate_fn_id=3);
+        return (datalake_hash_low=datalake_hash_low, datalake_hash_high=datalake_hash_high, aggregate_fn_id=AGGREGATE_FN.MAX);
     }
 
     // Terminate on invalid aggregate_fn_id

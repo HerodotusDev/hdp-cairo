@@ -361,6 +361,8 @@ func fetch_storage_data_points{
     return fetch_storage_data_points(datalake=datalake, index=index + 1, data_points=data_points);
 }
 
+// Collects the header data points defined in the datalake from the memorizer recursivly.
+// Fills the data_points array with the values of the sampled property in LE
 func fetch_header_data_points{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -369,7 +371,6 @@ func fetch_header_data_points{
     pow2_array: felt*,
 }(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     alloc_locals;
-
     let current_block_number = datalake.block_range_start + index * datalake.increment;
     
     let header = HeaderMemorizer.get(

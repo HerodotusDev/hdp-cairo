@@ -18,6 +18,7 @@ from src.hdp.types import (
 from src.libs.block_header import extract_block_number_big, reverse_block_header_chunks
 from src.hdp.memorizer import HeaderMemorizer
 
+
 namespace HeaderDecoder {
     func get_coinbase{
         range_check_ptr,
@@ -202,3 +203,28 @@ func get_bloom_filter{
     // the bloom filter always seems to start at byte 192, so we can increment the pointer and return
     return (value=rlp + 24, value_len=32, bytes_len=256);
 }
+
+
+// namespace HEADER {
+//     const PARENT = 0;
+//     const UNCLE = 1;
+//     const COINBASE = 2;
+//     const STATE_ROOT = 3;
+//     const TRANSACTION_ROOT = 4;
+//     const RECEIPT_ROOT = 5;
+//     const BLOOM = 6;
+//     const DIFFICULTY = 7;
+//     const NUMBER = 8;
+//     const GAS_LIMIT = 9;
+//     const GAS_USED = 10;
+//     const TIMESTAMP = 11;
+//     const EXTRA_DATA = 12;
+//     const MIX_HASH = 13;
+//     const NONCE = 14;
+//     const BASE_FEE_PER_GAS = 15;
+//     const WITHDRAWALS_ROOT = 16;
+//     const BLOB_GAS_USED = 17;
+//     const EXCESS_BLOB_GAS = 18;
+//     const PARENT_BEACON_BLOCK_ROOT = 19;
+
+// }
