@@ -312,11 +312,11 @@ func fetch_account_data_points{
         block_number=current_block_number
     );
 
-    let data_point = AccountDecoder.get_by_index{
+    let data_point = AccountDecoder.get_field{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array,
-    }(rlp=account_value.values, value_idx=[datalake.properties + 4]); // value idx is at 4
+    }(rlp=account_value.values, field=[datalake.properties + 4]); // value idx is at 4
 
     assert [data_points + index * Uint256.SIZE] = data_point;
 
@@ -377,7 +377,7 @@ func fetch_header_data_points{
         block_number=current_block_number
     );
 
-    let data_point = HeaderDecoder.get_field_by_index{
+    let data_point = HeaderDecoder.get_field{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array,

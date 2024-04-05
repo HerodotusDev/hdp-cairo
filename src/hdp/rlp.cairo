@@ -13,15 +13,15 @@ from starkware.cairo.common.uint256 import Uint256, word_reverse_endian
 // The validity of RLP is not checked in this function.
 // Params:
 // - rlp: the rlp encoded state array
-// - value_idx: the index of the value to retrieve as index
-// - item_starts_at_byte: the byte at which the item starts.
+// - field: the index of the value to retrieve
+// - item_starts_at_byte: the byte at which the item starts. this skips the RLP list prefix
 // - counter: the current counter of the recursive function
 // Returns: LE 8bytes array of the value + the length of the array
 func retrieve_from_rlp_list_via_idx{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
-} ( rlp: felt*, value_idx: felt, item_starts_at_byte: felt, counter: felt) -> (res: felt*, res_len: felt, bytes_len: felt) {
+} ( rlp: felt*, field: felt, item_starts_at_byte: felt, counter: felt) -> (res: felt*, res_len: felt, bytes_len: felt) {
     alloc_locals;
 
     let (item_starts_at_word, item_start_offset) = felt_divmod(
@@ -136,7 +136,7 @@ func retrieve_from_rlp_list_via_idx{
         tempvar range_check_ptr = range_check_ptr;
     }
     
-    if (value_idx == counter) {
+    if (field == counter) {
         if(current_value_len == 0) {
             let (res: felt*) = alloc();
             assert res[0] = 0;
@@ -158,7 +158,7 @@ func retrieve_from_rlp_list_via_idx{
     } else {
         return retrieve_from_rlp_list_via_idx(
             rlp=rlp,
-            value_idx=value_idx,
+            field=field,
             item_starts_at_byte=next_item_starts_at_byte,
             counter=counter+1,
         );

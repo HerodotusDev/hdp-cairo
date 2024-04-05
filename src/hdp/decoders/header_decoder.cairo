@@ -18,24 +18,30 @@ from src.hdp.types import (
 from src.libs.block_header import extract_block_number_big, reverse_block_header_chunks
 from src.hdp.memorizer import HeaderMemorizer
 
+namespace HEADER_FIELD {
+    const PARENT = 0;
+    const UNCLE = 1;
+    const COINBASE = 2;
+    const STATE_ROOT = 3;
+    const TRANSACTION_ROOT = 4;
+    const RECEIPT_ROOT = 5;
+    const BLOOM = 6;
+    const DIFFICULTY = 7;
+    const NUMBER = 8;
+    const GAS_LIMIT = 9;
+    const GAS_USED = 10;
+    const TIMESTAMP = 11;
+    const EXTRA_DATA = 12;
+    const MIX_HASH = 13;
+    const NONCE = 14;
+    const BASE_FEE_PER_GAS = 15;
+    const WITHDRAWALS_ROOT = 16;
+    const BLOB_GAS_USED = 17;
+    const EXCESS_BLOB_GAS = 18;
+    const PARENT_BEACON_BLOCK_ROOT = 19;
+}
 
 namespace HeaderDecoder {
-    func get_coinbase{
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-        pow2_array: felt*
-    }(rlp: felt*) -> felt* {
-        return get_address_value(rlp, 8, 6);
-    }
-
-    func get_state_root{
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-        pow2_array: felt*
-    }(rlp: felt*) -> Uint256 {
-        return get_field_by_index(rlp, 3);
-    }
-
     func get_block_number{
         range_check_ptr,
         bitwise_ptr: BitwiseBuiltin*,
@@ -47,22 +53,22 @@ namespace HeaderDecoder {
         return value.low;
     }
 
-    func get_felt_fields_by_index{
+    func get_field_felt{
         range_check_ptr,
         bitwise_ptr: BitwiseBuiltin*,
         pow2_array: felt*
     }(rlp: felt*, field: felt) -> (value: felt*, value_len: felt, bytes_len: felt) {
 
-        if(field == 2) {
+        if(field == HEADER_FIELD.COINBASE) {
             let value = get_address_value(rlp, 8, 6);
             return (value=value, value_len=3, bytes_len=20);
         }
 
-        if(field == 6) {
+        if(field == HEADER_FIELD.BLOOM) {
             return get_bloom_filter(rlp);
         }
 
-        if(field == 12) {
+        if(field == HEADER_FIELD.EXTRA_DATA) {
             return get_dynamic_field_bytes(rlp, 12);
         }
 
@@ -70,44 +76,34 @@ namespace HeaderDecoder {
         return (value=rlp, value_len=0, bytes_len=0);
     }
 
-    func get_field_by_index{
+    func get_field{
         range_check_ptr,
         bitwise_ptr: BitwiseBuiltin*,
         pow2_array: felt*
-    }(rlp: felt*, field: felt) -> Uint256 {
-        alloc_locals;
-        
-        //parent LE
-        if(field == 0) {
+    }(rlp: felt*, field: felt) -> Uint256 {        
+        if(field == HEADER_FIELD.PARENT) {
             return get_hash_value(rlp, 0, 4);
         }
-        //uncle LE
-        if(field == 1){
+        if(field == HEADER_FIELD.UNCLE){
             return get_hash_value(rlp, 4, 5);
         }
-        // coinbase
-        if(field == 2) {
+        if(field == HEADER_FIELD.COINBASE) {
             assert 1 = 0; // must use get_coinbase
         }
-        //state_root LE
-        if(field == 3){
+        if(field == HEADER_FIELD.STATE_ROOT){
             return get_hash_value(rlp, 11, 3);
         }
-        //tx_root LE
-        if(field == 4){
+        if(field == HEADER_FIELD.TRANSACTION_ROOT){
             return get_hash_value(rlp, 15, 4);
         }
-        //receipts_root LE
-        if(field == 5){
+        if(field == HEADER_FIELD.RECEIPT_ROOT){
             return get_hash_value(rlp, 19, 5);
         }
-        // bloom filter
-        if(field == 6) {
+        if(field == HEADER_FIELD.BLOOM) {
             // not implemented
             assert 1 = 0;
         }
-        //mixData
-        if(field == 12) {
+        if(field == HEADER_FIELD.EXTRA_DATA) {
             assert 1 = 0;
         }
 
@@ -134,7 +130,7 @@ namespace HeaderDecoder {
         
         let (res, res_len, bytes_len) = retrieve_from_rlp_list_via_idx(
             rlp=rlp,
-            value_idx=field_idx,
+            field=field_idx,
             item_starts_at_byte=start_byte,
             counter=0,
         );
@@ -203,28 +199,3 @@ func get_bloom_filter{
     // the bloom filter always seems to start at byte 192, so we can increment the pointer and return
     return (value=rlp + 24, value_len=32, bytes_len=256);
 }
-
-
-// namespace HEADER {
-//     const PARENT = 0;
-//     const UNCLE = 1;
-//     const COINBASE = 2;
-//     const STATE_ROOT = 3;
-//     const TRANSACTION_ROOT = 4;
-//     const RECEIPT_ROOT = 5;
-//     const BLOOM = 6;
-//     const DIFFICULTY = 7;
-//     const NUMBER = 8;
-//     const GAS_LIMIT = 9;
-//     const GAS_USED = 10;
-//     const TIMESTAMP = 11;
-//     const EXTRA_DATA = 12;
-//     const MIX_HASH = 13;
-//     const NONCE = 14;
-//     const BASE_FEE_PER_GAS = 15;
-//     const WITHDRAWALS_ROOT = 16;
-//     const BLOB_GAS_USED = 17;
-//     const EXCESS_BLOB_GAS = 18;
-//     const PARENT_BEACON_BLOCK_ROOT = 19;
-
-// }

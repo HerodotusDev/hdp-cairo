@@ -12,25 +12,6 @@ from src.libs.utils import (
     word_reverse_endian_56_RC
 )
 
-// ToDo: deprecate
-func keccak_hash_array_to_uint256{
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*
-} (elements: felt*, elements_len: felt) -> Uint256 {
-    assert elements_len = 4;
-
-    let low_1 = elements[1];
-    let low_2 = elements[0];
-    let high_1 = elements[3];
-    let high_2 = elements[2];
-
-    let result = Uint256(
-        low=low_1 * pow2_array[64] + low_2,
-        high=high_1 * pow2_array[64] + high_2
-    );
-    return result;
-}
-
 // computes the result entry. This maps the result to a task_hash/id. It computes h(task_hash, result), which is a leaf in the results tree.
 // Inputs:
 // - task_hash: the task hash

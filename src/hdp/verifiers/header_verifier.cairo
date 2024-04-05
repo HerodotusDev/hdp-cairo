@@ -6,7 +6,6 @@ from starkware.cairo.common.alloc import alloc
 
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash, poseidon_hash_many
 from starkware.cairo.common.uint256 import Uint256
-from src.hdp.rlp import retrieve_from_rlp_list_via_idx, le_u64_array_to_uint256
 from src.libs.utils import felt_divmod
 from src.libs.mmr import hash_subtree_path
 from src.hdp.types import (

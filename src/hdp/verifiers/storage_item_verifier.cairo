@@ -12,7 +12,7 @@ from src.libs.rlp_little import (
 )
 
 from src.hdp.memorizer import StorageMemorizer, AccountMemorizer
-from src.hdp.decoders.account_decoder import AccountDecoder
+from src.hdp.decoders.account_decoder import AccountDecoder, ACCOUNT_FIELD
 
 from src.libs.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64
 
@@ -139,7 +139,7 @@ func verify_storage_item{
 
     // get state_root from verified headers
     let (account_value) = AccountMemorizer.get(storage_item.address, slot_proof.block_number);
-    let state_root = AccountDecoder.get_state_root(account_value.values);
+    let state_root = AccountDecoder.get_field(account_value.values, ACCOUNT_FIELD.STATE_ROOT);
  
     let (value: felt*, value_bytes_len: felt) = verify_mpt_proof(
         mpt_proof=slot_proof.proof,
