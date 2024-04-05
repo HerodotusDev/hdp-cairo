@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import "forge-std/Test.sol";
-import "forge-std/console.sol";
-
+import {Test} from "forge-std/Test.sol";
 import {HdpExecutionStore} from "../src/HdpExecutionStore.sol";
 import {BlockSampledDatalake, BlockSampledDatalakeCodecs} from "../src/datatypes/BlockSampledDatalakeCodecs.sol";
 import {ComputationalTask, ComputationalTaskCodecs} from "../src/datatypes/ComputationalTaskCodecs.sol";
@@ -57,7 +55,7 @@ contract HdpExecutionStoreTest is Test {
     using BlockSampledDatalakeCodecs for BlockSampledDatalake;
     using ComputationalTaskCodecs for ComputationalTask;
 
-    address proverAddress = address(12);
+    address public proverAddress = address(12);
 
     HdpExecutionStore private hdp;
     HdpExecutionStore private hdp2;
@@ -94,7 +92,7 @@ contract HdpExecutionStoreTest is Test {
         hdp2.grantRole(keccak256("OPERATOR_ROLE"), proverAddress);
     }
 
-    function test_SingleBlockSingleBlockSampledDatalake() public {
+    function testSingleBlockSingleBlockSampledDatalake() public {
         // Note: Step 1. HDP Server receives a request
         // [1 Request = N Tasks] Request execution of task with block sampled datalake
         BlockSampledDatalake memory datalake = BlockSampledDatalake({
@@ -163,13 +161,13 @@ contract HdpExecutionStoreTest is Test {
         // Tasks and Results Merkle Tree Information
         // proof of the tasks merkle tree
         bytes32[][] memory batchInclusionMerkleProofOfTasks = new bytes32[][](1);
-        bytes32[] memory InclusionMerkleProofOfTask1 = new bytes32[](0);
-        batchInclusionMerkleProofOfTasks[0] = InclusionMerkleProofOfTask1;
+        bytes32[] memory inclusionMerkleProofOfTask1 = new bytes32[](0);
+        batchInclusionMerkleProofOfTasks[0] = inclusionMerkleProofOfTask1;
 
         // proof of the result
         bytes32[][] memory batchInclusionMerkleProofOfResults = new bytes32[][](1);
-        bytes32[] memory InclusionMerkleProofOfResult1 = new bytes32[](0);
-        batchInclusionMerkleProofOfResults[0] = InclusionMerkleProofOfResult1;
+        bytes32[] memory inclusionMerkleProofOfResult1 = new bytes32[](0);
+        batchInclusionMerkleProofOfResults[0] = inclusionMerkleProofOfResult1;
 
         uint256 taskMerkleRoot = uint256(bytes32(0x0030ce873e657283a8e03a3e83ba95a0bf1ad049e8ac1cb8148280aca2b1adc7));
         (uint256 taskRootLow, uint256 taskRootHigh) = Uint256Splitter.split128(taskMerkleRoot);
@@ -205,8 +203,8 @@ contract HdpExecutionStoreTest is Test {
         );
         assertEq(factHash, bytes32(0x0209c77553b707b8545cdb4efa711a4e1e81748e7e98d4704756658bc89e5203));
         factsRegistry.markValid(factHash);
-        bool is_valid = factsRegistry.isValid(factHash);
-        assertEq(is_valid, true);
+        bool isValid = factsRegistry.isValid(factHash);
+        assertEq(isValid, true);
 
         // =================================
 
@@ -235,7 +233,7 @@ contract HdpExecutionStoreTest is Test {
         assertEq(task1Result, computationalTasksResult[0]);
     }
 
-    function test_SingleBlockHeaderBlockSampledDatalake() public {
+    function testSingleBlockHeaderBlockSampledDatalake() public {
         // Note: Step 1. HDP Server receives a request
         // [1 Request = N Tasks] Request execution of task with block sampled datalake
         BlockSampledDatalake memory datalake = BlockSampledDatalake({
@@ -302,13 +300,13 @@ contract HdpExecutionStoreTest is Test {
         // Tasks and Results Merkle Tree Information
         // proof of the tasks merkle tree
         bytes32[][] memory batchInclusionMerkleProofOfTasks = new bytes32[][](1);
-        bytes32[] memory InclusionMerkleProofOfTask1 = new bytes32[](0);
-        batchInclusionMerkleProofOfTasks[0] = InclusionMerkleProofOfTask1;
+        bytes32[] memory inclusionMerkleProofOfTask1 = new bytes32[](0);
+        batchInclusionMerkleProofOfTasks[0] = inclusionMerkleProofOfTask1;
 
         // proof of the result
         bytes32[][] memory batchInclusionMerkleProofOfResults = new bytes32[][](1);
-        bytes32[] memory InclusionMerkleProofOfResult1 = new bytes32[](0);
-        batchInclusionMerkleProofOfResults[0] = InclusionMerkleProofOfResult1;
+        bytes32[] memory inclusionMerkleProofOfResult1 = new bytes32[](0);
+        batchInclusionMerkleProofOfResults[0] = inclusionMerkleProofOfResult1;
 
         uint256 taskMerkleRoot = uint256(bytes32(0x67b239a997d896ed6a579254637b2890c27feeaafb1f388b77d3f3e5f75d88c3));
         (uint256 taskRootLow, uint256 taskRootHigh) = Uint256Splitter.split128(taskMerkleRoot);
@@ -348,8 +346,8 @@ contract HdpExecutionStoreTest is Test {
         );
         assertEq(factHash, bytes32(0x1a4ea0279d59daeffef3942286d008543236dc2c37ae55369b2d105bd0a9458a));
         factsRegistry.markValid(factHash);
-        bool is_valid = factsRegistry.isValid(factHash);
-        assertEq(is_valid, true);
+        bool isValid = factsRegistry.isValid(factHash);
+        assertEq(isValid, true);
 
         // =================================
 

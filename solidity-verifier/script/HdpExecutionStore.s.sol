@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "forge-std/Script.sol";
-import "forge-std/console.sol";
+import {Script} from "forge-std/Script.sol";
+import {console2} from "forge-std/console2.sol";
 
 import {IAggregatorsFactory} from "../src/interfaces/IAggregatorsFactory.sol";
 import {IFactsRegistry} from "../src/interfaces/IFactsRegistry.sol";
@@ -19,7 +19,7 @@ contract HdpExecutionStoreDeployer is Script {
         // Deploy the HdpExecutionStore
         HdpExecutionStore hdpExecutionStore = new HdpExecutionStore(factsRegistry, aggregatorsFactory);
 
-        console.log("HdpExecutionStore deployed at: ", address(hdpExecutionStore));
+        console2.log("HdpExecutionStore deployed at: ", address(hdpExecutionStore));
 
         vm.stopBroadcast();
     }

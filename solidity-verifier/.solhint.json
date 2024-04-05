@@ -1,6 +1,7 @@
 {
     "extends": "solhint:recommended",
     "rules": {
+        "no-console": "off",
         "code-complexity": ["error", 8],
         "compiler-version": ["error", ">=0.5.8"],
         "const-name-snakecase": "off",
