@@ -4,6 +4,7 @@ from src.libs.rlp_little import (
     extract_byte_at_pos,
     extract_n_bytes_from_le_64_chunks_array,
 )
+from src.hdp.utils import reverse_small_chunk_endianess
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, word_reverse_endian
 
@@ -33,65 +34,160 @@ func retrieve_from_rlp_list_via_idx{
         pow2_array
     );
 
-    local item_has_prefix: felt;
+    local item_type: felt;
     %{
-        if ids.current_item < 0x80:
-            ids.item_has_prefix = 0
+        #print("current item:", hex(ids.current_item))
+        if ids.current_item <= 0x7f:
+            ids.item_type = 0 # single byte
+        elif 0x80 <= ids.current_item <= 0xb6:
+            ids.item_type = 1 # short string
+        elif 0xb7 <= ids.current_item <= 0xbf:
+            ids.item_type = 2 # long string
+        elif 0xc0 <= ids.current_item <= 0xf6:
+            ids.item_type = 3 # short list
+        elif 0xf7 <= ids.current_item <= 0xff:
+            ids.item_type = 4 # long list
         else:
-            ids.item_has_prefix = 1
+            assert False, "Invalid RLP item"
     %}
 
-    local current_item_len: felt;
+    local current_value_len: felt;
+    local current_value_starts_at_byte: felt;
+    local next_item_starts_at_byte: felt;
 
-    if (item_has_prefix == 1) {
-        assert [range_check_ptr] = current_item - 0x80; // validates item_has_prefix hint
-        current_item_len = current_item - 0x80;
-        tempvar next_item_starts_at_byte = item_starts_at_byte +  current_item_len + 1;
+    // Single Byte
+    if (item_type == 0) {
+        assert [range_check_ptr] = 0x7f - current_item;
+        assert current_value_len = 1;
+        assert current_value_starts_at_byte = item_starts_at_byte;
+        assert next_item_starts_at_byte = current_value_starts_at_byte + current_value_len;
+        tempvar range_check_ptr = range_check_ptr + 1;
     } else {
-        assert [range_check_ptr] = 0x7f - current_item; // validates item_has_prefix hint
-        current_item_len = 1;
-        tempvar next_item_starts_at_byte = item_starts_at_byte +  current_item_len;
+        tempvar range_check_ptr = range_check_ptr;
     }
 
-    let range_check_ptr = range_check_ptr + 1;
+    // Short String
+    if(item_type == 1) {
+        assert [range_check_ptr] = current_item - 0x80;
+        assert [range_check_ptr + 1] = 0xb7 - current_item;
+        assert current_value_len = current_item - 0x80;
+        assert current_value_starts_at_byte = item_starts_at_byte + 1;
+        assert next_item_starts_at_byte = current_value_starts_at_byte + current_value_len;
+
+        tempvar range_check_ptr = range_check_ptr + 2;
+    } else {
+        tempvar range_check_ptr = range_check_ptr;
+    }
+
+    // Short List
+    if(item_type == 3) {
+        assert [range_check_ptr] = current_item - 0xc0;
+        assert [range_check_ptr + 1] = 0xf7 - current_item;
+        assert current_value_len = current_item - 0xc0;
+        assert current_value_starts_at_byte = item_starts_at_byte + 1;
+        assert next_item_starts_at_byte = current_value_starts_at_byte + current_value_len;
+
+        tempvar range_check_ptr = range_check_ptr + 2;
+    } else {
+        tempvar range_check_ptr = range_check_ptr;
+    }
+
+    // Long String
+    if(item_type == 2) {
+        assert [range_check_ptr] = current_item - 0xb7;
+        assert [range_check_ptr + 1] = 0xbf - current_item;
+        tempvar range_check_ptr = range_check_ptr + 2;
+        let len_len = current_item - 0xb7;
+       
+        let value_len = decode_value_len(
+            rlp=rlp,
+            item_starts_at_byte=item_starts_at_byte,
+            len_len=len_len,
+            pow2_array=pow2_array
+        );
+       
+        assert current_value_len = value_len;
+        assert current_value_starts_at_byte = item_starts_at_byte + len_len + 1;
+        assert next_item_starts_at_byte = current_value_starts_at_byte +  current_value_len;
+        tempvar range_check_ptr = range_check_ptr;
+    } else {
+        tempvar range_check_ptr = range_check_ptr;
+    }
+
+    // Long List
+    if(item_type == 4) {
+        assert [range_check_ptr] = current_item - 0xf8;
+        assert [range_check_ptr + 1] = 0xff - current_item;
+        tempvar range_check_ptr = range_check_ptr + 2;
+        let len_len = current_item - 0xf8;
+
+        let item_len = decode_value_len(
+            rlp=rlp,
+            item_starts_at_byte=item_starts_at_byte,
+            len_len=len_len,
+            pow2_array=pow2_array
+        );
+       
+        assert current_value_len = item_len;
+        assert current_value_starts_at_byte = item_starts_at_byte + len_len + 1;
+        assert next_item_starts_at_byte = current_value_starts_at_byte + current_value_len;
+        tempvar range_check_ptr = range_check_ptr;
+    } else {
+        tempvar range_check_ptr = range_check_ptr;
+    }
     
     if (value_idx == counter) {
-        // handle empty bytes case
-        if(current_item_len == 0) {
+        if(current_value_len == 0) {
             let (res: felt*) = alloc();
             assert res[0] = 0;
             return (res=res, res_len=1, bytes_len=1);
-        } 
+        } else {
 
-        // handle prefix case
-        if (item_has_prefix == 1) {
-            let (word_idx, offset) = felt_divmod(
-                item_starts_at_byte + 1, 8
+            let (word, offset) = felt_divmod(
+                current_value_starts_at_byte, 8
             );
-            
             let (res, res_len) = extract_n_bytes_from_le_64_chunks_array(
                 array=rlp,
-                start_word=word_idx,
+                start_word=word,
                 start_offset=offset,
-                n_bytes=current_item_len,
+                n_bytes=current_value_len,
                 pow2_array=pow2_array
             );
-
-            return (res=res, res_len=res_len, bytes_len=current_item_len);
-        } else {
-            // handle single byte case
-            let (res: felt*) = alloc();
-            assert res[0] = current_item;
-            return (res=res, res_len=1, bytes_len=1);
+            return (res=res, res_len=res_len, bytes_len=current_value_len);
         }
+    } else {
+        return retrieve_from_rlp_list_via_idx(
+            rlp=rlp,
+            value_idx=value_idx,
+            item_starts_at_byte=next_item_starts_at_byte,
+            counter=counter+1,
+        );
     }
+}
 
-    return retrieve_from_rlp_list_via_idx(
-        rlp=rlp,
-        value_idx=value_idx,
-        item_starts_at_byte=next_item_starts_at_byte,
-        counter=counter+1,
+// decodes the length prefix of an RLP value. This is used for long strings and lists.
+// A prefix larger then 56bits will cause the function to fail. Should be sufficient for the current use case.
+func decode_value_len{
+    range_check_ptr
+}(
+    rlp: felt*,
+    item_starts_at_byte: felt,
+    len_len: felt,
+    pow2_array: felt*
+) -> felt {
+    let (word, offset) = felt_divmod(
+        item_starts_at_byte + 1, 8
     );
+
+    let (current_value_len_list, _) = extract_n_bytes_from_le_64_chunks_array(
+        array=rlp,
+        start_word=word,
+        start_offset=offset,
+        n_bytes=len_len,
+        pow2_array=pow2_array
+    );
+
+    return reverse_small_chunk_endianess(current_value_len_list[0], len_len);
 }
 
 // decodes an rlp word to a uint256
