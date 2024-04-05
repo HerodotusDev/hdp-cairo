@@ -104,13 +104,14 @@ func decode_rlp_word_to_uint256{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*
-}(elements: felt*, elements_bytes_len: felt, to_be: felt) -> Uint256 { 
+}(elements: felt*, elements_bytes_len: felt) -> Uint256 { 
+
     alloc_locals;
     // if its a single byte, we can just return it
     if (elements_bytes_len == 1) {
         return (Uint256(
-            low=elements[0],
-            high=0
+            low=0,
+            high=elements[0] * pow2_array[120],
         ));
     }
 
@@ -132,8 +133,7 @@ func decode_rlp_word_to_uint256{
     let result = le_u64_array_to_uint256(
         elements=result_chunks,
         elements_len=result_len,
-        bytes_len=result_bytes_len,
-        to_be=to_be
+        bytes_len=result_bytes_len
     );
 
     return result;
@@ -146,81 +146,101 @@ func le_u64_array_to_uint256{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*
-} (elements: felt*, elements_len: felt, bytes_len: felt, to_be: felt) -> Uint256 {
+} (elements: felt*, elements_len: felt, bytes_len: felt) -> Uint256 {
     alloc_locals;
     local value: Uint256;
 
     if(elements_len == 1) {
+        let high = elements[0] * pow2_array[(16-bytes_len) * 8];
         assert value = Uint256(
-            low=elements[0],
-            high=0,
+            low=0,
+            high=high,
         );
     }
 
     if(elements_len == 2) {
          assert value = Uint256(
-            low=elements[1] * pow2_array[64] + elements[0],
-            high=0,
+            low=0,
+            high=(elements[1] * pow2_array[64] + elements[0]) * pow2_array[(16-bytes_len) * 8],
         );
     }
 
+    // For values larger then 16 bytes, we need to shift the chunks to the left.
+    let (_, local offset) = felt_divmod(bytes_len, 8); // calculate the offset from the bytes_len 
+    let (le_shifted) = shift_for_le_uint256(elements, elements_len, offset);
+
+    // tempvar range_check_ptr = range_check_ptr;
     if(elements_len == 3) {
         assert value = Uint256(
-            low=elements[1] * pow2_array[64] + elements[0],
-            high=elements[2],
+            low=le_shifted[0] * pow2_array[64],
+            high=le_shifted[2] * pow2_array[64] + le_shifted[1],
         );
     }
 
     if(elements_len == 4) {
          assert value = Uint256(
-            low=elements[1] * pow2_array[64] + elements[0],
-            high=elements[3] * pow2_array[64] + elements[2],
+            low=le_shifted[1] * pow2_array[64] + le_shifted[0],
+            high=le_shifted[3] * pow2_array[64] + le_shifted[2],
         );
     }
 
-    if(to_be == 1) {
-        let flipped = bytewise_endian_flip(value, bytes_len);
-        return (flipped);
-    } else {
-        return (value);
-    }
+    return (value);
 }
 
-// Converts a le uint256 to be. This function can deal with a dynamic number of bytes, ensuring no additional padding is added.
-// e.g. 0x1234 -> 0x3412 is a valid output for this function. This is required for reversing the endianess of values derived via RLP decoding.
-// In contrast, uint256_reverse_endian: 0x1234 -> 0x34120000000000000000000000000000
-func bytewise_endian_flip{
+func shift_for_le_uint256{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*
-} (value: Uint256, bytes_len: felt) -> Uint256 {
-    
-    // value <= 16 bytes
-    if(value.high == 0) {
-        let (value_low_rev) = word_reverse_endian(value.low);
-        let low = value_low_rev / pow2_array[(16 - bytes_len) * 8];
+} (value: felt*, value_len: felt, offset: felt) -> (shifted: felt*) {
+    alloc_locals;
+    let (local result: felt*) = alloc();
 
-        return (Uint256(
-            low=low,
-            high=0
-        ));
-    } else {
-
-        // value >= 17 bytes
-        assert [range_check_ptr] = bytes_len - 17;
-        let range_check_ptr = range_check_ptr + 1;
-        let (value_high_rev) = word_reverse_endian(value.high);
-        let (value_low_rev) = word_reverse_endian(value.low);
-
-        let devisor = pow2_array[(32 - bytes_len) * 8];
-
-        let (high, low_left) = felt_divmod(value_low_rev, devisor);
-        let (low_right, trash) = felt_divmod(value_high_rev, devisor);
-        let low = low_left * pow2_array[(bytes_len - 16) * 8] + low_right;
-
-        return (Uint256(
-            low=low,
-            high=high
-        ));
+    if(offset == 0) {
+        return (shifted=value);
     }
+
+    let devisor = pow2_array[offset * 8];
+    let shifter = pow2_array[(8 - offset) * 8];
+
+    tempvar current_word = 0;
+    tempvar n_processed_words = 0;
+    tempvar i = 0;
+    loop:
+
+    let i = [ap - 1];
+    let n_processed_words = [ap - 2];
+    let current_word = [ap - 3];
+
+    %{ memory[ap] = 1 if (ids.value_len - ids.n_processed_words == 0) else 0 %}
+    jmp end_loop if [ap] != 0, ap++;
+
+    // Inlined felt_divmod (unsigned_div_rem).
+    let q = [ap];
+    let r = [ap + 1];
+    %{
+        ids.q, ids.r = divmod(memory[ids.value + ids.i], ids.devisor)
+        print(f"val={memory[ids.value + ids.i]} q={ids.q} r={ids.r} i={ids.i}")
+    %}
+    ap += 2;
+    tempvar offset = 3 * n_processed_words;
+    assert [range_check_ptr + offset] = q;
+    assert [range_check_ptr + offset + 1] = r;
+    assert [range_check_ptr + offset + 2] = devisor - r - 1;
+    assert q * devisor + r = value[i];
+    // done inlining felt_divmod.
+
+    assert result[n_processed_words] = current_word + r * shifter;
+    [ap] = q, ap++;
+    [ap] = n_processed_words + 1, ap++;
+    [ap] = i + 1, ap++;
+
+    jmp loop;
+    end_loop:
+    
+
+    assert value_len = n_processed_words;
+    tempvar range_check_ptr = range_check_ptr + 3 * n_processed_words;
+    assert current_word = 0;
+
+    return (shifted=result);
 }
