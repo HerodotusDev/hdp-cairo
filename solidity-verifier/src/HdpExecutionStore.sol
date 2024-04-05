@@ -4,14 +4,13 @@ pragma solidity ^0.8.0;
 import {AccessControl} from "openzeppelin-contracts/contracts/access/AccessControl.sol";
 import {MerkleProof} from "openzeppelin-contracts/contracts/utils/cryptography/MerkleProof.sol";
 
-import {IFactsRegistry} from "../interfaces/IFactsRegistry.sol";
-import {ISharpFactsAggregator} from "../interfaces/ISharpFactsAggregator.sol";
-import {IAggregatorsFactory} from "../interfaces/IAggregatorsFactory.sol";
+import {IFactsRegistry} from "./interfaces/IFactsRegistry.sol";
+import {ISharpFactsAggregator} from "./interfaces/ISharpFactsAggregator.sol";
+import {IAggregatorsFactory} from "./interfaces/IAggregatorsFactory.sol";
 
 import {BlockSampledDatalake, BlockSampledDatalakeCodecs} from "./datatypes/BlockSampledDatalakeCodecs.sol";
 import {IterativeDynamicLayoutDatalake, IterativeDynamicLayoutDatalakeCodecs} from "./datatypes/IterativeDynamicLayoutDatalakeCodecs.sol";
 import {ComputationalTask, ComputationalTaskCodecs} from "./datatypes/ComputationalTaskCodecs.sol";
-import {HexStringConverter} from "../lib/HexStringConverter.sol";
 
 /// @title HdpExecutionStore
 /// @author Herodotus Dev

@@ -4,15 +4,14 @@ pragma solidity ^0.8.0;
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
-import {HdpExecutionStore} from "../../src/hdp/HdpExecutionStore.sol";
-import {BlockSampledDatalake, BlockSampledDatalakeCodecs} from "../../src/hdp/datatypes/BlockSampledDatalakeCodecs.sol";
-import {ComputationalTask, ComputationalTaskCodecs} from "../../src/hdp/datatypes/ComputationalTaskCodecs.sol";
+import {HdpExecutionStore} from "../src/HdpExecutionStore.sol";
+import {BlockSampledDatalake, BlockSampledDatalakeCodecs} from "../src/datatypes/BlockSampledDatalakeCodecs.sol";
+import {ComputationalTask, ComputationalTaskCodecs} from "../src/datatypes/ComputationalTaskCodecs.sol";
 
-import {IFactsRegistry} from "../../src/interfaces/IFactsRegistry.sol";
-import {ISharpFactsAggregator} from "../../src/interfaces/ISharpFactsAggregator.sol";
-import {IAggregatorsFactory} from "../../src/interfaces/IAggregatorsFactory.sol";
-import {Uint256Splitter} from "../../src/lib/Uint256Splitter.sol";
-import {HexStringConverter} from "../../src/lib/HexStringConverter.sol";
+import {IFactsRegistry} from "../src/interfaces/IFactsRegistry.sol";
+import {ISharpFactsAggregator} from "../src/interfaces/ISharpFactsAggregator.sol";
+import {IAggregatorsFactory} from "../src/interfaces/IAggregatorsFactory.sol";
+import {Uint256Splitter} from "../src/lib/Uint256Splitter.sol";
 
 contract MockFactsRegistry is IFactsRegistry {
     mapping(bytes32 => bool) public isValid;

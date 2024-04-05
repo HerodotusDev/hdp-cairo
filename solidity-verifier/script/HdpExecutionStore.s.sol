@@ -6,7 +6,7 @@ import "forge-std/console.sol";
 
 import {IAggregatorsFactory} from "../src/interfaces/IAggregatorsFactory.sol";
 import {IFactsRegistry} from "../src/interfaces/IFactsRegistry.sol";
-import {HdpExecutionStore} from "../src/hdp/HdpExecutionStore.sol";
+import {HdpExecutionStore} from "../src/HdpExecutionStore.sol";
 
 contract HdpExecutionStoreDeployer is Script {
     function run() external {
