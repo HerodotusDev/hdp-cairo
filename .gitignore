@@ -26,4 +26,4 @@ package-lock.json
 .DS_Store
 src/.DS_Store
 
-solidity-verifier/lib/*
+hdp-evm/lib/*
