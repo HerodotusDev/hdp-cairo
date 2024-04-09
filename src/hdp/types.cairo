@@ -65,8 +65,9 @@ struct BlockSampledDataLake {
 }
 
 struct BlockSampledComputationalTask {
-    aggregate_fn_id: felt, // avg=0, sum=1, min=2, max=3
-    // aggregateFnCtx: felt*,
     hash: Uint256,
     datalake: BlockSampledDataLake,
+    aggregate_fn_id: felt,
+    ctx_operator: felt,
+    ctx_value: Uint256,
 }

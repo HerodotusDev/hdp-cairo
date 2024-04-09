@@ -10,6 +10,12 @@ from src.hdp.memorizer import AccountMemorizer, StorageMemorizer, HeaderMemorize
 from src.hdp.decoders.header_decoder import HeaderDecoder
 from src.hdp.decoders.account_decoder import AccountDecoder
 
+namespace BLOCK_SAMPLED_PROPERTY {
+    const HEADER = 1;
+    const ACCOUNT = 2;
+    const STORAGE_SLOT = 3;
+}
+
 // Creates a BlockSampledDataLake from the input bytes
 func init_block_sampled{
     range_check_ptr,
@@ -26,7 +32,7 @@ func init_block_sampled{
 
     let (properties) = alloc();
     // Decode properties
-    if(property_type == 1) {
+    if(property_type == BLOCK_SAMPLED_PROPERTY.HEADER) {
         // Header Input Layout:
         let chunk_one = word_reverse_endian_16_RC([input + 24]);
 
@@ -48,7 +54,7 @@ func init_block_sampled{
         ));
     }
 
-    if(property_type == 2) {
+    if(property_type == BLOCK_SAMPLED_PROPERTY.ACCOUNT) {
         // Account Input Layout:
 
         let (sample_id, address) = extract_sample_id_and_address{
@@ -75,7 +81,7 @@ func init_block_sampled{
         tempvar bitwise_ptr = bitwise_ptr;
     }
 
-    if(property_type == 3) {
+    if(property_type == BLOCK_SAMPLED_PROPERTY.STORAGE_SLOT) {
         // Account Slot Input Layout:
 
         let (sample_id, address) = extract_sample_id_and_address{
@@ -127,12 +133,7 @@ func fetch_data_points{
     let (data_points: Uint256*) = alloc();
     let property_type = task.datalake.properties[0];
 
-    %{
-        print("property_type: ", ids.property_type)
-    %}
-
-    if(property_type == 1) {
-        // Header
+    if(property_type == BLOCK_SAMPLED_PROPERTY.HEADER) {
         let data_points_len = fetch_header_data_points(
             datalake=task.datalake, 
             index=0, 
@@ -142,8 +143,7 @@ func fetch_data_points{
         return (data_points, data_points_len);
     }
 
-    if(property_type == 2) {
-        // Account
+    if(property_type == BLOCK_SAMPLED_PROPERTY.ACCOUNT) {
         let data_points_len = fetch_account_data_points(
             datalake=task.datalake, 
             index=0, 
@@ -153,8 +153,7 @@ func fetch_data_points{
         return (data_points, data_points_len);
     }
 
-    if(property_type == 3) {
-        // Account Slot
+    if(property_type == BLOCK_SAMPLED_PROPERTY.STORAGE_SLOT) {
         let data_points_len = fetch_storage_data_points(
             datalake=task.datalake, 
             index=0, 

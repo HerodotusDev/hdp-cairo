@@ -12,13 +12,14 @@ from src.libs.utils import uint256_add, uint256_sub
 const TRUE = 1;
 const FALSE = 0;
 
-namespace COUNT_IF {
-    const EQ = 0;  // ==
-    const NEQ = 1;  // !=
-    const GT = 2;  // >
-    const GE = 3;  // >=
-    const LT = 4;  // <
-    const LE = 5;  // <=
+// we start with index 1, as solidity handles undefined as 0
+namespace COUNT_IF { 
+    const EQ = 1;  // ==
+    const NEQ = 2;  // !=
+    const GT = 3;  // >
+    const GE = 4;  // >=
+    const LT = 5;  // <
+    const LE = 6;  // <=
 }
 
 // Takes an array of Uint256 values and returns the number of elements that satisfy the condition.

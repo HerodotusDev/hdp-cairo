@@ -227,6 +227,7 @@ func run{
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
         block_sampled_tasks=block_sampled_tasks,
+        pow2_array=pow2_array,
     }(
         block_sampled_tasks_input,
         block_sampled_tasks_bytes_len,
