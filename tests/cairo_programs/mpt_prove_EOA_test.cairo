@@ -29,7 +29,7 @@ func main{
         from tools.py.storage_proof import get_account_proof, CairoAccountMPTProof
 
         load_dotenv()
-        RPC_URL = os.getenv('RPC_URL_MAINNET')
+        RPC_URL = os.getenv('RPC_URL')
         addresses = [0xd3cda913deb6f67967b99d67acdfa1712c293601, 0xaa3a45fEE87a6f6a86F8C62719354F967E4Ce7c2, 0xFb12899D8bf56E13288efA6b0E46358961af1aA9]
         block_numbers = [81326, 18821000, 15829204]
 

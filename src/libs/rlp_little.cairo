@@ -88,7 +88,7 @@ func assert_subset_in_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
 ) -> () {
     alloc_locals;
     let key_subset_256t = key_subset_to_uint256(key_subset, key_subset_len);
-    %{ conditional_print(f"key_susbet_uncut={hex(ids.key_subset_256t.low + ids.key_subset_256t.high*2**128)}") %}
+    // %{ conditional_print(f"key_susbet_uncut={hex(ids.key_subset_256t.low + ids.key_subset_256t.high*2**128)}") %}
 
     local key_subset_256: Uint256;
     local key_subset_last_nibble: felt;
@@ -96,7 +96,7 @@ func assert_subset_in_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     let (_, odd_checked_nibbles) = felt_divmod(n_nibbles_already_checked, 2);
 
     if (cut_nibble != 0) {
-        %{ conditional_print(f"Cut nibble") %}
+        // %{ conditional_print(f"Cut nibble") %}
         let (key_subset_256ltmp, byte) = felt_divmod(key_subset_256t.low, 2 ** 8);
         let (key_subset_256h, acc) = felt_divmod(key_subset_256t.high, 2 ** 8);
         let (_, nibble) = felt_divmod(byte, 2 ** 4);
@@ -110,8 +110,8 @@ func assert_subset_in_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
         assert key_subset_last_nibble = 0;
         tempvar range_check_ptr = range_check_ptr;
     }
-    %{ conditional_print(f"key_susbet_cutted={hex(ids.key_subset_256.low + ids.key_subset_256.high*2**128)}") %}
-    %{ conditional_print(f"key_little={hex(ids.key_little.low + ids.key_little.high*2**128)}") %}
+    // %{ conditional_print(f"key_susbet_cutted={hex(ids.key_subset_256.low + ids.key_subset_256.high*2**128)}") %}
+    // %{ conditional_print(f"key_little={hex(ids.key_little.low + ids.key_little.high*2**128)}") %}
 
     local key_shifted: Uint256;
     local key_shifted_last_nibble: felt;
@@ -134,7 +134,7 @@ func assert_subset_in_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
         tempvar range_check_ptr = range_check_ptr;
     }
 
-    %{ conditional_print(f"key_shifted={hex(ids.key_shifted.low + ids.key_shifted.high*2**128)}") %}
+    // %{ conditional_print(f"key_shifted={hex(ids.key_shifted.low + ids.key_shifted.high*2**128)}") %}
 
     if (key_subset_256.high != 0) {
         // caution : high part must have less or equal 30 nibbles. for felt divmod.
@@ -142,11 +142,11 @@ func assert_subset_in_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
         let (_, key_high) = bitwise_divmod{bitwise_ptr=bitwise_ptr}(key_shifted.high, pow2_array[4 * n_nibble_in_high_part]);
 
         %{
-            conditional_print(f"\t N nibbles in right part : {ids.n_nibble_in_high_part}") 
-            conditional_print(f"\t orig key high : {hex(ids.key_little.high)}")
-            conditional_print(f"\t key shifted high : {hex(ids.key_shifted.high)}")
-            conditional_print(f"\t final key high : {hex(ids.key_high)}")
-            conditional_print(f"\t key subset high : {hex(ids.key_subset_256.high)}")
+            #conditional_print(f"\t N nibbles in right part : {ids.n_nibble_in_high_part}") 
+            #conditional_print(f"\t orig key high : {hex(ids.key_little.high)}")
+            #conditional_print(f"\t key shifted high : {hex(ids.key_shifted.high)}")
+            #conditional_print(f"\t final key high : {hex(ids.key_high)}")
+            #conditional_print(f"\t key subset high : {hex(ids.key_subset_256.high)}")
         %}
 
         assert key_subset_256.low = key_shifted.low;
@@ -178,13 +178,13 @@ func extract_nibble_from_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
         ids.nibble_pos = ids.nibble_index % 2
     %}
     %{
-        conditional_print(f"Key low: {hex(ids.key.low)}")
-        conditional_print(f"Key high: {hex(ids.key.high)}")
-        conditional_print(f"nibble_index: {ids.nibble_index}")
+        #conditional_print(f"Key low: {hex(ids.key.low)}")
+        #conditional_print(f"Key high: {hex(ids.key.high)}")
+        #conditional_print(f"nibble_index: {ids.nibble_index}")
     %}
     if (get_nibble_from_low != 0) {
         if (nibble_pos != 0) {
-            %{ conditional_print(f"\t case 0 ") %}
+            // %{ conditional_print(f"\t case 0 ") %}
             assert [range_check_ptr] = 31 - nibble_index;
             assert bitwise_ptr.x = key.low;
             assert bitwise_ptr.y = 0xf * pow2_array[4 * (nibble_index - 1)];
@@ -193,7 +193,7 @@ func extract_nibble_from_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
             tempvar bitwise_ptr = bitwise_ptr + BitwiseBuiltin.SIZE;
             return extracted_nibble_at_pos;
         } else {
-            %{ conditional_print(f"\t case 1 ") %}
+            // %{ conditional_print(f"\t case 1 ") %}
 
             assert [range_check_ptr] = 31 - nibble_index;
             assert bitwise_ptr.x = key.low;
@@ -205,7 +205,7 @@ func extract_nibble_from_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
         }
     } else {
         if (nibble_pos != 0) {
-            %{ conditional_print(f"\t case 2 ") %}
+            // %{ conditional_print(f"\t case 2 ") %}
 
             assert [range_check_ptr] = 31 - (nibble_index - 32);
             tempvar offset = pow2_array[4 * (nibble_index - 32)];
@@ -216,7 +216,7 @@ func extract_nibble_from_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
             tempvar bitwise_ptr = bitwise_ptr + BitwiseBuiltin.SIZE;
             return extracted_nibble_at_pos;
         } else {
-            %{ conditional_print(f"\t case 3 ") %}
+            // %{ conditional_print(f"\t case 3 ") %}
 
             assert [range_check_ptr] = 31 - (nibble_index - 32);
             tempvar offset = pow2_array[4 * (nibble_index - 32) + 4];
@@ -238,13 +238,13 @@ func extract_nibble_from_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
 func extract_n_bytes_at_pos{bitwise_ptr: BitwiseBuiltin*}(
     word_64_little: felt, pos: felt, n: felt, pow2_array: felt*
 ) -> felt {
-    %{ conditional_print(f"extracting {ids.n} bytes at pos {ids.pos} from {hex(ids.word_64_little)}") %}
+    // %{ conditional_print(f"extracting {ids.n} bytes at pos {ids.pos} from {hex(ids.word_64_little)}") %}
     let x_mask = get_0xff_mask(n);
-    %{ conditional_print(f"x_mask for len {ids.n}: {hex(ids.x_mask)}") %}
+    // %{ conditional_print(f"x_mask for len {ids.n}: {hex(ids.x_mask)}") %}
     assert bitwise_ptr[0].x = word_64_little;
     assert bitwise_ptr[0].y = x_mask * pow2_array[8 * (pos)];
     tempvar res = bitwise_ptr[0].x_and_y;
-    %{ conditional_print(f"tmp : {hex(ids.res)}") %}
+    // %{ conditional_print(f"tmp : {hex(ids.res)}") %}
     tempvar extracted_bytes = bitwise_ptr[0].x_and_y / pow2_array[8 * pos];
     tempvar bitwise_ptr = bitwise_ptr + BitwiseBuiltin.SIZE;
     return extracted_bytes;
@@ -472,7 +472,7 @@ func jump_n_items_from_item{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
             ids.item_type = 2
             #conditional_print(f"ong string (len_len {ids.second_item_prefix - 0xb7} bytes)")
         else:
-            conditional_print(f"Unsupported item type {ids.item_prefix}. Only single bytes, short or long strings are supported.")
+            #conditional_print(f"Unsupported item type {ids.item_prefix}. Only single bytes, short or long strings are supported.")
     %}
 
     if (item_type == 0) {

@@ -22,13 +22,11 @@ import math
 GOERLI = "goerli"
 MAINNET = "mainnet"
 
-NETWORK = GOERLI
+NETWORK = MAINNET
 load_dotenv()
 RPC_URL = (
-    os.getenv("RPC_URL_GOERLI") if NETWORK == GOERLI else os.getenv("RPC_URL_MAINNET")
+    os.getenv("RPC_URL_GOERLI") if NETWORK == GOERLI else os.getenv("RPC_URL")
 )
-RPC_URL = "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"
-
 
 def fetch_header(block_number):
     blocks = fetch_blocks_from_rpc_no_async(block_number + 1, block_number - 1, RPC_URL)
