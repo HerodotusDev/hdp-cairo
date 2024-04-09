@@ -21,8 +21,6 @@ namespace AGGREGATE_FN {
     const MERKLE = 5;
 }
 
-
-
 namespace BlockSampledTask {
     func init{
         range_check_ptr,
@@ -133,10 +131,6 @@ namespace BlockSampledTask {
         if(tasks[index].aggregate_fn_id == AGGREGATE_FN.COUNT){
             let (res_felt) = count_if(data_points, data_points_len, tasks[index].ctx_operator, tasks[index].ctx_value);
             let result = felt_to_uint256(res_felt);
-
-            %{
-                print("Count: ", ids.res_felt)
-            %}
             assert [results] = result;
 
             return execute(
@@ -193,6 +187,12 @@ func extract_params_and_construct_task{
             high=[input + 14] + [input + 15] * 0x10000000000000000
         );
         let (ctx_value) = uint256_reverse_endian(ctx_value_le);
+
+        %{
+            print("ctx_operator: ", ids.ctx_operator)
+            print("ctx_value: ", hex(ids.ctx_value.low), hex(ids.ctx_value.high))
+        
+        %}
 
         return (task=BlockSampledComputationalTask(
             hash=hash,

@@ -52,6 +52,7 @@ func run_tests{
     poseidon_ptr: PoseidonBuiltin*,
 }(tests_len: felt, index: felt) {
 
+
     if (tests_len == index){
         return ();
     }
@@ -59,6 +60,7 @@ func run_tests{
     %{
         # Overwrite program input
         program_input = data_list[ids.index]
+        print(f'Running test {ids.index + 1}/{ids.tests_len}')
     %}
 
     run{

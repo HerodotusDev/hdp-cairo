@@ -5,6 +5,7 @@ from starkware.cairo.common.alloc import alloc
 from tests.hdp.test_vectors import BlockSampledTaskMocker
 from src.hdp.merkle import compute_tasks_root, compute_results_root, hash_pair, compute_merkle_root
 from src.hdp.utils import compute_results_entry
+from src.hdp.types import BlockSampledComputationalTask
 
 func main{
     range_check_ptr,
@@ -39,7 +40,9 @@ func computes_output_roots{
 }() {
     alloc_locals;
 
-    let (tasks,_,_,_,_,tasks_len) = BlockSampledTaskMocker.get_account_task();
+    let (task,_,_,_,_,_,tasks_len) = BlockSampledTaskMocker.get_init_data();
+    let (tasks: BlockSampledComputationalTask*) = alloc();
+    assert tasks[0] = task;
 
     let tasks_root = compute_tasks_root{
         range_check_ptr=range_check_ptr,
@@ -47,14 +50,14 @@ func computes_output_roots{
         keccak_ptr=keccak_ptr,
     } (tasks, tasks_len);
 
-    assert tasks_root.low = 25249885786962326550128618884562747073;
-    assert tasks_root.high = 303705675233408676159998938613428017230;
+    assert tasks_root.low = 114514345207152648761622449186187146395;
+    assert tasks_root.high = 250820143348695721067706216954199270384;
 
     let result = Uint256(low=100, high=0);
     let results_entry = compute_results_entry(tasks_root, result);
 
-    assert results_entry.low = 52590437381030883083081982142525279579;
-    assert results_entry.high = 305080544191682781037295485062205375969;
+    assert results_entry.low = 2004459135957517006232490669995341918;
+    assert results_entry.high = 17938436372202772873742223991112862737;
 
 
     let (results: Uint256*) = alloc();
@@ -62,8 +65,8 @@ func computes_output_roots{
 
     let results_root = compute_results_root(tasks, results, 1);
 
-    assert results_root.low = 328630078149447953936045244953643482176;
-    assert results_root.high = 260038522591081060757806935135508368687;
+    assert results_root.low = 519486554900734574573258899619310091;
+    assert results_root.high = 259887999216688164462131972375059079258;
 
 
     return (); 
