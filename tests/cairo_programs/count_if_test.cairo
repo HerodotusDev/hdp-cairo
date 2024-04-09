@@ -21,12 +21,12 @@ func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
         random.seed(0)
 
         class COUNTIFOP(Enum):
-            EQ = 0
-            NEQ = 1
-            GT = 2
-            GE = 3
-            LT = 4
-            LE = 5
+            EQ = 1
+            NEQ = 2
+            GT = 3
+            GE = 4
+            LT = 5
+            LE = 6
 
         def count_if(array:list, op:COUNTIFOP, value) -> int:
             counter = 0
@@ -79,7 +79,7 @@ func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
         segments.write_arg(ids.values, values)
         segments.write_arg(ids.expected, expected)
     %}
-    test_count_if(cast(arrs, Uint256**), ops, cast(values, Uint256*), expected, 0, N_TESTS);
+    test_count_if(cast(arrs, Uint256**), ops, cast(values, Uint256*), expected, 1, N_TESTS);
     return ();
 }
 

@@ -50,6 +50,7 @@ Currently, there are three different operators available. These are:
 - `max`: Returns the maximum value of the passed data.
 - `sum`: Returns the sum of the passed data.
 - `avg`: Returns the average of the passed data.
+- `count_if`: Returns the number of elements that satisfy a condition.
 
 It must be noted, that these operations can be run on any field that we verified in the previous stage. This means its currently possible to run these aggregation functions on non-numerical values like addresses or hashes, e.g. `parent_hash` of a header.
 
@@ -74,10 +75,6 @@ make test-hdp
 Features that are planned or in progress:
 
 ### In Progress
-
-**Count-if Aggregate:** counts the number of elements that satisfy a condition.
-
-Status: ![](https://geps.dev/progress/90)
 
 **Transaction Verifier:** verifies and decodes raw transactions.
 
