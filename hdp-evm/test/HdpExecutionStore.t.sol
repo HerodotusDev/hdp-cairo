@@ -5,7 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {HdpExecutionStore} from "../src/HdpExecutionStore.sol";
 import {BlockSampledDatalake, BlockSampledDatalakeCodecs} from "../src/datatypes/BlockSampledDatalakeCodecs.sol";
 import {ComputationalTask, ComputationalTaskCodecs} from "../src/datatypes/ComputationalTaskCodecs.sol";
-
+import {AggregateFn, Operator} from "../src/datatypes/ComputationalTaskCodecs.sol";
 import {IFactsRegistry} from "../src/interfaces/IFactsRegistry.sol";
 import {ISharpFactsAggregator} from "../src/interfaces/ISharpFactsAggregator.sol";
 import {IAggregatorsFactory} from "../src/interfaces/IAggregatorsFactory.sol";
@@ -22,7 +22,10 @@ contract MockFactsRegistry is IFactsRegistry {
 contract MockAggregatorsFactory is IAggregatorsFactory {
     mapping(uint256 => ISharpFactsAggregator) public aggregatorsById;
 
-    function createAggregator(uint256 id, ISharpFactsAggregator aggregator) external {
+    function createAggregator(
+        uint256 id,
+        ISharpFactsAggregator aggregator
+    ) external {
         aggregatorsById[id] = aggregator;
     }
 }
@@ -30,24 +33,26 @@ contract MockAggregatorsFactory is IAggregatorsFactory {
 contract MockSharpFactsAggregator is ISharpFactsAggregator {
     function aggregatorState() external pure returns (AggregatorState memory) {
         bytes32 root = 0x010985193855d9de012ae065d02e15676aa2cce031b18290d3b48fb8e410d3bc;
-        return AggregatorState({
-            poseidonMmrRoot: root,
-            keccakMmrRoot: bytes32(0),
-            mmrSize: 56994,
-            continuableParentHash: bytes32(0)
-        });
+        return
+            AggregatorState({
+                poseidonMmrRoot: root,
+                keccakMmrRoot: bytes32(0),
+                mmrSize: 56994,
+                continuableParentHash: bytes32(0)
+            });
     }
 }
 
 contract MockSharpFactsAggregator2 is ISharpFactsAggregator {
     function aggregatorState() external pure returns (AggregatorState memory) {
-        bytes32 root = 0x012638c701c5d7a48787bf56db397fa6a02b62a900f24528e0b33f2de64fc6f5;
-        return AggregatorState({
-            poseidonMmrRoot: root,
-            keccakMmrRoot: bytes32(0),
-            mmrSize: 925479,
-            continuableParentHash: bytes32(0)
-        });
+        bytes32 root = 0x03487af623d7acba1505bfac5690d1a80c96590f5f5f40e6485861eb4e69c63e;
+        return
+            AggregatorState({
+                poseidonMmrRoot: root,
+                keccakMmrRoot: bytes32(0),
+                mmrSize: 1215237,
+                continuableParentHash: bytes32(0)
+            });
     }
 }
 
@@ -93,24 +98,33 @@ contract HdpExecutionStoreTest is Test {
     }
 
     function testSingleBlockSingleBlockSampledDatalake() public {
+        // hdp encode -a -b 4952100 4952100 "account.0x7f2C6f930306D3AA736B3A6C6A98f512F74036D4.nonce" 1
         // Note: Step 1. HDP Server receives a request
         // [1 Request = N Tasks] Request execution of task with block sampled datalake
         BlockSampledDatalake memory datalake = BlockSampledDatalake({
             blockRangeStart: 4952100,
             blockRangeEnd: 4952100,
             increment: 1,
-            sampledProperty: BlockSampledDatalakeCodecs.encodeSampledPropertyForAccount(
-                address(0x7f2C6f930306D3AA736B3A6C6A98f512F74036D4), uint8(0)
+            sampledProperty: BlockSampledDatalakeCodecs
+                .encodeSampledPropertyForAccount(
+                    address(0x7f2C6f930306D3AA736B3A6C6A98f512F74036D4),
+                    uint8(0)
                 )
         });
 
-        ComputationalTask memory computationalTask =
-            ComputationalTask({aggregateFnId: uint256(bytes32("sum")), aggregateFnCtx: ""});
+        ComputationalTask memory computationalTask = ComputationalTask({
+            aggregateFnId: AggregateFn.SUM,
+            operatorId: Operator.NONE,
+            valueToCompare: uint256(0)
+        });
 
         // =================================
 
         // Note: Step 2. HDP Server call [`requestExecutionOfTaskWithBlockSampledDatalake`] before processing
-        hdp.requestExecutionOfTaskWithBlockSampledDatalake(datalake, computationalTask);
+        hdp.requestExecutionOfTaskWithBlockSampledDatalake(
+            datalake,
+            computationalTask
+        );
 
         // =================================
 
@@ -119,11 +133,21 @@ contract HdpExecutionStoreTest is Test {
         bytes32 datalakeCommitment = datalake.commit();
         bytes32 taskCommitment = computationalTask.commit(datalakeCommitment);
 
-        assertEq(taskCommitment, bytes32(0x46296bc9cb11408bfa46c5c31a542f12242db2412ee2217b4e8add2bc1927d0b));
+        assertEq(
+            taskCommitment,
+            bytes32(
+                0xa8a1306d7f51289d0731a64579765e34a672ddc247c2c10752596dd53150b00e
+            )
+        );
 
         // Check the task state is PENDING
-        HdpExecutionStore.TaskStatus task1Status = hdp.getTaskStatus(taskCommitment);
-        assertEq(uint256(task1Status), uint256(HdpExecutionStore.TaskStatus.SCHEDULED));
+        HdpExecutionStore.TaskStatus task1Status = hdp.getTaskStatus(
+            taskCommitment
+        );
+        assertEq(
+            uint256(task1Status),
+            uint256(HdpExecutionStore.TaskStatus.SCHEDULED)
+        );
 
         // =================================
 
@@ -154,38 +178,60 @@ contract HdpExecutionStoreTest is Test {
         bytes32[] memory computationalTasksResult = new bytes32[](1);
         computationalTasksResult[0] = bytes32(uint256(6776));
 
-        bytes32 taskResultCommitment1 = keccak256(abi.encode(taskCommitment, computationalTasksResult[0]));
+        bytes32 taskResultCommitment1 = keccak256(
+            abi.encode(taskCommitment, computationalTasksResult[0])
+        );
 
-        assertEq(taskResultCommitment1, bytes32(0xa2ce858689a998d85b8f821f32e971556146d097d8033948d9b9bac978cedc9d));
+        assertEq(
+            taskResultCommitment1,
+            bytes32(
+                0x9ce0534899d786d8a51a2bc471d4894d61c8c723d8b31174c838014aa99acf9b
+            )
+        );
 
         // Tasks and Results Merkle Tree Information
         // proof of the tasks merkle tree
-        bytes32[][] memory batchInclusionMerkleProofOfTasks = new bytes32[][](1);
+        bytes32[][] memory batchInclusionMerkleProofOfTasks = new bytes32[][](
+            1
+        );
         bytes32[] memory inclusionMerkleProofOfTask1 = new bytes32[](0);
         batchInclusionMerkleProofOfTasks[0] = inclusionMerkleProofOfTask1;
 
         // proof of the result
-        bytes32[][] memory batchInclusionMerkleProofOfResults = new bytes32[][](1);
+        bytes32[][] memory batchInclusionMerkleProofOfResults = new bytes32[][](
+            1
+        );
         bytes32[] memory inclusionMerkleProofOfResult1 = new bytes32[](0);
         batchInclusionMerkleProofOfResults[0] = inclusionMerkleProofOfResult1;
 
-        uint256 taskMerkleRoot = uint256(bytes32(0x0030ce873e657283a8e03a3e83ba95a0bf1ad049e8ac1cb8148280aca2b1adc7));
-        (uint256 taskRootLow, uint256 taskRootHigh) = Uint256Splitter.split128(taskMerkleRoot);
-        uint128 scheduledTasksBatchMerkleRootLow = 0xbf1ad049e8ac1cb8148280aca2b1adc7;
-        uint128 scheduledTasksBatchMerkleRootHigh = 0x0030ce873e657283a8e03a3e83ba95a0;
+        uint256 taskMerkleRoot = uint256(
+            bytes32(
+                0x3a2f682184c8f04070193cb3c5a0a5c519cfda71c5ae8d39090c6ed0aa9d7aa1
+            )
+        );
+        (uint256 taskRootLow, uint256 taskRootHigh) = Uint256Splitter.split128(
+            taskMerkleRoot
+        );
+        uint128 scheduledTasksBatchMerkleRootLow = 0x19cfda71c5ae8d39090c6ed0aa9d7aa1;
+        uint128 scheduledTasksBatchMerkleRootHigh = 0x3a2f682184c8f04070193cb3c5a0a5c5;
         assertEq(scheduledTasksBatchMerkleRootLow, taskRootLow);
         assertEq(scheduledTasksBatchMerkleRootHigh, taskRootHigh);
 
-        uint256 resultMerkleRoot = uint256(bytes32(0xee5ce36fcbe3272adfaee606c1fa7cb6030952ad8335425a83ca271685eef146));
-        (uint256 resultRootLow, uint256 resultRootHigh) = Uint256Splitter.split128(resultMerkleRoot);
-        uint128 batchResultsMerkleRootLow = 0x030952ad8335425a83ca271685eef146;
-        uint128 batchResultsMerkleRootHigh = 0xee5ce36fcbe3272adfaee606c1fa7cb6;
+        uint256 resultMerkleRoot = uint256(
+            bytes32(
+                0x8ddadb3a246d9988d78871b11dca322a2df53381bfacb9edc42cedfd263b691d
+            )
+        );
+        (uint256 resultRootLow, uint256 resultRootHigh) = Uint256Splitter
+            .split128(resultMerkleRoot);
+        uint128 batchResultsMerkleRootLow = 0x2df53381bfacb9edc42cedfd263b691d;
+        uint128 batchResultsMerkleRootHigh = 0x8ddadb3a246d9988d78871b11dca322a;
         assertEq(batchResultsMerkleRootLow, resultRootLow);
         assertEq(batchResultsMerkleRootHigh, resultRootHigh);
 
         // MMR metadata
-        uint256 usedMmrId = 2;
-        uint256 usedMmrSize = 56994;
+        uint256 usedMmrId = 19;
+        uint256 usedMmrSize = 1215237;
 
         // =================================
 
@@ -201,7 +247,12 @@ contract HdpExecutionStoreTest is Test {
             scheduledTasksBatchMerkleRootLow,
             scheduledTasksBatchMerkleRootHigh
         );
-        assertEq(factHash, bytes32(0x0209c77553b707b8545cdb4efa711a4e1e81748e7e98d4704756658bc89e5203));
+        assertEq(
+            factHash,
+            bytes32(
+                0x57b0d769b9c7cb45ba549e3170ad0c2558ba598e5d2f170d94cefdcbbf3f99ce
+            )
+        );
         factsRegistry.markValid(factHash);
         bool isValid = factsRegistry.isValid(factHash);
         assertEq(isValid, true);
@@ -225,31 +276,44 @@ contract HdpExecutionStoreTest is Test {
         );
 
         // Check if the task state is FINALIZED
-        HdpExecutionStore.TaskStatus task1StatusAfter = hdp.getTaskStatus(taskCommitment);
-        assertEq(uint256(task1StatusAfter), uint256(HdpExecutionStore.TaskStatus.FINALIZED));
+        HdpExecutionStore.TaskStatus task1StatusAfter = hdp.getTaskStatus(
+            taskCommitment
+        );
+        assertEq(
+            uint256(task1StatusAfter),
+            uint256(HdpExecutionStore.TaskStatus.FINALIZED)
+        );
 
         // Check if the task result is stored
         bytes32 task1Result = hdp.getFinalizedTaskResult(taskCommitment);
         assertEq(task1Result, computationalTasksResult[0]);
     }
 
-    function testSingleBlockHeaderBlockSampledDatalake() public {
+    function testBlockHeaderBlockSampledDatalakeCount() public {
+        // hdp encode -a count gt.100000 -b 5515000 5515029 "header.blob_gas_used" 1
         // Note: Step 1. HDP Server receives a request
         // [1 Request = N Tasks] Request execution of task with block sampled datalake
         BlockSampledDatalake memory datalake = BlockSampledDatalake({
             blockRangeStart: 5515000,
             blockRangeEnd: 5515029,
             increment: 1,
-            sampledProperty: BlockSampledDatalakeCodecs.encodeSampledPropertyForHeaderProp(uint8(17))
+            sampledProperty: BlockSampledDatalakeCodecs
+                .encodeSampledPropertyForHeaderProp(uint8(17))
         });
 
-        ComputationalTask memory computationalTask =
-            ComputationalTask({aggregateFnId: uint256(bytes32("avg")), aggregateFnCtx: ""});
+        ComputationalTask memory computationalTask = ComputationalTask({
+            aggregateFnId: AggregateFn.COUNT,
+            operatorId: Operator.GT,
+            valueToCompare: uint256(100000)
+        });
 
         // =================================
 
         // Note: Step 2. HDP Server call [`requestExecutionOfTaskWithBlockSampledDatalake`] before processing
-        hdp2.requestExecutionOfTaskWithBlockSampledDatalake(datalake, computationalTask);
+        hdp2.requestExecutionOfTaskWithBlockSampledDatalake(
+            datalake,
+            computationalTask
+        );
 
         // =================================
 
@@ -258,11 +322,21 @@ contract HdpExecutionStoreTest is Test {
         bytes32 datalakeCommitment = datalake.commit();
         bytes32 taskCommitment = computationalTask.commit(datalakeCommitment);
 
-        assertEq(taskCommitment, bytes32(0x2f7cfd3f7a97c9f9e2f8ddd4a9693f9e25f1e59070a5e2aa98eb6b5fb4a44507));
+        assertEq(
+            taskCommitment,
+            bytes32(
+                0x631a92d0413783f63a6b8f8f226f6fd1ce01de4d534375e3b59555d245974954
+            )
+        );
 
         // Check the task state is PENDING
-        HdpExecutionStore.TaskStatus task1Status = hdp2.getTaskStatus(taskCommitment);
-        assertEq(uint256(task1Status), uint256(HdpExecutionStore.TaskStatus.SCHEDULED));
+        HdpExecutionStore.TaskStatus task1Status = hdp2.getTaskStatus(
+            taskCommitment
+        );
+        assertEq(
+            uint256(task1Status),
+            uint256(HdpExecutionStore.TaskStatus.SCHEDULED)
+        );
 
         // =================================
 
@@ -289,42 +363,78 @@ contract HdpExecutionStoreTest is Test {
         bytes32[] memory taskCommitments = new bytes32[](1);
         taskCommitments[0] = taskCommitment;
 
+        assertEq(
+            taskCommitments[0],
+            bytes32(
+                0x631a92d0413783f63a6b8f8f226f6fd1ce01de4d534375e3b59555d245974954
+            )
+        );
+
         // Evaluation Result value from cli
         bytes32[] memory computationalTasksResult = new bytes32[](1);
-        computationalTasksResult[0] = bytes32(uint256(419430));
+        computationalTasksResult[0] = bytes32(uint256(23));
 
-        bytes32 taskResultCommitment1 = keccak256(abi.encode(taskCommitment, computationalTasksResult[0]));
+        bytes32 taskResultCommitment1 = keccak256(
+            abi.encode(taskCommitment, computationalTasksResult[0])
+        );
 
-        assertEq(taskResultCommitment1, bytes32(0xcd2202d0ebc104aa31bcd63c729e322ac6b7da10f8896e1ea4a1b030d316811e));
+        assertEq(
+            taskCommitment,
+            bytes32(
+                0x631a92d0413783f63a6b8f8f226f6fd1ce01de4d534375e3b59555d245974954
+            )
+        );
+
+        assertEq(
+            taskResultCommitment1,
+            bytes32(
+                0x1c7caaf1a635ce660411286890a97ec8912fb1b583b56eb8f71153f3d3acd631
+            )
+        );
 
         // Tasks and Results Merkle Tree Information
         // proof of the tasks merkle tree
-        bytes32[][] memory batchInclusionMerkleProofOfTasks = new bytes32[][](1);
+        bytes32[][] memory batchInclusionMerkleProofOfTasks = new bytes32[][](
+            1
+        );
         bytes32[] memory inclusionMerkleProofOfTask1 = new bytes32[](0);
         batchInclusionMerkleProofOfTasks[0] = inclusionMerkleProofOfTask1;
 
         // proof of the result
-        bytes32[][] memory batchInclusionMerkleProofOfResults = new bytes32[][](1);
+        bytes32[][] memory batchInclusionMerkleProofOfResults = new bytes32[][](
+            1
+        );
         bytes32[] memory inclusionMerkleProofOfResult1 = new bytes32[](0);
         batchInclusionMerkleProofOfResults[0] = inclusionMerkleProofOfResult1;
 
-        uint256 taskMerkleRoot = uint256(bytes32(0x67b239a997d896ed6a579254637b2890c27feeaafb1f388b77d3f3e5f75d88c3));
-        (uint256 taskRootLow, uint256 taskRootHigh) = Uint256Splitter.split128(taskMerkleRoot);
-        uint128 scheduledTasksBatchMerkleRootLow = 0xc27feeaafb1f388b77d3f3e5f75d88c3;
-        uint128 scheduledTasksBatchMerkleRootHigh = 0x67b239a997d896ed6a579254637b2890;
+        uint256 taskMerkleRoot = uint256(
+            bytes32(
+                0x42273215b02c4d30f4b986e12013cd44459c6b8d18f7ade57b8180e104e06e80
+            )
+        );
+        (uint256 taskRootLow, uint256 taskRootHigh) = Uint256Splitter.split128(
+            taskMerkleRoot
+        );
+        uint128 scheduledTasksBatchMerkleRootLow = 0x459c6b8d18f7ade57b8180e104e06e80;
+        uint128 scheduledTasksBatchMerkleRootHigh = 0x42273215b02c4d30f4b986e12013cd44;
         assertEq(scheduledTasksBatchMerkleRootLow, taskRootLow);
         assertEq(scheduledTasksBatchMerkleRootHigh, taskRootHigh);
 
-        uint256 resultMerkleRoot = uint256(bytes32(0xc162bb399f80f431db2e732a37046f0f706089dddd630a8e1a0a2c22da06a5c1));
-        (uint256 resultRootLow, uint256 resultRootHigh) = Uint256Splitter.split128(resultMerkleRoot);
-        uint128 batchResultsMerkleRootLow = 0x706089dddd630a8e1a0a2c22da06a5c1;
-        uint128 batchResultsMerkleRootHigh = 0xc162bb399f80f431db2e732a37046f0f;
+        uint256 resultMerkleRoot = uint256(
+            bytes32(
+                0x63549254b8ea402aa8adbc1f0646ee0965cfcf426bcffb95002fb5e2ea8c6f9b
+            )
+        );
+        (uint256 resultRootLow, uint256 resultRootHigh) = Uint256Splitter
+            .split128(resultMerkleRoot);
+        uint128 batchResultsMerkleRootLow = 0x65cfcf426bcffb95002fb5e2ea8c6f9b;
+        uint128 batchResultsMerkleRootHigh = 0x63549254b8ea402aa8adbc1f0646ee09;
         assertEq(batchResultsMerkleRootLow, resultRootLow);
         assertEq(batchResultsMerkleRootHigh, resultRootHigh);
 
         // MMR metadata
         uint256 usedMmrId = 19;
-        uint256 usedMmrSize = 925479;
+        uint256 usedMmrSize = 1215237;
 
         // =================================
 
@@ -333,7 +443,12 @@ contract HdpExecutionStoreTest is Test {
 
         bytes32 loadRoot = hdp2.loadMmrRoot(usedMmrId, usedMmrSize);
 
-        assertEq(loadRoot, bytes32(0x012638c701c5d7a48787bf56db397fa6a02b62a900f24528e0b33f2de64fc6f5));
+        assertEq(
+            loadRoot,
+            bytes32(
+                0x03487af623d7acba1505bfac5690d1a80c96590f5f5f40e6485861eb4e69c63e
+            )
+        );
 
         // Mocking Cairo Program, insert the fact into the registry
         bytes32 factHash = getFactHash2(
@@ -344,7 +459,12 @@ contract HdpExecutionStoreTest is Test {
             scheduledTasksBatchMerkleRootLow,
             scheduledTasksBatchMerkleRootHigh
         );
-        assertEq(factHash, bytes32(0x1a4ea0279d59daeffef3942286d008543236dc2c37ae55369b2d105bd0a9458a));
+        assertEq(
+            factHash,
+            bytes32(
+                0xaca2ec9a009599561432bf0c88755198d232c0b723346b3e151052710181b1f8
+            )
+        );
         factsRegistry.markValid(factHash);
         bool isValid = factsRegistry.isValid(factHash);
         assertEq(isValid, true);
@@ -369,8 +489,13 @@ contract HdpExecutionStoreTest is Test {
         );
 
         // Check if the task state is FINALIZED
-        HdpExecutionStore.TaskStatus task1StatusAfter = hdp2.getTaskStatus(taskCommitment);
-        assertEq(uint256(task1StatusAfter), uint256(HdpExecutionStore.TaskStatus.FINALIZED));
+        HdpExecutionStore.TaskStatus task1StatusAfter = hdp2.getTaskStatus(
+            taskCommitment
+        );
+        assertEq(
+            uint256(task1StatusAfter),
+            uint256(HdpExecutionStore.TaskStatus.FINALIZED)
+        );
 
         // Check if the task result is stored
         bytes32 task1Result = hdp2.getFinalizedTaskResult(taskCommitment);
@@ -403,7 +528,9 @@ contract HdpExecutionStoreTest is Test {
 
         // Compute GPS fact hash
         bytes32 programHash = 0x0099423699f60ef2e51458ec9890eb9ee3ea011067337b8009ab6adcbac6148e;
-        bytes32 gpsFactHash = keccak256(abi.encode(programHash, programOutputHash));
+        bytes32 gpsFactHash = keccak256(
+            abi.encode(programHash, programOutputHash)
+        );
 
         return gpsFactHash;
     }
@@ -434,7 +561,9 @@ contract HdpExecutionStoreTest is Test {
 
         // Compute GPS fact hash
         bytes32 programHash = 0x0099423699f60ef2e51458ec9890eb9ee3ea011067337b8009ab6adcbac6148e;
-        bytes32 gpsFactHash = keccak256(abi.encode(programHash, programOutputHash));
+        bytes32 gpsFactHash = keccak256(
+            abi.encode(programHash, programOutputHash)
+        );
 
         return gpsFactHash;
     }
