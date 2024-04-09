@@ -1,4 +1,5 @@
 """Utility functions."""
+
 import json
 import os
 import shutil
@@ -14,6 +15,33 @@ def split_128(a):
 def from_uint256(a):
     """Takes in uint256-ish tuple, returns value."""
     return a[0] + (a[1] << 128)
+
+
+def uint256_reverse_endian(x: int):
+    return int.from_bytes(x.to_bytes(32, "big"), "little")
+
+
+def reverse_endian(x: int):
+    hex_str = hex(x)[2:]
+    return int.from_bytes(bytes.fromhex(hex_str), "little")
+
+
+def flatten(t):
+    result = []
+    for item in t:
+        if isinstance(item, (tuple, list)):
+            result.extend(flatten(item))
+        else:
+            result.append(item)
+    return result
+
+
+def reverse_endian_bytes(x: bytes):
+    return int.from_bytes(x, "little")
+
+
+def reverse_and_split_256_bytes(x: bytes):
+    return split_128(reverse_endian_bytes(x))
 
 
 def rpc_request(url, rpc_request):
@@ -37,6 +65,14 @@ def bytes_to_8_bytes_chunks_little(input_bytes):
 def bytes_to_8_bytes_chunks(input_bytes):
     # Split the input_bytes into 8-byte chunks
     byte_chunks = [input_bytes[i : i + 8] for i in range(0, len(input_bytes), 8)]
+    # Convert each chunk to big-endian integers
+    big_endian_ints = [int.from_bytes(chunk, byteorder="big") for chunk in byte_chunks]
+    return big_endian_ints
+
+
+def bytes_to_16_bytes_chunks(input_bytes):
+    # Split the input_bytes into 8-byte chunks
+    byte_chunks = [input_bytes[i : i + 16] for i in range(0, len(input_bytes), 16)]
     # Convert each chunk to big-endian integers
     big_endian_ints = [int.from_bytes(chunk, byteorder="big") for chunk in byte_chunks]
     return big_endian_ints

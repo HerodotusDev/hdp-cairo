@@ -6,7 +6,15 @@ import inquirer
 from tools.py.utils import create_directory, get_files_from_folders
 
 # Constants
-CAIRO_PROGRAMS_FOLDERS = ["tests/cairo_programs/", "src/single_chunk_processor"]
+CAIRO_PROGRAMS_FOLDERS = [
+    "tests/cairo_programs/",
+    "src/single_chunk_processor",
+    "src/batch_storage_proof",
+    "src/hdp",
+    "src/hdp/datalakes",
+    "src/hdp/tasks"
+]
+
 BUILD_DIR = "build"
 PROFILING_DIR = os.path.join(BUILD_DIR, "profiling")
 COMPILED_FILES_DIR = os.path.join(BUILD_DIR, "compiled_cairo_files")
@@ -34,6 +42,8 @@ class CairoRunner:
         )
         parser.add_argument("-pie", action="store_true", help="Create PIE object")
         parser.add_argument("-test", action="store_true", help="Run all tests")
+        parser.add_argument("-test_hdp", action="store_true", help="Run hdp tests")
+        parser.add_argument("-run_hdp", action="store_true", help="Run HDP")
         return parser.parse_args()
 
     def setup_autocomplete(self):
@@ -113,7 +123,7 @@ class CairoRunner:
             print(f"Compiling {self.filename_dot_cairo} ... ")
             compiled_path = os.path.join(COMPILED_FILES_DIR, f"{self.filename}.json")
             return_code = os.system(
-                f"cairo-compile {self.filename_dot_cairo_path} --output {compiled_path}"
+                f"cairo-compile {self.filename_dot_cairo_path} --output {compiled_path} --proof_mode"
             )
 
             if return_code == 0:
@@ -124,7 +134,7 @@ class CairoRunner:
     def construct_run_command(self, compiled_path):
         cmd_base = f"cairo-run --program={compiled_path} --layout=starknet_with_keccak"
         input_flag = (
-            f" --program_input={self.json_input_path}"
+            f" --program_input={self.json_input_path} --print_output"
             if os.path.exists(self.json_input_path)
             else ""
         )
@@ -139,6 +149,12 @@ class CairoRunner:
             else ""
         )
         return f"{cmd_base}{input_flag}{profile_flag}{pie_flag}"
+    
+    def run_hdp(self):
+        self.filename_dot_cairo_path = "src/hdp/hdp.cairo"
+        compiled_path = self.compile_cairo_file()
+        cmd_base = f"cairo-run --program={compiled_path} --layout=starknet_with_keccak  --program_input=src/hdp/hdp_input.json --print_output"
+        os.system(cmd_base)
 
     def run(self):
         self.prompt_for_cairo_file()
@@ -172,6 +188,33 @@ class CairoRunner:
                 print(f"Test {self.filename_dot_cairo} passed.")
         print(f"All tests passed.")
 
+    def test_hdp(self):
+        """Run HDP tests."""
+        tests_files = get_files_from_folders(["tests/hdp"], ".cairo")
+        for test_file in tests_files:
+            # Skip the vectors test file.
+            if test_file == "tests/hdp/test_vectors.cairo":
+                continue
+            
+            # if test_file != "tests/hdp/account_decoder.cairo":
+            #     continue
+
+            self.filename_dot_cairo_path = test_file
+            self.filename_dot_cairo = os.path.basename(test_file)
+            self.filename = self.filename_dot_cairo.removesuffix(".cairo")
+            self.compile_cairo_file()
+            run_command = self.construct_run_command(
+                os.path.join(COMPILED_FILES_DIR, f"{self.filename}.json")
+            )
+            return_code = os.system(run_command)
+            if return_code != 0:
+                print(f"### Test {self.filename_dot_cairo} failed.")
+                print(f"### Aborting tests.")
+                return
+            else:
+                print(f"Test {self.filename_dot_cairo} passed.")
+        print(f"All HDP tests passed.")
+
     def run_profiling_tool(self):
         """Run the profiling tool for the selected Cairo file."""
         print(f"Running profiling tool for {self.filename_dot_cairo} ... ")
@@ -184,5 +227,9 @@ if __name__ == "__main__":
     x = CairoRunner()
     if x.args.test:
         x.test()
+    elif x.args.test_hdp:
+        x.test_hdp()
+    elif x.args.run_hdp:
+        x.run_hdp()
     else:
         x.run()

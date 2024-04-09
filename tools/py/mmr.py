@@ -244,15 +244,170 @@ class MMR(object):
 
         return bags
 
+    def gen_proof(self, pos: int) -> "MerkleProof":
+        """
+        generate a merkle proof
+        1. generate merkle tree proof for pos
+        2. find peaks positions
+        3. find rhs peaks packs into one single hash, then push to proof
+        4. find lhs peaks reverse then push to proof
+
+        For peaks: P1, P2, P3, P4, P5, we proof a P4 leaf
+        [P4 merkle proof.., P5, P3, P2, P1]
+        """
+        proof = []
+        height = tree_pos_height(pos)
+        assert height == 0, f"Forbidden to prove non-leaf element"
+        # construct merkle proof of one peak
+        while pos <= self.last_pos:
+            # print(f"Pos:{pos}, height:{height}")
+            pos_height = tree_pos_height(pos)
+            next_height = tree_pos_height(pos + 1)
+            if next_height > pos_height:
+                # get left child sib
+                sib = pos - sibling_offset(height)
+                # print(
+                #     f"Sib:{sib}, pos:{pos}, offset : {sibling_offset(height)}, heigh:{height}"
+                # )
+                # break if sib is out of mmr
+                if sib > self.last_pos:
+                    break
+                proof.append(self.pos_hash[sib])
+                # print(f"Proof: {proof}")
+                # goto parent node
+                pos += 1
+            else:
+                # get right child
+                sib = pos + sibling_offset(height)
+                # break if sib is out of mmr
+                if sib > self.last_pos:
+                    break
+                proof.append(self.pos_hash[sib])
+                # print(f"Proof: {proof}")
+                # goto parent node
+                pos += 2 << height
+            height += 1
+        # now pos is peak of the mountain(because pos can't find a sibling)
+        peak_pos = pos
+        peaks = get_peaks(self.last_pos + 1)
+        # bagging rhs peaks into one hash
+        rhs_peak_hash = self._bag_rhs_peaks(peak_pos, peaks)
+        if rhs_peak_hash is not None:
+            proof.append(rhs_peak_hash)
+            # f"Proof RHS: {proof}")
+        # insert lhs peaks
+        proof.extend(reversed(self._lhs_peaks(peak_pos, peaks)))
+        # f"Proof LHS: {proof}")
+        return MerkleProof(mmr_size=self.last_pos + 1, proof=proof, hasher=self._hasher)
+
+    def _bag_rhs_peaks(self, peak_pos: int, peaks: List[int]):
+        rhs_peak_hashes = [self.pos_hash[p] for p in peaks if p > peak_pos]
+        # print(f"RHS: {rhs_peak_hashes}")
+        if len(rhs_peak_hashes) == 0:
+            return None
+        if len(rhs_peak_hashes) == 1:
+            return rhs_peak_hashes[0]
+        if len(rhs_peak_hashes) >= 2:
+            bags = rhs_peak_hashes[-1]
+            # print(f"init bags: {bags}")
+            for peak in reversed(rhs_peak_hashes[:-1]):
+                # print(f"Hashing: {peak}, {bags}")
+                self._hasher.update(peak)
+                self._hasher.update(bags)
+
+                bags = self._hasher.digest()
+
+        return bags
+
+    def _lhs_peaks(self, peak_pos: int, peaks: List[int]) -> List[bytes]:
+        return [self.pos_hash[p] for p in peaks if p < peak_pos]
+
+
+class MerkleProof(object):
+    """
+    MerkleProof, used for verify a proof
+    """
+
+    def __init__(self, mmr_size: int, proof: List[bytes], hasher):
+        self.mmr_size = mmr_size
+        self.proof = proof
+        self._hasher = hasher
+
+    def __repr__(self) -> str:
+        return f"mmr size {self.mmr_size}, proof:{self.proof}"
+
+    def verify(self, root: bytes, pos: int, elem: bytes) -> bool:
+        """
+        verify proof
+        root - MMR root that generate this proof
+        pos - elem insertion pos
+        elem - elem
+        """
+        # print(f"Verifying proof: {self}")
+        peaks = get_peaks(self.mmr_size)
+        # print(f"Pos: {pos}, peaks: {peaks}")
+        elem_hash = elem
+        height = 0
+        for proof in self.proof:
+            hasher = self._hasher
+            # verify bagging peaks
+            if pos in peaks:
+                # print(f"Pos in peaks: {pos}")
+
+                if pos == peaks[-1]:
+                    hasher.update(proof)
+                    hasher.update(elem_hash)
+                    # print(f"Hashing last: {proof}, {elem_hash}")
+                else:
+                    hasher.update(elem_hash)
+                    hasher.update(proof)
+                    # print(f"Hashing : {elem_hash}, {proof}")
+                    pos = peaks[-1]
+                elem_hash = hasher.digest()
+                # print(f"Hash result : {elem_hash}")
+                continue
+
+            # verify merkle path
+            pos_height = tree_pos_height(pos)
+            next_height = tree_pos_height(pos + 1)
+            # print(f"position: {pos}, h={pos_height}, nh={next_height}")
+            if next_height > pos_height:
+                # we are in right child
+                hasher.update(proof)
+                hasher.update(elem_hash)
+                pos += 1
+                # print(f"Hashing right : {proof}, {elem_hash}")
+            else:
+                # we are in left child
+                hasher.update(elem_hash)
+                hasher.update(proof)
+                pos += 2 << height
+                # print(f"Hashing left : {elem_hash}, {proof}")
+            # print(f"MerklePath: elem:{elem_hash}, proof:{proof}")
+            elem_hash = hasher.digest()
+            height += 1
+        hasher = self._hasher
+        hasher.update(self.mmr_size)
+        hasher.update(elem_hash)
+        expected_root = hasher.digest()
+        assert expected_root == root, f"Expected root: {expected_root}, got: {root}"
+
 
 if __name__ == "__main__":
     poseidon_mmr = MMR(PoseidonHasher())
-    for i in range(3):
+    for i in range(11):
         _ = poseidon_mmr.add(i)
 
     print(poseidon_mmr.get_root())
-
-    keccak_mmr = MMR(KeccakHasher())
-    for i in range(3):
-        _ = keccak_mmr.add(i)
-    print(keccak_mmr.get_root())
+    print(f"MMr len : {poseidon_mmr.last_pos+1}")
+    print(f"MMR: {poseidon_mmr.pos_hash}")
+    proof_pos = 1
+    x = poseidon_mmr.gen_proof(proof_pos)
+    print(x)
+    print(
+        x.verify(poseidon_mmr.get_root(), proof_pos, poseidon_mmr.pos_hash[proof_pos])
+    )
+    # keccak_mmr = MMR(KeccakHasher())
+    # for i in range(3):
+    #     _ = keccak_mmr.add(i)
+    # print(keccak_mmr.get_root())

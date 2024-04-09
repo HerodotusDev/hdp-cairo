@@ -1,10 +1,124 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.registers import get_label_location
-from starkware.cairo.common.math import unsigned_div_rem as felt_divmod
 from starkware.cairo.common.alloc import alloc
+from starkware.cairo.common.dict_access import DictAccess
+from starkware.cairo.common.dict import dict_write
+from starkware.cairo.common.uint256 import (
+    Uint256,
+    SHIFT,
+    word_reverse_endian,
+    uint256_reverse_endian,
+    ALL_ONES,
+)
+from starkware.cairo.common.registers import get_fp_and_pc
 
 const DIV_32 = 2 ** 32;
 const DIV_32_MINUS_1 = DIV_32 - 1;
+
+// Adds two integers. Returns the result as a 256-bit integer and the (1-bit) carry.
+// Strictly equivalent and faster version of common.uint256.uint256_add using the same whitelisted hint.
+func uint256_add{range_check_ptr}(a: Uint256, b: Uint256) -> (res: Uint256, carry: felt) {
+    alloc_locals;
+    local carry_low: felt;
+    local carry_high: felt;
+    %{
+        sum_low = ids.a.low + ids.b.low
+        ids.carry_low = 1 if sum_low >= ids.SHIFT else 0
+        sum_high = ids.a.high + ids.b.high + ids.carry_low
+        ids.carry_high = 1 if sum_high >= ids.SHIFT else 0
+    %}
+
+    if (carry_low != 0) {
+        if (carry_high != 0) {
+            tempvar range_check_ptr = range_check_ptr + 2;
+            tempvar res = Uint256(low=a.low + b.low - SHIFT, high=a.high + b.high + 1 - SHIFT);
+            assert [range_check_ptr - 2] = res.low;
+            assert [range_check_ptr - 1] = res.high;
+            return (res, 1);
+        } else {
+            tempvar range_check_ptr = range_check_ptr + 2;
+            tempvar res = Uint256(low=a.low + b.low - SHIFT, high=a.high + b.high + 1);
+            assert [range_check_ptr - 2] = res.low;
+            assert [range_check_ptr - 1] = res.high;
+            return (res, 0);
+        }
+    } else {
+        if (carry_high != 0) {
+            tempvar range_check_ptr = range_check_ptr + 2;
+            tempvar res = Uint256(low=a.low + b.low, high=a.high + b.high - SHIFT);
+            assert [range_check_ptr - 2] = res.low;
+            assert [range_check_ptr - 1] = res.high;
+            return (res, 1);
+        } else {
+            tempvar range_check_ptr = range_check_ptr + 2;
+            tempvar res = Uint256(low=a.low + b.low, high=a.high + b.high);
+            assert [range_check_ptr - 2] = res.low;
+            assert [range_check_ptr - 1] = res.high;
+            return (res, 0);
+        }
+    }
+}
+
+// Subtracts two integers. Returns the result as a 256-bit integer.
+// Strictly equivalent and faster version of common.uint256.uint256_sub using uint256_add's whitelisted hint.
+func uint256_sub{range_check_ptr}(a: Uint256, b: Uint256) -> (res: Uint256) {
+    alloc_locals;
+    // Reference "b" as -b.
+    local b: Uint256 = Uint256(ALL_ONES - b.low + 1, ALL_ONES - b.high);
+    // Computes a + (-b)
+    local carry_low: felt;
+    local carry_high: felt;
+    %{
+        sum_low = ids.a.low + ids.b.low
+        ids.carry_low = 1 if sum_low >= ids.SHIFT else 0
+        sum_high = ids.a.high + ids.b.high + ids.carry_low
+        ids.carry_high = 1 if sum_high >= ids.SHIFT else 0
+    %}
+
+    if (carry_low != 0) {
+        if (carry_high != 0) {
+            tempvar range_check_ptr = range_check_ptr + 2;
+            tempvar res = Uint256(low=a.low + b.low - SHIFT, high=a.high + b.high + 1 - SHIFT);
+            assert [range_check_ptr - 2] = res.low;
+            assert [range_check_ptr - 1] = res.high;
+            return (res,);
+        } else {
+            tempvar range_check_ptr = range_check_ptr + 2;
+            tempvar res = Uint256(low=a.low + b.low - SHIFT, high=a.high + b.high + 1);
+            assert [range_check_ptr - 2] = res.low;
+            assert [range_check_ptr - 1] = res.high;
+            return (res,);
+        }
+    } else {
+        if (carry_high != 0) {
+            tempvar range_check_ptr = range_check_ptr + 2;
+            tempvar res = Uint256(low=a.low + b.low, high=a.high + b.high - SHIFT);
+            assert [range_check_ptr - 2] = res.low;
+            assert [range_check_ptr - 1] = res.high;
+            return (res,);
+        } else {
+            tempvar range_check_ptr = range_check_ptr + 2;
+            tempvar res = Uint256(low=a.low + b.low, high=a.high + b.high);
+            assert [range_check_ptr - 2] = res.low;
+            assert [range_check_ptr - 1] = res.high;
+            return (res,);
+        }
+    }
+}
+
+// Write the elements of the array as key in the dictionnary and assign the value 0 to each key.
+// Used to check that an element in the dict is present by checking dict[key] == 1.
+// Use with a default_dict with default_value = 0.
+// If the element is present, the value will be 1.
+// If the element is not present, the value will be 0.
+func write_felt_array_to_dict_keys{dict_end: DictAccess*}(array: felt*, index: felt) {
+    if (index == -1) {
+        return ();
+    } else {
+        dict_write{dict_ptr=dict_end}(key=array[index], new_value=1);
+        return write_felt_array_to_dict_keys(array, index - 1);
+    }
+}
 
 // Returns the number of bits in x.
 // Implicits arguments:
@@ -76,14 +190,56 @@ func felt_divmod_2pow32{range_check_ptr}(value: felt) -> (q: felt, r: felt) {
     return (q, r);
 }
 
-// A function to reverse the endianness of a 8 bytes (64 bits) integer.
+// Computes x//8 and x%8 using range checks operations.
+// Adapted version of starkware.common.math.unsigned_div_rem with a fixed divisor of 2**32.
+// Assumption : value / 8 < RC_BOUND
+// params:
+//   x: the dividend.
+// returns:
+//   q: the quotient .
+//   r: the remainder.
+func felt_divmod_8{range_check_ptr}(value: felt) -> (q: felt, r: felt) {
+    let r = [range_check_ptr];
+    let q = [range_check_ptr + 1];
+    %{ ids.q, ids.r = divmod(ids.value, 8) %}
+    assert [range_check_ptr + 2] = 7 - r;
+    let range_check_ptr = range_check_ptr + 3;
+
+    assert value = q * 8 + r;
+    return (q, r);
+}
+
+// Returns q and r such that:
+//  0 <= q < rc_bound, 0 <= r < div and value = q * div + r.
+//
+// Assumption: 0 < div <= PRIME / rc_bound.
+// Prover assumption: value / div < rc_bound.
+// Modified version of unsigned_div_rem with inlined range checks.
+func felt_divmod{range_check_ptr}(value, div) -> (q: felt, r: felt) {
+    let r = [range_check_ptr];
+    let q = [range_check_ptr + 1];
+    %{
+        from starkware.cairo.common.math_utils import assert_integer
+        assert_integer(ids.div)
+        assert 0 < ids.div <= PRIME // range_check_builtin.bound, \
+            f'div={hex(ids.div)} is out of the valid range.'
+        ids.q, ids.r = divmod(ids.value, ids.div)
+    %}
+    assert [range_check_ptr + 2] = div - 1 - r;
+    let range_check_ptr = range_check_ptr + 3;
+
+    assert value = q * div + r;
+    return (q, r);
+}
+
+// A function to reverse the byte endianness of a 8 bytes (64 bits) integer.
 // The result will not make sense if word >= 2^64.
 // The implementation is directly inspired by the function word_reverse_endian
 // from the common library starkware.cairo.common.uint256 with three steps instead of four.
 // params:
 //   word: the 64 bits integer to reverse.
 // returns:
-//   res: the reversed integer.
+//   res: the byte-reversed integer.
 func word_reverse_endian_64{bitwise_ptr: BitwiseBuiltin*}(word: felt) -> (res: felt) {
     // Step 1.
     assert bitwise_ptr[0].x = word;
@@ -102,12 +258,12 @@ func word_reverse_endian_64{bitwise_ptr: BitwiseBuiltin*}(word: felt) -> (res: f
     return (res=word / 2 ** (8 + 16 + 32));
 }
 
-// A function to reverse the endianness of a 2 bytes (16 bits) integer using range checks operations.
+// A function to reverse the byte endianness of a 2 bytes (16 bits) integer using range checks operations.
 // Asuumes 0 <= word < 2^16.
 // params:
 //   word: the 16 bits integer to reverse.
 // returns:
-//   res: the reversed integer.
+//   res: the byte-reversed integer.
 func word_reverse_endian_16_RC{range_check_ptr}(word: felt) -> felt {
     %{
         word = ids.word
@@ -132,12 +288,12 @@ func word_reverse_endian_16_RC{range_check_ptr}(word: felt) -> felt {
     return b0 + b1 * 256;
 }
 
-// A function to reverse the endianness of a 3 bytes (24 bits) integer using range checks operations.
+// A function to reverse the byte endianness of a 3 bytes (24 bits) integer using range checks operations.
 // Asuumes 0 <= word < 2^24.
 // params:
 //   word: the 24 bits integer to reverse.
 // returns:
-//   res: the reversed integer.
+//   res: the byte-reversed integer.
 func word_reverse_endian_24_RC{range_check_ptr}(word: felt) -> felt {
     %{
         word = ids.word
@@ -165,12 +321,12 @@ func word_reverse_endian_24_RC{range_check_ptr}(word: felt) -> felt {
     return b0 + b1 * 256 + b2 * 256 ** 2;
 }
 
-// A function to reverse the endianness of a 4 bytes (32 bits) integer using range checks operations.
+// A function to reverse the byte endianness of a 4 bytes (32 bits) integer using range checks operations.
 // Asuumes 0 <= word < 2^32.
 // params:
 //   word: the 32 bits integer to reverse.
 // returns:
-//   res: the reversed integer.
+//   res: the byte-reversed integer.
 func word_reverse_endian_32_RC{range_check_ptr}(word: felt) -> felt {
     %{
         word = ids.word
@@ -201,12 +357,12 @@ func word_reverse_endian_32_RC{range_check_ptr}(word: felt) -> felt {
     return b0 + b1 * 256 + b2 * 256 ** 2 + b3 * 256 ** 3;
 }
 
-// A function to reverse the endianness of a 5 bytes (40 bits) integer using range checks operations.
+// A function to reverse the byte endianness of a 5 bytes (40 bits) integer using range checks operations.
 // Asuumes 0 <= word < 2^40.
 // params:
 //   word: the 40 bits integer to reverse.
 // returns:
-//   res: the reversed integer.
+//   res: the byte-reversed integer.
 func word_reverse_endian_40_RC{range_check_ptr}(word: felt) -> felt {
     %{
         word = ids.word
@@ -240,12 +396,12 @@ func word_reverse_endian_40_RC{range_check_ptr}(word: felt) -> felt {
     return b0 + b1 * 256 + b2 * 256 ** 2 + b3 * 256 ** 3 + b4 * 256 ** 4;
 }
 
-// A function to reverse the endianness of a 6 bytes (48 bits) integer using range checks operations.
+// A function to reverse the byte endianness of a 6 bytes (48 bits) integer using range checks operations.
 // Asuumes 0 <= word < 2^48.
 // params:
 //   word: the 48 bits integer to reverse.
 // returns:
-//   res: the reversed integer.
+//   res: the byte-reversed integer.
 func word_reverse_endian_48_RC{range_check_ptr}(word: felt) -> felt {
     %{
         word = ids.word
@@ -282,12 +438,12 @@ func word_reverse_endian_48_RC{range_check_ptr}(word: felt) -> felt {
     return b0 + b1 * 256 + b2 * 256 ** 2 + b3 * 256 ** 3 + b4 * 256 ** 4 + b5 * 256 ** 5;
 }
 
-// A function to reverse the endianness of a 7 bytes (56 bits) integer using range checks operations.
+// A function to reverse the byte endianness of a 7 bytes (56 bits) integer using range checks operations.
 // Asuumes 0 <= word < 2^56.
 // params:
 //   word: the 56 bits integer to reverse.
 // returns:
-//   res: the reversed integer.
+//   res: the byte-reversed integer.
 func word_reverse_endian_56_RC{range_check_ptr}(word: felt) -> felt {
     %{
         word = ids.word
@@ -327,6 +483,28 @@ func word_reverse_endian_56_RC{range_check_ptr}(word: felt) -> felt {
     tempvar range_check_ptr = range_check_ptr + 14;
     return b0 + b1 * 256 + b2 * 256 ** 2 + b3 * 256 ** 3 + b4 * 256 ** 4 + b5 * 256 ** 5 + b6 *
         256 ** 6;
+}
+
+func get_0xff_mask(n: felt) -> felt {
+    let (_, pc) = get_fp_and_pc();
+
+    pc_labelx:
+    let data = pc + (n_0xff - pc_labelx);
+
+    let res = [data + n];
+
+    return res;
+
+    n_0xff:
+    dw 0;
+    dw 0xff;
+    dw 0xffff;
+    dw 0xffffff;
+    dw 0xffffffff;
+    dw 0xffffffffff;
+    dw 0xffffffffffff;
+    dw 0xffffffffffffff;
+    dw 0xffffffffffffffff;
 }
 
 // Utility to get a pointer on an array of 2^i from i = 0 to 127.
@@ -463,4 +641,141 @@ func pow2alloc127() -> (array: felt*) {
     dw 0x20000000000000000000000000000000;
     dw 0x40000000000000000000000000000000;
     dw 0x80000000000000000000000000000000;
+}
+
+// Utility to get a pointer on an array of 2^i from i = 0 to 128.
+func pow2alloc128() -> (array: felt*) {
+    let (data_address) = get_label_location(data);
+    return (data_address,);
+
+    data:
+    dw 0x1;
+    dw 0x2;
+    dw 0x4;
+    dw 0x8;
+    dw 0x10;
+    dw 0x20;
+    dw 0x40;
+    dw 0x80;
+    dw 0x100;
+    dw 0x200;
+    dw 0x400;
+    dw 0x800;
+    dw 0x1000;
+    dw 0x2000;
+    dw 0x4000;
+    dw 0x8000;
+    dw 0x10000;
+    dw 0x20000;
+    dw 0x40000;
+    dw 0x80000;
+    dw 0x100000;
+    dw 0x200000;
+    dw 0x400000;
+    dw 0x800000;
+    dw 0x1000000;
+    dw 0x2000000;
+    dw 0x4000000;
+    dw 0x8000000;
+    dw 0x10000000;
+    dw 0x20000000;
+    dw 0x40000000;
+    dw 0x80000000;
+    dw 0x100000000;
+    dw 0x200000000;
+    dw 0x400000000;
+    dw 0x800000000;
+    dw 0x1000000000;
+    dw 0x2000000000;
+    dw 0x4000000000;
+    dw 0x8000000000;
+    dw 0x10000000000;
+    dw 0x20000000000;
+    dw 0x40000000000;
+    dw 0x80000000000;
+    dw 0x100000000000;
+    dw 0x200000000000;
+    dw 0x400000000000;
+    dw 0x800000000000;
+    dw 0x1000000000000;
+    dw 0x2000000000000;
+    dw 0x4000000000000;
+    dw 0x8000000000000;
+    dw 0x10000000000000;
+    dw 0x20000000000000;
+    dw 0x40000000000000;
+    dw 0x80000000000000;
+    dw 0x100000000000000;
+    dw 0x200000000000000;
+    dw 0x400000000000000;
+    dw 0x800000000000000;
+    dw 0x1000000000000000;
+    dw 0x2000000000000000;
+    dw 0x4000000000000000;
+    dw 0x8000000000000000;
+    dw 0x10000000000000000;
+    dw 0x20000000000000000;
+    dw 0x40000000000000000;
+    dw 0x80000000000000000;
+    dw 0x100000000000000000;
+    dw 0x200000000000000000;
+    dw 0x400000000000000000;
+    dw 0x800000000000000000;
+    dw 0x1000000000000000000;
+    dw 0x2000000000000000000;
+    dw 0x4000000000000000000;
+    dw 0x8000000000000000000;
+    dw 0x10000000000000000000;
+    dw 0x20000000000000000000;
+    dw 0x40000000000000000000;
+    dw 0x80000000000000000000;
+    dw 0x100000000000000000000;
+    dw 0x200000000000000000000;
+    dw 0x400000000000000000000;
+    dw 0x800000000000000000000;
+    dw 0x1000000000000000000000;
+    dw 0x2000000000000000000000;
+    dw 0x4000000000000000000000;
+    dw 0x8000000000000000000000;
+    dw 0x10000000000000000000000;
+    dw 0x20000000000000000000000;
+    dw 0x40000000000000000000000;
+    dw 0x80000000000000000000000;
+    dw 0x100000000000000000000000;
+    dw 0x200000000000000000000000;
+    dw 0x400000000000000000000000;
+    dw 0x800000000000000000000000;
+    dw 0x1000000000000000000000000;
+    dw 0x2000000000000000000000000;
+    dw 0x4000000000000000000000000;
+    dw 0x8000000000000000000000000;
+    dw 0x10000000000000000000000000;
+    dw 0x20000000000000000000000000;
+    dw 0x40000000000000000000000000;
+    dw 0x80000000000000000000000000;
+    dw 0x100000000000000000000000000;
+    dw 0x200000000000000000000000000;
+    dw 0x400000000000000000000000000;
+    dw 0x800000000000000000000000000;
+    dw 0x1000000000000000000000000000;
+    dw 0x2000000000000000000000000000;
+    dw 0x4000000000000000000000000000;
+    dw 0x8000000000000000000000000000;
+    dw 0x10000000000000000000000000000;
+    dw 0x20000000000000000000000000000;
+    dw 0x40000000000000000000000000000;
+    dw 0x80000000000000000000000000000;
+    dw 0x100000000000000000000000000000;
+    dw 0x200000000000000000000000000000;
+    dw 0x400000000000000000000000000000;
+    dw 0x800000000000000000000000000000;
+    dw 0x1000000000000000000000000000000;
+    dw 0x2000000000000000000000000000000;
+    dw 0x4000000000000000000000000000000;
+    dw 0x8000000000000000000000000000000;
+    dw 0x10000000000000000000000000000000;
+    dw 0x20000000000000000000000000000000;
+    dw 0x40000000000000000000000000000000;
+    dw 0x80000000000000000000000000000000;
+    dw 0x100000000000000000000000000000000;
 }

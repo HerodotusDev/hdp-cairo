@@ -20,6 +20,15 @@ test:
 	@echo "Run all tests in tests/cairo_programs" 
 	./tools/make/launch_cairo_files.py -test
 
+run-hdp:
+	@echo "A script to compile and run HDP"
+	@echo "Total number of steps will be shown at the end of the run." 
+	./tools/make/launch_cairo_files.py -run_hdp
+
+test-hdp:
+	@echo "Run all tests in tests/cairo_programs" 
+	./tools/make/launch_cairo_files.py -test_hdp
+
 run-pie:
 	@echo "A script to select, compile & run one Cairo file"
 	@echo "Outputs a cairo PIE object"
@@ -48,6 +57,8 @@ prepare-processor-input:
 	@echo "Prepare chunk_processor_input.json data with the parameters in tools/make/processor_input.json"
 	./tools/make/prepare_inputs_api.py
 
+prepare-inclusion-proof:
+	./tools/make/prepare_inclusion_proof.py
 get-program-hash:
 	@echo "Get chunk_processor.cairo program's hash."
 	cairo-compile ./src/single_chunk_processor/chunk_processor.cairo --output build/compiled_cairo_files/chunk_processor.json
