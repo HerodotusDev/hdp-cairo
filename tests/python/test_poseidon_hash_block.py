@@ -48,4 +48,3 @@ test = get_block_header_raw(block_n)
 # test_big = get_poseidon_hash_block(test)
 test_little = get_poseidon_hash_block_little(test)
 print(hex(test_little))
-

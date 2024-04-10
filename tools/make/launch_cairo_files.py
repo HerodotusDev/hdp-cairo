@@ -12,7 +12,7 @@ CAIRO_PROGRAMS_FOLDERS = [
     "src/batch_storage_proof",
     "src/hdp",
     "src/hdp/datalakes",
-    "src/hdp/tasks"
+    "src/hdp/tasks",
 ]
 
 BUILD_DIR = "build"
