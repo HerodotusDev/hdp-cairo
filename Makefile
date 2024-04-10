@@ -71,3 +71,7 @@ clean:
 	rm -rf build/compiled_cairo_files
 	mkdir -p build
 	mkdir build/compiled_cairo_files
+ci-local:
+	./tools/make/ci_local.sh
+test-full:
+	./tools/make/cairo_tests.sh

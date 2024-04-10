@@ -1,6 +1,6 @@
 name: Main
 
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
   main:
@@ -36,7 +36,4 @@ jobs:
     - name: Run Cairo tests
       env:
         RPC_URL_MAINNET: ${{ secrets.RPC_URL_MAINNET }}
-      run: source venv/bin/activate && make test && make test-hdp
-      
-    
-    
+      run: source ./tools/make/cairo_tests.sh
