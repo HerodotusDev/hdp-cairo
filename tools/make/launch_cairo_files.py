@@ -149,7 +149,7 @@ class CairoRunner:
             else ""
         )
         return f"{cmd_base}{input_flag}{profile_flag}{pie_flag}"
-    
+
     def run_hdp(self):
         self.filename_dot_cairo_path = "src/hdp/hdp.cairo"
         compiled_path = self.compile_cairo_file()
@@ -195,7 +195,7 @@ class CairoRunner:
             # Skip the vectors test file.
             if test_file == "tests/hdp/test_vectors.cairo":
                 continue
-            
+
             # if test_file != "tests/hdp/account_decoder.cairo":
             #     continue
 

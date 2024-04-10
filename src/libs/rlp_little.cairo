@@ -464,11 +464,11 @@ func array_copy(src: felt*, dst: felt*, n: felt, index: felt) {
 // ) -> (start_word: felt, start_offset: felt, bytes_len: felt) {
 //     alloc_locals;
 
-//     if (already_jumped_items == n_items_to_jump) {
+// if (already_jumped_items == n_items_to_jump) {
 //         return (prefix_start_word, prefix_start_offset, last_item_bytes_len);
 //     }
 
-//     let item_prefix = extract_byte_at_pos(rlp[prefix_start_word], prefix_start_offset, pow2_array);
+// let item_prefix = extract_byte_at_pos(rlp[prefix_start_word], prefix_start_offset, pow2_array);
 //     local item_type: felt;
 //     %{
 //         if 0x00 <= ids.item_prefix <= 0x7f:
@@ -484,7 +484,7 @@ func array_copy(src: felt*, dst: felt*, n: felt, index: felt) {
 //             #conditional_print(f"Unsupported item type {ids.item_prefix}. Only single bytes, short or long strings are supported.")
 //     %}
 
-//     if (item_type == 0) {
+// if (item_type == 0) {
 //         // Single byte. We need to go further by one byte.
 //         assert [range_check_ptr] = 0x7f - item_prefix;
 //         tempvar range_check_ptr = range_check_ptr + 1;
@@ -536,10 +536,10 @@ func array_copy(src: felt*, dst: felt*, n: felt, index: felt) {
 //             tempvar range_check_ptr = range_check_ptr + 2;
 //             tempvar len_len = item_prefix - 0xb7;
 
-//             local len_len_start_word: felt;
+// local len_len_start_word: felt;
 //             local len_len_start_offset: felt;
 
-//             if (prefix_start_offset + 1 == 8) {
+// if (prefix_start_offset + 1 == 8) {
 //                 assert len_len_start_word = prefix_start_word + 1;
 //                 assert len_len_start_offset = 0;
 //             } else {
@@ -547,16 +547,16 @@ func array_copy(src: felt*, dst: felt*, n: felt, index: felt) {
 //                 assert len_len_start_offset = prefix_start_offset + 1;
 //             }
 
-//             let (
+// let (
 //                 len_len_bytes: felt*, len_len_n_words: felt
 //             ) = extract_n_bytes_from_le_64_chunks_array(
 //                 rlp, len_len_start_word, len_len_start_offset, len_len, pow2_array
 //             );
 //             assert len_len_n_words = 1;
 
-//             local long_string_bytes_len: felt;
+// local long_string_bytes_len: felt;
 
-//             if (len_len == 1) {
+// if (len_len == 1) {
 //                 // No need to reverse, only one byte.
 //                 assert long_string_bytes_len = len_len_bytes[0];
 //             } else {
@@ -564,11 +564,11 @@ func array_copy(src: felt*, dst: felt*, n: felt, index: felt) {
 //                 assert long_string_bytes_len = long_string_bytes_len_tmp;
 //             }
 
-//             let (next_item_start_word, next_item_start_offset) = felt_divmod_8(
+// let (next_item_start_word, next_item_start_offset) = felt_divmod_8(
 //                 prefix_start_word * 8 + prefix_start_offset + 1 + len_len + long_string_bytes_len
 //             );
 
-//             return jump_n_items_from_item(
+// return jump_n_items_from_item(
 //                 rlp,
 //                 already_jumped_items + 1,
 //                 n_items_to_jump,
