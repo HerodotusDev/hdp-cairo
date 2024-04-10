@@ -2,6 +2,7 @@ from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuilti
 
 from src.hdp.hdp import run
 
+
 func main{
     output_ptr: felt*,
     range_check_ptr,
@@ -34,10 +35,14 @@ func main{
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
         poseidon_ptr=poseidon_ptr,
-    }(tests_len=tests_len, index=0);
+    }(
+        tests_len=tests_len,
+        index=0
+    );
 
     return ();
 }
+
 
 func run_tests{
     output_ptr: felt*,
@@ -46,7 +51,8 @@ func run_tests{
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
 }(tests_len: felt, index: felt) {
-    if (tests_len == index) {
+
+    if (tests_len == index){
         return ();
     }
 
@@ -63,5 +69,8 @@ func run_tests{
         poseidon_ptr=poseidon_ptr,
     }();
 
-    return run_tests(tests_len=tests_len, index=index + 1);
+    return run_tests(
+        tests_len=tests_len,
+        index=index + 1
+    );
 }

@@ -9,7 +9,11 @@ from starkware.cairo.common.uint256 import Uint256
 from src.hdp.rlp import retrieve_from_rlp_list_via_idx, le_u64_array_to_uint256
 from src.libs.utils import felt_divmod
 from src.libs.mmr import hash_subtree_path
-from src.hdp.types import Header, HeaderProof, MMRMeta
+from src.hdp.types import (
+    Header,
+    HeaderProof,
+    MMRMeta,
+)
 from src.libs.block_header import extract_block_number_big, reverse_block_header_chunks
 from src.hdp.memorizer import HeaderMemorizer
 
@@ -32,18 +36,22 @@ func verify_headers_inclusion{
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
     peaks_dict: DictAccess*,
-    header_dict: DictAccess*,
-}(headers: Header*, mmr_size: felt, n_headers: felt, index: felt) {
+    header_dict: DictAccess*
+} (headers: Header*, mmr_size: felt, n_headers: felt, index: felt) {
     alloc_locals;
     if (index == n_headers) {
         return ();
     }
 
     // compute the hash of the header
-    let (poseidon_hash) = poseidon_hash_many(n=headers[index].rlp_len, elements=headers[index].rlp);
+    let (poseidon_hash) = poseidon_hash_many(
+        n=headers[index].rlp_len, 
+        elements=headers[index].rlp
+    );
 
     // a header can be the right-most peak
     if (headers[index].proof.leaf_idx == mmr_size) {
+
         // instead of running an inclusion proof, we ensure its a known peak
         let (contains_peak) = dict_read{dict_ptr=peaks_dict}(poseidon_hash);
         assert contains_peak = 1;
@@ -53,7 +61,10 @@ func verify_headers_inclusion{
         HeaderMemorizer.add(block_number=block_number, index=index);
 
         return verify_headers_inclusion(
-            headers=headers, mmr_size=mmr_size, n_headers=n_headers, index=index + 1
+            headers=headers,
+            mmr_size=mmr_size,
+            n_headers=n_headers,
+            index=index + 1
         );
     }
 
@@ -63,7 +74,7 @@ func verify_headers_inclusion{
         height=0,
         position=headers[index].proof.leaf_idx,
         inclusion_proof=headers[index].proof.mmr_path,
-        inclusion_proof_len=headers[index].proof.mmr_path_len,
+        inclusion_proof_len=headers[index].proof.mmr_path_len
     );
 
     // ensure the peak is included in the peaks dict, which contains the peaks of the mmr_root
@@ -75,6 +86,9 @@ func verify_headers_inclusion{
     HeaderMemorizer.add(block_number=block_number, index=index);
 
     return verify_headers_inclusion(
-        headers=headers, mmr_size=mmr_size, n_headers=n_headers, index=index + 1
+        headers=headers,
+        mmr_size=mmr_size,
+        n_headers=n_headers,
+        index=index + 1
     );
 }

@@ -6,36 +6,49 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from src.hdp.decoders.header_decoder import HeaderDecoder
 from src.libs.utils import pow2alloc128
 
-func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
+func main{
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*
+}() {
     alloc_locals;
     let pow2_array: felt* = pow2alloc128();
 
     %{ print("Testing Homestead Block") %}
     test_header_decoding{
-        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array
     }(block_number=150001);
 
     %{ print("Testing London Block (EIP-1559)") %}
     test_header_decoding{
-        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array
     }(block_number=12965001);
-
+   
     %{ print("Testing Shanghai Block") %}
     test_header_decoding{
-        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array
     }(block_number=17034871);
 
     %{ print("Testing Dencun Block") %}
     test_header_decoding{
-        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array
     }(block_number=19427930);
 
     return ();
 }
 
-func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
-    block_number: felt
-) {
+func test_header_decoding{
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    pow2_array: felt*
+}(block_number: felt) {
     alloc_locals;
 
     let (rlp) = alloc();
@@ -105,11 +118,11 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
 
         if ids.header_type >=1 :
             ids.expected_base_fee_per_gas.low = header['base_fee_per_gas']
-
+        
         if ids.header_type >= 2:
             ids.expected_withdrawls_root.low = header['withdrawls_root']["low"]
             ids.expected_withdrawls_root.high = header['withdrawls_root']["high"]
-
+        
         if ids.header_type >= 3:
             ids.expected_blob_gas_used.low = header['blob_gas_used']
             ids.expected_excess_blob_gas.low = header['excess_blob_gas']
@@ -144,12 +157,7 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
     assert receipts_root.high = expected_receipts_root.high;
 
     let (bloom_filter, value_len, bytes_len) = HeaderDecoder.get_felt_fields_by_index(rlp, 6);
-    compare_bloom_filter(
-        expected_bloom_filter=expected_bloom_filter,
-        bloom_filter=bloom_filter,
-        value_len=value_len,
-        bytes_len=bytes_len,
-    );
+    compare_bloom_filter(expected_bloom_filter=expected_bloom_filter, bloom_filter=bloom_filter, value_len=value_len, bytes_len=bytes_len);
 
     let difficulty = HeaderDecoder.get_field_by_index(rlp, 7);
     assert difficulty.low = expected_difficulty.low;
@@ -171,9 +179,7 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
     assert timestamp.low = expected_timestamp.low;
     assert timestamp.high = expected_timestamp.high;
 
-    let (extra_data, extra_data_len, extra_data_bytes_len) = HeaderDecoder.get_felt_fields_by_index(
-        rlp, 12
-    );
+    let (extra_data, extra_data_len, extra_data_bytes_len) = HeaderDecoder.get_felt_fields_by_index(rlp, 12);
 
     compare_extra_data(
         expected_extra_data=expected_extra_data,
@@ -181,7 +187,7 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
         expected_extra_data_bytes_len=expected_extra_data_bytes_len,
         extra_data=extra_data,
         extra_data_len=extra_data_len,
-        extra_data_bytes_len=extra_data_bytes_len,
+        extra_data_bytes_len=extra_data_bytes_len
     );
 
     let mix_hash = HeaderDecoder.get_field_by_index(rlp, 13);
@@ -195,7 +201,7 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
     local impl_london: felt;
     %{ ids.impl_london = 1 if ids.header_type >= 1 else 0 %}
 
-    if (impl_london == 1) {
+    if(impl_london == 1){
         let base_fee_per_gas = HeaderDecoder.get_field_by_index(rlp, 15);
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
@@ -206,11 +212,12 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
         tempvar pow2_array = pow2_array;
+
     }
 
     local impl_shanghai: felt;
     %{ ids.impl_shanghai = 1 if ids.header_type >= 2 else 0 %}
-    if (impl_shanghai == 1) {
+    if(impl_shanghai == 1){
         let withdrawls_root = HeaderDecoder.get_field_by_index(rlp, 16);
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
@@ -225,8 +232,8 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
 
     local impl_dencun: felt;
     %{ ids.impl_dencun = 1 if ids.header_type >= 3 else 0 %}
-
-    if (impl_dencun == 1) {
+    
+    if(impl_dencun == 1){
         let blob_gas_used = HeaderDecoder.get_field_by_index(rlp, 17);
         assert blob_gas_used.low = expected_blob_gas_used.low;
         assert blob_gas_used.high = expected_blob_gas_used.high;
@@ -250,27 +257,24 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
     return ();
 }
 
-func compare_bloom_filter(
-    expected_bloom_filter: felt*, bloom_filter: felt*, value_len: felt, bytes_len: felt
-) {
+func compare_bloom_filter(expected_bloom_filter: felt*, bloom_filter: felt*, value_len: felt, bytes_len: felt) {
     alloc_locals;
-
+    
     assert value_len = 32;
     assert bytes_len = 256;
 
     tempvar i = 0;
-
     assert_loop:
-    let i = [ap - 1];
-    if (i == 32) {
-        jmp end_loop;
-    }
+        let i = [ap - 1];
+        if(i == 32) {
+            jmp end_loop;
+        }
 
-    assert expected_bloom_filter[i] = bloom_filter[i];
-    [ap] = i + 1, ap++;
-    jmp assert_loop;
-
+        assert expected_bloom_filter[i] = bloom_filter[i];
+        [ap] = i + 1, ap++;
+        jmp assert_loop;
     end_loop:
+
     return ();
 }
 
@@ -280,25 +284,24 @@ func compare_extra_data(
     expected_extra_data_bytes_len: felt,
     extra_data: felt*,
     extra_data_len: felt,
-    extra_data_bytes_len: felt,
+    extra_data_bytes_len: felt    
 ) {
     alloc_locals;
-
+    
     assert expected_extra_data_len = extra_data_len;
     assert expected_extra_data_bytes_len = extra_data_bytes_len;
 
     tempvar i = 0;
-
     assert_loop:
-    let i = [ap - 1];
-    if (i == expected_extra_data_len) {
-        jmp end_loop;
-    }
+        let i = [ap - 1];
+        if(i == expected_extra_data_len) {
+            jmp end_loop;
+        }
 
-    assert expected_extra_data[i] = extra_data[i];
-    [ap] = i + 1, ap++;
-    jmp assert_loop;
-
+        assert expected_extra_data[i] = extra_data[i];
+        [ap] = i + 1, ap++;
+        jmp assert_loop;
     end_loop:
+
     return ();
 }

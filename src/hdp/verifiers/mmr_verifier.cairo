@@ -1,7 +1,11 @@
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin
 from src.hdp.types import MMRMeta
 
-from src.libs.mmr import mmr_root_poseidon, assert_mmr_size_is_valid, compute_peaks_positions
+from src.libs.mmr import (
+    mmr_root_poseidon,
+    assert_mmr_size_is_valid,
+    compute_peaks_positions
+)
 
 // Guard function that ensures the MMR parameters are valid
 // 1. mmr_size is valid
@@ -10,9 +14,11 @@ from src.libs.mmr import mmr_root_poseidon, assert_mmr_size_is_valid, compute_pe
 // Params:
 // mmr_meta: MMRMeta - the MMR metadata
 // mmr_peaks: felt* - the MMR peaks
-func verify_mmr_meta{range_check_ptr, poseidon_ptr: PoseidonBuiltin*, pow2_array: felt*}(
-    mmr_meta: MMRMeta
-) {
+func verify_mmr_meta{
+    range_check_ptr,
+    poseidon_ptr: PoseidonBuiltin*,
+    pow2_array: felt*,
+} (mmr_meta: MMRMeta) {
     alloc_locals;
 
     // ensure the mmr_size is valid
@@ -26,5 +32,5 @@ func verify_mmr_meta{range_check_ptr, poseidon_ptr: PoseidonBuiltin*, pow2_array
     let (mmr_root) = mmr_root_poseidon(mmr_meta.peaks, mmr_meta.size, mmr_meta.peaks_len);
     assert 0 = mmr_meta.root - mmr_root;
 
-    return ();
+    return();
 }

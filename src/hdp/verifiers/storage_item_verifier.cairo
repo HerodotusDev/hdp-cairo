@@ -6,7 +6,10 @@ from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
 from src.hdp.types import AccountValues, StorageItemProof, StorageItem
 from src.hdp.rlp import decode_rlp_word_to_uint256
-from src.libs.rlp_little import extract_byte_at_pos, extract_n_bytes_from_le_64_chunks_array
+from src.libs.rlp_little import (
+    extract_byte_at_pos,
+    extract_n_bytes_from_le_64_chunks_array,
+)
 
 from src.hdp.memorizer import StorageMemorizer, AccountMemorizer
 from src.hdp.decoders.account_decoder import AccountDecoder
@@ -15,15 +18,17 @@ from src.libs.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64
 
 // Intializes and validates the storage_items
 func populate_storage_item_segments{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
-}(storage_items: StorageItem*, n_storage_items: felt, index: felt) {
-    alloc_locals;
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*, 
+    keccak_ptr: KeccakBuiltin*
+} (storage_items: StorageItem*, n_storage_items: felt, index: felt) {
+     alloc_locals;
     if (index == n_storage_items) {
         return ();
     } else {
         local storage_item: StorageItem;
         let (proofs: StorageItemProof*) = alloc();
-
+        
         %{
             def write_storage_item(account_ptr, proofs_ptr, account):
                 memory[account_ptr._reference_value] = segments.gen_arg(hex_to_int_array(account["address"]))
@@ -56,7 +61,9 @@ func populate_storage_item_segments{
         assert storage_items[index] = storage_item;
 
         return populate_storage_item_segments(
-            storage_items=storage_items, n_storage_items=n_storage_items, index=index + 1
+            storage_items=storage_items,
+            n_storage_items=n_storage_items,
+            index=index + 1,
         );
     }
 }
@@ -68,32 +75,37 @@ func populate_storage_item_segments{
 // - pow2_array: the array of powers of 2.
 func verify_n_storage_items{
     range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
+    bitwise_ptr: BitwiseBuiltin*, 
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     account_values: AccountValues*,
     account_dict: DictAccess*,
     storage_dict: DictAccess*,
     pow2_array: felt*,
-}(storage_items: StorageItem*, storage_items_len: felt, storage_values: Uint256*, state_idx: felt) {
-    if (storage_items_len == 0) {
+} (
+    storage_items: StorageItem*,
+    storage_items_len: felt,
+    storage_values: Uint256*,
+    state_idx: felt,
+) {
+    if(storage_items_len == 0) {
         return ();
     }
 
     let storage_item_idx = storage_items_len - 1;
-
+    
     let state_idx = verify_storage_item(
         storage_item=storage_items[storage_item_idx],
         storage_values=storage_values,
         proof_idx=0,
-        state_idx=state_idx,
+        state_idx=state_idx
     );
 
     return verify_n_storage_items(
         storage_items=storage_items,
         storage_items_len=storage_items_len - 1,
         storage_values=storage_values,
-        state_idx=state_idx,
+        state_idx=state_idx
     );
 }
 
@@ -104,25 +116,31 @@ func verify_n_storage_items{
 // - pow2_array: the array of powers of 2.
 func verify_storage_item{
     range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
+    bitwise_ptr: BitwiseBuiltin*, 
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     account_values: AccountValues*,
     account_dict: DictAccess*,
     storage_dict: DictAccess*,
     pow2_array: felt*,
-}(storage_item: StorageItem, storage_values: Uint256*, proof_idx: felt, state_idx: felt) -> felt {
+} (
+    storage_item: StorageItem,
+    storage_values: Uint256*,
+    proof_idx: felt,
+    state_idx: felt
+) -> felt {
     alloc_locals;
     if (proof_idx == storage_item.proofs_len) {
         return state_idx;
     }
+
 
     let slot_proof = storage_item.proofs[proof_idx];
 
     // get state_root from verified headers
     let (account_value) = AccountMemorizer.get(storage_item.address, slot_proof.block_number);
     let state_root = AccountDecoder.get_state_root(account_value.values);
-
+ 
     let (value: felt*, value_bytes_len: felt) = verify_mpt_proof(
         mpt_proof=slot_proof.proof,
         mpt_proof_bytes_len=slot_proof.proof_bytes_len,
@@ -133,18 +151,16 @@ func verify_storage_item{
         hash_to_assert=state_root,
         pow2_array=pow2_array,
     );
-
+    
     let decoded_value = decode_rlp_word_to_uint256(value, value_bytes_len, 1);
     assert storage_values[state_idx] = decoded_value;
 
-    StorageMemorizer.add(
-        storage_item.slot, storage_item.address, slot_proof.block_number, state_idx
-    );
+    StorageMemorizer.add(storage_item.slot, storage_item.address, slot_proof.block_number, state_idx);
 
     return verify_storage_item(
         storage_item=storage_item,
         storage_values=storage_values,
         proof_idx=proof_idx + 1,
-        state_idx=state_idx + 1,
+        state_idx=state_idx + 1
     );
 }
