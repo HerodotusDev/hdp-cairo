@@ -13,18 +13,19 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.9' # Specify the Python version you need
-
-    - name: Install Dependencies
       run: |
         make setup
-    
     - name: Check python formatting
       run: source venv/bin/activate && ./tools/make/python_format_check.sh
-
     - name: Check cairo Formatting
       run: |
         source venv/bin/activate && ./tools/make/cairo_format_check.sh
     - name: Compile cairo files
       run: source venv/bin/activate && make build
+    - name: Run Cairo tests
+      env:
+        RPC_URL_MAINNET: ${{ secrets.RPC_URL_MAINNET }}
+      run: source venv/bin/activate && make test && make test-hdp
+      
     
     

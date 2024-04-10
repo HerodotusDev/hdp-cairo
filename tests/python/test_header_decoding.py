@@ -25,7 +25,7 @@ MAINNET = "mainnet"
 NETWORK = MAINNET
 load_dotenv()
 RPC_URL = (
-    os.getenv("RPC_URL_GOERLI") if NETWORK == GOERLI else os.getenv("RPC_URL")
+    os.getenv("RPC_URL_GOERLI") if NETWORK == GOERLI else os.getenv("RPC_URL_MAINNET")
 )
 
 def fetch_header(block_number):
