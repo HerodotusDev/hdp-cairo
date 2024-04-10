@@ -13,19 +13,17 @@ namespace ACCOUNT_FIELD {
 }
 
 namespace AccountDecoder {
-    func get_field{
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-        pow2_array: felt*
-    } (rlp: felt*, field: felt) -> Uint256 {
+    func get_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+        rlp: felt*, field: felt
+    ) -> Uint256 {
         alloc_locals;
 
-        let (res, res_len, bytes_len) = retrieve_from_rlp_list_via_idx(rlp=rlp, field=field, item_starts_at_byte=2, counter=0);
-        
+        let (res, res_len, bytes_len) = retrieve_from_rlp_list_via_idx(
+            rlp=rlp, field=field, item_starts_at_byte=2, counter=0
+        );
+
         let result = le_u64_array_to_uint256(
-            elements=res,
-            elements_len=res_len,
-            bytes_len=bytes_len
+            elements=res, elements_len=res_len, bytes_len=bytes_len
         );
 
         return (result);

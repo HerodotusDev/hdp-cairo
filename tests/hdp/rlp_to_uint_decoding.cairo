@@ -7,11 +7,7 @@ from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
 from src.hdp.rlp import le_u64_array_to_uint256, decode_rlp_word_to_uint256
 from src.libs.utils import pow2alloc127
 
-func main{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
-}() {
+func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}() {
     alloc_locals;
     let pow2_array: felt* = pow2alloc127();
     local decode_rlp_word_to_uint256_len: felt;
@@ -61,45 +57,32 @@ func main{
             0x85bdc29d6de8c62e3c3a7789448dfa47cc2ad137791dcb6f7413fc1e347734,
             0x66ba7c97a8d86016687269a255b6557ae499a417222aede48aca47e8a34fccc8
         ]
-        
+
         ids.decode_rlp_word_to_uint256_len = len(decode_rlp_word_to_uint256)
     %}
 
     test_decode_rlp_word_to_uint256{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array
-    }(decode_rlp_word_to_uint256_len,0);
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
+    }(decode_rlp_word_to_uint256_len, 0);
 
     return ();
 }
 
-
 func test_decode_rlp_word_to_uint256{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*,
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
 }(case_len: felt, index: felt) {
-
-    if(index == case_len) {
+    if (index == case_len) {
         return ();
-    }    
+    }
     test_decode_rlp_word_to_uint256_inner{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(case=index);
 
-    return test_decode_rlp_word_to_uint256(
-        case_len=case_len,
-        index=index + 1,
-    );
+    return test_decode_rlp_word_to_uint256(case_len=case_len, index=index + 1);
 }
 
 func test_decode_rlp_word_to_uint256_inner{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*,
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
 }(case: felt) {
     alloc_locals;
 
@@ -107,7 +90,7 @@ func test_decode_rlp_word_to_uint256_inner{
     local expected_le: Uint256;
     local expected_be: Uint256;
     local bytes_len: felt;
-    
+
     %{
         # Writes input and expected value to cairo
         def write_case_values(value):

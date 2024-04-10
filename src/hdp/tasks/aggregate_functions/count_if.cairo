@@ -13,7 +13,7 @@ const TRUE = 1;
 const FALSE = 0;
 
 // we start with index 1, as solidity handles undefined as 0
-namespace COUNT_IF { 
+namespace COUNT_IF {
     const EQ = 1;  // ==
     const NEQ = 2;  // !=
     const GT = 3;  // >

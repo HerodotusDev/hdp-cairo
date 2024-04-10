@@ -64,10 +64,12 @@ To add a new aggregation function, add it to `src/hdp/tasks/aggregate_functions`
 
 ## Testing
 
+Some tests reply on Ethereum Mainnet RPC calls. For this reason, an ENV variable name `RPC_URL_MAINNET` must be available.
+
 To run (from VENV!):
 
 ```bash
-make test-hdp
+make test-full
 ```
 
 ## Roadmap

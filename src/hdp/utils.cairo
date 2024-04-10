@@ -9,7 +9,7 @@ from src.libs.utils import (
     word_reverse_endian_32_RC,
     word_reverse_endian_40_RC,
     word_reverse_endian_48_RC,
-    word_reverse_endian_56_RC
+    word_reverse_endian_56_RC,
 )
 
 // computes the result entry. This maps the result to a task_hash/id. It computes h(task_hash, result), which is a leaf in the results tree.
@@ -19,10 +19,8 @@ from src.libs.utils import (
 // Outputs:
 // - the result entry
 func compute_results_entry{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
-} (task_hash: Uint256, result: Uint256) -> Uint256 {
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
+}(task_hash: Uint256, result: Uint256) -> Uint256 {
     alloc_locals;
 
     // before hashing we need to reverse the endianness
@@ -37,14 +35,8 @@ func compute_results_entry{
 
     // convert to felts
     keccak_add_uint256s{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        inputs=values_felt
-    }(
-        n_elements=2,
-        elements=values_uint,
-        bigend=0
-    );
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, inputs=values_felt
+    }(n_elements=2, elements=values_uint, bigend=0);
 
     let (res_id) = keccak(values_felt_start, 64);
 
@@ -52,26 +44,26 @@ func compute_results_entry{
 }
 
 // reverses the endianness of chunk up to 56 bytes long
-func reverse_small_chunk_endianess{range_check_ptr}(word: felt, bytes_len: felt) -> felt{
-    if(bytes_len == 1) {
+func reverse_small_chunk_endianess{range_check_ptr}(word: felt, bytes_len: felt) -> felt {
+    if (bytes_len == 1) {
         return word;
     }
-    if(bytes_len == 2) {
+    if (bytes_len == 2) {
         return word_reverse_endian_16_RC{range_check_ptr=range_check_ptr}(word);
     }
-    if(bytes_len == 3) {
+    if (bytes_len == 3) {
         return word_reverse_endian_24_RC{range_check_ptr=range_check_ptr}(word);
     }
-    if(bytes_len == 4) {
+    if (bytes_len == 4) {
         return word_reverse_endian_32_RC{range_check_ptr=range_check_ptr}(word);
     }
-    if(bytes_len == 5) {
+    if (bytes_len == 5) {
         return word_reverse_endian_40_RC{range_check_ptr=range_check_ptr}(word);
     }
-    if(bytes_len == 6) {
+    if (bytes_len == 6) {
         return word_reverse_endian_48_RC{range_check_ptr=range_check_ptr}(word);
     }
-    if(bytes_len == 7) {
+    if (bytes_len == 7) {
         return word_reverse_endian_56_RC{range_check_ptr=range_check_ptr}(word);
     }
 

@@ -20,7 +20,7 @@ func main{output_ptr: felt*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
     let (pow2_array: felt*) = pow2alloc127();
 
     with pow2_array {
-        test_batch_block_numbers(from_block_number_high=100, to_block_number_low=0);
+        test_batch_block_numbers(from_block_number_high=100, to_block_number_low=1);
         test_batch_block_numbers(from_block_number_high=14173499, to_block_number_low=14173450);
         test_batch_block_numbers(from_block_number_high=17173499, to_block_number_low=17173400);
         test_batch_block_numbers(from_block_number_high=12173499, to_block_number_low=12173400);
