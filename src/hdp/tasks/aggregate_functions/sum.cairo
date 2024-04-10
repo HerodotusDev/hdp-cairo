@@ -2,11 +2,9 @@ from starkware.cairo.common.uint256 import Uint256
 from src.libs.utils import uint256_add, uint256_reverse_endian
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 
-
-func compute_sum{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*
-}(values_le: Uint256*, values_len: felt) -> Uint256 {
+func compute_sum{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
+    values_le: Uint256*, values_len: felt
+) -> Uint256 {
     alloc_locals;
     if (values_len == 0) {
         return (Uint256(0, 0));

@@ -3,7 +3,13 @@ from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.uint256 import Uint256, uint256_pow2, uint256_unsigned_div_rem
 from starkware.cairo.common.alloc import alloc
-from src.libs.utils import felt_divmod_8, felt_divmod, get_0xff_mask, word_reverse_endian_64, bitwise_divmod
+from src.libs.utils import (
+    felt_divmod_8,
+    felt_divmod,
+    get_0xff_mask,
+    word_reverse_endian_64,
+    bitwise_divmod,
+)
 
 // Takes a 64 bit word in little endian, returns the byte at a given position as it would be in big endian.
 // Ie: word = b7 b6 b5 b4 b3 b2 b1 b0
@@ -139,7 +145,9 @@ func assert_subset_in_key{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     if (key_subset_256.high != 0) {
         // caution : high part must have less or equal 30 nibbles. for felt divmod.
         let n_nibble_in_high_part = key_subset_nibble_len - 32;
-        let (_, key_high) = bitwise_divmod{bitwise_ptr=bitwise_ptr}(key_shifted.high, pow2_array[4 * n_nibble_in_high_part]);
+        let (_, key_high) = bitwise_divmod{bitwise_ptr=bitwise_ptr}(
+            key_shifted.high, pow2_array[4 * n_nibble_in_high_part]
+        );
 
         %{
             #conditional_print(f"\t N nibbles in right part : {ids.n_nibble_in_high_part}") 

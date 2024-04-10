@@ -6,10 +6,7 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from src.hdp.decoders.account_decoder import AccountDecoder, ACCOUNT_FIELD
 from src.libs.utils import pow2alloc128
 
-func main{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*
-}() {
+func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
     alloc_locals;
     let pow2_array: felt* = pow2alloc128();
 
@@ -28,12 +25,10 @@ func main{
         segments.write_arg(ids.account_one, account_one_chunks)
         segments.write_arg(ids.account_two, account_two_chunks)
     %}
-    
+
     // ACCOUNT ONE
     let nonce_le = AccountDecoder.get_field{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array,
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(rlp=account_one, field=ACCOUNT_FIELD.NONCE);
     let (nonce) = uint256_reverse_endian(nonce_le);
 
@@ -41,9 +36,7 @@ func main{
     assert nonce.high = 0;
 
     let balance_le = AccountDecoder.get_field{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array,
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(rlp=account_one, field=ACCOUNT_FIELD.BALANCE);
 
     let (balance) = uint256_reverse_endian(balance_le);
@@ -51,18 +44,14 @@ func main{
     assert balance.high = 0;
 
     let state_root = AccountDecoder.get_field{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array,
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(rlp=account_one, field=ACCOUNT_FIELD.STATE_ROOT);
 
     assert state_root.low = 0x9DB0CA98F364A91AC11CAC229B8D8DB0;
     assert state_root.high = 0x202E62E706B4820DEE331010DE98A479;
 
     let code_hash = AccountDecoder.get_field{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array,
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(rlp=account_one, field=ACCOUNT_FIELD.CODE_HASH);
 
     assert code_hash.low = 0x40DBA8C5CAFFA95444B2005213D9FBCA;
@@ -70,9 +59,7 @@ func main{
 
     // ACCOUNT TWO
     let nonce_le = AccountDecoder.get_field{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array,
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(rlp=account_two, field=ACCOUNT_FIELD.NONCE);
     let (nonce) = uint256_reverse_endian(nonce_le);
 
@@ -80,9 +67,7 @@ func main{
     assert nonce.high = 0;
 
     let balance_le = AccountDecoder.get_field{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array,
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(rlp=account_two, field=ACCOUNT_FIELD.BALANCE);
     let (balance) = uint256_reverse_endian(balance_le);
 
@@ -90,23 +75,18 @@ func main{
     assert balance.high = 0;
 
     let state_root = AccountDecoder.get_field{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array,
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(rlp=account_two, field=ACCOUNT_FIELD.STATE_ROOT);
 
     assert state_root.low = 0x6EF8C092E64583FFA655CC1B171FE856;
     assert state_root.high = 0x21B463E3B52F6201C0AD6C991BE0485B;
 
     let code_hash = AccountDecoder.get_field{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array,
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(rlp=account_two, field=ACCOUNT_FIELD.CODE_HASH);
 
     assert code_hash.low = 0xC003C7DCB27D7E923C23F7860146D2C5;
     assert code_hash.high = 0x70A4855D04D8FA7B3B2782CA53B600E5;
-    
 
     return ();
 }

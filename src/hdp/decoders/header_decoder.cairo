@@ -10,11 +10,7 @@ from src.hdp.rlp import retrieve_from_rlp_list_via_idx, le_u64_array_to_uint256
 from src.libs.utils import felt_divmod
 
 from src.libs.mmr import hash_subtree_path
-from src.hdp.types import (
-    Header,
-    HeaderProof,
-    MMRMeta,
-)
+from src.hdp.types import Header, HeaderProof, MMRMeta
 from src.libs.block_header import extract_block_number_big, reverse_block_header_chunks
 from src.hdp.memorizer import HeaderMemorizer
 
@@ -42,33 +38,28 @@ namespace HEADER_FIELD {
 }
 
 namespace HeaderDecoder {
-    func get_block_number{
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-        pow2_array: felt*
-    }(rlp: felt*) -> felt {
+    func get_block_number{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+        rlp: felt*
+    ) -> felt {
         let value_le = get_dynamic_field(rlp, 8);
         let (value) = uint256_reverse_endian(value_le);
-        assert value.high = 0x0; // u128 is sufficient for the time being
+        assert value.high = 0x0;  // u128 is sufficient for the time being
         return value.low;
     }
 
-    func get_field_felt{
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-        pow2_array: felt*
-    }(rlp: felt*, field: felt) -> (value: felt*, value_len: felt, bytes_len: felt) {
-
-        if(field == HEADER_FIELD.COINBASE) {
+    func get_field_felt{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+        rlp: felt*, field: felt
+    ) -> (value: felt*, value_len: felt, bytes_len: felt) {
+        if (field == HEADER_FIELD.COINBASE) {
             let value = get_address_value(rlp, 8, 6);
             return (value=value, value_len=3, bytes_len=20);
         }
 
-        if(field == HEADER_FIELD.BLOOM) {
+        if (field == HEADER_FIELD.BLOOM) {
             return get_bloom_filter(rlp);
         }
 
-        if(field == HEADER_FIELD.EXTRA_DATA) {
+        if (field == HEADER_FIELD.EXTRA_DATA) {
             return get_dynamic_field_bytes(rlp, 12);
         }
 
@@ -76,34 +67,32 @@ namespace HeaderDecoder {
         return (value=rlp, value_len=0, bytes_len=0);
     }
 
-    func get_field{
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-        pow2_array: felt*
-    }(rlp: felt*, field: felt) -> Uint256 {        
-        if(field == HEADER_FIELD.PARENT) {
+    func get_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+        rlp: felt*, field: felt
+    ) -> Uint256 {
+        if (field == HEADER_FIELD.PARENT) {
             return get_hash_value(rlp, 0, 4);
         }
-        if(field == HEADER_FIELD.UNCLE){
+        if (field == HEADER_FIELD.UNCLE) {
             return get_hash_value(rlp, 4, 5);
         }
-        if(field == HEADER_FIELD.COINBASE) {
-            assert 1 = 0; // must use get_coinbase
+        if (field == HEADER_FIELD.COINBASE) {
+            assert 1 = 0;  // must use get_coinbase
         }
-        if(field == HEADER_FIELD.STATE_ROOT){
+        if (field == HEADER_FIELD.STATE_ROOT) {
             return get_hash_value(rlp, 11, 3);
         }
-        if(field == HEADER_FIELD.TRANSACTION_ROOT){
+        if (field == HEADER_FIELD.TRANSACTION_ROOT) {
             return get_hash_value(rlp, 15, 4);
         }
-        if(field == HEADER_FIELD.RECEIPT_ROOT){
+        if (field == HEADER_FIELD.RECEIPT_ROOT) {
             return get_hash_value(rlp, 19, 5);
         }
-        if(field == HEADER_FIELD.BLOOM) {
+        if (field == HEADER_FIELD.BLOOM) {
             // not implemented
             assert 1 = 0;
         }
-        if(field == HEADER_FIELD.EXTRA_DATA) {
+        if (field == HEADER_FIELD.EXTRA_DATA) {
             assert 1 = 0;
         }
 
@@ -111,39 +100,30 @@ namespace HeaderDecoder {
         return get_dynamic_field(rlp, field);
     }
 
-    func get_dynamic_field{
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-        pow2_array: felt*
-    }(rlp: felt*, field: felt) -> Uint256 {
+    func get_dynamic_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+        rlp: felt*, field: felt
+    ) -> Uint256 {
         let (value, value_len, bytes_len) = get_dynamic_field_bytes(rlp, field);
         return le_u64_array_to_uint256(value, value_len, bytes_len);
     }
 
-    func get_dynamic_field_bytes{
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-        pow2_array: felt*
-    }(rlp: felt*, field: felt) -> (value: felt*, value_len: felt, bytes_len: felt) {
-        let start_byte = 448; // 20 + 5*32 + 256 + encoding bytes
-        let field_idx = field - 7; // we have 7 static fields that we skip
-        
+    func get_dynamic_field_bytes{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+        rlp: felt*, field: felt
+    ) -> (value: felt*, value_len: felt, bytes_len: felt) {
+        let start_byte = 448;  // 20 + 5*32 + 256 + encoding bytes
+        let field_idx = field - 7;  // we have 7 static fields that we skip
+
         let (res, res_len, bytes_len) = retrieve_from_rlp_list_via_idx(
-            rlp=rlp,
-            field=field_idx,
-            item_starts_at_byte=start_byte,
-            counter=0,
+            rlp=rlp, field=field_idx, item_starts_at_byte=start_byte, counter=0
         );
 
         return (value=res, value_len=res_len, bytes_len=bytes_len);
     }
 }
 
-func get_hash_value{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*
-} (rlp: felt*, word_idx: felt, offset: felt) -> Uint256 {
+func get_hash_value{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    rlp: felt*, word_idx: felt, offset: felt
+) -> Uint256 {
     let shifter = (8 - offset) * 8;
     let devisor = pow2_array[offset * 8];
 
@@ -156,17 +136,15 @@ func get_hash_value{
     let rlp_4 = rlp[word_idx + 4];
     let (tash, rlp_4) = felt_divmod(rlp_4, devisor);
 
-    let res_low = rlp_2_right * pow2_array[shifter+ 64] + rlp_1 * pow2_array[shifter] + rlp_0;
+    let res_low = rlp_2_right * pow2_array[shifter + 64] + rlp_1 * pow2_array[shifter] + rlp_0;
     let res_high = rlp_4 * pow2_array[shifter + 64] + rlp_3 * pow2_array[shifter] + rlp_2_left;
 
     return (Uint256(low=res_low, high=res_high));
 }
 
-func get_address_value{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*
-} (rlp: felt*, word_idx: felt, offset: felt) -> felt* {
+func get_address_value{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    rlp: felt*, word_idx: felt, offset: felt
+) -> felt* {
     let (addr) = alloc();
 
     let shifter = (8 - offset) * 8;
@@ -184,18 +162,16 @@ func get_address_value{
     assert [addr + 1] = rlp_2_right * pow2_array[shifter] + rlp_1_left;
 
     let rlp_3 = rlp[word_idx + 3];
-    let last_divisor = pow2_array[(offset - 4) * 8]; // address is 20 bytes, so we need to subtract 4 from the offset
+    let last_divisor = pow2_array[(offset - 4) * 8];  // address is 20 bytes, so we need to subtract 4 from the offset
     let (trash, rlp_3_right) = felt_divmod(rlp_3, last_divisor);
     assert [addr + 2] = rlp_3_right * pow2_array[shifter] + rlp_2_left;
 
     return (addr);
 }
 
-func get_bloom_filter{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*
-} (rlp: felt*,) -> (value: felt*, value_len: felt, bytes_len: felt) {
+func get_bloom_filter{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    rlp: felt*
+) -> (value: felt*, value_len: felt, bytes_len: felt) {
     // the bloom filter always seems to start at byte 192, so we can increment the pointer and return
     return (value=rlp + 24, value_len=32, bytes_len=256);
 }
