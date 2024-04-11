@@ -11,8 +11,11 @@ from src.libs.utils import (
     word_reverse_endian_32_RC,
     word_reverse_endian_40_RC,
     word_reverse_endian_48_RC,
-    word_reverse_endian_56_RC
+    word_reverse_endian_56_RC,
+    word_reverse_endian_64,
 )
+
+from src.libs.rlp_little import array_copy
 
 // ToDo: deprecate
 func keccak_hash_array_to_uint256{
@@ -116,22 +119,16 @@ func prepend_le_rlp_list_prefix{
     let shifter = pow2_array[offset * 8];
     let devisor = pow2_array[(8 - offset) * 8];
 
-    let (lsb0, msb0) = felt_divmod(rlp[0], devisor);
-    assert result[0] = msb0 * shifter + prefix;
-
-    // let (lsb1, msb1) = felt_divmod(rlp[1], devisor);
-    // let v1 = msb1 * shifter + lsb0;
-
-    tempvar current_word = lsb0;
+    tempvar current_word = prefix;
     tempvar n_processed_words = 0;
-    tempvar i = 1;
+    tempvar i = 0;
     loop:
 
     let i = [ap - 1];
     let n_processed_words = [ap - 2];
     let current_word = [ap - 3];
 
-    %{ memory[ap] = 1 if (ids.rlp_len - ids.n_processed_words == 1) else 0 %}
+    %{ memory[ap] = 1 if (ids.rlp_len - ids.n_processed_words == 0) else 0 %}
     jmp end_loop if [ap] != 0, ap++;
 
     // Inlined felt_divmod (unsigned_div_rem).
@@ -149,7 +146,7 @@ func prepend_le_rlp_list_prefix{
     assert q * devisor + r = rlp[i];
     // done inlining felt_divmod.
 
-    assert result[n_processed_words + 1] = current_word + r * shifter;
+    assert result[n_processed_words] = current_word + r * shifter;
     [ap] = q, ap++;
     [ap] = n_processed_words + 1, ap++;
     [ap] = i + 1, ap++;
@@ -157,16 +154,115 @@ func prepend_le_rlp_list_prefix{
     jmp loop;
     end_loop:
 
-    assert rlp_len = n_processed_words + 1;
+    assert rlp_len = n_processed_words;
     tempvar range_check_ptr = range_check_ptr + 3 * n_processed_words;
 
     // if the last word is not 0, we need to add it to the result and increment the rlp length
     if(current_word != 0) {
-        assert result[n_processed_words + 1] = current_word;
+        assert result[n_processed_words] = current_word;
         return (encoded=result, encoded_len=rlp_len + 1);
     }
-    
     return (encoded=result, encoded_len=rlp_len);
 
     // return (result);
+}
+
+// reverses the endianness of chunk, up to 64 bits long
+func reverse_chunk_endianess{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(word: felt, bytes_len: felt) -> felt{
+    if(bytes_len == 1) {
+        return word;
+    }
+    if(bytes_len == 2) {
+        let res = word_reverse_endian_16_RC{range_check_ptr=range_check_ptr}(word);
+        return (res);
+    }
+    if(bytes_len == 3) {
+        let res = word_reverse_endian_24_RC{range_check_ptr=range_check_ptr}(word);
+        return (res);
+    }
+    if(bytes_len == 4) {
+        let res = word_reverse_endian_32_RC{range_check_ptr=range_check_ptr}(word);
+        return (res);
+    }
+    if(bytes_len == 5) {
+        let res = word_reverse_endian_40_RC{range_check_ptr=range_check_ptr}(word);
+        return (res);
+    }
+    if(bytes_len == 6) {
+        let res = word_reverse_endian_48_RC{range_check_ptr=range_check_ptr}(word);
+        return (res);
+    }
+    if(bytes_len == 7) {
+        let res = word_reverse_endian_56_RC{range_check_ptr=range_check_ptr}(word);
+        return (res);
+    }
+    if(bytes_len == 8) {
+        let (res) =  word_reverse_endian_64{bitwise_ptr=bitwise_ptr}(word);
+        return (res);
+    }
+
+    assert 1 = 0;
+    return 0;
+}
+
+
+// Appends a BE 64-bit word to a list of 64-bit LE words, and returns the new list.
+// Inputs:
+// - list: the le chunks list to append to
+// - list_bytes_len: the length of the list in bytes
+// - item: the BE chunk to append (max 8 bytes)
+// - item_bytes_len: the length of the item in bytes
+func append_be_chunk{
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    pow2_array: felt*
+} (list: felt*, list_bytes_len: felt, chunk: felt, chunk_bytes_len: felt) -> (list: felt*, list_len: felt, list_bytes_len: felt) {
+    alloc_locals;
+
+    let (word, offset) = felt_divmod(list_bytes_len, 8);
+    let le_chunk = reverse_chunk_endianess{range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr}(chunk, chunk_bytes_len);
+
+    if(offset == 0) {
+        assert list[word] = le_chunk;
+        return (list=list, list_len=word + 1, list_bytes_len=list_bytes_len + chunk_bytes_len);
+    }
+
+
+    // copy every element except the last one
+    let (result) = alloc();
+    array_copy(list, result, word, 0);
+
+    // reverse and extend the chunk
+    let le_extended = le_chunk * pow2_array[offset * 8];
+    %{
+        print(f"le_chunk={hex(ids.le_chunk)} chunk={hex(ids.chunk)} chunk_bytes_len={ids.chunk_bytes_len}")
+    %}
+
+    let (new_item, msb_item) = felt_divmod(le_extended, pow2_array[64]);
+    assert result[word] = msb_item + list[word];
+
+    %{
+        print(f"word_idx={ids.word} offset={ids.offset} last_word={hex(memory[ids.list + ids.word - 1])}")
+        print(f"le_extended={hex(ids.le_extended)}")
+        print(f"new_item={hex(ids.new_item)}")
+    %}
+
+    if(new_item != 0) {
+        assert result[word + 1] = new_item;
+        return (list=result, list_len=word + 2, list_bytes_len=list_bytes_len + chunk_bytes_len);
+    } else {
+        return (list=result, list_len=word + 1, list_bytes_len=list_bytes_len + chunk_bytes_len);
+    }
+
+
+    // to simplyfy a maximum of 8 bytes can be added
+    // assert [range_check_ptr] = 8 - chunk_bytes_len;
+
+
+
+
+
+
+    // return ();
+
 }
