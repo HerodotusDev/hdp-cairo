@@ -21,8 +21,12 @@ def reverse_endian_256(x: int):
 
 def reverse_endian(x: int):
     hex_str = hex(x)[2:]
+    if len(hex_str) % 2 != 0:
+        hex_str = '0' + hex_str
     return int.from_bytes(bytes.fromhex(hex_str), "little")
 
+def int_get_bytes_len(x: int):
+    return (x.bit_length() + 7) // 8
 
 def reverse_endian_bytes(x: bytes):
     return int.from_bytes(x, "little")

@@ -98,136 +98,31 @@ namespace TransactionSender {
     } (tx: Transaction) -> felt {
         alloc_locals;
 
-        let unsigned_tx_bytes_len = tx.bytes_len - 67; // 65 bytes for signature, 2 for s + r prefix
-
-        // since the TX doesnt contain the list prefix, we simply retrieve the bytes, ignoring the signature ones
-        let (unsigned_tx_rlp, unsigned_tx_rlp_len) = extract_n_bytes_from_le_64_chunks_array(
-            array=tx.rlp,
-            start_word=0,
-            start_offset=0,
-            n_bytes=unsigned_tx_bytes_len,
-            pow2_array=pow2_array
-        );
-
-        %{
-            print("Unsigned RLP:")
-            print("UNsigned len:", ids.unsigned_tx_bytes_len)
-            i = 0
-            while(i < ids.unsigned_tx_rlp_len):
-                print("encoded_tx[", i, "]:", hex(memory[ids.unsigned_tx_rlp + i]))
-                i += 1
-        
-        %}
-
-        local scoped_tx_bytes_len: felt;
-        // ToDo: Add hardfork block height check also. Need to redo the tx type for this
-        // if(tx.type == 0) {
-            // ToDo: need to integrate chain_id
-        let eip155 = 0x018080;
-        let eip155_bytes_len = 3;
-
-        let (appended, appeneded_len, appended_bytes_len) = append_be_chunk{
+        let (tx_payload, tx_payload_len, tx_payload_bytes_len) = extract_tx_payload{
             range_check_ptr=range_check_ptr,
             bitwise_ptr=bitwise_ptr,
             pow2_array=pow2_array
-        }(
-            unsigned_tx_rlp,
-            unsigned_tx_bytes_len,
-            eip155,
-            eip155_bytes_len,
-        );
+        }(tx);
 
-         %{
-            print("Appended len:", ids.appeneded_len)
-            print("Appended bytes len:", ids.appended_bytes_len)
-            print("Appended RLP:")
-            i = 0
-            while(i < ids.appeneded_len):
-                print("encoded_tx[", i, "]:", hex(memory[ids.appended + i]))
-                i += 1
-        
-        %}
-
-        local unsigned_prefix: felt;
-        local unsigned_prefix_bytes_len: felt;
-        local genesis_type: felt;
-        let (padded: felt*) = alloc();
-        %{  
-            from tools.py.utils import (
-                reverse_endian,
-                int_get_bytes_len,
-                bytes_to_8_bytes_chunks_little
-            )
-
-            # We now need to generate the rlp prefix in LE.
-            # This should be fine as a hint, as we are only adding formatting, not actual tx content
-            # !!!!!! ATTENTION !!!!! This is actually not fine in a hint. We can inject malicious prefixes, which will cause ecrecover to derive a different address.
-            if ids.appended_bytes_len < 55:
-                prefix = 0xc0 + ids.appended_bytes_len
-            else:
-                #print("appended_bytes_len:", ids.appended_bytes_len)
-                len_len_bytes = int_get_bytes_len(ids.appended_bytes_len)
-                rlp_id = 0xf7 + len_len_bytes
-                prefix = (rlp_id << (8 * len_len_bytes)) | ids.appended_bytes_len
-
-            #print("prefix:", hex(prefix))
-            # Prepend tx type if not genesis, and reverse endianess
-            if(ids.tx.type == 0):
-                ids.genesis_type = 1
-                ids.unsigned_prefix = reverse_endian(prefix)
-            else:
-                ids.genesis_type = 0
-                ids.unsigned_prefix = reverse_endian(ids.tx.type << 8 | prefix)
-
-            ids.unsigned_prefix_bytes_len = int_get_bytes_len(ids.unsigned_prefix)
-
-            #padded_bytes = bytes.fromhex("e40285051f4d5c0082520894e919522e686d4e998e0434488273c7fa2ce153d86480018080")
-            #padded_rlp = bytes_to_8_bytes_chunks_little(padded_bytes)
-            #segments.write_arg(ids.padded, padded_rlp)
-            #print("prefix:", hex(ids.unsigned_prefix))
-        %}
-
-        if(genesis_type == 1) {
-            assert tx.type = 0;
-            tempvar range_check_ptr = range_check_ptr;
-        } else {
-            assert [range_check_ptr] = tx.type - 1;
-            tempvar range_check_ptr = range_check_ptr + 1;
-        }
-
-        // We have generated the RLP prefix in a hint, now we need to shift all values to fit the LE 64bit array format
-        let (encoded_tx, encoded_tx_len) = prepend_le_rlp_list_prefix(
-            offset=unsigned_prefix_bytes_len,
-            prefix=unsigned_prefix,
-            rlp=appended,
-            rlp_len=appeneded_len
-        );
-        let encoded_tx_bytes_len = appended_bytes_len + unsigned_prefix_bytes_len;
-
-        %{
-            i = 0
-            print("Encoded RLP:")
-            while(i < ids.encoded_tx_len):
-                print("encoded_tx[", i, "]:", hex(memory[ids.encoded_tx + i]))
-                i += 1
-        
-        %}
+        let (encoded_tx_payload, encoded_tx_payload_len, encoded_tx_payload_bytes_len) = rlp_encode_payload{
+            range_check_ptr=range_check_ptr,
+            bitwise_ptr=bitwise_ptr,
+            pow2_array=pow2_array
+        }(tx, tx_payload, tx_payload_len, tx_payload_bytes_len);
 
         let r = TransactionReader.get_field_by_index(tx, 7);
         let s = TransactionReader.get_field_by_index(tx, 8);
 
-        %{
-            print("R:", hex(ids.r.low), hex(ids.r.high))
-            print("S:", hex(ids.s.low), hex(ids.s.high))
-        
-        %}
-
         local v_final: felt;
         let v = TransactionReader.get_field_by_index(tx, 6);
+
         // ToDo: add chain_id check here. Also only for valid hardforks.
+        // ToDo: figure out why ecrecover precompile does v - 27 
         %{
             print("V:", hex(ids.v.low), hex(ids.v.high))
-            if ids.v.low % 2 == 1:
+            if ids.v.low < 2:
+                ids.v_final = ids.v.low
+            elif ids.v.low % 2 == 1:
                 ids.v_final = 0
             else:
                 ids.v_final = 1
@@ -240,7 +135,7 @@ namespace TransactionSender {
         let (big_s) = uint256_to_bigint(s);
 
         // Now we hash this reencoded transaction, which is what the sender has signed in the first place
-        let (msg_hash) = keccak_bigend(encoded_tx, encoded_tx_bytes_len);
+        let (msg_hash) = keccak_bigend(encoded_tx_payload, encoded_tx_payload_bytes_len);
         let (big_msg_hash) = uint256_to_bigint(msg_hash);
         %{
             print("msg_hash:", hex(ids.msg_hash.low), hex(ids.msg_hash.high))
@@ -265,9 +160,110 @@ namespace TransactionSender {
         %{ print("Address:", hex(ids.address)) %}
 
         return (address);
-
-        // return (address);
     }
+
+    func extract_tx_payload{
+        range_check_ptr,
+        bitwise_ptr: BitwiseBuiltin*,
+        pow2_array: felt*
+    }(tx: Transaction) -> (tx_payload: felt*, tx_payload_len: felt, tx_payload_bytes_len: felt) {
+        let tx_params_bytes_len = tx.bytes_len - 67; // 65 bytes for signature, 2 for s + r prefix
+
+        // since the TX doesnt contain the list prefix, we simply retrieve the bytes, ignoring the signature ones
+        let (tx_params, tx_params_len) = extract_n_bytes_from_le_64_chunks_array(
+            array=tx.rlp,
+            start_word=0,
+            start_offset=0,
+            n_bytes=tx_params_bytes_len,
+            pow2_array=pow2_array
+        );
+
+        // ToDo: Compatiblility with pre-eip155 transactions
+        if(tx.type == 0) {
+            // ToDo: need to integrate chain_id
+            let eip155 = 0x018080;
+            let eip155_bytes_len = 3;
+
+            let (tx_payload, tx_payload_len, tx_payload_bytes_len) = append_be_chunk{
+                range_check_ptr=range_check_ptr,
+                bitwise_ptr=bitwise_ptr,
+                pow2_array=pow2_array
+            }(
+                tx_params,
+                tx_params_bytes_len,
+                eip155,
+                eip155_bytes_len,
+            );
+
+            return (tx_payload, tx_payload_len, tx_payload_bytes_len);
+        } else {
+            return (tx_params, tx_params_len, tx_params_bytes_len);
+        }
+    }
+
+    func rlp_encode_payload{
+        range_check_ptr,
+        bitwise_ptr: BitwiseBuiltin*,
+        pow2_array: felt*
+    } (tx: Transaction, tx_payload: felt*, tx_payload_len: felt, tx_payload_bytes_len: felt) -> (signed_payload: felt*, signed_payload_len: felt, signed_payload_bytes_len: felt) {
+        alloc_locals;
+        local prefix: felt;
+        local prefix_bytes_len: felt;
+        local genesis_type: felt;
+        %{  
+            from tools.py.utils import (
+                reverse_endian,
+                int_get_bytes_len,
+                bytes_to_8_bytes_chunks_little
+            )
+
+            # We now need to generate the rlp prefix in LE.
+            # This should be fine as a hint, as we are only adding formatting, not actual tx content
+            # !!!!!! ATTENTION !!!!! This is actually not fine in a hint. We can inject malicious prefixes, which will cause ecrecover to derive a different address.
+            if ids.tx_payload_bytes_len < 55:
+                prefix = 0xc0 + ids.tx_payload_bytes_len
+            else:
+             #   print("tx_payload_len:", ids.tx_payload_len)
+                len_len_bytes = int_get_bytes_len(ids.tx_payload_bytes_len)
+                rlp_id = 0xf7 + len_len_bytes
+                prefix = (rlp_id << (8 * len_len_bytes)) | ids.tx_payload_bytes_len
+
+            #print("prefix:", hex(prefix), prefix)
+            # Prepend tx type if not genesis, and reverse endianess
+            if(ids.tx.type == 0):
+                ids.genesis_type = 1
+                ids.prefix = reverse_endian(prefix)
+            else:
+                ids.genesis_type = 0
+                ids.prefix = reverse_endian(ids.tx.type << 8 | prefix)
+
+            ids.prefix_bytes_len = int_get_bytes_len(ids.prefix)
+            #print("prefix_bytes_len:", ids.prefix_bytes_len)
+
+        %}
+
+        if(genesis_type == 1) {
+            assert tx.type = 0;
+            tempvar range_check_ptr = range_check_ptr;
+        } else {
+            assert [range_check_ptr] = tx.type - 1;
+            tempvar range_check_ptr = range_check_ptr + 1;
+        }
+
+        // We have generated the RLP prefix in a hint, now we need to shift all values to fit the LE 64bit array format
+        let (encoded_tx, encoded_tx_len) = prepend_le_rlp_list_prefix(
+            offset=prefix_bytes_len,
+            prefix=prefix,
+            rlp=tx_payload,
+            rlp_len=tx_payload_len
+        );
+        let encoded_tx_bytes_len = tx_payload_bytes_len + prefix_bytes_len;
+        // %{ print("total_byes_len:", ids.encoded_tx_bytes_len) %}
+
+        return (encoded_tx, encoded_tx_len, encoded_tx_bytes_len);
+
+    }
+
 }
 
 // The layout of the different transaction types depends on the type of transaction. Some fields are only available in certain types of transactions.
@@ -550,5 +546,3 @@ namespace TxTypeFieldMap {
         return 0;    
     }
 }
-
-

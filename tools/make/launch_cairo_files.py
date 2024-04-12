@@ -190,7 +190,7 @@ class CairoRunner:
             if test_file == "tests/hdp/test_vectors.cairo":
                 continue
             
-            if test_file != "tests/hdp/header_decoder.cairo":
+            if test_file != "tests/hdp/tx_decoder.cairo":
                 continue
 
             self.filename_dot_cairo_path = test_file

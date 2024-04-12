@@ -234,18 +234,18 @@ func append_be_chunk{
 
     // reverse and extend the chunk
     let le_extended = le_chunk * pow2_array[offset * 8];
-    %{
-        print(f"le_chunk={hex(ids.le_chunk)} chunk={hex(ids.chunk)} chunk_bytes_len={ids.chunk_bytes_len}")
-    %}
+    // %{
+    //     print(f"le_chunk={hex(ids.le_chunk)} chunk={hex(ids.chunk)} chunk_bytes_len={ids.chunk_bytes_len}")
+    // %}
 
     let (new_item, msb_item) = felt_divmod(le_extended, pow2_array[64]);
     assert result[word] = msb_item + list[word];
 
-    %{
-        print(f"word_idx={ids.word} offset={ids.offset} last_word={hex(memory[ids.list + ids.word - 1])}")
-        print(f"le_extended={hex(ids.le_extended)}")
-        print(f"new_item={hex(ids.new_item)}")
-    %}
+    // %{
+    //     print(f"word_idx={ids.word} offset={ids.offset} last_word={hex(memory[ids.list + ids.word - 1])}")
+    //     print(f"le_extended={hex(ids.le_extended)}")
+    //     print(f"new_item={hex(ids.new_item)}")
+    // %}
 
     if(new_item != 0) {
         assert result[word + 1] = new_item;

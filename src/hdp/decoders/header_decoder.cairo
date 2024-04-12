@@ -35,6 +35,14 @@ namespace HeaderDecoder {
         return get_field_by_index(rlp, 3);
     }
 
+    func get_tx_root{
+        range_check_ptr,
+        bitwise_ptr: BitwiseBuiltin*,
+        pow2_array: felt*
+    }(rlp: felt*) -> Uint256 {
+        return get_field_by_index(rlp, 4);
+    }
+
     func get_block_number{
         range_check_ptr,
         bitwise_ptr: BitwiseBuiltin*,
