@@ -228,17 +228,15 @@ namespace TransactionSender {
                 rlp_id = 0xf7 + len_len_bytes
                 prefix = (rlp_id << (8 * len_len_bytes)) | ids.tx_payload_bytes_len
 
-            #print("prefix:", hex(prefix), prefix)
             # Prepend tx type if not genesis, and reverse endianess
             if(ids.tx.type == 0):
                 ids.genesis_type = 1
                 ids.prefix = reverse_endian(prefix)
             else:
                 ids.genesis_type = 0
-                ids.prefix = reverse_endian(ids.tx.type << 8 | prefix)
+                ids.prefix = reverse_endian(ids.tx.type << (8 * int_get_bytes_len(prefix)) | prefix)
 
             ids.prefix_bytes_len = int_get_bytes_len(ids.prefix)
-            #print("prefix_bytes_len:", ids.prefix_bytes_len)
 
         %}
 
@@ -258,7 +256,6 @@ namespace TransactionSender {
             rlp_len=tx_payload_len
         );
         let encoded_tx_bytes_len = tx_payload_bytes_len + prefix_bytes_len;
-        // %{ print("total_byes_len:", ids.encoded_tx_bytes_len) %}
 
         return (encoded_tx, encoded_tx_len, encoded_tx_bytes_len);
 
