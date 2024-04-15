@@ -1,13 +1,8 @@
 from tools.py.fetch_tx import fetch_tx_from_rpc
 from tools.py.transaction import LegacyTx
 from rlp import encode
-from starkware.cairo.common.poseidon_hash import poseidon_hash_many, poseidon_hash
 from tools.py.utils import (
-    bytes_to_8_bytes_chunks,
     bytes_to_8_bytes_chunks_little,
-    split_128,
-    uint256_reverse_endian,
-    reverse_endian_bytes,
     reverse_and_split_256_bytes,
 )
 from dotenv import load_dotenv
@@ -35,6 +30,7 @@ def fetch_transaction_dict(tx_hash):
 
     tx_dict = {
         "rlp": rlp,
+        "rlp_bytes_len": len(tx.raw_rlp()),
     }
 
     # LE
@@ -45,7 +41,7 @@ def fetch_transaction_dict(tx_hash):
     tx_dict["gas_limit"] = {"low": low, "high": high}
 
     to = bytes_to_8_bytes_chunks_little(tx.to)
-    tx_dict["to"] = to
+    tx_dict["receiver"] = to
 
     (low, high) = reverse_and_split_256_bytes(tx.value.to_bytes(32, "big"))
     tx_dict["value"] = {"low": low, "high": high}
@@ -62,9 +58,23 @@ def fetch_transaction_dict(tx_hash):
     (low, high) = reverse_and_split_256_bytes(tx.s)
     tx_dict["s"] = {"low": low, "high": high}
 
+    input_bytes = tx.data
+    if tx.data == b"":
+        tx_dict["input"] = {
+            "chunks": [0],
+            "bytes_len": 1,
+        }
+    else:
+        tx_dict["input"] = {
+            "chunks": bytes_to_8_bytes_chunks_little(tx.data),
+            "bytes_len": len(tx.data),
+        }
+
     tx_dict["type"] = tx.type
-    tx_dict["sender"] = tx.sender
-    tx_dict["chain_id"] = tx.chain_id
+    tx_dict["sender"] = int(tx.sender.hex(), 16)
+
+    if type(tx) != LegacyTx:
+        tx_dict["chain_id"] = tx.chain_id
 
     if tx.type <= 1:
         (low, high) = reverse_and_split_256_bytes(tx.gas_price.to_bytes(32, "big"))
@@ -81,18 +91,44 @@ def fetch_transaction_dict(tx_hash):
         tx_dict["max_fee_per_gas"] = {"low": low, "high": high}
 
     if tx.type >= 1:
-        tx_dict["access_list"] = bytes_to_8_bytes_chunks_little(encode(tx.access_list))
+        if len(tx.access_list) == 0:
+            tx_dict["access_list"] = {
+                "chunks": [0],
+                "bytes_len": 1,
+            }
+        else:
+            access_list_bytes = encode(tx.access_list) # we need to remove the prefix
+            tx_dict["access_list"] = {
+                "chunks": bytes_to_8_bytes_chunks_little(encode_array_elements(access_list_bytes)),
+                "bytes_len": len(encode_array_elements(access_list_bytes)),
+            }
 
     if tx.type == 3:
         (low, high) = reverse_and_split_256_bytes(
-            tx.blob_base.max_fee_per_blob_gas(32, "big")
+            tx.max_fee_per_blob_gas.to_bytes(32, "big")
         )
         tx_dict["max_fee_per_blob_gas"] = {"low": low, "high": high}
-        tx_dict["blob_versioned_hashes"] = bytes_to_8_bytes_chunks_little(
-            encode(tx.blob_versioned_hashes)
-        )
 
+
+        if len(tx.blob_versioned_hashes) == 0:
+            tx_dict["blob_versioned_hashes"] = {
+                "chunks": [0],
+                "bytes_len": 1,
+            }
+        else:
+            tx_dict["blob_versioned_hashes"] = {
+                "chunks": bytes_to_8_bytes_chunks_little(encode_array_elements(tx.blob_versioned_hashes)),
+                "bytes_len": len(encode_array_elements(tx.blob_versioned_hashes)),
+            }
+        
     return tx_dict
+
+def encode_array_elements(hex_array):
+    res = b""
+    for element in hex_array:
+        res += encode(element)
+
+    return res
 
 
 ## Test TX encoding:

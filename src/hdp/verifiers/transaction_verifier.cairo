@@ -107,14 +107,15 @@ func init_tx_stuct{
         let len_len = second_byte - 0xf7;
         assert tx_start_offset = 2 + len_len;  // type + prefix + len_len
     } else {
+        assert tx_type = 0;
+        let len_len = first_byte - 0xf7;
+        assert tx_start_offset = 1 + len_len;
+        
         assert [range_check_ptr] = 0xff - first_byte;
         assert [range_check_ptr + 1] = first_byte - 0xf7;
         assert [range_check_ptr + 2] = 7 - tx_start_offset;
         tempvar range_check_ptr = range_check_ptr + 3;
 
-        assert tx_type = 0;
-        let len_len = first_byte - 0xf7;
-        assert tx_start_offset = 1 + len_len;
     }
 
     let tx_bytes_len = tx_item_bytes_len - tx_start_offset;

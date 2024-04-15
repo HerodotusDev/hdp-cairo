@@ -276,7 +276,6 @@ class Eip4844(Serializable):
 
 
 def build_tx(tx: SignedTx) -> Union[LegacyTx]:
-    print("signed tx", tx)
     if tx["type"] == "0x0":
         if int(tx["blockNumber"], 16) < 2675000:
             return LegacyTx(

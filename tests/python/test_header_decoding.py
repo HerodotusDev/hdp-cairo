@@ -28,7 +28,6 @@ RPC_URL = (
     os.getenv("RPC_URL_GOERLI") if NETWORK == GOERLI else os.getenv("RPC_URL_MAINNET")
 )
 
-
 def fetch_header(block_number):
     blocks = fetch_blocks_from_rpc_no_async(block_number + 1, block_number - 1, RPC_URL)
     block = blocks[1]
@@ -72,11 +71,20 @@ def fetch_header_dict(block_number):
     block_dict["gas_limit"] = block.gasLimit
     block_dict["gas_used"] = block.gasUsed
     block_dict["timestamp"] = block.timestamp
-    block_dict["extra_data"] = {
-        "bytes": bytes_to_8_bytes_chunks_little(block.extraData),
-        "bytes_len": len(block.extraData),
-        "len": math.ceil(len(block.extraData) / 8),
-    }
+
+    # Special case for empty extra data
+    if len(block.extraData) == 0:
+        block_dict["extra_data"] = {
+            "bytes": [0],
+            "bytes_len": 1,
+            "len": 1
+        }
+    else:
+        block_dict["extra_data"] = {
+            "bytes": bytes_to_8_bytes_chunks_little(block.extraData),
+            "bytes_len": len(block.extraData),
+            "len": math.ceil(len(block.extraData) / 8)
+        }
 
     (low, high) = reverse_and_split_256_bytes(block.mixHash)
     block_dict["mix_hash"] = {"low": low, "high": high}
