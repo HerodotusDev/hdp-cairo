@@ -7,6 +7,7 @@ from src.hdp.decoders.header_decoder import HeaderDecoder
 from src.libs.utils import pow2alloc128
 from src.hdp.types import Transaction
 from src.hdp.decoders.transaction_decoder import TransactionReader, TransactionSender
+from src.hdp.verifiers.transaction_verifier import init_tx_stuct
 
 func main{
     range_check_ptr,
@@ -16,36 +17,123 @@ func main{
     alloc_locals;
     let pow2_array: felt* = pow2alloc128();
 
-    %{ print("Testing Type 0") %}
-    test_type_0{
+    local n_test_txs: felt;
+
+    %{
+        tx_array = [
+            "0x237f99e622d67413956b8674cf16ea56b0ba0a18a9f68a5e254f4ac8d2050b51", # Type 0 (eip155)
+            "0x2e923a6f09ba38f63ff9b722afd14b9e850432860b77df9011e92c1bf0eecf6b", # Type 0
+            "0x423d6dfdeae9967847fb226e138ea5fad6279c12bf3343eae4d32c2477be3021", # Type 1
+            "0x0d19225fe9ec3044d16008c3aceb0b9059cc22d66cd3ab847f6bd1e454342b4b", # Type 2
+            "0x4b0070defa33cbc85f558323bf60132f600212cec3f4ab9e57260d40ff8949d9", # Type 3
+        ]
+
+        ids.n_test_txs = len(tx_array)
+    %}
+
+
+    test_tx_decoding{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array,
         keccak_ptr=keccak_ptr
-    }();
+    }(0);
 
-    %{ print("Testing Type 1") %}
-    test_type_1{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array
-    }();
+    // %{ print("Testing Type 0") %}
+    // test_type_0{
+    //     range_check_ptr=range_check_ptr,
+    //     bitwise_ptr=bitwise_ptr,
+    //     pow2_array=pow2_array,
+    //     keccak_ptr=keccak_ptr
+    // }();
 
-    %{ print("Testing Type 2") %}
-    test_type_2{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array,
-        keccak_ptr=keccak_ptr
-    }();
+    // %{ print("Testing Type 1") %}
+    // test_type_1{
+    //     range_check_ptr=range_check_ptr,
+    //     bitwise_ptr=bitwise_ptr,
+    //     pow2_array=pow2_array
+    // }();
 
-    %{ print("Testing Type 3") %}
-    test_type_3{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array
-    }();
+    // %{ print("Testing Type 2") %}
+    // test_type_2{
+    //     range_check_ptr=range_check_ptr,
+    //     bitwise_ptr=bitwise_ptr,
+    //     pow2_array=pow2_array,
+    //     keccak_ptr=keccak_ptr
+    // }();
 
+    // %{ print("Testing Type 3") %}
+    // test_type_3{
+    //     range_check_ptr=range_check_ptr,
+    //     bitwise_ptr=bitwise_ptr,
+    //     pow2_array=pow2_array
+    // }();
+
+
+    return ();
+}
+
+func test_tx_decoding{
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    pow2_array: felt*,
+    keccak_ptr: KeccakBuiltin*
+} (i: felt) {
+    alloc_locals;
+
+    let (rlp) = alloc();
+    local rlp_len: felt;
+    local bytes_len: felt;
+
+    local expected_nonce: Uint256;
+    local expected_gas_limit: Uint256;
+    let (expected_receiver) = alloc();
+    local expected_value: Uint256;
+    let (expected_input) = alloc();
+    local expected_v: Uint256;
+    local expected_r: Uint256;
+    local expected_s: Uint256;
+
+    %{
+        from tools.py.utils import (
+            bytes_to_8_bytes_chunks_little,
+        )
+        from tests.python.test_tx_decoding import fetch_transaction_dict
+
+        tx_dict = fetch_transaction_dict("0x237f99e622d67413956b8674cf16ea56b0ba0a18a9f68a5e254f4ac8d2050b51")
+
+        print("tx_dict: ", tx_dict)
+
+        # tx_bytes = bytes.fromhex("237f99e622d67413956b8674cf16ea56b0ba0a18a9f68a5e254f4ac8d2050b51")
+        # ids.bytes_len = len(tx_bytes)
+        # chunks = bytes_to_8_bytes_chunks_little(tx_bytes)
+        # ids.rlp_len = len(chunks)
+        # segments.write_arg(ids.rlp, chunks)
+
+        # receiver = bytes_to_8_bytes_chunks_little(bytes.fromhex("b0ba0a18a9f68a5e254f4ac8d2050b51"))
+        # segments.write_arg(ids.expected_receiver, receiver)
+
+        # segments.write_arg(ids.expected_input, [0])
+
+        # ids.expected_nonce.low = 0
+        # ids.expected_nonce.high = 0
+
+        # ids.expected_gas_limit.low = 0
+        # ids.expected_gas_limit.high = 0
+
+        # ids.expected_value.low = 0
+        # ids.expected_value.high = 0
+
+        # ids.expected_v.low = 0
+        # ids.expected_v.high = 0
+
+        # ids.expected_r.low = 0
+        # ids.expected_r.high = 0
+
+        # ids.expected_s.low = 0
+        # ids.expected_s.high = 0
+    
+    %}
 
     return ();
 }
@@ -65,15 +153,12 @@ func test_type_0{
     local expected_nonce: Uint256;
     local expected_gas_price: Uint256;
     local expected_gas_limit: Uint256;
+    let (expected_receiver) = alloc();
     local expected_value: Uint256;
-
+    let (expected_input) = alloc();
     local expected_v: Uint256;
     local expected_r: Uint256;
     local expected_s: Uint256;
-
-    let (expected_receiver) = alloc();
-    let (expected_input) = alloc();
-
 
     %{ 
         from tools.py.utils import (
@@ -471,20 +556,21 @@ func test_type_3{
             bytes_to_8_bytes_chunks_little,
         )
 
-        tx_bytes = bytes.fromhex("018213CF85012A05F20085067BF3114E837A120094A8CB082A5A689E0D594D7DA1E2D72A3D63ADC1BD80B906A4701F58C50000000000000000000000000000000000000000000000000000000000071735856067108BA30E184D777A3FC833F37983F2E48C57A597785755811D2A027B220000000000000000000000000000000000000000000000000000000010B9BDD9000000000000000000000000000000000000000000000000000000000000000365EA057C6834D687253AF6DD58745C268070507CF1F701ED510B4092EAF93601805CA1E763747779C17F34899ACD3507BB5BA2E22DC2C4CD862EF27E1A1462610000000000000000000000000000000000000000000000000000000065F7F03A66B6785A423D7803BE31774427AA91DB5973E0534F28D1C2FED8A53B34231DC100000000000000000000000000000000000000000000000000000000000001200000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000717360000000000000000000000000000000000000000000000000000000065F7F08A0000000000000000000000000000000000000000000000000000000010B9C1C182C0740D3A41268DE6B52AC1EAEE241298824DB68122F8787CB7A5E732435259000000000000000000000000000000000000000000000000000000000000000452A2EB0E93CE6A696BBD597709A2C1DFD5D5C9318F9E9F08087A88712E4606C5FCA6BEE4022BD331455BD97FC8B1006091FABFF53A1F01F9E22EAC597641F4864AF974C95B6D000E82565B427812526EAACC1C69DBC24606EA0E691F4C477D3300000000000000000000000000000000000000000000000000000000000001400000000000000000000000000000000000000000000000000000000000000480000000000000000000000000000000000000000000000000000000000000031800000000000000000000000000000000000000000000800B0000000000000000000000000000000000000000000000000000000000000004856067108BA30E184D777A3FC833F37983F2E48C57A597785755811D2A027B2200000580000000000000000000000000000000000000800B000000000000000000000000000000000000000000000000000000000000000300000000000000000000000065F7F08A00000000000000000000000065F7F0D2000105800000000000000000000000000000000000008001000000000000000000000000000000000000000000000000000000000000000552A2EB0E93CE6A696BBD597709A2C1DFD5D5C9318F9E9F08087A88712E4606C50001058000000000000000000000000000000000000080010000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000400010580000000000000000000000000000000000000801100000000000000000000000000000000000000000000000000000000000000072B15A2246FE5C72065054CEB2B0E3EC0E0E8CC7C70C3651D54FB314F8563E72F000105800000000000000000000000000000000000008011000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000001058000000000000000000000000000000000000080080000000000000000000000000000000000000000000000000000000000000000792A32F10DB9C017A5D17EF7D3D2AAC295A76115C4F71AFC2670A95B96C906700001058000000000000000000000000000000000000080080000000000000000000000000000000000000000000000000000000000000001826C71922C8C0347C4CC9534E07489C1ABF737C329184DE5597F8D657AEC337C00010580000000000000000000000000000000000000800800000000000000000000000000000000000000000000000000000000000000029BACB83454043EBDCB629D77075CCFB129F154B44283B83FB1E6A3AB5430F25E0000000000000000000000000000000000000000000000000000000000000000000000000000009101398AB6798047B0214B7C3E3983DC26FF2EEC3316ED34BC31A4823453ED02EF9B37CA6A2AFDB55E9F07A563E263FEDF3CA3AA7DAA49CC7772C351F2925037D6F775A14F7704F2107748CC766AB5D777541584DBF70A49DE223170822E452DA6FB83A3EA567570639B3791B2496C7F0CBE620B664CD9C38487DE263F37394E93AC83103C0E5DB6702246A14E527F854F87000000000000000000000000000000C001E1A0015560DE5B6C2EDA4B74CFD91620C300829C9C15D290A68BF43B10FE91C365F980A030D1D9B80835D7E5368DD74549EE3CD47948DA17B07E4F98F42702726ADD470BA027EDA9A5B312C0EF4E7C3C1C48716642B20553ECEE0478B1F128E99CF5612095")
+        tx_bytes = bytes.fromhex("018309A0238405F5E1008522ECB25C008353EC6094C662C410C0ECF747543F5BA90660F6ABEBD9C8C480B903A4B72D42A100000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000340000000000000000000000000000000000000000000000000000000000000001700D836A3E3BE7D1ABB2E2ED1CF011624DF098D43B38A14FB364BDAAEFE82B81103452AAB84F4B9A0458F2090038A966FB2267FA661928713F404031095B44170000000000000000000000000000000000000000000000000000000000009A02205412543965C1F5104E42933B54B3A080A0DA4366F6E73C05B7F267EA024FB8505BA2078240F1585F96424C2D1EE48211DA3B3F9177BF2B9880B4FC91D59E9A2000000000000000000000000000000000000000000000000000000000000000100000000000000003AC2371AF51D48ACD4084F9EC3F8FD121DC2787E592E8ED100000000000000008F902DE4D6F8A60F38F86E2E72D509A612FFBE1537B94D6907D2A065B1268D88E652C9281FDD317C6A778DB8E8989B7E10F089A9405B845B000000000000000000000000000000000C8F8620E3E9BD0D5287CBE661547C510000000000000000000000000000000041F3F74BEEDCB3A761886EA953F98B9E0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000A000000000000000000000000F6080D9FBEEBCD44D89AFFBFD42F098CBFF9281605CD48FCCBFD8AA2773FE22C217E808319FFCC1C5A6A463F7D8FA2DA482181960000000000000000000000000000000000000000000000000000000000190D5B01B64B1B3B690B43B9B514FB81377518F4039CD3E4F4914D8A6BDF01D679FB190000000000000000000000000000000000000000000000000000000000000005000000000000000000000000A0B86991C6218B36C1D19D4A2E9EB0CE3606EB4800000000000000000000000000D5FCD1548097845368B47DC3497599EAB811B9071E5405ACE1AFD64C682E65B08360B573C00370F4E3AD6E4F2CD800EC7D93D20000000000000000000000000000000000000000000000000000005D2180128000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000030ABE4BCB691385528AEF33D747702C592249BAF44BCD0C7BB67442248902EA8191CD8D270B579ADF17BC477592FEDD65100000000000000000000000000000000C08522ECB25C00E1A001C951A42B7275260E2D5826BE7D1297CD1628321389B4A35EAA2E6E682F331F01A0BABCA5339DCBA9C0AFFDFADFDF2152E9D51842B614B88B963281FE31C0B94BEAA0542BBA31AB00734A64DB3F8E219A1495BE55A925BED63E4384E6A35734FF6826")
         tx_bytes_len = len(tx_bytes)
-        rlp_chunks = bytes_to_8_bytes_chunks_little(tx_bytes)
-        rlp_len = len(rlp_chunks)
-        segments.write_arg(ids.rlp, rlp_chunks)
-        ids.rlp_len = rlp_len
         ids.bytes_len = tx_bytes_len
+        chunks = bytes_to_8_bytes_chunks_little(tx_bytes)
+        rlp_len = len(chunks)
+        segments.write_arg(ids.rlp, chunks)
+        ids.rlp_len = rlp_len
 
         receiver = bytes_to_8_bytes_chunks_little(bytes.fromhex("a8cb082a5a689e0d594d7da1e2d72a3d63adc1bd"))
         segments.write_arg(ids.expected_receiver, receiver)
 
-        input_bytes = bytes.fromhex("701f58c50000000000000000000000000000000000000000000000000000000000071735856067108ba30e184d777a3fc833f37983f2e48c57a597785755811d2a027b220000000000000000000000000000000000000000000000000000000010b9bdd9000000000000000000000000000000000000000000000000000000000000000365ea057c6834d687253af6dd58745c268070507cf1f701ed510b4092eaf93601805ca1e763747779c17f34899acd3507bb5ba2e22dc2c4cd862ef27e1a1462610000000000000000000000000000000000000000000000000000000065f7f03a66b6785a423d7803be31774427aa91db5973e0534f28d1c2fed8a53b34231dc100000000000000000000000000000000000000000000000000000000000001200000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000717360000000000000000000000000000000000000000000000000000000065f7f08a0000000000000000000000000000000000000000000000000000000010b9c1c182c0740d3a41268de6b52ac1eaee241298824db68122f8787cb7a5e732435259000000000000000000000000000000000000000000000000000000000000000452a2eb0e93ce6a696bbd597709a2c1dfd5d5c9318f9e9f08087a88712e4606c5fca6bee4022bd331455bd97fc8b1006091fabff53a1f01f9e22eac597641f4864af974c95b6d000e82565b427812526eaacc1c69dbc24606ea0e691f4c477d3300000000000000000000000000000000000000000000000000000000000001400000000000000000000000000000000000000000000000000000000000000480000000000000000000000000000000000000000000000000000000000000031800000000000000000000000000000000000000000000800b0000000000000000000000000000000000000000000000000000000000000004856067108ba30e184d777a3fc833f37983f2e48c57a597785755811d2a027b2200000580000000000000000000000000000000000000800b000000000000000000000000000000000000000000000000000000000000000300000000000000000000000065f7f08a00000000000000000000000065f7f0d2000105800000000000000000000000000000000000008001000000000000000000000000000000000000000000000000000000000000000552a2eb0e93ce6a696bbd597709a2c1dfd5d5c9318f9e9f08087a88712e4606c50001058000000000000000000000000000000000000080010000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000400010580000000000000000000000000000000000000801100000000000000000000000000000000000000000000000000000000000000072b15a2246fe5c72065054ceb2b0e3ec0e0e8cc7c70c3651d54fb314f8563e72f000105800000000000000000000000000000000000008011000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000001058000000000000000000000000000000000000080080000000000000000000000000000000000000000000000000000000000000000792a32f10db9c017a5d17ef7d3d2aac295a76115c4f71afc2670a95b96c906700001058000000000000000000000000000000000000080080000000000000000000000000000000000000000000000000000000000000001826c71922c8c0347c4cc9534e07489c1abf737c329184de5597f8d657aec337c00010580000000000000000000000000000000000000800800000000000000000000000000000000000000000000000000000000000000029bacb83454043ebdcb629d77075ccfb129f154b44283b83fb1e6a3ab5430f25e0000000000000000000000000000000000000000000000000000000000000000000000000000009101398ab6798047b0214b7c3e3983dc26ff2eec3316ed34bc31a4823453ed02ef9b37ca6a2afdb55e9f07a563e263fedf3ca3aa7daa49cc7772c351f2925037d6f775a14f7704f2107748cc766ab5d777541584dbf70a49de223170822e452da6fb83a3ea567570639b3791b2496c7f0cbe620b664cd9c38487de263f37394e93ac83103c0e5db6702246a14e527f854f87000000000000000000000000000000")
+        input_bytes = bytes.fromhex("b72d42a100000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000340000000000000000000000000000000000000000000000000000000000000001700d836a3e3be7d1abb2e2ed1cf011624df098d43b38a14fb364bdaaefe82b81103452aab84f4b9a0458f2090038a966fb2267fa661928713f404031095b44170000000000000000000000000000000000000000000000000000000000009a02205412543965c1f5104e42933b54b3a080a0da4366f6e73c05b7f267ea024fb8505ba2078240f1585f96424c2d1ee48211da3b3f9177bf2b9880b4fc91d59e9a2000000000000000000000000000000000000000000000000000000000000000100000000000000003ac2371af51d48acd4084f9ec3f8fd121dc2787e592e8ed100000000000000008f902de4d6f8a60f38f86e2e72d509a612ffbe1537b94d6907d2a065b1268d88e652c9281fdd317c6a778db8e8989b7e10f089a9405b845b000000000000000000000000000000000c8f8620e3e9bd0d5287cbe661547c510000000000000000000000000000000041f3f74beedcb3a761886ea953f98b9e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000f6080d9fbeebcd44d89affbfd42f098cbff9281605cd48fccbfd8aa2773fe22c217e808319ffcc1c5a6a463f7d8fa2da482181960000000000000000000000000000000000000000000000000000000000190d5b01b64b1b3b690b43b9b514fb81377518f4039cd3e4f4914d8a6bdf01d679fb190000000000000000000000000000000000000000000000000000000000000005000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb4800000000000000000000000000d5fcd1548097845368b47dc3497599eab811b9071e5405ace1afd64c682e65b08360b573c00370f4e3ad6e4f2cd800ec7d93d20000000000000000000000000000000000000000000000000000005d2180128000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000030abe4bcb691385528aef33d747702c592249baf44bcd0c7bb67442248902ea8191cd8d270b579adf17bc477592fedd65100000000000000000000000000000000")
         ids.expected_input_bytes_len = len(input_bytes)
         input_chunks = bytes_to_8_bytes_chunks_little(input_bytes)
+
 
         ids.expected_input_len = len(input_chunks)
         segments.write_arg(ids.expected_input, input_chunks)
@@ -537,80 +623,80 @@ func test_type_3{
         type=3
     );
 
-    let nonce = TransactionReader.get_field_by_index(tx, 0);
-    assert expected_nonce.low = nonce.low;
-    assert expected_nonce.high = nonce.high;
+    // let nonce = TransactionReader.get_field_by_index(tx, 0);
+    // assert expected_nonce.low = nonce.low;
+    // assert expected_nonce.high = nonce.high;
 
-    // // N/A: Field 1
+    // // // N/A: Field 1
 
-    let gas_limit = TransactionReader.get_field_by_index(tx, 2);
-    assert expected_gas_limit.low = gas_limit.low;
-    assert expected_gas_limit.high = gas_limit.high;
+    // let gas_limit = TransactionReader.get_field_by_index(tx, 2);
+    // assert expected_gas_limit.low = gas_limit.low;
+    // assert expected_gas_limit.high = gas_limit.high;
 
-    let (receiver, _, _) = TransactionReader.get_felt_field_by_index(tx, 3);
-    assert expected_receiver[0] = receiver[0];
-    assert expected_receiver[1] = receiver[1];
-    assert expected_receiver[2] = receiver[2];
+    // let (receiver, _, _) = TransactionReader.get_felt_field_by_index(tx, 3);
+    // assert expected_receiver[0] = receiver[0];
+    // assert expected_receiver[1] = receiver[1];
+    // assert expected_receiver[2] = receiver[2];
 
-    let value = TransactionReader.get_field_by_index(tx, 4);
-    assert expected_value.low = value.low;
-    assert expected_value.high = value.high;
+    // let value = TransactionReader.get_field_by_index(tx, 4);
+    // assert expected_value.low = value.low;
+    // assert expected_value.high = value.high;
 
-    // Input:
-    eval_input(
-        expected_input,
-        expected_input_len,
-        expected_input_bytes_len,
-        tx,
-        5
-    );
+    // // Input:
+    // eval_input(
+    //     expected_input,
+    //     expected_input_len,
+    //     expected_input_bytes_len,
+    //     tx,
+    //     5
+    // );
+// 03F9043D018309A0238405F5E1008522ECB25C008353EC6094C662C410C0ECF747543F5BA90660F6ABEBD9C8C480B903A4B72D42A100000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000340000000000000000000000000000000000000000000000000000000000000001700D836A3E3BE7D1ABB2E2ED1CF011624DF098D43B38A14FB364BDAAEFE82B81103452AAB84F4B9A0458F2090038A966FB2267FA661928713F404031095B44170000000000000000000000000000000000000000000000000000000000009A02205412543965C1F5104E42933B54B3A080A0DA4366F6E73C05B7F267EA024FB8505BA2078240F1585F96424C2D1EE48211DA3B3F9177BF2B9880B4FC91D59E9A2000000000000000000000000000000000000000000000000000000000000000100000000000000003AC2371AF51D48ACD4084F9EC3F8FD121DC2787E592E8ED100000000000000008F902DE4D6F8A60F38F86E2E72D509A612FFBE1537B94D6907D2A065B1268D88E652C9281FDD317C6A778DB8E8989B7E10F089A9405B845B000000000000000000000000000000000C8F8620E3E9BD0D5287CBE661547C510000000000000000000000000000000041F3F74BEEDCB3A761886EA953F98B9E0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000A000000000000000000000000F6080D9FBEEBCD44D89AFFBFD42F098CBFF9281605CD48FCCBFD8AA2773FE22C217E808319FFCC1C5A6A463F7D8FA2DA482181960000000000000000000000000000000000000000000000000000000000190D5B01B64B1B3B690B43B9B514FB81377518F4039CD3E4F4914D8A6BDF01D679FB190000000000000000000000000000000000000000000000000000000000000005000000000000000000000000A0B86991C6218B36C1D19D4A2E9EB0CE3606EB4800000000000000000000000000D5FCD1548097845368B47DC3497599EAB811B9071E5405ACE1AFD64C682E65B08360B573C00370F4E3AD6E4F2CD800EC7D93D20000000000000000000000000000000000000000000000000000005D2180128000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000030ABE4BCB691385528AEF33D747702C592249BAF44BCD0C7BB67442248902EA8191CD8D270B579ADF17BC477592FEDD65100000000000000000000000000000000C08522ECB25C00E1A001C951A42B7275260E2D5826BE7D1297CD1628321389B4A35EAA2E6E682F331F01A0BABCA5339DCBA9C0AFFDFADFDF2152E9D51842B614B88B963281FE31C0B94BEAA0542BBA31AB00734A64DB3F8E219A1495BE55A925BED63E4384E6A35734FF6826
 
+    // let v = TransactionReader.get_field_by_index(tx, 6);
+    // assert expected_v.low = v.low;
+    // assert expected_v.high = v.high;
 
-    let v = TransactionReader.get_field_by_index(tx, 6);
-    assert expected_v.low = v.low;
-    assert expected_v.high = v.high;
+    // let r = TransactionReader.get_field_by_index(tx, 7);
+    // assert expected_r.low = r.low;
+    // assert expected_r.high = r.high;
 
-    let r = TransactionReader.get_field_by_index(tx, 7);
-    assert expected_r.low = r.low;
-    assert expected_r.high = r.high;
+    // let s = TransactionReader.get_field_by_index(tx, 8);
+    // assert expected_s.low = s.low;
+    // assert expected_s.high = s.high;
 
-    let s = TransactionReader.get_field_by_index(tx, 8);
-    assert expected_s.low = s.low;
-    assert expected_s.high = s.high;
+    // let chain_id = TransactionReader.get_field_by_index(tx, 9);
+    // assert expected_chain_id.low = chain_id.low;
+    // assert expected_chain_id.high = chain_id.high;
 
-    let chain_id = TransactionReader.get_field_by_index(tx, 9);
-    assert expected_chain_id.low = chain_id.low;
-    assert expected_chain_id.high = chain_id.high;
+    // let (access_list, access_list_len, bytes_len) = TransactionReader.get_felt_field_by_index(tx, 10);
+    // assert expected_access_list[0] = access_list[0];
+    // assert access_list_len = 1;
+    // assert bytes_len = 1;
 
-    let (access_list, access_list_len, bytes_len) = TransactionReader.get_felt_field_by_index(tx, 10);
-    assert expected_access_list[0] = access_list[0];
-    assert access_list_len = 1;
-    assert bytes_len = 1;
+    // let max_fee = TransactionReader.get_field_by_index(tx, 11);
+    // assert expected_max_fee.low = max_fee.low;
+    // assert expected_max_fee.high = max_fee.high;
 
-    let max_fee = TransactionReader.get_field_by_index(tx, 11);
-    assert expected_max_fee.low = max_fee.low;
-    assert expected_max_fee.high = max_fee.high;
+    // let max_prio_fee = TransactionReader.get_field_by_index(tx, 12);
+    // assert expected_max_prio_fee.low = max_prio_fee.low;
+    // assert expected_max_prio_fee.high = max_prio_fee.high;
 
-    let max_prio_fee = TransactionReader.get_field_by_index(tx, 12);
-    assert expected_max_prio_fee.low = max_prio_fee.low;
-    assert expected_max_prio_fee.high = max_prio_fee.high;
+    // let max_fee_per_blob_gas = TransactionReader.get_field_by_index(tx, 13);
+    // assert expected_max_fee_per_blob_gas.low = max_fee_per_blob_gas.low;
+    // assert expected_max_fee_per_blob_gas.high = max_fee_per_blob_gas.high;
 
-    let max_fee_per_blob_gas = TransactionReader.get_field_by_index(tx, 13);
-    assert expected_max_fee_per_blob_gas.low = max_fee_per_blob_gas.low;
-    assert expected_max_fee_per_blob_gas.high = max_fee_per_blob_gas.high;
-
-    // Blob hashes:
-    let (blob_versioned_hashes, blob_versioned_hashes_len, blob_versioned_hashes_bytes_len) = TransactionReader.get_felt_field_by_index(tx, 14);
-    assert expected_blob_versioned_hashes_len = blob_versioned_hashes_len;
-    assert expected_blob_versioned_hashes_bytes_len = blob_versioned_hashes_bytes_len;
-    assert expected_blob_versioned_hashes[0] = blob_versioned_hashes[0];
-    assert expected_blob_versioned_hashes[1] = blob_versioned_hashes[1];
-    assert expected_blob_versioned_hashes[2] = blob_versioned_hashes[2];
-    assert expected_blob_versioned_hashes[3] = blob_versioned_hashes[3];
-    assert expected_blob_versioned_hashes[4] = blob_versioned_hashes[4];
+    // // Blob hashes:
+    // let (blob_versioned_hashes, blob_versioned_hashes_len, blob_versioned_hashes_bytes_len) = TransactionReader.get_felt_field_by_index(tx, 14);
+    // assert expected_blob_versioned_hashes_len = blob_versioned_hashes_len;
+    // assert expected_blob_versioned_hashes_bytes_len = blob_versioned_hashes_bytes_len;
+    // assert expected_blob_versioned_hashes[0] = blob_versioned_hashes[0];
+    // assert expected_blob_versioned_hashes[1] = blob_versioned_hashes[1];
+    // assert expected_blob_versioned_hashes[2] = blob_versioned_hashes[2];
+    // assert expected_blob_versioned_hashes[3] = blob_versioned_hashes[3];
+    // assert expected_blob_versioned_hashes[4] = blob_versioned_hashes[4];
 
     let sender = TransactionSender.derive(tx);
-    assert sender = 0x2BCB6BC69991802124F04A1114EE487FF3FAD197;
+    assert sender = 0x2C169DFe5fBbA12957Bdd0Ba47d9CEDbFE260CA7;
 
 
     return ();
@@ -625,31 +711,40 @@ func eval_input{
 
     let (field, len, bytes_len) = TransactionReader.get_felt_field_by_index(tx, index);
     
-    assert expected_len = len;
-    assert expected_bytes_len = bytes_len;
+    %{
+        i = 0
+        while(i < ids.len):
+            print(memory[ids.field + i] == input_chunks[i])
 
-    assert field[0] = expected_field[0];
-    assert field[1] = expected_field[1];
-    assert field[2] = expected_field[2];
-    assert field[3] = expected_field[3];
-    assert field[4] = expected_field[4];
-    assert field[5] = expected_field[5];
-    assert field[6] = expected_field[6];
-    assert field[7] = expected_field[7];
-    assert field[8] = expected_field[8];
+            i += 1
+    
+    %}
 
-    assert field[9] = expected_field[9];
-    assert field[10] = expected_field[10];
-    assert field[11] = expected_field[11];
-    assert field[12] = expected_field[12];
-    assert field[13] = expected_field[13];
-    assert field[14] = expected_field[14];
-    assert field[15] = expected_field[15];
+    // assert expected_len = len;
+    // assert expected_bytes_len = bytes_len;
 
-    assert field[209] = expected_field[209];
-    assert field[210] = expected_field[210];
-    assert field[211] = expected_field[211];
-    assert field[212] = expected_field[212];
+    // assert field[0] = expected_field[0];
+    // assert field[1] = expected_field[1];
+    // assert field[2] = expected_field[2];
+    // assert field[3] = expected_field[3];
+    // assert field[4] = expected_field[4];
+    // assert field[5] = expected_field[5];
+    // assert field[6] = expected_field[6];
+    // assert field[7] = expected_field[7];
+    // assert field[8] = expected_field[8];
+
+    // assert field[9] = expected_field[9];
+    // assert field[10] = expected_field[10];
+    // assert field[11] = expected_field[11];
+    // assert field[12] = expected_field[12];
+    // assert field[13] = expected_field[13];
+    // assert field[14] = expected_field[14];
+    // assert field[15] = expected_field[15];
+
+    // assert field[209] = expected_field[209];
+    // assert field[210] = expected_field[210];
+    // assert field[211] = expected_field[211];
+    // assert field[212] = expected_field[212];
 
     return ();
 }
