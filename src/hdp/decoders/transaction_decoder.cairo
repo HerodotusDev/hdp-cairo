@@ -1,6 +1,6 @@
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, KeccakBuiltin
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.uint256 import Uint256
+from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
@@ -17,22 +17,31 @@ from src.libs.rlp_little import extract_n_bytes_from_le_64_chunks_array
 from src.hdp.utils import prepend_le_rlp_list_prefix, append_be_chunk
 from starkware.cairo.common.cairo_secp.bigint import BigInt3, uint256_to_bigint
 
-// Available Fields:
-//     0: Nonce
-//     1: Gas Price
-//     2: Gas Limit
-//     3: To
-//     4: Value
-//     5: Inputs
-//     6: V
-//     7: R
-//     8: S
-//     9: Chain Id
-//     10: Access List
-//     11: Max Fee Per Gas
-//     12: Max Priority Fee Per Gas
-//     13: Max Fee Per Blob Gas
-//     14: Blob Versioned Hashes
+namespace TransactionField {
+    const NONCE = 0;
+    const GAS_PRICE = 1;
+    const GAS_LIMIT = 2;
+    const RECEIVER = 3;
+    const VALUE = 4;
+    const INPUT = 5;
+    const V = 6;
+    const R = 7;
+    const S = 8;
+    const CHAIN_ID = 9;
+    const ACCESS_LIST = 10;
+    const MAX_FEE_PER_GAS = 11;
+    const MAX_PRIORITY_FEE_PER_GAS = 12;
+    const MAX_FEE_PER_BLOB_GAS = 13;
+    const BLOB_VERSIONED_HASHES = 14;
+}
+
+namespace TransactionType {
+    const LEGACY = 0;
+    const EIP2930 = 1;
+    const EIP1559 = 2;
+    const EIP4844 = 3;
+}
+
 namespace TransactionReader {
     func get_nonce{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
         tx: Transaction
@@ -47,19 +56,19 @@ namespace TransactionReader {
     func get_field_by_index{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
         tx: Transaction, field: felt
     ) -> Uint256 {
-        if (field == 3) {
+        if (field == TransactionField.RECEIVER) {
             assert 1 = 0;  // returns as felt
         }
 
-        if (field == 5) {
+        if (field == TransactionField.INPUT) {
             assert 1 = 0;  // returns as felt
         }
 
-        if (field == 10) {
+        if (field == TransactionField.ACCESS_LIST) {
             assert 1 = 0;  // returns as felt
         }
 
-        if (field == 14) {
+        if (field == TransactionField.BLOB_VERSIONED_HASHES) {
             assert 1 = 0;  // returns as felt
         }
 
@@ -73,6 +82,7 @@ namespace TransactionReader {
         tx: Transaction, field
     ) -> (value: felt*, value_len: felt, bytes_len: felt) {
         let index = TxTypeFieldMap.get_field_index(tx.type, field);
+
         let (res, res_len, bytes_len) = retrieve_from_rlp_list_via_idx(tx.rlp, index, 0, 0);
 
         return (res, res_len, bytes_len);
@@ -97,16 +107,19 @@ namespace TransactionSender {
             range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
         }(tx, tx_payload, tx_payload_len, tx_payload_bytes_len);
 
-        let r = TransactionReader.get_field_by_index(tx, 7);
-        let s = TransactionReader.get_field_by_index(tx, 8);
+        let r_le = TransactionReader.get_field_by_index(tx, 7);
+        let (r) = uint256_reverse_endian(r_le);
+        let s_le = TransactionReader.get_field_by_index(tx, 8);
+        let (s) = uint256_reverse_endian(s_le);
 
         local v_final: felt;
-        let v = TransactionReader.get_field_by_index(tx, 6);
+        let v_le = TransactionReader.get_field_by_index(tx, 6);
+        let (v) = uint256_reverse_endian(v_le);
 
         // ToDo: add chain_id check here. Also only for valid hardforks.
         // ToDo: figure out why ecrecover precompile does v - 27
         %{
-            print("V:", hex(ids.v.low), hex(ids.v.high))
+            #print("V:", hex(ids.v.low), hex(ids.v.high))
             if ids.v.low < 2:
                 ids.v_final = ids.v.low
             elif ids.v.low % 2 == 1:
@@ -114,7 +127,7 @@ namespace TransactionSender {
             else:
                 ids.v_final = 1
 
-            print("V_final:", ids.v_final)
+            #print("V_final:", ids.v_final)
         %}
 
         let (big_r) = uint256_to_bigint(r);
@@ -123,7 +136,7 @@ namespace TransactionSender {
         // Now we hash this reencoded transaction, which is what the sender has signed in the first place
         let (msg_hash) = keccak_bigend(encoded_tx_payload, encoded_tx_payload_bytes_len);
         let (big_msg_hash) = uint256_to_bigint(msg_hash);
-        %{ print("msg_hash:", hex(ids.msg_hash.low), hex(ids.msg_hash.high)) %}
+        //%{ print("msg_hash:", hex(ids.msg_hash.low), hex(ids.msg_hash.high)) %}
         let (pub) = recover_public_key(big_msg_hash, big_r, big_s, v_final);
 
         local address: felt;
@@ -139,7 +152,7 @@ namespace TransactionSender {
             finalize_keccak(keccak_ptr_start=keccak_ptr_seg_start, keccak_ptr_end=keccak_ptr_seg);
         }
 
-        %{ print("Address:", hex(ids.address)) %}
+        // %{ print("Address:", hex(ids.address)) %}
 
         return (address);
     }
@@ -232,27 +245,27 @@ namespace TransactionSender {
 // For this reason we must map all available fields to the corresponding index in the transaction object.
 namespace TxTypeFieldMap {
     func get_field_index(tx_type: felt, field: felt) -> felt {
-        if (tx_type == 0) {
-            return get_tx_type_0_field_index(field);
+        if (tx_type == TransactionType.LEGACY) {
+            return get_legacy_tx_field_index(field);
         }
 
-        if (tx_type == 1) {
-            return get_tx_type_1_field_index(field);
+        if (tx_type == TransactionType.EIP2930) {
+            return get_eip2930_tx_field_index(field);
         }
 
-        if (tx_type == 2) {
-            return get_tx_type_2_field_index(field);
+        if (tx_type == TransactionType.EIP1559) {
+            return get_eip1559_tx_field_index(field);
         }
 
-        if (tx_type == 3) {
-            return get_tx_type_3_field_index(field);
+        if (tx_type == TransactionType.EIP4844) {
+            return get_eip4844_tx_field_index(field);
         }
 
         assert 1 = 0;
         return 0;
     }
 
-    // Type 0:
+    // Legacy:
     //     0: Nonce
     //     1: Gas Price
     //     2: Gas Limit
@@ -263,58 +276,40 @@ namespace TxTypeFieldMap {
     //     7: R
     //     8: S
     // ToDo: Consider implementing with dw. Not how how to handle the assert statements though
-    func get_tx_type_0_field_index(field: felt) -> felt {
-        if (field == 0) {
+    func get_legacy_tx_field_index(field: felt) -> felt {
+        if (field == TransactionField.NONCE) {
             return 0;
         }
-        if (field == 1) {
+        if (field == TransactionField.GAS_PRICE) {
             return 1;
         }
-        if (field == 2) {
+        if (field == TransactionField.GAS_LIMIT) {
             return 2;
         }
-        if (field == 3) {
+        if (field == TransactionField.RECEIVER) {
             return 3;
         }
-        if (field == 4) {
+        if (field == TransactionField.VALUE) {
             return 4;
         }
-        if (field == 5) {
+        if (field == TransactionField.INPUT) {
             return 5;
         }
-        if (field == 6) {
+        if (field == TransactionField.V) {
             return 6;
         }
-        if (field == 7) {
+        if (field == TransactionField.R) {
             return 7;
         }
-        if (field == 8) {
+        if (field == TransactionField.S) {
             return 8;
-        }
-        if (field == 9) {
-            assert 1 = 0;
-        }
-        if (field == 10) {
-            assert 1 = 0;
-        }
-        if (field == 11) {
-            assert 1 = 0;
-        }
-        if (field == 12) {
-            assert 1 = 0;
-        }
-        if (field == 13) {
-            assert 1 = 0;
-        }
-        if (field == 14) {
-            assert 1 = 0;
         }
 
         assert 1 = 0;
         return 0;
     }
 
-    // Type 1:
+    // Eip2930:
     //     0: Chain Id
     //     1: Nonce
     //     2: Gas Price
@@ -327,58 +322,46 @@ namespace TxTypeFieldMap {
     //     9: R
     //     10: S
 
-    func get_tx_type_1_field_index(field: felt) -> felt {
-        if (field == 0) {
+    func get_eip2930_tx_field_index(field: felt) -> felt {
+        if (field == TransactionField.NONCE) {
             return 1;
         }
-        if (field == 1) {
+        if (field == TransactionField.GAS_PRICE) {
             return 2;
         }
-        if (field == 2) {
+        if (field == TransactionField.GAS_LIMIT) {
             return 3;
         }
-        if (field == 3) {
+        if (field == TransactionField.RECEIVER) {
             return 4;
         }
-        if (field == 4) {
+        if (field == TransactionField.VALUE) {
             return 5;
         }
-        if (field == 5) {
+        if (field == TransactionField.INPUT) {
             return 6;
         }
-        if (field == 6) {
+        if (field == TransactionField.V) {
             return 8;
         }
-        if (field == 7) {
+        if (field == TransactionField.R) {
             return 9;
         }
-        if (field == 8) {
+        if (field == TransactionField.S) {
             return 10;
         }
-        if (field == 9) {
+        if (field == TransactionField.CHAIN_ID) {
             return 0;
         }
-        if (field == 10) {
+        if (field == TransactionField.ACCESS_LIST) {
             return 7;
-        }
-        if (field == 11) {
-            assert 1 = 0;
-        }
-        if (field == 12) {
-            assert 1 = 0;
-        }
-        if (field == 13) {
-            assert 1 = 0;
-        }
-        if (field == 14) {
-            assert 1 = 0;
         }
 
         assert 1 = 0;
         return 0;
     }
 
-    // Type 2:
+    // Eip1559:
     //     0: Chain Id
     //     1: Nonce
     //     2: Max Priority Fee Per Gas
@@ -391,58 +374,52 @@ namespace TxTypeFieldMap {
     //     9: V
     //     10: R
     //     11: S
-    func get_tx_type_2_field_index(field: felt) -> felt {
-        if (field == 0) {
+    func get_eip1559_tx_field_index(field: felt) -> felt {
+        if (field == TransactionField.NONCE) {
             return 1;
         }
-        if (field == 1) {
+        if (field == TransactionField.GAS_PRICE) {
             assert 1 = 0;  // not available in eip1559
         }
-        if (field == 2) {
+        if (field == TransactionField.GAS_LIMIT) {
             return 4;
         }
-        if (field == 3) {
+        if (field == TransactionField.RECEIVER) {
             return 5;
         }
-        if (field == 4) {
+        if (field == TransactionField.VALUE) {
             return 6;
         }
-        if (field == 5) {
+        if (field == TransactionField.INPUT) {
             return 7;
         }
-        if (field == 6) {
+        if (field == TransactionField.V) {
             return 9;
         }
-        if (field == 7) {
+        if (field == TransactionField.R) {
             return 10;
         }
-        if (field == 8) {
+        if (field == TransactionField.S) {
             return 11;
         }
-        if (field == 9) {
+        if (field == TransactionField.CHAIN_ID) {
             return 0;
         }
-        if (field == 10) {
+        if (field == TransactionField.ACCESS_LIST) {
             return 8;
         }
-        if (field == 11) {
+        if (field == TransactionField.MAX_FEE_PER_GAS) {
             return 3;
         }
-        if (field == 12) {
+        if (field == TransactionField.MAX_PRIORITY_FEE_PER_GAS) {
             return 2;
-        }
-        if (field == 13) {
-            assert 1 = 0;
-        }
-        if (field == 14) {
-            assert 1 = 0;
         }
 
         assert 1 = 0;
         return 0;
     }
 
-    // Type 3:
+    // Eip4844:
     //     0: Chain Id
     //     1: Nonce
     //     2: Max Priority Fee Per Gas
@@ -457,50 +434,50 @@ namespace TxTypeFieldMap {
     //     11: V
     //     12: R
     //     13: S
-    func get_tx_type_3_field_index(field: felt) -> felt {
-        if (field == 0) {
+    func get_eip4844_tx_field_index(field: felt) -> felt {
+        if (field == TransactionField.NONCE) {
             return 1;
         }
-        if (field == 1) {
-            assert 1 = 0;  // not available in eip1559
+        if (field == TransactionField.GAS_PRICE) {
+            assert 1 = 0; 
         }
-        if (field == 2) {
+        if (field == TransactionField.GAS_LIMIT) {
             return 4;
         }
-        if (field == 3) {
+        if (field == TransactionField.RECEIVER) {
             return 5;
         }
-        if (field == 4) {
+        if (field == TransactionField.VALUE) {
             return 6;
         }
-        if (field == 5) {
+        if (field == TransactionField.INPUT) {
             return 7;
         }
-        if (field == 6) {
+        if (field == TransactionField.V) {
             return 11;
         }
-        if (field == 7) {
+        if (field == TransactionField.R) {
             return 12;
         }
-        if (field == 8) {
+        if (field == TransactionField.S) {
             return 13;
         }
-        if (field == 9) {
+        if (field == TransactionField.CHAIN_ID) {
             return 0;
         }
-        if (field == 10) {
+        if (field == TransactionField.ACCESS_LIST) {
             return 8;
         }
-        if (field == 11) {
+        if (field == TransactionField.MAX_FEE_PER_GAS) {
             return 3;
         }
-        if (field == 12) {
+        if (field == TransactionField.MAX_PRIORITY_FEE_PER_GAS) {
             return 2;
         }
-        if (field == 13) {
+        if (field == TransactionField.MAX_FEE_PER_BLOB_GAS) {
             return 9;
         }
-        if (field == 14) {
+        if (field == TransactionField.BLOB_VERSIONED_HASHES) {
             return 10;
         }
 
