@@ -44,6 +44,7 @@ class CairoRunner:
         parser.add_argument("-pie", action="store_true", help="Create PIE object")
         parser.add_argument("-test", action="store_true", help="Run all tests")
         parser.add_argument("-test_hdp", action="store_true", help="Run hdp tests")
+        parser.add_argument("-run_hdp", action="store_true", help="Run HDP")
         return parser.parse_args()
 
     def setup_autocomplete(self):
@@ -150,6 +151,12 @@ class CairoRunner:
         )
         return f"{cmd_base}{input_flag}{profile_flag}{pie_flag}"
 
+    def run_hdp(self):
+        self.filename_dot_cairo_path = "src/hdp/hdp.cairo"
+        compiled_path = self.compile_cairo_file()
+        cmd_base = f"cairo-run --program={compiled_path} --layout=starknet_with_keccak  --program_input=src/hdp/hdp_input.json --print_output"
+        os.system(cmd_base)
+
     def run(self):
         self.prompt_for_cairo_file()
         print(f"Selected Cairo file: {self.filename_dot_cairo_path}")
@@ -189,8 +196,8 @@ class CairoRunner:
             # Skip the vectors test file.
             if test_file == "tests/hdp/test_vectors.cairo":
                 continue
-            
-            if test_file != "tests/hdp/tx_decoder.cairo":
+
+            if test_file != "tests/hdp/full_flow.cairo":
                 continue
 
             self.filename_dot_cairo_path = test_file
@@ -223,5 +230,7 @@ if __name__ == "__main__":
         x.test()
     elif x.args.test_hdp:
         x.test_hdp()
+    elif x.args.run_hdp:
+        x.run_hdp()
     else:
         x.run()

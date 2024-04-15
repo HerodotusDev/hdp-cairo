@@ -2,16 +2,12 @@
 from starkware.cairo.common.alloc import alloc
 
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
-from starkware.cairo.common.uint256 import Uint256, uint256_eq
+from starkware.cairo.common.uint256 import Uint256, uint256_eq, uint256_reverse_endian
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
 from src.hdp.rlp import le_u64_array_to_uint256, decode_rlp_word_to_uint256
 from src.libs.utils import pow2alloc127
 
-func main{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
-}() {
+func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}() {
     alloc_locals;
     let pow2_array: felt* = pow2alloc127();
     local decode_rlp_word_to_uint256_len: felt;
@@ -19,8 +15,8 @@ func main{
     %{
         from tools.py.utils import (
             bytes_to_8_bytes_chunks_little,
+            uint256_reverse_endian,
             split_128,
-            reverse_endian_256,
             reverse_endian,
             bytes_to_8_bytes_chunks,
         )
@@ -61,89 +57,72 @@ func main{
             0x85bdc29d6de8c62e3c3a7789448dfa47cc2ad137791dcb6f7413fc1e347734,
             0x66ba7c97a8d86016687269a255b6557ae499a417222aede48aca47e8a34fccc8
         ]
-        
+
         ids.decode_rlp_word_to_uint256_len = len(decode_rlp_word_to_uint256)
     %}
 
     test_decode_rlp_word_to_uint256{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array
-    }(decode_rlp_word_to_uint256_len,0, 0);
-
-     test_decode_rlp_word_to_uint256{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array
-    }(decode_rlp_word_to_uint256_len,0, 1);
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
+    }(decode_rlp_word_to_uint256_len, 0);
 
     return ();
 }
 
-
 func test_decode_rlp_word_to_uint256{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*,
-}(case_len: felt, index: felt, to_be: felt) {
-
-    if(index == case_len) {
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
+}(case_len: felt, index: felt) {
+    if (index == case_len) {
         return ();
-    }    
+    }
     test_decode_rlp_word_to_uint256_inner{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array
-    }(case=index, to_be=to_be);
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
+    }(case=index);
 
-    return test_decode_rlp_word_to_uint256(
-        case_len=case_len,
-        index=index + 1,
-        to_be=to_be
-    );
+    return test_decode_rlp_word_to_uint256(case_len=case_len, index=index + 1);
 }
 
 func test_decode_rlp_word_to_uint256_inner{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*,
-}(case: felt, to_be: felt) {
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
+}(case: felt) {
     alloc_locals;
 
     let (chunks: felt*) = alloc();
-    local expected: Uint256;
+    local expected_le: Uint256;
+    local expected_be: Uint256;
     local bytes_len: felt;
-    
+
     %{
         # Writes input and expected value to cairo
         def write_case_values(value):
-            #print(f"Writing case {ids.case} with value {hex(value)}")
-            if ids.to_be == 1:
-                (low, high) = split_128(value)
-                ids.expected.low = low
-                ids.expected.high = high
-            else:
-                reversed_value = reverse_endian(value)
-                (low, high) = split_128(reversed_value)
-                ids.expected.low = low
-                ids.expected.high = high
+            (low_be, high_be) = split_128(value)
+            ids.expected_be.low = low_be
+            ids.expected_be.high = high_be
+
+            reversed_value = uint256_reverse_endian(value)
+            (low_le, high_le) = split_128(reversed_value)
+            ids.expected_le.low = low_le
+            ids.expected_le.high = high_le
 
             rlp_value = rlp.encode(value)
             ids.bytes_len = len(rlp_value)
             chunks = bytes_to_8_bytes_chunks_little(rlp_value)
-            segments.write_arg(ids.chunks, chunks)    
+            segments.write_arg(ids.chunks, chunks)  
 
         write_case_values(decode_rlp_word_to_uint256[ids.case])
     %}
 
-    let result = decode_rlp_word_to_uint256(chunks, bytes_len, to_be);
+    let result_le = decode_rlp_word_to_uint256(chunks, bytes_len);
+    let (local result_be) = uint256_reverse_endian(result_le);
 
-    %{
-        #print(f"Expect: {hex(ids.expected.low)} {hex(ids.expected.high)}")
-        #print(f"Result: {hex(ids.result.low)} {hex(ids.result.high)}")
-    %}
+    // %{
+    //     print(f"Expect: {hex(ids.expected_le.low)} {hex(ids.expected_le.high)}")
+    //     print(f"Result: {hex(ids.result_le.low)} {hex(ids.result_le.high)}")
+    // %}
+    assert expected_le.low = result_le.low;
+    assert expected_le.high = result_le.high;
 
-    assert result.low = expected.low;
-    assert result.high = expected.high;
+    assert expected_be.low = result_be.low;
+    assert expected_be.high = result_be.high;
+
     return ();
 }

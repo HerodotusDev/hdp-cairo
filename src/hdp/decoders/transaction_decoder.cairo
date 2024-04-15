@@ -6,18 +6,16 @@ from starkware.cairo.common.default_dict import default_dict_new, default_dict_f
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
 from src.libs.utils import pow2alloc128, write_felt_array_to_dict_keys
 from src.hdp.rlp import retrieve_from_rlp_list_via_idx, le_u64_array_to_uint256
-from starkware.cairo.common.cairo_secp.signature import recover_public_key, public_key_point_to_eth_address
+from starkware.cairo.common.cairo_secp.signature import (
+    recover_public_key,
+    public_key_point_to_eth_address,
+)
 from starkware.cairo.common.cairo_keccak.keccak import finalize_keccak
 
 from src.hdp.types import Transaction
-from src.libs.rlp_little import (
-    extract_n_bytes_from_le_64_chunks_array
-)
+from src.libs.rlp_little import extract_n_bytes_from_le_64_chunks_array
 from src.hdp.utils import prepend_le_rlp_list_prefix, append_be_chunk
-from starkware.cairo.common.cairo_secp.bigint import (
-    BigInt3,
-    uint256_to_bigint,
-)
+from starkware.cairo.common.cairo_secp.bigint import BigInt3, uint256_to_bigint
 
 // Available Fields:
 //     0: Nonce
@@ -36,11 +34,9 @@ from starkware.cairo.common.cairo_secp.bigint import (
 //     13: Max Fee Per Blob Gas
 //     14: Blob Versioned Hashes
 namespace TransactionReader {
-    func get_nonce{
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-        pow2_array: felt*
-    } (tx: Transaction) -> felt {
+    func get_nonce{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+        tx: Transaction
+    ) -> felt {
         let index = TxTypeFieldMap.get_field_index(tx.type, 0);
         let (nonce, nonce_len, _bytes_len) = retrieve_from_rlp_list_via_idx(tx.rlp, index, 0, 0);
 
@@ -48,38 +44,34 @@ namespace TransactionReader {
         return (nonce[0]);
     }
 
-    func get_field_by_index{
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-        pow2_array: felt*
-    }(tx: Transaction, field: felt) -> Uint256 {
-        if(field == 3) {
-            assert 1 = 0; // returns as felt
+    func get_field_by_index{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+        tx: Transaction, field: felt
+    ) -> Uint256 {
+        if (field == 3) {
+            assert 1 = 0;  // returns as felt
         }
 
-        if(field == 5) {
-            assert 1 = 0; // returns as felt
+        if (field == 5) {
+            assert 1 = 0;  // returns as felt
         }
 
-        if(field == 10) {
-            assert 1 = 0; // returns as felt
+        if (field == 10) {
+            assert 1 = 0;  // returns as felt
         }
 
-        if(field == 14) {
-            assert 1 = 0; // returns as felt
+        if (field == 14) {
+            assert 1 = 0;  // returns as felt
         }
 
         let index = TxTypeFieldMap.get_field_index(tx.type, field);
         let (res, res_len, bytes_len) = retrieve_from_rlp_list_via_idx(tx.rlp, index, 0, 0);
 
-        return le_u64_array_to_uint256(res, res_len, bytes_len, 1);
+        return le_u64_array_to_uint256(res, res_len, bytes_len);
     }
 
-    func get_felt_field_by_index{
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-        pow2_array: felt*
-    }(tx: Transaction, field) -> (value: felt*, value_len: felt, bytes_len: felt) {
+    func get_felt_field_by_index{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+        tx: Transaction, field
+    ) -> (value: felt*, value_len: felt, bytes_len: felt) {
         let index = TxTypeFieldMap.get_field_index(tx.type, field);
         let (res, res_len, bytes_len) = retrieve_from_rlp_list_via_idx(tx.rlp, index, 0, 0);
 
@@ -88,26 +80,21 @@ namespace TransactionReader {
 }
 
 // Deriving the sender is an expensive operation, as it requires the recovery of the public key from the signature.
-// For this reason, this logic is in its own namespace. 
+// For this reason, this logic is in its own namespace.
 namespace TransactionSender {
     func derive{
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-        pow2_array: felt*,
-        keccak_ptr: KeccakBuiltin*
-    } (tx: Transaction) -> felt {
+        range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, keccak_ptr: KeccakBuiltin*
+    }(tx: Transaction) -> felt {
         alloc_locals;
 
         let (tx_payload, tx_payload_len, tx_payload_bytes_len) = extract_tx_payload{
-            range_check_ptr=range_check_ptr,
-            bitwise_ptr=bitwise_ptr,
-            pow2_array=pow2_array
+            range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
         }(tx);
 
-        let (encoded_tx_payload, encoded_tx_payload_len, encoded_tx_payload_bytes_len) = rlp_encode_payload{
-            range_check_ptr=range_check_ptr,
-            bitwise_ptr=bitwise_ptr,
-            pow2_array=pow2_array
+        let (
+            encoded_tx_payload, encoded_tx_payload_len, encoded_tx_payload_bytes_len
+        ) = rlp_encode_payload{
+            range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
         }(tx, tx_payload, tx_payload_len, tx_payload_bytes_len);
 
         let r = TransactionReader.get_field_by_index(tx, 7);
@@ -117,7 +104,7 @@ namespace TransactionSender {
         let v = TransactionReader.get_field_by_index(tx, 6);
 
         // ToDo: add chain_id check here. Also only for valid hardforks.
-        // ToDo: figure out why ecrecover precompile does v - 27 
+        // ToDo: figure out why ecrecover precompile does v - 27
         %{
             print("V:", hex(ids.v.low), hex(ids.v.high))
             if ids.v.low < 2:
@@ -130,16 +117,13 @@ namespace TransactionSender {
             print("V_final:", ids.v_final)
         %}
 
-
         let (big_r) = uint256_to_bigint(r);
         let (big_s) = uint256_to_bigint(s);
 
         // Now we hash this reencoded transaction, which is what the sender has signed in the first place
         let (msg_hash) = keccak_bigend(encoded_tx_payload, encoded_tx_payload_bytes_len);
         let (big_msg_hash) = uint256_to_bigint(msg_hash);
-        %{
-            print("msg_hash:", hex(ids.msg_hash.low), hex(ids.msg_hash.high))
-        %}
+        %{ print("msg_hash:", hex(ids.msg_hash.low), hex(ids.msg_hash.high)) %}
         let (pub) = recover_public_key(big_msg_hash, big_r, big_s, v_final);
 
         local address: felt;
@@ -148,9 +132,7 @@ namespace TransactionSender {
 
         with keccak_ptr_seg {
             let (local public_address) = public_key_point_to_eth_address{
-                range_check_ptr=range_check_ptr,
-                bitwise_ptr=bitwise_ptr,
-                keccak_ptr=keccak_ptr_seg
+                range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr_seg
             }(pub);
 
             assert address = public_address;
@@ -162,12 +144,10 @@ namespace TransactionSender {
         return (address);
     }
 
-    func extract_tx_payload{
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-        pow2_array: felt*
-    }(tx: Transaction) -> (tx_payload: felt*, tx_payload_len: felt, tx_payload_bytes_len: felt) {
-        let tx_params_bytes_len = tx.bytes_len - 67; // 65 bytes for signature, 2 for s + r prefix
+    func extract_tx_payload{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+        tx: Transaction
+    ) -> (tx_payload: felt*, tx_payload_len: felt, tx_payload_bytes_len: felt) {
+        let tx_params_bytes_len = tx.bytes_len - 67;  // 65 bytes for signature, 2 for s + r prefix
 
         // since the TX doesnt contain the list prefix, we simply retrieve the bytes, ignoring the signature ones
         let (tx_params, tx_params_len) = extract_n_bytes_from_le_64_chunks_array(
@@ -175,25 +155,18 @@ namespace TransactionSender {
             start_word=0,
             start_offset=0,
             n_bytes=tx_params_bytes_len,
-            pow2_array=pow2_array
+            pow2_array=pow2_array,
         );
 
         // ToDo: Compatiblility with pre-eip155 transactions
-        if(tx.type == 0) {
+        if (tx.type == 0) {
             // ToDo: need to integrate chain_id
             let eip155 = 0x018080;
             let eip155_bytes_len = 3;
 
             let (tx_payload, tx_payload_len, tx_payload_bytes_len) = append_be_chunk{
-                range_check_ptr=range_check_ptr,
-                bitwise_ptr=bitwise_ptr,
-                pow2_array=pow2_array
-            }(
-                tx_params,
-                tx_params_bytes_len,
-                eip155,
-                eip155_bytes_len,
-            );
+                range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
+            }(tx_params, tx_params_bytes_len, eip155, eip155_bytes_len);
 
             return (tx_payload, tx_payload_len, tx_payload_bytes_len);
         } else {
@@ -201,16 +174,14 @@ namespace TransactionSender {
         }
     }
 
-    func rlp_encode_payload{
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-        pow2_array: felt*
-    } (tx: Transaction, tx_payload: felt*, tx_payload_len: felt, tx_payload_bytes_len: felt) -> (signed_payload: felt*, signed_payload_len: felt, signed_payload_bytes_len: felt) {
+    func rlp_encode_payload{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+        tx: Transaction, tx_payload: felt*, tx_payload_len: felt, tx_payload_bytes_len: felt
+    ) -> (signed_payload: felt*, signed_payload_len: felt, signed_payload_bytes_len: felt) {
         alloc_locals;
         local prefix: felt;
         local prefix_bytes_len: felt;
         local genesis_type: felt;
-        %{  
+        %{
             from tools.py.utils import (
                 reverse_endian,
                 int_get_bytes_len,
@@ -237,10 +208,9 @@ namespace TransactionSender {
                 ids.prefix = reverse_endian(ids.tx.type << (8 * int_get_bytes_len(prefix)) | prefix)
 
             ids.prefix_bytes_len = int_get_bytes_len(ids.prefix)
-
         %}
 
-        if(genesis_type == 1) {
+        if (genesis_type == 1) {
             assert tx.type = 0;
             tempvar range_check_ptr = range_check_ptr;
         } else {
@@ -250,36 +220,31 @@ namespace TransactionSender {
 
         // We have generated the RLP prefix in a hint, now we need to shift all values to fit the LE 64bit array format
         let (encoded_tx, encoded_tx_len) = prepend_le_rlp_list_prefix(
-            offset=prefix_bytes_len,
-            prefix=prefix,
-            rlp=tx_payload,
-            rlp_len=tx_payload_len
+            offset=prefix_bytes_len, prefix=prefix, rlp=tx_payload, rlp_len=tx_payload_len
         );
         let encoded_tx_bytes_len = tx_payload_bytes_len + prefix_bytes_len;
 
         return (encoded_tx, encoded_tx_len, encoded_tx_bytes_len);
-
     }
-
 }
 
 // The layout of the different transaction types depends on the type of transaction. Some fields are only available in certain types of transactions.
 // For this reason we must map all available fields to the corresponding index in the transaction object.
 namespace TxTypeFieldMap {
     func get_field_index(tx_type: felt, field: felt) -> felt {
-        if(tx_type == 0) {
+        if (tx_type == 0) {
             return get_tx_type_0_field_index(field);
         }
 
-        if(tx_type == 1) {
+        if (tx_type == 1) {
             return get_tx_type_1_field_index(field);
         }
 
-        if(tx_type == 2) {
+        if (tx_type == 2) {
             return get_tx_type_2_field_index(field);
         }
 
-        if(tx_type == 3) {
+        if (tx_type == 3) {
             return get_tx_type_3_field_index(field);
         }
 
@@ -287,61 +252,61 @@ namespace TxTypeFieldMap {
         return 0;
     }
 
-// Type 0:
-//     0: Nonce
-//     1: Gas Price
-//     2: Gas Limit
-//     3: To
-//     4: Value
-//     5: Inputs
-//     6: V
-//     7: R
-//     8: S
-// ToDo: Consider implementing with dw. Not how how to handle the assert statements though
+    // Type 0:
+    //     0: Nonce
+    //     1: Gas Price
+    //     2: Gas Limit
+    //     3: To
+    //     4: Value
+    //     5: Inputs
+    //     6: V
+    //     7: R
+    //     8: S
+    // ToDo: Consider implementing with dw. Not how how to handle the assert statements though
     func get_tx_type_0_field_index(field: felt) -> felt {
-        if(field == 0) {
+        if (field == 0) {
             return 0;
         }
-        if(field == 1) {
+        if (field == 1) {
             return 1;
         }
-        if(field == 2) {
+        if (field == 2) {
             return 2;
         }
-        if(field == 3) {
+        if (field == 3) {
             return 3;
         }
-        if(field == 4) {
+        if (field == 4) {
             return 4;
         }
-        if(field == 5) {
+        if (field == 5) {
             return 5;
         }
-        if(field == 6) {
+        if (field == 6) {
             return 6;
         }
-        if(field == 7) {
+        if (field == 7) {
             return 7;
         }
-        if(field == 8) {
+        if (field == 8) {
             return 8;
         }
-        if(field == 9) {
+        if (field == 9) {
             assert 1 = 0;
         }
-        if(field == 10) {
+        if (field == 10) {
             assert 1 = 0;
         }
-        if(field == 11) {
+        if (field == 11) {
             assert 1 = 0;
         }
-        if(field == 12) {
+        if (field == 12) {
             assert 1 = 0;
         }
-        if(field == 13) {
+        if (field == 13) {
             assert 1 = 0;
         }
-        if(field == 14) {
+        if (field == 14) {
             assert 1 = 0;
         }
 
@@ -349,63 +314,63 @@ namespace TxTypeFieldMap {
         return 0;
     }
 
-// Type 1:
-//     0: Chain Id
-//     1: Nonce
-//     2: Gas Price
-//     3: Gas Limit
-//     4: To
-//     5: Value
-//     6: Inputs
-//     7: Access List
-//     8: V
-//     9: R
-//     10: S
+    // Type 1:
+    //     0: Chain Id
+    //     1: Nonce
+    //     2: Gas Price
+    //     3: Gas Limit
+    //     4: To
+    //     5: Value
+    //     6: Inputs
+    //     7: Access List
+    //     8: V
+    //     9: R
+    //     10: S
 
     func get_tx_type_1_field_index(field: felt) -> felt {
-        if(field == 0) {
+        if (field == 0) {
             return 1;
         }
-        if(field == 1) {
+        if (field == 1) {
             return 2;
         }
-        if(field == 2) {
+        if (field == 2) {
             return 3;
         }
-        if(field == 3) {
+        if (field == 3) {
             return 4;
         }
-        if(field == 4) {
+        if (field == 4) {
             return 5;
         }
-        if(field == 5) {
+        if (field == 5) {
             return 6;
         }
-        if(field == 6) {
+        if (field == 6) {
             return 8;
         }
-        if(field == 7) {
+        if (field == 7) {
             return 9;
         }
-        if(field == 8) {
+        if (field == 8) {
             return 10;
         }
-        if(field == 9) {
+        if (field == 9) {
             return 0;
         }
-        if(field == 10) {
+        if (field == 10) {
             return 7;
         }
-        if(field == 11) {
+        if (field == 11) {
             assert 1 = 0;
         }
-        if(field == 12) {
+        if (field == 12) {
             assert 1 = 0;
         }
-        if(field == 13) {
+        if (field == 13) {
             assert 1 = 0;
         }
-        if(field == 14) {
+        if (field == 14) {
             assert 1 = 0;
         }
 
@@ -413,63 +378,63 @@ namespace TxTypeFieldMap {
         return 0;
     }
 
-// Type 2:
-//     0: Chain Id
-//     1: Nonce
-//     2: Max Priority Fee Per Gas
-//     3: Max Fee Per Gas
-//     4: Gas Limit
-//     5: To
-//     6: Value
-//     7: Inputs
-//     8: Access List
-//     9: V
-//     10: R
-//     11: S
+    // Type 2:
+    //     0: Chain Id
+    //     1: Nonce
+    //     2: Max Priority Fee Per Gas
+    //     3: Max Fee Per Gas
+    //     4: Gas Limit
+    //     5: To
+    //     6: Value
+    //     7: Inputs
+    //     8: Access List
+    //     9: V
+    //     10: R
+    //     11: S
     func get_tx_type_2_field_index(field: felt) -> felt {
-        if(field == 0) {
+        if (field == 0) {
             return 1;
         }
-        if(field == 1) {
-           assert 1 = 0; // not available in eip1559
+        if (field == 1) {
+            assert 1 = 0;  // not available in eip1559
         }
-        if(field == 2) {
+        if (field == 2) {
             return 4;
         }
         if (field == 3) {
             return 5;
         }
-        if(field == 4) {
+        if (field == 4) {
             return 6;
         }
-        if(field == 5) {
+        if (field == 5) {
             return 7;
         }
-        if(field == 6) {
+        if (field == 6) {
             return 9;
         }
-        if(field == 7) {
+        if (field == 7) {
             return 10;
         }
-        if(field == 8) {
+        if (field == 8) {
             return 11;
         }
-        if(field == 9) {
+        if (field == 9) {
             return 0;
         }
-        if(field == 10) {
+        if (field == 10) {
             return 8;
         }
-        if(field == 11) {
+        if (field == 11) {
             return 3;
         }
-        if(field == 12) {
+        if (field == 12) {
             return 2;
         }
-        if(field == 13) {
+        if (field == 13) {
             assert 1 = 0;
         }
-        if(field == 14) {
+        if (field == 14) {
             assert 1 = 0;
         }
 
@@ -477,69 +442,69 @@ namespace TxTypeFieldMap {
         return 0;
     }
 
-// Type 3:
-//     0: Chain Id
-//     1: Nonce
-//     2: Max Priority Fee Per Gas
-//     3: Max Fee Per Gas
-//     4: Gas Limit
-//     5: To
-//     6: Value
-//     7: Inputs
-//     8: Access List
-//     9: Max Fee Per Blob Gas
-//     10: Blob Versioned Hashes
-//     11: V
-//     12: R
-//     13: S      
+    // Type 3:
+    //     0: Chain Id
+    //     1: Nonce
+    //     2: Max Priority Fee Per Gas
+    //     3: Max Fee Per Gas
+    //     4: Gas Limit
+    //     5: To
+    //     6: Value
+    //     7: Inputs
+    //     8: Access List
+    //     9: Max Fee Per Blob Gas
+    //     10: Blob Versioned Hashes
+    //     11: V
+    //     12: R
+    //     13: S
     func get_tx_type_3_field_index(field: felt) -> felt {
-        if(field == 0) {
+        if (field == 0) {
             return 1;
         }
-        if(field == 1) {
-           assert 1 = 0; // not available in eip1559
+        if (field == 1) {
+            assert 1 = 0;  // not available in eip1559
         }
-        if(field == 2) {
+        if (field == 2) {
             return 4;
         }
         if (field == 3) {
             return 5;
         }
-        if(field == 4) {
+        if (field == 4) {
             return 6;
         }
-        if(field == 5) {
+        if (field == 5) {
             return 7;
         }
-        if(field == 6) {
+        if (field == 6) {
             return 11;
         }
-        if(field == 7) {
+        if (field == 7) {
             return 12;
         }
-        if(field == 8) {
+        if (field == 8) {
             return 13;
         }
-        if(field == 9) {
+        if (field == 9) {
             return 0;
         }
-        if(field == 10) {
+        if (field == 10) {
             return 8;
         }
-        if(field == 11) {
+        if (field == 11) {
             return 3;
         }
-        if(field == 12) {
+        if (field == 12) {
             return 2;
         }
-        if(field == 13) {
+        if (field == 13) {
             return 9;
         }
-        if(field == 14) {
+        if (field == 14) {
             return 10;
         }
 
         assert 1 = 0;
-        return 0;    
+        return 0;
     }
 }

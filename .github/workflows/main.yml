@@ -1,0 +1,39 @@
+name: Main
+
+on: [pull_request]
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9' # Specify the Python version you need
+    - name: Cache Python environment
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/pip
+          venv
+        key: ${{ runner.os }}-python-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-python-
+    - name: Install Dependencies
+      run: |
+        make setup
+
+    - name: Check python formatting
+      run: source venv/bin/activate && ./tools/make/python_format_check.sh
+    - name: Check cairo Formatting
+      run: |
+        source venv/bin/activate && ./tools/make/cairo_format_check.sh
+    - name: Compile cairo files
+      run: source venv/bin/activate && make build
+    - name: Run Cairo tests
+      env:
+        RPC_URL_MAINNET: ${{ secrets.RPC_URL_MAINNET }}
+      run: source ./tools/make/cairo_tests.sh

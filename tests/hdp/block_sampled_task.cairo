@@ -5,45 +5,45 @@ from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuilti
 from tests.hdp.block_sampled_datalake import block_sampled_datalake_eq
 from tests.hdp.test_vectors import BlockSampledTaskMocker
 
-from src.hdp.tasks.block_sampled_task import BlockSampledTask, extract_params
+from src.hdp.tasks.block_sampled_task import BlockSampledTask, extract_params_and_construct_task
 from src.hdp.types import BlockSampledDataLake, BlockSampledComputationalTask
 from src.hdp.merkle import compute_tasks_root
+from src.libs.utils import pow2alloc128
 
-func main{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
-}() {
+func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}() {
+    let pow2_array: felt* = pow2alloc128();
+
     test_block_sampled_task_init{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
+        pow2_array=pow2_array,
     }();
-    
+
     test_block_sampled_task_param_decoding{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
+        pow2_array=pow2_array,
     }();
 
     return ();
 }
 
 func test_block_sampled_task_init{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*
 }() {
     alloc_locals;
 
     let (
-        expected_tasks,
+        expected_task,
         tasks_input,
         tasks_bytes_len,
+        expected_datalake,
         datalakes_inputs,
         datalakes_bytes_len,
-        tasks_len
-    ) = BlockSampledTaskMocker.get_account_task();
+        tasks_len,
+    ) = BlockSampledTaskMocker.get_init_data();
 
     let (tasks: BlockSampledComputationalTask*) = alloc();
 
@@ -51,60 +51,72 @@ func test_block_sampled_task_init{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
-        block_sampled_tasks=tasks
+        block_sampled_tasks=tasks,
     }(tasks_input, tasks_bytes_len, datalakes_inputs, datalakes_bytes_len, tasks_len, 0);
 
     let task = tasks[0];
-    let expected_task = expected_tasks[0];
-    
+
     assert task.hash.low = expected_task.hash.low;
     assert task.hash.high = expected_task.hash.high;
     block_sampled_datalake_eq(task.datalake, expected_task.datalake, task.datalake.property_type);
 
     assert task.aggregate_fn_id = expected_task.aggregate_fn_id;
 
-    return (); 
+    return ();
 }
 
 func test_block_sampled_task_param_decoding{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*
 }() {
     alloc_locals;
 
     // AVG:
-    let (avg_input, avg_expected_hash_low, avg_expected_hash_high, avg_expected_aggregate_fn_id) = BlockSampledTaskMocker.get_avg_params();
-    let (avg_hash_low, avg_hash_high, avg_aggregate_fn_id) = extract_params(avg_input);
-
-    assert avg_hash_low = avg_expected_hash_low;
-    assert avg_hash_high = avg_expected_hash_high;
-    assert avg_aggregate_fn_id = avg_expected_aggregate_fn_id;
+    let (
+        expected_avg_task, avg_input, avg_bytes_len, avg_datalake
+    ) = BlockSampledTaskMocker.get_avg_task();
+    let (avg_task) = extract_params_and_construct_task(avg_input, avg_bytes_len, avg_datalake);
+    task_eq(avg_task, expected_avg_task);
 
     // SUM:
-    let (sum_input, sum_expected_hash_low, sum_expected_hash_high, sum_expected_aggregate_fn_id) = BlockSampledTaskMocker.get_sum_params();
-    let (sum_hash_low, sum_hash_high, sum_aggregate_fn_id) = extract_params(sum_input);
-
-    assert sum_hash_low = sum_expected_hash_low;
-    assert sum_hash_high = sum_expected_hash_high;
-    assert sum_aggregate_fn_id = sum_expected_aggregate_fn_id;
+    let (
+        expected_sum_task, sum_input, sum_bytes_len, sum_datalake
+    ) = BlockSampledTaskMocker.get_sum_task();
+    let (sum_task) = extract_params_and_construct_task(sum_input, sum_bytes_len, sum_datalake);
+    task_eq(sum_task, expected_sum_task);
 
     // MIN:
-    let (min_input, min_expected_hash_low, min_expected_hash_high, min_expected_aggregate_fn_id) = BlockSampledTaskMocker.get_min_params();
-    let (min_hash_low, min_hash_high, min_aggregate_fn_id) = extract_params(min_input);
-
-    assert min_hash_low = min_expected_hash_low;
-    assert min_hash_high = min_expected_hash_high;
-    assert min_aggregate_fn_id = min_expected_aggregate_fn_id;
+    let (
+        expected_min_task, min_input, min_bytes_len, min_datalake
+    ) = BlockSampledTaskMocker.get_min_task();
+    let (min_task) = extract_params_and_construct_task(min_input, min_bytes_len, min_datalake);
+    task_eq(min_task, expected_min_task);
 
     // MAX:
-    let (max_input, max_expected_hash_low, max_expected_hash_high, max_expected_aggregate_fn_id) = BlockSampledTaskMocker.get_max_params();
+    let (
+        expected_max_task, max_input, max_bytes_len, max_datalake
+    ) = BlockSampledTaskMocker.get_max_task();
+    let (max_task) = extract_params_and_construct_task(max_input, max_bytes_len, max_datalake);
+    task_eq(max_task, expected_max_task);
 
-    let (max_hash_low, max_hash_high, max_aggregate_fn_id) = extract_params(max_input);
+    // COUNT_IF:
+    let (
+        expected_count_if_task, count_if_input, count_if_bytes_len, count_if_datalake
+    ) = BlockSampledTaskMocker.get_count_if_task();
+    let (count_if_task) = extract_params_and_construct_task(
+        count_if_input, count_if_bytes_len, count_if_datalake
+    );
+    task_eq(count_if_task, expected_count_if_task);
 
-    assert max_hash_low = max_expected_hash_low;
-    assert max_hash_high = max_expected_hash_high;
-    assert max_aggregate_fn_id = max_expected_aggregate_fn_id;
+    return ();
+}
+
+func task_eq(a: BlockSampledComputationalTask, b: BlockSampledComputationalTask) {
+    assert a.hash.low = b.hash.low;
+    assert a.hash.high = b.hash.high;
+    assert a.aggregate_fn_id = b.aggregate_fn_id;
+    assert a.ctx_operator = b.ctx_operator;
+    assert a.ctx_value.high = b.ctx_value.high;
+    assert a.ctx_value.low = b.ctx_value.low;
 
     return ();
 }

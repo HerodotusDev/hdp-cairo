@@ -1,4 +1,4 @@
-cairo-lang==0.12.2
+cairo-lang==0.13.1
 typeguard==2.13.3
 protobuf==3.20.3
 inquirer
@@ -6,3 +6,4 @@ python-dotenv
 pysha3
 web3
 trie
+black

@@ -4,7 +4,7 @@ from tools.py.fetch_block_headers import get_block_header
 from tools.py.utils import (
     bytes_to_8_bytes_chunks_little,
     split_128,
-    reverse_endian_256,
+    uint256_reverse_endian,
     bytes_to_8_bytes_chunks,
 )
 from web3 import Web3

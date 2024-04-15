@@ -9,7 +9,10 @@ from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
 
 // Verifiers:
 from src.hdp.verifiers.account_verifier import populate_account_segments, verify_n_accounts
-from src.hdp.verifiers.storage_item_verifier import populate_storage_item_segments, verify_n_storage_items
+from src.hdp.verifiers.storage_item_verifier import (
+    populate_storage_item_segments,
+    verify_n_storage_items,
+)
 from src.hdp.verifiers.header_verifier import verify_headers_inclusion
 from src.hdp.verifiers.mmr_verifier import verify_mmr_meta
 from src.hdp.verifiers.transaction_verifier import verify_n_transaction_proofs
@@ -22,10 +25,16 @@ from src.hdp.types import (
     StorageItem,
     BlockSampledComputationalTask,
     TransactionProof,
-    Transaction
+    Transaction,
 )
 
-from src.hdp.memorizer import HeaderMemorizer, AccountMemorizer, StorageMemorizer, TransactionMemorizer, MEMORIZER_DEFAULT
+from src.hdp.memorizer import (
+    HeaderMemorizer,
+    AccountMemorizer,
+    StorageMemorizer,
+    TransactionMemorizer,
+    MEMORIZER_DEFAULT,
+)
 from src.libs.utils import pow2alloc128, write_felt_array_to_dict_keys
 
 from src.hdp.tasks.block_sampled_task import BlockSampledTask
@@ -142,8 +151,6 @@ func run{
                 memory[ptr._reference_value + offset + 4] = tx_proof["key"]["low"]
                 memory[ptr._reference_value + offset + 5] = tx_proof["key"]["high"]
                 offset += 6
-
-
     %}
     // if these hints are one hint, the compiler goes on strike.
     %{
@@ -170,7 +177,7 @@ func run{
         ids.storage_items_len = len(program_input['storages'])
 
         # Transaction params
-        write_tx_proofs(ids.transaction_proofs, program_input["transactions"])
+        #write_tx_proofs(ids.transaction_proofs, program_input["transactions"])
 
         # Task and Datalake
         tasks_input, data_lakes_input, tasks_bytes_len, data_lake_bytes_len = ([], [], [], [])
@@ -247,22 +254,22 @@ func run{
         state_idx=0,
     );
 
-    // Check 5: Verify the transaction proofs
-    verify_n_transaction_proofs{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        poseidon_ptr=poseidon_ptr,
-        keccak_ptr=keccak_ptr,
-        transactions=transactions,
-        transaction_dict=transaction_dict,
-        headers=headers,
-        header_dict=header_dict,
-        pow2_array=pow2_array
-    }(
-        tx_proofs=transaction_proofs, 
-        tx_proofs_len=transaction_proof_len, 
-        index=0
-    );
+    // // Check 5: Verify the transaction proofs
+    // verify_n_transaction_proofs{
+    //     range_check_ptr=range_check_ptr,
+    //     bitwise_ptr=bitwise_ptr,
+    //     poseidon_ptr=poseidon_ptr,
+    //     keccak_ptr=keccak_ptr,
+    //     transactions=transactions,
+    //     transaction_dict=transaction_dict,
+    //     headers=headers,
+    //     header_dict=header_dict,
+    //     pow2_array=pow2_array
+    // }(
+    //     tx_proofs=transaction_proofs,
+    //     tx_proofs_len=transaction_proof_len,
+    //     index=0
+    // );
 
     // Verified data is now in memorizer, and can be used for further computation
     BlockSampledTask.init{
@@ -270,6 +277,7 @@ func run{
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
         block_sampled_tasks=block_sampled_tasks,
+        pow2_array=pow2_array,
     }(
         block_sampled_tasks_input,
         block_sampled_tasks_bytes_len,

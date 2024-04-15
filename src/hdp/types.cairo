@@ -14,10 +14,10 @@ struct Header {
 }
 
 struct Account {
-	address: felt*,
-	key: Uint256,
+    address: felt*,
+    key: Uint256,
     proofs_len: felt,
-	proofs: AccountProof*,
+    proofs: AccountProof*,
 }
 
 struct AccountProof {
@@ -35,12 +35,12 @@ struct AccountValues {
 struct MMRMeta {
     id: felt,
     root: felt,
-	size: felt,
-	peaks_len: felt,
-	peaks: felt*,
+    size: felt,
+    peaks_len: felt,
+    peaks: felt*,
 }
 
-struct StorageItem   {
+struct StorageItem {
     address: felt*,
     slot: felt*,
     key: Uint256,
@@ -74,14 +74,15 @@ struct BlockSampledDataLake {
     block_range_start: felt,
     block_range_end: felt,
     increment: felt,
-    property_type: felt, // header=1, account=2, accountSlot=3
+    property_type: felt,  // header=1, account=2, accountSlot=3
     properties: felt*,
     hash: Uint256,
 }
 
 struct BlockSampledComputationalTask {
-    aggregate_fn_id: felt, // avg=0, sum=1, min=2, max=3
-    // aggregateFnCtx: felt*,
     hash: Uint256,
     datalake: BlockSampledDataLake,
+    aggregate_fn_id: felt,
+    ctx_operator: felt,
+    ctx_value: Uint256,
 }

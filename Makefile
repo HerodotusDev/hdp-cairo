@@ -20,9 +20,18 @@ test:
 	@echo "Run all tests in tests/cairo_programs" 
 	./tools/make/launch_cairo_files.py -test
 
+run-hdp:
+	@echo "A script to compile and run HDP"
+	@echo "Total number of steps will be shown at the end of the run." 
+	./tools/make/launch_cairo_files.py -run_hdp
+
 test-hdp:
 	@echo "Run all tests in tests/cairo_programs" 
 	./tools/make/launch_cairo_files.py -test_hdp
+
+format-cairo:
+	@echo "Format all .cairo files"
+	./tools/make/format_cairo_files.sh
 
 run-pie:
 	@echo "A script to select, compile & run one Cairo file"
@@ -62,3 +71,7 @@ clean:
 	rm -rf build/compiled_cairo_files
 	mkdir -p build
 	mkdir build/compiled_cairo_files
+ci-local:
+	./tools/make/ci_local.sh
+test-full:
+	./tools/make/cairo_tests.sh

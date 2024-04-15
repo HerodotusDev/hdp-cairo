@@ -6,25 +6,25 @@ from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
 from src.hdp.types import Account, AccountProof, Header, AccountValues
 from src.libs.block_header import extract_state_root_little
-from src.hdp.rlp import retrieve_from_rlp_list_via_idx, le_u64_array_to_uint256
-from src.hdp.utils import keccak_hash_array_to_uint256
 from src.hdp.memorizer import HeaderMemorizer, AccountMemorizer
 
-from src.hdp.decoders.header_decoder import HeaderDecoder
+from src.hdp.decoders.header_decoder import HeaderDecoder, HEADER_FIELD
 
 // Initializes the accounts, ensuring that the passed address matches the key.
 // Params:
 // - accounts: empty accounts array that the accounts will be writte too.
 // - n_accounts: the number of accounts to initialize.
 // - index: the current index of the account being initialized.
-func populate_account_segments{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(accounts: Account*, n_accounts: felt, index: felt) {
+func populate_account_segments{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
+}(accounts: Account*, n_accounts: felt, index: felt) {
     alloc_locals;
     if (index == n_accounts) {
         return ();
     } else {
         local account: Account;
         let (proofs: AccountProof*) = alloc();
-        
+
         %{
             def write_account(account_ptr, proofs_ptr, account):
                 memory[account_ptr._reference_value] = segments.gen_arg(hex_to_int_array(account["address"]))
@@ -55,11 +55,7 @@ func populate_account_segments{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, ke
 
         assert accounts[index] = account;
 
-        return populate_account_segments(
-            accounts=accounts,
-            n_accounts=n_accounts,
-            index=index + 1,
-        );
+        return populate_account_segments(accounts=accounts, n_accounts=n_accounts, index=index + 1);
     }
 }
 
@@ -70,33 +66,28 @@ func populate_account_segments{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, ke
 // - pow2_array: the array of powers of 2.
 func verify_n_accounts{
     range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*, 
+    bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     headers: Header*,
     header_dict: DictAccess*,
     account_dict: DictAccess*,
     pow2_array: felt*,
-} (
-    accounts: Account*,
-    accounts_len: felt,
-    account_values: AccountValues*,
-    account_value_idx: felt,
-) {
+}(accounts: Account*, accounts_len: felt, account_values: AccountValues*, account_value_idx: felt) {
     alloc_locals;
-    if(accounts_len == 0) {
+    if (accounts_len == 0) {
         return ();
     }
 
     let account_idx = accounts_len - 1;
-    
+
     let account_value_idx = verify_account(
         account=accounts[account_idx],
         account_values=account_values,
         account_value_idx=account_value_idx,
         proof_idx=0,
     );
- 
+
     return verify_n_accounts(
         accounts=accounts,
         accounts_len=accounts_len - 1,
@@ -112,18 +103,15 @@ func verify_n_accounts{
 // - pow2_array: the array of powers of 2.
 func verify_account{
     range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*, 
+    bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     headers: Header*,
     header_dict: DictAccess*,
     account_dict: DictAccess*,
     pow2_array: felt*,
-} (
-    account: Account,
-    account_values: AccountValues*,
-    account_value_idx: felt,
-    proof_idx: felt,
+}(
+    account: Account, account_values: AccountValues*, account_value_idx: felt, proof_idx: felt
 ) -> felt {
     alloc_locals;
     if (proof_idx == account.proofs_len) {
@@ -134,7 +122,7 @@ func verify_account{
 
     // get state_root from verified headers
     let header = HeaderMemorizer.get(account_proof.block_number);
-    let state_root = HeaderDecoder.get_state_root(header.rlp);
+    let state_root = HeaderDecoder.get_field(header.rlp, HEADER_FIELD.STATE_ROOT);
 
     let (value: felt*, value_len: felt) = verify_mpt_proof(
         mpt_proof=account_proof.proof,
@@ -148,10 +136,7 @@ func verify_account{
     );
 
     // write verified account state
-    assert account_values[account_value_idx] = AccountValues(
-        values=value,
-        values_len=value_len,
-    );
+    assert account_values[account_value_idx] = AccountValues(values=value, values_len=value_len);
 
     // add account to memorizer
     AccountMemorizer.add(account.address, account_proof.block_number, account_value_idx);

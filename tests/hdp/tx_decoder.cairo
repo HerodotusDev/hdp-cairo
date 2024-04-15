@@ -9,11 +9,7 @@ from src.hdp.types import Transaction
 from src.hdp.decoders.transaction_decoder import TransactionReader, TransactionSender
 from src.hdp.verifiers.transaction_verifier import init_tx_stuct
 
-func main{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*
-}() {
+func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}() {
     alloc_locals;
     let pow2_array: felt* = pow2alloc128();
 
@@ -31,12 +27,11 @@ func main{
         ids.n_test_txs = len(tx_array)
     %}
 
-
     test_tx_decoding{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array,
-        keccak_ptr=keccak_ptr
+        keccak_ptr=keccak_ptr,
     }(0);
 
     // %{ print("Testing Type 0") %}
@@ -69,16 +64,12 @@ func main{
     //     pow2_array=pow2_array
     // }();
 
-
     return ();
 }
 
 func test_tx_decoding{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*,
-    keccak_ptr: KeccakBuiltin*
-} (i: felt) {
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, keccak_ptr: KeccakBuiltin*
+}(i: felt) {
     alloc_locals;
 
     let (rlp) = alloc();
@@ -132,17 +123,13 @@ func test_tx_decoding{
 
         # ids.expected_s.low = 0
         # ids.expected_s.high = 0
-    
     %}
 
     return ();
 }
 
 func test_type_0{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*,
-    keccak_ptr: KeccakBuiltin*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, keccak_ptr: KeccakBuiltin*
 }() {
     alloc_locals;
 
@@ -160,7 +147,7 @@ func test_type_0{
     local expected_r: Uint256;
     local expected_s: Uint256;
 
-    %{ 
+    %{
         from tools.py.utils import (
             bytes_to_8_bytes_chunks_little,
         )
@@ -199,12 +186,7 @@ func test_type_0{
         ids.expected_s.high = 0x2814f18af3985a80f03c8a0d7c32c6d9
     %}
 
-    let tx = Transaction(
-        rlp=rlp,
-        rlp_len=rlp_len,
-        bytes_len=bytes_len,
-        type=0
-    );
+    let tx = Transaction(rlp=rlp, rlp_len=rlp_len, bytes_len=bytes_len, type=0);
 
     // let nonce = TransactionReader.get_field_by_index(tx, 0);
     // assert expected_nonce.low = nonce.low;
@@ -236,7 +218,7 @@ func test_type_0{
 
     // %{
     //     print("v.low: ", ids.v.low)
-    
+
     // %}
     // assert expected_v.low = v.low;
     // assert expected_v.high = v.high;
@@ -256,10 +238,7 @@ func test_type_0{
 }
 
 func test_type_1{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*,
-    keccak_ptr: KeccakBuiltin*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, keccak_ptr: KeccakBuiltin*
 }() {
     alloc_locals;
 
@@ -280,7 +259,7 @@ func test_type_1{
     let (expected_input) = alloc();
     let (expected_access_list) = alloc();
 
-    %{ 
+    %{
         from tools.py.utils import (
             bytes_to_8_bytes_chunks_little,
         )
@@ -320,12 +299,7 @@ func test_type_1{
         ids.expected_s.high = 0x03a70fbce7c7ba9ae962820bd367ab7a
     %}
 
-    let tx = Transaction(
-        rlp=rlp,
-        rlp_len=rlp_len,
-        bytes_len=bytes_len,
-        type=1
-    );
+    let tx = Transaction(rlp=rlp, rlp_len=rlp_len, bytes_len=bytes_len, type=1);
 
     // let nonce = TransactionReader.get_field_by_index(tx, 0);
     // assert expected_nonce.low = nonce.low;
@@ -381,10 +355,7 @@ func test_type_1{
 }
 
 func test_type_2{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*,
-    keccak_ptr: KeccakBuiltin*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, keccak_ptr: KeccakBuiltin*
 }() {
     alloc_locals;
 
@@ -407,7 +378,7 @@ func test_type_2{
     let (expected_input) = alloc();
     let (expected_access_list) = alloc();
 
-    %{ 
+    %{
         from tools.py.utils import (
             bytes_to_8_bytes_chunks_little,
         )
@@ -449,12 +420,7 @@ func test_type_2{
         ids.expected_s.high = 0x5b07a387267212c53fdb35cc60321a54
     %}
 
-    let tx = Transaction(
-        rlp=rlp,
-        rlp_len=rlp_len,
-        bytes_len=bytes_len,
-        type=2
-    );
+    let tx = Transaction(rlp=rlp, rlp_len=rlp_len, bytes_len=bytes_len, type=2);
 
     let nonce = TransactionReader.get_field_by_index(tx, 0);
     assert expected_nonce.low = nonce.low;
@@ -496,7 +462,9 @@ func test_type_2{
     assert expected_chain_id.low = chain_id.low;
     assert expected_chain_id.high = chain_id.high;
 
-    let (access_list, access_list_len, bytes_len) = TransactionReader.get_felt_field_by_index(tx, 10);
+    let (access_list, access_list_len, bytes_len) = TransactionReader.get_felt_field_by_index(
+        tx, 10
+    );
     assert expected_access_list[0] = access_list[0];
     assert access_list_len = 1;
     assert bytes_len = 1;
@@ -515,10 +483,7 @@ func test_type_2{
 }
 
 func test_type_3{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*,
-    keccak_ptr: KeccakBuiltin*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, keccak_ptr: KeccakBuiltin*
 }() {
     alloc_locals;
 
@@ -551,7 +516,7 @@ func test_type_3{
 
     local expected_max_fee_per_blob_gas: Uint256;
 
-    %{ 
+    %{
         from tools.py.utils import (
             bytes_to_8_bytes_chunks_little,
         )
@@ -574,7 +539,7 @@ func test_type_3{
 
         ids.expected_input_len = len(input_chunks)
         segments.write_arg(ids.expected_input, input_chunks)
-        
+
         blob_hashes_bytes = bytes.fromhex("a0015560de5b6c2eda4b74cfd91620c300829c9c15d290a68bf43b10fe91c365f9")
         ids.expected_blob_versioned_hashes_bytes_len = len(blob_hashes_bytes)
         blob_hashes_chunks = bytes_to_8_bytes_chunks_little(blob_hashes_bytes)
@@ -612,16 +577,9 @@ func test_type_3{
 
         ids.expected_s.low = 0xb20553ecee0478b1f128e99cf5612095
         ids.expected_s.high = 0x27eda9a5b312c0ef4e7c3c1c48716642
-
-
     %}
 
-    let tx = Transaction(
-        rlp=rlp,
-        rlp_len=rlp_len,
-        bytes_len=bytes_len,
-        type=3
-    );
+    let tx = Transaction(rlp=rlp, rlp_len=rlp_len, bytes_len=bytes_len, type=3);
 
     // let nonce = TransactionReader.get_field_by_index(tx, 0);
     // assert expected_nonce.low = nonce.low;
@@ -650,7 +608,7 @@ func test_type_3{
     //     tx,
     //     5
     // );
-// 03F9043D018309A0238405F5E1008522ECB25C008353EC6094C662C410C0ECF747543F5BA90660F6ABEBD9C8C480B903A4B72D42A100000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000340000000000000000000000000000000000000000000000000000000000000001700D836A3E3BE7D1ABB2E2ED1CF011624DF098D43B38A14FB364BDAAEFE82B81103452AAB84F4B9A0458F2090038A966FB2267FA661928713F404031095B44170000000000000000000000000000000000000000000000000000000000009A02205412543965C1F5104E42933B54B3A080A0DA4366F6E73C05B7F267EA024FB8505BA2078240F1585F96424C2D1EE48211DA3B3F9177BF2B9880B4FC91D59E9A2000000000000000000000000000000000000000000000000000000000000000100000000000000003AC2371AF51D48ACD4084F9EC3F8FD121DC2787E592E8ED100000000000000008F902DE4D6F8A60F38F86E2E72D509A612FFBE1537B94D6907D2A065B1268D88E652C9281FDD317C6A778DB8E8989B7E10F089A9405B845B000000000000000000000000000000000C8F8620E3E9BD0D5287CBE661547C510000000000000000000000000000000041F3F74BEEDCB3A761886EA953F98B9E0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000A000000000000000000000000F6080D9FBEEBCD44D89AFFBFD42F098CBFF9281605CD48FCCBFD8AA2773FE22C217E808319FFCC1C5A6A463F7D8FA2DA482181960000000000000000000000000000000000000000000000000000000000190D5B01B64B1B3B690B43B9B514FB81377518F4039CD3E4F4914D8A6BDF01D679FB190000000000000000000000000000000000000000000000000000000000000005000000000000000000000000A0B86991C6218B36C1D19D4A2E9EB0CE3606EB4800000000000000000000000000D5FCD1548097845368B47DC3497599EAB811B9071E5405ACE1AFD64C682E65B08360B573C00370F4E3AD6E4F2CD800EC7D93D20000000000000000000000000000000000000000000000000000005D2180128000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000030ABE4BCB691385528AEF33D747702C592249BAF44BCD0C7BB67442248902EA8191CD8D270B579ADF17BC477592FEDD65100000000000000000000000000000000C08522ECB25C00E1A001C951A42B7275260E2D5826BE7D1297CD1628321389B4A35EAA2E6E682F331F01A0BABCA5339DCBA9C0AFFDFADFDF2152E9D51842B614B88B963281FE31C0B94BEAA0542BBA31AB00734A64DB3F8E219A1495BE55A925BED63E4384E6A35734FF6826
+    // 03F9043D018309A0238405F5E1008522ECB25C008353EC6094C662C410C0ECF747543F5BA90660F6ABEBD9C8C480B903A4B72D42A100000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000340000000000000000000000000000000000000000000000000000000000000001700D836A3E3BE7D1ABB2E2ED1CF011624DF098D43B38A14FB364BDAAEFE82B81103452AAB84F4B9A0458F2090038A966FB2267FA661928713F404031095B44170000000000000000000000000000000000000000000000000000000000009A02205412543965C1F5104E42933B54B3A080A0DA4366F6E73C05B7F267EA024FB8505BA2078240F1585F96424C2D1EE48211DA3B3F9177BF2B9880B4FC91D59E9A2000000000000000000000000000000000000000000000000000000000000000100000000000000003AC2371AF51D48ACD4084F9EC3F8FD121DC2787E592E8ED100000000000000008F902DE4D6F8A60F38F86E2E72D509A612FFBE1537B94D6907D2A065B1268D88E652C9281FDD317C6A778DB8E8989B7E10F089A9405B845B000000000000000000000000000000000C8F8620E3E9BD0D5287CBE661547C510000000000000000000000000000000041F3F74BEEDCB3A761886EA953F98B9E0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000A000000000000000000000000F6080D9FBEEBCD44D89AFFBFD42F098CBFF9281605CD48FCCBFD8AA2773FE22C217E808319FFCC1C5A6A463F7D8FA2DA482181960000000000000000000000000000000000000000000000000000000000190D5B01B64B1B3B690B43B9B514FB81377518F4039CD3E4F4914D8A6BDF01D679FB190000000000000000000000000000000000000000000000000000000000000005000000000000000000000000A0B86991C6218B36C1D19D4A2E9EB0CE3606EB4800000000000000000000000000D5FCD1548097845368B47DC3497599EAB811B9071E5405ACE1AFD64C682E65B08360B573C00370F4E3AD6E4F2CD800EC7D93D20000000000000000000000000000000000000000000000000000005D2180128000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000030ABE4BCB691385528AEF33D747702C592249BAF44BCD0C7BB67442248902EA8191CD8D270B579ADF17BC477592FEDD65100000000000000000000000000000000C08522ECB25C00E1A001C951A42B7275260E2D5826BE7D1297CD1628321389B4A35EAA2E6E682F331F01A0BABCA5339DCBA9C0AFFDFADFDF2152E9D51842B614B88B963281FE31C0B94BEAA0542BBA31AB00734A64DB3F8E219A1495BE55A925BED63E4384E6A35734FF6826
 
     // let v = TransactionReader.get_field_by_index(tx, 6);
     // assert expected_v.low = v.low;
@@ -698,26 +656,26 @@ func test_type_3{
     let sender = TransactionSender.derive(tx);
     assert sender = 0x2C169DFe5fBbA12957Bdd0Ba47d9CEDbFE260CA7;
 
-
     return ();
 }
 
-func eval_input{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*
-}(expected_field: felt*, expected_len: felt, expected_bytes_len: felt, tx: Transaction, index: felt) {
+func eval_input{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    expected_field: felt*,
+    expected_len: felt,
+    expected_bytes_len: felt,
+    tx: Transaction,
+    index: felt,
+) {
     alloc_locals;
 
     let (field, len, bytes_len) = TransactionReader.get_felt_field_by_index(tx, index);
-    
+
     %{
         i = 0
         while(i < ids.len):
             print(memory[ids.field + i] == input_chunks[i])
 
             i += 1
-    
     %}
 
     // assert expected_len = len;
