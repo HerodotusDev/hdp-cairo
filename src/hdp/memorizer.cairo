@@ -156,10 +156,3 @@ func gen_account_key{poseidon_ptr: PoseidonBuiltin*}(address: felt*, block_numbe
 
     return res;
 }
-
-func gen_transaction_key{poseidon_ptr: PoseidonBuiltin*}(sender: felt*, nonce: felt) -> felt {
-    let (h_sender) = poseidon_hash_many(3, sender);
-    let (res) = poseidon_hash(h_sender, nonce);
-
-    return res;
-}
