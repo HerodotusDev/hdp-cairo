@@ -8,11 +8,7 @@ from tools.py.utils import create_directory, get_files_from_folders
 # Constants
 CAIRO_PROGRAMS_FOLDERS = [
     "tests/cairo_programs/",
-    "src/single_chunk_processor",
-    "src/batch_storage_proof",
-    "src/hdp",
-    "src/hdp/datalakes",
-    "src/hdp/tasks",
+    "src/*"
 ]
 
 BUILD_DIR = "build"

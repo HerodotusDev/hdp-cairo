@@ -38,40 +38,19 @@ run-pie:
 	@echo "Outputs a cairo PIE object"
 	@echo "Total number of steps will be shown at the end of the run." 
 	./tools/make/launch_cairo_files.py -pie
-db-update:
-	@echo "Update/create the block headers database"
-	./tools/make/db.py
-batch-cairo-pie:
-	@echo "Run processor with all inputs in src/single_chunk_processor/data/ and write pie objects"
-	./tools/make/sharp_submit.py -pie
 
-batch-pie-multicore:
-	@echo "Run processor with all inputs in src/single_chunk_processor/data/ and write pie objects"
-	./tools/make/sharp_submit.py -pie-multicore
-	
-batch-sharp-submit:
-	@echo "Submits all pie objects in src/single_chunk_processor/data/ to SHARP"
-	./tools/make/sharp_submit.py -sharp
-
-batch-run-and-submit:
-	@echo "Run processor with all inputs in src/single_chunk_processor/data/ and submit to SHARP"
-	./tools/make/sharp_submit.py -pie -sharp
-
-prepare-processor-input:
-	@echo "Prepare chunk_processor_input.json data with the parameters in tools/make/processor_input.json"
-	./tools/make/prepare_inputs_api.py
-
-prepare-inclusion-proof:
-	./tools/make/prepare_inclusion_proof.py
 get-program-hash:
-	@echo "Get chunk_processor.cairo program's hash."
-	cairo-compile ./src/single_chunk_processor/chunk_processor.cairo --output build/compiled_cairo_files/chunk_processor.json
-	cairo-hash-program --program build/compiled_cairo_files/chunk_processor.json
+	@echo "Get hdp.cairo program's hash."
+	cairo-compile ./src/hdp.cairo --output build/compiled_cairo_files/hdp.json
+	cairo-hash-program --program build/compiled_cairo_files/hdp.json
+
 clean:
 	rm -rf build/compiled_cairo_files
 	mkdir -p build
 	mkdir build/compiled_cairo_files
+
 ci-local:
 	./tools/make/ci_local.sh
+	
 test-full:
 	./tools/make/cairo_tests.sh
