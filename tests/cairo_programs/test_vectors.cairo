@@ -1,7 +1,7 @@
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.alloc import alloc
-from src.hdp.types import BlockSampledDataLake, BlockSampledComputationalTask
-from src.hdp.tasks.block_sampled_task import AGGREGATE_FN
+from src.types import BlockSampledDataLake, BlockSampledComputationalTask
+from src.tasks.block_sampled_task import AGGREGATE_FN
 namespace BlockSampledDataLakeMocker {
     func get_header_property() -> (
         datalake_input: felt*,

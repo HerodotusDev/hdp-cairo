@@ -1,5 +1,5 @@
 from starkware.cairo.common.uint256 import Uint256
-from src.libs.utils import uint256_add, uint256_reverse_endian
+from packages.evm_libs_cairo.lib.utils import uint256_add, uint256_reverse_endian
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 
 func compute_sum{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(

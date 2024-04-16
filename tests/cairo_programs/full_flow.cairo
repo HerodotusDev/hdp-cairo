@@ -1,6 +1,6 @@
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, KeccakBuiltin
 
-from src.hdp.hdp import run
+from src.hdp import run
 
 func main{
     output_ptr: felt*,
@@ -16,7 +16,7 @@ func main{
         import os
         import json
 
-        directory_path = 'tests/hdp/fixtures/'
+        directory_path = 'tests/cairo_programs/fixtures/'
         json_files = [file for file in os.listdir(directory_path) if file.endswith('.json')]
         data_list = []
 

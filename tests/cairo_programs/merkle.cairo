@@ -2,10 +2,10 @@
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, KeccakBuiltin
 from starkware.cairo.common.alloc import alloc
-from tests.hdp.test_vectors import BlockSampledTaskMocker
-from src.hdp.merkle import compute_tasks_root, compute_results_root, hash_pair, compute_merkle_root
-from src.hdp.utils import compute_results_entry
-from src.hdp.types import BlockSampledComputationalTask
+from tests.cairo_programs.test_vectors import BlockSampledTaskMocker
+from src.merkle import compute_tasks_root, compute_results_root, hash_pair, compute_merkle_root
+from src.utils import compute_results_entry
+from src.types import BlockSampledComputationalTask
 
 func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}() {
     computes_output_roots{

@@ -1,7 +1,11 @@
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin
-from src.hdp.types import MMRMeta
+from src.types import MMRMeta
 
-from src.libs.mmr import mmr_root_poseidon, assert_mmr_size_is_valid, compute_peaks_positions
+from packages.evm_libs_cairo.lib.mmr import (
+    mmr_root_poseidon,
+    assert_mmr_size_is_valid,
+    compute_peaks_positions,
+)
 
 // Guard function that ensures the MMR parameters are valid
 // 1. mmr_size is valid

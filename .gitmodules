@@ -1,0 +1,3 @@
+[submodule "packages/evm_libs_cairo"]
+	path = packages/evm_libs_cairo
+	url = https://github.com/HerodotusDev/evm_libs_cairo.git

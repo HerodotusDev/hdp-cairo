@@ -1,9 +1,9 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.uint256 import Uint256
-from src.hdp.types import Account, AccountProof, Header, AccountValues
-from src.hdp.rlp import retrieve_from_rlp_list_via_idx, le_u64_array_to_uint256
-from src.hdp.memorizer import HeaderMemorizer, AccountMemorizer
+from src.types import Account, AccountProof, Header, AccountValues
+from src.rlp import retrieve_from_rlp_list_via_idx, le_u64_array_to_uint256
+from src.memorizer import HeaderMemorizer, AccountMemorizer
 
 namespace ACCOUNT_FIELD {
     const NONCE = 0;

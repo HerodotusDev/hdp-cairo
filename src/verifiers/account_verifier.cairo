@@ -1,14 +1,14 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
 from starkware.cairo.common.dict_access import DictAccess
-from src.libs.mpt import verify_mpt_proof
+from packages.evm_libs_cairo.lib.mpt import verify_mpt_proof
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
-from src.hdp.types import Account, AccountProof, Header, AccountValues
-from src.libs.block_header import extract_state_root_little
-from src.hdp.memorizer import HeaderMemorizer, AccountMemorizer
+from src.types import Account, AccountProof, Header, AccountValues
+from packages.evm_libs_cairo.lib.block_header import extract_state_root_little
+from src.memorizer import HeaderMemorizer, AccountMemorizer
 
-from src.hdp.decoders.header_decoder import HeaderDecoder, HEADER_FIELD
+from src.decoders.header_decoder import HeaderDecoder, HEADER_FIELD
 
 // Initializes the accounts, ensuring that the passed address matches the key.
 // Params:

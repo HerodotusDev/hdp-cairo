@@ -5,13 +5,9 @@ process_cairo_file() {
     local filename=$(basename "$cairo_file" .cairo)
     local first_line=$(head -n 1 "$cairo_file")
 
-    if [[ "$first_line" == "%lang starknet" ]]; then
-        echo "Compiling $cairo_file using starknet-compile ..."
-        starknet-compile "$cairo_file" --output "build/compiled_cairo_files/$filename.json" --abi "build/compiled_cairo_files/$filename_abi.json"
-    else
-        echo "Compiling $cairo_file using cairo-compile ..."
-        cairo-compile "$cairo_file" --output "build/compiled_cairo_files/$filename.json"
-    fi
+    echo "Compiling $cairo_file using cairo-compile ..."
+    cairo-compile --cairo_path="packages/evm_libs_cairo" "$cairo_file" --output "build/compiled_cairo_files/$filename.json"
+    
     local status=$?
     if [ $status -eq 0 ]; then
         echo "$(date '+%Y-%m-%d %H:%M:%S') - Successfully compiled $1"

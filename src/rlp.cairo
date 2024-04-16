@@ -1,7 +1,10 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
-from src.libs.utils import felt_divmod
-from src.libs.rlp_little import extract_byte_at_pos, extract_n_bytes_from_le_64_chunks_array
-from src.hdp.utils import reverse_small_chunk_endianess
+from packages.evm_libs_cairo.lib.utils import felt_divmod
+from packages.evm_libs_cairo.lib.rlp_little import (
+    extract_byte_at_pos,
+    extract_n_bytes_from_le_64_chunks_array,
+)
+from src.utils import reverse_small_chunk_endianess
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, word_reverse_endian
 

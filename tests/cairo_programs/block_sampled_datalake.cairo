@@ -1,8 +1,8 @@
 %builtins range_check bitwise keccak
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, KeccakBuiltin
-from src.hdp.datalakes.block_sampled_datalake import init_block_sampled
-from tests.hdp.test_vectors import BlockSampledDataLakeMocker
-from src.hdp.types import BlockSampledDataLake
+from src.datalakes.block_sampled_datalake import init_block_sampled
+from tests.cairo_programs.test_vectors import BlockSampledDataLakeMocker
+from src.types import BlockSampledDataLake
 
 func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}() {
     test_block_sampled_datalake_decoding{

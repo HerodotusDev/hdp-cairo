@@ -3,12 +3,12 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
-from src.libs.utils import word_reverse_endian_64, word_reverse_endian_16_RC
-from src.hdp.types import BlockSampledDataLake, AccountValues, BlockSampledComputationalTask, Header
-from src.hdp.memorizer import AccountMemorizer, StorageMemorizer, HeaderMemorizer
+from packages.evm_libs_cairo.lib.utils import word_reverse_endian_64, word_reverse_endian_16_RC
+from src.types import BlockSampledDataLake, AccountValues, BlockSampledComputationalTask, Header
+from src.memorizer import AccountMemorizer, StorageMemorizer, HeaderMemorizer
 
-from src.hdp.decoders.header_decoder import HeaderDecoder
-from src.hdp.decoders.account_decoder import AccountDecoder
+from src.decoders.header_decoder import HeaderDecoder
+from src.decoders.account_decoder import AccountDecoder
 
 namespace BLOCK_SAMPLED_PROPERTY {
     const HEADER = 1;

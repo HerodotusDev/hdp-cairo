@@ -4,13 +4,13 @@ from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.alloc import alloc
 
-from src.hdp.types import BlockSampledDataLake, BlockSampledComputationalTask, AccountValues, Header
-from src.hdp.datalakes.block_sampled_datalake import init_block_sampled, fetch_data_points
-from src.hdp.tasks.aggregate_functions.sum import compute_sum
-from src.hdp.tasks.aggregate_functions.avg import compute_avg
-from src.hdp.tasks.aggregate_functions.min_max import uint256_min_le, uint256_max_le
-from src.hdp.tasks.aggregate_functions.count_if import count_if
-from src.libs.rlp_little import extract_byte_at_pos
+from src.types import BlockSampledDataLake, BlockSampledComputationalTask, AccountValues, Header
+from src.datalakes.block_sampled_datalake import init_block_sampled, fetch_data_points
+from src.tasks.aggregate_functions.sum import compute_sum
+from src.tasks.aggregate_functions.avg import compute_avg
+from src.tasks.aggregate_functions.min_max import uint256_min_le, uint256_max_le
+from src.tasks.aggregate_functions.count_if import count_if
+from packages.evm_libs_cairo.lib.rlp_little import extract_byte_at_pos
 
 namespace AGGREGATE_FN {
     const AVG = 0;

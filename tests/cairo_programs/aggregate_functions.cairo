@@ -1,15 +1,15 @@
 %builtins range_check bitwise
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 
-from src.hdp.tasks.aggregate_functions.sum import compute_sum
-from src.hdp.tasks.aggregate_functions.avg import compute_avg
-from src.hdp.tasks.aggregate_functions.min_max import (
+from src.tasks.aggregate_functions.sum import compute_sum
+from src.tasks.aggregate_functions.avg import compute_avg
+from src.tasks.aggregate_functions.min_max import (
     uint256_min_be,
     uint256_max_be,
     uint256_min_le,
     uint256_max_le,
 )
-from src.hdp.tasks.aggregate_functions.count_if import count_if
+from src.tasks.aggregate_functions.count_if import count_if
 
 from starkware.cairo.common.uint256 import Uint256, uint256_eq, uint256_reverse_endian
 from starkware.cairo.common.alloc import alloc

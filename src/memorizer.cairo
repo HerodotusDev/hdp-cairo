@@ -7,7 +7,7 @@ from starkware.cairo.common.builtin_poseidon.poseidon import (
     poseidon_hash_many,
 )
 from starkware.cairo.common.dict import dict_write, dict_read
-from src.hdp.types import Header, AccountValues
+from src.types import Header, AccountValues
 from starkware.cairo.common.uint256 import Uint256
 
 const MEMORIZER_DEFAULT = 100000000;  // An arbitrary large number. We need to ensure each memorizer never contains >= number of elements.
