@@ -93,3 +93,42 @@ The MMR is not using indexes when appending values or when merging childrens, as
 
 The reference implementation of the MMR construction can be found in [mmr.py](../../tools/py/mmr.py).
 The implementation of the processor lies in [chunk_processor.cairo](chunk_processor.cairo).
+
+## Setup
+
+### Create a virtual environment and install the dependencies (one-time setup)
+
+```bash
+make setup
+```
+
+After that and every time you get back to the repo, you will need to activate the virtual environment by doing:
+
+```bash
+source venv/bin/activate
+```
+
+### Run Cairo unit tests
+
+```bash
+make test
+```
+
+### Get the chunk processor program's hash
+
+```bash
+make get-program-hash
+```
+
+This command computes the hash of the main chunk processor program and outputs it to stdout. It is used to make sure that STARK proofs of this program are indeed relative to the chunk processor. The hash is hardcoded in the [solidity contract](../../solidity-verifier/src/SharpFactsAggregator.sol) that verifies SHARP facts.
+
+### Prepare inputs for the chunk processor, SHARP submitting & more
+
+The general workflow is as follows:
+
+1. Update the database of block headers
+2. Prepare the inputs and expected outputs for the chunk processor
+3. Run the chunk processor to create PIE objects
+4. Submit those PIE objects to SHARP to prove the execution.
+
+For more details about the other `make` commands and test the repository, see [tools/make/README.md](tools/make/README.md).
