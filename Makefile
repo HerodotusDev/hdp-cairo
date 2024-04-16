@@ -25,10 +25,6 @@ run-hdp:
 	@echo "Total number of steps will be shown at the end of the run." 
 	./tools/make/launch_cairo_files.py -run_hdp
 
-test-hdp:
-	@echo "Run all tests in tests/cairo_programs" 
-	./tools/make/launch_cairo_files.py -test_hdp
-
 format-cairo:
 	@echo "Format all .cairo files"
 	./tools/make/format_cairo_files.sh
