@@ -26,6 +26,7 @@ from src.hdp.types import (
     BlockSampledComputationalTask,
     TransactionProof,
     Transaction,
+    ChainId,
 )
 
 from src.hdp.memorizer import (
@@ -68,6 +69,8 @@ func run{
     alloc_locals;
     local expected_results_root: Uint256;
     local expected_tasks_root: Uint256;
+
+    let chain_id = ChainId(id=1, bytes_len=1);
 
     // Header Params
     local headers_len: felt;
@@ -160,6 +163,9 @@ func run{
             ids.mmr_meta.size = mmr_meta["size"]
             ids.mmr_meta.peaks_len = len(mmr_meta["peaks"])
             ids.mmr_meta.peaks = segments.gen_arg(hex_to_int_array(mmr_meta["peaks"]))
+            
+            # ids.chain_id.id = hex_to_int(mmr_meta["chain_id"])
+            # ids.chain_id.bytes_len = len(bytes.fromhex(mmr_meta["chain_id"][2:]))
 
         ids.expected_results_root.low = hex_to_int(program_input["results_root"]["low"])
         ids.expected_results_root.high = hex_to_int(program_input["results_root"]["high"])

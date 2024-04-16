@@ -12,7 +12,7 @@ from starkware.cairo.common.cairo_secp.signature import (
 )
 from starkware.cairo.common.cairo_keccak.keccak import finalize_keccak
 
-from src.hdp.types import Transaction
+from src.hdp.types import Transaction, ChainId
 from src.libs.rlp_little import extract_n_bytes_from_le_64_chunks_array
 from src.hdp.utils import prepend_le_rlp_list_prefix, append_be_chunk
 from starkware.cairo.common.cairo_secp.bigint import BigInt3, uint256_to_bigint
@@ -37,9 +37,10 @@ namespace TransactionField {
 
 namespace TransactionType {
     const LEGACY = 0;
-    const EIP2930 = 1;
-    const EIP1559 = 2;
-    const EIP4844 = 3;
+    const EIP155 = 1; // Similar to legacy, but different signing payload
+    const EIP2930 = 2;
+    const EIP1559 = 3;
+    const EIP4844 = 4;
 }
 
 namespace TransactionReader {
@@ -160,6 +161,8 @@ namespace TransactionSender {
     func extract_tx_payload{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
         tx: Transaction
     ) -> (tx_payload: felt*, tx_payload_len: felt, tx_payload_bytes_len: felt) {
+        alloc_locals;
+
         let tx_params_bytes_len = tx.bytes_len - 67;  // 65 bytes for signature, 2 for s + r prefix
 
         // since the TX doesnt contain the list prefix, we simply retrieve the bytes, ignoring the signature ones
@@ -171,15 +174,18 @@ namespace TransactionSender {
             pow2_array=pow2_array,
         );
 
-        // ToDo: Compatiblility with pre-eip155 transactions
-        if (tx.type == 0) {
-            // ToDo: need to integrate chain_id
-            let eip155 = 0x018080;
-            let eip155_bytes_len = 3;
+        // deal with EIP155
+        if (tx.type == TransactionType.EIP155) {
+            // ToDo: pass via implicit arguments
+            let chain_id = 0x01;
+            let chain_id_bytes_len = 1;
+
+            let eip155_append = chain_id * pow2_array[16] + 0x8080;
+            let eip155_bytes_len = chain_id_bytes_len + 2;
 
             let (tx_payload, tx_payload_len, tx_payload_bytes_len) = append_be_chunk{
                 range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-            }(tx_params, tx_params_bytes_len, eip155, eip155_bytes_len);
+            }(tx_params, tx_params_bytes_len, eip155_append, eip155_bytes_len);
 
             return (tx_payload, tx_payload_len, tx_payload_bytes_len);
         } else {
@@ -213,21 +219,21 @@ namespace TransactionSender {
                 prefix = (rlp_id << (8 * len_len_bytes)) | ids.tx_payload_bytes_len
 
             # Prepend tx type if not genesis, and reverse endianess
-            if(ids.tx.type == 0):
+            if(ids.tx.type <= 1):
                 ids.genesis_type = 1
                 ids.prefix = reverse_endian(prefix)
             else:
                 ids.genesis_type = 0
-                ids.prefix = reverse_endian(ids.tx.type << (8 * int_get_bytes_len(prefix)) | prefix)
+                ids.prefix = reverse_endian((ids.tx.type - 1) << (8 * int_get_bytes_len(prefix)) | prefix)
 
             ids.prefix_bytes_len = int_get_bytes_len(ids.prefix)
         %}
 
         if (genesis_type == 1) {
-            assert tx.type = 0;
-            tempvar range_check_ptr = range_check_ptr;
+            assert [range_check_ptr] = 1 - tx.type;
+            tempvar range_check_ptr = range_check_ptr + 1;
         } else {
-            assert [range_check_ptr] = tx.type - 1;
+            assert [range_check_ptr] = tx.type - 2;
             tempvar range_check_ptr = range_check_ptr + 1;
         }
 
@@ -249,6 +255,11 @@ namespace TxTypeFieldMap {
             return get_legacy_tx_field_index(field);
         }
 
+        if (tx_type == TransactionType.EIP155) {
+            // Same fields as legacy, but different signing payload
+            return get_legacy_tx_field_index(field); 
+        }
+
         if (tx_type == TransactionType.EIP2930) {
             return get_eip2930_tx_field_index(field);
         }
@@ -265,7 +276,7 @@ namespace TxTypeFieldMap {
         return 0;
     }
 
-    // Legacy:
+    // Legacy/EIP155:
     //     0: Nonce
     //     1: Gas Price
     //     2: Gas Limit

@@ -70,7 +70,7 @@ func verify_n_transaction_proofs{
 
     let tx = init_tx_stuct{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, poseidon_ptr=poseidon_ptr
-    }(tx_item=tx_item, tx_item_bytes_len=tx_item_bytes_len);
+    }(tx_item=tx_item, tx_item_bytes_len=tx_item_bytes_len, block_number=tx_proof.block_number);
 
     assert transactions[index] = tx;
 
@@ -81,7 +81,7 @@ func verify_n_transaction_proofs{
 
 func init_tx_stuct{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, poseidon_ptr: PoseidonBuiltin*, pow2_array: felt*
-}(tx_item: felt*, tx_item_bytes_len: felt) -> Transaction {
+}(tx_item: felt*, tx_item_bytes_len: felt, block_number: felt) -> Transaction {
     alloc_locals;
 
     let first_byte = extract_byte_at_pos(tx_item[0], 0, pow2_array);
@@ -103,11 +103,13 @@ func init_tx_stuct{
         assert [range_check_ptr + 2] = second_byte - 0xf7;
         tempvar range_check_ptr = range_check_ptr + 3;
 
-        assert tx_type = first_byte;
+        assert tx_type = first_byte + 1;
         let len_len = second_byte - 0xf7;
         assert tx_start_offset = 2 + len_len;  // type + prefix + len_len
     } else {
-        assert tx_type = 0;
+        // ToDO: Make sound!
+        %{ ids.tx_type = 0 if ids.block_number < 2675000 else 1 %}
+
         let len_len = first_byte - 0xf7;
         assert tx_start_offset = 1 + len_len;
         

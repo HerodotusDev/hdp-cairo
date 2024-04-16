@@ -31,6 +31,7 @@ def fetch_transaction_dict(tx_hash):
     tx_dict = {
         "rlp": rlp,
         "rlp_bytes_len": len(tx.raw_rlp()),
+        "block_number": tx.block_number,
     }
 
     # LE

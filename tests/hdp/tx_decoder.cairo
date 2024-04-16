@@ -22,11 +22,11 @@ func main{
 
     %{
         tx_array = [
-            "0x237f99e622d67413956b8674cf16ea56b0ba0a18a9f68a5e254f4ac8d2050b51", # Type 0 (eip155)
-            #"0x2e923a6f09ba38f63ff9b722afd14b9e850432860b77df9011e92c1bf0eecf6b", # Type 0
-            "0x423d6dfdeae9967847fb226e138ea5fad6279c12bf3343eae4d32c2477be3021", # Type 1
-            "0x0d19225fe9ec3044d16008c3aceb0b9059cc22d66cd3ab847f6bd1e454342b4b", # Type 2
-            "0x4b0070defa33cbc85f558323bf60132f600212cec3f4ab9e57260d40ff8949d9", # Type 3
+            "0x2e923a6f09ba38f63ff9b722afd14b9e850432860b77df9011e92c1bf0eecf6b", # Type 0
+            "0x237f99e622d67413956b8674cf16ea56b0ba0a18a9f68a5e254f4ac8d2050b51", # Type 1 (eip155)
+            "0x423d6dfdeae9967847fb226e138ea5fad6279c12bf3343eae4d32c2477be3021", # Type 2
+            "0x0d19225fe9ec3044d16008c3aceb0b9059cc22d66cd3ab847f6bd1e454342b4b", # Type 3
+            "0x4b0070defa33cbc85f558323bf60132f600212cec3f4ab9e57260d40ff8949d9", # Type 4
         ]
 
         ids.n_test_txs = len(tx_array)
@@ -58,6 +58,7 @@ func test_tx_decoding{
     let (rlp) = alloc();
     local rlp_len: felt;
     local rlp_bytes_len: felt;
+    local block_number: felt;
 
     local expected_nonce: Uint256;
     local expected_gas_limit: Uint256;
@@ -93,6 +94,8 @@ func test_tx_decoding{
         from tests.python.test_tx_decoding import fetch_transaction_dict
         print("Running TX:", tx_array[ids.index])
         tx_dict = fetch_transaction_dict(tx_array[ids.index])
+
+        ids.block_number = tx_dict["block_number"]
         
         segments.write_arg(ids.rlp, tx_dict["rlp"])
         ids.rlp_len = len(tx_dict["rlp"])
@@ -150,7 +153,8 @@ func test_tx_decoding{
 
     let tx = init_tx_stuct(
         rlp,
-        rlp_bytes_len
+        rlp_bytes_len,
+        block_number,
     );
 
     let nonce = TransactionReader.get_field_by_index(tx, TransactionField.NONCE);
@@ -189,7 +193,7 @@ func test_tx_decoding{
     assert expected_s.high = s.high;
 
     local has_legacy: felt;
-    %{ ids.has_legacy = 1 if ids.tx.type == 0 else 0 %}
+    %{ ids.has_legacy = 1 if ids.tx.type <= 1 else 0 %}
     if(has_legacy == 1) {
         let gas_price = TransactionReader.get_field_by_index(tx, TransactionField.GAS_PRICE);
         assert expected_gas_price.low = gas_price.low;
@@ -205,7 +209,7 @@ func test_tx_decoding{
     }
 
     local has_eip2930: felt;
-    %{ ids.has_eip2930 = 1 if ids.tx.type >= 1 else 0 %}
+    %{ ids.has_eip2930 = 1 if ids.tx.type >= 2 else 0 %}
     if (has_eip2930 == 1) {
         eval_felt_field{
             range_check_ptr=range_check_ptr,
@@ -223,7 +227,7 @@ func test_tx_decoding{
     }
 
     local has_eip1559: felt;
-    %{ ids.has_eip1559 = 1 if ids.tx.type >= 2 else 0 %}
+    %{ ids.has_eip1559 = 1 if ids.tx.type >= 3 else 0 %}
     if (has_eip1559 == 1) {
         let max_prio_fee_per_gas = TransactionReader.get_field_by_index(tx, TransactionField.MAX_PRIORITY_FEE_PER_GAS);
         assert expected_max_prio_fee_per_gas.low = max_prio_fee_per_gas.low;
@@ -243,7 +247,7 @@ func test_tx_decoding{
     }
 
     local has_blob_versioned_hashes: felt;
-    %{ ids.has_blob_versioned_hashes = 1 if ids.tx.type == 3 else 0 %}
+    %{ ids.has_blob_versioned_hashes = 1 if ids.tx.type == 4 else 0 %}
     if (has_blob_versioned_hashes == 1) {
         eval_felt_field{
             range_check_ptr=range_check_ptr,

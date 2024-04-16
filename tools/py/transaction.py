@@ -31,6 +31,7 @@ class LegacyTx(Serializable):
         ("s", hash32),
         ("sender", address),
         ("type", big_endian_int),
+        ("block_number", big_endian_int),
     )
 
     def hash(self) -> HexBytes:
@@ -71,6 +72,7 @@ class Eip155(Serializable):
         ("chain_id", big_endian_int),
         ("sender", address),
         ("type", big_endian_int),
+        ("block_number", big_endian_int),
     )
 
     def hash(self) -> HexBytes:
@@ -122,6 +124,7 @@ class Eip2930(Serializable):
         ("s", hash32),
         ("sender", address),
         ("type", big_endian_int),
+        ("block_number", big_endian_int),
     )
 
     def hash(self) -> HexBytes:
@@ -175,6 +178,7 @@ class Eip1559(Serializable):
         ("s", hash32),
         ("sender", address),
         ("type", big_endian_int),
+        ("block_number", big_endian_int),
     )
 
     def hash(self) -> HexBytes:
@@ -232,6 +236,7 @@ class Eip4844(Serializable):
         ("s", hash32),
         ("sender", address),
         ("type", big_endian_int),
+        ("block_number", big_endian_int),
     )
 
     def hash(self) -> HexBytes:
@@ -290,6 +295,7 @@ def build_tx(tx: SignedTx) -> Union[LegacyTx]:
                 HexBytes(tx["s"]),
                 HexBytes(tx["from"]),
                 int(tx["type"], 16),
+                int(tx["blockNumber"], 16),
             )
         else:
             # EIP-155 tx
@@ -306,6 +312,7 @@ def build_tx(tx: SignedTx) -> Union[LegacyTx]:
                 int(tx["chainId"], 16),
                 HexBytes(tx["from"]),
                 int(tx["type"], 16),
+                int(tx["blockNumber"], 16),
             )
     elif tx["type"] == "0x1":
         # EIP-2930 tx
@@ -323,6 +330,7 @@ def build_tx(tx: SignedTx) -> Union[LegacyTx]:
             HexBytes(tx["s"]),
             HexBytes(tx["from"]),
             int(tx["type"], 16),
+            int(tx["blockNumber"], 16),
         )
     elif tx["type"] == "0x2":
         # EIP-1559 tx
@@ -341,6 +349,7 @@ def build_tx(tx: SignedTx) -> Union[LegacyTx]:
             HexBytes(tx["s"]),
             HexBytes(tx["from"]),
             int(tx["type"], 16),
+            int(tx["blockNumber"], 16),
         )
     else:
         # EIP-4844 tx
@@ -361,4 +370,5 @@ def build_tx(tx: SignedTx) -> Union[LegacyTx]:
             HexBytes(tx["s"]),
             HexBytes(tx["from"]),
             int(tx["type"], 16),
+            int(tx["blockNumber"], 16),
         )
