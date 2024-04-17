@@ -162,7 +162,7 @@ func run{
             ids.mmr_meta.size = mmr_meta["size"]
             ids.mmr_meta.peaks_len = len(mmr_meta["peaks"])
             ids.mmr_meta.peaks = segments.gen_arg(hex_to_int_array(mmr_meta["peaks"]))
-            ids.chain_id = mmr_meta["chain_id"]
+            # ids.chain_id = mmr_meta["chain_id"]
 
         ids.expected_results_root.low = hex_to_int(program_input["results_root"]["low"])
         ids.expected_results_root.high = hex_to_int(program_input["results_root"]["high"])
@@ -211,7 +211,7 @@ func run{
     );
 
     // Fetch matching chain info
-    let (local chain_info) = fetch_chain_info(chain_id);
+    let (local chain_info) = fetch_chain_info(1);
 
     // Check 2: Ensure the header is contained in a peak, and that the peak is known
     verify_headers_inclusion{

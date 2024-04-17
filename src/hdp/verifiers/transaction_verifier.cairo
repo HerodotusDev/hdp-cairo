@@ -11,7 +11,13 @@ from starkware.cairo.common.cairo_secp.signature import (
     verify_eth_signature,
 )
 from src.libs.mpt import verify_mpt_proof
-from src.libs.utils import pow2alloc128, write_felt_array_to_dict_keys, felt_divmod, felt_divmod_8, word_reverse_endian_64
+from src.libs.utils import (
+    pow2alloc128,
+    write_felt_array_to_dict_keys,
+    felt_divmod,
+    felt_divmod_8,
+    word_reverse_endian_64,
+)
 from src.libs.rlp_little import (
     extract_byte_at_pos,
     extract_n_bytes_at_pos,
@@ -79,7 +85,11 @@ func verify_n_transaction_proofs{
 }
 
 func init_tx_stuct{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, poseidon_ptr: PoseidonBuiltin*, pow2_array: felt*, chain_info: ChainInfo
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
+    pow2_array: felt*,
+    chain_info: ChainInfo,
 }(tx_item: felt*, tx_item_bytes_len: felt, block_number: felt) -> Transaction {
     alloc_locals;
 
@@ -109,7 +119,7 @@ func init_tx_stuct{
         // Handle legacy tx (eip155 or standard)
         %{ ids.tx_type = 0 if ids.block_number < ids.chain_info.eip155_activation else 1 %}
 
-        if(tx_type == 0) {
+        if (tx_type == 0) {
             assert [range_check_ptr] = chain_info.eip155_activation - (block_number + 1);
         } else {
             assert [range_check_ptr] = block_number - chain_info.eip155_activation;
@@ -117,12 +127,11 @@ func init_tx_stuct{
 
         let len_len = first_byte - 0xf7;
         assert tx_start_offset = 1 + len_len;
-        
+
         assert [range_check_ptr + 1] = 0xff - first_byte;
         assert [range_check_ptr + 2] = first_byte - 0xf7;
         assert [range_check_ptr + 3] = 7 - tx_start_offset;
         tempvar range_check_ptr = range_check_ptr + 4;
-
     }
 
     let tx_bytes_len = tx_item_bytes_len - tx_start_offset;

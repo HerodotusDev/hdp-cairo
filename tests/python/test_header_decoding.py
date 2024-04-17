@@ -27,10 +27,7 @@ load_dotenv()
 RPC_URL = (
     os.getenv("RPC_URL_GOERLI") if NETWORK == GOERLI else os.getenv("RPC_URL_MAINNET")
 )
-<<<<<<< HEAD
-=======
 
->>>>>>> main
 
 def fetch_header(block_number):
     blocks = fetch_blocks_from_rpc_no_async(block_number + 1, block_number - 1, RPC_URL)
@@ -78,16 +75,12 @@ def fetch_header_dict(block_number):
 
     # Special case for empty extra data
     if len(block.extraData) == 0:
-        block_dict["extra_data"] = {
-            "bytes": [0],
-            "bytes_len": 1,
-            "len": 1
-        }
+        block_dict["extra_data"] = {"bytes": [0], "bytes_len": 1, "len": 1}
     else:
         block_dict["extra_data"] = {
             "bytes": bytes_to_8_bytes_chunks_little(block.extraData),
             "bytes_len": len(block.extraData),
-            "len": math.ceil(len(block.extraData) / 8)
+            "len": math.ceil(len(block.extraData) / 8),
         }
 
     (low, high) = reverse_and_split_256_bytes(block.mixHash)

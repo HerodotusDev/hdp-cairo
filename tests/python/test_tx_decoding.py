@@ -98,9 +98,11 @@ def fetch_transaction_dict(tx_hash):
                 "bytes_len": 1,
             }
         else:
-            access_list_bytes = encode(tx.access_list) # we need to remove the prefix
+            access_list_bytes = encode(tx.access_list)  # we need to remove the prefix
             tx_dict["access_list"] = {
-                "chunks": bytes_to_8_bytes_chunks_little(encode_array_elements(access_list_bytes)),
+                "chunks": bytes_to_8_bytes_chunks_little(
+                    encode_array_elements(access_list_bytes)
+                ),
                 "bytes_len": len(encode_array_elements(access_list_bytes)),
             }
 
@@ -110,7 +112,6 @@ def fetch_transaction_dict(tx_hash):
         )
         tx_dict["max_fee_per_blob_gas"] = {"low": low, "high": high}
 
-
         if len(tx.blob_versioned_hashes) == 0:
             tx_dict["blob_versioned_hashes"] = {
                 "chunks": [0],
@@ -118,11 +119,14 @@ def fetch_transaction_dict(tx_hash):
             }
         else:
             tx_dict["blob_versioned_hashes"] = {
-                "chunks": bytes_to_8_bytes_chunks_little(encode_array_elements(tx.blob_versioned_hashes)),
+                "chunks": bytes_to_8_bytes_chunks_little(
+                    encode_array_elements(tx.blob_versioned_hashes)
+                ),
                 "bytes_len": len(encode_array_elements(tx.blob_versioned_hashes)),
             }
-        
+
     return tx_dict
+
 
 def encode_array_elements(hex_array):
     res = b""

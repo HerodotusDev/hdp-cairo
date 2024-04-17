@@ -229,3 +229,84 @@ func append_be_chunk{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: 
 
     // return ();
 }
+// returns the bytes len of a felt chunk. Maximal 8 bytes are supported.
+func get_chunk_bytes_len{range_check_ptr}(value: felt) -> felt {
+    alloc_locals;
+    local len: felt;
+    %{
+        if ids.value == 0:
+            ids.len = 0
+        elif ids.value <= 255:
+            ids.len = 1
+        elif ids.value <= 65535:
+            ids.len = 2
+        elif ids.value <= 16777215:
+            ids.len = 3
+        elif ids.value <= 4294967295:
+            ids.len = 4
+        elif ids.value <= 1099511627775:
+            ids.len = 5
+        elif ids.value <= 281474976710655:
+            ids.len = 6
+        elif ids.value <= 72057594037927935:
+            ids.len = 7
+        else: # 18446744073709551615
+            ids.len = 8
+    %}
+
+    if (len == 0) {
+        assert value = 0;
+        return (len);
+    }
+
+    if (len == 1) {
+        assert [range_check_ptr] = 255 - value;
+        tempvar range_check_ptr = range_check_ptr + 1;
+        return (len);
+    }
+
+    if (len == 2) {
+        assert [range_check_ptr] = 65535 - value;
+        tempvar range_check_ptr = range_check_ptr + 1;
+        return (len);
+    }
+
+    if (len == 3) {
+        assert [range_check_ptr] = 16777215 - value;
+        tempvar range_check_ptr = range_check_ptr + 1;
+        return (len);
+    }
+
+    if (len == 4) {
+        assert [range_check_ptr] = 4294967295 - value;
+        tempvar range_check_ptr = range_check_ptr + 1;
+        return (len);
+    }
+
+    if (len == 5) {
+        assert [range_check_ptr] = 1099511627775 - value;
+        tempvar range_check_ptr = range_check_ptr + 1;
+        return (len);
+    }
+
+    if (len == 6) {
+        assert [range_check_ptr] = 281474976710655 - value;
+        tempvar range_check_ptr = range_check_ptr + 1;
+        return (len);
+    }
+
+    if (len == 7) {
+        assert [range_check_ptr] = 72057594037927935 - value;
+        tempvar range_check_ptr = range_check_ptr + 1;
+        return (len);
+    }
+
+    if (len == 8) {
+        assert [range_check_ptr] = 18446744073709551615 - value;
+        tempvar range_check_ptr = range_check_ptr + 1;
+        return (len);
+    }
+
+    assert 1 = 0;
+    return (0);
+}

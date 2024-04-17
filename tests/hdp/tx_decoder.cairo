@@ -6,7 +6,11 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin,
 from src.hdp.decoders.header_decoder import HeaderDecoder
 from src.libs.utils import pow2alloc128
 from src.hdp.types import Transaction, ChainInfo
-from src.hdp.decoders.transaction_decoder import TransactionReader, TransactionSender, TransactionField
+from src.hdp.decoders.transaction_decoder import (
+    TransactionReader,
+    TransactionSender,
+    TransactionField,
+)
 from src.hdp.verifiers.transaction_verifier import init_tx_stuct
 from src.hdp.chain_info import fetch_chain_info
 
@@ -14,11 +18,11 @@ func main{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
-    poseidon_ptr: PoseidonBuiltin*
+    poseidon_ptr: PoseidonBuiltin*,
 }() {
     alloc_locals;
     let pow2_array: felt* = pow2alloc128();
-    let (local chain_info) = fetch_chain_info(1); 
+    let (local chain_info) = fetch_chain_info(1);
 
     local n_test_txs: felt;
 
@@ -40,7 +44,7 @@ func main{
         pow2_array=pow2_array,
         keccak_ptr=keccak_ptr,
         poseidon_ptr=poseidon_ptr,
-        chain_info=chain_info
+        chain_info=chain_info,
     }(n_test_txs, 0);
 
     return ();
@@ -52,11 +56,11 @@ func test_tx_decoding{
     pow2_array: felt*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    chain_info: ChainInfo
-} (txs: felt, index: felt) {
+    chain_info: ChainInfo,
+}(txs: felt, index: felt) {
     alloc_locals;
 
-    if(txs == index) {
+    if (txs == index) {
         return ();
     }
 
@@ -101,7 +105,7 @@ func test_tx_decoding{
         tx_dict = fetch_transaction_dict(tx_array[ids.index])
 
         ids.block_number = tx_dict["block_number"]
-        
+
         segments.write_arg(ids.rlp, tx_dict["rlp"])
         ids.rlp_len = len(tx_dict["rlp"])
         ids.rlp_bytes_len = tx_dict["rlp_bytes_len"]
@@ -156,11 +160,7 @@ func test_tx_decoding{
             ids.expected_max_fee_per_blob_gas.high = tx_dict["max_fee_per_blob_gas"]["high"]
     %}
 
-    let tx = init_tx_stuct(
-        rlp,
-        rlp_bytes_len,
-        block_number,
-    );
+    let tx = init_tx_stuct(rlp, rlp_bytes_len, block_number);
 
     let nonce = TransactionReader.get_field_by_index(tx, TransactionField.NONCE);
     assert expected_nonce.low = nonce.low;
@@ -180,9 +180,7 @@ func test_tx_decoding{
     assert expected_value.high = value.high;
 
     eval_felt_field{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array,
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(expected_input, expected_input_len, expected_input_bytes_len, tx, TransactionField.INPUT);
 
     let v = TransactionReader.get_field_by_index(tx, TransactionField.V);
@@ -199,11 +197,11 @@ func test_tx_decoding{
 
     local has_legacy: felt;
     %{ ids.has_legacy = 1 if ids.tx.type <= 1 else 0 %}
-    if(has_legacy == 1) {
+    if (has_legacy == 1) {
         let gas_price = TransactionReader.get_field_by_index(tx, TransactionField.GAS_PRICE);
         assert expected_gas_price.low = gas_price.low;
         assert expected_gas_price.high = gas_price.high;
-        
+
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
         tempvar pow2_array = pow2_array;
@@ -217,10 +215,14 @@ func test_tx_decoding{
     %{ ids.has_eip2930 = 1 if ids.tx.type >= 2 else 0 %}
     if (has_eip2930 == 1) {
         eval_felt_field{
-            range_check_ptr=range_check_ptr,
-            bitwise_ptr=bitwise_ptr,
-            pow2_array=pow2_array,
-        }(expected_access_list, expected_access_list_len, expected_access_list_bytes_len, tx, TransactionField.ACCESS_LIST);
+            range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
+        }(
+            expected_access_list,
+            expected_access_list_len,
+            expected_access_list_bytes_len,
+            tx,
+            TransactionField.ACCESS_LIST,
+        );
 
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
@@ -234,14 +236,18 @@ func test_tx_decoding{
     local has_eip1559: felt;
     %{ ids.has_eip1559 = 1 if ids.tx.type >= 3 else 0 %}
     if (has_eip1559 == 1) {
-        let max_prio_fee_per_gas = TransactionReader.get_field_by_index(tx, TransactionField.MAX_PRIORITY_FEE_PER_GAS);
+        let max_prio_fee_per_gas = TransactionReader.get_field_by_index(
+            tx, TransactionField.MAX_PRIORITY_FEE_PER_GAS
+        );
         assert expected_max_prio_fee_per_gas.low = max_prio_fee_per_gas.low;
         assert expected_max_prio_fee_per_gas.high = max_prio_fee_per_gas.high;
 
-        let max_fee_per_gas = TransactionReader.get_field_by_index(tx, TransactionField.MAX_FEE_PER_GAS);
+        let max_fee_per_gas = TransactionReader.get_field_by_index(
+            tx, TransactionField.MAX_FEE_PER_GAS
+        );
         assert max_fee_per_gas.low = expected_max_fee_per_gas.low;
         assert max_fee_per_gas.high = expected_max_fee_per_gas.high;
-        
+
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
         tempvar pow2_array = pow2_array;
@@ -255,12 +261,18 @@ func test_tx_decoding{
     %{ ids.has_blob_versioned_hashes = 1 if ids.tx.type == 4 else 0 %}
     if (has_blob_versioned_hashes == 1) {
         eval_felt_field{
-            range_check_ptr=range_check_ptr,
-            bitwise_ptr=bitwise_ptr,
-            pow2_array=pow2_array,
-        }(expected_blob_versioned_hashes, expected_blob_versioned_hashes_len, expected_blob_versioned_hashes_bytes_len, tx, TransactionField.BLOB_VERSIONED_HASHES);
+            range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
+        }(
+            expected_blob_versioned_hashes,
+            expected_blob_versioned_hashes_len,
+            expected_blob_versioned_hashes_bytes_len,
+            tx,
+            TransactionField.BLOB_VERSIONED_HASHES,
+        );
 
-        let max_fee_per_blob_gas = TransactionReader.get_field_by_index(tx, TransactionField.MAX_FEE_PER_BLOB_GAS);
+        let max_fee_per_blob_gas = TransactionReader.get_field_by_index(
+            tx, TransactionField.MAX_FEE_PER_BLOB_GAS
+        );
         assert max_fee_per_blob_gas.low = expected_max_fee_per_blob_gas.low;
         assert max_fee_per_blob_gas.high = expected_max_fee_per_blob_gas.high;
 
@@ -279,15 +291,13 @@ func test_tx_decoding{
     return test_tx_decoding(txs, index + 1);
 }
 
-func eval_felt_field{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*
-}(expected: felt*, expected_len: felt, expected_bytes_len: felt, tx: Transaction, field: felt) {
+func eval_felt_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    expected: felt*, expected_len: felt, expected_bytes_len: felt, tx: Transaction, field: felt
+) {
     alloc_locals;
 
     let (res, res_len, res_bytes_len) = TransactionReader.get_felt_field_by_index(tx, field);
-    
+
     %{
         i = 0
         while(i < ids.res_len):
