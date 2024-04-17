@@ -5,9 +5,10 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
 from src.hdp.decoders.header_decoder import HeaderDecoder
 from src.libs.utils import pow2alloc128
-from src.hdp.types import Transaction
+from src.hdp.types import Transaction, ChainInfo
 from src.hdp.decoders.transaction_decoder import TransactionReader, TransactionSender, TransactionField
 from src.hdp.verifiers.transaction_verifier import init_tx_stuct
+from src.hdp.chain_info import fetch_chain_info
 
 func main{
     range_check_ptr,
@@ -17,6 +18,7 @@ func main{
 }() {
     alloc_locals;
     let pow2_array: felt* = pow2alloc128();
+    let (local chain_info) = fetch_chain_info(1); 
 
     local n_test_txs: felt;
 
@@ -37,6 +39,8 @@ func main{
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array,
         keccak_ptr=keccak_ptr,
+        poseidon_ptr=poseidon_ptr,
+        chain_info=chain_info
     }(n_test_txs, 0);
 
     return ();
@@ -47,7 +51,8 @@ func test_tx_decoding{
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
     keccak_ptr: KeccakBuiltin*,
-    poseidon_ptr: PoseidonBuiltin*
+    poseidon_ptr: PoseidonBuiltin*,
+    chain_info: ChainInfo
 } (txs: felt, index: felt) {
     alloc_locals;
 
@@ -270,7 +275,6 @@ func test_tx_decoding{
 
     let sender = TransactionSender.derive(tx);
     assert sender = expected_sender;
-
 
     return test_tx_decoding(txs, index + 1);
 }

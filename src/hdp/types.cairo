@@ -32,9 +32,10 @@ struct AccountValues {
     values_len: felt,
 }
 
-struct ChainId {
+struct ChainInfo {
     id: felt,
-    bytes_len: felt,
+    id_bytes_len: felt,
+    eip155_activation: felt,
 }
 
 struct MMRMeta {

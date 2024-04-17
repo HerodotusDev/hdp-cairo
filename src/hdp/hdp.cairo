@@ -26,7 +26,6 @@ from src.hdp.types import (
     BlockSampledComputationalTask,
     TransactionProof,
     Transaction,
-    ChainId,
 )
 
 from src.hdp.memorizer import (
@@ -40,6 +39,7 @@ from src.libs.utils import pow2alloc128, write_felt_array_to_dict_keys
 
 from src.hdp.tasks.block_sampled_task import BlockSampledTask
 from src.hdp.merkle import compute_tasks_root, compute_results_root
+from src.hdp.chain_info import fetch_chain_info
 
 func main{
     output_ptr: felt*,
@@ -69,8 +69,6 @@ func run{
     alloc_locals;
     local expected_results_root: Uint256;
     local expected_tasks_root: Uint256;
-
-    let chain_id = ChainId(id=1, bytes_len=1);
 
     // Header Params
     local headers_len: felt;
@@ -113,6 +111,7 @@ func run{
 
     // Misc
     let pow2_array: felt* = pow2alloc128();
+    local chain_id: felt;
 
     %{
         debug_mode = False
@@ -163,9 +162,7 @@ func run{
             ids.mmr_meta.size = mmr_meta["size"]
             ids.mmr_meta.peaks_len = len(mmr_meta["peaks"])
             ids.mmr_meta.peaks = segments.gen_arg(hex_to_int_array(mmr_meta["peaks"]))
-            
-            # ids.chain_id.id = hex_to_int(mmr_meta["chain_id"])
-            # ids.chain_id.bytes_len = len(bytes.fromhex(mmr_meta["chain_id"][2:]))
+            ids.chain_id = mmr_meta["chain_id"]
 
         ids.expected_results_root.low = hex_to_int(program_input["results_root"]["low"])
         ids.expected_results_root.high = hex_to_int(program_input["results_root"]["high"])
@@ -212,6 +209,9 @@ func run{
     write_felt_array_to_dict_keys{dict_end=peaks_dict}(
         array=mmr_meta.peaks, index=mmr_meta.peaks_len - 1
     );
+
+    // Fetch matching chain info
+    let (local chain_info) = fetch_chain_info(chain_id);
 
     // Check 2: Ensure the header is contained in a peak, and that the peak is known
     verify_headers_inclusion{
@@ -270,7 +270,8 @@ func run{
     //     transaction_dict=transaction_dict,
     //     headers=headers,
     //     header_dict=header_dict,
-    //     pow2_array=pow2_array
+    //     pow2_array=pow2_array,
+    //     chain_info=chain_info,
     // }(
     //     tx_proofs=transaction_proofs,
     //     tx_proofs_len=transaction_proof_len,

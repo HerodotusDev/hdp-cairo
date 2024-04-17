@@ -1,6 +1,6 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
+from starkware.cairo.common.cairo_secp.bigint import BigInt3, uint256_to_bigint
 from starkware.cairo.common.dict_access import DictAccess
-from src.libs.mpt import verify_mpt_proof
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
 from starkware.cairo.common.cairo_keccak.keccak import finalize_keccak
@@ -10,9 +10,8 @@ from starkware.cairo.common.cairo_secp.signature import (
     public_key_point_to_eth_address,
     verify_eth_signature,
 )
-from src.libs.utils import pow2alloc128, write_felt_array_to_dict_keys
-from src.libs.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64
-from src.hdp.rlp import retrieve_from_rlp_list_via_idx
+from src.libs.mpt import verify_mpt_proof
+from src.libs.utils import pow2alloc128, write_felt_array_to_dict_keys, felt_divmod, felt_divmod_8, word_reverse_endian_64
 from src.libs.rlp_little import (
     extract_byte_at_pos,
     extract_n_bytes_at_pos,
@@ -22,11 +21,10 @@ from src.libs.rlp_little import (
     assert_subset_in_key,
     extract_nibble_from_key,
 )
-from starkware.cairo.common.cairo_secp.bigint import BigInt3, uint256_to_bigint
 
+from src.hdp.rlp import retrieve_from_rlp_list_via_idx
 from src.hdp.utils import prepend_le_rlp_list_prefix
-
-from src.hdp.types import TransactionProof, Transaction, Header
+from src.hdp.types import TransactionProof, Transaction, Header, ChainInfo
 from src.hdp.memorizer import HeaderMemorizer, TransactionMemorizer
 
 from src.hdp.decoders.transaction_decoder import TransactionReader
@@ -41,6 +39,7 @@ func verify_n_transaction_proofs{
     headers: Header*,
     header_dict: DictAccess*,
     pow2_array: felt*,
+    chain_info: ChainInfo,
 }(tx_proofs: TransactionProof*, tx_proofs_len: felt, index: felt) {
     alloc_locals;
 
@@ -80,7 +79,7 @@ func verify_n_transaction_proofs{
 }
 
 func init_tx_stuct{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, poseidon_ptr: PoseidonBuiltin*, pow2_array: felt*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, poseidon_ptr: PoseidonBuiltin*, pow2_array: felt*, chain_info: ChainInfo
 }(tx_item: felt*, tx_item_bytes_len: felt, block_number: felt) -> Transaction {
     alloc_locals;
 
@@ -107,16 +106,22 @@ func init_tx_stuct{
         let len_len = second_byte - 0xf7;
         assert tx_start_offset = 2 + len_len;  // type + prefix + len_len
     } else {
-        // ToDO: Make sound!
-        %{ ids.tx_type = 0 if ids.block_number < 2675000 else 1 %}
+        // Handle legacy tx (eip155 or standard)
+        %{ ids.tx_type = 0 if ids.block_number < ids.chain_info.eip155_activation else 1 %}
+
+        if(tx_type == 0) {
+            assert [range_check_ptr] = chain_info.eip155_activation - (block_number + 1);
+        } else {
+            assert [range_check_ptr] = block_number - chain_info.eip155_activation;
+        }
 
         let len_len = first_byte - 0xf7;
         assert tx_start_offset = 1 + len_len;
         
-        assert [range_check_ptr] = 0xff - first_byte;
-        assert [range_check_ptr + 1] = first_byte - 0xf7;
-        assert [range_check_ptr + 2] = 7 - tx_start_offset;
-        tempvar range_check_ptr = range_check_ptr + 3;
+        assert [range_check_ptr + 1] = 0xff - first_byte;
+        assert [range_check_ptr + 2] = first_byte - 0xf7;
+        assert [range_check_ptr + 3] = 7 - tx_start_offset;
+        tempvar range_check_ptr = range_check_ptr + 4;
 
     }
 

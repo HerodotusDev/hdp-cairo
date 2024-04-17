@@ -12,7 +12,7 @@ from starkware.cairo.common.cairo_secp.signature import (
 )
 from starkware.cairo.common.cairo_keccak.keccak import finalize_keccak
 
-from src.hdp.types import Transaction, ChainId
+from src.hdp.types import Transaction, ChainInfo
 from src.libs.rlp_little import extract_n_bytes_from_le_64_chunks_array
 from src.hdp.utils import prepend_le_rlp_list_prefix, append_be_chunk
 from starkware.cairo.common.cairo_secp.bigint import BigInt3, uint256_to_bigint
@@ -94,7 +94,7 @@ namespace TransactionReader {
 // For this reason, this logic is in its own namespace.
 namespace TransactionSender {
     func derive{
-        range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, keccak_ptr: KeccakBuiltin*
+        range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, keccak_ptr: KeccakBuiltin*, chain_info: ChainInfo
     }(tx: Transaction) -> felt {
         alloc_locals;
 
@@ -158,7 +158,7 @@ namespace TransactionSender {
         return (address);
     }
 
-    func extract_tx_payload{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    func extract_tx_payload{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, chain_info: ChainInfo}(
         tx: Transaction
     ) -> (tx_payload: felt*, tx_payload_len: felt, tx_payload_bytes_len: felt) {
         alloc_locals;
@@ -176,12 +176,9 @@ namespace TransactionSender {
 
         // deal with EIP155
         if (tx.type == TransactionType.EIP155) {
-            // ToDo: pass via implicit arguments
-            let chain_id = 0x01;
-            let chain_id_bytes_len = 1;
 
-            let eip155_append = chain_id * pow2_array[16] + 0x8080;
-            let eip155_bytes_len = chain_id_bytes_len + 2;
+            let eip155_append = chain_info.id * pow2_array[16] + 0x8080;
+            let eip155_bytes_len = chain_info.id_bytes_len + 2;
 
             let (tx_payload, tx_payload_len, tx_payload_bytes_len) = append_be_chunk{
                 range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
