@@ -117,19 +117,22 @@ namespace TransactionSender {
         let v_le = TransactionReader.get_field_by_index(tx, 6);
         let (v) = uint256_reverse_endian(v_le);
 
-        // ToDo: add chain_id check here. Also only for valid hardforks.
-        // ToDo: figure out why ecrecover precompile does v - 27
-        %{
-            #print("V:", hex(ids.v.low), hex(ids.v.high))
-            if ids.v.low < 2:
-                ids.v_final = ids.v.low
-            elif ids.v.low % 2 == 1:
-                ids.v_final = 0
-            else:
-                ids.v_final = 1
-
-            #print("V_final:", ids.v_final)
-        %}
+        if(tx.type == TransactionType.LEGACY) {
+            assert [range_check_ptr] = v.low - 27;
+            assert v_final = v.low - 27;
+            tempvar range_check_ptr = range_check_ptr + 1;
+        } else {
+            if(tx.type == TransactionType.EIP155) {
+                let subtractor = chain_info.id * 2 + 35; // eip155 rule
+                assert [range_check_ptr] = v.low - subtractor;
+                assert v_final = v.low - subtractor;
+                tempvar range_check_ptr = range_check_ptr + 1;
+            } else {
+                // remaining TX types
+                assert v_final = v.low;
+                tempvar range_check_ptr = range_check_ptr;
+            }
+        }
 
         let (big_r) = uint256_to_bigint(r);
         let (big_s) = uint256_to_bigint(s);
