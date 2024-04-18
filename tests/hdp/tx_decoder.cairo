@@ -34,10 +34,12 @@ func main{
             "0x423d6dfdeae9967847fb226e138ea5fad6279c12bf3343eae4d32c2477be3021", # Type 2
             "0x0d19225fe9ec3044d16008c3aceb0b9059cc22d66cd3ab847f6bd1e454342b4b", # Type 3
             "0x4b0070defa33cbc85f558323bf60132f600212cec3f4ab9e57260d40ff8949d9", # Type 4
+            # Other edge cases
+            "0x15306e5f15afc5d178d705155bd38d70504795686f5f75f3d759ff3fb7fcb61d",
+            "0x371882ee00ff668ca6bf9b1ec37fda5e1fa3a4d0b0f2fb4ef26611f1b1603d3e"
         ]
 
-        tx_array = ["0x15306e5f15afc5d178d705155bd38d70504795686f5f75f3d759ff3fb7fcb61d"]
-
+        tx_array = ["0xa10d0d5a82894137f33b85e8f40a028eb740acc3dd3b98ed85c16e8d5d57a803"]
 
         ids.n_test_txs = len(tx_array)
     %}
@@ -51,7 +53,6 @@ func main{
         poseidon_ptr=poseidon_ptr,
         chain_info=chain_info,
     }(n_test_txs, 0);
-
 
     // test_tx_decoding{
     //     range_check_ptr=range_check_ptr,
@@ -79,7 +80,7 @@ func test_tx_decoding{
     %{
         from tests.python.test_tx_decoding import fetch_block_tx_ids, fetch_latest_block_height
         import random
-        random.seed(10)
+        random.seed(100)
         latest_height = fetch_latest_block_height()
         selected_block = random.randrange(1, latest_height)
         print("Selected Block:", selected_block)
@@ -95,7 +96,7 @@ func test_tx_decoding{
         keccak_ptr=keccak_ptr,
         poseidon_ptr=poseidon_ptr,
         chain_info=chain_info,
-    }(n_test_txs, 6);
+    }(n_test_txs, 0);
 
     return test_tx_decoding();
 }
@@ -212,20 +213,20 @@ func test_tx_decoding_inner{
 
     let tx = init_tx_stuct(rlp, rlp_bytes_len, block_number);
 
-    let nonce = TransactionReader.get_field_by_index(tx, TransactionField.NONCE);
+    let nonce = TransactionReader.get_field(tx, TransactionField.NONCE);
     assert expected_nonce.low = nonce.low;
     assert expected_nonce.high = nonce.high;
 
-    let gas_limit = TransactionReader.get_field_by_index(tx, TransactionField.GAS_LIMIT);
+    let gas_limit = TransactionReader.get_field(tx, TransactionField.GAS_LIMIT);
     assert expected_gas_limit.low = gas_limit.low;
     assert expected_gas_limit.high = gas_limit.high;
 
-    let (receiver, _, _) = TransactionReader.get_felt_field_by_index(tx, TransactionField.RECEIVER);
+    let (receiver, _, _) = TransactionReader.get_felt_field(tx, TransactionField.RECEIVER);
     assert expected_receiver[0] = receiver[0];
     assert expected_receiver[1] = receiver[1];
     assert expected_receiver[2] = receiver[2];
 
-    let value = TransactionReader.get_field_by_index(tx, TransactionField.VALUE);
+    let value = TransactionReader.get_field(tx, TransactionField.VALUE);
     assert expected_value.low = value.low;
     assert expected_value.high = value.high;
 
@@ -233,27 +234,28 @@ func test_tx_decoding_inner{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(expected_input, expected_input_len, expected_input_bytes_len, tx, TransactionField.INPUT);
 
-    let v = TransactionReader.get_field_by_index(tx, TransactionField.V);
+    let v = TransactionReader.get_field(tx, TransactionField.V);
     assert expected_v.low = v.low;
     assert expected_v.high = v.high;
 
-    let r = TransactionReader.get_field_by_index(tx, TransactionField.R);
+    let r = TransactionReader.get_field(tx, TransactionField.R);
     assert expected_r.low = r.low;
     assert expected_r.high = r.high;
 
-    let s = TransactionReader.get_field_by_index(tx, TransactionField.S);
+    let s = TransactionReader.get_field(tx, TransactionField.S);
 
-    %{
-        print("Rec S: ", hex(ids.s.low), hex(ids.s.high))
-        print("Exp S: ", hex(ids.expected_s.low), hex(ids.expected_s.high))
-    %}
+    // %{
+    //     print("Rec S: ", hex(ids.s.high) + hex(ids.s.low)[2:])
+    //     print("Exp S: ", hex(ids.expected_s.high) + hex(ids.expected_s.low)[2:])
+    //     # print("Exp S: ", hex(ids.expected_s.low), hex(ids.expected_s.high))
+    // %}
     assert expected_s.low = s.low;
     assert expected_s.high = s.high;
 
     local has_legacy: felt;
     %{ ids.has_legacy = 1 if ids.tx.type <= 1 else 0 %}
     if (has_legacy == 1) {
-        let gas_price = TransactionReader.get_field_by_index(tx, TransactionField.GAS_PRICE);
+        let gas_price = TransactionReader.get_field(tx, TransactionField.GAS_PRICE);
         assert expected_gas_price.low = gas_price.low;
         assert expected_gas_price.high = gas_price.high;
 
@@ -291,13 +293,13 @@ func test_tx_decoding_inner{
     local has_eip1559: felt;
     %{ ids.has_eip1559 = 1 if ids.tx.type >= 3 else 0 %}
     if (has_eip1559 == 1) {
-        let max_prio_fee_per_gas = TransactionReader.get_field_by_index(
+        let max_prio_fee_per_gas = TransactionReader.get_field(
             tx, TransactionField.MAX_PRIORITY_FEE_PER_GAS
         );
         assert expected_max_prio_fee_per_gas.low = max_prio_fee_per_gas.low;
         assert expected_max_prio_fee_per_gas.high = max_prio_fee_per_gas.high;
 
-        let max_fee_per_gas = TransactionReader.get_field_by_index(
+        let max_fee_per_gas = TransactionReader.get_field(
             tx, TransactionField.MAX_FEE_PER_GAS
         );
         assert max_fee_per_gas.low = expected_max_fee_per_gas.low;
@@ -325,7 +327,7 @@ func test_tx_decoding_inner{
             TransactionField.BLOB_VERSIONED_HASHES,
         );
 
-        let max_fee_per_blob_gas = TransactionReader.get_field_by_index(
+        let max_fee_per_blob_gas = TransactionReader.get_field(
             tx, TransactionField.MAX_FEE_PER_BLOB_GAS
         );
         assert max_fee_per_blob_gas.low = expected_max_fee_per_blob_gas.low;
@@ -351,7 +353,7 @@ func eval_felt_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: 
 ) {
     alloc_locals;
 
-    let (res, res_len, res_bytes_len) = TransactionReader.get_felt_field_by_index(tx, field);
+    let (res, res_len, res_bytes_len) = TransactionReader.get_felt_field(tx, field);
 
     %{
         i = 0

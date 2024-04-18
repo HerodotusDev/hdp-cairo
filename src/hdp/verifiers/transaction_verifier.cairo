@@ -112,26 +112,19 @@ func init_tx_stuct{
         assert [range_check_ptr + 2] = second_byte - 0xf7;
         tempvar range_check_ptr = range_check_ptr + 3;
 
-        assert tx_type = first_byte + 1;
+        assert tx_type = first_byte;
         let len_len = second_byte - 0xf7;
         assert tx_start_offset = 2 + len_len;  // type + prefix + len_len
     } else {
-        // Handle legacy tx (eip155 or standard)
-        %{ ids.tx_type = 0 if ids.block_number < ids.chain_info.eip155_activation else 1 %}
-
-        if (tx_type == 0) {
-            assert [range_check_ptr] = chain_info.eip155_activation - (block_number + 1);
-        } else {
-            assert [range_check_ptr] = block_number - chain_info.eip155_activation;
-        }
+        assert tx_type = 0;
 
         let len_len = first_byte - 0xf7;
         assert tx_start_offset = 1 + len_len;
 
-        assert [range_check_ptr + 1] = 0xff - first_byte;
-        assert [range_check_ptr + 2] = first_byte - 0xf7;
-        assert [range_check_ptr + 3] = 7 - tx_start_offset;
-        tempvar range_check_ptr = range_check_ptr + 4;
+        assert [range_check_ptr ] = 0xff - first_byte;
+        assert [range_check_ptr + 1] = first_byte - 0xf7;
+        assert [range_check_ptr + 2] = 7 - tx_start_offset;
+        tempvar range_check_ptr = range_check_ptr + 3;
     }
 
     let tx_bytes_len = tx_item_bytes_len - tx_start_offset;
