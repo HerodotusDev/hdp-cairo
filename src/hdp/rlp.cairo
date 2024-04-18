@@ -59,21 +59,8 @@ func retrieve_from_rlp_list_via_idx{
     // Short String
     if (item_type == 1) {
         assert [range_check_ptr] = current_item - 0x80;
-        assert [range_check_ptr + 1] = 0xb7 - current_item;
+        assert [range_check_ptr + 1] = 0xb6 - current_item;
         assert current_value_len = current_item - 0x80;
-        assert current_value_starts_at_byte = item_starts_at_byte + 1;
-        assert next_item_starts_at_byte = current_value_starts_at_byte + current_value_len;
-
-        tempvar range_check_ptr = range_check_ptr + 2;
-    } else {
-        tempvar range_check_ptr = range_check_ptr;
-    }
-
-    // Short List
-    if (item_type == 3) {
-        assert [range_check_ptr] = current_item - 0xc0;
-        assert [range_check_ptr + 1] = 0xf7 - current_item;
-        assert current_value_len = current_item - 0xc0;
         assert current_value_starts_at_byte = item_starts_at_byte + 1;
         assert next_item_starts_at_byte = current_value_starts_at_byte + current_value_len;
 
@@ -101,13 +88,25 @@ func retrieve_from_rlp_list_via_idx{
         tempvar range_check_ptr = range_check_ptr;
     }
 
+    // Short List
+    if (item_type == 3) {
+        assert [range_check_ptr] = current_item - 0xc0;
+        assert [range_check_ptr + 1] = 0xf6 - current_item;
+        assert current_value_len = current_item - 0xc0;
+        assert current_value_starts_at_byte = item_starts_at_byte + 1;
+        assert next_item_starts_at_byte = current_value_starts_at_byte + current_value_len;
+
+        tempvar range_check_ptr = range_check_ptr + 2;
+    } else {
+        tempvar range_check_ptr = range_check_ptr;
+    }
+
     // Long List
     if (item_type == 4) {
-        assert [range_check_ptr] = current_item - 0xf8;
+        assert [range_check_ptr] = current_item - 0xf7;
         assert [range_check_ptr + 1] = 0xff - current_item;
         tempvar range_check_ptr = range_check_ptr + 2;
-        let len_len = current_item - 0xf8;
-
+        let len_len = current_item - 0xf7;
         let item_len = decode_value_len(
             rlp=rlp, item_starts_at_byte=item_starts_at_byte, len_len=len_len, pow2_array=pow2_array
         );
@@ -115,6 +114,7 @@ func retrieve_from_rlp_list_via_idx{
         assert current_value_len = item_len;
         assert current_value_starts_at_byte = item_starts_at_byte + len_len + 1;
         assert next_item_starts_at_byte = current_value_starts_at_byte + current_value_len;
+
         tempvar range_check_ptr = range_check_ptr;
     } else {
         tempvar range_check_ptr = range_check_ptr;
