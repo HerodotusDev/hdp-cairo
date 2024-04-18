@@ -76,7 +76,7 @@ func reverse_small_chunk_endianess{range_check_ptr}(word: felt, bytes_len: felt)
 }
 
 func prepend_le_rlp_list_prefix{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
-    offset: felt, prefix: felt, rlp: felt*, rlp_len: felt
+    offset: felt, prefix: felt, rlp: felt*, rlp_len: felt, expected_bytes_len: felt
 ) -> (encoded: felt*, encoded_len: felt) {
     // we have no offset if the prefix is 0
     if (offset == 0) {
@@ -106,7 +106,7 @@ func prepend_le_rlp_list_prefix{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, p
     let r = [ap + 1];
     %{
         ids.q, ids.r = divmod(memory[ids.rlp + ids.i], ids.devisor)
-        #print(f"val={memory[ids.rlp + ids.i]} q={ids.q} r={ids.r} i={ids.i}")
+        #print(f"val={hex(memory[ids.rlp + ids.i])} q/cur={hex(ids.q)} r={hex(ids.r)} i={ids.i}")
     %}
     ap += 2;
     tempvar offset = 3 * n_processed_words;
@@ -127,14 +127,14 @@ func prepend_le_rlp_list_prefix{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, p
     assert rlp_len = n_processed_words;
     tempvar range_check_ptr = range_check_ptr + 3 * n_processed_words;
 
-    // if the last word is not 0, we need to add it to the result and increment the rlp length
-    if (current_word != 0) {
+    let (words, rest) = felt_divmod(expected_bytes_len, 8);
+    if(rest == 0) {
+        return (encoded=result, encoded_len=rlp_len);
+    } else {
+        // add the last word
         assert result[n_processed_words] = current_word;
         return (encoded=result, encoded_len=rlp_len + 1);
     }
-    return (encoded=result, encoded_len=rlp_len);
-
-    // return (result);
 }
 
 // reverses the endianness of chunk, up to 64 bits long

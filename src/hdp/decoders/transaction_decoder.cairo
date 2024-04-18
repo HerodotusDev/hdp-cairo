@@ -157,11 +157,13 @@ namespace TransactionSender {
             range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
         }(tx, tx_payload, tx_payload_len, tx_payload_bytes_len);
 
-        let (big_r) = uint256_to_bigint(r);
-        let (big_s) = uint256_to_bigint(s);
 
         // Now we hash this reencoded transaction, which is what the sender has signed in the first place
         let (msg_hash) = keccak_bigend(encoded_tx_payload, encoded_tx_payload_bytes_len);
+        
+        // Convert types for ec-recover
+        let (big_r) = uint256_to_bigint(r);
+        let (big_s) = uint256_to_bigint(s);
         let (big_msg_hash) = uint256_to_bigint(msg_hash);
         let (pub) = recover_public_key(big_msg_hash, big_r, big_s, v_norm);
 
@@ -271,11 +273,11 @@ namespace TransactionSender {
             tempvar range_check_ptr = range_check_ptr;
         }
 
+        let encoded_tx_bytes_len = tx_payload_bytes_len + prefix_bytes_len;
         // We have generated the RLP prefix in a hint, now we need to shift all values to fit the LE 64bit array format
         let (encoded_tx, encoded_tx_len) = prepend_le_rlp_list_prefix(
-            offset=prefix_bytes_len, prefix=typed_prefix, rlp=tx_payload, rlp_len=tx_payload_len
+            offset=prefix_bytes_len, prefix=typed_prefix, rlp=tx_payload, rlp_len=tx_payload_len, expected_bytes_len=encoded_tx_bytes_len
         );
-        let encoded_tx_bytes_len = tx_payload_bytes_len + prefix_bytes_len;
 
         return (encoded_tx, encoded_tx_len, encoded_tx_bytes_len);
     }
