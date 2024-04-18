@@ -297,22 +297,18 @@ namespace TransactionSender {
             assert [range_check_ptr + 1] = v.low - (chain_info.id * 2 + 35);
             assert tx_type = TransactionType.LEGACY;
             assert v_norm = v.low - (chain_info.id * 2 + 35);
-
-            tempvar range_check_ptr = range_check_ptr + 2;
         } else {
             // if its not eip155, V must be smaller
             assert [range_check_ptr] = (chain_info.id * 2 + 35) - v.low;
             if (tx_type == TransactionType.LEGACY) {
                 assert [range_check_ptr + 1] = v.low - 27; // In theory, this should never fail
                 assert v_norm = v.low - 27;
-                tempvar range_check_ptr = range_check_ptr + 2;
             } else {
-                assert [range_check_ptr + 1] = v.low - 1; // In theory, this should never fail
-                assert [range_check_ptr + 2] = tx_type - 1;
+                assert [range_check_ptr + 1] = 1 - v.low; // In theory, this should never fail
                 assert v_norm = v.low;
-                tempvar range_check_ptr = range_check_ptr + 3;
             }
         }
+        tempvar range_check_ptr = range_check_ptr + 2;
         return (v_norm, is_eip155);
     }
 }

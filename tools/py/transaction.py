@@ -291,14 +291,19 @@ class Eip4844(Serializable):
 
 
 def build_tx(tx: SignedTx) -> Union[LegacyTx]:
-    print(tx)
+
+    if tx["to"] is None:
+        receiver = ""
+    else:
+        receiver = tx["to"]
+
     if tx["type"] == "0x0":
         if int(tx["blockNumber"], 16) < 2675000:
             return LegacyTx(
                 int(tx["nonce"], 16),
                 int(tx["gasPrice"], 16),
                 int(tx["gas"], 16),
-                HexBytes(tx["to"]),
+                HexBytes(receiver),
                 int(tx["value"], 16),
                 HexBytes(tx["input"]),
                 int(tx["v"], 16),
@@ -314,7 +319,7 @@ def build_tx(tx: SignedTx) -> Union[LegacyTx]:
                 int(tx["nonce"], 16),
                 int(tx["gasPrice"], 16),
                 int(tx["gas"], 16),
-                HexBytes(tx["to"]),
+                HexBytes(receiver),
                 int(tx["value"], 16),
                 HexBytes(tx["input"]),
                 int(tx["v"], 16),
@@ -333,7 +338,7 @@ def build_tx(tx: SignedTx) -> Union[LegacyTx]:
             int(tx["nonce"], 16),
             int(tx["gasPrice"], 16),
             int(tx["gas"], 16),
-            HexBytes(tx["to"]),
+            HexBytes(receiver),
             int(tx["value"], 16),
             HexBytes(tx["input"]),
             access_list,
@@ -354,7 +359,7 @@ def build_tx(tx: SignedTx) -> Union[LegacyTx]:
             int(tx["maxPriorityFeePerGas"], 16),
             int(tx["maxFeePerGas"], 16),
             int(tx["gas"], 16),
-            HexBytes(tx["to"]),
+            HexBytes(receiver),
             int(tx["value"], 16),
             HexBytes(tx["input"]),
             access_list,
@@ -374,7 +379,7 @@ def build_tx(tx: SignedTx) -> Union[LegacyTx]:
             int(tx["maxPriorityFeePerGas"], 16),
             int(tx["maxFeePerGas"], 16),
             int(tx["gas"], 16),
-            HexBytes(tx["to"]),
+            HexBytes(receiver),
             int(tx["value"], 16),
             HexBytes(tx["input"]),
             access_list,

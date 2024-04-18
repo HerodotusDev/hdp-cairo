@@ -34,12 +34,14 @@ func main{
             "0x423d6dfdeae9967847fb226e138ea5fad6279c12bf3343eae4d32c2477be3021", # Type 2
             "0x0d19225fe9ec3044d16008c3aceb0b9059cc22d66cd3ab847f6bd1e454342b4b", # Type 3
             "0x4b0070defa33cbc85f558323bf60132f600212cec3f4ab9e57260d40ff8949d9", # Type 4
-            # Other edge cases
+            # Other edge cases that have failed before
             "0x15306e5f15afc5d178d705155bd38d70504795686f5f75f3d759ff3fb7fcb61d",
-            "0x371882ee00ff668ca6bf9b1ec37fda5e1fa3a4d0b0f2fb4ef26611f1b1603d3e"
+            "0x371882ee00ff668ca6bf9b1ec37fda5e1fa3a4d0b0f2fb4ef26611f1b1603d3e",
+            "0xa10d0d5a82894137f33b85e8f40a028eb740acc3dd3b98ed85c16e8d5d57a803",
+            "0xd675eaa76156b865c8d0aa1556dd08b0ed0bc2dc6531fc168f3d623aaa093230"
         ]
 
-        tx_array = ["0xa10d0d5a82894137f33b85e8f40a028eb740acc3dd3b98ed85c16e8d5d57a803"]
+        #tx_array = ["0xd675eaa76156b865c8d0aa1556dd08b0ed0bc2dc6531fc168f3d623aaa093230"]
 
         ids.n_test_txs = len(tx_array)
     %}
@@ -61,7 +63,7 @@ func main{
     //     keccak_ptr=keccak_ptr,
     //     poseidon_ptr=poseidon_ptr,
     //     chain_info=chain_info,
-    // }();
+    // }(0);
 
     return ();
 }
@@ -73,18 +75,23 @@ func test_tx_decoding{
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     chain_info: ChainInfo,
-}() {
+}(index: felt) {
     alloc_locals;
     local n_test_txs: felt;
 
     %{
         from tests.python.test_tx_decoding import fetch_block_tx_ids, fetch_latest_block_height
         import random
-        random.seed(100)
+        random.seed(ids.index)
+        block_sample = 10
         latest_height = fetch_latest_block_height()
         selected_block = random.randrange(1, latest_height)
         print("Selected Block:", selected_block)
         tx_array = fetch_block_tx_ids(selected_block)
+
+        if(len(tx_array) >= block_sample):
+            tx_array = random.sample(tx_array, 10)
+            
         ids.n_test_txs = len(tx_array)
     %}
 
@@ -98,7 +105,7 @@ func test_tx_decoding{
         chain_info=chain_info,
     }(n_test_txs, 0);
 
-    return test_tx_decoding();
+    return test_tx_decoding(index + 1);
 }
 
 func test_tx_decoding_inner{
@@ -221,11 +228,14 @@ func test_tx_decoding_inner{
     assert expected_gas_limit.low = gas_limit.low;
     assert expected_gas_limit.high = gas_limit.high;
 
-    let (receiver, _, _) = TransactionReader.get_felt_field(tx, TransactionField.RECEIVER);
+    let (receiver, receiver_len, _) = TransactionReader.get_felt_field(tx, TransactionField.RECEIVER);
     assert expected_receiver[0] = receiver[0];
-    assert expected_receiver[1] = receiver[1];
-    assert expected_receiver[2] = receiver[2];
 
+    // prevent failing checks for contract creation transactions
+    if(receiver_len == 3) {
+        assert expected_receiver[1] = receiver[1];
+        assert expected_receiver[2] = receiver[2];
+    }
     let value = TransactionReader.get_field(tx, TransactionField.VALUE);
     assert expected_value.low = value.low;
     assert expected_value.high = value.high;
