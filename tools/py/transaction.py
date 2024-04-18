@@ -291,13 +291,10 @@ class Eip4844(Serializable):
 
 
 def build_tx(tx: SignedTx) -> Union[LegacyTx]:
-
-    if tx["to"] is None:
-        receiver = ""
-    else:
-        receiver = tx["to"]
-
-    if tx["type"] == "0x0":
+    # print(tx)
+    receiver = "" if tx["to"] is None else tx["to"] # for contract creation txs
+    tx_type = "0x0" if "type" not in tx else tx["type"] # for some TXs RPC doesnt return type
+    if tx_type == "0x0":
         if int(tx["blockNumber"], 16) < 2675000:
             return LegacyTx(
                 int(tx["nonce"], 16),
@@ -310,7 +307,7 @@ def build_tx(tx: SignedTx) -> Union[LegacyTx]:
                 HexBytes(tx["r"]),
                 HexBytes(tx["s"]),
                 HexBytes(tx["from"]),
-                int(tx["type"], 16),
+                int(tx_type, 16),
                 int(tx["blockNumber"], 16),
             )
         else:
@@ -327,10 +324,10 @@ def build_tx(tx: SignedTx) -> Union[LegacyTx]:
                 HexBytes(tx["s"]),
                 1,
                 HexBytes(tx["from"]),
-                int(tx["type"], 16),
+                int(tx_type, 16),
                 int(tx["blockNumber"], 16),
             )
-    elif tx["type"] == "0x1":
+    elif tx_type == "0x1":
         # EIP-2930 tx
         access_list = [AccessListEntry(address=HexBytes(entry["address"]), storage_keys=[HexBytes(key) for key in entry["storageKeys"]]) for entry in tx["accessList"]]
         return Eip2930(
@@ -346,10 +343,10 @@ def build_tx(tx: SignedTx) -> Union[LegacyTx]:
             HexBytes(tx["r"]),
             HexBytes(tx["s"]),
             HexBytes(tx["from"]),
-            int(tx["type"], 16),
+            int(tx_type, 16),
             int(tx["blockNumber"], 16),
         )
-    elif tx["type"] == "0x2":
+    elif tx_type == "0x2":
         #print("1559")
         access_list = [AccessListEntry(address=HexBytes(entry["address"]), storage_keys=[HexBytes(key) for key in entry["storageKeys"]]) for entry in tx["accessList"]]
         # EIP-1559 tx
@@ -367,7 +364,7 @@ def build_tx(tx: SignedTx) -> Union[LegacyTx]:
             HexBytes(tx["r"]),
             HexBytes(tx["s"]),
             HexBytes(tx["from"]),
-            int(tx["type"], 16),
+            int(tx_type, 16),
             int(tx["blockNumber"], 16),
         )
     else:
@@ -389,6 +386,6 @@ def build_tx(tx: SignedTx) -> Union[LegacyTx]:
             HexBytes(tx["r"]),
             HexBytes(tx["s"]),
             HexBytes(tx["from"]),
-            int(tx["type"], 16),
+            int(tx_type, 16),
             int(tx["blockNumber"], 16),
         )
