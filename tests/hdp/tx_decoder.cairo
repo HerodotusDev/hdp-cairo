@@ -27,6 +27,7 @@ func main{
     local n_test_txs: felt;
 
     %{
+
         tx_array = [
             "0x2e923a6f09ba38f63ff9b722afd14b9e850432860b77df9011e92c1bf0eecf6b", # Type 0
             "0x237f99e622d67413956b8674cf16ea56b0ba0a18a9f68a5e254f4ac8d2050b51", # Type 1 (eip155)
@@ -35,10 +36,14 @@ func main{
             "0x4b0070defa33cbc85f558323bf60132f600212cec3f4ab9e57260d40ff8949d9", # Type 4
         ]
 
+        tx_array = ["0x15306e5f15afc5d178d705155bd38d70504795686f5f75f3d759ff3fb7fcb61d"]
+
+
         ids.n_test_txs = len(tx_array)
     %}
 
-    test_tx_decoding{
+    // run default tests first
+    test_tx_decoding_inner{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array,
@@ -47,10 +52,55 @@ func main{
         chain_info=chain_info,
     }(n_test_txs, 0);
 
+
+    // test_tx_decoding{
+    //     range_check_ptr=range_check_ptr,
+    //     bitwise_ptr=bitwise_ptr,
+    //     pow2_array=pow2_array,
+    //     keccak_ptr=keccak_ptr,
+    //     poseidon_ptr=poseidon_ptr,
+    //     chain_info=chain_info,
+    // }();
+
     return ();
 }
 
 func test_tx_decoding{
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    pow2_array: felt*,
+    keccak_ptr: KeccakBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
+    chain_info: ChainInfo,
+}() {
+    alloc_locals;
+    local n_test_txs: felt;
+
+    %{
+        from tests.python.test_tx_decoding import fetch_block_tx_ids, fetch_latest_block_height
+        import random
+        random.seed(10)
+        latest_height = fetch_latest_block_height()
+        selected_block = random.randrange(1, latest_height)
+        print("Selected Block:", selected_block)
+        tx_array = fetch_block_tx_ids(selected_block)
+        ids.n_test_txs = len(tx_array)
+    %}
+
+     // run default tests first
+    test_tx_decoding_inner{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array,
+        keccak_ptr=keccak_ptr,
+        poseidon_ptr=poseidon_ptr,
+        chain_info=chain_info,
+    }(n_test_txs, 6);
+
+    return test_tx_decoding();
+}
+
+func test_tx_decoding_inner{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
@@ -192,6 +242,11 @@ func test_tx_decoding{
     assert expected_r.high = r.high;
 
     let s = TransactionReader.get_field_by_index(tx, TransactionField.S);
+
+    %{
+        print("Rec S: ", hex(ids.s.low), hex(ids.s.high))
+        print("Exp S: ", hex(ids.expected_s.low), hex(ids.expected_s.high))
+    %}
     assert expected_s.low = s.low;
     assert expected_s.high = s.high;
 
@@ -288,7 +343,7 @@ func test_tx_decoding{
     let sender = TransactionSender.derive(tx);
     assert sender = expected_sender;
 
-    return test_tx_decoding(txs, index + 1);
+    return test_tx_decoding_inner(txs, index + 1);
 }
 
 func eval_felt_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
@@ -301,6 +356,7 @@ func eval_felt_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: 
     %{
         i = 0
         while(i < ids.res_len):
+            #print("Expected:", hex(memory[ids.expected + i]), "Got:",hex(memory[ids.res + i]))
             assert memory[ids.res + i] == memory[ids.expected + i], f"Value Missmatch for field: {ids.field} at index: {i}"
             i += 1
     %}

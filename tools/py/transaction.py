@@ -7,6 +7,7 @@ from rlp.sedes import (
     Binary,
     binary,
     lists,
+    CountableList
 )
 from web3 import Web3
 from typing import Union
@@ -108,6 +109,15 @@ class Eip155(Serializable):
             ]
         )
 
+# Define a Serializable class for an Access List entry
+class AccessListEntry(Serializable):
+    fields = [
+        ('address', address),
+        ('storage_keys', CountableList(hash32))
+    ]
+
+# Define the access list using CountableList of AccessListEntry
+access_list_type = CountableList(AccessListEntry)
 
 class Eip2930(Serializable):
     fields = (
@@ -118,7 +128,7 @@ class Eip2930(Serializable):
         ("to", address),
         ("value", big_endian_int),
         ("data", binary),
-        ("access_list", lists.CountableList(address)),
+        ("access_list", access_list_type),
         ("v", big_endian_int),
         ("r", hash32),
         ("s", hash32),
@@ -172,7 +182,7 @@ class Eip1559(Serializable):
         ("to", address),
         ("value", big_endian_int),
         ("data", binary),
-        ("access_list", lists.CountableList(address)),
+        ("access_list", access_list_type),
         ("v", big_endian_int),
         ("r", hash32),
         ("s", hash32),
@@ -228,7 +238,7 @@ class Eip4844(Serializable):
         ("to", address),
         ("value", big_endian_int),
         ("data", binary),
-        ("access_list", lists.CountableList(address)),
+        ("access_list", access_list_type),
         ("max_fee_per_blob_gas", big_endian_int),
         ("blob_versioned_hashes", lists.CountableList(hash32)),
         ("v", big_endian_int),
@@ -281,6 +291,7 @@ class Eip4844(Serializable):
 
 
 def build_tx(tx: SignedTx) -> Union[LegacyTx]:
+    print(tx)
     if tx["type"] == "0x0":
         if int(tx["blockNumber"], 16) < 2675000:
             return LegacyTx(
@@ -309,13 +320,14 @@ def build_tx(tx: SignedTx) -> Union[LegacyTx]:
                 int(tx["v"], 16),
                 HexBytes(tx["r"]),
                 HexBytes(tx["s"]),
-                int(tx["chainId"], 16),
+                1,
                 HexBytes(tx["from"]),
                 int(tx["type"], 16),
                 int(tx["blockNumber"], 16),
             )
     elif tx["type"] == "0x1":
         # EIP-2930 tx
+        access_list = [AccessListEntry(address=HexBytes(entry["address"]), storage_keys=[HexBytes(key) for key in entry["storageKeys"]]) for entry in tx["accessList"]]
         return Eip2930(
             int(tx["chainId"], 16),
             int(tx["nonce"], 16),
@@ -324,7 +336,7 @@ def build_tx(tx: SignedTx) -> Union[LegacyTx]:
             HexBytes(tx["to"]),
             int(tx["value"], 16),
             HexBytes(tx["input"]),
-            [HexBytes(address) for address in tx["accessList"]],
+            access_list,
             int(tx["v"], 16),
             HexBytes(tx["r"]),
             HexBytes(tx["s"]),
@@ -333,6 +345,8 @@ def build_tx(tx: SignedTx) -> Union[LegacyTx]:
             int(tx["blockNumber"], 16),
         )
     elif tx["type"] == "0x2":
+        #print("1559")
+        access_list = [AccessListEntry(address=HexBytes(entry["address"]), storage_keys=[HexBytes(key) for key in entry["storageKeys"]]) for entry in tx["accessList"]]
         # EIP-1559 tx
         return Eip1559(
             int(tx["chainId"], 16),
@@ -343,7 +357,7 @@ def build_tx(tx: SignedTx) -> Union[LegacyTx]:
             HexBytes(tx["to"]),
             int(tx["value"], 16),
             HexBytes(tx["input"]),
-            [HexBytes(address) for address in tx["accessList"]],
+            access_list,
             int(tx["v"], 16),
             HexBytes(tx["r"]),
             HexBytes(tx["s"]),
@@ -353,6 +367,7 @@ def build_tx(tx: SignedTx) -> Union[LegacyTx]:
         )
     else:
         # EIP-4844 tx
+        access_list = [AccessListEntry(address=HexBytes(entry["address"]), storage_keys=[HexBytes(key) for key in entry["storageKeys"]]) for entry in tx["accessList"]]
         return Eip4844(
             int(tx["chainId"], 16),
             int(tx["nonce"], 16),
@@ -362,7 +377,7 @@ def build_tx(tx: SignedTx) -> Union[LegacyTx]:
             HexBytes(tx["to"]),
             int(tx["value"], 16),
             HexBytes(tx["input"]),
-            [HexBytes(address) for address in tx["accessList"]],
+            access_list,
             int(tx["maxFeePerBlobGas"], 16),
             [HexBytes(hash32) for hash32 in tx["blobVersionedHashes"]],
             int(tx["v"], 16),

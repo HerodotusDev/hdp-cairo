@@ -117,11 +117,11 @@ namespace TransactionSender {
             range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
         }(tx, tx_payload, tx_payload_len, tx_payload_bytes_len);
 
-        let v_le = TransactionReader.get_field_by_index(tx, 6);
+        let v_le = TransactionReader.get_field_by_index(tx, TransactionField.V);
         let (v) = uint256_reverse_endian(v_le);
-        let r_le = TransactionReader.get_field_by_index(tx, 7);
+        let r_le = TransactionReader.get_field_by_index(tx, TransactionField.R);
         let (r) = uint256_reverse_endian(r_le);
-        let s_le = TransactionReader.get_field_by_index(tx, 8);
+        let s_le = TransactionReader.get_field_by_index(tx, TransactionField.S);
         let (s) = uint256_reverse_endian(s_le);
 
         local v_final: felt;
@@ -253,12 +253,13 @@ namespace TransactionSender {
         } else {
             // Lagacy and eip155 txs have no type prefix
             assert [range_check_ptr] = 1 - tx.type;
+            tempvar range_check_ptr = range_check_ptr + 1;
 
             // No type, just convert to LE
             assert prefix_bytes_len = current_len;
             let le_prefix = reverse_chunk_endianess(prefix, prefix_bytes_len);
             assert typed_prefix = le_prefix;
-            tempvar range_check_ptr = range_check_ptr + 1;
+            tempvar range_check_ptr = range_check_ptr;
         }
 
         // We have generated the RLP prefix in a hint, now we need to shift all values to fit the LE 64bit array format
