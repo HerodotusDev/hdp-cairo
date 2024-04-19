@@ -41,14 +41,8 @@ namespace BlockSampledTask {
         if (index == n_tasks) {
             return ();
         } else {
-            local property_type;
-            %{
-                # ToDo: This is bad design
-                ids.property_type = block_sampled_tasks[ids.index]["property_type"]
-            %}
-
             let datalake = init_block_sampled(
-                datalakes_input[index], datalakes_bytes_len[index], property_type
+                datalakes_input[index], datalakes_bytes_len[index]
             );
 
             let (local task) = extract_params_and_construct_task{

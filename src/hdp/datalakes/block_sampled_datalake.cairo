@@ -6,6 +6,7 @@ from starkware.cairo.common.alloc import alloc
 from src.libs.utils import word_reverse_endian_64, word_reverse_endian_16_RC
 from src.hdp.types import BlockSampledDataLake, AccountValues, BlockSampledComputationalTask, Header
 from src.hdp.memorizer import AccountMemorizer, StorageMemorizer, HeaderMemorizer
+from src.libs.rlp_little import extract_byte_at_pos
 
 from src.hdp.decoders.header_decoder import HeaderDecoder
 from src.hdp.decoders.account_decoder import AccountDecoder
@@ -17,10 +18,12 @@ namespace BLOCK_SAMPLED_PROPERTY {
 }
 
 // Creates a BlockSampledDataLake from the input bytes
-func init_block_sampled{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(
-    input: felt*, input_bytes_len: felt, property_type: felt
-) -> BlockSampledDataLake {
+func init_block_sampled{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*}(
+    input: felt*, input_bytes_len: felt
+) -> (res: BlockSampledDataLake) {
     alloc_locals;
+
+    let property_type = extract_byte_at_pos([input + 24], 0, pow2_array);
 
     let (hash: Uint256) = keccak(input, input_bytes_len);
 
@@ -43,7 +46,7 @@ func init_block_sampled{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_pt
 
         // im unable to the the range_check_ptr rebinding to work here, so we return here for now
         return (
-            BlockSampledDataLake(
+            res=BlockSampledDataLake(
                 block_range_start=block_range_start,
                 block_range_end=block_range_end,
                 increment=increment,
@@ -57,14 +60,12 @@ func init_block_sampled{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_pt
     if (property_type == BLOCK_SAMPLED_PROPERTY.ACCOUNT) {
         // Account Input Layout:
 
-        let (sample_id, address) = extract_sample_id_and_address{bitwise_ptr=bitwise_ptr}(
+        let (address) = extract_address{bitwise_ptr=bitwise_ptr}(
             chunk_one=[input + 24], chunk_two=[input + 25], chunk_three=[input + 26]
         );
         tempvar bitwise_ptr = bitwise_ptr;
 
-        assert sample_id = property_type;  // enforces account type
-
-        assert [properties] = sample_id;
+        assert [properties] = property_type;
 
         // write address to properties
         assert [properties + 1] = [address];
@@ -84,14 +85,11 @@ func init_block_sampled{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_pt
     if (property_type == BLOCK_SAMPLED_PROPERTY.STORAGE_SLOT) {
         // Account Slot Input Layout:
 
-        let (sample_id, address) = extract_sample_id_and_address{bitwise_ptr=bitwise_ptr}(
+        let (address) = extract_address{bitwise_ptr=bitwise_ptr}(
             chunk_one=[input + 24], chunk_two=[input + 25], chunk_three=[input + 26]
         );
         tempvar bitwise_ptr = bitwise_ptr;
-
-        assert sample_id = property_type;  // enforces slot type
-
-        assert [properties] = sample_id;
+        assert [properties] = property_type;
 
         // write address to properties
         assert [properties + 1] = [address];
@@ -106,7 +104,7 @@ func init_block_sampled{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_pt
     }
 
     return (
-        BlockSampledDataLake(
+        res=BlockSampledDataLake(
             block_range_start=block_range_start,
             block_range_end=block_range_end,
             increment=increment,
@@ -205,9 +203,11 @@ func extract_and_write_slot{bitwise_ptr: BitwiseBuiltin*}(
 // Output:
 // id: the ID of the sampled property (2 for Account, 3 for AccountSlot)
 // address: le 8-byte chunks
-func extract_sample_id_and_address{bitwise_ptr: BitwiseBuiltin*}(
+
+//ToDo: refactor to use divmod
+func extract_address{bitwise_ptr: BitwiseBuiltin*}(
     chunk_one: felt, chunk_two: felt, chunk_three: felt
-) -> (id: felt, address: felt*) {
+) -> (address: felt*) {
     let (address: felt*) = alloc();
 
     // Example Input + operations:
@@ -247,7 +247,7 @@ func extract_sample_id_and_address{bitwise_ptr: BitwiseBuiltin*}(
     assert [address + 2] = bitwise_ptr[3].x_and_y / 0x100;
 
     let bitwise_ptr = bitwise_ptr + 4 * BitwiseBuiltin.SIZE;
-    return (id=type_id, address=address);
+    return (address=address);
 }
 
 // Decodes the constant parameters of the block sampled data lake
