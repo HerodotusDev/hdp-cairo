@@ -82,7 +82,13 @@ struct BlockSampledDataLake {
     increment: felt,
     property_type: felt,  // header=1, account=2, accountSlot=3
     properties: felt*,
-    hash: Uint256,
+}
+
+struct TransactionsInBlockDatalake {
+    target_block: felt,
+    increment: felt,
+    type: felt,
+    sampled_property: felt,
 }
 
 struct BlockSampledComputationalTask {
@@ -92,3 +98,13 @@ struct BlockSampledComputationalTask {
     ctx_operator: felt,
     ctx_value: Uint256,
 }
+
+struct ComputationalTask {
+    hash: Uint256,
+    datalake_ptr: felt*,
+    datalake_type: felt,
+    aggregate_fn_id: felt,
+    ctx_operator: felt,
+    ctx_value: Uint256,
+}
+
