@@ -47,7 +47,7 @@ namespace TransactionType {
     const EIP4844 = 3;
 }
 
-namespace TransactionReader {
+namespace TransactionDecoder {
     func get_nonce{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
         tx: Transaction
     ) -> felt {
@@ -136,15 +136,15 @@ namespace TransactionSender {
     }(tx: Transaction) -> felt {
         alloc_locals;
 
-        let v_le = TransactionReader.get_field(tx, TransactionField.V);
+        let v_le = TransactionDecoder.get_field(tx, TransactionField.V);
         let (v) = uint256_reverse_endian(v_le);
         let (v_norm, is_eip155) = normalize_v{
             range_check_ptr=range_check_ptr, chain_info=chain_info
         }(tx.type, v);
 
-        let (r_le, r_bytes_len) = TransactionReader.get_field_and_bytes_len(tx, TransactionField.R);
+        let (r_le, r_bytes_len) = TransactionDecoder.get_field_and_bytes_len(tx, TransactionField.R);
         let (r) = uint256_reverse_endian(r_le);
-        let (s_le, s_bytes_len) = TransactionReader.get_field_and_bytes_len(tx, TransactionField.S);
+        let (s_le, s_bytes_len) = TransactionDecoder.get_field_and_bytes_len(tx, TransactionField.S);
         let (s) = uint256_reverse_endian(s_le);
        
         let (tx_payload, tx_payload_len, tx_payload_bytes_len) = extract_tx_payload{

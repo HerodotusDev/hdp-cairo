@@ -33,7 +33,7 @@ from src.hdp.utils import prepend_le_rlp_list_prefix
 from src.hdp.types import TransactionProof, Transaction, Header, ChainInfo
 from src.hdp.memorizer import HeaderMemorizer, TransactionMemorizer
 
-from src.hdp.decoders.transaction_decoder import TransactionReader
+from src.hdp.decoders.transaction_decoder import TransactionDecoder
 from src.hdp.decoders.header_decoder import HeaderDecoder, HEADER_FIELD
 
 func verify_n_transaction_proofs{
@@ -76,7 +76,12 @@ func verify_n_transaction_proofs{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, poseidon_ptr=poseidon_ptr
     }(tx_item=tx_item, tx_item_bytes_len=tx_item_bytes_len, block_number=tx_proof.block_number);
 
-    TransactionMemorizer.add(tx_proof.block_number, tx_proof.key.low, index);
+    let (idx) = alloc();
+    assert idx[0] = tx_proof.key.low;
+
+    let (key_n, _, _) = retrieve_from_rlp_list_via_idx(idx, 0, 0, 0);
+
+    TransactionMemorizer.add(tx_proof.block_number, key_n[0], index);
     assert transactions[index] = tx;
 
     return verify_n_transaction_proofs(

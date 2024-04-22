@@ -46,8 +46,8 @@ func verify_mpt_proof{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr:
         // Check that the hash of the last node is the expected one.
         // Check that the final accumulated key is the expected one.
         let (node_hash: Uint256) = keccak(mpt_proof[node_index], mpt_proof_bytes_len[node_index]);
-        // %{ print(f"node_hash : {hex(ids.node_hash.low + 2**128*ids.node_hash.high)}") %}
-        // %{ print(f"hash_to_assert : {hex(ids.hash_to_assert.low + 2**128*ids.hash_to_assert.high)}") %}
+        //%{ print(f"node_hash : {hex(ids.node_hash.low + 2**128*ids.node_hash.high)}") %}
+        //%{ print(f"hash_to_assert : {hex(ids.hash_to_assert.low + 2**128*ids.hash_to_assert.high)}") %}
         assert node_hash.low - hash_to_assert.low = 0;
         assert node_hash.high - hash_to_assert.high = 0;
 
@@ -359,8 +359,13 @@ func decode_node_list_lazy{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
                     assert key_bits = key_bit_low;
                 }
             }
-            let (n_nibbles_in_key, remainder) = felt_divmod(key_bits, 4);
-            assert remainder = 0;
+            local n_nibbles_in_key: felt;  // <=> ceil(key_bits/4)
+            let (n_nibbles_in_key_tmp, remainder) = felt_divmod(key_bits, 4);
+            if (remainder != 0) {
+                assert n_nibbles_in_key = n_nibbles_in_key_tmp + 1;
+            } else {
+                assert n_nibbles_in_key = n_nibbles_in_key_tmp;
+            }
             assert n_nibbles_in_key = n_nibbles_already_checked;
             tempvar range_check_ptr = range_check_ptr;
             tempvar bitwise_ptr = bitwise_ptr;
