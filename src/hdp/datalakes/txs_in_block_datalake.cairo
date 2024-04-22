@@ -9,9 +9,7 @@ from src.libs.rlp_little import extract_byte_at_pos
 
 func init_txs_in_block{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*}(
     input: felt*, input_bytes_len: felt
-) -> TransactionsInBlockDatalake {
-
-    let (hash: Uint256) = keccak(input, input_bytes_len);
+) -> (res: TransactionsInBlockDatalake) {
 
     // HeaderProp Input Layout:
     // 0-3: DatalakeCode.BlockSampled
@@ -33,11 +31,10 @@ func init_txs_in_block{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr
 
     assert [input + 21] = 0;  // remaining chunks should be 0
 
-    return (TransactionsInBlockDatalake(
+    return (res=TransactionsInBlockDatalake(
         target_block=target_block,
         increment=increment,
         type=type,
         sampled_property=property,
-        hash=hash,
     ));
 }
