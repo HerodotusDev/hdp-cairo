@@ -1,7 +1,7 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
 from starkware.cairo.common.cairo_secp.bigint import BigInt3, uint256_to_bigint
 from starkware.cairo.common.dict_access import DictAccess
-from starkware.cairo.common.uint256 import Uint256
+from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
 from starkware.cairo.common.cairo_keccak.keccak import finalize_keccak
 from starkware.cairo.common.alloc import alloc
@@ -34,6 +34,7 @@ from src.hdp.types import TransactionProof, Transaction, Header, ChainInfo
 from src.hdp.memorizer import HeaderMemorizer, TransactionMemorizer
 
 from src.hdp.decoders.transaction_decoder import TransactionReader
+from src.hdp.decoders.header_decoder import HeaderDecoder, HEADER_FIELD
 
 func verify_n_transaction_proofs{
     range_check_ptr,
@@ -53,12 +54,10 @@ func verify_n_transaction_proofs{
         return ();
     }
 
-    // ToDo: fetch real root via memorizer
-    let tx_root = Uint256(
-        low=257761197311116532837196150678159856969, high=159425385474712577316496950941176039553
-    );
-
     let tx_proof = tx_proofs[index];
+
+    let header = HeaderMemorizer.get(tx_proof.block_number);
+    let tx_root = HeaderDecoder.get_field(header.rlp, HEADER_FIELD.TRANSACTION_ROOT);
 
     let (tx_item, tx_item_bytes_len) = verify_mpt_proof{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
@@ -77,6 +76,7 @@ func verify_n_transaction_proofs{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, poseidon_ptr=poseidon_ptr
     }(tx_item=tx_item, tx_item_bytes_len=tx_item_bytes_len, block_number=tx_proof.block_number);
 
+    TransactionMemorizer.add(tx_proof.block_number, tx_proof.key.low, index);
     assert transactions[index] = tx;
 
     return verify_n_transaction_proofs(

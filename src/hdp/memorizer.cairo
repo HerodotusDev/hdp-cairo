@@ -111,9 +111,9 @@ namespace TransactionMemorizer {
     }
 
     func add{poseidon_ptr: PoseidonBuiltin*, transaction_dict: DictAccess*}(
-        sender: felt*, nonce: felt, index: felt
+        block_number: felt, key_low: felt, index: felt
     ) {
-        let key = gen_transaction_key(sender, nonce);
+        let key = gen_transaction_key(block_number, key_low);
 
         dict_write{dict_ptr=transaction_dict}(key=key, new_value=index);
         return ();
@@ -121,9 +121,9 @@ namespace TransactionMemorizer {
 
     func get{
         transaction_dict: DictAccess*, transactions: Transaction*, poseidon_ptr: PoseidonBuiltin*
-    }(sender: felt*, nonce: felt) -> (transaction: Transaction) {
+    }( block_number: felt, key_low: felt,) -> (transaction: Transaction) {
         alloc_locals;
-        let key = gen_transaction_key(sender, nonce);
+        let key = gen_transaction_key(block_number, key_low);
         let (index) = dict_read{dict_ptr=transaction_dict}(key);
 
         if (index == MEMORIZER_DEFAULT) {
@@ -157,9 +157,8 @@ func gen_account_key{poseidon_ptr: PoseidonBuiltin*}(address: felt*, block_numbe
     return res;
 }
 
-func gen_transaction_key{poseidon_ptr: PoseidonBuiltin*}(sender: felt*, nonce: felt) -> felt {
-    let (h_sender) = poseidon_hash_many(3, sender);
-    let (res) = poseidon_hash(h_sender, nonce);
+func gen_transaction_key{poseidon_ptr: PoseidonBuiltin*}(block_number: felt, key_low: felt) -> felt {
+    let (res) = poseidon_hash(block_number, key_low);
 
     return res;
 }
