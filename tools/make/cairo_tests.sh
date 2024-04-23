@@ -6,7 +6,7 @@ run_tests() {
     local temp_output=$(mktemp)
 
     # Redirecting output to temp file for potential error capture
-    cairo-compile "$cairo_file" --output "build/compiled_cairo_files/$filename.json" > "$temp_output" 2>&1
+    cairo-compile --cairo_path="packages/eth_essentials" "$cairo_file" --output "build/compiled_cairo_files/$filename.json" > "$temp_output" 2>&1
     cairo-run --program="build/compiled_cairo_files/$filename.json" --layout=starknet_with_keccak >> "$temp_output" 2>&1
     local status=$?
 
@@ -29,7 +29,7 @@ export -f run_tests
 
 # Find all .cairo files under src/ and tests/ directories and format them in parallel
 # Using --halt soon,fail=1 to stop at the first failure
-find ./tests/cairo_programs ./tests/hdp -name '*.cairo' ! -name 'test_vectors.cairo' | parallel --halt soon,fail=1 run_tests
+find ./tests/cairo_programs -name '*.cairo' ! -name 'test_vectors.cairo' | parallel --halt soon,fail=1 run_tests
 
 # Capture the exit status of parallel
 exit_status=$?

@@ -4,7 +4,6 @@ import json
 import os
 import shutil
 import requests
-from tools.py.mmr import is_valid_mmr_size
 
 
 def split_128(a):
