@@ -28,7 +28,7 @@ from src.libs.rlp_little import (
     extract_nibble_from_key,
 )
 
-from src.hdp.rlp import retrieve_from_rlp_list_via_idx
+from src.hdp.rlp import decode_le_rlp_string_small
 from src.hdp.utils import prepend_le_rlp_list_prefix
 from src.hdp.types import TransactionProof, Transaction, Header, ChainInfo
 from src.hdp.memorizer import HeaderMemorizer, TransactionMemorizer
@@ -76,12 +76,10 @@ func verify_n_transaction_proofs{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, poseidon_ptr=poseidon_ptr
     }(tx_item=tx_item, tx_item_bytes_len=tx_item_bytes_len, block_number=tx_proof.block_number);
 
-    let (idx) = alloc();
-    assert idx[0] = tx_proof.key.low;
+    // decode tx-index from rlp-encoded key
+    let tx_index = decode_le_rlp_string_small(tx_proof.key.low);
 
-    let (key_n, _, _) = retrieve_from_rlp_list_via_idx(idx, 0, 0, 0);
-
-    TransactionMemorizer.add(tx_proof.block_number, key_n[0], index);
+    TransactionMemorizer.add(tx_proof.block_number, tx_index, index);
     assert transactions[index] = tx;
 
     return verify_n_transaction_proofs(

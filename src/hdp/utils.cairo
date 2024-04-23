@@ -3,7 +3,7 @@ from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256s
-from src.libs.utils import felt_divmod
+from src.libs.utils import felt_divmod, get_felt_bitlength
 from src.libs.rlp_little import array_copy
 
 from src.libs.utils import (
@@ -229,7 +229,23 @@ func append_be_chunk{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: 
 
     // return ();
 }
+
+// Returns the number of bytes in x
+// Assumption for caller:
+// - 1 <= x < 2^127
+// returns the number of bytes needed to represent x
+func get_felt_bytes_len{range_check_ptr, pow2_array: felt*}(x: felt) -> felt {
+    let bit_len = get_felt_bitlength(x);
+    let (bytes, rest) = felt_divmod(bit_len, 8);
+    if(rest == 0) {
+        return (bytes);
+    } else {
+        return (bytes + 1);
+    }
+}
+
 // returns the bytes len of a felt chunk. Maximal 8 bytes are supported.
+// ToDo: this is exploitable. switch to get_felt_bitlength
 func get_chunk_bytes_len{range_check_ptr}(value: felt) -> felt {
     alloc_locals;
     local len: felt;

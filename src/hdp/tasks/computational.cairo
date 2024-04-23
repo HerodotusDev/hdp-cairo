@@ -5,7 +5,7 @@ from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.registers import get_fp_and_pc
 
-from src.hdp.types import BlockSampledDataLake, ComputationalTask, AccountValues, Header
+from src.hdp.types import BlockSampledDataLake, ComputationalTask, AccountValues, Header, Transaction
 from src.hdp.datalakes.datalake import Datalake
 from src.hdp.tasks.aggregate_functions.sum import compute_sum
 from src.hdp.tasks.aggregate_functions.avg import compute_avg
@@ -82,6 +82,8 @@ namespace Task {
         storage_values: Uint256*,
         header_dict: DictAccess*,
         headers: Header*,
+        transaction_dict: DictAccess*,
+        transactions: Transaction*,
         pow2_array: felt*,
         tasks: ComputationalTask*,
     }(results: Uint256*, tasks_len: felt, index: felt) {

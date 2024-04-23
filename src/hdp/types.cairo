@@ -87,7 +87,7 @@ struct BlockSampledDataLake {
 struct TransactionsInBlockDatalake {
     target_block: felt,
     increment: felt,
-    type: felt,
+    type: felt, // 1=transaction, 2=receipt
     sampled_property: felt,
 }
 

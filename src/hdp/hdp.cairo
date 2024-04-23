@@ -286,6 +286,8 @@ func run{
         storage_values=storage_values,
         header_dict=header_dict,
         headers=headers,
+        transaction_dict=transaction_dict,
+        transactions=transactions,
         pow2_array=pow2_array,
         tasks=tasks,
     }(results=results, tasks_len=tasks_len, index=0);

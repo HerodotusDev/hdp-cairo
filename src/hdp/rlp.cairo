@@ -1,7 +1,7 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from src.libs.utils import felt_divmod
 from src.libs.rlp_little import extract_byte_at_pos, extract_n_bytes_from_le_64_chunks_array
-from src.hdp.utils import reverse_small_chunk_endianess
+from src.hdp.utils import reverse_small_chunk_endianess, get_felt_bytes_len, reverse_chunk_endianess
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, word_reverse_endian
 
@@ -155,6 +155,37 @@ func decode_value_len{range_check_ptr}(
     );
 
     return reverse_small_chunk_endianess(current_value_len_list[0], len_len);
+}
+
+// Decodes a LE RLP string (<= 8 bytes) to a felt
+// Inputs:
+// - value: the LE RLP value
+// Outputs:
+// - the decoded felt in BE
+func decode_le_rlp_string_small{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(value: felt) -> felt {
+    alloc_locals;
+
+    // special zero-byte case
+    if(value == 0x80) {
+        return 0;
+    }
+
+    let bytes_len = get_felt_bytes_len(value);
+
+    if(bytes_len == 1) {
+        return value;
+    }
+
+    let (q, r) = felt_divmod(value, 0x100); // remove trailing byte
+
+    // ensure we have a short string
+    assert [range_check_ptr] = 8 - bytes_len;
+    assert [range_check_ptr + 1] = r - 0x80;
+    assert [range_check_ptr + 2] = 0xb6 - r;
+    tempvar range_check_ptr = range_check_ptr + 3;
+
+    let result = reverse_chunk_endianess(q, bytes_len - 1);
+    return (result);
 }
 
 // decodes an rlp word to a uint256
