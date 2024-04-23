@@ -89,6 +89,7 @@ struct TransactionsInBlockDatalake {
     increment: felt,
     type: felt, // 1=transaction, 2=receipt
     sampled_property: felt,
+    // block_tx_count: felt,
 }
 
 struct BlockSampledComputationalTask {

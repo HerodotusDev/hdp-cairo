@@ -20,6 +20,8 @@ namespace Datalake {
         bitwise_ptr: BitwiseBuiltin*,
         keccak_ptr: KeccakBuiltin*,
         pow2_array: felt*,
+        headers: Header*,
+        header_dict: DictAccess*,
     }(input: felt*, input_bytes_len: felt, type: felt) -> (datalake_ptr: felt*) {
         alloc_locals;
         let (__fp__, _) = get_fp_and_pc();

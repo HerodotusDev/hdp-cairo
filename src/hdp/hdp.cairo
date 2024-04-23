@@ -271,6 +271,8 @@ func run{
         keccak_ptr=keccak_ptr,
         tasks=tasks,
         pow2_array=pow2_array,
+        headers=headers,
+        header_dict=header_dict,
     }(
         tasks_len,
         0,

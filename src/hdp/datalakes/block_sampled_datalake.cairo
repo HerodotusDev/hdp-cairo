@@ -25,8 +25,6 @@ func init_block_sampled{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_pt
 
     let property_type = extract_byte_at_pos([input + 24], 0, pow2_array);
 
-    let (hash: Uint256) = keccak(input, input_bytes_len);
-
     let (block_range_start, block_range_end, increment) = extract_constant_params{
         range_check_ptr=range_check_ptr
     }(input=input);
@@ -40,7 +38,7 @@ func init_block_sampled{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_pt
         assert [range_check_ptr] = 0x01ff - chunk_one;  // assert selected property_type matches input
         tempvar range_check_ptr = range_check_ptr + 1;
 
-        assert [properties] = 0x1;
+        assert [properties] = 0x1; // ToDo: we have a field for this!!
         // bootleg bitshift. 0x01 is a know value (property_type), the rest is the property
         assert [properties + 1] = chunk_one - 0x100;
 
@@ -51,8 +49,7 @@ func init_block_sampled{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_pt
                 block_range_end=block_range_end,
                 increment=increment,
                 property_type=property_type,
-                properties=properties,
-                hash=hash,
+                properties=properties
             )
         );
     }
@@ -110,7 +107,6 @@ func init_block_sampled{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_pt
             increment=increment,
             property_type=property_type,
             properties=properties,
-            hash=hash,
         )
     );
 }
@@ -127,31 +123,30 @@ func fetch_data_points{
     header_dict: DictAccess*,
     headers: Header*,
     pow2_array: felt*,
-}(task: BlockSampledComputationalTask) -> (Uint256*, felt) {
+}(datalake: BlockSampledDataLake) -> (Uint256*, felt) {
     alloc_locals;
 
     let (data_points: Uint256*) = alloc();
-    let property_type = task.datalake.properties[0];
 
-    if (property_type == BLOCK_SAMPLED_PROPERTY.HEADER) {
+    if (datalake.property_type == BLOCK_SAMPLED_PROPERTY.HEADER) {
         let data_points_len = fetch_header_data_points(
-            datalake=task.datalake, index=0, data_points=data_points
+            datalake=datalake, index=0, data_points=data_points
         );
 
         return (data_points, data_points_len);
     }
 
-    if (property_type == BLOCK_SAMPLED_PROPERTY.ACCOUNT) {
+    if (datalake.property_type == BLOCK_SAMPLED_PROPERTY.ACCOUNT) {
         let data_points_len = fetch_account_data_points(
-            datalake=task.datalake, index=0, data_points=data_points
+            datalake=datalake, index=0, data_points=data_points
         );
 
         return (data_points, data_points_len);
     }
 
-    if (property_type == BLOCK_SAMPLED_PROPERTY.STORAGE_SLOT) {
+    if (datalake.property_type == BLOCK_SAMPLED_PROPERTY.STORAGE_SLOT) {
         let data_points_len = fetch_storage_data_points(
-            datalake=task.datalake, index=0, data_points=data_points
+            datalake=datalake, index=0, data_points=data_points
         );
 
         return (data_points, data_points_len);
@@ -302,7 +297,7 @@ func fetch_account_data_points{
 
     let (account_value) = AccountMemorizer.get(
         address=datalake.properties + 1, block_number=current_block_number
-    );
+    );  
 
     let data_point = AccountDecoder.get_field{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
