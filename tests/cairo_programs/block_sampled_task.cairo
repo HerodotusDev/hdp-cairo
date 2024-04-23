@@ -8,7 +8,7 @@ from tests.cairo_programs.test_vectors import BlockSampledTaskMocker
 from src.tasks.block_sampled_task import BlockSampledTask, extract_params_and_construct_task
 from src.types import BlockSampledDataLake, BlockSampledComputationalTask
 from src.merkle import compute_tasks_root
-from packages.evm_libs_cairo.lib.utils import pow2alloc128
+from packages.eth_essentials.lib.utils import pow2alloc128
 
 func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}() {
     let pow2_array: felt* = pow2alloc128();

@@ -7,7 +7,7 @@ from starkware.cairo.common.uint256 import (
     uint256_reverse_endian,
 )
 
-from packages.evm_libs_cairo.lib.utils import uint256_add, uint256_sub
+from packages.eth_essentials.lib.utils import uint256_add, uint256_sub
 
 const TRUE = 1;
 const FALSE = 0;

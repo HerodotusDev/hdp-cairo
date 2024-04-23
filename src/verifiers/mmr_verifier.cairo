@@ -1,7 +1,7 @@
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin
 from src.types import MMRMeta
 
-from packages.evm_libs_cairo.lib.mmr import (
+from packages.eth_essentials.lib.mmr import (
     mmr_root_poseidon,
     assert_mmr_size_is_valid,
     compute_peaks_positions,

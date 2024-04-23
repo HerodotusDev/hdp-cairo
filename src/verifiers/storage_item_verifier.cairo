@@ -1,12 +1,12 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
 from starkware.cairo.common.dict_access import DictAccess
-from packages.evm_libs_cairo.lib.mpt import verify_mpt_proof
+from packages.eth_essentials.lib.mpt import verify_mpt_proof
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
 from src.types import AccountValues, StorageItemProof, StorageItem
 from src.rlp import decode_rlp_word_to_uint256
-from packages.evm_libs_cairo.lib.rlp_little import (
+from packages.eth_essentials.lib.rlp_little import (
     extract_byte_at_pos,
     extract_n_bytes_from_le_64_chunks_array,
 )
@@ -14,7 +14,7 @@ from packages.evm_libs_cairo.lib.rlp_little import (
 from src.memorizer import StorageMemorizer, AccountMemorizer
 from src.decoders.account_decoder import AccountDecoder, ACCOUNT_FIELD
 
-from packages.evm_libs_cairo.lib.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64
+from packages.eth_essentials.lib.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64
 
 // Intializes and validates the storage_items
 func populate_storage_item_segments{

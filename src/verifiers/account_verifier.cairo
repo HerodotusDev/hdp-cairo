@@ -1,11 +1,11 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
 from starkware.cairo.common.dict_access import DictAccess
-from packages.evm_libs_cairo.lib.mpt import verify_mpt_proof
+from packages.eth_essentials.lib.mpt import verify_mpt_proof
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
 from src.types import Account, AccountProof, Header, AccountValues
-from packages.evm_libs_cairo.lib.block_header import extract_state_root_little
+from packages.eth_essentials.lib.block_header import extract_state_root_little
 from src.memorizer import HeaderMemorizer, AccountMemorizer
 
 from src.decoders.header_decoder import HeaderDecoder, HEADER_FIELD

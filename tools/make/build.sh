@@ -6,7 +6,7 @@ process_cairo_file() {
     local first_line=$(head -n 1 "$cairo_file")
 
     echo "Compiling $cairo_file using cairo-compile ..."
-    cairo-compile --cairo_path="packages/evm_libs_cairo" "$cairo_file" --output "build/compiled_cairo_files/$filename.json"
+    cairo-compile --cairo_path="packages/eth_essentials" "$cairo_file" --output "build/compiled_cairo_files/$filename.json"
     
     local status=$?
     if [ $status -eq 0 ]; then

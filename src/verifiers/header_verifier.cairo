@@ -6,10 +6,10 @@ from starkware.cairo.common.alloc import alloc
 
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash, poseidon_hash_many
 from starkware.cairo.common.uint256 import Uint256
-from packages.evm_libs_cairo.lib.utils import felt_divmod
-from packages.evm_libs_cairo.lib.mmr import hash_subtree_path
+from packages.eth_essentials.lib.utils import felt_divmod
+from packages.eth_essentials.lib.mmr import hash_subtree_path
 from src.types import Header, HeaderProof, MMRMeta
-from packages.evm_libs_cairo.lib.block_header import (
+from packages.eth_essentials.lib.block_header import (
     extract_block_number_big,
     reverse_block_header_chunks,
 )

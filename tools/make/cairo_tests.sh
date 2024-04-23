@@ -6,7 +6,7 @@ run_tests() {
     local temp_output=$(mktemp)
 
     # Redirecting output to temp file for potential error capture
-    cairo-compile --cairo_path="packages/evm_libs_cairo" "$cairo_file" --output "build/compiled_cairo_files/$filename.json" > "$temp_output" 2>&1
+    cairo-compile --cairo_path="packages/eth_essentials" "$cairo_file" --output "build/compiled_cairo_files/$filename.json" > "$temp_output" 2>&1
     cairo-run --program="build/compiled_cairo_files/$filename.json" --layout=starknet_with_keccak >> "$temp_output" 2>&1
     local status=$?
 

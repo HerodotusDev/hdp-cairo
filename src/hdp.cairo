@@ -26,7 +26,7 @@ from src.types import (
 )
 
 from src.memorizer import HeaderMemorizer, AccountMemorizer, StorageMemorizer, MEMORIZER_DEFAULT
-from packages.evm_libs_cairo.lib.utils import pow2alloc128, write_felt_array_to_dict_keys
+from packages.eth_essentials.lib.utils import pow2alloc128, write_felt_array_to_dict_keys
 
 from src.tasks.block_sampled_task import BlockSampledTask
 from src.merkle import compute_tasks_root, compute_results_root

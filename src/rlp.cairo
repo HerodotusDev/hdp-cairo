@@ -1,6 +1,6 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
-from packages.evm_libs_cairo.lib.utils import felt_divmod
-from packages.evm_libs_cairo.lib.rlp_little import (
+from packages.eth_essentials.lib.utils import felt_divmod
+from packages.eth_essentials.lib.rlp_little import (
     extract_byte_at_pos,
     extract_n_bytes_from_le_64_chunks_array,
 )

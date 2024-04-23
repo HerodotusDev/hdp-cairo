@@ -116,7 +116,7 @@ class CairoRunner:
             print(f"Compiling {self.filename_dot_cairo} ... ")
             compiled_path = os.path.join(COMPILED_FILES_DIR, f"{self.filename}.json")
             return_code = os.system(
-                f"cairo-compile --cairo_path='packages/evm_libs_cairo' {self.filename_dot_cairo_path} --output {compiled_path} --proof_mode"
+                f"cairo-compile --cairo_path='packages/eth_essentials' {self.filename_dot_cairo_path} --output {compiled_path} --proof_mode"
             )
 
             if return_code == 0:
