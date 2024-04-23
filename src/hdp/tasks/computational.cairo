@@ -29,8 +29,8 @@ namespace Task {
         keccak_ptr: KeccakBuiltin*,
         tasks: ComputationalTask*,
         pow2_array: felt*,
-        headers: Header*,
-        header_dict: DictAccess*,
+        // headers: Header*,
+        // header_dict: DictAccess*,
     }(
         n_tasks: felt,
         index: felt,

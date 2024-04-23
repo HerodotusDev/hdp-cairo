@@ -1,6 +1,8 @@
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.alloc import alloc
-from src.hdp.types import BlockSampledDataLake, BlockSampledComputationalTask
+from starkware.cairo.common.registers import get_fp_and_pc
+
+from src.hdp.types import BlockSampledDataLake, BlockSampledComputationalTask, ComputationalTask
 from src.hdp.tasks.block_sampled_task import AGGREGATE_FN
 namespace BlockSampledDataLakeMocker {
     func get_header_property() -> (
@@ -21,8 +23,6 @@ namespace BlockSampledDataLakeMocker {
             ids.datalake.increment = 1
             ids.datalake.property_type = 1
             ids.datalake.properties = segments.gen_arg([1, 8])
-            ids.datalake.hash.low = 107436943091682614843991191375763387426
-            ids.datalake.hash.high = 43197761823970343188211903881620784812
 
             datalake_input = [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x9a22520000000000, 0x0, 0x0, 0x0, 0x9f22520000000000, 0x0, 0x0, 0x0, 0x100000000000000, 0x0, 0x0, 0x0, 0xa000000000000000, 0x0, 0x0, 0x0, 0x200000000000000, 0x801, 0x0, 0x0, 0x0]
             ids.datalake_bytes_len = 224
@@ -50,8 +50,6 @@ namespace BlockSampledDataLakeMocker {
             ids.datalake.increment = 1
             ids.datalake.property_type = 2
             ids.datalake.properties = segments.gen_arg([0x2, 0xaad30603936f2c7f, 0x12f5986a6c3a6b73, 0xd43640f7, 0x1])
-            ids.datalake.hash.low = 171115948030875793627051908460499129522
-            ids.datalake.hash.high = 56570840644286196296062165637174297103
 
             datalake_input = [0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x24904b0000000000,0x0,0x0,0x0,0x38904b0000000000,0x0,0x0,0x0,0x100000000000000,0x0,0x0,0x0,0xa000000000000000,0x0,0x0,0x0,0x1600000000000000,0xd30603936f2c7f02,0xf5986a6c3a6b73aa,0x1d43640f712,0x0]        
             ids.datalake_bytes_len = 224
@@ -79,8 +77,6 @@ namespace BlockSampledDataLakeMocker {
             ids.datalake.increment = 1
             ids.datalake.property_type = 3
             ids.datalake.properties = segments.gen_arg([0x3, 0x3b7ce9ddbc1ce75, 0x8568f69565aa0e20, 0x20b962c9, 0x0, 0x0, 0x0, 0x200000000000000])
-            ids.datalake.hash.low = 215828760250207880142328954482205465726
-            ids.datalake.hash.high = 268581037684598511895223889006659959396
 
             datalake_input = [0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x9a22520000000000,0x0,0x0,0x0,0x9f22520000000000,0x0,0x0,0x0,0x100000000000000,0x0,0x0,0x0,0xa000000000000000,0x0,0x0,0x0,0x3500000000000000,0xb7ce9ddbc1ce7503,0x68f69565aa0e2003,0x20b962c985,0x0,0x0,0x0,0x200000000,0x0]
             ids.datalake_bytes_len = 256
@@ -93,7 +89,7 @@ namespace BlockSampledDataLakeMocker {
 
 namespace BlockSampledTaskMocker {
     func get_init_data() -> (
-        task: BlockSampledComputationalTask,
+        task: ComputationalTask,
         tasks_inputs: felt**,
         tasks_bytes_len: felt*,
         datalake: BlockSampledDataLake,
@@ -102,9 +98,10 @@ namespace BlockSampledTaskMocker {
         tasks_len: felt,
     ) {
         alloc_locals;
+        let (__fp__, _) = get_fp_and_pc();
 
         let (
-            datalake_input, datalake_bytes_len, datalake, prop_id
+            datalake_input, datalake_bytes_len, local datalake, prop_id
         ) = BlockSampledDataLakeMocker.get_header_property();
         let (task_input) = alloc();
         let (tasks_bytes_len) = alloc();
@@ -118,11 +115,22 @@ namespace BlockSampledTaskMocker {
             segments.write_arg(ids.task_input, bytes_to_8_bytes_chunks_little(task_bytes))
         %}
 
-        let task = BlockSampledComputationalTask(
+        // let task = BlockSampledComputationalTask(
+        //     hash=Uint256(
+        //         low=0x407E98D423A7BB2DBF09B0E42601FC9B, high=0xEF8B01F35B404615F0339EEFAE7719A2
+        //     ),
+        //     datalake=datalake,
+        //     aggregate_fn_id=AGGREGATE_FN.AVG,
+        //     ctx_operator=0,
+        //     ctx_value=Uint256(low=0, high=0),
+        // );
+
+        let task = ComputationalTask(
             hash=Uint256(
                 low=0x407E98D423A7BB2DBF09B0E42601FC9B, high=0xEF8B01F35B404615F0339EEFAE7719A2
             ),
-            datalake=datalake,
+            datalake_ptr=cast(&datalake, felt*),
+            datalake_type=0,
             aggregate_fn_id=AGGREGATE_FN.AVG,
             ctx_operator=0,
             ctx_value=Uint256(low=0, high=0),

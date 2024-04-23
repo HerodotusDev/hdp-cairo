@@ -55,8 +55,6 @@ func block_sampled_datalake_eq(
     assert a.block_range_end = b.block_range_end;
     assert a.increment = b.increment;
     assert a.property_type = b.property_type;
-    assert a.hash.low = b.hash.low;
-    assert a.hash.high = b.hash.high;
 
     if (property_type == 1) {
         assert a.properties[0] = b.properties[0];

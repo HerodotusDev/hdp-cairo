@@ -5,13 +5,8 @@ from tools.py.block_header import (
     BlockHeaderShangai,
     BlockHeaderDencun,
 )
-from starkware.cairo.common.poseidon_hash import poseidon_hash_many, poseidon_hash
 from tools.py.utils import (
-    bytes_to_8_bytes_chunks,
     bytes_to_8_bytes_chunks_little,
-    split_128,
-    uint256_reverse_endian,
-    reverse_endian_bytes,
     reverse_and_split_256_bytes,
 )
 from dotenv import load_dotenv

@@ -35,6 +35,7 @@ def fetch_latest_block_height_from_rpc(rpc_url: str) -> int:
 def fetch_tx_from_rpc(
     tx_hash: str, rpc_url: str
 ) -> Union[LegacyTx, Eip155, Eip1559, Eip2930, Eip4844]:
+    print(rpc_url)
     result = rpc_request(
         rpc_url,
         {
@@ -45,8 +46,5 @@ def fetch_tx_from_rpc(
     )
 
     tx: Union[LegacyTx, Eip155, Eip1559, Eip2930, Eip4844] = build_tx(result["result"])
-    print(tx.raw_rlp().hex)
+    # print(tx.raw_rlp().hex())
     return tx
-
-0xdbe7aeee33496c24651d818f1c67cd82f85092666f36ecb3bd712c6317c4576b
-0x8d2c9f198a1a635ac464a21e07cc1f58c2f1cf7cdc9161025c1df38b4c0706

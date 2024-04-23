@@ -16,7 +16,9 @@ namespace TX_IN_BLOCK_TYPES {
     const RECEIPT = 2;
 }
 
-func init_txs_in_block{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*, headers: Header*, header_dict: DictAccess*}(
+func init_txs_in_block{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*, 
+// headers: Header*, header_dict: DictAccess*
+}(
     input: felt*, input_bytes_len: felt
 ) -> (res: TransactionsInBlockDatalake) {
     alloc_locals;

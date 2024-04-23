@@ -29,7 +29,7 @@ func main{
     
     %}
     
-    let txs_in_block = init_txs_in_block{
+    let (txs_in_block) = init_txs_in_block{
         pow2_array=pow2_array,
     }(
         input=input, input_bytes_len=input_bytes_len
@@ -39,8 +39,6 @@ func main{
     assert txs_in_block.increment = 20;
     assert txs_in_block.type = 1;
     assert txs_in_block.sampled_property = 2;
-    assert txs_in_block.hash.low = 0xf3ed0ed7be750ac3cb32a5e6f231ceff;
-    assert txs_in_block.hash.high = 0xe0d0594eb8df2532d349ba61df964c0e;
 
     return ();
 
