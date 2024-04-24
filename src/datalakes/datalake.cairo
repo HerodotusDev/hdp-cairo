@@ -4,10 +4,23 @@ from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.alloc import alloc
 
 from starkware.cairo.common.uint256 import Uint256
-from src.hdp.datalakes.block_sampled_datalake import init_block_sampled, fetch_data_points as fetch_block_sampled_data_points
-from src.hdp.datalakes.txs_in_block_datalake import init_txs_in_block, fetch_data_points as fetch_txs_in_block_data_points
+from src.datalakes.block_sampled_datalake import (
+    init_block_sampled,
+    fetch_data_points as fetch_block_sampled_data_points,
+)
+from src.datalakes.txs_in_block_datalake import (
+    init_txs_in_block,
+    fetch_data_points as fetch_txs_in_block_data_points,
+)
 
-from src.hdp.types import ComputationalTask, AccountValues, Header, BlockSampledDataLake, TransactionsInBlockDatalake, Transaction
+from src.types import (
+    ComputationalTask,
+    AccountValues,
+    Header,
+    BlockSampledDataLake,
+    TransactionsInBlockDatalake,
+    Transaction,
+)
 
 namespace DATALAKE_TYPE {
     const BLOCK_SAMPLED = 0;
@@ -16,23 +29,18 @@ namespace DATALAKE_TYPE {
 
 namespace Datalake {
     func init{
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-        keccak_ptr: KeccakBuiltin*,
-        pow2_array: felt*,
-        // headers: Header*,
-        // header_dict: DictAccess*,
+        range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*
     }(input: felt*, input_bytes_len: felt, type: felt) -> (datalake_ptr: felt*) {
         alloc_locals;
         let (__fp__, _) = get_fp_and_pc();
-        
-        if(type == 0) {
+
+        if (type == 0) {
             let (local block_sampled) = init_block_sampled(input, input_bytes_len);
             let datalake_ptr: felt* = cast(&block_sampled, felt*);
             return (datalake_ptr=datalake_ptr);
         }
 
-        if(type == 1) { 
+        if (type == 1) {
             let (local txs_in_block) = init_txs_in_block(input, input_bytes_len);
             let datalake_ptr: felt* = cast(&txs_in_block, felt*);
             return (datalake_ptr=datalake_ptr);
@@ -59,16 +67,19 @@ namespace Datalake {
         transactions: Transaction*,
         pow2_array: felt*,
     }(task: ComputationalTask) -> (res: Uint256*, res_len: felt) {
-        if(task.datalake_type == DATALAKE_TYPE.BLOCK_SAMPLED) {
-
-            let block_sampled_datalake: BlockSampledDataLake = [cast(task.datalake_ptr, BlockSampledDataLake*)];
+        if (task.datalake_type == DATALAKE_TYPE.BLOCK_SAMPLED) {
+            let block_sampled_datalake: BlockSampledDataLake = [
+                cast(task.datalake_ptr, BlockSampledDataLake*)
+            ];
             let (res, res_len) = fetch_block_sampled_data_points(block_sampled_datalake);
 
             return (res=res, res_len=res_len);
         }
 
-        if(task.datalake_type == DATALAKE_TYPE.TXS_IN_BLOCK) {
-            let tx_in_block_datalake: TransactionsInBlockDatalake = [cast(task.datalake_ptr, TransactionsInBlockDatalake*)];
+        if (task.datalake_type == DATALAKE_TYPE.TXS_IN_BLOCK) {
+            let tx_in_block_datalake: TransactionsInBlockDatalake = [
+                cast(task.datalake_ptr, TransactionsInBlockDatalake*)
+            ];
             let (res, res_len) = fetch_txs_in_block_data_points(tx_in_block_datalake);
 
             return (res=res, res_len=res_len);

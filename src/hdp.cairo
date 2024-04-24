@@ -28,7 +28,13 @@ from src.types import (
     ComputationalTask,
 )
 
-from src.memorizer import HeaderMemorizer, AccountMemorizer, StorageMemorizer, TransactionMemorizer, MEMORIZER_DEFAULT
+from src.memorizer import (
+    HeaderMemorizer,
+    AccountMemorizer,
+    StorageMemorizer,
+    TransactionMemorizer,
+    MEMORIZER_DEFAULT,
+)
 from packages.eth_essentials.lib.utils import pow2alloc128, write_felt_array_to_dict_keys
 
 from src.tasks.computational import Task
@@ -145,7 +151,6 @@ func run{
     %}
     // if these hints are one hint, the compiler goes on strike.
     %{
-
         from tests.python.test_header_decoding import fetch_header_dict
         # header = fetch_header_dict(5608949)
         def write_mmr_meta(mmr_meta):
@@ -250,11 +255,7 @@ func run{
         header_dict=header_dict,
         pow2_array=pow2_array,
         chain_info=chain_info,
-    }(
-        tx_proofs=transaction_proofs,
-        tx_proofs_len=transaction_proof_len,
-        index=0
-    );
+    }(tx_proofs=transaction_proofs, tx_proofs_len=transaction_proof_len, index=0);
 
     %{ print("headers verified") %}
     // Verified data is now in memorizer, and can be used for further computation
@@ -264,12 +265,7 @@ func run{
         keccak_ptr=keccak_ptr,
         tasks=tasks,
         pow2_array=pow2_array,
-        // headers=headers,
-        // header_dict=header_dict,
-    }(
-        tasks_len,
-        0,
-    );
+    }(tasks_len, 0);
 
     Task.execute{
         range_check_ptr=range_check_ptr,

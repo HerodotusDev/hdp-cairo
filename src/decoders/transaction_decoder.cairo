@@ -4,17 +4,17 @@ from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
-from src.libs.utils import pow2alloc128, write_felt_array_to_dict_keys
-from src.hdp.rlp import retrieve_from_rlp_list_via_idx, le_u64_array_to_uint256
+from packages.eth_essentials.lib.utils import pow2alloc128, write_felt_array_to_dict_keys
+from src.rlp import retrieve_from_rlp_list_via_idx, le_u64_array_to_uint256
 from starkware.cairo.common.cairo_secp.signature import (
     recover_public_key,
     public_key_point_to_eth_address,
 )
 from starkware.cairo.common.cairo_keccak.keccak import finalize_keccak
 
-from src.hdp.types import Transaction, ChainInfo
-from src.libs.rlp_little import extract_n_bytes_from_le_64_chunks_array
-from src.hdp.utils import (
+from src.types import Transaction, ChainInfo
+from packages.eth_essentials.lib.rlp_little import extract_n_bytes_from_le_64_chunks_array
+from src.utils import (
     prepend_le_rlp_list_prefix,
     append_be_chunk,
     get_chunk_bytes_len,
@@ -83,11 +83,7 @@ namespace TransactionDecoder {
         return le_u64_array_to_uint256(res, res_len, bytes_len);
     }
 
-    func get_field_and_bytes_len{
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-        pow2_array: felt*,
-    }(
+    func get_field_and_bytes_len{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
         tx: Transaction, field: felt
     ) -> (value: Uint256, bytes_len: felt) {
         alloc_locals;
@@ -142,14 +138,18 @@ namespace TransactionSender {
             range_check_ptr=range_check_ptr, chain_info=chain_info
         }(tx.type, v);
 
-        let (r_le, r_bytes_len) = TransactionDecoder.get_field_and_bytes_len(tx, TransactionField.R);
+        let (r_le, r_bytes_len) = TransactionDecoder.get_field_and_bytes_len(
+            tx, TransactionField.R
+        );
         let (r) = uint256_reverse_endian(r_le);
-        let (s_le, s_bytes_len) = TransactionDecoder.get_field_and_bytes_len(tx, TransactionField.S);
+        let (s_le, s_bytes_len) = TransactionDecoder.get_field_and_bytes_len(
+            tx, TransactionField.S
+        );
         let (s) = uint256_reverse_endian(s_le);
-       
+
         let (tx_payload, tx_payload_len, tx_payload_bytes_len) = extract_tx_payload{
             range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-        }(tx, r_bytes_len + s_bytes_len + 3, is_eip155); // + 2 for s + r prefix, +1 for v
+        }(tx, r_bytes_len + s_bytes_len + 3, is_eip155);  // + 2 for s + r prefix, +1 for v
 
         let (
             encoded_tx_payload, encoded_tx_payload_len, encoded_tx_payload_bytes_len
@@ -157,10 +157,9 @@ namespace TransactionSender {
             range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
         }(tx, tx_payload, tx_payload_len, tx_payload_bytes_len);
 
-
         // Now we hash this reencoded transaction, which is what the sender has signed in the first place
         let (msg_hash) = keccak_bigend(encoded_tx_payload, encoded_tx_payload_bytes_len);
-        
+
         // Convert types for ec-recover
         let (big_r) = uint256_to_bigint(r);
         let (big_s) = uint256_to_bigint(s);
@@ -185,7 +184,9 @@ namespace TransactionSender {
 
     func extract_tx_payload{
         range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, chain_info: ChainInfo
-    }(tx: Transaction, sig_bytes_len: felt, is_eip155: felt) -> (tx_payload: felt*, tx_payload_len: felt, tx_payload_bytes_len: felt) {
+    }(tx: Transaction, sig_bytes_len: felt, is_eip155: felt) -> (
+        tx_payload: felt*, tx_payload_len: felt, tx_payload_bytes_len: felt
+    ) {
         alloc_locals;
 
         let tx_params_bytes_len = tx.bytes_len - sig_bytes_len;
@@ -252,8 +253,8 @@ namespace TransactionSender {
         }
 
         local typed_prefix: felt;
-        if(tx.type == TransactionType.LEGACY) {
-             // Legacy txs have no type prefix
+        if (tx.type == TransactionType.LEGACY) {
+            // Legacy txs have no type prefix
 
             assert prefix_bytes_len = current_len;
             let le_prefix = reverse_chunk_endianess(prefix, prefix_bytes_len);
@@ -276,7 +277,11 @@ namespace TransactionSender {
         let encoded_tx_bytes_len = tx_payload_bytes_len + prefix_bytes_len;
         // We have generated the RLP prefix in a hint, now we need to shift all values to fit the LE 64bit array format
         let (encoded_tx, encoded_tx_len) = prepend_le_rlp_list_prefix(
-            offset=prefix_bytes_len, prefix=typed_prefix, rlp=tx_payload, rlp_len=tx_payload_len, expected_bytes_len=encoded_tx_bytes_len
+            offset=prefix_bytes_len,
+            prefix=typed_prefix,
+            rlp=tx_payload,
+            rlp_len=tx_payload_len,
+            expected_bytes_len=encoded_tx_bytes_len,
         );
 
         return (encoded_tx, encoded_tx_len, encoded_tx_bytes_len);
@@ -284,17 +289,16 @@ namespace TransactionSender {
 
     // The extract the public key of the sende, we need to normalize the signatures v parameter.
     // For legacy transactions, we also need to check if it is an EIP155 transaction. This can be derived by the V parameter.
-    func normalize_v{
-        range_check_ptr,
-        chain_info: ChainInfo,
-    }(tx_type: felt, v: Uint256) -> (v_norm: felt, is_eip155: felt) {
+    func normalize_v{range_check_ptr, chain_info: ChainInfo}(tx_type: felt, v: Uint256) -> (
+        v_norm: felt, is_eip155: felt
+    ) {
         alloc_locals;
 
         local is_eip155: felt;
         local v_norm: felt;
         %{ ids.is_eip155 = 1 if ids.chain_info.id * 2 + 35 <= ids.v.low <= ids.chain_info.id * 2 + 36 else 0 %}
         // a tx uses EIP155 if the V value is in the range of [chain_id * 2 + 35, chain_id * 2 + 36]
-        if(is_eip155 == 1) {
+        if (is_eip155 == 1) {
             assert [range_check_ptr] = (chain_info.id * 2 + 36) - v.low;
             assert [range_check_ptr + 1] = v.low - (chain_info.id * 2 + 35);
             assert tx_type = TransactionType.LEGACY;
@@ -303,10 +307,10 @@ namespace TransactionSender {
             // if its not eip155, V must be smaller
             assert [range_check_ptr] = (chain_info.id * 2 + 35) - v.low;
             if (tx_type == TransactionType.LEGACY) {
-                assert [range_check_ptr + 1] = v.low - 27; // In theory, this should never fail
+                assert [range_check_ptr + 1] = v.low - 27;  // In theory, this should never fail
                 assert v_norm = v.low - 27;
             } else {
-                assert [range_check_ptr + 1] = 1 - v.low; // In theory, this should never fail
+                assert [range_check_ptr + 1] = 1 - v.low;  // In theory, this should never fail
                 assert v_norm = v.low;
             }
         }

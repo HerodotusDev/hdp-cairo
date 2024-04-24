@@ -19,7 +19,7 @@ out/
 .env
 .encryptedKey
 broadcast/
-
+.idea
 node_modules
 package-lock.json
 

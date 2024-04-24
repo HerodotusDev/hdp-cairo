@@ -10,15 +10,15 @@ from starkware.cairo.common.cairo_secp.signature import (
     public_key_point_to_eth_address,
     verify_eth_signature,
 )
-from src.libs.mpt import verify_mpt_proof
-from src.libs.utils import (
+from packages.eth_essentials.lib.mpt import verify_mpt_proof
+from packages.eth_essentials.lib.utils import (
     pow2alloc128,
     write_felt_array_to_dict_keys,
     felt_divmod,
     felt_divmod_8,
     word_reverse_endian_64,
 )
-from src.libs.rlp_little import (
+from packages.eth_essentials.lib.rlp_little import (
     extract_byte_at_pos,
     extract_n_bytes_at_pos,
     extract_nibble_at_byte_pos,
@@ -28,13 +28,13 @@ from src.libs.rlp_little import (
     extract_nibble_from_key,
 )
 
-from src.hdp.rlp import decode_le_rlp_string_small
-from src.hdp.utils import prepend_le_rlp_list_prefix
-from src.hdp.types import TransactionProof, Transaction, Header, ChainInfo
-from src.hdp.memorizer import HeaderMemorizer, TransactionMemorizer
+from src.rlp import decode_le_rlp_string_small
+from src.utils import prepend_le_rlp_list_prefix
+from src.types import TransactionProof, Transaction, Header, ChainInfo
+from src.memorizer import HeaderMemorizer, TransactionMemorizer
 
-from src.hdp.decoders.transaction_decoder import TransactionDecoder
-from src.hdp.decoders.header_decoder import HeaderDecoder, HEADER_FIELD
+from src.decoders.transaction_decoder import TransactionDecoder
+from src.decoders.header_decoder import HeaderDecoder, HEADER_FIELD
 
 func verify_n_transaction_proofs{
     range_check_ptr,
@@ -124,7 +124,7 @@ func init_tx_stuct{
         let len_len = first_byte - 0xf7;
         assert tx_start_offset = 1 + len_len;
 
-        assert [range_check_ptr ] = 0xff - first_byte;
+        assert [range_check_ptr] = 0xff - first_byte;
         assert [range_check_ptr + 1] = first_byte - 0xf7;
         assert [range_check_ptr + 2] = 7 - tx_start_offset;
         tempvar range_check_ptr = range_check_ptr + 3;

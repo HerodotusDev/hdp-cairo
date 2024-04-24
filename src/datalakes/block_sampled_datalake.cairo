@@ -18,9 +18,9 @@ namespace BLOCK_SAMPLED_PROPERTY {
 }
 
 // Creates a BlockSampledDataLake from the input bytes
-func init_block_sampled{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*}(
-    input: felt*, input_bytes_len: felt
-) -> (res: BlockSampledDataLake) {
+func init_block_sampled{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*
+}(input: felt*, input_bytes_len: felt) -> (res: BlockSampledDataLake) {
     alloc_locals;
 
     let property_type = extract_byte_at_pos([input + 24], 0, pow2_array);
@@ -38,7 +38,7 @@ func init_block_sampled{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_pt
         assert [range_check_ptr] = 0x01ff - chunk_one;  // assert selected property_type matches input
         tempvar range_check_ptr = range_check_ptr + 1;
 
-        assert [properties] = 0x1; // ToDo: we have a field for this!!
+        assert [properties] = 0x1;  // ToDo: we have a field for this!!
         // bootleg bitshift. 0x01 is a know value (property_type), the rest is the property
         assert [properties + 1] = chunk_one - 0x100;
 
@@ -49,8 +49,8 @@ func init_block_sampled{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_pt
                 block_range_end=block_range_end,
                 increment=increment,
                 property_type=property_type,
-                properties=properties
-            )
+                properties=properties,
+            ),
         );
     }
 
@@ -107,7 +107,7 @@ func init_block_sampled{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_pt
             increment=increment,
             property_type=property_type,
             properties=properties,
-        )
+        ),
     );
 }
 
@@ -199,7 +199,7 @@ func extract_and_write_slot{bitwise_ptr: BitwiseBuiltin*}(
 // id: the ID of the sampled property (2 for Account, 3 for AccountSlot)
 // address: le 8-byte chunks
 
-//ToDo: refactor to use divmod
+// ToDo: refactor to use divmod
 func extract_address{bitwise_ptr: BitwiseBuiltin*}(
     chunk_one: felt, chunk_two: felt, chunk_three: felt
 ) -> (address: felt*) {

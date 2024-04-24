@@ -9,7 +9,10 @@ func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuilt
     let pow2_array: felt* = pow2alloc128();
 
     test_block_sampled_datalake_decoding{
-        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr, pow2_array=pow2_array
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        keccak_ptr=keccak_ptr,
+        pow2_array=pow2_array,
     }();
 
     return ();
@@ -23,25 +26,19 @@ func test_block_sampled_datalake_decoding{
     let (
         header_input, header_input_bytes_len, header_expected_datalake, header_property_type
     ) = BlockSampledDataLakeMocker.get_header_property();
-    let (header_datalake) = init_block_sampled(
-        header_input, header_input_bytes_len
-    );
+    let (header_datalake) = init_block_sampled(header_input, header_input_bytes_len);
     block_sampled_datalake_eq(header_datalake, header_expected_datalake, header_property_type);
 
     let (
         account_input, account_input_bytes_len, account_expected_datalake, account_property_type
     ) = BlockSampledDataLakeMocker.get_account_property();
-    let (account_datalake) = init_block_sampled(
-        account_input, account_input_bytes_len
-    );
+    let (account_datalake) = init_block_sampled(account_input, account_input_bytes_len);
     block_sampled_datalake_eq(account_datalake, account_expected_datalake, account_property_type);
 
     let (
         storage_input, storage_input_bytes_len, storage_expected_datalake, storage_property_type
     ) = BlockSampledDataLakeMocker.get_storage_property();
-    let (storage_datalake) = init_block_sampled(
-        storage_input, storage_input_bytes_len
-    );
+    let (storage_datalake) = init_block_sampled(storage_input, storage_input_bytes_len);
     block_sampled_datalake_eq(storage_datalake, storage_expected_datalake, storage_property_type);
 
     return ();

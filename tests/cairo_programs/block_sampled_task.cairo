@@ -8,7 +8,8 @@ from tests.cairo_programs.test_vectors import BlockSampledTaskMocker
 
 from src.tasks.computational import Task, extract_params_and_construct_task, AGGREGATE_FN
 from src.decoders.header_decoder import HEADER_FIELD
-from src.hdp.datalakes.block_sampled_datalake import BLOCK_SAMPLED_PROPERTY
+from src.datalakes.datalake import DATALAKE_TYPE
+from src.datalakes.block_sampled_datalake import BLOCK_SAMPLED_PROPERTY
 from src.types import BlockSampledDataLake, ComputationalTask
 from src.merkle import compute_tasks_root
 from packages.eth_essentials.lib.utils import pow2alloc128
@@ -89,10 +90,7 @@ func test_block_sampled_task_init{
     );
 
     Task.init{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        keccak_ptr=keccak_ptr,
-        tasks=tasks,
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr, tasks=tasks
     }(tasks_len, 0);
 
     let task = tasks[0];
@@ -103,7 +101,6 @@ func test_block_sampled_task_init{
     assert task.ctx_operator = expected_task.ctx_operator;
     assert task.ctx_value.low = expected_task.ctx_value.low;
     assert task.ctx_value.high = expected_task.ctx_value.high;
-
 
     let datalake: BlockSampledDataLake = [cast(task.datalake_ptr, BlockSampledDataLake*)];
     block_sampled_datalake_eq(datalake, expected_datalake, datalake.property_type);
@@ -119,37 +116,36 @@ func test_block_sampled_task_init{
 //     alloc_locals;
 //     let (__fp__, _) = get_fp_and_pc();
 
-//     // AVG:
+// // AVG:
 //     let (
 //         expected_avg_task, avg_input, avg_bytes_len, avg_datalake
 //     ) = BlockSampledTaskMocker.get_avg_task();
 
-
-//     let (avg_task) = extract_params_and_construct_task(avg_input, avg_bytes_len, avg_datalake);
+// let (avg_task) = extract_params_and_construct_task(avg_input, avg_bytes_len, avg_datalake);
 //     task_eq(avg_task, expected_avg_task);
 
-//     // SUM:
+// // SUM:
 //     let (
 //         expected_sum_task, sum_input, sum_bytes_len, sum_datalake
 //     ) = BlockSampledTaskMocker.get_sum_task();
 //     let (sum_task) = extract_params_and_construct_task(sum_input, sum_bytes_len, sum_datalake);
 //     task_eq(sum_task, expected_sum_task);
 
-//     // MIN:
+// // MIN:
 //     let (
 //         expected_min_task, min_input, min_bytes_len, min_datalake
 //     ) = BlockSampledTaskMocker.get_min_task();
 //     let (min_task) = extract_params_and_construct_task(min_input, min_bytes_len, min_datalake);
 //     task_eq(min_task, expected_min_task);
 
-//     // MAX:
+// // MAX:
 //     let (
 //         expected_max_task, max_input, max_bytes_len, max_datalake
 //     ) = BlockSampledTaskMocker.get_max_task();
 //     let (max_task) = extract_params_and_construct_task(max_input, max_bytes_len, max_datalake);
 //     task_eq(max_task, expected_max_task);
 
-//     // COUNT_IF:
+// // COUNT_IF:
 //     let (
 //         expected_count_if_task, count_if_input, count_if_bytes_len, count_if_datalake
 //     ) = BlockSampledTaskMocker.get_count_if_task();
@@ -158,7 +154,7 @@ func test_block_sampled_task_init{
 //     );
 //     task_eq(count_if_task, expected_count_if_task);
 
-//     return ();
+// return ();
 // }
 
 // func task_eq(a: ComputationalTask, b: ComputationalTask) {
@@ -169,5 +165,5 @@ func test_block_sampled_task_init{
 //     assert a.ctx_value.high = b.ctx_value.high;
 //     assert a.ctx_value.low = b.ctx_value.low;
 
-//     return ();
+// return ();
 // }

@@ -2,25 +2,23 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin,
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.alloc import alloc
-from src.hdp.memorizer import HeaderMemorizer, TransactionMemorizer
+from src.memorizer import HeaderMemorizer, TransactionMemorizer
 from starkware.cairo.common.dict_access import DictAccess
-from src.libs.utils import word_reverse_endian_64
-from src.libs.mpt import verify_mpt_proof
-from src.hdp.types import TransactionsInBlockDatalake, Transaction, TransactionProof, Header
-from src.libs.rlp_little import extract_byte_at_pos
-from src.hdp.decoders.transaction_decoder import TransactionDecoder
-from src.hdp.decoders.header_decoder import HeaderDecoder, HEADER_FIELD
+from packages.eth_essentials.lib.utils import word_reverse_endian_64
+from packages.eth_essentials.lib.mpt import verify_mpt_proof
+from src.types import TransactionsInBlockDatalake, Transaction, TransactionProof, Header
+from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
+from src.decoders.transaction_decoder import TransactionDecoder
+from src.decoders.header_decoder import HeaderDecoder, HEADER_FIELD
 
 namespace TX_IN_BLOCK_TYPES {
     const TX = 1;
     const RECEIPT = 2;
 }
 
-func init_txs_in_block{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*, 
-// headers: Header*, header_dict: DictAccess*
-}(
-    input: felt*, input_bytes_len: felt
-) -> (res: TransactionsInBlockDatalake) {
+func init_txs_in_block{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*
+}(input: felt*, input_bytes_len: felt) -> (res: TransactionsInBlockDatalake) {
     alloc_locals;
     // HeaderProp Input Layout:
     // 0-3: DatalakeCode.BlockSampled
@@ -38,18 +36,17 @@ func init_txs_in_block{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr
     let (increment) = word_reverse_endian_64([input + 11]);
 
     let type = extract_byte_at_pos([input + 20], 0, pow2_array);
-    let property = extract_byte_at_pos([input + 20], 1, pow2_array); // first chunk cointains type + property
+    let property = extract_byte_at_pos([input + 20], 1, pow2_array);  // first chunk cointains type + property
 
     // validate_block_tx_count(target_block);
 
     assert [input + 21] = 0;  // remaining chunks should be 0
 
-    return (res=TransactionsInBlockDatalake(
-        target_block=target_block,
-        increment=increment,
-        type=type,
-        sampled_property=property,
-    ));
+    return (
+        res=TransactionsInBlockDatalake(
+            target_block=target_block, increment=increment, type=type, sampled_property=property
+        ),
+    );
 }
 
 // func validate_block_tx_count{
@@ -62,25 +59,25 @@ func init_txs_in_block{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr
 // } (target_block: felt) -> felt {
 //     alloc_locals;
 
-//     local key: Uint256;
+// local key: Uint256;
 //     let (proof: felt**) = alloc();
 //     local proof_len: felt;
 //     let (proof_bytes_len: felt*) = alloc();
 
-//     %{
+// %{
 //         proof = next((item for item in program_input['last_tx_markers'] if item['block_number'] == ids.target_block), None)
 //         print(proof)
 //         segments.write_arg(ids.proof_bytes_len, proof["proof_bytes_len"])
 //         segments.write_arg(ids.proof, nested_hex_to_int_array(proof["proof"]))
 //         ids.proof_len = len(proof["proof"])
 //         ids.key.low = hex_to_int(proof["key"]["low"])
-//         ids.key.high = hex_to_int(proof["key"]["high"])    
+//         ids.key.high = hex_to_int(proof["key"]["high"])
 //     %}
 
-//     let header = HeaderMemorizer.get(target_block);
+// let header = HeaderMemorizer.get(target_block);
 //     let tx_root = HeaderDecoder.get_field(header.rlp, HEADER_FIELD.TRANSACTION_ROOT);
 
-//     let (tx_item, tx_item_bytes_len) = verify_mpt_proof(
+// let (tx_item, tx_item_bytes_len) = verify_mpt_proof(
 //         mpt_proof=proof,
 //         mpt_proof_bytes_len=proof_bytes_len,
 //         mpt_proof_len=proof_len,
@@ -91,12 +88,11 @@ func init_txs_in_block{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr
 //         pow2_array=pow2_array,
 //     );
 
-//     %{
+// %{
 //         print("tx_item", hex(memory[ids.tx_item]))
 //     %}
 
-
-//     return 0;
+// return 0;
 
 // }
 
@@ -111,15 +107,15 @@ func fetch_data_points{
     alloc_locals;
     let (data_points: Uint256*) = alloc();
 
-    if(datalake.type == TX_IN_BLOCK_TYPES.TX) {
+    if (datalake.type == TX_IN_BLOCK_TYPES.TX) {
         let data_points_len = fetch_tx_data_points(
             datalake=datalake, index=0, data_points=data_points
         );
 
         return (data_points, data_points_len);
-    } 
-    
-    if(datalake.type == TX_IN_BLOCK_TYPES.RECEIPT) {
+    }
+
+    if (datalake.type == TX_IN_BLOCK_TYPES.RECEIPT) {
         assert 1 = 0;
     }
 
@@ -149,5 +145,4 @@ func fetch_tx_data_points{
     }
 
     return fetch_tx_data_points(datalake=datalake, index=index + 1, data_points=data_points);
-
 }

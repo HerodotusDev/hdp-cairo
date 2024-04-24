@@ -5,23 +5,14 @@ from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.registers import get_fp_and_pc
 
-<<<<<<<< HEAD:src/tasks/computational.cairo
-from src.hdp.types import BlockSampledDataLake, ComputationalTask, AccountValues, Header, Transaction
-from src.hdp.datalakes.datalake import Datalake
-from src.hdp.tasks.aggregate_functions.sum import compute_sum
-from src.hdp.tasks.aggregate_functions.avg import compute_avg
-from src.hdp.tasks.aggregate_functions.min_max import uint256_min_le, uint256_max_le
-from src.hdp.tasks.aggregate_functions.count_if import count_if
-from src.libs.rlp_little import extract_byte_at_pos
-========
-from src.types import BlockSampledDataLake, BlockSampledComputationalTask, AccountValues, Header
+from src.types import BlockSampledDataLake, ComputationalTask, AccountValues, Header, Transaction
+from src.datalakes.datalake import Datalake
 from src.datalakes.block_sampled_datalake import init_block_sampled, fetch_data_points
 from src.tasks.aggregate_functions.sum import compute_sum
 from src.tasks.aggregate_functions.avg import compute_avg
 from src.tasks.aggregate_functions.min_max import uint256_min_le, uint256_max_le
 from src.tasks.aggregate_functions.count_if import count_if
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
->>>>>>>> main:src/tasks/block_sampled_task.cairo
 
 namespace AGGREGATE_FN {
     const AVG = 0;
@@ -39,12 +30,7 @@ namespace Task {
         keccak_ptr: KeccakBuiltin*,
         tasks: ComputationalTask*,
         pow2_array: felt*,
-        // headers: Header*,
-        // header_dict: DictAccess*,
-    }(
-        n_tasks: felt,
-        index: felt,
-    ) {
+    }(n_tasks: felt, index: felt) {
         alloc_locals;
         let (__fp__, _) = get_fp_and_pc();
 
@@ -67,19 +53,24 @@ namespace Task {
                 ids.tasks_input_bytes_len = task["task_bytes_len"]
             %}
 
-            let (datalake_ptr) = Datalake.init(datalake_input, datalake_input_bytes_len, datalake_type);
+            let (datalake_ptr) = Datalake.init(
+                datalake_input, datalake_input_bytes_len, datalake_type
+            );
             let (datalake_hash) = keccak(datalake_input, datalake_input_bytes_len);
 
             let (local task) = extract_params_and_construct_task{
                 range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
-            }(input=tasks_input, input_bytes_len=tasks_input_bytes_len, datalake_hash=datalake_hash, datalake_ptr=datalake_ptr, datalake_type=datalake_type);
+            }(
+                input=tasks_input,
+                input_bytes_len=tasks_input_bytes_len,
+                datalake_hash=datalake_hash,
+                datalake_ptr=datalake_ptr,
+                datalake_type=datalake_type,
+            );
 
             assert tasks[index] = task;
 
-            return init(
-                n_tasks=n_tasks,
-                index=index + 1,
-            );
+            return init(n_tasks=n_tasks, index=index + 1);
         }
     }
 
@@ -155,9 +146,13 @@ namespace Task {
 // Internal Functions:
 func extract_params_and_construct_task{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*
-}(input: felt*, input_bytes_len: felt, datalake_hash: Uint256, datalake_ptr: felt*, datalake_type: felt) -> (
-    task: ComputationalTask
-) {
+}(
+    input: felt*,
+    input_bytes_len: felt,
+    datalake_hash: Uint256,
+    datalake_ptr: felt*,
+    datalake_type: felt,
+) -> (task: ComputationalTask) {
     alloc_locals;
     // HeaderProp Input Layout:
     // 0-3: data_lake_hash

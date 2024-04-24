@@ -1,16 +1,11 @@
-
 %builtins range_check bitwise keccak
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
 from starkware.cairo.common.alloc import alloc
 
-from src.libs.utils import pow2alloc128
-from src.hdp.datalakes.txs_in_block_datalake import init_txs_in_block
+from packages.eth_essentials.lib.utils import pow2alloc128
+from src.datalakes.txs_in_block_datalake import init_txs_in_block
 
-func main{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
-}() {
+func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}() {
     alloc_locals;
     let pow2_array: felt* = pow2alloc128();
 
@@ -26,12 +21,9 @@ func main{
 
         input_chunks = bytes_to_8_bytes_chunks_little(input_bytes)
         segments.write_arg(ids.input, input_chunks)
-    
     %}
-    
-    let (txs_in_block) = init_txs_in_block{
-        pow2_array=pow2_array,
-    }(
+
+    let (txs_in_block) = init_txs_in_block{pow2_array=pow2_array}(
         input=input, input_bytes_len=input_bytes_len
     );
 
@@ -41,5 +33,4 @@ func main{
     assert txs_in_block.sampled_property = 2;
 
     return ();
-
 }

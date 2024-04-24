@@ -12,6 +12,8 @@ from packages.eth_essentials.lib.utils import (
     word_reverse_endian_48_RC,
     word_reverse_endian_56_RC,
     word_reverse_endian_64,
+    felt_divmod,
+    get_felt_bitlength,
 )
 
 // computes the result entry. This maps the result to a task_hash/id. It computes h(task_hash, result), which is a leaf in the results tree.
@@ -126,7 +128,7 @@ func prepend_le_rlp_list_prefix{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, p
     tempvar range_check_ptr = range_check_ptr + 3 * n_processed_words;
 
     let (words, rest) = felt_divmod(expected_bytes_len, 8);
-    if(rest == 0) {
+    if (rest == 0) {
         return (encoded=result, encoded_len=rlp_len);
     } else {
         // add the last word
@@ -235,7 +237,7 @@ func append_be_chunk{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: 
 func get_felt_bytes_len{range_check_ptr, pow2_array: felt*}(x: felt) -> felt {
     let bit_len = get_felt_bitlength(x);
     let (bytes, rest) = felt_divmod(bit_len, 8);
-    if(rest == 0) {
+    if (rest == 0) {
         return (bytes);
     } else {
         return (bytes + 1);

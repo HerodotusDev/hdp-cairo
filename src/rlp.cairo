@@ -165,20 +165,22 @@ func decode_value_len{range_check_ptr}(
 // - value: the LE RLP value
 // Outputs:
 // - the decoded felt in BE
-func decode_le_rlp_string_small{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(value: felt) -> felt {
+func decode_le_rlp_string_small{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    value: felt
+) -> felt {
     alloc_locals;
 
     let bytes_len = get_felt_bytes_len(value);
 
-    if(bytes_len == 1) {
-        if(value == 0x80) {
+    if (bytes_len == 1) {
+        if (value == 0x80) {
             return 0;
         } else {
             return value;
         }
     }
 
-    let (q, r) = felt_divmod(value, 0x100); // remove trailing byte
+    let (q, r) = felt_divmod(value, 0x100);  // remove trailing byte
 
     // ensure we have a short string
     assert [range_check_ptr] = 8 - bytes_len;

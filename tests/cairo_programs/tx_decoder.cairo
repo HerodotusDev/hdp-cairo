@@ -3,16 +3,12 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256
 
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
-from src.hdp.decoders.header_decoder import HeaderDecoder
-from src.libs.utils import pow2alloc128
-from src.hdp.types import Transaction, ChainInfo
-from src.hdp.decoders.transaction_decoder import (
-    TransactionDecoder,
-    TransactionSender,
-    TransactionField,
-)
-from src.hdp.verifiers.transaction_verifier import init_tx_stuct
-from src.hdp.chain_info import fetch_chain_info
+from src.decoders.header_decoder import HeaderDecoder
+from packages.eth_essentials.lib.utils import pow2alloc128
+from src.types import Transaction, ChainInfo
+from src.decoders.transaction_decoder import TransactionDecoder, TransactionSender, TransactionField
+from src.verifiers.transaction_verifier import init_tx_stuct
+from src.chain_info import fetch_chain_info
 
 func main{
     range_check_ptr,
@@ -27,7 +23,6 @@ func main{
     local n_test_txs: felt;
 
     %{
-
         tx_array = [
             "0x2e923a6f09ba38f63ff9b722afd14b9e850432860b77df9011e92c1bf0eecf6b", # Type 0
             "0x237f99e622d67413956b8674cf16ea56b0ba0a18a9f68a5e254f4ac8d2050b51", # Type 0 (eip155)
@@ -48,7 +43,7 @@ func main{
         ids.n_test_txs = len(tx_array)
     %}
 
-    //run default tests first
+    // run default tests first
     test_tx_decoding_inner{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
@@ -97,7 +92,7 @@ func test_tx_decoding{
         ids.n_test_txs = len(tx_array)
     %}
 
-     // run default tests first
+    // run default tests first
     test_tx_decoding_inner{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
@@ -230,11 +225,13 @@ func test_tx_decoding_inner{
     assert expected_gas_limit.low = gas_limit.low;
     assert expected_gas_limit.high = gas_limit.high;
 
-    let (receiver, receiver_len, _) = TransactionDecoder.get_felt_field(tx, TransactionField.RECEIVER);
+    let (receiver, receiver_len, _) = TransactionDecoder.get_felt_field(
+        tx, TransactionField.RECEIVER
+    );
     assert expected_receiver[0] = receiver[0];
 
     // prevent failing checks for contract creation transactions
-    if(receiver_len == 3) {
+    if (receiver_len == 3) {
         assert expected_receiver[1] = receiver[1];
         assert expected_receiver[2] = receiver[2];
     }
@@ -305,9 +302,7 @@ func test_tx_decoding_inner{
         assert expected_max_prio_fee_per_gas.low = max_prio_fee_per_gas.low;
         assert expected_max_prio_fee_per_gas.high = max_prio_fee_per_gas.high;
 
-        let max_fee_per_gas = TransactionDecoder.get_field(
-            tx, TransactionField.MAX_FEE_PER_GAS
-        );
+        let max_fee_per_gas = TransactionDecoder.get_field(tx, TransactionField.MAX_FEE_PER_GAS);
         assert max_fee_per_gas.low = expected_max_fee_per_gas.low;
         assert max_fee_per_gas.high = expected_max_fee_per_gas.high;
 

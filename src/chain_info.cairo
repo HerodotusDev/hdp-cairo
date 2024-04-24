@@ -1,4 +1,4 @@
-from src.hdp.types import ChainInfo
+from src.types import ChainInfo
 
 func fetch_chain_info(chain_id: felt) -> (info: ChainInfo) {
     if (chain_id == 1) {

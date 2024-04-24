@@ -1,4 +1,8 @@
-from tools.py.fetch_tx import fetch_tx_from_rpc, fetch_block_tx_ids_from_rpc, fetch_latest_block_height_from_rpc
+from tools.py.fetch_tx import (
+    fetch_tx_from_rpc,
+    fetch_block_tx_ids_from_rpc,
+    fetch_latest_block_height_from_rpc,
+)
 from tools.py.transaction import LegacyTx
 from rlp import encode, decode
 from tools.py.utils import (
@@ -18,8 +22,10 @@ RPC_URL = (
     os.getenv("RPC_URL_GOERLI") if NETWORK == GOERLI else os.getenv("RPC_URL_MAINNET")
 )
 
+
 def fetch_latest_block_height():
     return fetch_latest_block_height_from_rpc(RPC_URL)
+
 
 def fetch_block_tx_ids(block_number):
     return fetch_block_tx_ids_from_rpc(block_number, RPC_URL)
@@ -60,10 +66,14 @@ def fetch_transaction_dict(tx_hash):
     tx_dict["v"] = {"low": low, "high": high}
 
     # dirty af, but it works
-    (low, high) = reverse_and_split_256_bytes(int.from_bytes(tx.r, "big").to_bytes(32, "big"))
+    (low, high) = reverse_and_split_256_bytes(
+        int.from_bytes(tx.r, "big").to_bytes(32, "big")
+    )
     tx_dict["r"] = {"low": low, "high": high}
 
-    (low, high) = reverse_and_split_256_bytes(int.from_bytes(tx.s, "big").to_bytes(32, "big"))
+    (low, high) = reverse_and_split_256_bytes(
+        int.from_bytes(tx.s, "big").to_bytes(32, "big")
+    )
     tx_dict["s"] = {"low": low, "high": high}
 
     input_bytes = tx.data
@@ -107,9 +117,7 @@ def fetch_transaction_dict(tx_hash):
         else:
             encoded = encode_array_elements(tx.access_list)
             tx_dict["access_list"] = {
-                "chunks": bytes_to_8_bytes_chunks_little(
-                    encoded
-                ),
+                "chunks": bytes_to_8_bytes_chunks_little(encoded),
                 "bytes_len": len(encoded),
             }
 
@@ -134,6 +142,7 @@ def fetch_transaction_dict(tx_hash):
 
     return tx_dict
 
+
 # encode an the elements of an array in RLP. This returns the encoded data, without the array prefix
 def encode_array_elements(hex_array):
     res = b""
@@ -141,6 +150,7 @@ def encode_array_elements(hex_array):
         res += encode(element)
 
     return res
+
 
 ## Test TX encoding:
 # assert fetch_tx("0x423d6dfdeae9967847fb226e138ea5fad6279c12bf3343eae4d32c2477be3021").hash().hex() == "0x423d6dfdeae9967847fb226e138ea5fad6279c12bf3343eae4d32c2477be3021"
