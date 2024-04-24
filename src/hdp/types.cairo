@@ -92,14 +92,6 @@ struct TransactionsInBlockDatalake {
     // block_tx_count: felt,
 }
 
-struct BlockSampledComputationalTask {
-    hash: Uint256,
-    datalake: BlockSampledDataLake,
-    aggregate_fn_id: felt,
-    ctx_operator: felt,
-    ctx_value: Uint256,
-}
-
 struct ComputationalTask {
     hash: Uint256,
     datalake_ptr: felt*,

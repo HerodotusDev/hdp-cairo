@@ -23,7 +23,6 @@ from src.hdp.types import (
     Account,
     AccountValues,
     StorageItem,
-    BlockSampledComputationalTask,
     TransactionProof,
     Transaction,
     ComputationalTask,

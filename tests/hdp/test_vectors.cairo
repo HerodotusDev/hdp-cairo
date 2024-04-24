@@ -2,8 +2,8 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.registers import get_fp_and_pc
 
-from src.hdp.types import BlockSampledDataLake, BlockSampledComputationalTask, ComputationalTask
-from src.hdp.tasks.block_sampled_task import AGGREGATE_FN
+from src.hdp.types import BlockSampledDataLake, ComputationalTask
+from src.hdp.tasks.computational import AGGREGATE_FN
 namespace BlockSampledDataLakeMocker {
     func get_header_property() -> (
         datalake_input: felt*,
@@ -115,7 +115,7 @@ namespace BlockSampledTaskMocker {
             segments.write_arg(ids.task_input, bytes_to_8_bytes_chunks_little(task_bytes))
         %}
 
-        // let task = BlockSampledComputationalTask(
+        // let task = ComputationalTask(
         //     hash=Uint256(
         //         low=0x407E98D423A7BB2DBF09B0E42601FC9B, high=0xEF8B01F35B404615F0339EEFAE7719A2
         //     ),
@@ -149,7 +149,7 @@ namespace BlockSampledTaskMocker {
     }
 
     func get_avg_task() -> (
-        task: BlockSampledComputationalTask,
+        task: ComputationalTask,
         tasks_inputs: felt*,
         tasks_bytes_len: felt,
         datalake: BlockSampledDataLake,
@@ -168,7 +168,7 @@ namespace BlockSampledTaskMocker {
             segments.write_arg(ids.task_input, bytes_to_8_bytes_chunks_little(task_bytes))
         %}
 
-        let task = BlockSampledComputationalTask(
+        let task = ComputationalTask(
             hash=Uint256(
                 low=0x407E98D423A7BB2DBF09B0E42601FC9B, high=0xEF8B01F35B404615F0339EEFAE7719A2
             ),
@@ -182,7 +182,7 @@ namespace BlockSampledTaskMocker {
     }
 
     func get_sum_task() -> (
-        task: BlockSampledComputationalTask,
+        task: ComputationalTask,
         tasks_inputs: felt*,
         tasks_bytes_len: felt,
         datalake: BlockSampledDataLake,
@@ -200,7 +200,7 @@ namespace BlockSampledTaskMocker {
             segments.write_arg(ids.task_input, bytes_to_8_bytes_chunks_little(task_bytes))
         %}
 
-        let task = BlockSampledComputationalTask(
+        let task = ComputationalTask(
             hash=Uint256(
                 low=0x3CB6684D1B4B7FDEA3FBACAEA422C944, high=0x02F8516E3F7BE7FCCFDE22FB4A98DF37
             ),
@@ -214,7 +214,7 @@ namespace BlockSampledTaskMocker {
     }
 
     func get_min_task() -> (
-        task: BlockSampledComputationalTask,
+        task: ComputationalTask,
         tasks_inputs: felt*,
         tasks_bytes_len: felt,
         datalake: BlockSampledDataLake,
@@ -232,7 +232,7 @@ namespace BlockSampledTaskMocker {
             segments.write_arg(ids.task_input, bytes_to_8_bytes_chunks_little(task_bytes))
         %}
 
-        let task = BlockSampledComputationalTask(
+        let task = ComputationalTask(
             hash=Uint256(
                 low=0x9F439795EE0CA868B463479E5A905BF0, high=0x72CEFA1188B199ECEEAB39767CD32605
             ),
@@ -246,7 +246,7 @@ namespace BlockSampledTaskMocker {
     }
 
     func get_max_task() -> (
-        task: BlockSampledComputationalTask,
+        task: ComputationalTask,
         tasks_inputs: felt*,
         tasks_bytes_len: felt,
         datalake: BlockSampledDataLake,
@@ -264,7 +264,7 @@ namespace BlockSampledTaskMocker {
             segments.write_arg(ids.task_input, bytes_to_8_bytes_chunks_little(task_bytes))
         %}
 
-        let task = BlockSampledComputationalTask(
+        let task = ComputationalTask(
             hash=Uint256(
                 low=0x1CD2E160D860B4D1BD1E327B6AA209BD, high=0xCABA4809710EB228D6A31DE1B852DFB7
             ),
@@ -278,7 +278,7 @@ namespace BlockSampledTaskMocker {
     }
 
     func get_count_if_task() -> (
-        task: BlockSampledComputationalTask,
+        task: ComputationalTask,
         tasks_inputs: felt*,
         tasks_bytes_len: felt,
         datalake: BlockSampledDataLake,
@@ -296,7 +296,7 @@ namespace BlockSampledTaskMocker {
             segments.write_arg(ids.task_input, bytes_to_8_bytes_chunks_little(task_bytes))
         %}
 
-        let task = BlockSampledComputationalTask(
+        let task = ComputationalTask(
             hash=Uint256(
                 low=0xAE5641FEA9032C936D7E54D7CF36E2C3, high=0xA53CFAB970F9780B3C39CFAC1DD3D425
             ),

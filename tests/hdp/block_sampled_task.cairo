@@ -7,7 +7,7 @@ from tests.hdp.block_sampled_datalake import block_sampled_datalake_eq
 from tests.hdp.test_vectors import BlockSampledTaskMocker
 
 from src.hdp.tasks.computational import Task, extract_params_and_construct_task, AGGREGATE_FN
-from src.hdp.types import BlockSampledDataLake, BlockSampledComputationalTask, ComputationalTask
+from src.hdp.types import BlockSampledDataLake, ComputationalTask
 from src.hdp.merkle import compute_tasks_root
 from src.libs.utils import pow2alloc128
 from src.hdp.datalakes.block_sampled_datalake import BLOCK_SAMPLED_PROPERTY
@@ -162,7 +162,7 @@ func test_block_sampled_task_init{
 //     return ();
 // }
 
-// func task_eq(a: BlockSampledComputationalTask, b: BlockSampledComputationalTask) {
+// func task_eq(a: ComputationalTask, b: ComputationalTask) {
 //     assert a.hash.low = b.hash.low;
 //     assert a.hash.high = b.hash.high;
 //     assert a.aggregate_fn_id = b.aggregate_fn_id;
