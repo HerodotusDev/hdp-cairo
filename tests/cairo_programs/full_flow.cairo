@@ -28,13 +28,13 @@ func main{
                 data_list.append(data)
     %}
 
-    // run_tests{
-    //     output_ptr=output_ptr,
-    //     range_check_ptr=range_check_ptr,
-    //     bitwise_ptr=bitwise_ptr,
-    //     keccak_ptr=keccak_ptr,
-    //     poseidon_ptr=poseidon_ptr,
-    // }(tests_len=tests_len, index=0);
+    run_tests{
+        output_ptr=output_ptr,
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        keccak_ptr=keccak_ptr,
+        poseidon_ptr=poseidon_ptr,
+    }(tests_len=tests_len, index=0);
 
     return ();
 }

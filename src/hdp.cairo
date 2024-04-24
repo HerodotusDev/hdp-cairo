@@ -136,18 +136,21 @@ func run{
                 memory[ptr._reference_value + offset + 5] = segments.gen_arg(hex_to_int_array(header["proof"]["mmr_path"]))
                 offset += 6
 
-        def write_tx_proofs(ptr, tx_proofs):
+        def write_tx_proofs(ptr, program_input):
             offset = 0
-            ids.transaction_proof_len = len(tx_proofs)
+            if "transactions" in program_input:
+                ids.transaction_proof_len = len(tx_proofs)
 
-            for tx_proof in tx_proofs:
-                memory[ptr._reference_value + offset] = tx_proof["block_number"]
-                memory[ptr._reference_value + offset + 1] = len(tx_proof["proof"])
-                memory[ptr._reference_value + offset + 2] = segments.gen_arg(tx_proof["proof_bytes_len"])
-                memory[ptr._reference_value + offset + 3] = segments.gen_arg(nested_hex_to_int_array(tx_proof["proof"]))
-                memory[ptr._reference_value + offset + 4] = hex_to_int(tx_proof["key"]["low"])
-                memory[ptr._reference_value + offset + 5] = hex_to_int(tx_proof["key"]["high"])
-                offset += 6
+                for tx_proof in tx_proofs:
+                    memory[ptr._reference_value + offset] = tx_proof["block_number"]
+                    memory[ptr._reference_value + offset + 1] = len(tx_proof["proof"])
+                    memory[ptr._reference_value + offset + 2] = segments.gen_arg(tx_proof["proof_bytes_len"])
+                    memory[ptr._reference_value + offset + 3] = segments.gen_arg(nested_hex_to_int_array(tx_proof["proof"]))
+                    memory[ptr._reference_value + offset + 4] = hex_to_int(tx_proof["key"]["low"])
+                    memory[ptr._reference_value + offset + 5] = hex_to_int(tx_proof["key"]["high"])
+                    offset += 6
+            else:
+                ids.transaction_proof_len = 0
     %}
     // if these hints are one hint, the compiler goes on strike.
     %{
@@ -177,7 +180,7 @@ func run{
         ids.storage_items_len = len(program_input['storages'])
 
         # Transaction params
-        write_tx_proofs(ids.transaction_proofs, program_input["transactions"])
+        write_tx_proofs(ids.transaction_proofs, program_input)
 
         # Task and Datalake
         ids.tasks_len = len(program_input['tasks'])
