@@ -1,5 +1,9 @@
 #!/bin/bash
 
+VENV_PATH=${1:-venv}
+
+echo "Setting up virtual environment at $VENV_PATH"
+
 # Function to install GNU parallel
 install_parallel() {
     case "$OSTYPE" in
@@ -41,7 +45,9 @@ else
 fi
 
 # Your existing setup script continues here...
-python3.9 -m venv venv
-echo 'export PYTHONPATH="$PWD:$PYTHONPATH"' >> venv/bin/activate
-source venv/bin/activate
+python3.9 -m venv "$VENV_PATH"
+echo 'export PYTHONPATH="$PWD:$PYTHONPATH"' >> "$VENV_PATH/bin/activate"
+source "$VENV_PATH/bin/activate"
 pip install -r tools/make/requirements.txt
+git submodule init
+git submodule update
