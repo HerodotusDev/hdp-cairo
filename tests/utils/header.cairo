@@ -9,7 +9,7 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
 ) {
     alloc_locals;
 
-    if(header_len == index) {
+    if (header_len == index) {
         return ();
     }
 
@@ -237,10 +237,7 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
         tempvar pow2_array = pow2_array;
     }
 
-    return test_header_decoding(
-        header_len=header_len,
-        index=index + 1,
-    );
+    return test_header_decoding(header_len=header_len, index=index + 1);
 }
 
 func compare_bloom_filter(

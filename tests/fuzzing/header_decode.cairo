@@ -24,7 +24,6 @@ func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
             block_numbers.append(random.randrange(1, max_block_height))
 
         ids.block_numbers_len = len(block_numbers)
-
     %}
 
     test_header_decoding{

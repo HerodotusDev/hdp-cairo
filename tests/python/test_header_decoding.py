@@ -28,6 +28,7 @@ RPC_URL = (
     os.getenv("RPC_URL_GOERLI") if NETWORK == GOERLI else os.getenv("RPC_URL_MAINNET")
 )
 
+
 def fetch_latest_block_height():
     return fetch_latest_block_height_from_rpc(RPC_URL)
 

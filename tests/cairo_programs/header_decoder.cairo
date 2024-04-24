@@ -12,7 +12,7 @@ func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
     let pow2_array: felt* = pow2alloc128();
     local block_numbers_len: felt;
 
-     %{
+    %{
         block_numbers = [
             150001, # Homestead
             12965001, # London (EIP-1559)
@@ -26,13 +26,11 @@ func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
         ]
 
         ids.block_numbers_len = len(block_numbers)
-
     %}
 
     test_header_decoding{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(block_numbers_len, 0);
-
 
     return ();
 }
