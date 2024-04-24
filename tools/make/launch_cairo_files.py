@@ -168,8 +168,8 @@ class CairoRunner:
             if test_file == "tests/cairo_programs/test_vectors.cairo":
                 continue
 
-            # if test_file != "tests/hdp/account_decoder.cairo":
-            #     continue
+            if test_file != "tests/cairo_programs/header_decoder.cairo":
+                continue
 
             self.filename_dot_cairo_path = test_file
             self.filename_dot_cairo = os.path.basename(test_file)

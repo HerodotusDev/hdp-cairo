@@ -5,6 +5,11 @@ from tools.py.block_header import (
     BlockHeaderShangai,
     BlockHeaderDencun,
 )
+
+from tools.py.fetch_tx import (
+    fetch_latest_block_height_from_rpc,
+)
+
 from tools.py.utils import (
     bytes_to_8_bytes_chunks_little,
     reverse_and_split_256_bytes,
@@ -22,6 +27,9 @@ load_dotenv()
 RPC_URL = (
     os.getenv("RPC_URL_GOERLI") if NETWORK == GOERLI else os.getenv("RPC_URL_MAINNET")
 )
+
+def fetch_latest_block_height():
+    return fetch_latest_block_height_from_rpc(RPC_URL)
 
 
 def fetch_header(block_number):
@@ -41,6 +49,7 @@ def fetch_header_dict(block_number):
     block_dict = {
         "rlp": rlp,
         "bloom": bloom,
+        "hash": block.hash,
     }
 
     # LE

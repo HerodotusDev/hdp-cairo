@@ -12,6 +12,7 @@ __pycache__
 *.zip
 *.json
 *.db
+*.log
 cache/
 out/
 .gas-snapshot

@@ -12,18 +12,16 @@ func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
     let pow2_array: felt* = pow2alloc128();
     local block_numbers_len: felt;
 
-     %{
-        block_numbers = [
-            150001, # Homestead
-            12965001, # London (EIP-1559)
-            17034871, # Shanghai
-            19427930, # Dencun
-            # random block numbers
-            3549319,
-            6374469,
-            18603628,
-            7244939
-        ]
+    %{
+        from tests.python.test_tx_decoding import fetch_latest_block_height
+        import random
+
+        sample_size = 25
+        max_block_height = fetch_latest_block_height()
+
+        block_numbers = []
+        while len(block_numbers) < sample_size:
+            block_numbers.append(random.randrange(1, max_block_height))
 
         ids.block_numbers_len = len(block_numbers)
 
@@ -32,7 +30,6 @@ func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
     test_header_decoding{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(block_numbers_len, 0);
-
 
     return ();
 }
