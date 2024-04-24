@@ -112,7 +112,7 @@ def format_proof_nodes(proof):
     return trie_proof
 
 
-RPC_URL = "https://sepolia.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"
+RPC_URL = "https://ethereum-rpc.publicnode.com"
 w3 = Web3(Web3.HTTPProvider(RPC_URL))
 
 address = "0x779877A7B0D9E8603169DdbD7836e478b4624789"  # ERC20 https://sepolia.etherscan.io/address/0x4D6bCD482715B543aEfcfC2A49963628E6c959Bc

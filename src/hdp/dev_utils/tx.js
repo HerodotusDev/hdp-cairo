@@ -6,7 +6,7 @@ const privateKey = '0x037420379234345678901234567890123456789012345678901d234567
 // const privateKey = '0x4646464646464646464646464646464646464646464646464646464646464646';
 
 // // Set up a provider using the Rinkeby test network through Infura
-const provider = new ethers.providers.JsonRpcProvider('https://mainnet.infura.io/v3/0b8f91c0ada04f51945d9a127629d2fb');
+const provider = new ethers.providers.JsonRpcProvider('https://ethereum-rpc.publicnode.com');
 
 // The rest of your transaction signing and sending logic will go here
 

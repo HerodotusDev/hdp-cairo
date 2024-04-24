@@ -115,16 +115,6 @@ namespace BlockSampledTaskMocker {
             segments.write_arg(ids.task_input, bytes_to_8_bytes_chunks_little(task_bytes))
         %}
 
-        // let task = ComputationalTask(
-        //     hash=Uint256(
-        //         low=0x407E98D423A7BB2DBF09B0E42601FC9B, high=0xEF8B01F35B404615F0339EEFAE7719A2
-        //     ),
-        //     datalake=datalake,
-        //     aggregate_fn_id=AGGREGATE_FN.AVG,
-        //     ctx_operator=0,
-        //     ctx_value=Uint256(low=0, high=0),
-        // );
-
         let task = ComputationalTask(
             hash=Uint256(
                 low=0x407E98D423A7BB2DBF09B0E42601FC9B, high=0xEF8B01F35B404615F0339EEFAE7719A2

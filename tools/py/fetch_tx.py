@@ -11,6 +11,7 @@ def fetch_block_tx_ids_from_rpc(block_number: int, rpc_url: str) -> List[str]:
         rpc_url,
         {
             "jsonrpc": "2.0",
+            "id": 1,
             "method": "eth_getBlockByNumber",
             "params": [hex(block_number), False],
         },
@@ -24,6 +25,7 @@ def fetch_latest_block_height_from_rpc(rpc_url: str) -> int:
         rpc_url,
         {
             "jsonrpc": "2.0",
+            "id": 1,
             "method": "eth_blockNumber",
             "params": [],
         },
@@ -35,11 +37,11 @@ def fetch_latest_block_height_from_rpc(rpc_url: str) -> int:
 def fetch_tx_from_rpc(
     tx_hash: str, rpc_url: str
 ) -> Union[LegacyTx, Eip155, Eip1559, Eip2930, Eip4844]:
-    print(rpc_url)
     result = rpc_request(
         rpc_url,
         {
             "jsonrpc": "2.0",
+            "id": 1,
             "method": "eth_getTransactionByHash",
             "params": [tx_hash],
         },
