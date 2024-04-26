@@ -2,7 +2,7 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
-from src.decoders.header_decoder import HeaderDecoder, HEADER_FIELD
+from src.decoders.header_decoder import HeaderDecoder, HeaderField
 
 func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
     header_len: felt, index: felt
@@ -93,34 +93,34 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
             ids.expected_parent_beacon_root.high = header['parent_beacon_block_root']["high"]
     %}
 
-    let parent_hash = HeaderDecoder.get_field(rlp, HEADER_FIELD.PARENT);
+    let parent_hash = HeaderDecoder.get_field(rlp, HeaderField.PARENT);
 
     assert parent_hash.low = expected_parent_hash.low;
     assert parent_hash.high = expected_parent_hash.high;
 
-    let uncles_hash = HeaderDecoder.get_field(rlp, HEADER_FIELD.UNCLE);
+    let uncles_hash = HeaderDecoder.get_field(rlp, HeaderField.UNCLE);
     assert uncles_hash.low = expected_uncles_hash.low;
     assert uncles_hash.high = expected_uncles_hash.high;
 
-    let (coinbase, _, _) = HeaderDecoder.get_field_felt(rlp, HEADER_FIELD.COINBASE);
+    let (coinbase, _, _) = HeaderDecoder.get_field_felt(rlp, HeaderField.COINBASE);
     assert coinbase[0] = expected_coinbase[0];
     assert coinbase[1] = expected_coinbase[1];
     assert coinbase[2] = expected_coinbase[2];
 
-    let state_root = HeaderDecoder.get_field(rlp, HEADER_FIELD.STATE_ROOT);
+    let state_root = HeaderDecoder.get_field(rlp, HeaderField.STATE_ROOT);
     assert state_root.low = expected_state_root.low;
     assert state_root.high = expected_state_root.high;
 
-    let tx_root = HeaderDecoder.get_field(rlp, HEADER_FIELD.TRANSACTION_ROOT);
+    let tx_root = HeaderDecoder.get_field(rlp, HeaderField.TRANSACTION_ROOT);
     assert tx_root.low = expected_tx_root.low;
     assert tx_root.high = expected_tx_root.high;
 
-    let receipts_root = HeaderDecoder.get_field(rlp, HEADER_FIELD.RECEIPT_ROOT);
+    let receipts_root = HeaderDecoder.get_field(rlp, HeaderField.RECEIPT_ROOT);
     assert receipts_root.low = expected_receipts_root.low;
     assert receipts_root.high = expected_receipts_root.high;
 
     let (bloom_filter, value_len, bytes_len) = HeaderDecoder.get_field_felt(
-        rlp, HEADER_FIELD.BLOOM
+        rlp, HeaderField.BLOOM
     );
     compare_bloom_filter(
         expected_bloom_filter=expected_bloom_filter,
@@ -129,34 +129,34 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
         bytes_len=bytes_len,
     );
 
-    let difficulty_le = HeaderDecoder.get_field(rlp, HEADER_FIELD.DIFFICULTY);
+    let difficulty_le = HeaderDecoder.get_field(rlp, HeaderField.DIFFICULTY);
     let (local difficulty) = uint256_reverse_endian(difficulty_le);
     assert difficulty.low = expected_difficulty.low;
     assert difficulty.high = expected_difficulty.high;
 
-    let number_le = HeaderDecoder.get_field(rlp, HEADER_FIELD.NUMBER);
+    let number_le = HeaderDecoder.get_field(rlp, HeaderField.NUMBER);
     let (local number) = uint256_reverse_endian(number_le);
 
     assert number.low = expected_number.low;
     assert number.high = expected_number.high;
 
-    let gas_limit_le = HeaderDecoder.get_field(rlp, HEADER_FIELD.GAS_LIMIT);
+    let gas_limit_le = HeaderDecoder.get_field(rlp, HeaderField.GAS_LIMIT);
     let (local gas_limit) = uint256_reverse_endian(gas_limit_le);
     assert gas_limit.low = expected_gas_limit.low;
     assert gas_limit.high = expected_gas_limit.high;
 
-    let gas_used_le = HeaderDecoder.get_field(rlp, HEADER_FIELD.GAS_USED);
+    let gas_used_le = HeaderDecoder.get_field(rlp, HeaderField.GAS_USED);
     let (local gas_used) = uint256_reverse_endian(gas_used_le);
     assert gas_used.low = expected_gas_used.low;
     assert gas_used.high = expected_gas_used.high;
 
-    let timestamp_le = HeaderDecoder.get_field(rlp, HEADER_FIELD.TIMESTAMP);
+    let timestamp_le = HeaderDecoder.get_field(rlp, HeaderField.TIMESTAMP);
     let (local timestamp) = uint256_reverse_endian(timestamp_le);
     assert timestamp.low = expected_timestamp.low;
     assert timestamp.high = expected_timestamp.high;
 
     let (extra_data, extra_data_len, extra_data_bytes_len) = HeaderDecoder.get_field_felt(
-        rlp, HEADER_FIELD.EXTRA_DATA
+        rlp, HeaderField.EXTRA_DATA
     );
 
     compare_extra_data(
@@ -168,11 +168,11 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
         extra_data_bytes_len=extra_data_bytes_len,
     );
 
-    let mix_hash = HeaderDecoder.get_field(rlp, HEADER_FIELD.MIX_HASH);
+    let mix_hash = HeaderDecoder.get_field(rlp, HeaderField.MIX_HASH);
     assert mix_hash.low = expected_mix_hash.low;
     assert mix_hash.high = expected_mix_hash.high;
 
-    let nonce_le = HeaderDecoder.get_field(rlp, HEADER_FIELD.NONCE);
+    let nonce_le = HeaderDecoder.get_field(rlp, HeaderField.NONCE);
     let (local nonce) = uint256_reverse_endian(nonce_le);
     assert nonce.low = expected_nonce.low;
     assert nonce.high = expected_nonce.high;
@@ -181,7 +181,7 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
     %{ ids.impl_london = 1 if ids.header_type >= 1 else 0 %}
 
     if (impl_london == 1) {
-        let base_fee_per_gas_le = HeaderDecoder.get_field(rlp, HEADER_FIELD.BASE_FEE_PER_GAS);
+        let base_fee_per_gas_le = HeaderDecoder.get_field(rlp, HeaderField.BASE_FEE_PER_GAS);
         let (local base_fee_per_gas) = uint256_reverse_endian(base_fee_per_gas_le);
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
@@ -197,7 +197,7 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
     local impl_shanghai: felt;
     %{ ids.impl_shanghai = 1 if ids.header_type >= 2 else 0 %}
     if (impl_shanghai == 1) {
-        let withdrawls_root = HeaderDecoder.get_field(rlp, HEADER_FIELD.WITHDRAWALS_ROOT);
+        let withdrawls_root = HeaderDecoder.get_field(rlp, HeaderField.WITHDRAWALS_ROOT);
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
         tempvar pow2_array = pow2_array;
@@ -213,18 +213,18 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
     %{ ids.impl_dencun = 1 if ids.header_type >= 3 else 0 %}
 
     if (impl_dencun == 1) {
-        let blob_gas_used_le = HeaderDecoder.get_field(rlp, HEADER_FIELD.BLOB_GAS_USED);
+        let blob_gas_used_le = HeaderDecoder.get_field(rlp, HeaderField.BLOB_GAS_USED);
         let (local blob_gas_used) = uint256_reverse_endian(blob_gas_used_le);
         assert blob_gas_used.low = expected_blob_gas_used.low;
         assert blob_gas_used.high = expected_blob_gas_used.high;
 
-        let excess_blob_gas_le = HeaderDecoder.get_field(rlp, HEADER_FIELD.EXCESS_BLOB_GAS);
+        let excess_blob_gas_le = HeaderDecoder.get_field(rlp, HeaderField.EXCESS_BLOB_GAS);
         let (local excess_blob_gas) = uint256_reverse_endian(excess_blob_gas_le);
         assert excess_blob_gas.low = expected_excess_blob_gas.low;
         assert excess_blob_gas.high = expected_excess_blob_gas.high;
 
         let parent_beacon_root = HeaderDecoder.get_field(
-            rlp, HEADER_FIELD.PARENT_BEACON_BLOCK_ROOT
+            rlp, HeaderField.PARENT_BEACON_BLOCK_ROOT
         );
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;

@@ -1,17 +1,15 @@
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, KeccakBuiltin
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
-from starkware.cairo.common.dict_access import DictAccess
-from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
-from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
-from packages.eth_essentials.lib.utils import pow2alloc128, write_felt_array_to_dict_keys
-from src.rlp import retrieve_from_rlp_list_via_idx, le_u64_array_to_uint256
+from starkware.cairo.common.builtin_keccak.keccak import keccak_bigend
+from starkware.cairo.common.cairo_secp.bigint import uint256_to_bigint
+from starkware.cairo.common.cairo_keccak.keccak import finalize_keccak
 from starkware.cairo.common.cairo_secp.signature import (
     recover_public_key,
     public_key_point_to_eth_address,
 )
-from starkware.cairo.common.cairo_keccak.keccak import finalize_keccak
 
+from src.rlp import retrieve_from_rlp_list_via_idx, le_chunks_to_uint256
 from src.types import Transaction, ChainInfo
 from packages.eth_essentials.lib.rlp_little import extract_n_bytes_from_le_64_chunks_array
 from src.utils import (
@@ -20,7 +18,6 @@ from src.utils import (
     get_chunk_bytes_len,
     reverse_chunk_endianess,
 )
-from starkware.cairo.common.cairo_secp.bigint import BigInt3, uint256_to_bigint
 
 namespace TransactionField {
     const NONCE = 0;
@@ -80,7 +77,7 @@ namespace TransactionDecoder {
         let index = TxTypeFieldMap.get_field_index(tx.type, field);
         let (res, res_len, bytes_len) = retrieve_from_rlp_list_via_idx(tx.rlp, index, 0, 0);
 
-        return le_u64_array_to_uint256(res, res_len, bytes_len);
+        return le_chunks_to_uint256(res, res_len, bytes_len);
     }
 
     func get_field_and_bytes_len{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
@@ -105,7 +102,7 @@ namespace TransactionDecoder {
 
         let index = TxTypeFieldMap.get_field_index(tx.type, field);
         let (local res, res_len, bytes_len) = retrieve_from_rlp_list_via_idx(tx.rlp, index, 0, 0);
-        let value = le_u64_array_to_uint256(res, res_len, bytes_len);
+        let value = le_chunks_to_uint256(res, res_len, bytes_len);
         return (value=value, bytes_len=bytes_len);
     }
 
@@ -121,8 +118,13 @@ namespace TransactionDecoder {
 }
 
 // Deriving the sender is an expensive operation, as it requires the recovery of the public key from the signature.
-// For this reason, this logic is in its own namespace.
 namespace TransactionSender {
+    // Derives the sender of a transaction
+    // This function call is very expensive, costing around 205k steps to run.
+    // Inputs:
+    //     tx: Transaction - The transaction object
+    // Output:
+    //     felt - The address of the sender, in BE
     func derive{
         range_check_ptr,
         bitwise_ptr: BitwiseBuiltin*,
@@ -147,20 +149,22 @@ namespace TransactionSender {
         );
         let (s) = uint256_reverse_endian(s_le);
 
+        // Step 1: Unpack the RLP list and omit signature parameters
         let (tx_payload, tx_payload_len, tx_payload_bytes_len) = extract_tx_payload{
             range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
         }(tx, r_bytes_len + s_bytes_len + 3, is_eip155);  // + 2 for s + r prefix, +1 for v
 
+        // Step 2: RLP encode the TX params to create the signing payload and add TX type prefix
         let (
             encoded_tx_payload, encoded_tx_payload_len, encoded_tx_payload_bytes_len
-        ) = rlp_encode_payload{
+        ) = encode_signing_payload{
             range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
         }(tx, tx_payload, tx_payload_len, tx_payload_bytes_len);
 
-        // Now we hash this reencoded transaction, which is what the sender has signed in the first place
+        // Step 3: Calculate the keccak hash of the encoded tx payload
         let (msg_hash) = keccak_bigend(encoded_tx_payload, encoded_tx_payload_bytes_len);
 
-        // Convert types for ec-recover
+        // Step 4:  Recover the public key from the signature
         let (big_r) = uint256_to_bigint(r);
         let (big_s) = uint256_to_bigint(s);
         let (big_msg_hash) = uint256_to_bigint(msg_hash);
@@ -170,6 +174,7 @@ namespace TransactionSender {
         let (keccak_ptr_seg: felt*) = alloc();
         local keccak_ptr_seg_start: felt* = keccak_ptr_seg;
 
+        // Step 5: Calculate the public address from the public key
         with keccak_ptr_seg {
             let (local public_address) = public_key_point_to_eth_address{
                 range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr_seg
@@ -182,6 +187,8 @@ namespace TransactionSender {
         return (address);
     }
 
+    // Extracts the transaction parameters from the RLP encoded transaction and omits the signature parameters
+    // The RLP prefix is also removed
     func extract_tx_payload{
         range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, chain_info: ChainInfo
     }(tx: Transaction, sig_bytes_len: felt, is_eip155: felt) -> (
@@ -215,8 +222,7 @@ namespace TransactionSender {
         }
     }
 
-    // Encode encoded tx payload
-    // This function accepts the RLP encoded parameters of a transaction and encodes them in to their signing form. This is the form that the sender has signed.
+    // Computes the RLP prefix for the transactions params and prepends the tx type prefix. The resulting rlp chunks are the signing payload
     // Inputs:
     //     tx: Transaction - The transaction object
     //     tx_payload: felt* - The RLP encoded transaction parameters. This does not include the RLP list prefix.
@@ -226,7 +232,7 @@ namespace TransactionSender {
     //     signed_payload: felt* - The encoded transaction payload in the form that the sender has signed
     //     signed_payload_len: felt - The number of 64bit chunks in the signed_payload
     //     signed_payload_bytes_len: felt - The number of bytes in the signed_payload
-    func rlp_encode_payload{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    func encode_signing_payload{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
         tx: Transaction, tx_payload: felt*, tx_payload_len: felt, tx_payload_bytes_len: felt
     ) -> (signed_payload: felt*, signed_payload_len: felt, signed_payload_bytes_len: felt) {
         alloc_locals;
@@ -255,7 +261,6 @@ namespace TransactionSender {
         local typed_prefix: felt;
         if (tx.type == TransactionType.LEGACY) {
             // Legacy txs have no type prefix
-
             assert prefix_bytes_len = current_len;
             let le_prefix = reverse_chunk_endianess(prefix, prefix_bytes_len);
             assert typed_prefix = le_prefix;
@@ -275,7 +280,6 @@ namespace TransactionSender {
         }
 
         let encoded_tx_bytes_len = tx_payload_bytes_len + prefix_bytes_len;
-        // We have generated the RLP prefix in a hint, now we need to shift all values to fit the LE 64bit array format
         let (encoded_tx, encoded_tx_len) = prepend_le_rlp_list_prefix(
             offset=prefix_bytes_len,
             prefix=typed_prefix,

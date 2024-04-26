@@ -57,7 +57,6 @@ func compute_tasks_root{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_pt
     let (local leafs: Uint256*) = alloc();
 
     // copy the leafs to a new array.
-    // ToDo: is this a shallow copy or deep copy?
     tempvar i = 0;
 
     copy_loop:

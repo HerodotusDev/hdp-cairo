@@ -6,7 +6,7 @@ from starkware.cairo.common.alloc import alloc
 
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash, poseidon_hash_many
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
-from src.rlp import retrieve_from_rlp_list_via_idx, le_u64_array_to_uint256
+from src.rlp import retrieve_from_rlp_list_via_idx, le_chunks_to_uint256
 from packages.eth_essentials.lib.utils import felt_divmod
 
 from packages.eth_essentials.lib.mmr import hash_subtree_path
@@ -17,7 +17,7 @@ from packages.eth_essentials.lib.block_header import (
 )
 from src.memorizer import HeaderMemorizer
 
-namespace HEADER_FIELD {
+namespace HeaderField {
     const PARENT = 0;
     const UNCLE = 1;
     const COINBASE = 2;
@@ -53,16 +53,16 @@ namespace HeaderDecoder {
     func get_field_felt{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
         rlp: felt*, field: felt
     ) -> (value: felt*, value_len: felt, bytes_len: felt) {
-        if (field == HEADER_FIELD.COINBASE) {
+        if (field == HeaderField.COINBASE) {
             let value = get_address_value(rlp, 8, 6);
             return (value=value, value_len=3, bytes_len=20);
         }
 
-        if (field == HEADER_FIELD.BLOOM) {
+        if (field == HeaderField.BLOOM) {
             return get_bloom_filter(rlp);
         }
 
-        if (field == HEADER_FIELD.EXTRA_DATA) {
+        if (field == HeaderField.EXTRA_DATA) {
             return get_dynamic_field_bytes(rlp, 12);
         }
 
@@ -73,29 +73,29 @@ namespace HeaderDecoder {
     func get_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
         rlp: felt*, field: felt
     ) -> Uint256 {
-        if (field == HEADER_FIELD.PARENT) {
+        if (field == HeaderField.PARENT) {
             return get_hash_value(rlp, 0, 4);
         }
-        if (field == HEADER_FIELD.UNCLE) {
+        if (field == HeaderField.UNCLE) {
             return get_hash_value(rlp, 4, 5);
         }
-        if (field == HEADER_FIELD.COINBASE) {
+        if (field == HeaderField.COINBASE) {
             assert 1 = 0;  // must use get_coinbase
         }
-        if (field == HEADER_FIELD.STATE_ROOT) {
+        if (field == HeaderField.STATE_ROOT) {
             return get_hash_value(rlp, 11, 3);
         }
-        if (field == HEADER_FIELD.TRANSACTION_ROOT) {
+        if (field == HeaderField.TRANSACTION_ROOT) {
             return get_hash_value(rlp, 15, 4);
         }
-        if (field == HEADER_FIELD.RECEIPT_ROOT) {
+        if (field == HeaderField.RECEIPT_ROOT) {
             return get_hash_value(rlp, 19, 5);
         }
-        if (field == HEADER_FIELD.BLOOM) {
+        if (field == HeaderField.BLOOM) {
             // not implemented
             assert 1 = 0;
         }
-        if (field == HEADER_FIELD.EXTRA_DATA) {
+        if (field == HeaderField.EXTRA_DATA) {
             assert 1 = 0;
         }
 
@@ -107,7 +107,7 @@ namespace HeaderDecoder {
         rlp: felt*, field: felt
     ) -> Uint256 {
         let (value, value_len, bytes_len) = get_dynamic_field_bytes(rlp, field);
-        return le_u64_array_to_uint256(value, value_len, bytes_len);
+        return le_chunks_to_uint256(value, value_len, bytes_len);
     }
 
     func get_dynamic_field_bytes{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(

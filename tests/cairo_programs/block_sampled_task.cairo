@@ -7,9 +7,9 @@ from tests.cairo_programs.block_sampled_datalake import block_sampled_datalake_e
 from tests.cairo_programs.test_vectors import BlockSampledTaskMocker
 
 from src.tasks.computational import Task, extract_params_and_construct_task, AGGREGATE_FN
-from src.decoders.header_decoder import HEADER_FIELD
-from src.datalakes.datalake import DATALAKE_TYPE
-from src.datalakes.block_sampled_datalake import BLOCK_SAMPLED_PROPERTY
+from src.decoders.header_decoder import HeaderField
+from src.datalakes.datalake import DatalakeType
+from src.datalakes.block_sampled_datalake import BlockSampledProperty
 from src.types import BlockSampledDataLake, ComputationalTask
 from src.merkle import compute_tasks_root
 from packages.eth_essentials.lib.utils import pow2alloc128
@@ -64,7 +64,7 @@ func test_block_sampled_task_init{
     %}
 
     let (properties) = alloc();
-    %{ segments.write_arg(ids.properties, [1, ids.HEADER_FIELD.BLOB_GAS_USED]) %}
+    %{ segments.write_arg(ids.properties, [1, ids.HeaderField.BLOB_GAS_USED]) %}
 
     local expected_datalake: BlockSampledDataLake;
 
@@ -72,7 +72,7 @@ func test_block_sampled_task_init{
         block_range_start=5515000,
         block_range_end=5515029,
         increment=1,
-        property_type=BLOCK_SAMPLED_PROPERTY.HEADER,
+        property_type=BlockSampledProperty.HEADER,
         properties=properties,
     );
 
@@ -83,7 +83,7 @@ func test_block_sampled_task_init{
     assert expected_task = ComputationalTask(
         hash=Uint256(0xB85414EBA86F94BAC1CA653D3D3CF014, 0x212F54CE9F4342F21C5D865F1641AABC),
         datalake_ptr=datalake_ptr,
-        datalake_type=DATALAKE_TYPE.BLOCK_SAMPLED,
+        datalake_type=DatalakeType.BLOCK_SAMPLED,
         aggregate_fn_id=AGGREGATE_FN.AVG,
         ctx_operator=0,
         ctx_value=Uint256(low=0, high=0),

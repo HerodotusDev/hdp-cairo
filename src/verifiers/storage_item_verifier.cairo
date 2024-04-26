@@ -12,7 +12,7 @@ from packages.eth_essentials.lib.rlp_little import (
 )
 
 from src.memorizer import StorageMemorizer, AccountMemorizer
-from src.decoders.account_decoder import AccountDecoder, ACCOUNT_FIELD
+from src.decoders.account_decoder import AccountDecoder, AccountField
 
 from packages.eth_essentials.lib.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64
 
@@ -124,7 +124,7 @@ func verify_storage_item{
 
     // get state_root from verified headers
     let (account_value) = AccountMemorizer.get(storage_item.address, slot_proof.block_number);
-    let state_root = AccountDecoder.get_field(account_value.values, ACCOUNT_FIELD.STATE_ROOT);
+    let state_root = AccountDecoder.get_field(account_value.values, AccountField.STATE_ROOT);
 
     let (value: felt*, value_bytes_len: felt) = verify_mpt_proof(
         mpt_proof=slot_proof.proof,

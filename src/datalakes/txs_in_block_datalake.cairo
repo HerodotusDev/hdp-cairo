@@ -9,7 +9,7 @@ from packages.eth_essentials.lib.mpt import verify_mpt_proof
 from src.types import TransactionsInBlockDatalake, Transaction, TransactionProof, Header
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
 from src.decoders.transaction_decoder import TransactionDecoder
-from src.decoders.header_decoder import HeaderDecoder, HEADER_FIELD
+from src.decoders.header_decoder import HeaderDecoder, HeaderField
 
 namespace TX_IN_BLOCK_TYPES {
     const TX = 1;
@@ -75,7 +75,7 @@ func init_txs_in_block{
 //     %}
 
 // let header = HeaderMemorizer.get(target_block);
-//     let tx_root = HeaderDecoder.get_field(header.rlp, HEADER_FIELD.TRANSACTION_ROOT);
+//     let tx_root = HeaderDecoder.get_field(header.rlp, HeaderField.TRANSACTION_ROOT);
 
 // let (tx_item, tx_item_bytes_len) = verify_mpt_proof(
 //         mpt_proof=proof,

@@ -11,7 +11,7 @@ from src.memorizer import AccountMemorizer, StorageMemorizer, HeaderMemorizer
 from src.decoders.header_decoder import HeaderDecoder
 from src.decoders.account_decoder import AccountDecoder
 
-namespace BLOCK_SAMPLED_PROPERTY {
+namespace BlockSampledProperty {
     const HEADER = 1;
     const ACCOUNT = 2;
     const STORAGE_SLOT = 3;
@@ -31,7 +31,7 @@ func init_block_sampled{
 
     let (properties) = alloc();
     // Decode properties
-    if (property_type == BLOCK_SAMPLED_PROPERTY.HEADER) {
+    if (property_type == BlockSampledProperty.HEADER) {
         // Header Input Layout:
         let chunk_one = word_reverse_endian_16_RC([input + 24]);
 
@@ -54,7 +54,7 @@ func init_block_sampled{
         );
     }
 
-    if (property_type == BLOCK_SAMPLED_PROPERTY.ACCOUNT) {
+    if (property_type == BlockSampledProperty.ACCOUNT) {
         // Account Input Layout:
 
         let (address) = extract_address{bitwise_ptr=bitwise_ptr}(
@@ -79,7 +79,7 @@ func init_block_sampled{
         tempvar bitwise_ptr = bitwise_ptr;
     }
 
-    if (property_type == BLOCK_SAMPLED_PROPERTY.STORAGE_SLOT) {
+    if (property_type == BlockSampledProperty.STORAGE_SLOT) {
         // Account Slot Input Layout:
 
         let (address) = extract_address{bitwise_ptr=bitwise_ptr}(
@@ -111,7 +111,12 @@ func init_block_sampled{
     );
 }
 
-// Collects the data points for BlocKSampledDataLakes
+// Evaluates the datalake definition and retrieves the data from the memorizer.
+// Inputs:
+// datalake: the datalake to sample
+// Outputs:
+// data_points: the data points sampled from the datalake
+// data_points_len: the number of data points sampled
 func fetch_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
@@ -128,7 +133,7 @@ func fetch_data_points{
 
     let (data_points: Uint256*) = alloc();
 
-    if (datalake.property_type == BLOCK_SAMPLED_PROPERTY.HEADER) {
+    if (datalake.property_type == BlockSampledProperty.HEADER) {
         let data_points_len = fetch_header_data_points(
             datalake=datalake, index=0, data_points=data_points
         );
@@ -136,7 +141,7 @@ func fetch_data_points{
         return (data_points, data_points_len);
     }
 
-    if (datalake.property_type == BLOCK_SAMPLED_PROPERTY.ACCOUNT) {
+    if (datalake.property_type == BlockSampledProperty.ACCOUNT) {
         let data_points_len = fetch_account_data_points(
             datalake=datalake, index=0, data_points=data_points
         );
@@ -144,7 +149,7 @@ func fetch_data_points{
         return (data_points, data_points_len);
     }
 
-    if (datalake.property_type == BLOCK_SAMPLED_PROPERTY.STORAGE_SLOT) {
+    if (datalake.property_type == BlockSampledProperty.STORAGE_SLOT) {
         let data_points_len = fetch_storage_data_points(
             datalake=datalake, index=0, data_points=data_points
         );

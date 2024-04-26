@@ -1,41 +1,29 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
-from starkware.cairo.common.cairo_secp.bigint import BigInt3, uint256_to_bigint
 from starkware.cairo.common.dict_access import DictAccess
-from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
-from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
-from starkware.cairo.common.cairo_keccak.keccak import finalize_keccak
+from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.cairo_secp.signature import (
-    recover_public_key,
-    public_key_point_to_eth_address,
-    verify_eth_signature,
-)
 from packages.eth_essentials.lib.mpt import verify_mpt_proof
-from packages.eth_essentials.lib.utils import (
-    pow2alloc128,
-    write_felt_array_to_dict_keys,
-    felt_divmod,
-    felt_divmod_8,
-    word_reverse_endian_64,
-)
+from packages.eth_essentials.lib.utils import felt_divmod
 from packages.eth_essentials.lib.rlp_little import (
     extract_byte_at_pos,
-    extract_n_bytes_at_pos,
-    extract_nibble_at_byte_pos,
     extract_n_bytes_from_le_64_chunks_array,
-    extract_le_hash_from_le_64_chunks_array,
-    assert_subset_in_key,
-    extract_nibble_from_key,
 )
 
 from src.rlp import decode_le_rlp_string_small
-from src.utils import prepend_le_rlp_list_prefix
 from src.types import TransactionProof, Transaction, Header, ChainInfo
 from src.memorizer import HeaderMemorizer, TransactionMemorizer
+from src.decoders.header_decoder import HeaderDecoder, HeaderField
 
-from src.decoders.transaction_decoder import TransactionDecoder
-from src.decoders.header_decoder import HeaderDecoder, HEADER_FIELD
-
+// Verfies an array of transaction proofs with the headers stored in the memorizer.
+// The verified transactions are then added to the memorizer.
+// Inputs:
+// - tx_proofs: An array of transaction proofs.
+// - tx_proofs_len: The length of the array.
+// - index: The index of the current transaction proof to verify.
+// Outputs:
+// The outputs are added to the implicit args.
+// - transactions: An array of transactions.
+// - transaction_dict: A dictionary of transactions (memorizer).
 func verify_n_transaction_proofs{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -55,9 +43,8 @@ func verify_n_transaction_proofs{
     }
 
     let tx_proof = tx_proofs[index];
-
     let header = HeaderMemorizer.get(tx_proof.block_number);
-    let tx_root = HeaderDecoder.get_field(header.rlp, HEADER_FIELD.TRANSACTION_ROOT);
+    let tx_root = HeaderDecoder.get_field(header.rlp, HeaderField.TRANSACTION_ROOT);
 
     let (tx_item, tx_item_bytes_len) = verify_mpt_proof{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
@@ -77,6 +64,7 @@ func verify_n_transaction_proofs{
     }(tx_item=tx_item, tx_item_bytes_len=tx_item_bytes_len, block_number=tx_proof.block_number);
 
     // decode tx-index from rlp-encoded key
+    assert tx_proof.key.high = 0; // sanity check
     let tx_index = decode_le_rlp_string_small(tx_proof.key.low);
 
     TransactionMemorizer.add(tx_proof.block_number, tx_index, index);
@@ -87,6 +75,13 @@ func verify_n_transaction_proofs{
     );
 }
 
+// Derives a TX type and initializes a Transaction struct.
+// Inputs:
+// - tx_item: The RLP-encoded transaction.
+// - tx_item_bytes_len: The length of the RLP-encoded transaction.
+// - block_number: The block number of the transaction.
+// Outputs:
+// - Transaction struct.
 func init_tx_stuct{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -101,7 +96,8 @@ func init_tx_stuct{
 
     local has_type_prefix: felt;
     %{
-        if ids.first_byte < 0x04:
+        # typed transactions have a type prefix in this range [1, 3]
+        if 0x0 < ids.first_byte < 0x04:
             ids.has_type_prefix = 1
         else:
             ids.has_type_prefix = 0
@@ -110,20 +106,21 @@ func init_tx_stuct{
     local tx_type: felt;
     local tx_start_offset: felt;
     if (has_type_prefix == 1) {
-        assert [range_check_ptr] = 0x3 - first_byte;  // current the highest tx type is 3
+        assert [range_check_ptr] = 0x3 - first_byte;
         assert [range_check_ptr + 1] = 0xff - second_byte;
         assert [range_check_ptr + 2] = second_byte - 0xf7;
-        tempvar range_check_ptr = range_check_ptr + 3;
 
         assert tx_type = first_byte;
         let len_len = second_byte - 0xf7;
         assert tx_start_offset = 2 + len_len;  // type + prefix + len_len
+        assert [range_check_ptr + 3] = 7 - tx_start_offset;
+        tempvar range_check_ptr = range_check_ptr + 4;
     } else {
         assert tx_type = 0;
 
         let len_len = first_byte - 0xf7;
         assert tx_start_offset = 1 + len_len;
-
+        // Legacy transactions must start with long list prefix
         assert [range_check_ptr] = 0xff - first_byte;
         assert [range_check_ptr + 1] = first_byte - 0xf7;
         assert [range_check_ptr + 2] = 7 - tx_start_offset;

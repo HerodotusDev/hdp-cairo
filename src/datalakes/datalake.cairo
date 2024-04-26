@@ -22,7 +22,7 @@ from src.types import (
     Transaction,
 )
 
-namespace DATALAKE_TYPE {
+namespace DatalakeType {
     const BLOCK_SAMPLED = 0;
     const TXS_IN_BLOCK = 1;
 }
@@ -67,7 +67,7 @@ namespace Datalake {
         transactions: Transaction*,
         pow2_array: felt*,
     }(task: ComputationalTask) -> (res: Uint256*, res_len: felt) {
-        if (task.datalake_type == DATALAKE_TYPE.BLOCK_SAMPLED) {
+        if (task.datalake_type == DatalakeType.BLOCK_SAMPLED) {
             let block_sampled_datalake: BlockSampledDataLake = [
                 cast(task.datalake_ptr, BlockSampledDataLake*)
             ];
@@ -76,7 +76,7 @@ namespace Datalake {
             return (res=res, res_len=res_len);
         }
 
-        if (task.datalake_type == DATALAKE_TYPE.TXS_IN_BLOCK) {
+        if (task.datalake_type == DatalakeType.TXS_IN_BLOCK) {
             let tx_in_block_datalake: TransactionsInBlockDatalake = [
                 cast(task.datalake_ptr, TransactionsInBlockDatalake*)
             ];

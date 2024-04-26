@@ -9,7 +9,7 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, word_reverse_endian
 
 // retrieves an element from an RLP encoded list. The element is selected via its index in the list.
-// The validity of RLP is not checked in this function.
+// The passed rlp chunks should not contain the RLP list prefix, only the elements.
 // Params:
 // - rlp: the rlp encoded state array
 // - field: the index of the value to retrieve
@@ -220,7 +220,7 @@ func decode_rlp_word_to_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, p
     );
 
     // convert to uint256
-    let result = le_u64_array_to_uint256(
+    let result = le_chunks_to_uint256(
         elements=result_chunks, elements_len=result_len, bytes_len=result_bytes_len
     );
 
@@ -229,8 +229,13 @@ func decode_rlp_word_to_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, p
 
 // Converts a LE 8-bytes chunks to uint256. Converts between [1-4] chunks
 // This function should be used for decoding RLP values, as it can deal with arbitrary length values.
-// The to_be flag can be used to convert the result to BE.
-func le_u64_array_to_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+// Inputs:
+// - elements: the LE 8-bytes chunks
+// - elements_len: the number of chunks
+// - bytes_len: the number of bytes of the elements
+// Outputs:
+// - the decoded uint256 in LE
+func le_chunks_to_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
     elements: felt*, elements_len: felt, bytes_len: felt
 ) -> Uint256 {
     alloc_locals;
@@ -250,9 +255,8 @@ func le_u64_array_to_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2
 
     // For values larger then 16 bytes, we need to shift the chunks to the left.
     let (_, local offset) = felt_divmod(bytes_len, 8);  // calculate the offset from the bytes_len
-    let (le_shifted) = shift_for_le_uint256(elements, elements_len, offset);
+    let (le_shifted) = right_shift_chunks(elements, elements_len, offset);
 
-    // tempvar range_check_ptr = range_check_ptr;
     if (elements_len == 3) {
         assert value = Uint256(
             low=le_shifted[0] * pow2_array[64], high=le_shifted[2] * pow2_array[64] + le_shifted[1]
@@ -269,7 +273,16 @@ func le_u64_array_to_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2
     return (value);
 }
 
-func shift_for_le_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+// This function is required when constructing a LE uint256 from LE chunks.
+// It shifts the chunks to the right, ensuring the correct values end up in low and high
+// e.g. 0x11223344 0x55 -> 0x11 0x22334455
+// Inputs:
+// - value: the LE chunks
+// - value_len: the number of chunks
+// - offset: the number of bytes to shift
+// Outputs:
+// - the shifted chunks
+func right_shift_chunks{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
     value: felt*, value_len: felt, offset: felt
 ) -> (shifted: felt*) {
     alloc_locals;

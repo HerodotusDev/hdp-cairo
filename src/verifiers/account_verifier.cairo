@@ -8,7 +8,7 @@ from src.types import Account, AccountProof, Header, AccountValues
 from packages.eth_essentials.lib.block_header import extract_state_root_little
 from src.memorizer import HeaderMemorizer, AccountMemorizer
 
-from src.decoders.header_decoder import HeaderDecoder, HEADER_FIELD
+from src.decoders.header_decoder import HeaderDecoder, HeaderField
 
 // Initializes the accounts, ensuring that the passed address matches the key.
 // Params:
@@ -122,7 +122,7 @@ func verify_account{
 
     // get state_root from verified headers
     let header = HeaderMemorizer.get(account_proof.block_number);
-    let state_root = HeaderDecoder.get_field(header.rlp, HEADER_FIELD.STATE_ROOT);
+    let state_root = HeaderDecoder.get_field(header.rlp, HeaderField.STATE_ROOT);
 
     let (value: felt*, value_len: felt) = verify_mpt_proof(
         mpt_proof=account_proof.proof,
