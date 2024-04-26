@@ -9,7 +9,7 @@ from starkware.cairo.common.cairo_secp.signature import (
     public_key_point_to_eth_address,
 )
 
-from src.rlp import retrieve_from_rlp_list_via_idx, le_chunks_to_uint256
+from src.rlp import rlp_list_retrieve, le_chunks_to_uint256
 from src.types import Transaction, ChainInfo
 from packages.eth_essentials.lib.rlp_little import extract_n_bytes_from_le_64_chunks_array
 from src.utils import (
@@ -49,7 +49,7 @@ namespace TransactionDecoder {
         tx: Transaction
     ) -> felt {
         let index = TxTypeFieldMap.get_field_index(tx.type, 0);
-        let (nonce, nonce_len, _bytes_len) = retrieve_from_rlp_list_via_idx(tx.rlp, index, 0, 0);
+        let (nonce, nonce_len, _bytes_len) = rlp_list_retrieve(tx.rlp, index, 0, 0);
 
         assert nonce_len = 1;
         return (nonce[0]);
@@ -75,7 +75,7 @@ namespace TransactionDecoder {
         }
 
         let index = TxTypeFieldMap.get_field_index(tx.type, field);
-        let (res, res_len, bytes_len) = retrieve_from_rlp_list_via_idx(tx.rlp, index, 0, 0);
+        let (res, res_len, bytes_len) = rlp_list_retrieve(tx.rlp, index, 0, 0);
 
         return le_chunks_to_uint256(res, res_len, bytes_len);
     }
@@ -101,7 +101,7 @@ namespace TransactionDecoder {
         }
 
         let index = TxTypeFieldMap.get_field_index(tx.type, field);
-        let (local res, res_len, bytes_len) = retrieve_from_rlp_list_via_idx(tx.rlp, index, 0, 0);
+        let (local res, res_len, bytes_len) = rlp_list_retrieve(tx.rlp, index, 0, 0);
         let value = le_chunks_to_uint256(res, res_len, bytes_len);
         return (value=value, bytes_len=bytes_len);
     }
@@ -111,7 +111,7 @@ namespace TransactionDecoder {
     ) -> (value: felt*, value_len: felt, bytes_len: felt) {
         let index = TxTypeFieldMap.get_field_index(tx.type, field);
 
-        let (res, res_len, bytes_len) = retrieve_from_rlp_list_via_idx(tx.rlp, index, 0, 0);
+        let (res, res_len, bytes_len) = rlp_list_retrieve(tx.rlp, index, 0, 0);
 
         return (res, res_len, bytes_len);
     }

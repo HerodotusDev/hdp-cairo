@@ -6,7 +6,7 @@ from starkware.cairo.common.alloc import alloc
 
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash, poseidon_hash_many
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
-from src.rlp import retrieve_from_rlp_list_via_idx, le_chunks_to_uint256
+from src.rlp import rlp_list_retrieve, le_chunks_to_uint256
 from packages.eth_essentials.lib.utils import felt_divmod
 
 from packages.eth_essentials.lib.mmr import hash_subtree_path
@@ -116,7 +116,7 @@ namespace HeaderDecoder {
         let start_byte = 448;  // 20 + 5*32 + 256 + encoding bytes
         let field_idx = field - 7;  // we have 7 static fields that we skip
 
-        let (res, res_len, bytes_len) = retrieve_from_rlp_list_via_idx(
+        let (res, res_len, bytes_len) = rlp_list_retrieve(
             rlp=rlp, field=field_idx, item_starts_at_byte=start_byte, counter=0
         );
 

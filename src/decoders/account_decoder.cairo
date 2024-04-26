@@ -2,7 +2,7 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.uint256 import Uint256
 from src.types import Account, AccountProof, Header, AccountValues
-from src.rlp import retrieve_from_rlp_list_via_idx, le_chunks_to_uint256
+from src.rlp import rlp_list_retrieve, le_chunks_to_uint256
 from src.memorizer import HeaderMemorizer, AccountMemorizer
 
 namespace AccountField {
@@ -18,7 +18,7 @@ namespace AccountDecoder {
     ) -> Uint256 {
         alloc_locals;
 
-        let (res, res_len, bytes_len) = retrieve_from_rlp_list_via_idx(
+        let (res, res_len, bytes_len) = rlp_list_retrieve(
             rlp=rlp, field=field, item_starts_at_byte=2, counter=0
         );
 

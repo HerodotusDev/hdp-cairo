@@ -9,7 +9,7 @@ from packages.eth_essentials.lib.rlp_little import (
     extract_n_bytes_from_le_64_chunks_array,
 )
 
-from src.rlp import decode_le_rlp_string_small
+from src.rlp import chunk_to_felt_be
 from src.types import TransactionProof, Transaction, Header, ChainInfo
 from src.memorizer import HeaderMemorizer, TransactionMemorizer
 from src.decoders.header_decoder import HeaderDecoder, HeaderField
@@ -65,7 +65,7 @@ func verify_n_transaction_proofs{
 
     // decode tx-index from rlp-encoded key
     assert tx_proof.key.high = 0; // sanity check
-    let tx_index = decode_le_rlp_string_small(tx_proof.key.low);
+    let tx_index = chunk_to_felt_be(tx_proof.key.low);
 
     TransactionMemorizer.add(tx_proof.block_number, tx_index, index);
     assert transactions[index] = tx;
