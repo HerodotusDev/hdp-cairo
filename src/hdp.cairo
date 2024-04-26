@@ -139,6 +139,7 @@ func run{
         def write_tx_proofs(ptr, program_input):
             offset = 0
             if "transactions" in program_input:
+                tx_proofs = program_input["transactions"]
                 ids.transaction_proof_len = len(tx_proofs)
 
                 for tx_proof in tx_proofs:
@@ -151,9 +152,7 @@ func run{
                     offset += 6
             else:
                 ids.transaction_proof_len = 0
-    %}
-    // if these hints are one hint, the compiler goes on strike.
-    %{
+
         from tests.python.test_header_decoding import fetch_header_dict
         # header = fetch_header_dict(5608949)
         def write_mmr_meta(mmr_meta):
