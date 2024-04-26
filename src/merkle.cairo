@@ -79,10 +79,11 @@ func compute_tasks_root{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_pt
 func compute_merkle_root{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(
     leafs: Uint256*, leafs_len: felt
 ) -> Uint256 {
-    // pass H(0,0) if no leafs
-    if(leafs_len == 0) {
+    if (leafs_len == 0) {
         // keccak(0)
-        return (Uint256(low=0x6612f7b477d66591ff96a9e064bcc98a, high=0xbc36789e7a1e281436464229828f817d));
+        return (
+            Uint256(low=0x6612f7b477d66591ff96a9e064bcc98a, high=0xbc36789e7a1e281436464229828f817d)
+        );
     }
 
     let (tree: Uint256*) = alloc();
