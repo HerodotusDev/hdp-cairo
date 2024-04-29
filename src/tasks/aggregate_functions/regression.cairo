@@ -9,7 +9,7 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 
 struct Output {
-    result: felt,
+    result: Uint256,
 }
 
 func compute_regression{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
@@ -18,12 +18,15 @@ func compute_regression{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     alloc_locals;
 
     // Inputs
-    local input = values;
+    local input: felt* = cast(values, felt*);
     local input_size = values_len * 2;
 
-    // TODO call run_simple_bootloader fake output_ptr
+    local return_ptr: felt*;
+    %{ ids.return_ptr = segments.add() %}
 
-    let output = cast(output - Output.SIZE, Output*);
+    // TODO call run_simple_bootloader replace output_ptr with return_ptr
+
+    let output = cast(return_ptr - Output.SIZE, Output*);
 
     return (output.result);
 }
