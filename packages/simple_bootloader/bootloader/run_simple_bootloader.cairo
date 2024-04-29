@@ -1,4 +1,4 @@
-from bootloader.recursive_with_poseidon.execute_task import BuiltinData, execute_task
+from bootloader.execute_task import BuiltinData, execute_task
 from common.cairo_builtins import HashBuiltin, PoseidonBuiltin
 from common.registers import get_fp_and_pc
 
