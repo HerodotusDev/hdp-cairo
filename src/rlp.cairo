@@ -7,6 +7,7 @@ from packages.eth_essentials.lib.rlp_little import (
 from src.utils import reverse_small_chunk_endianess, get_felt_bytes_len, reverse_chunk_endianess
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, word_reverse_endian
+from packages.eth_essentials.lib.rlp_little import array_copy
 
 // retrieves an element from an RLP encoded list (LE chunks). The element is selected via its index in the list.
 // The passed rlp chunks should not contain the RLP list prefix, only the elements.
@@ -274,14 +275,16 @@ func le_chunks_to_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
 }
 
 // This function is required when constructing a LE uint256 from LE chunks.
-// It shifts the chunks to the right, ensuring the correct values end up in low and high
+// In BE, the function shifts elements to the right: 
+//  e.g. [0x1122334455667788, 0x11] -> [0x11, 0x2233445566778811]
+// This function does the same thing, but on LE chunks. This results in the following:
 // e.g. [0x1122334455667788, 0x11] -> [0x8800000000000000, 0x1111223344556677]
 // Inputs:
 // - value: the LE chunks
 // - value_len: the number of chunks
 // - offset: the number of bytes to shift
 // Outputs:
-// - the shifted chunks
+// - the shifted LE chunks
 func right_shift_le_chunks{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
     value: felt*, value_len: felt, offset: felt
 ) -> (shifted: felt*) {
@@ -292,9 +295,9 @@ func right_shift_le_chunks{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_a
         return (shifted=value);
     }
 
-    // assert [range_check_ptr] = 7 - offset;
-    // assert [range_check_ptr + 1] = value_len - 1;
-    // tempvar range_check_ptr = range_check_ptr + 2;
+    assert [range_check_ptr] = 7 - offset;
+    assert [range_check_ptr + 1] = value_len - 1;
+    let range_check_ptr = range_check_ptr + 2;
 
     let devisor = pow2_array[offset * 8];
     let shifter = pow2_array[(8 - offset) * 8];
@@ -339,4 +342,132 @@ func right_shift_le_chunks{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_a
     assert current_word = 0;
 
     return (shifted=result);
+}
+
+// Prepends a LE encoded item to an RLP list.
+// Inputs:
+// - item_bytes_len: the number of bytes in the item.
+// - item: the item to prepend (max 64 bits).
+// - rlp: the RLP list.
+// - rlp_len: the length of the RLP list.
+// - expected_bytes_len: the expected number of bytes in the RLP list after prepending the item.
+// Outputs:
+// - encoded: the new RLP list.
+// - encoded_len: the length of the new RLP list.
+func prepend_le_chunks{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    item_bytes_len: felt, item: felt, rlp: felt*, rlp_len: felt, expected_bytes_len: felt
+) -> (encoded: felt*, encoded_len: felt) {
+    // we have no item_bytes_len if the prefix is 0
+    if (item_bytes_len == 0) {
+        return (encoded=rlp, encoded_len=rlp_len);
+    }
+    
+    alloc_locals;
+
+    assert [range_check_ptr] = 8 - item_bytes_len;
+    let range_check_ptr = range_check_ptr + 1;
+
+    let (local result: felt*) = alloc();
+
+    let shifter = pow2_array[item_bytes_len * 8];
+    let devisor = pow2_array[(8 - item_bytes_len) * 8];
+
+    tempvar current_word = item;
+    tempvar n_processed_words = 0;
+    tempvar i = 0;
+
+    loop:
+    let i = [ap - 1];
+    let n_processed_words = [ap - 2];
+    let current_word = [ap - 3];
+
+    %{ memory[ap] = 1 if (ids.rlp_len - ids.n_processed_words == 0) else 0 %}
+    jmp end_loop if [ap] != 0, ap++;
+
+    // Inlined felt_divmod (unsigned_div_rem).
+    let q = [ap];
+    let r = [ap + 1];
+    %{
+        ids.q, ids.r = divmod(memory[ids.rlp + ids.i], ids.devisor)
+        #print(f"val={hex(memory[ids.rlp + ids.i])} q/cur={hex(ids.q)} r={hex(ids.r)} i={ids.i}")
+    %}
+    ap += 2;
+    tempvar item_bytes_len = 3 * n_processed_words;
+    assert [range_check_ptr + item_bytes_len] = q;
+    assert [range_check_ptr + item_bytes_len + 1] = r;
+    assert [range_check_ptr + item_bytes_len + 2] = devisor - r - 1;
+    assert q * devisor + r = rlp[i];
+    // done inlining felt_divmod.
+
+    assert result[n_processed_words] = current_word + r * shifter;
+    [ap] = q, ap++;
+    [ap] = n_processed_words + 1, ap++;
+    [ap] = i + 1, ap++;
+
+    jmp loop;
+
+    end_loop:
+    assert rlp_len = n_processed_words;
+    tempvar range_check_ptr = range_check_ptr + 3 * n_processed_words;
+
+    let (words, rest) = felt_divmod(expected_bytes_len, 8);
+    if (rest == 0) {
+        return (encoded=result, encoded_len=rlp_len);
+    } else {
+        // since rest > 0, we expect word + 1 words to be done
+        if(words + 1 == n_processed_words) {
+            return (encoded=result, encoded_len=rlp_len);
+        } else {
+            // add the remaining word
+            assert result[n_processed_words] = current_word;
+            return (encoded=result, encoded_len=rlp_len + 1);
+        }
+
+    }
+}
+
+// Reverses the endianness of a chunk and appends it to a list of chunks and returns new list
+// Inputs:
+// - list: the le chunks list to append to
+// - list_bytes_len: the length of the list in bytes
+// - item: the BE chunk to append (max 8 bytes)
+// - item_bytes_len: the length of the item in bytes
+// Outputs:
+// - list: the new list
+// - list_len: the length of the new list
+// - list_bytes_len: the length of the new list in bytes
+func append_be_chunk{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    list: felt*, list_bytes_len: felt, chunk: felt, chunk_bytes_len: felt
+) -> (list: felt*, list_len: felt, list_bytes_len: felt) {
+    alloc_locals;
+
+    assert [range_check_ptr] = 7 - chunk_bytes_len;
+    tempvar range_check_ptr = range_check_ptr + 1;
+
+    let (word, offset) = felt_divmod(list_bytes_len, 8);
+    let le_chunk = reverse_chunk_endianess{
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr
+    }(chunk, chunk_bytes_len);
+
+    if (offset == 0) {
+        assert list[word] = le_chunk;
+        return (list=list, list_len=word + 1, list_bytes_len=list_bytes_len + chunk_bytes_len);
+    }
+
+    // copy every element except the last one
+    let (result) = alloc();
+    array_copy(list, result, word, 0);
+
+    // reverse and extend the chunk
+    let le_extended = le_chunk * pow2_array[offset * 8];
+
+    let (new_item, msb_item) = felt_divmod(le_extended, pow2_array[64]);
+    assert result[word] = msb_item + list[word];
+
+    if (new_item != 0) {
+        assert result[word + 1] = new_item;
+        return (list=result, list_len=word + 2, list_bytes_len=list_bytes_len + chunk_bytes_len);
+    } else {
+        return (list=result, list_len=word + 1, list_bytes_len=list_bytes_len + chunk_bytes_len);
+    }
 }

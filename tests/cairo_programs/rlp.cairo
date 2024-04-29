@@ -4,7 +4,7 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
 from starkware.cairo.common.uint256 import Uint256, uint256_eq, uint256_reverse_endian
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
-from src.rlp import le_chunks_to_uint256, decode_rlp_word_to_uint256, rlp_list_retrieve, chunk_to_felt_be, right_shift_le_chunks
+from src.rlp import le_chunks_to_uint256, decode_rlp_word_to_uint256, rlp_list_retrieve, chunk_to_felt_be, right_shift_le_chunks, prepend_le_chunks
 from packages.eth_essentials.lib.utils import pow2alloc127
 
 func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}() {
@@ -22,21 +22,135 @@ func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuilt
         import rlp
     %}
 
-    test_decode_rlp_word_to_uint256{
-        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-    }();
-    test_rlp_list_retrieve{
-        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-    }();
-    test_chunk_to_felt_be{
-        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-    }();
-    test_right_shift_le_chunks{
+    // test_decode_rlp_word_to_uint256{
+    //     range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
+    // }();
+    // test_rlp_list_retrieve{
+    //     range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
+    // }();
+    // test_chunk_to_felt_be{
+    //     range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
+    // }();
+    // test_right_shift_le_chunks{
+    //     range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
+    // }();
+    test_prepend_le_chunks{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }();
 
     return ();
 }
+
+func test_prepend_le_chunks{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
+}() {
+    alloc_locals;
+
+    local elements_len: felt;
+    local item_len: felt;
+
+    %{
+        rlp_elements = [
+            ([0x11223344], 4),
+            ([0x1122334455667788], 8),
+            ([0x0011223344556677], 8),
+            ([0x0011223344556677, 0x1122], 10),
+            ([0x1122334455667788, 0x1122334455667788, 0x112233], 19)
+        ]
+        ids.elements_len = len(rlp_elements)
+
+        prepend_items = [
+            (0x01, 1),
+            (0x1122, 2),
+            (0x1122334455, 5),
+            (0x1122334455667788, 8)
+        ]
+        ids.item_len = len(prepend_items)
+
+        expected_values = [
+            [
+                [0x1122334401],
+                [0x112233441122],
+                [0x2233441122334455, 0x11],
+                [0x1122334455667788, 0x11223344]
+            ],
+            [
+                [0x2233445566778801, 0x11],
+                [0x3344556677881122, 0x1122],
+                [0x6677881122334455, 0x1122334455],
+                [0x1122334455667788, 0x1122334455667788]
+            ],
+            [
+                [0x1122334455667701, 0x00],
+                [0x2233445566771122, 0x0011],
+                [0x5566771122334455, 0x0011223344],
+                [0x1122334455667788, 0x0011223344556677]
+            ],
+            [
+                [0x1122334455667701, 0x112200],
+                [0x2233445566771122, 0x11220011],
+                [0x5566771122334455, 0x11220011223344],
+                [0x1122334455667788, 0x0011223344556677, 0x1122]
+            ],
+            [
+                [0x2233445566778801, 0x2233445566778811, 0x11223311],
+                [0x3344556677881122, 0x3344556677881122, 0x1122331122],
+                [0x6677881122334455, 0x6677881122334455, 0x1122331122334455],
+                [0x1122334455667788, 0x1122334455667788, 0x1122334455667788, 0x112233]
+            ]
+        ]   
+    %}
+    return test_prepend_le_chunks_inner(elements_len, 0, item_len);
+}
+
+func test_prepend_le_chunks_inner{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
+}(elements_len: felt, elements_index: felt, item_len: felt) {
+    alloc_locals;
+
+    if(elements_len == elements_index) {
+        return ();
+    }
+
+    test_prepend_le_chunks_inner_inner(elements_index, item_len, 0);
+
+    return test_prepend_le_chunks_inner(elements_len, elements_index + 1, item_len);
+}
+
+func test_prepend_le_chunks_inner_inner{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
+}(elements_index: felt, item_len: felt, item_index: felt) {
+    alloc_locals;
+
+    if(item_len == item_index) {
+        return ();
+    }
+
+    local item_bytes_len: felt;
+    local item: felt;
+    local expected_bytes_len: felt;
+    let (rlp) = alloc();
+    local rlp_len: felt;
+
+    %{
+        ids.item = prepend_items[ids.item_index][0]
+        ids.item_bytes_len = prepend_items[ids.item_index][1]
+        segments.write_arg(ids.rlp, rlp_elements[ids.elements_index][0])
+        ids.rlp_len = len(rlp_elements[ids.elements_index][0])
+        ids.expected_bytes_len =  prepend_items[ids.item_index][1] + rlp_elements[ids.elements_index][1]
+    %}
+
+    let (encoded, encoded_len) = prepend_le_chunks(item_bytes_len, item, rlp, rlp_len, expected_bytes_len);
+
+    %{
+        for i in range(ids.encoded_len):
+            assert memory[ids.encoded + i] == expected_values[ids.elements_index][ids.item_index][i], f"Invalid Result at index {i}"
+    %}
+
+    return test_prepend_le_chunks_inner_inner(elements_index, item_len, item_index + 1);
+}
+
+
 
 func test_right_shift_le_chunks{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*

@@ -9,11 +9,10 @@ from starkware.cairo.common.cairo_secp.signature import (
     public_key_point_to_eth_address,
 )
 
-from src.rlp import rlp_list_retrieve, le_chunks_to_uint256
+from src.rlp import rlp_list_retrieve, le_chunks_to_uint256, prepend_le_chunks
 from src.types import Transaction, ChainInfo
 from packages.eth_essentials.lib.rlp_little import extract_n_bytes_from_le_64_chunks_array
 from src.utils import (
-    prepend_le_rlp_list_prefix,
     append_be_chunk,
     get_felt_bytes_len,
     reverse_chunk_endianess,
@@ -282,9 +281,9 @@ namespace TransactionSender {
         }
 
         let encoded_tx_bytes_len = tx_payload_bytes_len + prefix_bytes_len;
-        let (encoded_tx, encoded_tx_len) = prepend_le_rlp_list_prefix(
-            offset=prefix_bytes_len,
-            prefix=typed_prefix,
+        let (encoded_tx, encoded_tx_len) = prepend_le_chunks(
+            item_bytes_len=prefix_bytes_len,
+            item=typed_prefix,
             rlp=tx_payload,
             rlp_len=tx_payload_len,
             expected_bytes_len=encoded_tx_bytes_len,
