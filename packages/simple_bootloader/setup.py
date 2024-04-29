@@ -11,5 +11,5 @@ setuptools.setup(
         "common.builtin_poseidon": ["*.cairo", "*/*.cairo"],
         "lang.compiler": ["cairo.ebnf", "lib/*.cairo"],
         "bootloader": ["*.cairo", "*/*.cairo"],
-    }
+    },
 )

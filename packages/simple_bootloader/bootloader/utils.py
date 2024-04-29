@@ -1,13 +1,13 @@
 import json
 import os
-from typing import List
+from typing import Any, List, Union
 import aiofiles
 from starkware.cairo.bootloaders.fact_topology import (
     FactTopologiesFile,
     FactTopology,
     get_fact_topology_from_additional_data,
 )
-from bootloader.objects import CairoPieTask, Task
+from bootloader.objects import CairoPieTask, RunProgramTask, Task
 from starkware.cairo.common.hash_state import compute_hash_on_elements
 from starkware.cairo.lang.compiler.program import Program
 from starkware.cairo.lang.vm.cairo_pie import CairoPie, ExecutionResources
@@ -185,15 +185,49 @@ def load_cairo_pie(
         memory[local_relocate_value(addr)] = local_relocate_value(val)
 
 
-def get_task_fact_topology(
-    output_size: int,
-    task: CairoPie,
-) -> FactTopology:
+def prepare_output_runner(
+    task: Task, output_builtin: OutputBuiltinRunner, output_ptr: RelocatableValue
+):
     """
-    Returns the fact_topology that corresponds to 'task'.
+    Prepares the output builtin if the type of task is Task, so that pages of the inner program
+    will be recorded separately.
+    If the type of task is CairoPie, nothing should be done, as the program does not contain
+    hints that may affect the output builtin.
+    The return value of this function should be later passed to get_task_fact_topology().
     """
 
-    if isinstance(task, CairoPieTask):
+    if isinstance(task, RunProgramTask):
+        output_state = output_builtin.get_state()
+        output_builtin.new_state(base=output_ptr)
+        return output_state
+    elif isinstance(task, CairoPieTask):
+        return None
+    else:
+        raise NotImplementedError(f"Unexpected task type: {type(task).__name__}.")
+
+
+def get_task_fact_topology(
+    output_size: int,
+    task: Union[RunProgramTask, CairoPie],
+    output_builtin: OutputBuiltinRunner,
+    output_runner_data: Any,
+) -> FactTopology:
+    """
+    Returns the fact_topology that corresponds to 'task'. Restores output builtin state if 'task' is
+    a RunProgramTask.
+    """
+
+    # Obtain the fact_toplogy of 'task'.
+    if isinstance(task, RunProgramTask):
+        assert output_runner_data is not None
+        fact_topology = get_fact_topology_from_additional_data(
+            output_size=output_size,
+            output_builtin_additional_data=output_builtin.get_additional_data(),
+        )
+        # Restore the output builtin runner to its original state.
+        output_builtin.set_state(output_runner_data)
+    elif isinstance(task, CairoPieTask):
+        assert output_runner_data is None
         fact_topology = get_fact_topology_from_additional_data(
             output_size=output_size,
             output_builtin_additional_data=task.cairo_pie.additional_data[
