@@ -15,7 +15,7 @@ from packages.eth_essentials.lib.rlp_little import extract_n_bytes_from_le_64_ch
 from src.utils import (
     prepend_le_rlp_list_prefix,
     append_be_chunk,
-    get_chunk_bytes_len,
+    get_felt_bytes_len,
     reverse_chunk_endianess,
 )
 
@@ -248,16 +248,18 @@ namespace TransactionSender {
             assert [range_check_ptr] = 55 - tx_payload_bytes_len;
             assert prefix = 0xc0 + tx_payload_bytes_len;
             assert current_len = 1;
+            tempvar pow2_array = pow2_array;
             tempvar range_check_ptr = range_check_ptr + 1;
         } else {
             // Calculate the prefix for an RLP long list
-            let len_len = get_chunk_bytes_len(tx_payload_bytes_len);
+            let len_len = get_felt_bytes_len(tx_payload_bytes_len);
             assert [range_check_ptr] = tx_payload_bytes_len - 56;
             assert prefix = (0xf7 + len_len) * pow2_array[8 * len_len] + tx_payload_bytes_len;
             assert current_len = len_len + 1;
+            tempvar pow2_array = pow2_array;
             tempvar range_check_ptr = range_check_ptr + 1;
         }
-
+        let pow2_array = pow2_array;
         local typed_prefix: felt;
         if (tx.type == TransactionType.LEGACY) {
             // Legacy txs have no type prefix
