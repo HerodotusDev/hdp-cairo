@@ -441,7 +441,7 @@ func append_be_chunk{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: 
 ) -> (list: felt*, list_len: felt, list_bytes_len: felt) {
     alloc_locals;
 
-    assert [range_check_ptr] = 7 - chunk_bytes_len;
+    assert [range_check_ptr] = 8 - chunk_bytes_len;
     tempvar range_check_ptr = range_check_ptr + 1;
 
     let (word, offset) = felt_divmod(list_bytes_len, 8);

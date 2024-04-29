@@ -4,7 +4,7 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
 from starkware.cairo.common.uint256 import Uint256, uint256_eq, uint256_reverse_endian
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
-from src.rlp import le_chunks_to_uint256, decode_rlp_word_to_uint256, rlp_list_retrieve, chunk_to_felt_be, right_shift_le_chunks, prepend_le_chunks
+from src.rlp import le_chunks_to_uint256, decode_rlp_word_to_uint256, rlp_list_retrieve, chunk_to_felt_be, right_shift_le_chunks, prepend_le_chunks, append_be_chunk
 from packages.eth_essentials.lib.utils import pow2alloc127
 
 func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}() {
@@ -22,23 +22,141 @@ func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuilt
         import rlp
     %}
 
-    // test_decode_rlp_word_to_uint256{
-    //     range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-    // }();
-    // test_rlp_list_retrieve{
-    //     range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-    // }();
-    // test_chunk_to_felt_be{
-    //     range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-    // }();
-    // test_right_shift_le_chunks{
-    //     range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-    // }();
+    test_decode_rlp_word_to_uint256{
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
+    }();
+    test_rlp_list_retrieve{
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
+    }();
+    test_chunk_to_felt_be{
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
+    }();
+    test_right_shift_le_chunks{
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
+    }();
     test_prepend_le_chunks{
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
+    }();
+    test_append_be_chunk{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }();
 
     return ();
+}
+
+func test_append_be_chunk{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
+}() {
+    alloc_locals;
+
+    local elements_len: felt;
+    local item_len: felt;
+    
+    %{
+        rlp_elements = [
+            ([0x11223344], 4),
+            ([0x1122334455667788], 8),
+            ([0x0011223344556677], 8),
+            ([0x0011223344556677, 0x1122], 10),
+            ([0x1122334455667788, 0x1122334455667788, 0x112233], 19)
+        ]
+        ids.elements_len = len(rlp_elements)
+
+        prepend_items = [
+            (0x01, 1),
+            (0x1122, 2),
+            (0x1122334455, 5),
+            (0x1122334455667788, 8)
+        ]
+        ids.item_len = len(prepend_items)
+
+        expected_values = [
+            [
+                [0x0111223344],
+                [0x221111223344],
+                [0x4433221111223344, 0x55],
+                [0x4433221111223344, 0x88776655],
+            ],
+            [
+                [0x1122334455667788, 0x01],
+                [0x1122334455667788, 0x2211],
+                [0x1122334455667788, 0x5544332211],
+                [0x1122334455667788, 0x8877665544332211]
+            ],
+            [
+                [0x0011223344556677, 0x01],
+                [0x0011223344556677, 0x2211],
+                [0x0011223344556677, 0x5544332211],
+                [0x0011223344556677, 0x8877665544332211]
+            ],
+            [
+                [0x0011223344556677, 0x011122],
+                [0x0011223344556677, 0x22111122],
+                [0x0011223344556677, 0x55443322111122],
+                [0x0011223344556677, 0x6655443322111122, 0x8877]
+            ],
+            [
+                [0x1122334455667788, 0x1122334455667788, 0x01112233],
+                [0x1122334455667788, 0x1122334455667788, 0x2211112233],
+                [0x1122334455667788, 0x1122334455667788, 0x5544332211112233],
+                [0x1122334455667788, 0x1122334455667788, 0x5544332211112233, 0x887766]
+            ]
+        ]
+    %}
+
+    return test_append_be_chunk_inner(elements_len, 0, item_len);
+
+}
+
+func test_append_be_chunk_inner{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
+}(elements_len: felt, elements_index: felt, item_len: felt) {
+    alloc_locals;
+
+    if(elements_len == elements_index) {
+        return ();
+    }
+
+    test_append_be_chunk_inner_inner(elements_index, item_len, 0);
+
+    return test_append_be_chunk_inner(elements_len, elements_index + 1, item_len);
+}
+
+
+func test_append_be_chunk_inner_inner{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
+}(elements_index: felt, item_len: felt, item_index: felt) {
+    alloc_locals;
+
+    if(item_len == item_index) {
+        return ();
+    }
+    local expected_bytes_len: felt;
+    local item_bytes_len: felt;
+    local item: felt;
+    let (rlp) = alloc();
+    local rlp_bytes_len: felt;
+    local rlp_len: felt;
+
+    %{
+        ids.item = prepend_items[ids.item_index][0]
+        ids.item_bytes_len = prepend_items[ids.item_index][1]
+        segments.write_arg(ids.rlp, rlp_elements[ids.elements_index][0])
+        ids.rlp_len = len(rlp_elements[ids.elements_index][0])
+        ids.rlp_bytes_len = rlp_elements[ids.elements_index][1]
+        ids.expected_bytes_len = ids.item_bytes_len + ids.rlp_bytes_len
+    %}
+
+    let (encoded, encoded_len, encoded_bytes_len) = append_be_chunk(rlp, rlp_bytes_len, item, item_bytes_len);
+
+    %{  
+        assert len(expected_values[ids.elements_index][ids.item_index]) == ids.encoded_len, "Invalid Results Length"
+        assert ids.encoded_bytes_len == ids.expected_bytes_len, "Invalid Results Bytes Length"
+        for i in range(ids.encoded_len):
+            assert memory[ids.encoded + i] == expected_values[ids.elements_index][ids.item_index][i], f"Invalid Result at index {i}"
+    %}
+
+    return test_append_be_chunk_inner_inner(elements_index, item_len, item_index + 1);
 }
 
 func test_prepend_le_chunks{
