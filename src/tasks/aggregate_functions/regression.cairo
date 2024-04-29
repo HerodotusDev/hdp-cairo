@@ -8,28 +8,22 @@ from starkware.cairo.common.uint256 import (
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 
-func compute_avg{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
+struct Output {
+    result: felt,
+}
+
+func compute_regression{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     values: Uint256*, values_len: felt
 ) -> Uint256 {
     alloc_locals;
-    let sum = compute_sum(values, values_len);
-    let divisor = felt_to_uint256(values_len);
 
-    let (result, remainder) = uint256_signed_div_rem(sum, divisor);
-    local round_up: felt;
+    // Inputs
+    local input = values;
+    local input_size = values_len * 2;
 
-    // ToDo: Unsafe hint for now. Worst-case is incorrect rounding.
-    %{
-        if ((ids.remainder.high * 2**128 + ids.remainder.low) / ids.values_len) >= 0.5:
-            ids.round_up = 1
-        else:
-            ids.round_up = 0
-    %}
+    // TODO call run_simple_bootloader fake output_ptr
 
-    if (round_up == 1) {
-        let (rounded, _carry) = uint256_add(result, Uint256(1, 0));
-        return (rounded);
-    }
+    let output = cast(output - Output.SIZE, Output*);
 
-    return (result);
+    return (output.result);
 }
