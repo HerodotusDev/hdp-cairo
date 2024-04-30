@@ -56,15 +56,12 @@ func init_block_sampled{
         // Account Input Layout:
 
         // extract & write field_idx
-        assert bitwise_ptr[0].x = [input + 26];
-        assert bitwise_ptr[0].y = 0xff0000000000;
-        assert [properties] = bitwise_ptr[0].x_and_y / 0x10000000000;
-        tempvar bitwise_ptr = bitwise_ptr + 1 * BitwiseBuiltin.SIZE;
+        let field_idx = extract_byte_at_pos([input + 26], 5, pow2_array);
+        assert [properties] = field_idx;
 
         let (address) = extract_address{bitwise_ptr=bitwise_ptr}(
             chunk_one=[input + 24], chunk_two=[input + 25], chunk_three=[input + 26]
         );
-        tempvar bitwise_ptr = bitwise_ptr;
 
         // write address to properties
         assert [properties + 1] = [address];
