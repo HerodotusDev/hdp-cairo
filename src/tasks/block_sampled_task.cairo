@@ -1,4 +1,9 @@
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
+from starkware.cairo.common.cairo_builtins import (
+    PoseidonBuiltin,
+    BitwiseBuiltin,
+    HashBuiltin,
+    KeccakBuiltin,
+)
 from starkware.cairo.common.uint256 import Uint256, felt_to_uint256, uint256_reverse_endian
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.dict_access import DictAccess
@@ -70,9 +75,10 @@ namespace BlockSampledTask {
 
     // Executes the aggregate_fn of the passed tasks
     func execute{
+        pedersen_ptr: HashBuiltin*,
         range_check_ptr,
-        poseidon_ptr: PoseidonBuiltin*,
         bitwise_ptr: BitwiseBuiltin*,
+        poseidon_ptr: PoseidonBuiltin*,
         account_dict: DictAccess*,
         account_values: AccountValues*,
         storage_dict: DictAccess*,

@@ -1,9 +1,14 @@
-from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, KeccakBuiltin
-
+from starkware.cairo.common.cairo_builtins import (
+    PoseidonBuiltin,
+    BitwiseBuiltin,
+    KeccakBuiltin,
+    HashBuiltin,
+)
 from src.hdp import run
 
 func main{
     output_ptr: felt*,
+    pedersen_ptr: HashBuiltin*,
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
@@ -30,6 +35,7 @@ func main{
 
     run_tests{
         output_ptr=output_ptr,
+        pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
@@ -41,6 +47,7 @@ func main{
 
 func run_tests{
     output_ptr: felt*,
+    pedersen_ptr: HashBuiltin*,
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
@@ -58,6 +65,7 @@ func run_tests{
 
     run{
         output_ptr=output_ptr,
+        pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,

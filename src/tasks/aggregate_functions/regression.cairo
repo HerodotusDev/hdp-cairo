@@ -6,15 +6,18 @@ from starkware.cairo.common.uint256 import (
     uint256_add,
 )
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
+from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, HashBuiltin
 
 struct Output {
     result: Uint256,
 }
 
-func compute_regression{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
-    values: Uint256*, values_len: felt
-) -> Uint256 {
+func compute_regression{
+    pedersen_ptr: HashBuiltin*,
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
+}(values: Uint256*, values_len: felt) -> Uint256 {
     alloc_locals;
 
     // Inputs
@@ -24,7 +27,7 @@ func compute_regression{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     local return_ptr: felt*;
     %{ ids.return_ptr = segments.add() %}
 
-    // TODO call run_simple_bootloader replace output_ptr with return_ptr
+    // TODO call run_simple_bootloader
 
     let output = cast(return_ptr - Output.SIZE, Output*);
 
