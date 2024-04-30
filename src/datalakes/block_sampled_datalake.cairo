@@ -362,7 +362,7 @@ func fetch_header_data_points{
 
     let data_point = HeaderDecoder.get_field{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-    }(rlp=header.rlp, field=[datalake.properties + 1]);
+    }(rlp=header.rlp, field=[datalake.properties]);
 
     assert [data_points + index * Uint256.SIZE] = data_point;
 
