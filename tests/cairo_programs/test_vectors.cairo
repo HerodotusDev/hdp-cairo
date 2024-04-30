@@ -1,8 +1,13 @@
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.registers import get_fp_and_pc
+from starkware.cairo.common.builtin_keccak.keccak import keccak
 from src.types import BlockSampledDataLake, ComputationalTask
 from src.tasks.computational import AGGREGATE_FN
+from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, KeccakBuiltin
+
+
+from src.datalakes.datalake import DatalakeType
 namespace BlockSampledDataLakeMocker {
     func get_header_property() -> (
         datalake_input: felt*,
@@ -137,15 +142,21 @@ namespace BlockSampledTaskMocker {
         );
     }
 
-    func get_avg_task() -> (
+    func get_avg_task{
+        range_check_ptr,
+        bitwise_ptr: BitwiseBuiltin*,
+        keccak_ptr: KeccakBuiltin*,
+    }() -> (
         task: ComputationalTask,
         tasks_inputs: felt*,
         tasks_bytes_len: felt,
         datalake: BlockSampledDataLake,
+        datalake_hash: Uint256,
     ) {
         alloc_locals;
+        let (__fp__, _) = get_fp_and_pc();
 
-        let (_, _, datalake, _) = BlockSampledDataLakeMocker.get_header_property();
+        let (datalake_input, datalake_bytes_len, local datalake, _) = BlockSampledDataLakeMocker.get_header_property();
         let (task_input) = alloc();
         local tasks_bytes_len: felt;
 
@@ -157,28 +168,39 @@ namespace BlockSampledTaskMocker {
             segments.write_arg(ids.task_input, bytes_to_8_bytes_chunks_little(task_bytes))
         %}
 
+        let (datalake_hash) = keccak(datalake_input, datalake_bytes_len);
+
+        let datalake_ptr: felt* = cast(&datalake, felt*);
+
         let task = ComputationalTask(
             hash=Uint256(
                 low=0x407E98D423A7BB2DBF09B0E42601FC9B, high=0xEF8B01F35B404615F0339EEFAE7719A2
             ),
-            datalake=datalake,
+            datalake_ptr=datalake_ptr,
+            datalake_type=DatalakeType.BLOCK_SAMPLED,
             aggregate_fn_id=AGGREGATE_FN.AVG,
             ctx_operator=0,
             ctx_value=Uint256(low=0, high=0),
         );
 
-        return (task, task_input, tasks_bytes_len, datalake);
+        return (task, task_input, tasks_bytes_len, datalake, datalake_hash);
     }
 
-    func get_sum_task() -> (
+    func get_sum_task{
+        range_check_ptr,
+        bitwise_ptr: BitwiseBuiltin*,
+        keccak_ptr: KeccakBuiltin*,
+    }() -> (
         task: ComputationalTask,
         tasks_inputs: felt*,
         tasks_bytes_len: felt,
         datalake: BlockSampledDataLake,
+        datalake_hash: Uint256,
     ) {
         alloc_locals;
+        let (__fp__, _) = get_fp_and_pc();
 
-        let (_, _, datalake, _) = BlockSampledDataLakeMocker.get_header_property();
+        let (datalake_input, datalake_bytes_len, local datalake, _) = BlockSampledDataLakeMocker.get_header_property();
         let (task_input) = alloc();
         local tasks_bytes_len: felt;
 
@@ -189,28 +211,39 @@ namespace BlockSampledTaskMocker {
             segments.write_arg(ids.task_input, bytes_to_8_bytes_chunks_little(task_bytes))
         %}
 
+        let datalake_ptr: felt* = cast(&datalake, felt*);
+
         let task = ComputationalTask(
             hash=Uint256(
                 low=0x3CB6684D1B4B7FDEA3FBACAEA422C944, high=0x02F8516E3F7BE7FCCFDE22FB4A98DF37
             ),
-            datalake=datalake,
+            datalake_ptr=datalake_ptr,
+            datalake_type=DatalakeType.BLOCK_SAMPLED,
             aggregate_fn_id=AGGREGATE_FN.SUM,
             ctx_operator=0,
             ctx_value=Uint256(low=0, high=0),
         );
 
-        return (task, task_input, tasks_bytes_len, datalake);
+        let (datalake_hash) = keccak(datalake_input, datalake_bytes_len);
+
+        return (task, task_input, tasks_bytes_len, datalake, datalake_hash);
     }
 
-    func get_min_task() -> (
+    func get_min_task{
+        range_check_ptr,
+        bitwise_ptr: BitwiseBuiltin*,
+        keccak_ptr: KeccakBuiltin*,
+    }() -> (
         task: ComputationalTask,
         tasks_inputs: felt*,
         tasks_bytes_len: felt,
         datalake: BlockSampledDataLake,
+        datalake_hash: Uint256,
     ) {
         alloc_locals;
+        let (__fp__, _) = get_fp_and_pc();
 
-        let (_, _, datalake, _) = BlockSampledDataLakeMocker.get_header_property();
+        let (datalake_input, datalake_bytes_len, local datalake, _) = BlockSampledDataLakeMocker.get_header_property();
         let (task_input) = alloc();
         local tasks_bytes_len: felt;
 
@@ -221,28 +254,39 @@ namespace BlockSampledTaskMocker {
             segments.write_arg(ids.task_input, bytes_to_8_bytes_chunks_little(task_bytes))
         %}
 
+        let datalake_ptr: felt* = cast(&datalake, felt*);
+
         let task = ComputationalTask(
             hash=Uint256(
                 low=0x9F439795EE0CA868B463479E5A905BF0, high=0x72CEFA1188B199ECEEAB39767CD32605
             ),
-            datalake=datalake,
+            datalake_ptr=datalake_ptr,
+            datalake_type=DatalakeType.BLOCK_SAMPLED,
             aggregate_fn_id=AGGREGATE_FN.MIN,
             ctx_operator=0,
             ctx_value=Uint256(low=0, high=0),
         );
 
-        return (task, task_input, tasks_bytes_len, datalake);
+        let (datalake_hash) = keccak(datalake_input, datalake_bytes_len);
+
+        return (task, task_input, tasks_bytes_len, datalake, datalake_hash);
     }
 
-    func get_max_task() -> (
+    func get_max_task{
+        range_check_ptr,
+        bitwise_ptr: BitwiseBuiltin*,
+        keccak_ptr: KeccakBuiltin*,
+    }() -> (
         task: ComputationalTask,
         tasks_inputs: felt*,
         tasks_bytes_len: felt,
         datalake: BlockSampledDataLake,
+        datalake_hash: Uint256,
     ) {
         alloc_locals;
+        let (__fp__, _) = get_fp_and_pc();
 
-        let (_, _, datalake, _) = BlockSampledDataLakeMocker.get_header_property();
+        let (datalake_input, datalake_bytes_len, local datalake, _) = BlockSampledDataLakeMocker.get_header_property();
         let (task_input) = alloc();
         local tasks_bytes_len: felt;
 
@@ -253,28 +297,40 @@ namespace BlockSampledTaskMocker {
             segments.write_arg(ids.task_input, bytes_to_8_bytes_chunks_little(task_bytes))
         %}
 
+        let datalake_ptr: felt* = cast(&datalake, felt*);
+
         let task = ComputationalTask(
             hash=Uint256(
                 low=0x1CD2E160D860B4D1BD1E327B6AA209BD, high=0xCABA4809710EB228D6A31DE1B852DFB7
             ),
-            datalake=datalake,
+            datalake_ptr=datalake_ptr,
+            datalake_type=DatalakeType.BLOCK_SAMPLED,
             aggregate_fn_id=AGGREGATE_FN.MAX,
             ctx_operator=0,
             ctx_value=Uint256(low=0, high=0),
         );
 
-        return (task, task_input, tasks_bytes_len, datalake);
+        let (datalake_hash) = keccak(datalake_input, datalake_bytes_len);
+
+        return (task, task_input, tasks_bytes_len, datalake, datalake_hash);
     }
 
-    func get_count_if_task() -> (
+    func get_count_if_task{
+        range_check_ptr,
+        bitwise_ptr: BitwiseBuiltin*,
+        keccak_ptr: KeccakBuiltin*,
+    }() -> (
         task: ComputationalTask,
         tasks_inputs: felt*,
         tasks_bytes_len: felt,
         datalake: BlockSampledDataLake,
+        datalake_hash: Uint256,
     ) {
         alloc_locals;
+        let (__fp__, _) = get_fp_and_pc();
 
-        let (_, _, datalake, _) = BlockSampledDataLakeMocker.get_header_property();
+
+        let (datalake_input, datalake_bytes_len, local datalake, _) = BlockSampledDataLakeMocker.get_header_property();
         let (task_input) = alloc();
         local tasks_bytes_len: felt;
 
@@ -284,17 +340,21 @@ namespace BlockSampledTaskMocker {
             ids.tasks_bytes_len = len(task_bytes)
             segments.write_arg(ids.task_input, bytes_to_8_bytes_chunks_little(task_bytes))
         %}
+        let datalake_ptr: felt* = cast(&datalake, felt*);
 
         let task = ComputationalTask(
             hash=Uint256(
                 low=0xAE5641FEA9032C936D7E54D7CF36E2C3, high=0xA53CFAB970F9780B3C39CFAC1DD3D425
             ),
-            datalake=datalake,
+            datalake_ptr=datalake_ptr,
+            datalake_type=DatalakeType.BLOCK_SAMPLED,
             aggregate_fn_id=AGGREGATE_FN.COUNT,
             ctx_operator=1,
             ctx_value=Uint256(low=0x186a0, high=0),
         );
 
-        return (task, task_input, tasks_bytes_len, datalake);
+        let (datalake_hash) = keccak(datalake_input, datalake_bytes_len);
+
+        return (task, task_input, tasks_bytes_len, datalake, datalake_hash);
     }
 }
