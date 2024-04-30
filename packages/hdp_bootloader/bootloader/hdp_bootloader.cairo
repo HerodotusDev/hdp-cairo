@@ -1,4 +1,4 @@
-from bootloader.execute_task import BuiltinData, execute_task
+from packages.hdp_bootloader.bootloader.execute_task import BuiltinData, execute_task
 from starkware.cairo.common.cairo_builtins import HashBuiltin, PoseidonBuiltin, BitwiseBuiltin
 from starkware.cairo.common.registers import get_fp_and_pc
 

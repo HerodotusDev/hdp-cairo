@@ -20,7 +20,7 @@ process_cairo_file() {
 export -f process_cairo_file
 
 # Use --halt now,fail=1 to return non-zero if any task fails
-find ./src ./tests/cairo_programs -name "*.cairo" | parallel --halt now,fail=1 process_cairo_file
+find ./src ./tests/cairo_programs ./packages/hdp_bootloader/bootloader ./packages/hdp_bootloader/builtin_selection -name "*.cairo" | parallel --halt now,fail=1 process_cairo_file
 
 # Capture the exit status of parallel
 exit_status=$?

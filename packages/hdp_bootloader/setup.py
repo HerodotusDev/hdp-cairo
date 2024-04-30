@@ -7,5 +7,6 @@ setuptools.setup(
     zip_safe=False,
     package_data={
         "bootloader": ["*.cairo", "*/*.cairo"],
+        "builtin_selection": ["*.cairo", "*/*.cairo"],
     },
 )

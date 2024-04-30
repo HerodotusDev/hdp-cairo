@@ -1,6 +1,6 @@
-from builtin_selection.inner_select_builtins import inner_select_builtins
-from builtin_selection.select_input_builtins import select_input_builtins
-from builtin_selection.validate_builtins import validate_builtins
+from packages.hdp_bootloader.builtin_selection.inner_select_builtins import inner_select_builtins
+from packages.hdp_bootloader.builtin_selection.select_input_builtins import select_input_builtins
+from packages.hdp_bootloader.builtin_selection.validate_builtins import validate_builtins
 from starkware.cairo.common.builtin_poseidon.poseidon import PoseidonBuiltin, poseidon_hash_many
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.hash_chain import hash_chain
