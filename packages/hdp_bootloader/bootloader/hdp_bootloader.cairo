@@ -19,7 +19,7 @@ func run_simple_bootloader{
     alloc_locals;
 
     %{
-        from bootloader.objects import SimpleBootloaderInput
+        from packages.hdp_bootloader.bootloader.objects import SimpleBootloaderInput
         simple_bootloader_input = SimpleBootloaderInput.Schema().load(hdp_bootloader_input)
     %}
 
@@ -108,7 +108,7 @@ func verify_non_negative(num: felt, n_bits: felt) {
     return verify_non_negative(num=num_div2, n_bits=n_bits - 1);
 }
 
-// Executes the task from simple_bootloader_input.task.
+// Executes the task from simple_bootloader_input
 //
 // Arguments:
 // builtin_encodings - String encodings of the builtins.
@@ -124,10 +124,10 @@ func execute{builtin_ptrs: BuiltinData*, self_range_check_ptr}(
     task_input_len: felt,
 ) {
     %{
-        from bootloader.objects import Task
+        from packages.hdp_bootloader.bootloader.objects import Task
 
         # Pass current task to execute_task.
-        task = simple_bootloader_input.task.load_task(
+        task = simple_bootloader_input.tasks[0].load_task(
             memory=memory, args_start=ids.task_input_arr, args_len=ids.task_input_len
         )
     %}

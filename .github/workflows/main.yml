@@ -9,6 +9,9 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v3
 
+    - name: Setup Scarb
+      uses: software-mansion/setup-scarb@v1
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:

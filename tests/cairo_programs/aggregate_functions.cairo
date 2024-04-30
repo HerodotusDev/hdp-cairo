@@ -1,7 +1,9 @@
-%builtins range_check bitwise
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
+%builtins pedersen range_check bitwise poseidon
+
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, HashBuiltin, PoseidonBuiltin
 
 from src.tasks.aggregate_functions.sum import compute_sum
+from src.tasks.aggregate_functions.regression import compute_regression
 from src.tasks.aggregate_functions.avg import compute_avg
 from src.tasks.aggregate_functions.min_max import (
     uint256_min_be,
@@ -14,10 +16,21 @@ from src.tasks.aggregate_functions.count_if import count_if
 from starkware.cairo.common.uint256 import Uint256, uint256_eq, uint256_reverse_endian
 from starkware.cairo.common.alloc import alloc
 
-func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
+func main{
+    pedersen_ptr: HashBuiltin*,
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
+}() {
     avg_sum{range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr}();
     min_max{range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr}();
     count_if_main{range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr}();
+    regression_main{
+        pedersen_ptr=pedersen_ptr,
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        poseidon_ptr=poseidon_ptr,
+    }();
     return ();
 }
 
@@ -212,23 +225,42 @@ func test_count_if_inner{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     return ();
 }
 
-func regression_main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
+func regression_main{
+    pedersen_ptr: HashBuiltin*,
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
+}() {
     alloc_locals;
 
-    let (local arr: felt*) = alloc();
-    %{ segments.write_arg(ids.arrs, [1] * ids.TEST_ARRAY_SIZE) %}
+    let (local array: felt*) = alloc();
+    %{ segments.write_arg(ids.array, [0] * (ids.TEST_ARRAY_SIZE * 2)) %}
 
     %{
         hdp_bootloader_input = {
-                   "tasks": [
-                       {
-                           "type": "CairoSierra",
-                           "path": "cairo1_programs/regression/target/dev/regression.sierra.json",
-                           "use_poseidon": true
-                       }
-                   ],
-                   "single_page": true
-               }
+            "tasks": [
+                {
+                    "type": "CairoSierra",
+                    "path": "cairo1_programs/regression/target/dev/regression.sierra.json",
+                    "use_poseidon": True
+                }
+            ],
+            "single_page": True
+        }
+    %}
+
+    let values: Uint256* = cast(array, Uint256*);
+
+    let result = compute_regression{
+        pedersen_ptr=pedersen_ptr,
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        poseidon_ptr=poseidon_ptr,
+    }(values=values, values_len=TEST_ARRAY_SIZE);
+
+    %{
+        print(hex(ids.result.low))
+        print(hex(ids.result.high))
     %}
 
     return ();

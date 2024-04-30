@@ -22,6 +22,10 @@ export -f process_cairo_file
 # Use --halt now,fail=1 to return non-zero if any task fails
 find ./src ./tests/cairo_programs ./packages/hdp_bootloader/bootloader ./packages/hdp_bootloader/builtin_selection -name "*.cairo" | parallel --halt now,fail=1 process_cairo_file
 
+cd cairo1_programs/regression
+scarb build 
+cd ../../
+
 # Capture the exit status of parallel
 exit_status=$?
 

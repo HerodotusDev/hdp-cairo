@@ -34,3 +34,5 @@ solidity-verifier/lib/*
 !tests/cairo_programs/fixtures/*.json
 !src/hdp_input.json
 !tools/js/package.json
+
+cairo-vm

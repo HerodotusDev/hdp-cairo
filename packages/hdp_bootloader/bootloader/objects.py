@@ -76,7 +76,7 @@ class Cairo1ProgramPath(TaskSpec):
         with tempfile.NamedTemporaryFile() as cairo_pie_file:
             cairo_pie_file_path = cairo_pie_file.name
 
-            args = [memory[args_start.address_ + i] for i in range(args_len)]
+            args = [memory[args_start + i] for i in range(args_len)]
             formatted_args = f'[{" ".join(map(str, args))}]'
 
             subprocess.run(
@@ -113,18 +113,20 @@ class CairoSierra(TaskSpec):
         with tempfile.NamedTemporaryFile() as cairo_pie_file:
             cairo_pie_file_path = cairo_pie_file.name
 
-            args = [memory[args_start.address_ + i] for i in range(args_len)]
+            args = [memory[args_start + i] for i in range(args_len)]
             formatted_args = f'[{" ".join(map(str, args))}]'
 
             subprocess.run(
                 [
-                    "runner",
-                    "--sierra_program",
+                    "cairo1-run",
                     self.path,
+                    "--layout",
+                    "all_cairo",
                     "--args",
                     formatted_args,
                     "--cairo_pie_output",
                     cairo_pie_file_path,
+                    "--append_return_values",
                 ],
                 check=True,
             )
