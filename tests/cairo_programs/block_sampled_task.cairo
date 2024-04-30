@@ -64,7 +64,7 @@ func test_block_sampled_task_init{
     %}
 
     let (properties) = alloc();
-    %{ segments.write_arg(ids.properties, [1, ids.HeaderField.BLOB_GAS_USED]) %}
+    %{ segments.write_arg(ids.properties, [ids.HeaderField.BLOB_GAS_USED]) %}
 
     local expected_datalake: BlockSampledDataLake;
 

@@ -9,11 +9,10 @@ from starkware.cairo.common.cairo_secp.signature import (
     public_key_point_to_eth_address,
 )
 
-from src.rlp import rlp_list_retrieve, le_chunks_to_uint256, prepend_le_chunks
+from src.rlp import rlp_list_retrieve, le_chunks_to_uint256, prepend_le_chunks, append_be_chunk
 from src.types import Transaction, ChainInfo
 from packages.eth_essentials.lib.rlp_little import extract_n_bytes_from_le_64_chunks_array
 from src.utils import (
-    append_be_chunk,
     get_felt_bytes_len,
     reverse_chunk_endianess,
 )
