@@ -1,5 +1,5 @@
 from builtin_selection.inner_select_builtins import inner_select_builtins
-from common.registers import get_fp_and_pc
+from starkware.cairo.common.registers import get_fp_and_pc
 
 // A wrapper for 'inner_select_builtins' function (see its documentation).
 // Returns the selected builtin pointers (e.g., if n_selected_builtins=2, returns two values).

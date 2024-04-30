@@ -9,5 +9,5 @@ trie
 typeguard==2.13.3
 web3
 
-# package simple_bootloader
-packages/simple_bootloader
+# install local package hdp_bootloader
+packages/hdp_bootloader

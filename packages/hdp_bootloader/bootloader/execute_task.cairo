@@ -1,10 +1,10 @@
 from builtin_selection.inner_select_builtins import inner_select_builtins
 from builtin_selection.select_input_builtins import select_input_builtins
 from builtin_selection.validate_builtins import validate_builtins
-from common.builtin_poseidon.poseidon import PoseidonBuiltin, poseidon_hash_many
-from common.cairo_builtins import HashBuiltin
-from common.hash_chain import hash_chain
-from common.registers import get_ap, get_fp_and_pc
+from starkware.cairo.common.builtin_poseidon.poseidon import PoseidonBuiltin, poseidon_hash_many
+from starkware.cairo.common.cairo_builtins import HashBuiltin
+from starkware.cairo.common.hash_chain import hash_chain
+from starkware.cairo.common.registers import get_ap, get_fp_and_pc
 
 const BOOTLOADER_VERSION = 0;
 
@@ -102,7 +102,7 @@ func execute_task{builtin_ptrs: BuiltinData*, self_range_check_ptr}(
     assert [output_ptr + 1] = hash;
     %{
         # Validate hash.
-        from bootloader.hash_program import compute_program_hash_chain
+        from starkware.cairo.bootloaders.hash_program import compute_program_hash_chain
 
         assert memory[ids.output_ptr + 1] == compute_program_hash_chain(
             program=task.get_program(),
@@ -159,7 +159,7 @@ func execute_task{builtin_ptrs: BuiltinData*, self_range_check_ptr}(
                 task=task.cairo_pie, memory=memory, segments=segments,
                 program_address=program_address, execution_segment_address= ap - n_builtins,
                 builtin_runners=builtin_runners, ret_fp=fp, ret_pc=ret_pc)
-        
+
         new_task_locals = {}
         vm_enter_scope(new_task_locals)
     %}
@@ -184,7 +184,7 @@ func execute_task{builtin_ptrs: BuiltinData*, self_range_check_ptr}(
     // Allocate a struct containing all builtin pointers just after the program returns.
     local return_builtin_ptrs: BuiltinData;
     %{
-        from bootloader.recursive_with_poseidon.builtins import ALL_BUILTINS
+        from bootloader.builtins import ALL_BUILTINS
         from bootloader.utils import write_return_builtins
 
         # Fill the values of all builtin pointers after executing the task.

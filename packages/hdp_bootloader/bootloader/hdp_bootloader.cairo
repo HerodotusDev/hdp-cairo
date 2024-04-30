@@ -1,6 +1,6 @@
 from bootloader.execute_task import BuiltinData, execute_task
-from common.cairo_builtins import HashBuiltin, PoseidonBuiltin
-from common.registers import get_fp_and_pc
+from starkware.cairo.common.cairo_builtins import HashBuiltin, PoseidonBuiltin, BitwiseBuiltin
+from starkware.cairo.common.registers import get_fp_and_pc
 
 // Loads the program and executes it.
 //
@@ -13,7 +13,7 @@ func run_simple_bootloader{
     output_ptr: felt*,
     pedersen_ptr: HashBuiltin*,
     range_check_ptr,
-    bitwise_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
 }() {
     alloc_locals;
@@ -36,7 +36,7 @@ func run_simple_bootloader{
         output=cast(output_ptr, felt),
         pedersen=cast(pedersen_ptr, felt),
         range_check=task_range_check_ptr,
-        bitwise=bitwise_ptr,
+        bitwise=cast(bitwise_ptr, felt),
         poseidon=cast(poseidon_ptr, felt),
     );
 
@@ -50,11 +50,7 @@ func run_simple_bootloader{
     );
 
     local builtin_instance_sizes: BuiltinData = BuiltinData(
-        output=1,
-        pedersen=3,
-        range_check=1,
-        bitwise=5,
-        poseidon=6,
+        output=1, pedersen=3, range_check=1, bitwise=5, poseidon=6
     );
 
     // Call execute.
@@ -64,8 +60,7 @@ func run_simple_bootloader{
     let self_range_check_ptr = range_check_ptr;
     with builtin_ptrs, self_range_check_ptr {
         execute(
-            builtin_encodings=&builtin_encodings,
-            builtin_instance_sizes=&builtin_instance_sizes,
+            builtin_encodings=&builtin_encodings, builtin_instance_sizes=&builtin_instance_sizes
         );
     }
 
@@ -77,7 +72,7 @@ func run_simple_bootloader{
     let output_ptr = cast(builtin_ptrs.output, felt*);
     let pedersen_ptr = cast(builtin_ptrs.pedersen, HashBuiltin*);
     let range_check_ptr = builtin_ptrs.range_check;
-    let bitwise_ptr = builtin_ptrs.bitwise;
+    let bitwise_ptr = cast(builtin_ptrs.bitwise, BitwiseBuiltin*);
     let poseidon_ptr = cast(builtin_ptrs.poseidon, PoseidonBuiltin*);
 
     // 'execute' runs untrusted code and uses the range_check builtin to verify that
@@ -138,4 +133,6 @@ func execute{builtin_ptrs: BuiltinData*, self_range_check_ptr}(
         builtin_instance_sizes=builtin_instance_sizes,
         use_poseidon=use_poseidon,
     );
+
+    return ();
 }
