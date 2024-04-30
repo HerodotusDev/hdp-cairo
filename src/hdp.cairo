@@ -309,6 +309,7 @@ func run{
     default_dict_finalize(header_dict_start, header_dict, MEMORIZER_DEFAULT);
     default_dict_finalize(account_dict_start, account_dict, MEMORIZER_DEFAULT);
     default_dict_finalize(storage_dict_start, storage_dict, MEMORIZER_DEFAULT);
+    default_dict_finalize(transaction_dict_start, transaction_dict, MEMORIZER_DEFAULT);
 
     [ap] = mmr_meta.root;
     [ap] = [output_ptr], ap++;
