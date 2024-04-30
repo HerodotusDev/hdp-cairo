@@ -22,8 +22,8 @@ func compute_regression{
     alloc_locals;
 
     // Inputs
-    local input: felt* = cast(values, felt*);
-    local input_size = values_len * 2;
+    local task_input_arr: felt* = cast(values, felt*);
+    local task_input_len = values_len * 2;
 
     local return_ptr: felt*;
     %{ ids.return_ptr = segments.add() %}
@@ -36,7 +36,7 @@ func compute_regression{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         poseidon_ptr=poseidon_ptr,
-    }();
+    }(task_input_arr=task_input_arr, task_input_len=task_input_len);
 
     let output = cast(return_ptr - Output.SIZE, Output*);
 

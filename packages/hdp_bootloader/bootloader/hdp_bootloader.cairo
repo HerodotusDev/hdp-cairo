@@ -15,7 +15,7 @@ func run_simple_bootloader{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-}() {
+}(task_input_arr: felt*, task_input_len: felt) {
     alloc_locals;
 
     %{
@@ -60,7 +60,10 @@ func run_simple_bootloader{
     let self_range_check_ptr = range_check_ptr;
     with builtin_ptrs, self_range_check_ptr {
         execute(
-            builtin_encodings=&builtin_encodings, builtin_instance_sizes=&builtin_instance_sizes
+            builtin_encodings=&builtin_encodings,
+            builtin_instance_sizes=&builtin_instance_sizes,
+            task_input_arr=task_input_arr,
+            task_input_len=task_input_len,
         );
     }
 
@@ -115,14 +118,17 @@ func verify_non_negative(num: felt, n_bits: felt) {
 // builtin_ptrs - Pointer to the builtin pointers before/after executing the task.
 // self_range_check_ptr - range_check pointer (used for validating the builtins).
 func execute{builtin_ptrs: BuiltinData*, self_range_check_ptr}(
-    builtin_encodings: BuiltinData*, builtin_instance_sizes: BuiltinData*
+    builtin_encodings: BuiltinData*,
+    builtin_instance_sizes: BuiltinData*,
+    task_input_arr: felt*,
+    task_input_len: felt,
 ) {
     %{
         from bootloader.objects import Task
 
         # Pass current task to execute_task.
         task = simple_bootloader_input.task.load_task(
-            memory=memory, args_start=ids.input, args_len=ids.input_size
+            memory=memory, args_start=ids.task_input_arr, args_len=ids.task_input_len
         )
     %}
     tempvar use_poseidon = nondet %{ 1 if task.use_poseidon else 0 %};
