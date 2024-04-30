@@ -57,8 +57,6 @@ func run{
     poseidon_ptr: PoseidonBuiltin*,
 }() {
     alloc_locals;
-    local expected_results_root: Uint256;
-    local expected_tasks_root: Uint256;
 
     // Header Params
     local headers_len: felt;
@@ -132,11 +130,6 @@ func run{
             ids.mmr_meta.size = mmr_meta["size"]
             ids.mmr_meta.peaks_len = len(mmr_meta["peaks"])
             ids.mmr_meta.peaks = segments.gen_arg(hex_to_int_array(mmr_meta["peaks"]))
-
-        ids.expected_results_root.low = hex_to_int(program_input["results_root"]["low"])
-        ids.expected_results_root.high = hex_to_int(program_input["results_root"]["high"])
-        ids.expected_tasks_root.low = hex_to_int(program_input["tasks_root"]["low"])
-        ids.expected_tasks_root.high = hex_to_int(program_input["tasks_root"]["high"])
 
         # MMR Meta
         write_mmr_meta(program_input['mmr'])
@@ -268,10 +261,15 @@ func run{
     %}
 
     // Post Verification Checks: Ensure the roots match the expected roots
-    assert expected_tasks_root.low = tasks_root.low;
-    assert expected_tasks_root.high = tasks_root.high;
-    assert expected_results_root.low = results_root.low;
-    assert expected_results_root.high = results_root.high;
+    %{
+        if "results_root" in program_input:
+            assert ids.results_root.low == hex_to_int(program_input["results_root"]["low"]), "Expected results root mismatch"
+            assert ids.results_root.high == hex_to_int(program_input["results_root"]["high"]), "Expected results root mismatch"
+
+        if "tasks_root" in program_input:
+            assert ids.tasks_root.low == hex_to_int(program_input["tasks_root"]["low"]), "Expected tasks root mismatch"
+            assert ids.tasks_root.high == hex_to_int(program_input["tasks_root"]["high"]), "Expected tasks root mismatch"
+    %}
 
     // Post Verification Checks: Ensure dict consistency
     default_dict_finalize(peaks_dict_start, peaks_dict, 0);
