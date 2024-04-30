@@ -13,7 +13,7 @@ struct Output {
     result: Uint256,
 }
 
-func compute_regression{
+func compute_cairo1{
     pedersen_ptr: HashBuiltin*,
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
