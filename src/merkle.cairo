@@ -79,6 +79,13 @@ func compute_tasks_root{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_pt
 func compute_merkle_root{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(
     leafs: Uint256*, leafs_len: felt
 ) -> Uint256 {
+    if (leafs_len == 0) {
+        // keccak(0)
+        return (
+            Uint256(low=0x6612f7b477d66591ff96a9e064bcc98a, high=0xbc36789e7a1e281436464229828f817d)
+        );
+    }
+
     let (tree: Uint256*) = alloc();
     let tree_len = 2 * leafs_len - 1;
 
@@ -166,7 +173,7 @@ func hash_pair{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: Keccak
     let (pair: Uint256*) = alloc();
     local is_left_smaller: felt;
 
-    // ToDo: I think we can get away with handling this in a hint. Or could this be exploited somehow?
+    // ToDo: We have to figure out if the pair-wise order is something we want to do in a hint. The order could be messed with by a malicious prover.
     %{
         def flip_endianess(val):
             val_hex = hex(val)[2:]
