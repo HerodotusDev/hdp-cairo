@@ -20,7 +20,7 @@ func run_simple_bootloader{
 
     %{
         from bootloader.objects import SimpleBootloaderInput
-        simple_bootloader_input = SimpleBootloaderInput.Schema().load(simple_bootloader_input)
+        simple_bootloader_input = SimpleBootloaderInput.Schema().load(hdp_bootloader_input)
     %}
 
     local task_range_check_ptr;

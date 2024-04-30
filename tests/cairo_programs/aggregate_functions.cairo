@@ -211,3 +211,25 @@ func test_count_if_inner{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     assert res = expected;
     return ();
 }
+
+func regression_main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
+    alloc_locals;
+
+    let (local arr: felt*) = alloc();
+    %{ segments.write_arg(ids.arrs, [1] * ids.TEST_ARRAY_SIZE) %}
+
+    %{
+        hdp_bootloader_input = {
+                   "tasks": [
+                       {
+                           "type": "CairoSierra",
+                           "path": "cairo1_programs/regression/target/dev/regression.sierra.json",
+                           "use_poseidon": true
+                       }
+                   ],
+                   "single_page": true
+               }
+    %}
+
+    return ();
+}

@@ -1,6 +1,8 @@
 venv/
 *profiling*
 __pycache__
+build
+*.egg-info
 /build/*.json
 /build/compiled_cairo_files/*.json
 *.pickle

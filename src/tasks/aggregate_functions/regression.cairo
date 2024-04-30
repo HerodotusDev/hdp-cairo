@@ -28,8 +28,6 @@ func compute_regression{
     local return_ptr: felt*;
     %{ ids.return_ptr = segments.add() %}
 
-    %{ simple_bootloader_input = {} %}
-
     run_simple_bootloader{
         output_ptr=return_ptr,
         pedersen_ptr=pedersen_ptr,
