@@ -127,7 +127,7 @@ func execute{builtin_ptrs: BuiltinData*, self_range_check_ptr}(
         from hdp_bootloader.bootloader.objects import Task
 
         # Pass current task to execute_task.
-        task = simple_bootloader_input.tasks[0].load_task(
+        task = simple_bootloader_input.task.load_task(
             memory=memory, args_start=ids.task_input_arr, args_len=ids.task_input_len
         )
     %}

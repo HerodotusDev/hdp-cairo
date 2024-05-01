@@ -3,7 +3,7 @@ import subprocess
 import dataclasses
 from abc import abstractmethod
 from dataclasses import field
-from typing import ClassVar, Dict, List, Optional, Type
+from typing import ClassVar, Dict, Optional, Type
 import marshmallow
 import marshmallow.fields as mfields
 import marshmallow_dataclass
@@ -165,9 +165,9 @@ class CairoPieTask(Task):
 
 @marshmallow_dataclass.dataclass(frozen=True)
 class SimpleBootloaderInput(ValidatedMarshmallowDataclass):
-    tasks: List[TaskSpec] = field(
+    task: TaskSpec = field(
         metadata=additional_metadata(
-            marshmallow_field=mfields.List(mfields.Nested(TaskSchema))
+            marshmallow_field=mfields.Nested(TaskSchema)
         )
     )
     fact_topologies_path: Optional[str]

@@ -238,13 +238,11 @@ func regression_main{
 
     %{
         hdp_bootloader_input = {
-            "tasks": [
-                {
-                    "type": "CairoSierra",
-                    "path": "build/compiled_cairo_files/regression.sierra.json",
-                    "use_poseidon": True
-                }
-            ],
+            "task": {
+                "type": "CairoSierra",
+                "path": "build/compiled_cairo_files/regression.sierra.json",
+                "use_poseidon": True
+            },
             "single_page": True
         }
     %}
