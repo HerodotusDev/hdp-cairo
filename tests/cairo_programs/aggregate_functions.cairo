@@ -241,7 +241,7 @@ func regression_main{
             "tasks": [
                 {
                     "type": "CairoSierra",
-                    "path": "cairo1_programs/regression/target/dev/regression.sierra.json",
+                    "path": "build/compiled_cairo_files/regression.sierra.json",
                     "use_poseidon": True
                 }
             ],

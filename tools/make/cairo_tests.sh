@@ -29,7 +29,7 @@ export -f run_tests
 
 # Find all .cairo files under src/ and tests/ directories and format them in parallel
 # Using --halt soon,fail=1 to stop at the first failure
-find ./tests/cairo_programs -name '*.cairo' ! -name 'test_vectors.cairo' | parallel --halt soon,fail=1 run_tests
+find ./tests/cairo_programs -name '*.cairo' ! -name 'test_vectors.cairo' ! -path "./tests/cairo_programs/cairo1_programs/*" | parallel --halt soon,fail=1 run_tests
 
 # Capture the exit status of parallel
 exit_status=$?
