@@ -1,16 +1,19 @@
+# Virtual Environment
 venv/
-*profiling*
-__pycache__
-build
-*.egg-info
-/build/*.json
-/build/compiled_cairo_files/*.json
+.profiling/
+__pycache__/
+build/
+*.egg-info/
 *.pickle
-/src/single_chunk_processor/data/*.json
 
+# Source Data
+/src/single_chunk_processor/data/*.json
 /src/single_chunk_processor/data/*.zip
+
+# Environment
 *.env
 
+# Miscellaneous
 *.zip
 *.json
 *.db
@@ -18,21 +21,24 @@ cache/
 out/
 .gas-snapshot
 .vscode/
-.env
 .encryptedKey
 broadcast/
 
-node_modules
+# Node.js
+node_modules/
 package-lock.json
 
+# System Files
 .DS_Store
 src/.DS_Store
 
+# Solidity Verifier
 solidity-verifier/lib/*
 
-# whitelist hdp fixtures
+# Whitelist
 !tests/cairo_programs/fixtures/*.json
 !src/hdp_input.json
 !tools/js/package.json
 
+# Cairo VM
 cairo-vm
