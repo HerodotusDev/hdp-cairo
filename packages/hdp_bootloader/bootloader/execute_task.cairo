@@ -1,6 +1,6 @@
-from packages.hdp_bootloader.builtin_selection.inner_select_builtins import inner_select_builtins
-from packages.hdp_bootloader.builtin_selection.select_input_builtins import select_input_builtins
-from packages.hdp_bootloader.builtin_selection.validate_builtins import validate_builtins
+from hdp_bootloader.builtin_selection.inner_select_builtins import inner_select_builtins
+from hdp_bootloader.builtin_selection.select_input_builtins import select_input_builtins
+from hdp_bootloader.builtin_selection.validate_builtins import validate_builtins
 from starkware.cairo.common.builtin_poseidon.poseidon import PoseidonBuiltin, poseidon_hash_many
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.hash_chain import hash_chain
@@ -77,7 +77,7 @@ func execute_task{builtin_ptrs: BuiltinData*, self_range_check_ptr}(
 
     let program_header = cast(program_data_ptr, ProgramHeader*);
     %{
-        from packages.hdp_bootloader.bootloader.utils import load_program
+        from hdp_bootloader.bootloader.utils import load_program
 
         # Call load_program to load the program header and code to memory.
         program_address, program_data_size = load_program(
@@ -142,11 +142,11 @@ func execute_task{builtin_ptrs: BuiltinData*, self_range_check_ptr}(
 
     call_task:
     %{
-        from packages.hdp_bootloader.bootloader.objects import (
+        from hdp_bootloader.bootloader.objects import (
             CairoPieTask,
             Task,
         )
-        from packages.hdp_bootloader.bootloader.utils import (
+        from hdp_bootloader.bootloader.utils import (
             load_cairo_pie,
         )
 
@@ -185,8 +185,8 @@ func execute_task{builtin_ptrs: BuiltinData*, self_range_check_ptr}(
     // Allocate a struct containing all builtin pointers just after the program returns.
     local return_builtin_ptrs: BuiltinData;
     %{
-        from packages.hdp_bootloader.bootloader.builtins import ALL_BUILTINS
-        from packages.hdp_bootloader.bootloader.utils import write_return_builtins
+        from hdp_bootloader.bootloader.builtins import ALL_BUILTINS
+        from hdp_bootloader.bootloader.utils import write_return_builtins
 
         # Fill the values of all builtin pointers after executing the task.
         builtins = task.get_program().builtins

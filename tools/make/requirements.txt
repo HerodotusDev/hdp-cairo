@@ -8,6 +8,3 @@ safe-pysha3
 trie
 typeguard==2.13.3
 web3
-
-# install local package hdp_bootloader
-packages/hdp_bootloader

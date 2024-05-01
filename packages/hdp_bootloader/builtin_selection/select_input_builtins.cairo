@@ -1,4 +1,4 @@
-from packages.hdp_bootloader.builtin_selection.inner_select_builtins import inner_select_builtins
+from hdp_bootloader.builtin_selection.inner_select_builtins import inner_select_builtins
 from starkware.cairo.common.registers import get_fp_and_pc
 
 // A wrapper for 'inner_select_builtins' function (see its documentation).

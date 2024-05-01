@@ -8,6 +8,7 @@ build:
 
 setup:
 	./tools/make/setup.sh ${VENV_PATH}
+	./tools/make/install_cairo_vm.sh
 
 run-profile:
 	@echo "A script to select, compile, run & profile one Cairo file"
@@ -43,8 +44,7 @@ get-program-hash:
 
 clean:
 	rm -rf build/compiled_cairo_files
-	mkdir -p build
-	mkdir build/compiled_cairo_files
+	mkdir -p build/compiled_cairo_files
 
 ci-local:
 	./tools/make/ci_local.sh

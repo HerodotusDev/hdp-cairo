@@ -1,4 +1,4 @@
-from packages.hdp_bootloader.bootloader.execute_task import BuiltinData, execute_task
+from hdp_bootloader.bootloader.execute_task import BuiltinData, execute_task
 from starkware.cairo.common.cairo_builtins import HashBuiltin, PoseidonBuiltin, BitwiseBuiltin
 from starkware.cairo.common.registers import get_fp_and_pc
 
@@ -19,7 +19,7 @@ func run_simple_bootloader{
     alloc_locals;
 
     %{
-        from packages.hdp_bootloader.bootloader.objects import SimpleBootloaderInput
+        from hdp_bootloader.bootloader.objects import SimpleBootloaderInput
         simple_bootloader_input = SimpleBootloaderInput.Schema().load(hdp_bootloader_input)
     %}
 
@@ -124,7 +124,7 @@ func execute{builtin_ptrs: BuiltinData*, self_range_check_ptr}(
     task_input_len: felt,
 ) {
     %{
-        from packages.hdp_bootloader.bootloader.objects import Task
+        from hdp_bootloader.bootloader.objects import Task
 
         # Pass current task to execute_task.
         task = simple_bootloader_input.tasks[0].load_task(

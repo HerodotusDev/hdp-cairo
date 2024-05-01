@@ -3,10 +3,16 @@ import setuptools
 setuptools.setup(
     name="hdp-cairo",
     version="0.1",
-    packages=setuptools.find_packages(),
+    packages=["hdp_bootloader", "tools", "tests"],
+    package_dir={
+        "tools": "tools",
+        "tests": "tests",
+        "hdp_bootloader": "packages/hdp_bootloader",
+    },
     zip_safe=False,
     package_data={
-        "packages.hdp_bootloader.bootloader": ["*.cairo", "*/*.cairo"],
-        "packages.hdp_bootloader.builtin_selection": ["*.cairo", "*/*.cairo"],
+        "tools": ["*/*.py"],
+        "tests": ["*/*.py"],
+        "hdp_bootloader": ["*.cairo", "*/*.cairo", "*/*.py"],
     },
 )
