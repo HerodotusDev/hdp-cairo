@@ -86,10 +86,12 @@ struct BlockSampledDataLake {
 
 struct TransactionsInBlockDatalake {
     target_block: felt,
+    start_index: felt,
+    end_index: felt,
     increment: felt,
     type: felt,  // 1=transaction, 2=receipt
+    included_types: felt*,
     sampled_property: felt,
-    // block_tx_count: felt,
 }
 
 struct ComputationalTask {

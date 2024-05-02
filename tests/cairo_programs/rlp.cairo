@@ -4,7 +4,15 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
 from starkware.cairo.common.uint256 import Uint256, uint256_eq, uint256_reverse_endian
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
-from src.rlp import le_chunks_to_uint256, decode_rlp_word_to_uint256, rlp_list_retrieve, chunk_to_felt_be, right_shift_le_chunks, prepend_le_chunks, append_be_chunk
+from src.rlp import (
+    le_chunks_to_uint256,
+    decode_rlp_word_to_uint256,
+    rlp_list_retrieve,
+    chunk_to_felt_be,
+    right_shift_le_chunks,
+    prepend_le_chunks,
+    append_be_chunk,
+)
 from packages.eth_essentials.lib.utils import pow2alloc127
 
 func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}() {
@@ -44,14 +52,12 @@ func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuilt
     return ();
 }
 
-func test_append_be_chunk{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
-}() {
+func test_append_be_chunk{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}() {
     alloc_locals;
 
     local elements_len: felt;
     local item_len: felt;
-    
+
     %{
         rlp_elements = [
             ([0x11223344], 4),
@@ -105,15 +111,14 @@ func test_append_be_chunk{
     %}
 
     return test_append_be_chunk_inner(elements_len, 0, item_len);
-
 }
 
-func test_append_be_chunk_inner{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
-}(elements_len: felt, elements_index: felt, item_len: felt) {
+func test_append_be_chunk_inner{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    elements_len: felt, elements_index: felt, item_len: felt
+) {
     alloc_locals;
 
-    if(elements_len == elements_index) {
+    if (elements_len == elements_index) {
         return ();
     }
 
@@ -122,13 +127,12 @@ func test_append_be_chunk_inner{
     return test_append_be_chunk_inner(elements_len, elements_index + 1, item_len);
 }
 
-
 func test_append_be_chunk_inner_inner{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
 }(elements_index: felt, item_len: felt, item_index: felt) {
     alloc_locals;
 
-    if(item_len == item_index) {
+    if (item_len == item_index) {
         return ();
     }
     local expected_bytes_len: felt;
@@ -147,9 +151,11 @@ func test_append_be_chunk_inner_inner{
         ids.expected_bytes_len = ids.item_bytes_len + ids.rlp_bytes_len
     %}
 
-    let (encoded, encoded_len, encoded_bytes_len) = append_be_chunk(rlp, rlp_bytes_len, item, item_bytes_len);
+    let (encoded, encoded_len, encoded_bytes_len) = append_be_chunk(
+        rlp, rlp_bytes_len, item, item_bytes_len
+    );
 
-    %{  
+    %{
         assert len(expected_values[ids.elements_index][ids.item_index]) == ids.encoded_len, "Invalid Results Length"
         assert ids.encoded_bytes_len == ids.expected_bytes_len, "Invalid Results Bytes Length"
         for i in range(ids.encoded_len):
@@ -159,9 +165,7 @@ func test_append_be_chunk_inner_inner{
     return test_append_be_chunk_inner_inner(elements_index, item_len, item_index + 1);
 }
 
-func test_prepend_le_chunks{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
-}() {
+func test_prepend_le_chunks{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}() {
     alloc_locals;
 
     local elements_len: felt;
@@ -216,17 +220,17 @@ func test_prepend_le_chunks{
                 [0x6677881122334455, 0x6677881122334455, 0x1122331122334455],
                 [0x1122334455667788, 0x1122334455667788, 0x1122334455667788, 0x112233]
             ]
-        ]   
+        ]
     %}
     return test_prepend_le_chunks_inner(elements_len, 0, item_len);
 }
 
-func test_prepend_le_chunks_inner{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
-}(elements_len: felt, elements_index: felt, item_len: felt) {
+func test_prepend_le_chunks_inner{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    elements_len: felt, elements_index: felt, item_len: felt
+) {
     alloc_locals;
 
-    if(elements_len == elements_index) {
+    if (elements_len == elements_index) {
         return ();
     }
 
@@ -240,7 +244,7 @@ func test_prepend_le_chunks_inner_inner{
 }(elements_index: felt, item_len: felt, item_index: felt) {
     alloc_locals;
 
-    if(item_len == item_index) {
+    if (item_len == item_index) {
         return ();
     }
 
@@ -258,7 +262,9 @@ func test_prepend_le_chunks_inner_inner{
         ids.expected_bytes_len =  prepend_items[ids.item_index][1] + rlp_elements[ids.elements_index][1]
     %}
 
-    let (encoded, encoded_len) = prepend_le_chunks(item_bytes_len, item, rlp, rlp_len, expected_bytes_len);
+    let (encoded, encoded_len) = prepend_le_chunks(
+        item_bytes_len, item, rlp, rlp_len, expected_bytes_len
+    );
 
     %{
         for i in range(ids.encoded_len):
@@ -268,11 +274,8 @@ func test_prepend_le_chunks_inner_inner{
     return test_prepend_le_chunks_inner_inner(elements_index, item_len, item_index + 1);
 }
 
-
-
-func test_right_shift_le_chunks{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
-}() {
+func test_right_shift_le_chunks{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    ) {
     alloc_locals;
     local elements_len: felt;
 
@@ -300,7 +303,6 @@ func test_right_shift_le_chunks{
             [0x1122334455667788, 0x1122334455667788],
             [0x8800000000000000, 0x8811223344556677, 0x1111223344556677],
         ]
-    
     %}
 
     test_test_right_shift_le_chunks(elements_len, 0);
@@ -313,7 +315,7 @@ func test_test_right_shift_le_chunks{
 }(elements_len: felt, index: felt) {
     alloc_locals;
 
-    if(elements_len == index) {
+    if (elements_len == index) {
         return ();
     }
 
@@ -331,18 +333,14 @@ func test_test_right_shift_le_chunks{
 
     %{
         for i in range(ids.inputs_len):
-            assert memory[ids.shifted + i] == output_values[ids.index][i], f"Invalid Result at index {i}"        
-    
+            assert memory[ids.shifted + i] == output_values[ids.index][i], f"Invalid Result at index {i}"
     %}
 
     return test_test_right_shift_le_chunks(elements_len=elements_len, index=index + 1);
 }
 
-
-func test_chunk_to_felt_be{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
-}() {
-    alloc_locals;   
+func test_chunk_to_felt_be{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}() {
+    alloc_locals;
 
     local elements_len: felt;
 
@@ -373,18 +371,18 @@ func test_chunk_to_felt_be{
     return test_chunk_to_felt_be_inner(elements_len, 0);
 }
 
-func test_chunk_to_felt_be_inner{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
-}(elements_len: felt, index: felt) {
+func test_chunk_to_felt_be_inner{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    elements_len: felt, index: felt
+) {
     alloc_locals;
 
-    if(elements_len == index) {
+    if (elements_len == index) {
         return ();
     }
 
     local value: felt;
     local expected: felt;
-    %{ 
+    %{
         ids.value = chunks[ids.index][0]
         ids.expected = values[ids.index]
     %}
@@ -395,9 +393,7 @@ func test_chunk_to_felt_be_inner{
     return test_chunk_to_felt_be_inner(elements_len=elements_len, index=index + 1);
 }
 
-func test_rlp_list_retrieve{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
-}() {
+func test_rlp_list_retrieve{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}() {
     alloc_locals;
 
     local elements_len: felt;
@@ -460,7 +456,7 @@ func test_rlp_list_retrieve{
         segments.write_arg(ids.input_chunks, input_chunks)
         ids.item_starts_at_byte = 3 # the first 3 bytes are the list prefix, which we want to skip
         ids.elements_len = len(elements)
-        
+
         encoded_elements = generate_encoded_results(elements)
         expected_bytes_len = [len(element) for element in encoded_elements]
         expected_results = [bytes_to_8_bytes_chunks_little(result) for result in encoded_elements]
@@ -468,19 +464,26 @@ func test_rlp_list_retrieve{
     %}
 
     test_rlp_list_retrieve_inner{
-        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array, input_chunks=input_chunks, item_starts_at_byte=item_starts_at_byte
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array,
+        input_chunks=input_chunks,
+        item_starts_at_byte=item_starts_at_byte,
     }(elements_len, 0);
 
     return ();
-
 }
 
 func test_rlp_list_retrieve_inner{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, input_chunks: felt*, item_starts_at_byte: felt
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    pow2_array: felt*,
+    input_chunks: felt*,
+    item_starts_at_byte: felt,
 }(elements_len: felt, index: felt) {
     alloc_locals;
 
-    if(elements_len == index) {
+    if (elements_len == index) {
         return ();
     }
 
@@ -494,9 +497,7 @@ func test_rlp_list_retrieve_inner{
 
         for i in range(ids.result_len):
             assert memory[ids.result + i] == expected_results[ids.index][i], f"Invalid Result at index {i}"
-
     %}
-
 
     return test_rlp_list_retrieve_inner(elements_len=elements_len, index=index + 1);
 }
@@ -546,7 +547,7 @@ func test_decode_rlp_word_to_uint256{
 
         ids.case_len = len(decode_rlp_word_to_uint256)
     %}
-    
+
     test_decode_rlp_word_to_uint256_inner{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(case_len, 0);

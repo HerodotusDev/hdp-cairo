@@ -121,28 +121,36 @@ func test_computational_task_param_decoding{
         exp_avg_task, avg_input, avg_bytes_len, avg_datalake, hash
     ) = BlockSampledTaskMocker.get_avg_task();
 
-    let (avg_task) = extract_params_and_construct_task(avg_input, avg_bytes_len, hash, exp_avg_task.datalake_ptr, exp_avg_task.datalake_type);
+    let (avg_task) = extract_params_and_construct_task(
+        avg_input, avg_bytes_len, hash, exp_avg_task.datalake_ptr, exp_avg_task.datalake_type
+    );
     task_eq(avg_task, exp_avg_task);
 
     // SUM:
     let (
         exp_sum_task, sum_input, sum_bytes_len, sum_datalake, hash
     ) = BlockSampledTaskMocker.get_sum_task();
-    let (sum_task) = extract_params_and_construct_task(sum_input, sum_bytes_len, hash, exp_sum_task.datalake_ptr, exp_sum_task.datalake_type);
+    let (sum_task) = extract_params_and_construct_task(
+        sum_input, sum_bytes_len, hash, exp_sum_task.datalake_ptr, exp_sum_task.datalake_type
+    );
     task_eq(sum_task, exp_sum_task);
 
     // MIN:
     let (
         exp_min_task, min_input, min_bytes_len, min_datalake, hash
     ) = BlockSampledTaskMocker.get_min_task();
-    let (min_task) = extract_params_and_construct_task(min_input, min_bytes_len, hash, exp_min_task.datalake_ptr, exp_min_task.datalake_type);
+    let (min_task) = extract_params_and_construct_task(
+        min_input, min_bytes_len, hash, exp_min_task.datalake_ptr, exp_min_task.datalake_type
+    );
     task_eq(min_task, exp_min_task);
 
     // MAX:
     let (
         exp_max_task, max_input, max_bytes_len, max_datalake, hash
     ) = BlockSampledTaskMocker.get_max_task();
-    let (max_task) = extract_params_and_construct_task(max_input, max_bytes_len, hash, exp_max_task.datalake_ptr, exp_max_task.datalake_type);
+    let (max_task) = extract_params_and_construct_task(
+        max_input, max_bytes_len, hash, exp_max_task.datalake_ptr, exp_max_task.datalake_type
+    );
     task_eq(max_task, exp_max_task);
 
     // COUNT_IF:
@@ -150,11 +158,15 @@ func test_computational_task_param_decoding{
         exp_count_if_task, count_if_input, count_if_bytes_len, _, hash
     ) = BlockSampledTaskMocker.get_count_if_task();
     let (count_if_task) = extract_params_and_construct_task(
-        count_if_input, count_if_bytes_len, hash, exp_count_if_task.datalake_ptr, exp_count_if_task.datalake_type
+        count_if_input,
+        count_if_bytes_len,
+        hash,
+        exp_count_if_task.datalake_ptr,
+        exp_count_if_task.datalake_type,
     );
     task_eq(count_if_task, exp_count_if_task);
 
-return ();
+    return ();
 }
 
 func task_eq(a: ComputationalTask, b: ComputationalTask) {
@@ -165,5 +177,5 @@ func task_eq(a: ComputationalTask, b: ComputationalTask) {
     assert a.ctx_value.high = b.ctx_value.high;
     assert a.ctx_value.low = b.ctx_value.low;
 
-return ();
+    return ();
 }

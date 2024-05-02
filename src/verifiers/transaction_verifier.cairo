@@ -64,7 +64,7 @@ func verify_n_transaction_proofs{
     }(tx_item=tx_item, tx_item_bytes_len=tx_item_bytes_len, block_number=tx_proof.block_number);
 
     // decode tx-index from rlp-encoded key
-    assert tx_proof.key.high = 0; // sanity check
+    assert tx_proof.key.high = 0;  // sanity check
     let tx_index = chunk_to_felt_be(tx_proof.key.low);
 
     TransactionMemorizer.add(tx_proof.block_number, tx_index, index);

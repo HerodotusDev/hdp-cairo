@@ -119,9 +119,7 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
     assert receipts_root.low = expected_receipts_root.low;
     assert receipts_root.high = expected_receipts_root.high;
 
-    let (bloom_filter, value_len, bytes_len) = HeaderDecoder.get_field_felt(
-        rlp, HeaderField.BLOOM
-    );
+    let (bloom_filter, value_len, bytes_len) = HeaderDecoder.get_field_felt(rlp, HeaderField.BLOOM);
     compare_bloom_filter(
         expected_bloom_filter=expected_bloom_filter,
         bloom_filter=bloom_filter,
@@ -223,9 +221,7 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
         assert excess_blob_gas.low = expected_excess_blob_gas.low;
         assert excess_blob_gas.high = expected_excess_blob_gas.high;
 
-        let parent_beacon_root = HeaderDecoder.get_field(
-            rlp, HeaderField.PARENT_BEACON_BLOCK_ROOT
-        );
+        let parent_beacon_root = HeaderDecoder.get_field(rlp, HeaderField.PARENT_BEACON_BLOCK_ROOT);
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
         tempvar pow2_array = pow2_array;

@@ -12,10 +12,7 @@ from starkware.cairo.common.cairo_secp.signature import (
 from src.rlp import rlp_list_retrieve, le_chunks_to_uint256, prepend_le_chunks, append_be_chunk
 from src.types import Transaction, ChainInfo
 from packages.eth_essentials.lib.rlp_little import extract_n_bytes_from_le_64_chunks_array
-from src.utils import (
-    get_felt_bytes_len,
-    reverse_chunk_endianess,
-)
+from src.utils import get_felt_bytes_len, reverse_chunk_endianess
 
 namespace TransactionField {
     const NONCE = 0;

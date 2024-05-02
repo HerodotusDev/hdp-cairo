@@ -3,7 +3,11 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
-from packages.eth_essentials.lib.utils import word_reverse_endian_64, word_reverse_endian_16_RC, felt_divmod
+from packages.eth_essentials.lib.utils import (
+    word_reverse_endian_64,
+    word_reverse_endian_16_RC,
+    felt_divmod,
+)
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
 from src.types import BlockSampledDataLake, AccountValues, ComputationalTask, Header
 from src.memorizer import AccountMemorizer, StorageMemorizer, HeaderMemorizer
@@ -90,9 +94,9 @@ func init_block_sampled{
         assert [properties + 1] = [address + 1];
         assert [properties + 2] = [address + 2];
 
-        extract_and_write_slot{range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, properties=properties}(
-            chunks=input + 26
-        );
+        extract_and_write_slot{
+            range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, properties=properties
+        }(chunks=input + 26);
 
         return (
             res=BlockSampledDataLake(
@@ -107,13 +111,13 @@ func init_block_sampled{
 
     assert 0 = 1;  // Invalid property_type
     let (prop) = alloc();
-    return (res=BlockSampledDataLake(0, 0, 0, 0, prop));   
+    return (res=BlockSampledDataLake(0, 0, 0, 0, prop));
 }
 
 // Decodes slot from datalake definition and writes it to the properties array
-func extract_and_write_slot{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, properties: felt*
-}(chunks: felt*) {
+func extract_and_write_slot{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, properties: felt*}(
+    chunks: felt*
+) {
     let divsor = 0x10000000000;
     let shifter = 0x1000000;
 
@@ -131,7 +135,7 @@ func extract_and_write_slot{
     let rlp_4 = [chunks + 4];
     let (trash, rlp_3_left) = felt_divmod(rlp_4, divsor);
     let word_3 = rlp_3_left * shifter + rlp_3_right;
-    
+
     assert [properties + 3] = word_0;
     assert [properties + 4] = word_1;
     assert [properties + 5] = word_2;
@@ -190,7 +194,6 @@ func fetch_data_points{
 
     return (data_points, 0);
 }
-
 
 // Used for decoding the sampled property of block sampled headers.
 // Accepted types: Account or AccountSlot

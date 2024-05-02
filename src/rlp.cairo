@@ -17,11 +17,9 @@ from packages.eth_essentials.lib.rlp_little import array_copy
 // - item_starts_at_byte: the byte at which the item starts. this skips the RLP list prefix
 // - counter: the current counter of the recursive function
 // Returns: LE 8bytes array of the value + the length of the array
-func rlp_list_retrieve{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
-}(rlp: felt*, field: felt, item_starts_at_byte: felt, counter: felt) -> (
-    res: felt*, res_len: felt, bytes_len: felt
-) {
+func rlp_list_retrieve{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    rlp: felt*, field: felt, item_starts_at_byte: felt, counter: felt
+) -> (res: felt*, res_len: felt, bytes_len: felt) {
     alloc_locals;
 
     let (item_starts_at_word, item_start_offset) = felt_divmod(item_starts_at_byte, 8);
@@ -275,7 +273,7 @@ func le_chunks_to_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
 }
 
 // This function is required when constructing a LE uint256 from LE chunks.
-// In BE, the function shifts elements to the right: 
+// In BE, the function shifts elements to the right:
 //  e.g. [0x1122334455667788, 0x11] -> [0x11, 0x2233445566778811]
 // This function does the same thing, but on LE chunks. This results in the following:
 // e.g. [0x1122334455667788, 0x11] -> [0x8800000000000000, 0x1111223344556677]
@@ -361,7 +359,7 @@ func prepend_le_chunks{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array
     if (item_bytes_len == 0) {
         return (encoded=rlp, encoded_len=rlp_len);
     }
-    
+
     alloc_locals;
 
     assert [range_check_ptr] = 8 - item_bytes_len;
@@ -415,14 +413,13 @@ func prepend_le_chunks{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array
         return (encoded=result, encoded_len=rlp_len);
     } else {
         // since rest > 0, we expect word + 1 words to be done
-        if(words + 1 == n_processed_words) {
+        if (words + 1 == n_processed_words) {
             return (encoded=result, encoded_len=rlp_len);
         } else {
             // add the remaining word
             assert result[n_processed_words] = current_word;
             return (encoded=result, encoded_len=rlp_len + 1);
         }
-
     }
 }
 
