@@ -2,5 +2,5 @@
 version = 1
 
 [[package]]
-name = "regression"
+name = "simple_linear_regression"
 version = "0.1.0"

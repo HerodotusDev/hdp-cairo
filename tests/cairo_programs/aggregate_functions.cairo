@@ -3,7 +3,7 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, HashBuiltin, PoseidonBuiltin
 
 from src.tasks.aggregate_functions.sum import compute_sum
-from src.tasks.aggregate_functions.regression import compute_regression
+from src.tasks.aggregate_functions.slr import compute_slr
 from src.tasks.aggregate_functions.avg import compute_avg
 from src.tasks.aggregate_functions.min_max import (
     uint256_min_be,
@@ -25,7 +25,7 @@ func main{
     avg_sum{range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr}();
     min_max{range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr}();
     count_if_main{range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr}();
-    regression_main{
+    slr_main{
         pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
@@ -225,7 +225,7 @@ func test_count_if_inner{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     return ();
 }
 
-func regression_main{
+func slr_main{
     pedersen_ptr: HashBuiltin*,
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -234,13 +234,13 @@ func regression_main{
     alloc_locals;
 
     let (local array: felt*) = alloc();
-    %{ segments.write_arg(ids.array, [0] * (ids.TEST_ARRAY_SIZE * 2)) %}
+    %{ segments.write_arg(ids.array, [2, 1, 0, 2, 0, 2, 3, 0, 5, 0, 0, 10, 0, 1, 0]) %}
 
     %{
         hdp_bootloader_input = {
             "task": {
                 "type": "CairoSierra",
-                "path": "build/compiled_cairo_files/regression.sierra.json",
+                "path": "build/compiled_cairo_files/simple_linear_regression.sierra.json",
                 "use_poseidon": True
             },
             "single_page": True
@@ -249,17 +249,12 @@ func regression_main{
 
     let values: Uint256* = cast(array, Uint256*);
 
-    let result = compute_regression{
+    let result = compute_slr{
         pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         poseidon_ptr=poseidon_ptr,
-    }(values=values, values_len=TEST_ARRAY_SIZE);
-
-    %{
-        print(hex(ids.result.low))
-        print(hex(ids.result.high))
-    %}
+    }(values=values, values_len=15);
 
     return ();
 }

@@ -9,11 +9,17 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, HashBuiltin
 from packages.hdp_bootloader.bootloader.hdp_bootloader import run_simple_bootloader
 
-struct Output {
-    result: Uint256,
+struct Fraction {
+    sign: felt,
+    p: Uint256,
+    q: Uint256,
 }
 
-func compute_regression{
+struct Output {
+    result: Fraction,
+}
+
+func compute_slr{
     pedersen_ptr: HashBuiltin*,
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -23,7 +29,7 @@ func compute_regression{
 
     // Inputs
     local task_input_arr: felt* = cast(values, felt*);
-    local task_input_len = values_len * 2;
+    local task_input_len = values_len;
 
     local return_ptr: felt*;
     %{ ids.return_ptr = segments.add() %}
@@ -38,5 +44,13 @@ func compute_regression{
 
     let output = cast(return_ptr - Output.SIZE, Output*);
 
-    return (output.result);
+    %{
+        print(hex(ids.result.sign))
+        print(hex(ids.result.p.low))
+        print(hex(ids.result.p.high))
+        print(hex(ids.result.q.low))
+        print(hex(ids.result.q.high))
+    %}
+
+    return (Uint256(low=0,high=0));
 }
