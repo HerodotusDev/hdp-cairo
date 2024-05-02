@@ -249,12 +249,29 @@ func slr_main{
 
     let values: Uint256* = cast(array, Uint256*);
 
-    let result = compute_slr{
+    let output_hash = compute_slr{
         pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         poseidon_ptr=poseidon_ptr,
     }(values=values, values_len=15);
+
+    local expected_hash: felt;
+
+    %{
+        from starkware.cairo.lang.vm.crypto import poseidon_hash
+        from starkware.cairo.common.hash_state import compute_hash_on_elements
+
+        ids.expected_hash = compute_hash_on_elements(data=[
+            0x0,
+            0x15,
+            0x0,
+            0x1,
+            0x0,
+        ], hash_func=poseidon_hash)
+    %}
+
+    assert output_hash.low = expected_hash;
 
     return ();
 }

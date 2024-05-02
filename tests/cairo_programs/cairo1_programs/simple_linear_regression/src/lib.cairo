@@ -17,13 +17,11 @@ struct Input {
     predicted: Fraction,
 }
 
-fn main(input: Array<felt252>) -> Array<felt252> {
+fn main(input: Array<felt252>) -> Fraction {
     let mut input_span = input.span();
     let input = Serde::<Input>::deserialize(ref input_span).unwrap();
     let regression = slr(input.x_i.span(), input.y_i.span());
-    let mut output = array![];
-    regression.predict(input.predicted).serialize(ref output);
-    output
+    regression.predict(input.predicted)
 }
 
 #[derive(Drop, Copy, PartialEq)]

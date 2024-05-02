@@ -12,5 +12,5 @@ fn test_slr_simple() {
 #[test]
 fn test_main() {
     let prediction = main(array![2, 1, 0, 2, 0, 2, 3, 0, 5, 0, 0, 10, 0, 1, 0]);
-    assert!(prediction == array![0, 21, 0, 1, 0]);
+    assert!(prediction == FractionImpl::from_u256(Sign::Positive, 21));
 }

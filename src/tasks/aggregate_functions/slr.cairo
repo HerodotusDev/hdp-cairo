@@ -16,7 +16,7 @@ struct Fraction {
 }
 
 struct Output {
-    result: Fraction,
+    prediction: Fraction,
 }
 
 func compute_slr{
@@ -44,13 +44,20 @@ func compute_slr{
 
     let output = cast(return_ptr - Output.SIZE, Output*);
 
+    local hash: felt;
+
     %{
-        print(hex(ids.result.sign))
-        print(hex(ids.result.p.low))
-        print(hex(ids.result.p.high))
-        print(hex(ids.result.q.low))
-        print(hex(ids.result.q.high))
+        from starkware.cairo.lang.vm.crypto import poseidon_hash
+        from starkware.cairo.common.hash_state import compute_hash_on_elements
+
+        ids.hash = compute_hash_on_elements(data=[
+            ids.output.prediction.sign,
+            ids.output.prediction.p.low,
+            ids.output.prediction.p.high,
+            ids.output.prediction.q.low,
+            ids.output.prediction.q.high,
+        ], hash_func=poseidon_hash)
     %}
 
-    return (Uint256(low=0,high=0));
+    return (Uint256(low=hash, high=0));
 }
