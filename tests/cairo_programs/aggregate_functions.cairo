@@ -259,16 +259,8 @@ func slr_main{
     local expected_hash: felt;
 
     %{
-        from starkware.cairo.lang.vm.crypto import poseidon_hash
-        from starkware.cairo.common.hash_state import compute_hash_on_elements
-
-        ids.expected_hash = compute_hash_on_elements(data=[
-            0x0,
-            0x15,
-            0x0,
-            0x1,
-            0x0,
-        ], hash_func=poseidon_hash)
+        from starkware.cairo.lang.vm.crypto import poseidon_hash_many
+        ids.expected_hash = poseidon_hash_many([0x0,0x15,0x0,0x1,0x0])
     %}
 
     assert output_hash.low = expected_hash;

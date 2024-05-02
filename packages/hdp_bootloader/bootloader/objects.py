@@ -166,9 +166,7 @@ class CairoPieTask(Task):
 @marshmallow_dataclass.dataclass(frozen=True)
 class SimpleBootloaderInput(ValidatedMarshmallowDataclass):
     task: TaskSpec = field(
-        metadata=additional_metadata(
-            marshmallow_field=mfields.Nested(TaskSchema)
-        )
+        metadata=additional_metadata(marshmallow_field=mfields.Nested(TaskSchema))
     )
     fact_topologies_path: Optional[str]
 

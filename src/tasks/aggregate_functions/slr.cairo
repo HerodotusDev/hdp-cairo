@@ -47,16 +47,14 @@ func compute_slr{
     local hash: felt;
 
     %{
-        from starkware.cairo.lang.vm.crypto import poseidon_hash
-        from starkware.cairo.common.hash_state import compute_hash_on_elements
-
-        ids.hash = compute_hash_on_elements(data=[
+        from starkware.cairo.lang.vm.crypto import poseidon_hash_many
+        ids.hash = poseidon_hash_many([
             ids.output.prediction.sign,
             ids.output.prediction.p.low,
             ids.output.prediction.p.high,
             ids.output.prediction.q.low,
             ids.output.prediction.q.high,
-        ], hash_func=poseidon_hash)
+        ])
     %}
 
     return (Uint256(low=hash, high=0));
