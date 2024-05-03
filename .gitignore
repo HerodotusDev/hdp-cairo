@@ -24,6 +24,8 @@ broadcast/
 node_modules
 package-lock.json
 
+hdp-test
+
 .DS_Store
 src/.DS_Store
 
