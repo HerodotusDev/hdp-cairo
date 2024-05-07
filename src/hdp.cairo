@@ -109,6 +109,8 @@ func run{
     local chain_id: felt;
 
     %{
+        from tools.py.utils import split_128, count_leading_zero_nibbles_from_hex
+
         debug_mode = False
         def conditional_print(*args):
             if debug_mode:
@@ -143,13 +145,18 @@ func run{
                 ids.transaction_proof_len = len(tx_proofs)
 
                 for tx_proof in tx_proofs:
+                    leading_zeroes = count_leading_zero_nibbles_from_hex(tx_proof["key"])
+                    (key_low, key_high) = split_128(int(tx_proof["key"], 16))
+
                     memory[ptr._reference_value + offset] = tx_proof["block_number"]
                     memory[ptr._reference_value + offset + 1] = len(tx_proof["proof"])
                     memory[ptr._reference_value + offset + 2] = segments.gen_arg(tx_proof["proof_bytes_len"])
                     memory[ptr._reference_value + offset + 3] = segments.gen_arg(nested_hex_to_int_array(tx_proof["proof"]))
-                    memory[ptr._reference_value + offset + 4] = hex_to_int(tx_proof["key"]["low"])
-                    memory[ptr._reference_value + offset + 5] = hex_to_int(tx_proof["key"]["high"])
-                    offset += 6
+                    memory[ptr._reference_value + offset + 4] = key_low
+                    memory[ptr._reference_value + offset + 5] = key_high
+                    memory[ptr._reference_value + offset + 6] = leading_zeroes
+
+                    offset += 7
             else:
                 ids.transaction_proof_len = 0
 

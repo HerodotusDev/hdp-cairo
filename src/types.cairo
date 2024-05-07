@@ -15,8 +15,9 @@ struct Header {
 
 struct Account {
     address: felt*,
-    key: Uint256,
     proofs_len: felt,
+    key: Uint256,
+    key_leading_zeros: felt,
     proofs: AccountProof*,
 }
 
@@ -49,8 +50,9 @@ struct MMRMeta {
 struct StorageItem {
     address: felt*,
     slot: felt*,
-    key: Uint256,
     proofs_len: felt,
+    key: Uint256,
+    key_leading_zeros: felt,
     proofs: StorageItemProof*,
 }
 
@@ -74,6 +76,7 @@ struct TransactionProof {
     bytes_len: felt*,
     proof: felt**,
     key: Uint256,
+    key_leading_zeros: felt,
 }
 
 struct BlockSampledDataLake {

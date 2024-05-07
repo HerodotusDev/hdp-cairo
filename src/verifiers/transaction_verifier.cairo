@@ -52,10 +52,9 @@ func verify_n_transaction_proofs{
         mpt_proof=tx_proof.proof,
         mpt_proof_bytes_len=tx_proof.bytes_len,
         mpt_proof_len=tx_proof.len,
-        key_little=tx_proof.key,
-        n_nibbles_already_checked=0,
-        node_index=0,
-        hash_to_assert=tx_root,
+        key_be=tx_proof.key,
+        key_be_leading_zeroes_nibbles=tx_proof.key_leading_zeros,
+        root=tx_root,
         pow2_array=pow2_array,
     );
 
