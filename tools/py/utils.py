@@ -48,6 +48,7 @@ def reverse_endian_bytes(x: bytes):
 def reverse_and_split_256_bytes(x: bytes):
     return split_128(reverse_endian_bytes(x))
 
+
 def reverse_endian_256(x: int):
     return int.from_bytes(x.to_bytes(32, "big"), "little")
 
@@ -121,6 +122,7 @@ def count_leading_zero_nibbles_from_hex(hex_str: str) -> int:
             break  # Stop counting at the first non-zero nibble
 
     return leading_zero_nibbles
+
 
 def rpc_request(url, rpc_request):
     headers = {"Content-Type": "application/json"}

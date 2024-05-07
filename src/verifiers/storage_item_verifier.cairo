@@ -27,7 +27,7 @@ func populate_storage_item_segments{
         local storage_item: StorageItem;
         let (proofs: StorageItemProof*) = alloc();
 
-        %{        
+        %{
             def write_storage_item(account_ptr, proofs_ptr, account):
                 leading_zeroes = count_leading_zero_nibbles_from_hex(account["storage_key"])
                 (key_low, key_high) = split_128(int(account["storage_key"], 16))
