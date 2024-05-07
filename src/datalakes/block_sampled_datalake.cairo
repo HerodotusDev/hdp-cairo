@@ -298,6 +298,14 @@ func fetch_account_data_points{
 
     let current_block_number = datalake.block_range_start + index * datalake.increment;
 
+    local exit_condition: felt;
+    %{ ids.exit_condition = 1 if ids.current_block_number > ids.datalake.block_range_end else 0 %}
+    if (exit_condition == 1) {
+        assert [range_check_ptr] = (current_block_number - 1) - datalake.block_range_end;
+        tempvar range_check_ptr = range_check_ptr + 1;
+        return index;
+    }
+
     let (account_value) = AccountMemorizer.get(
         address=datalake.properties + 1, block_number=current_block_number
     );
@@ -307,11 +315,6 @@ func fetch_account_data_points{
     }(rlp=account_value.values, field=[datalake.properties]);  // field_idx ios always at 0
 
     assert [data_points + index * Uint256.SIZE] = data_point;
-
-    // ToDo: this results in an endless loop if block_range_start % increment != block_range_end % increment
-    if (current_block_number == datalake.block_range_end) {
-        return index + 1;
-    }
 
     return fetch_account_data_points(datalake=datalake, index=index + 1, data_points=data_points);
 }
@@ -333,6 +336,14 @@ func fetch_storage_data_points{
 
     let current_block_number = datalake.block_range_start + index * datalake.increment;
 
+    local exit_condition: felt;
+    %{ ids.exit_condition = 1 if ids.current_block_number > ids.datalake.block_range_end else 0 %}
+    if (exit_condition == 1) {
+        assert [range_check_ptr] = (current_block_number - 1) - datalake.block_range_end;
+        tempvar range_check_ptr = range_check_ptr + 1;
+        return index;
+    }
+
     let (data_point) = StorageMemorizer.get(
         storage_slot=datalake.properties + 3,
         address=datalake.properties,
@@ -340,11 +351,6 @@ func fetch_storage_data_points{
     );
 
     assert [data_points + index * Uint256.SIZE] = data_point;
-
-    // ToDo: this results in an endless loop if block_range_start % increment != block_range_end % increment
-    if (current_block_number == datalake.block_range_end) {
-        return index + 1;
-    }
 
     return fetch_storage_data_points(datalake=datalake, index=index + 1, data_points=data_points);
 }
@@ -361,6 +367,14 @@ func fetch_header_data_points{
     alloc_locals;
     let current_block_number = datalake.block_range_start + index * datalake.increment;
 
+    local exit_condition: felt;
+    %{ ids.exit_condition = 1 if ids.current_block_number > ids.datalake.block_range_end else 0 %}
+    if (exit_condition == 1) {
+        assert [range_check_ptr] = (current_block_number - 1) - datalake.block_range_end;
+        tempvar range_check_ptr = range_check_ptr + 1;
+        return index;
+    }
+
     let header = HeaderMemorizer.get(block_number=current_block_number);
 
     let data_point = HeaderDecoder.get_field{
@@ -368,11 +382,6 @@ func fetch_header_data_points{
     }(rlp=header.rlp, field=[datalake.properties]);
 
     assert [data_points + index * Uint256.SIZE] = data_point;
-
-    // ToDo: this results in an endless loop if block_range_start % increment != block_range_end % increment
-    if (current_block_number == datalake.block_range_end) {
-        return index + 1;
-    }
 
     return fetch_header_data_points(datalake=datalake, index=index + 1, data_points=data_points);
 }
