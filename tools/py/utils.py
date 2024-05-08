@@ -22,7 +22,13 @@ def uint256_reverse_endian(x: int):
 
 def reverse_endian(x: int):
     hex_str = hex(x)[2:]
+    if len(hex_str) % 2 != 0:
+        hex_str = "0" + hex_str
     return int.from_bytes(bytes.fromhex(hex_str), "little")
+
+
+def int_get_bytes_len(x: int):
+    return (x.bit_length() + 7) // 8
 
 
 def flatten(t):
@@ -41,6 +47,81 @@ def reverse_endian_bytes(x: bytes):
 
 def reverse_and_split_256_bytes(x: bytes):
     return split_128(reverse_endian_bytes(x))
+
+
+def reverse_endian_256(x: int):
+    return int.from_bytes(x.to_bytes(32, "big"), "little")
+
+
+def parse_int_to_bytes(x: int) -> bytes:
+    """
+    Convert an integer to a bytes object.
+    If the number of bytes is odd, left pad with one leading zero.
+    """
+    hex_str = hex(x)[2:]
+    if len(hex_str) % 2 == 1:
+        hex_str = "0" + hex_str
+    return bytes.fromhex(hex_str)
+
+
+def count_trailing_zero_bytes_from_int(number: int) -> int:
+    """
+    Counts the number of trailing zero bytes in the hexadecimal representation of an integer.
+
+    Args:
+    number (int): The integer to analyze.
+
+    Returns:
+    int: The number of trailing zero bytes.
+    """
+    # Convert the integer to a hexadecimal string without the '0x' prefix
+    hex_str = format(number, "x")
+
+    # Ensure the hex string length is even for complete byte representation
+    if len(hex_str) % 2 != 0:
+        hex_str = "0" + hex_str
+
+    # Initialize count of trailing zero bytes
+    trailing_zero_bytes = 0
+
+    # Reverse the string to start checking from the last character
+    reversed_hex_str = hex_str[::-1]
+
+    # Iterate over each pair of characters in the reversed string
+    for i in range(0, len(reversed_hex_str), 2):
+        if reversed_hex_str[i : i + 2] == "00":
+            trailing_zero_bytes += 1
+        else:
+            break  # Stop counting at the first non-zero byte
+
+    return trailing_zero_bytes
+
+
+def count_leading_zero_nibbles_from_hex(hex_str: str) -> int:
+    """
+    Counts the number of leading zero nibbles in a hexadecimal string.
+
+    Args:
+    hex_str (str): The hexadecimal string to analyze.
+
+    Returns:
+    int: The number of leading zero nibbles.
+    """
+    # Remove any leading '0x' if present
+    if hex_str.startswith("0x"):
+        hex_str = hex_str[2:]
+
+    # Initialize count of leading zero nibbles
+    leading_zero_nibbles = 0
+
+    # Iterate over each character in the string
+    for char in hex_str:
+        if char == "0":
+            leading_zero_nibbles += 1
+        else:
+            break  # Stop counting at the first non-zero nibble
+
+    return leading_zero_nibbles
 
 
 def rpc_request(url, rpc_request):

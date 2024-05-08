@@ -7,7 +7,7 @@ from starkware.cairo.common.builtin_poseidon.poseidon import (
     poseidon_hash_many,
 )
 from starkware.cairo.common.dict import dict_write, dict_read
-from src.types import Header, AccountValues
+from src.types import Header, AccountValues, Transaction
 from starkware.cairo.common.uint256 import Uint256
 
 const MEMORIZER_DEFAULT = 100000000;  // An arbitrary large number. We need to ensure each memorizer never contains >= number of elements.
@@ -102,6 +102,38 @@ namespace StorageMemorizer {
     }
 }
 
+namespace TransactionMemorizer {
+    func initialize{}() -> (transaction_dict: DictAccess*, transaction_dict_start: DictAccess*) {
+        let (transaction_dict) = default_dict_new(default_value=MEMORIZER_DEFAULT);
+        tempvar transaction_dict_start = transaction_dict;
+
+        return (transaction_dict=transaction_dict, transaction_dict_start=transaction_dict_start);
+    }
+
+    func add{poseidon_ptr: PoseidonBuiltin*, transaction_dict: DictAccess*}(
+        block_number: felt, key_low: felt, index: felt
+    ) {
+        let key = gen_transaction_key(block_number, key_low);
+
+        dict_write{dict_ptr=transaction_dict}(key=key, new_value=index);
+        return ();
+    }
+
+    func get{
+        transaction_dict: DictAccess*, transactions: Transaction*, poseidon_ptr: PoseidonBuiltin*
+    }(block_number: felt, key_low: felt) -> (transaction: Transaction) {
+        alloc_locals;
+        let key = gen_transaction_key(block_number, key_low);
+        let (index) = dict_read{dict_ptr=transaction_dict}(key);
+
+        if (index == MEMORIZER_DEFAULT) {
+            assert 1 = 0;
+        }
+
+        return (transaction=transactions[index]);
+    }
+}
+
 // the account key is h(slot.key, account_key).
 // ToDo: too much hashing
 func gen_storage_key{poseidon_ptr: PoseidonBuiltin*}(
@@ -121,6 +153,14 @@ func gen_storage_key{poseidon_ptr: PoseidonBuiltin*}(
 func gen_account_key{poseidon_ptr: PoseidonBuiltin*}(address: felt*, block_number: felt) -> felt {
     let (h_addr) = poseidon_hash_many(3, address);
     let (res) = poseidon_hash(h_addr, block_number);
+
+    return res;
+}
+
+func gen_transaction_key{poseidon_ptr: PoseidonBuiltin*}(
+    block_number: felt, key_low: felt
+) -> felt {
+    let (res) = poseidon_hash(block_number, key_low);
 
     return res;
 }

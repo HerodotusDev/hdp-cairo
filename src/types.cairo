@@ -15,8 +15,9 @@ struct Header {
 
 struct Account {
     address: felt*,
-    key: Uint256,
     proofs_len: felt,
+    key: Uint256,
+    key_leading_zeros: felt,
     proofs: AccountProof*,
 }
 
@@ -32,6 +33,12 @@ struct AccountValues {
     values_len: felt,
 }
 
+struct ChainInfo {
+    id: felt,
+    id_bytes_len: felt,
+    eip155_activation: felt,
+}
+
 struct MMRMeta {
     id: felt,
     root: felt,
@@ -43,8 +50,9 @@ struct MMRMeta {
 struct StorageItem {
     address: felt*,
     slot: felt*,
-    key: Uint256,
     proofs_len: felt,
+    key: Uint256,
+    key_leading_zeros: felt,
     proofs: StorageItemProof*,
 }
 
@@ -55,18 +63,44 @@ struct StorageItemProof {
     proof: felt**,
 }
 
+struct Transaction {
+    rlp: felt*,
+    rlp_len: felt,
+    bytes_len: felt,
+    type: felt,
+}
+
+struct TransactionProof {
+    block_number: felt,
+    len: felt,
+    bytes_len: felt*,
+    proof: felt**,
+    key: Uint256,
+    key_leading_zeros: felt,
+}
+
 struct BlockSampledDataLake {
     block_range_start: felt,
     block_range_end: felt,
     increment: felt,
     property_type: felt,  // header=1, account=2, accountSlot=3
     properties: felt*,
-    hash: Uint256,
 }
 
-struct BlockSampledComputationalTask {
+struct TransactionsInBlockDatalake {
+    target_block: felt,
+    start_index: felt,
+    end_index: felt,
+    increment: felt,
+    type: felt,  // 1=transaction, 2=receipt
+    included_types: felt*,
+    sampled_property: felt,
+}
+
+struct ComputationalTask {
     hash: Uint256,
-    datalake: BlockSampledDataLake,
+    datalake_ptr: felt*,
+    datalake_type: felt,
     aggregate_fn_id: felt,
     ctx_operator: felt,
     ctx_value: Uint256,

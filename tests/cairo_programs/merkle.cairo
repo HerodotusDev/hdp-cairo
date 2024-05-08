@@ -5,7 +5,7 @@ from starkware.cairo.common.alloc import alloc
 from tests.cairo_programs.test_vectors import BlockSampledTaskMocker
 from src.merkle import compute_tasks_root, compute_results_root, hash_pair, compute_merkle_root
 from src.utils import compute_results_entry
-from src.types import BlockSampledComputationalTask
+from src.types import ComputationalTask
 
 func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}() {
     computes_output_roots{
@@ -28,7 +28,7 @@ func computes_output_roots{
     alloc_locals;
 
     let (task, _, _, _, _, _, tasks_len) = BlockSampledTaskMocker.get_init_data();
-    let (tasks: BlockSampledComputationalTask*) = alloc();
+    let (tasks: ComputationalTask*) = alloc();
     assert tasks[0] = task;
 
     let tasks_root = compute_tasks_root{

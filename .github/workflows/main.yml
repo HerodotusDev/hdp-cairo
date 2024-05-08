@@ -33,7 +33,9 @@ jobs:
         source venv/bin/activate && ./tools/make/cairo_format_check.sh
     - name: Compile cairo files
       run: source venv/bin/activate && make build
-    - name: Run Cairo tests
+    - name: Run Unit Cairo tests
       env:
         RPC_URL_MAINNET: ${{ secrets.RPC_URL_MAINNET }}
       run: source ./tools/make/cairo_tests.sh
+    - name: Run Full Flow tests
+      run: source ./tools/make/full_flow_test.sh

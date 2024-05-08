@@ -13,7 +13,7 @@ load_dotenv()
 RPC_URL = (
     os.getenv("RPC_URL_GOERLI") if NETWORK == GOERLI else os.getenv("RPC_URL_MAINNET")
 )
-RPC_URL = "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"
+RPC_URL = "https://ethereum-rpc.publicnode.com"
 
 block_n = 1150001
 

@@ -12,6 +12,7 @@ __pycache__
 *.zip
 *.json
 *.db
+*.log
 cache/
 out/
 .gas-snapshot
@@ -19,9 +20,12 @@ out/
 .env
 .encryptedKey
 broadcast/
-
+.idea
 node_modules
 package-lock.json
+
+hdp-test
+hdp
 
 .DS_Store
 src/.DS_Store

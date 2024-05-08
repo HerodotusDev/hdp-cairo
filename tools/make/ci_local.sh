@@ -15,8 +15,11 @@ echo "Run Cairo Format Check..."
 echo "Run Python Format Check..."
 (source ./tools/make/python_format_check.sh)
 
-echo "Run Cairo Tests..."
+echo "Run Cairo Unit Tests..."
 (source ./tools/make/cairo_tests.sh)
+
+echo "Run full flow test..."
+(source ./tools/make/full_flow_test.sh)
 
 # End time
 end_time=$SECONDS
