@@ -160,8 +160,6 @@ func run{
             else:
                 ids.transaction_proof_len = 0
 
-        from tests.python.test_header_decoding import fetch_header_dict
-        # header = fetch_header_dict(5608949)
         def write_mmr_meta(mmr_meta):
             ids.mmr_meta.id = mmr_meta["id"]
             ids.mmr_meta.root = hex_to_int(mmr_meta["root"])

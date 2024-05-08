@@ -53,7 +53,7 @@ if [ ! -d "hdp-test" ]; then
 fi
 
 echo "Starting tests..."
-find ./hdp-test/hdp/example -name "input.json" | parallel run_tests $filename
+find ./hdp-test/fixtures -name "input.json" | parallel run_tests $filename
 
 # Capture the exit status of parallel
 exit_status=$?
