@@ -17,15 +17,15 @@ jobs:
       with:
         python-version: '3.9' # Specify the Python version you need
 
-    - name: Cache Python environment
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cache/pip
-          venv
-        key: ${{ runner.os }}-python-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-python-
+    # - name: Cache Python environment
+    #   uses: actions/cache@v3
+    #   with:
+    #     path: |
+    #       ~/.cache/pip
+    #       venv
+    #     key: ${{ runner.os }}-python-${{ hashFiles('**/requirements.txt') }}
+    #     restore-keys: |
+    #       ${{ runner.os }}-python-
 
     - name: Install Dependencies
       run: |
