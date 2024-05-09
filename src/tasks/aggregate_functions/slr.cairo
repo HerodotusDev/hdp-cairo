@@ -26,9 +26,29 @@ func compute_slr{
 }(values: Uint256*, values_len: felt) -> Uint256 {
     alloc_locals;
 
-    // Inputs
-    local task_input_arr: felt* = cast(values, felt*);
-    local task_input_len = values_len;
+    local array: felt* = cast(values, felt*);
+
+    let (local task_input_arr: felt*) = alloc();
+    local task_input_len: felt;
+
+    // prepare prediction inputs
+    %{
+        offset = 0
+        memory[ids.task_input_arr + offset] = ids.values_len
+        offset += 1
+        for i in range(ids.values_len * 2 * 2):
+            memory[ids.task_input_arr + i + offset] = memory[ids.array + i]
+        offset += ids.values_len * 2 * 2
+    %}
+
+    // supply prediction target
+    %{
+        memory[ids.task_input_arr + offset] = 10
+        offset += 1
+        memory[ids.task_input_arr + offset] = 0
+        offset += 1
+        ids.task_input_len = offset
+    %}
 
     local return_ptr: felt*;
     %{ ids.return_ptr = segments.add() %}

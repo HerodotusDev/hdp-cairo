@@ -5,22 +5,33 @@ use cubit::f128::{Fixed as Fixed128, FixedTrait as FixedTrait128};
 #[cfg(test)]
 mod tests;
 
-use core::traits::Into;
-use core::array::SpanTrait;
-use core::array::ArrayTrait;
-
 #[derive(Drop, Serde)]
 struct Input {
-    x_i: Array<Fixed128>,
-    y_i: Array<Fixed128>,
-    predicted: Fixed128,
+    xy_i: Array<(u256, u256)>,
+    predicted: u256,
 }
 
 fn main(input: Array<felt252>) -> Fixed128 {
     let mut input_span = input.span();
-    let input = Serde::<Input>::deserialize(ref input_span).unwrap();
-    let regression = slr(input.x_i.span(), input.y_i.span());
-    regression.predict(input.predicted)
+    let mut input = Serde::<Input>::deserialize(ref input_span).unwrap();
+
+    let mut x_i = array![];
+    let mut y_i = array![];
+
+    loop {
+        match input.xy_i.pop_front() {
+            Option::Some((
+                x, y
+            )) => {
+                x_i.append(FixedTrait128::new_unscaled(x.try_into().unwrap(), false));
+                y_i.append(FixedTrait128::new_unscaled(y.try_into().unwrap(), false));
+            },
+            Option::None => { break; }
+        }
+    };
+
+    let regression = slr(x_i.span(), y_i.span());
+    regression.predict(FixedTrait128::new_unscaled(input.predicted.try_into().unwrap(), false))
 }
 
 #[derive(Drop, Copy, PartialEq)]

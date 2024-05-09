@@ -303,7 +303,7 @@ func fetch_account_data_points{
     if (exit_condition == 1) {
         assert [range_check_ptr] = (current_block_number - 1) - datalake.block_range_end;
         tempvar range_check_ptr = range_check_ptr + 1;
-        return index;
+        return index * 2;
     }
 
     let (account_value) = AccountMemorizer.get(
@@ -314,7 +314,10 @@ func fetch_account_data_points{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(rlp=account_value.values, field=[datalake.properties]);  // field_idx ios always at 0
 
-    assert [data_points + index * Uint256.SIZE] = data_point;
+    assert [data_points + index * 2 * Uint256.SIZE + 0] = Uint256(
+        low=current_block_number, high=0x0
+    );
+    assert [data_points + index * 2 * Uint256.SIZE + 1] = data_point;
 
     return fetch_account_data_points(datalake=datalake, index=index + 1, data_points=data_points);
 }
