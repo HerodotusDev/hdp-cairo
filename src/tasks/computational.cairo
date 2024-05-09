@@ -26,6 +26,7 @@ namespace AGGREGATE_FN {
     const MAX = 3;
     const COUNT = 4;
     const MERKLE = 5;
+    const SLR = 6;
 }
 
 namespace Task {
@@ -137,6 +138,13 @@ namespace Task {
                 data_points, data_points_len, tasks[index].ctx_operator, tasks[index].ctx_value
             );
             let result = felt_to_uint256(res_felt);
+            assert [results] = result;
+
+            return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
+        }
+
+        if (tasks[index].aggregate_fn_id == AGGREGATE_FN.SLR) {
+            let result = compute_slr(values=data_points, values_len=data_points_len);
             assert [results] = result;
 
             return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
