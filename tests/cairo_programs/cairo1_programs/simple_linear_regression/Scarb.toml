@@ -9,3 +9,4 @@ edition = "2023_11"
 enable-gas = false
 
 [dependencies]
+cubit = { git = "https://github.com/influenceth/cubit.git" }

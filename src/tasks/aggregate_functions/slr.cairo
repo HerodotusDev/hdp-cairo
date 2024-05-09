@@ -9,14 +9,13 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, HashBuiltin
 from packages.hdp_bootloader.bootloader.hdp_bootloader import run_simple_bootloader
 
-struct Fraction {
+struct Fixed {
+    mag: felt,
     sign: felt,
-    p: Uint256,
-    q: Uint256,
 }
 
 struct Output {
-    prediction: Fraction,
+    prediction: Fixed,
 }
 
 func compute_slr{
@@ -49,11 +48,8 @@ func compute_slr{
     %{
         from starkware.cairo.lang.vm.crypto import poseidon_hash_many
         ids.hash = poseidon_hash_many([
+            ids.output.prediction.mag,
             ids.output.prediction.sign,
-            ids.output.prediction.p.low,
-            ids.output.prediction.p.high,
-            ids.output.prediction.q.low,
-            ids.output.prediction.q.high,
         ])
     %}
 
