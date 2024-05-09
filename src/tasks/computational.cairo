@@ -17,6 +17,7 @@ from src.tasks.aggregate_functions.sum import compute_sum
 from src.tasks.aggregate_functions.avg import compute_avg
 from src.tasks.aggregate_functions.min_max import uint256_min_le, uint256_max_le
 from src.tasks.aggregate_functions.count_if import count_if
+from src.tasks.aggregate_functions.slr import compute_slr
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
 
 namespace AGGREGATE_FN {
