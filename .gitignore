@@ -18,6 +18,8 @@ out/
 .gas-snapshot
 .vscode/
 .env
+.idea
+*.log
 .encryptedKey
 broadcast/
 .idea
