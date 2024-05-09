@@ -6,6 +6,7 @@ from starkware.cairo.common.uint256 import (
     uint256_add,
 )
 from starkware.cairo.common.alloc import alloc
+from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, HashBuiltin
 from packages.hdp_bootloader.bootloader.hdp_bootloader import run_simple_bootloader
 
@@ -26,29 +27,13 @@ func compute_slr{
 }(values: Uint256*, values_len: felt) -> Uint256 {
     alloc_locals;
 
-    local array: felt* = cast(values, felt*);
-
     let (local task_input_arr: felt*) = alloc();
-    local task_input_len: felt;
 
-    // prepare prediction inputs
-    %{
-        offset = 0
-        memory[ids.task_input_arr + offset] = ids.values_len
-        offset += 1
-        for i in range(ids.values_len * 2 * 2):
-            memory[ids.task_input_arr + i + offset] = memory[ids.array + i]
-        offset += ids.values_len * 2 * 2
-    %}
+    assert task_input_arr[0] = values_len;
+    memcpy(task_input_arr + 1, cast(values, felt*), values_len * 2 * 2);
 
-    // supply prediction target
-    %{
-        memory[ids.task_input_arr + offset] = 10
-        offset += 1
-        memory[ids.task_input_arr + offset] = 0
-        offset += 1
-        ids.task_input_len = offset
-    %}
+    assert task_input_arr[1 + values_len * 2 * 2] = 10;
+    assert task_input_arr[1 + values_len * 2 * 2 + 1] = 0;
 
     local return_ptr: felt*;
     %{ ids.return_ptr = segments.add() %}
@@ -59,7 +44,7 @@ func compute_slr{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         poseidon_ptr=poseidon_ptr,
-    }(task_input_arr=task_input_arr, task_input_len=task_input_len);
+    }(task_input_arr=task_input_arr, task_input_len=1 + values_len * 2 * 2 + 2);
 
     let output = cast(return_ptr - Output.SIZE, Output*);
 
