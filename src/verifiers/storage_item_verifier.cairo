@@ -2,7 +2,7 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin,
 from starkware.cairo.common.dict_access import DictAccess
 from packages.eth_essentials.lib.mpt import verify_mpt_proof
 from starkware.cairo.common.uint256 import Uint256
-from starkware.cairo.common.builtin_keccak.keccak import keccak
+from starkware.cairo.common.builtin_keccak.keccak import keccak_bigend
 from starkware.cairo.common.alloc import alloc
 from src.types import AccountValues, StorageItemProof, StorageItem
 from src.rlp import decode_rlp_word_to_uint256
@@ -12,7 +12,7 @@ from packages.eth_essentials.lib.rlp_little import (
 )
 
 from src.memorizer import StorageMemorizer, AccountMemorizer
-from src.decoders.account_decoder import AccountDecoder, ACCOUNT_FIELD
+from src.decoders.account_decoder import AccountDecoder, AccountField
 
 from packages.eth_essentials.lib.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64
 
@@ -29,12 +29,16 @@ func populate_storage_item_segments{
 
         %{
             def write_storage_item(account_ptr, proofs_ptr, account):
+                leading_zeroes = count_leading_zero_nibbles_from_hex(account["storage_key"])
+                (key_low, key_high) = split_128(int(account["storage_key"], 16))
+
                 memory[account_ptr._reference_value] = segments.gen_arg(hex_to_int_array(account["address"]))
                 memory[account_ptr._reference_value + 1] =segments.gen_arg(hex_to_int_array(account["slot"]))
-                memory[account_ptr._reference_value + 2] = hex_to_int(account["storage_key"]["low"])
-                memory[account_ptr._reference_value + 3] = hex_to_int(account["storage_key"]["high"])
-                memory[account_ptr._reference_value + 4] = len(account["proofs"])
-                memory[account_ptr._reference_value + 5] = proofs_ptr._reference_value
+                memory[account_ptr._reference_value + 2] = len(account["proofs"])
+                memory[account_ptr._reference_value + 3] = key_low
+                memory[account_ptr._reference_value + 4] = key_high
+                memory[account_ptr._reference_value + 5] = leading_zeroes
+                memory[account_ptr._reference_value + 6] = proofs_ptr._reference_value
 
             def write_proofs(ptr, proofs):
                 offset = 0
@@ -52,7 +56,7 @@ func populate_storage_item_segments{
         %}
 
         // ensure that address matches the key
-        let (hash: Uint256) = keccak(storage_item.slot, 32);
+        let (hash: Uint256) = keccak_bigend(storage_item.slot, 32);
         assert storage_item.key.low = hash.low;
         assert storage_item.key.high = hash.high;
 
@@ -124,16 +128,15 @@ func verify_storage_item{
 
     // get state_root from verified headers
     let (account_value) = AccountMemorizer.get(storage_item.address, slot_proof.block_number);
-    let state_root = AccountDecoder.get_field(account_value.values, ACCOUNT_FIELD.STATE_ROOT);
+    let state_root = AccountDecoder.get_field(account_value.values, AccountField.STATE_ROOT);
 
     let (value: felt*, value_bytes_len: felt) = verify_mpt_proof(
         mpt_proof=slot_proof.proof,
         mpt_proof_bytes_len=slot_proof.proof_bytes_len,
         mpt_proof_len=slot_proof.proof_len,
-        key_little=storage_item.key,
-        n_nibbles_already_checked=0,
-        node_index=0,
-        hash_to_assert=state_root,
+        key_be=storage_item.key,
+        key_be_leading_zeroes_nibbles=storage_item.key_leading_zeros,
+        root=state_root,
         pow2_array=pow2_array,
     );
 

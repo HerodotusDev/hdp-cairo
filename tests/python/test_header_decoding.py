@@ -5,13 +5,13 @@ from tools.py.block_header import (
     BlockHeaderShangai,
     BlockHeaderDencun,
 )
-from starkware.cairo.common.poseidon_hash import poseidon_hash_many, poseidon_hash
+
+from tools.py.fetch_tx import (
+    fetch_latest_block_height_from_rpc,
+)
+
 from tools.py.utils import (
-    bytes_to_8_bytes_chunks,
     bytes_to_8_bytes_chunks_little,
-    split_128,
-    uint256_reverse_endian,
-    reverse_endian_bytes,
     reverse_and_split_256_bytes,
 )
 from dotenv import load_dotenv
@@ -27,6 +27,10 @@ load_dotenv()
 RPC_URL = (
     os.getenv("RPC_URL_GOERLI") if NETWORK == GOERLI else os.getenv("RPC_URL_MAINNET")
 )
+
+
+def fetch_latest_block_height():
+    return fetch_latest_block_height_from_rpc(RPC_URL)
 
 
 def fetch_header(block_number):
@@ -46,6 +50,7 @@ def fetch_header_dict(block_number):
     block_dict = {
         "rlp": rlp,
         "bloom": bloom,
+        "hash": block.hash,
     }
 
     # LE
@@ -72,11 +77,16 @@ def fetch_header_dict(block_number):
     block_dict["gas_limit"] = block.gasLimit
     block_dict["gas_used"] = block.gasUsed
     block_dict["timestamp"] = block.timestamp
-    block_dict["extra_data"] = {
-        "bytes": bytes_to_8_bytes_chunks_little(block.extraData),
-        "bytes_len": len(block.extraData),
-        "len": math.ceil(len(block.extraData) / 8),
-    }
+
+    # Special case for empty extra data
+    if len(block.extraData) == 0:
+        block_dict["extra_data"] = {"bytes": [0], "bytes_len": 1, "len": 1}
+    else:
+        block_dict["extra_data"] = {
+            "bytes": bytes_to_8_bytes_chunks_little(block.extraData),
+            "bytes_len": len(block.extraData),
+            "len": math.ceil(len(block.extraData) / 8),
+        }
 
     (low, high) = reverse_and_split_256_bytes(block.mixHash)
     block_dict["mix_hash"] = {"low": low, "high": high}

@@ -1,7 +1,7 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_uint256s
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
-from src.types import BlockSampledComputationalTask
+from src.types import ComputationalTask
 from src.utils import compute_results_entry
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
@@ -15,7 +15,7 @@ from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 //  - The merkle root of the results
 func compute_results_root{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
-}(tasks: BlockSampledComputationalTask*, results: Uint256*, tasks_len: felt) -> Uint256 {
+}(tasks: ComputationalTask*, results: Uint256*, tasks_len: felt) -> Uint256 {
     alloc_locals;
     let (local leafs: Uint256*) = alloc();
 
@@ -31,7 +31,7 @@ func compute_results_root{
 // Computes the results entry the results.
 func compute_results_entries{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, leafs: Uint256*
-}(tasks: BlockSampledComputationalTask*, results: Uint256*, tasks_len: felt, index: felt) {
+}(tasks: ComputationalTask*, results: Uint256*, tasks_len: felt, index: felt) {
     if (index == tasks_len) {
         return ();
     }
@@ -51,13 +51,12 @@ func compute_results_entries{
 // Outputs:
 //  - The merkle root of the tasks
 func compute_tasks_root{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(
-    tasks: BlockSampledComputationalTask*, tasks_len: felt
+    tasks: ComputationalTask*, tasks_len: felt
 ) -> Uint256 {
     alloc_locals;
     let (local leafs: Uint256*) = alloc();
 
     // copy the leafs to a new array.
-    // ToDo: is this a shallow copy or deep copy?
     tempvar i = 0;
 
     copy_loop:
@@ -79,6 +78,13 @@ func compute_tasks_root{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_pt
 func compute_merkle_root{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(
     leafs: Uint256*, leafs_len: felt
 ) -> Uint256 {
+    if (leafs_len == 0) {
+        // keccak(0)
+        return (
+            Uint256(low=0x6612f7b477d66591ff96a9e064bcc98a, high=0xbc36789e7a1e281436464229828f817d)
+        );
+    }
+
     let (tree: Uint256*) = alloc();
     let tree_len = 2 * leafs_len - 1;
 
@@ -166,7 +172,7 @@ func hash_pair{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: Keccak
     let (pair: Uint256*) = alloc();
     local is_left_smaller: felt;
 
-    // ToDo: I think we can get away with handling this in a hint. Or could this be exploited somehow?
+    // ToDo: We have to figure out if the pair-wise order is something we want to do in a hint. The order could be messed with by a malicious prover.
     %{
         def flip_endianess(val):
             val_hex = hex(val)[2:]

@@ -2,13 +2,13 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin,
 from starkware.cairo.common.dict_access import DictAccess
 from packages.eth_essentials.lib.mpt import verify_mpt_proof
 from starkware.cairo.common.uint256 import Uint256
-from starkware.cairo.common.builtin_keccak.keccak import keccak
+from starkware.cairo.common.builtin_keccak.keccak import keccak_bigend
 from starkware.cairo.common.alloc import alloc
 from src.types import Account, AccountProof, Header, AccountValues
 from packages.eth_essentials.lib.block_header import extract_state_root_little
 from src.memorizer import HeaderMemorizer, AccountMemorizer
 
-from src.decoders.header_decoder import HeaderDecoder, HEADER_FIELD
+from src.decoders.header_decoder import HeaderDecoder, HeaderField
 
 // Initializes the accounts, ensuring that the passed address matches the key.
 // Params:
@@ -27,11 +27,15 @@ func populate_account_segments{
 
         %{
             def write_account(account_ptr, proofs_ptr, account):
+                leading_zeroes = count_leading_zero_nibbles_from_hex(account["account_key"])
+                (key_low, key_high) = split_128(int(account["account_key"], 16))
+
                 memory[account_ptr._reference_value] = segments.gen_arg(hex_to_int_array(account["address"]))
-                memory[account_ptr._reference_value + 1] = hex_to_int(account["account_key"]["low"])
-                memory[account_ptr._reference_value + 2] = hex_to_int(account["account_key"]["high"])
-                memory[account_ptr._reference_value + 3] = len(account["proofs"])
-                memory[account_ptr._reference_value + 4] = proofs_ptr._reference_value
+                memory[account_ptr._reference_value + 1] = len(account["proofs"])
+                memory[account_ptr._reference_value + 2] = key_low
+                memory[account_ptr._reference_value + 3] = key_high
+                memory[account_ptr._reference_value + 4] = leading_zeroes
+                memory[account_ptr._reference_value + 5] = proofs_ptr._reference_value
 
             def write_proofs(ptr, proofs):
                 offset = 0
@@ -49,7 +53,7 @@ func populate_account_segments{
         %}
 
         // ensure that address matches the key
-        let (hash: Uint256) = keccak(account.address, 20);
+        let (hash: Uint256) = keccak_bigend(account.address, 20);
         assert account.key.low = hash.low;
         assert account.key.high = hash.high;
 
@@ -122,16 +126,15 @@ func verify_account{
 
     // get state_root from verified headers
     let header = HeaderMemorizer.get(account_proof.block_number);
-    let state_root = HeaderDecoder.get_field(header.rlp, HEADER_FIELD.STATE_ROOT);
+    let state_root = HeaderDecoder.get_field(header.rlp, HeaderField.STATE_ROOT);
 
     let (value: felt*, value_len: felt) = verify_mpt_proof(
         mpt_proof=account_proof.proof,
         mpt_proof_bytes_len=account_proof.proof_bytes_len,
         mpt_proof_len=account_proof.proof_len,
-        key_little=account.key,
-        n_nibbles_already_checked=0,
-        node_index=0,
-        hash_to_assert=state_root,
+        key_be=account.key,
+        key_be_leading_zeroes_nibbles=account.key_leading_zeros,
+        root=state_root,
         pow2_array=pow2_array,
     );
 

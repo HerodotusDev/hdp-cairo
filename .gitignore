@@ -14,9 +14,11 @@ build/
 *.env
 
 # Miscellaneous
+.idea
 *.zip
 *.json
 *.db
+*.log
 cache/
 out/
 .gas-snapshot
@@ -42,3 +44,7 @@ solidity-verifier/lib/*
 
 # Cairo VM
 cairo-vm
+
+# HDP
+hdp-test
+hdp

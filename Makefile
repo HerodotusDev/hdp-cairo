@@ -51,3 +51,9 @@ ci-local:
 	
 test-full:
 	./tools/make/cairo_tests.sh
+
+fuzz-tx:
+	./tools/make/fuzzer.sh tests/fuzzing/tx_decode.cairo
+
+fuzz-header:
+	./tools/make/fuzzer.sh tests/fuzzing/header_decode.cairo

@@ -168,6 +168,9 @@ class CairoRunner:
             if test_file == "tests/cairo_programs/test_vectors.cairo":
                 continue
 
+            # if test_file != "tests/cairo_programs/txs_in_block_datalake.cairo":
+            #     continue
+
             self.filename_dot_cairo_path = test_file
             self.filename_dot_cairo = os.path.basename(test_file)
             self.filename = self.filename_dot_cairo.removesuffix(".cairo")

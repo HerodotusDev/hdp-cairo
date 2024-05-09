@@ -20,6 +20,7 @@ from src.verifiers.storage_item_verifier import (
 )
 from src.verifiers.header_verifier import verify_headers_inclusion
 from src.verifiers.mmr_verifier import verify_mmr_meta
+from src.verifiers.transaction_verifier import verify_n_transaction_proofs
 
 from src.types import (
     Header,
@@ -27,14 +28,23 @@ from src.types import (
     Account,
     AccountValues,
     StorageItem,
-    BlockSampledComputationalTask,
+    TransactionProof,
+    Transaction,
+    ComputationalTask,
 )
 
-from src.memorizer import HeaderMemorizer, AccountMemorizer, StorageMemorizer, MEMORIZER_DEFAULT
+from src.memorizer import (
+    HeaderMemorizer,
+    AccountMemorizer,
+    StorageMemorizer,
+    TransactionMemorizer,
+    MEMORIZER_DEFAULT,
+)
 from packages.eth_essentials.lib.utils import pow2alloc128, write_felt_array_to_dict_keys
 
-from src.tasks.block_sampled_task import BlockSampledTask
+from src.tasks.computational import Task
 from src.merkle import compute_tasks_root, compute_results_root
+from src.chain_info import fetch_chain_info
 
 func main{
     output_ptr: felt*,
@@ -85,26 +95,30 @@ func run{
     let (storage_values: Uint256*) = alloc();
     local storage_items_len: felt;
 
+    // Transaction Params
+    let (transaction_proofs: TransactionProof*) = alloc();
+    let (transactions: Transaction*) = alloc();
+    local transaction_proof_len: felt;
+
     // Memorizers
     let (header_dict, header_dict_start) = HeaderMemorizer.initialize();
     let (account_dict, account_dict_start) = AccountMemorizer.initialize();
     let (storage_dict, storage_dict_start) = StorageMemorizer.initialize();
+    let (transaction_dict, transaction_dict_start) = TransactionMemorizer.initialize();
 
-    // Task and Datalake
-    local block_sampled_tasks_len: felt;
-    let (block_sampled_tasks_input: felt**) = alloc();
-    let (block_sampled_tasks_bytes_len) = alloc();
-
-    let (block_sampled_data_lakes_input: felt**) = alloc();
-    let (block_sampled_data_lakes_bytes_len) = alloc();
-    let (block_sampled_tasks: BlockSampledComputationalTask*) = alloc();
+    // Task Params
+    let (tasks: ComputationalTask*) = alloc();
+    local tasks_len: felt;
 
     let (results: Uint256*) = alloc();
 
     // Misc
     let pow2_array: felt* = pow2alloc128();
+    local chain_id: felt;
 
     %{
+        from tools.py.utils import split_128, count_leading_zero_nibbles_from_hex
+
         debug_mode = False
         def conditional_print(*args):
             if debug_mode:
@@ -131,15 +145,36 @@ func run{
                 memory[ptr._reference_value + offset + 4] = len(header["proof"]["mmr_path"])
                 memory[ptr._reference_value + offset + 5] = segments.gen_arg(hex_to_int_array(header["proof"]["mmr_path"]))
                 offset += 6
-    %}
-    // if these hints are one hint, the compiler goes on strike.
-    %{
+
+        def write_tx_proofs(ptr, program_input):
+            offset = 0
+            if "transactions" in program_input:
+                tx_proofs = program_input["transactions"]
+                ids.transaction_proof_len = len(tx_proofs)
+
+                for tx_proof in tx_proofs:
+                    leading_zeroes = count_leading_zero_nibbles_from_hex(tx_proof["key"])
+                    (key_low, key_high) = split_128(int(tx_proof["key"], 16))
+
+                    memory[ptr._reference_value + offset] = tx_proof["block_number"]
+                    memory[ptr._reference_value + offset + 1] = len(tx_proof["proof"])
+                    memory[ptr._reference_value + offset + 2] = segments.gen_arg(tx_proof["proof_bytes_len"])
+                    memory[ptr._reference_value + offset + 3] = segments.gen_arg(nested_hex_to_int_array(tx_proof["proof"]))
+                    memory[ptr._reference_value + offset + 4] = key_low
+                    memory[ptr._reference_value + offset + 5] = key_high
+                    memory[ptr._reference_value + offset + 6] = leading_zeroes
+
+                    offset += 7
+            else:
+                ids.transaction_proof_len = 0
+
         def write_mmr_meta(mmr_meta):
             ids.mmr_meta.id = mmr_meta["id"]
             ids.mmr_meta.root = hex_to_int(mmr_meta["root"])
             ids.mmr_meta.size = mmr_meta["size"]
             ids.mmr_meta.peaks_len = len(mmr_meta["peaks"])
             ids.mmr_meta.peaks = segments.gen_arg(hex_to_int_array(mmr_meta["peaks"]))
+            # ids.chain_id = mmr_meta["chain_id"]
 
         ids.expected_results_root.low = hex_to_int(program_input["results_root"]["low"])
         ids.expected_results_root.high = hex_to_int(program_input["results_root"]["high"])
@@ -150,29 +185,17 @@ func run{
         write_mmr_meta(program_input['mmr'])
 
         # Header Params
-        ids.headers_len = len(program_input["headers"])
         write_headers(ids.headers, program_input["headers"])
 
         # Account + Storage Params
         ids.accounts_len = len(program_input['accounts'])
         ids.storage_items_len = len(program_input['storages'])
 
+        # Transaction params
+        write_tx_proofs(ids.transaction_proofs, program_input)
+
         # Task and Datalake
-        tasks_input, data_lakes_input, tasks_bytes_len, data_lake_bytes_len = ([], [], [], [])
-        block_sampled_tasks = filtered_tasks = [task for task in program_input['tasks'] if task["datalake_type"] == 0]
-
-        for task in block_sampled_tasks:
-            tasks_input.append(hex_to_int_array(task["encoded_task"]))
-            tasks_bytes_len.append(task["task_bytes_len"])
-            data_lakes_input.append(hex_to_int_array(task["encoded_datalake"]))
-            data_lake_bytes_len.append(task["datalake_bytes_len"])
-
-        segments.write_arg(ids.block_sampled_tasks_input, tasks_input)
-        segments.write_arg(ids.block_sampled_tasks_bytes_len, tasks_bytes_len)
-        segments.write_arg(ids.block_sampled_data_lakes_input, data_lakes_input)
-        segments.write_arg(ids.block_sampled_data_lakes_bytes_len, data_lake_bytes_len)
-
-        ids.block_sampled_tasks_len = len(block_sampled_tasks)
+        ids.tasks_len = len(program_input['tasks'])
     %}
 
     // Check 1: Ensure we have a valid pair of mmr_root and peaks
@@ -184,6 +207,9 @@ func run{
     write_felt_array_to_dict_keys{dict_end=peaks_dict}(
         array=mmr_meta.peaks, index=mmr_meta.peaks_len - 1
     );
+
+    // Fetch matching chain info
+    let (local chain_info) = fetch_chain_info(1);
 
     // Check 2: Ensure the header is contained in a peak, and that the peak is known
     verify_headers_inclusion{
@@ -232,23 +258,31 @@ func run{
         state_idx=0,
     );
 
+    // Check 5: Verify the transaction proofs
+    verify_n_transaction_proofs{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        poseidon_ptr=poseidon_ptr,
+        keccak_ptr=keccak_ptr,
+        transactions=transactions,
+        transaction_dict=transaction_dict,
+        headers=headers,
+        header_dict=header_dict,
+        pow2_array=pow2_array,
+        chain_info=chain_info,
+    }(tx_proofs=transaction_proofs, tx_proofs_len=transaction_proof_len, index=0);
+
+    %{ print("headers verified") %}
     // Verified data is now in memorizer, and can be used for further computation
-    BlockSampledTask.init{
+    Task.init{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
-        block_sampled_tasks=block_sampled_tasks,
+        tasks=tasks,
         pow2_array=pow2_array,
-    }(
-        block_sampled_tasks_input,
-        block_sampled_tasks_bytes_len,
-        block_sampled_data_lakes_input,
-        block_sampled_data_lakes_bytes_len,
-        block_sampled_tasks_len,
-        0,
-    );
+    }(tasks_len, 0);
 
-    BlockSampledTask.execute{
+    Task.execute{
         pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
@@ -259,17 +293,19 @@ func run{
         storage_values=storage_values,
         header_dict=header_dict,
         headers=headers,
+        transaction_dict=transaction_dict,
+        transactions=transactions,
         pow2_array=pow2_array,
-        tasks=block_sampled_tasks,
-    }(results=results, tasks_len=block_sampled_tasks_len, index=0);
+        tasks=tasks,
+    }(results=results, tasks_len=tasks_len, index=0);
 
     let tasks_root = compute_tasks_root{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
-    }(tasks=block_sampled_tasks, tasks_len=block_sampled_tasks_len);
+    }(tasks=tasks, tasks_len=tasks_len);
 
     let results_root = compute_results_root{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
-    }(tasks=block_sampled_tasks, results=results, tasks_len=block_sampled_tasks_len);
+    }(tasks=tasks, results=results, tasks_len=tasks_len);
 
     %{
         print(f"Tasks Root: {hex(ids.tasks_root.low)} {hex(ids.tasks_root.high)}")
@@ -287,6 +323,7 @@ func run{
     default_dict_finalize(header_dict_start, header_dict, MEMORIZER_DEFAULT);
     default_dict_finalize(account_dict_start, account_dict, MEMORIZER_DEFAULT);
     default_dict_finalize(storage_dict_start, storage_dict, MEMORIZER_DEFAULT);
+    default_dict_finalize(transaction_dict_start, transaction_dict, MEMORIZER_DEFAULT);
 
     [ap] = mmr_meta.root;
     [ap] = [output_ptr], ap++;

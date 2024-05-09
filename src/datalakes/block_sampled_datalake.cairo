@@ -3,26 +3,31 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
-from packages.eth_essentials.lib.utils import word_reverse_endian_64, word_reverse_endian_16_RC
-from src.types import BlockSampledDataLake, AccountValues, BlockSampledComputationalTask, Header
+from packages.eth_essentials.lib.utils import (
+    word_reverse_endian_64,
+    word_reverse_endian_16_RC,
+    felt_divmod,
+)
+from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
+from src.types import BlockSampledDataLake, AccountValues, ComputationalTask, Header
 from src.memorizer import AccountMemorizer, StorageMemorizer, HeaderMemorizer
 
 from src.decoders.header_decoder import HeaderDecoder
 from src.decoders.account_decoder import AccountDecoder
 
-namespace BLOCK_SAMPLED_PROPERTY {
+namespace BlockSampledProperty {
     const HEADER = 1;
     const ACCOUNT = 2;
     const STORAGE_SLOT = 3;
 }
 
 // Creates a BlockSampledDataLake from the input bytes
-func init_block_sampled{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(
-    input: felt*, input_bytes_len: felt, property_type: felt
-) -> BlockSampledDataLake {
+func init_block_sampled{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*
+}(input: felt*, input_bytes_len: felt) -> (res: BlockSampledDataLake) {
     alloc_locals;
 
-    let (hash: Uint256) = keccak(input, input_bytes_len);
+    let property_type = extract_byte_at_pos([input + 24], 0, pow2_array);
 
     let (block_range_start, block_range_end, increment) = extract_constant_params{
         range_check_ptr=range_check_ptr
@@ -30,94 +35,121 @@ func init_block_sampled{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_pt
 
     let (properties) = alloc();
     // Decode properties
-    if (property_type == BLOCK_SAMPLED_PROPERTY.HEADER) {
+    if (property_type == BlockSampledProperty.HEADER) {
         // Header Input Layout:
         let chunk_one = word_reverse_endian_16_RC([input + 24]);
 
         assert [range_check_ptr] = 0x01ff - chunk_one;  // assert selected property_type matches input
         tempvar range_check_ptr = range_check_ptr + 1;
 
-        assert [properties] = 0x1;
         // bootleg bitshift. 0x01 is a know value (property_type), the rest is the property
-        assert [properties + 1] = chunk_one - 0x100;
+        assert [properties] = chunk_one - 0x100;
 
-        // im unable to the the range_check_ptr rebinding to work here, so we return here for now
         return (
-            BlockSampledDataLake(
+            res=BlockSampledDataLake(
                 block_range_start=block_range_start,
                 block_range_end=block_range_end,
                 increment=increment,
                 property_type=property_type,
                 properties=properties,
-                hash=hash,
-            )
+            ),
         );
     }
 
-    if (property_type == BLOCK_SAMPLED_PROPERTY.ACCOUNT) {
+    if (property_type == BlockSampledProperty.ACCOUNT) {
         // Account Input Layout:
 
-        let (sample_id, address) = extract_sample_id_and_address{bitwise_ptr=bitwise_ptr}(
+        // extract & write field_idx
+        let field_idx = extract_byte_at_pos([input + 26], 5, pow2_array);
+        assert [properties] = field_idx;
+
+        let (address) = extract_address{bitwise_ptr=bitwise_ptr}(
             chunk_one=[input + 24], chunk_two=[input + 25], chunk_three=[input + 26]
         );
-        tempvar bitwise_ptr = bitwise_ptr;
-
-        assert sample_id = property_type;  // enforces account type
-
-        assert [properties] = sample_id;
 
         // write address to properties
         assert [properties + 1] = [address];
         assert [properties + 2] = [address + 1];
         assert [properties + 3] = [address + 2];
 
-        // extract & write account_prop_id
-        assert bitwise_ptr[0].x = [input + 26];
-        assert bitwise_ptr[0].y = 0xff0000000000;
-        assert [properties + 4] = bitwise_ptr[0].x_and_y / 0x10000000000;
-
-        tempvar bitwise_ptr = bitwise_ptr + 1 * BitwiseBuiltin.SIZE;
-    } else {
-        tempvar bitwise_ptr = bitwise_ptr;
+        return (
+            res=BlockSampledDataLake(
+                block_range_start=block_range_start,
+                block_range_end=block_range_end,
+                increment=increment,
+                property_type=property_type,
+                properties=properties,
+            ),
+        );
     }
-
-    if (property_type == BLOCK_SAMPLED_PROPERTY.STORAGE_SLOT) {
+    if (property_type == BlockSampledProperty.STORAGE_SLOT) {
         // Account Slot Input Layout:
 
-        let (sample_id, address) = extract_sample_id_and_address{bitwise_ptr=bitwise_ptr}(
+        let (address) = extract_address{bitwise_ptr=bitwise_ptr}(
             chunk_one=[input + 24], chunk_two=[input + 25], chunk_three=[input + 26]
         );
-        tempvar bitwise_ptr = bitwise_ptr;
-
-        assert sample_id = property_type;  // enforces slot type
-
-        assert [properties] = sample_id;
 
         // write address to properties
-        assert [properties + 1] = [address];
-        assert [properties + 2] = [address + 1];
-        assert [properties + 3] = [address + 2];
+        assert [properties] = [address];
+        assert [properties + 1] = [address + 1];
+        assert [properties + 2] = [address + 2];
 
-        extract_and_write_slot{bitwise_ptr=bitwise_ptr}(
-            chunks=input + 26, idx=0, max_idx=4, slot=properties, slot_offset=4
+        extract_and_write_slot{
+            range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, properties=properties
+        }(chunks=input + 26);
+
+        return (
+            res=BlockSampledDataLake(
+                block_range_start=block_range_start,
+                block_range_end=block_range_end,
+                increment=increment,
+                property_type=property_type,
+                properties=properties,
+            ),
         );
-    } else {
-        tempvar bitwise_ptr = bitwise_ptr;
     }
 
-    return (
-        BlockSampledDataLake(
-            block_range_start=block_range_start,
-            block_range_end=block_range_end,
-            increment=increment,
-            property_type=property_type,
-            properties=properties,
-            hash=hash,
-        )
-    );
+    assert 0 = 1;  // Invalid property_type
+    let (prop) = alloc();
+    return (res=BlockSampledDataLake(0, 0, 0, 0, prop));
 }
 
-// Collects the data points for BlocKSampledDataLakes
+// Decodes slot from datalake definition and writes it to the properties array
+func extract_and_write_slot{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, properties: felt*}(
+    chunks: felt*
+) {
+    let divsor = 0x10000000000;
+    let shifter = 0x1000000;
+
+    let rlp_0 = [chunks];
+    let (rlp_0_left, _) = felt_divmod(rlp_0, divsor);
+    let rlp_1 = [chunks + 1];
+    let (rlp_1_left, rlp_0_right) = felt_divmod(rlp_1, divsor);
+    let word_0 = rlp_0_left * shifter + rlp_0_right;
+    let rlp_2 = [chunks + 2];
+    let (rlp_2_left, rlp_1_right) = felt_divmod(rlp_2, divsor);
+    let word_1 = rlp_1_left * shifter + rlp_1_right;
+    let rlp_3 = [chunks + 3];
+    let (rlp_3_right, rlp_2_right) = felt_divmod(rlp_3, divsor);
+    let word_2 = rlp_2_left * shifter + rlp_2_right;
+    let rlp_4 = [chunks + 4];
+    let (trash, rlp_3_left) = felt_divmod(rlp_4, divsor);
+    let word_3 = rlp_3_left * shifter + rlp_3_right;
+
+    assert [properties + 3] = word_0;
+    assert [properties + 4] = word_1;
+    assert [properties + 5] = word_2;
+    assert [properties + 6] = word_3;
+
+    return ();
+}
+
+// Evaluates the datalake definition and retrieves the data from the memorizer.
+// Inputs:
+// datalake: the datalake to sample
+// Outputs:
+// data_points: the data points sampled from the datalake
+// data_points_len: the number of data points sampled
 func fetch_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
@@ -129,31 +161,30 @@ func fetch_data_points{
     header_dict: DictAccess*,
     headers: Header*,
     pow2_array: felt*,
-}(task: BlockSampledComputationalTask) -> (Uint256*, felt) {
+}(datalake: BlockSampledDataLake) -> (Uint256*, felt) {
     alloc_locals;
 
     let (data_points: Uint256*) = alloc();
-    let property_type = task.datalake.properties[0];
 
-    if (property_type == BLOCK_SAMPLED_PROPERTY.HEADER) {
+    if (datalake.property_type == BlockSampledProperty.HEADER) {
         let data_points_len = fetch_header_data_points(
-            datalake=task.datalake, index=0, data_points=data_points
+            datalake=datalake, index=0, data_points=data_points
         );
 
         return (data_points, data_points_len);
     }
 
-    if (property_type == BLOCK_SAMPLED_PROPERTY.ACCOUNT) {
+    if (datalake.property_type == BlockSampledProperty.ACCOUNT) {
         let data_points_len = fetch_account_data_points(
-            datalake=task.datalake, index=0, data_points=data_points
+            datalake=datalake, index=0, data_points=data_points
         );
 
         return (data_points, data_points_len);
     }
 
-    if (property_type == BLOCK_SAMPLED_PROPERTY.STORAGE_SLOT) {
+    if (datalake.property_type == BlockSampledProperty.STORAGE_SLOT) {
         let data_points_len = fetch_storage_data_points(
-            datalake=task.datalake, index=0, data_points=data_points
+            datalake=datalake, index=0, data_points=data_points
         );
 
         return (data_points, data_points_len);
@@ -164,39 +195,6 @@ func fetch_data_points{
     return (data_points, 0);
 }
 
-// Internal Functions:
-
-// Extracts the slot from the le 8-byte chunks
-// We need to mask and shift the chunks to extract the le encoded slot
-// We want to keep le 8-byte chunks because we need to keccak the slot to derive the key
-// Inputs:
-// chunks: chunks ref pointing to the first relevant chunk
-// idx: current iteration
-// max_idx: max number of iterations (should be 4, one for each 8-byte chunk)
-// slot: the resulting slot
-func extract_and_write_slot{bitwise_ptr: BitwiseBuiltin*}(
-    chunks: felt*, idx: felt, max_idx: felt, slot: felt*, slot_offset: felt
-) {
-    if (idx == max_idx) {
-        return ();
-    }
-
-    assert bitwise_ptr[0].x = [chunks];
-    assert bitwise_ptr[0].y = 0xffffff0000000000;
-    tempvar least_sig_bytes = bitwise_ptr[0].x_and_y / 0x10000000000;
-
-    assert bitwise_ptr[1].x = [chunks + 1];
-    assert bitwise_ptr[1].y = 0x000000ffffffffff;
-    tempvar most_significant_bytes = bitwise_ptr[1].x_and_y * 0x1000000;
-
-    assert [slot + slot_offset + idx] = most_significant_bytes + least_sig_bytes;
-
-    let bitwise_ptr = bitwise_ptr + 2 * BitwiseBuiltin.SIZE;
-    return extract_and_write_slot{bitwise_ptr=bitwise_ptr}(
-        chunks=chunks + 1, idx=idx + 1, max_idx=max_idx, slot=slot, slot_offset=slot_offset
-    );
-}
-
 // Used for decoding the sampled property of block sampled headers.
 // Accepted types: Account or AccountSlot
 // data must be encoded as follows: abi.encodePacked(uint8(2), account, ...);
@@ -205,9 +203,9 @@ func extract_and_write_slot{bitwise_ptr: BitwiseBuiltin*}(
 // Output:
 // id: the ID of the sampled property (2 for Account, 3 for AccountSlot)
 // address: le 8-byte chunks
-func extract_sample_id_and_address{bitwise_ptr: BitwiseBuiltin*}(
+func extract_address{bitwise_ptr: BitwiseBuiltin*}(
     chunk_one: felt, chunk_two: felt, chunk_three: felt
-) -> (id: felt, address: felt*) {
+) -> (address: felt*) {
     let (address: felt*) = alloc();
 
     // Example Input + operations:
@@ -247,7 +245,7 @@ func extract_sample_id_and_address{bitwise_ptr: BitwiseBuiltin*}(
     assert [address + 2] = bitwise_ptr[3].x_and_y / 0x100;
 
     let bitwise_ptr = bitwise_ptr + 4 * BitwiseBuiltin.SIZE;
-    return (id=type_id, address=address);
+    return (address=address);
 }
 
 // Decodes the constant parameters of the block sampled data lake
@@ -300,20 +298,23 @@ func fetch_account_data_points{
 
     let current_block_number = datalake.block_range_start + index * datalake.increment;
 
+    local exit_condition: felt;
+    %{ ids.exit_condition = 1 if ids.current_block_number > ids.datalake.block_range_end else 0 %}
+    if (exit_condition == 1) {
+        assert [range_check_ptr] = (current_block_number - 1) - datalake.block_range_end;
+        tempvar range_check_ptr = range_check_ptr + 1;
+        return index;
+    }
+
     let (account_value) = AccountMemorizer.get(
         address=datalake.properties + 1, block_number=current_block_number
     );
 
     let data_point = AccountDecoder.get_field{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-    }(rlp=account_value.values, field=[datalake.properties + 4]);  // value idx is at 4
+    }(rlp=account_value.values, field=[datalake.properties]);  // field_idx ios always at 0
 
     assert [data_points + index * Uint256.SIZE] = data_point;
-
-    // ToDo: this results in an endless loop if block_range_start % increment != block_range_end % increment
-    if (current_block_number == datalake.block_range_end) {
-        return index + 1;
-    }
 
     return fetch_account_data_points(datalake=datalake, index=index + 1, data_points=data_points);
 }
@@ -335,18 +336,21 @@ func fetch_storage_data_points{
 
     let current_block_number = datalake.block_range_start + index * datalake.increment;
 
+    local exit_condition: felt;
+    %{ ids.exit_condition = 1 if ids.current_block_number > ids.datalake.block_range_end else 0 %}
+    if (exit_condition == 1) {
+        assert [range_check_ptr] = (current_block_number - 1) - datalake.block_range_end;
+        tempvar range_check_ptr = range_check_ptr + 1;
+        return index;
+    }
+
     let (data_point) = StorageMemorizer.get(
-        storage_slot=datalake.properties + 4,
-        address=datalake.properties + 1,
+        storage_slot=datalake.properties + 3,
+        address=datalake.properties,
         block_number=current_block_number,
     );
 
     assert [data_points + index * Uint256.SIZE] = data_point;
-
-    // ToDo: this results in an endless loop if block_range_start % increment != block_range_end % increment
-    if (current_block_number == datalake.block_range_end) {
-        return index + 1;
-    }
 
     return fetch_storage_data_points(datalake=datalake, index=index + 1, data_points=data_points);
 }
@@ -363,18 +367,21 @@ func fetch_header_data_points{
     alloc_locals;
     let current_block_number = datalake.block_range_start + index * datalake.increment;
 
+    local exit_condition: felt;
+    %{ ids.exit_condition = 1 if ids.current_block_number > ids.datalake.block_range_end else 0 %}
+    if (exit_condition == 1) {
+        assert [range_check_ptr] = (current_block_number - 1) - datalake.block_range_end;
+        tempvar range_check_ptr = range_check_ptr + 1;
+        return index;
+    }
+
     let header = HeaderMemorizer.get(block_number=current_block_number);
 
     let data_point = HeaderDecoder.get_field{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-    }(rlp=header.rlp, field=[datalake.properties + 1]);
+    }(rlp=header.rlp, field=[datalake.properties]);
 
     assert [data_points + index * Uint256.SIZE] = data_point;
-
-    // ToDo: this results in an endless loop if block_range_start % increment != block_range_end % increment
-    if (current_block_number == datalake.block_range_end) {
-        return index + 1;
-    }
 
     return fetch_header_data_points(datalake=datalake, index=index + 1, data_points=data_points);
 }
