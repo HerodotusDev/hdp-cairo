@@ -2,6 +2,8 @@ use core::serde::Serde;
 use cubit::f128::math::{ops, hyp, trig};
 use cubit::f128::{Fixed as Fixed128, FixedTrait as FixedTrait128};
 
+const GWEI: u256 = 1_u256;
+
 #[cfg(test)]
 mod tests;
 
@@ -24,7 +26,7 @@ fn main(input: Array<felt252>) -> Fixed128 {
                 x, y
             )) => {
                 x_i.append(FixedTrait128::new_unscaled(x.try_into().unwrap(), false));
-                y_i.append(FixedTrait128::new_unscaled(y.try_into().unwrap(), false));
+                y_i.append(FixedTrait128::new(y.try_into().unwrap(), false));
             },
             Option::None => { break; }
         }

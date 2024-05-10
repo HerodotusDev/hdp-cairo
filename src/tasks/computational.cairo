@@ -145,7 +145,9 @@ namespace Task {
         }
 
         if (tasks[index].aggregate_fn_id == AGGREGATE_FN.SLR) {
-            let result = compute_slr(values=data_points, values_len=data_points_len);
+            let result = compute_slr(
+                values=data_points, values_len=data_points_len, predict=Uint256(low=4952410, high=0)
+            );
             assert [results] = result;
 
             return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);

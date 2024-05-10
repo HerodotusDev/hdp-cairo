@@ -249,21 +249,21 @@ func slr_main{
 
     let values: Uint256* = cast(array, Uint256*);
 
-    let output_hash = compute_slr{
+    let output = compute_slr{
         pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         poseidon_ptr=poseidon_ptr,
-    }(values=values, values_len=2);
+    }(values=values, values_len=2, predict=Uint256(low=10, high=0));
 
     local expected_hash: felt;
 
     %{
         from starkware.cairo.lang.vm.crypto import poseidon_hash_many
-        ids.expected_hash = poseidon_hash_many([21*18446744073709551616,0x0])
+        ids.expected_hash = poseidon_hash_many([21, 0x0])
     %}
 
-    assert output_hash.low = expected_hash;
+    assert output.low = 21;
 
     return ();
 }

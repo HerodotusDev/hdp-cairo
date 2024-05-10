@@ -1,5 +1,5 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
-from starkware.cairo.common.uint256 import Uint256
+from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
@@ -303,7 +303,7 @@ func fetch_account_data_points{
     if (exit_condition == 1) {
         assert [range_check_ptr] = (current_block_number - 1) - datalake.block_range_end;
         tempvar range_check_ptr = range_check_ptr + 1;
-        return index * 2;
+        return index;
     }
 
     let (account_value) = AccountMemorizer.get(
@@ -316,8 +316,10 @@ func fetch_account_data_points{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(rlp=account_value.values, field=[datalake.properties]);  // field_idx ios always at 0
 
-    assert [data_points + index * 2 * Uint256.SIZE + 0] = data_point0;
-    assert [data_points + index * 2 * Uint256.SIZE + 1] = data_point1;
+    let (data_point1_reverse_endian) = uint256_reverse_endian(data_point1);
+
+    assert [data_points + index * 2 * Uint256.SIZE + 0 * Uint256.SIZE] = data_point0;
+    assert [data_points + index * 2 * Uint256.SIZE + 1 * Uint256.SIZE] = data_point1_reverse_endian;
 
     return fetch_account_data_points(datalake=datalake, index=index + 1, data_points=data_points);
 }

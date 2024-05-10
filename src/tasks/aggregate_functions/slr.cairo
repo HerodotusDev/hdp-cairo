@@ -24,16 +24,34 @@ func compute_slr{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-}(values: Uint256*, values_len: felt) -> Uint256 {
+}(values: Uint256*, values_len: felt, predict: Uint256) -> Uint256 {
     alloc_locals;
 
     let (local task_input_arr: felt*) = alloc();
+    local values_felts: felt* = cast(values, felt*);
+
+    %{
+        print(ids.values_len)
+        for i in range(ids.values_len * 2):
+            print(memory[ids.values_felts + i * 2])
+            print(memory[ids.values_felts + i * 2 + 1])
+    %}
 
     assert task_input_arr[0] = values_len;
-    memcpy(task_input_arr + 1, cast(values, felt*), values_len * 2 * 2);
+    memcpy(task_input_arr + 1, values_felts, values_len * 2 * 2);
+    assert task_input_arr[1 + values_len * 2 * 2] = predict.low;
+    assert task_input_arr[1 + values_len * 2 * 2 + 1] = predict.high;
 
-    assert task_input_arr[1 + values_len * 2 * 2] = 10;
-    assert task_input_arr[1 + values_len * 2 * 2 + 1] = 0;
+    %{
+        hdp_bootloader_input = {
+            "task": {
+                "type": "CairoSierra",
+                "path": "build/compiled_cairo_files/simple_linear_regression.sierra.json",
+                "use_poseidon": True
+            },
+            "single_page": True
+        }
+    %}
 
     local return_ptr: felt*;
     %{ ids.return_ptr = segments.add() %}
@@ -48,6 +66,8 @@ func compute_slr{
 
     let output = cast(return_ptr - Output.SIZE, Output*);
 
+    %{ print(f"SLR prediction for {ids.predict.low} is {ids.output.prediction.mag}") %}
+
     local hash: felt;
 
     %{
@@ -58,5 +78,5 @@ func compute_slr{
         ])
     %}
 
-    return (Uint256(low=hash, high=0));
+    return (Uint256(low=output.prediction.mag, high=0));
 }
