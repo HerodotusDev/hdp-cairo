@@ -161,13 +161,16 @@ func fetch_data_points{
     header_dict: DictAccess*,
     headers: Header*,
     pow2_array: felt*,
+    fetch_header_data_points_ptr: felt*,
+    fetch_account_data_points_ptr: felt*,
+    fetch_storage_data_points_ptr: felt*,
 }(datalake: BlockSampledDataLake) -> (Uint256*, felt) {
     alloc_locals;
 
     let (data_points: Uint256*) = alloc();
 
     if (datalake.property_type == BlockSampledProperty.HEADER) {
-        let data_points_len = fetch_header_data_points(
+        let data_points_len = abstract_fetch_header_data_points(
             datalake=datalake, index=0, data_points=data_points
         );
 
@@ -175,7 +178,7 @@ func fetch_data_points{
     }
 
     if (datalake.property_type == BlockSampledProperty.ACCOUNT) {
-        let data_points_len = fetch_account_data_points(
+        let data_points_len = abstract_fetch_account_data_points(
             datalake=datalake, index=0, data_points=data_points
         );
 
@@ -183,7 +186,7 @@ func fetch_data_points{
     }
 
     if (datalake.property_type == BlockSampledProperty.STORAGE_SLOT) {
-        let data_points_len = fetch_storage_data_points(
+        let data_points_len = abstract_fetch_storage_data_points(
             datalake=datalake, index=0, data_points=data_points
         );
 
@@ -193,6 +196,53 @@ func fetch_data_points{
     }
 
     return (data_points, 0);
+}
+
+// Collects the account data points defined in the datalake from the memorizer recursivly
+// Inputs:
+// datalake: the datalake to sample
+// index: the current index of the data_points array
+// data_points: outputs, array of values
+func abstract_fetch_account_data_points{
+    range_check_ptr,
+    poseidon_ptr: PoseidonBuiltin*,
+    bitwise_ptr: BitwiseBuiltin*,
+    account_dict: DictAccess*,
+    account_values: AccountValues*,
+    pow2_array: felt*,
+    fetch_account_data_points_ptr: felt*,
+}(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
+    jmp abs fetch_account_data_points_ptr;
+}
+
+// Collects the storage data points defined in the datalake from the memorizer recursivly
+// Inputs:
+// datalake: the datalake to sample
+// index: the current index of the data_points array
+// data_points: outputs, array of values
+func abstract_fetch_storage_data_points{
+    range_check_ptr,
+    poseidon_ptr: PoseidonBuiltin*,
+    bitwise_ptr: BitwiseBuiltin*,
+    storage_dict: DictAccess*,
+    storage_values: Uint256*,
+    pow2_array: felt*,
+    fetch_storage_data_points_ptr: felt*,
+}(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
+    jmp abs fetch_storage_data_points_ptr;
+}
+
+// Collects the header data points defined in the datalake from the memorizer recursivly.
+// Fills the data_points array with the values of the sampled property in LE
+func abstract_fetch_header_data_points{
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    header_dict: DictAccess*,
+    headers: Header*,
+    pow2_array: felt*,
+    fetch_header_data_points_ptr: felt*,
+}(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
+    jmp abs fetch_header_data_points_ptr;
 }
 
 // Used for decoding the sampled property of block sampled headers.
@@ -293,6 +343,7 @@ func fetch_account_data_points{
     account_dict: DictAccess*,
     account_values: AccountValues*,
     pow2_array: felt*,
+    fetch_account_data_points_ptr: felt*,
 }(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     alloc_locals;
 
@@ -310,16 +361,11 @@ func fetch_account_data_points{
         address=datalake.properties + 1, block_number=current_block_number
     );
 
-    local data_point0: Uint256 = Uint256(low=current_block_number, high=0x0);
-
-    let data_point1 = AccountDecoder.get_field{
+    let data_point = AccountDecoder.get_field{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(rlp=account_value.values, field=[datalake.properties]);  // field_idx ios always at 0
 
-    let (data_point1_reverse_endian) = uint256_reverse_endian(data_point1);
-
-    assert [data_points + index * 2 * Uint256.SIZE + 0 * Uint256.SIZE] = data_point0;
-    assert [data_points + index * 2 * Uint256.SIZE + 1 * Uint256.SIZE] = data_point1_reverse_endian;
+    assert [data_points + index * Uint256.SIZE] = data_point;
 
     return fetch_account_data_points(datalake=datalake, index=index + 1, data_points=data_points);
 }
@@ -336,6 +382,7 @@ func fetch_storage_data_points{
     storage_dict: DictAccess*,
     storage_values: Uint256*,
     pow2_array: felt*,
+    fetch_storage_data_points_ptr: felt*,
 }(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     alloc_locals;
 
@@ -368,6 +415,7 @@ func fetch_header_data_points{
     header_dict: DictAccess*,
     headers: Header*,
     pow2_array: felt*,
+    fetch_header_data_points_ptr: felt*,
 }(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     alloc_locals;
     let current_block_number = datalake.block_range_start + index * datalake.increment;

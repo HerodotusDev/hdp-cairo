@@ -66,6 +66,9 @@ namespace Datalake {
         transaction_dict: DictAccess*,
         transactions: Transaction*,
         pow2_array: felt*,
+        fetch_header_data_points_ptr: felt*,
+        fetch_account_data_points_ptr: felt*,
+        fetch_storage_data_points_ptr: felt*,
     }(task: ComputationalTask) -> (res: Uint256*, res_len: felt) {
         if (task.datalake_type == DatalakeType.BLOCK_SAMPLED) {
             let block_sampled_datalake: BlockSampledDataLake = [
