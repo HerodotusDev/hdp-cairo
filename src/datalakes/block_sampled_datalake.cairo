@@ -11,7 +11,7 @@ from packages.eth_essentials.lib.utils import (
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
 from src.types import BlockSampledDataLake, AccountValues, ComputationalTask, Header
 from src.memorizer import AccountMemorizer, StorageMemorizer, HeaderMemorizer
-
+from src.tasks.fetch_trait import FetchTrait
 from src.decoders.header_decoder import HeaderDecoder
 from src.decoders.account_decoder import AccountDecoder
 
@@ -161,9 +161,7 @@ func fetch_data_points{
     header_dict: DictAccess*,
     headers: Header*,
     pow2_array: felt*,
-    fetch_header_data_points_ptr: felt*,
-    fetch_account_data_points_ptr: felt*,
-    fetch_storage_data_points_ptr: felt*,
+    fetch_trait: FetchTrait,
 }(datalake: BlockSampledDataLake) -> (Uint256*, felt) {
     alloc_locals;
 
@@ -210,9 +208,9 @@ func abstract_fetch_account_data_points{
     account_dict: DictAccess*,
     account_values: AccountValues*,
     pow2_array: felt*,
-    fetch_account_data_points_ptr: felt*,
+    fetch_trait: FetchTrait,
 }(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
-    jmp abs fetch_account_data_points_ptr;
+    jmp abs fetch_trait.fetch_account_data_points_ptr;
 }
 
 // Collects the storage data points defined in the datalake from the memorizer recursivly
@@ -227,9 +225,9 @@ func abstract_fetch_storage_data_points{
     storage_dict: DictAccess*,
     storage_values: Uint256*,
     pow2_array: felt*,
-    fetch_storage_data_points_ptr: felt*,
+    fetch_trait: FetchTrait,
 }(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
-    jmp abs fetch_storage_data_points_ptr;
+    jmp abs fetch_trait.fetch_storage_data_points_ptr;
 }
 
 // Collects the header data points defined in the datalake from the memorizer recursivly.
@@ -240,9 +238,9 @@ func abstract_fetch_header_data_points{
     header_dict: DictAccess*,
     headers: Header*,
     pow2_array: felt*,
-    fetch_header_data_points_ptr: felt*,
+    fetch_trait: FetchTrait,
 }(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
-    jmp abs fetch_header_data_points_ptr;
+    jmp abs fetch_trait.fetch_header_data_points_ptr;
 }
 
 // Used for decoding the sampled property of block sampled headers.
@@ -343,7 +341,7 @@ func fetch_account_data_points{
     account_dict: DictAccess*,
     account_values: AccountValues*,
     pow2_array: felt*,
-    fetch_account_data_points_ptr: felt*,
+    fetch_trait: FetchTrait,
 }(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     alloc_locals;
 
@@ -382,7 +380,7 @@ func fetch_storage_data_points{
     storage_dict: DictAccess*,
     storage_values: Uint256*,
     pow2_array: felt*,
-    fetch_storage_data_points_ptr: felt*,
+    fetch_trait: FetchTrait,
 }(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     alloc_locals;
 
@@ -415,7 +413,7 @@ func fetch_header_data_points{
     header_dict: DictAccess*,
     headers: Header*,
     pow2_array: felt*,
-    fetch_header_data_points_ptr: felt*,
+    fetch_trait: FetchTrait,
 }(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     alloc_locals;
     let current_block_number = datalake.block_range_start + index * datalake.increment;
