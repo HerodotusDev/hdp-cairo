@@ -37,10 +37,10 @@ export -f process_cairo_file
 export -f process_scarb_project
 
 # Use --halt now,fail=1 to return non-zero if any task fails
-find ./src ./tests/cairo_programs ./packages/hdp_bootloader/bootloader ./packages/hdp_bootloader/builtin_selection -name "*.cairo" ! -path "./tests/cairo_programs/cairo1_programs/*" | parallel --halt now,fail=1 process_cairo_file
+find ./src ./tests/cairo_programs ./packages/hdp_bootloader/bootloader ./packages/hdp_bootloader/builtin_selection -name "*.cairo" ! -path "./src/cairo1/*" | parallel --halt now,fail=1 process_cairo_file
 
 # Find scarb projects and execute process_scarb_project in each
-find ./tests/cairo_programs/cairo1_programs -mindepth 1 -maxdepth 1 -type d | parallel --halt now,fail=1 process_scarb_project
+find ./src/cairo1 -mindepth 1 -maxdepth 1 -type d | parallel --halt now,fail=1 process_scarb_project
 
 # Capture the exit status of parallel
 exit_status=$?

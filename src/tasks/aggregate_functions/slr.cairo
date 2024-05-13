@@ -18,13 +18,8 @@ from src.memorizer import AccountMemorizer, StorageMemorizer, HeaderMemorizer
 from src.types import BlockSampledDataLake, AccountValues, ComputationalTask, Header
 from starkware.cairo.common.dict_access import DictAccess
 
-struct Fixed {
-    mag: felt,
-    sign: felt,
-}
-
 struct Output {
-    prediction: Fixed,
+    value: Uint256,
 }
 
 func compute_slr{
@@ -37,13 +32,6 @@ func compute_slr{
 
     let (local task_input_arr: felt*) = alloc();
     local values_felts: felt* = cast(values, felt*);
-
-    %{
-        print(ids.values_len)
-        for i in range(ids.values_len * 2):
-            print(memory[ids.values_felts + i * 2])
-            print(memory[ids.values_felts + i * 2 + 1])
-    %}
 
     assert task_input_arr[0] = values_len;
     memcpy(task_input_arr + 1, values_felts, values_len * 2 * 2);
@@ -74,19 +62,9 @@ func compute_slr{
 
     let output = cast(return_ptr - Output.SIZE, Output*);
 
-    %{ print(f"SLR prediction for {ids.predict.low} is {ids.output.prediction.mag}") %}
+    %{ print(f"SLR prediction for {ids.predict.low} is {ids.output.value.low}") %}
 
-    local hash: felt;
-
-    %{
-        from starkware.cairo.lang.vm.crypto import poseidon_hash_many
-        ids.hash = poseidon_hash_many([
-            ids.output.prediction.mag,
-            ids.output.prediction.sign,
-        ])
-    %}
-
-    return (Uint256(low=output.prediction.mag, high=0));
+    return output.value;
 }
 
 // Collects the account data points defined in the datalake from the memorizer recursivly

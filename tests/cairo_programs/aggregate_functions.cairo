@@ -256,13 +256,6 @@ func slr_main{
         poseidon_ptr=poseidon_ptr,
     }(values=values, values_len=2, predict=Uint256(low=10, high=0));
 
-    local expected_hash: felt;
-
-    %{
-        from starkware.cairo.lang.vm.crypto import poseidon_hash_many
-        ids.expected_hash = poseidon_hash_many([21, 0x0])
-    %}
-
     assert output.low = 21;
 
     return ();

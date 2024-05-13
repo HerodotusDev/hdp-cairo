@@ -2,8 +2,6 @@ use core::serde::Serde;
 use cubit::f128::math::{ops, hyp, trig};
 use cubit::f128::{Fixed as Fixed128, FixedTrait as FixedTrait128};
 
-const GWEI: u256 = 1_u256;
-
 #[cfg(test)]
 mod tests;
 
@@ -13,7 +11,7 @@ struct Input {
     predicted: u256,
 }
 
-fn main(input: Array<felt252>) -> Fixed128 {
+fn main(input: Array<felt252>) -> u256 {
     let mut input_span = input.span();
     let mut input = Serde::<Input>::deserialize(ref input_span).unwrap();
 
@@ -33,7 +31,9 @@ fn main(input: Array<felt252>) -> Fixed128 {
     };
 
     let regression = slr(x_i.span(), y_i.span());
-    regression.predict(FixedTrait128::new_unscaled(input.predicted.try_into().unwrap(), false))
+    let prediction = regression
+        .predict(FixedTrait128::new_unscaled(input.predicted.try_into().unwrap(), false));
+    u256 { low: prediction.mag, high: 0 }
 }
 
 #[derive(Drop, Copy, PartialEq)]
