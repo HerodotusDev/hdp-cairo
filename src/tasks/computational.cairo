@@ -9,25 +9,20 @@ from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.registers import get_fp_and_pc, get_label_location
-
-from src.types import BlockSampledDataLake, ComputationalTask, AccountValues, Header, Transaction
 from src.datalakes.datalake import Datalake
-from src.datalakes.block_sampled_datalake import (
-    fetch_data_points,
-    fetch_account_data_points as fetch_account_data_points_default,
-    fetch_storage_data_points as fetch_storage_data_points_default,
-    fetch_header_data_points as fetch_header_data_points_default,
+from src.types import BlockSampledDataLake, ComputationalTask, AccountValues, Header, Transaction
+from src.tasks.aggregate_functions.sum import compute_sum, get_fetch_trait as get_sum_fetch_trait
+from src.tasks.aggregate_functions.avg import compute_avg, get_fetch_trait as get_avg_fetch_trait
+from src.tasks.aggregate_functions.min_max import (
+    uint256_min_le,
+    uint256_max_le,
+    get_fetch_trait as get_minmax_fetch_trait,
 )
-from src.tasks.aggregate_functions.slr import (
-    fetch_account_data_points as fetch_account_data_points_slr,
-    fetch_storage_data_points as fetch_storage_data_points_slr,
-    fetch_header_data_points as fetch_header_data_points_slr,
+from src.tasks.aggregate_functions.count_if import (
+    count_if,
+    get_fetch_trait as get_count_fetch_trait,
 )
-from src.tasks.aggregate_functions.sum import compute_sum
-from src.tasks.aggregate_functions.avg import compute_avg
-from src.tasks.aggregate_functions.min_max import uint256_min_le, uint256_max_le
-from src.tasks.aggregate_functions.count_if import count_if
-from src.tasks.aggregate_functions.slr import compute_slr
+from src.tasks.aggregate_functions.slr import compute_slr, get_fetch_trait as get_slr_fetch_trait
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
 
 namespace AGGREGATE_FN {
@@ -115,16 +110,8 @@ namespace Task {
         }
 
         if (tasks[index].aggregate_fn_id == AGGREGATE_FN.AVG) {
-            let (fetch_header_data_points_ptr) = get_label_location(
-                fetch_header_data_points_default
-            );
-            let (fetch_account_data_points_ptr) = get_label_location(
-                fetch_account_data_points_default
-            );
-            let (fetch_storage_data_points_ptr) = get_label_location(
-                fetch_storage_data_points_default
-            );
-            with fetch_header_data_points_ptr, fetch_account_data_points_ptr, fetch_storage_data_points_ptr {
+            let fetch_trait = get_avg_fetch_trait();
+            with fetch_trait {
                 let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
             }
             let result = compute_avg(values=data_points, values_len=data_points_len);
@@ -134,16 +121,8 @@ namespace Task {
         }
 
         if (tasks[index].aggregate_fn_id == AGGREGATE_FN.SUM) {
-            let (fetch_header_data_points_ptr) = get_label_location(
-                fetch_header_data_points_default
-            );
-            let (fetch_account_data_points_ptr) = get_label_location(
-                fetch_account_data_points_default
-            );
-            let (fetch_storage_data_points_ptr) = get_label_location(
-                fetch_storage_data_points_default
-            );
-            with fetch_header_data_points_ptr, fetch_account_data_points_ptr, fetch_storage_data_points_ptr {
+            let fetch_trait = get_sum_fetch_trait();
+            with fetch_trait {
                 let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
             }
             let result = compute_sum(values_le=data_points, values_len=data_points_len);
@@ -153,16 +132,8 @@ namespace Task {
         }
 
         if (tasks[index].aggregate_fn_id == AGGREGATE_FN.MIN) {
-            let (fetch_header_data_points_ptr) = get_label_location(
-                fetch_header_data_points_default
-            );
-            let (fetch_account_data_points_ptr) = get_label_location(
-                fetch_account_data_points_default
-            );
-            let (fetch_storage_data_points_ptr) = get_label_location(
-                fetch_storage_data_points_default
-            );
-            with fetch_header_data_points_ptr, fetch_account_data_points_ptr, fetch_storage_data_points_ptr {
+            let fetch_trait = get_minmax_fetch_trait();
+            with fetch_trait {
                 let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
             }
             let result = uint256_min_le(data_points, data_points_len);
@@ -172,16 +143,8 @@ namespace Task {
         }
 
         if (tasks[index].aggregate_fn_id == AGGREGATE_FN.MAX) {
-            let (fetch_header_data_points_ptr) = get_label_location(
-                fetch_header_data_points_default
-            );
-            let (fetch_account_data_points_ptr) = get_label_location(
-                fetch_account_data_points_default
-            );
-            let (fetch_storage_data_points_ptr) = get_label_location(
-                fetch_storage_data_points_default
-            );
-            with fetch_header_data_points_ptr, fetch_account_data_points_ptr, fetch_storage_data_points_ptr {
+            let fetch_trait = get_minmax_fetch_trait();
+            with fetch_trait {
                 let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
             }
             let result = uint256_max_le(data_points, data_points_len);
@@ -191,16 +154,8 @@ namespace Task {
         }
 
         if (tasks[index].aggregate_fn_id == AGGREGATE_FN.COUNT) {
-            let (fetch_header_data_points_ptr) = get_label_location(
-                fetch_header_data_points_default
-            );
-            let (fetch_account_data_points_ptr) = get_label_location(
-                fetch_account_data_points_default
-            );
-            let (fetch_storage_data_points_ptr) = get_label_location(
-                fetch_storage_data_points_default
-            );
-            with fetch_header_data_points_ptr, fetch_account_data_points_ptr, fetch_storage_data_points_ptr {
+            let fetch_trait = get_count_fetch_trait();
+            with fetch_trait {
                 let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
             }
             let (res_felt) = count_if(
@@ -213,10 +168,8 @@ namespace Task {
         }
 
         if (tasks[index].aggregate_fn_id == AGGREGATE_FN.SLR) {
-            let (fetch_header_data_points_ptr) = get_label_location(fetch_header_data_points_slr);
-            let (fetch_account_data_points_ptr) = get_label_location(fetch_account_data_points_slr);
-            let (fetch_storage_data_points_ptr) = get_label_location(fetch_storage_data_points_slr);
-            with fetch_header_data_points_ptr, fetch_account_data_points_ptr, fetch_storage_data_points_ptr {
+            let fetch_trait = get_slr_fetch_trait();
+            with fetch_trait {
                 let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
             }
             let result = compute_slr(
