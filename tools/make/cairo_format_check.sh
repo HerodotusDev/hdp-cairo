@@ -31,10 +31,10 @@ export -f format_scarb_project
 
 # Find all .cairo files under src/ and tests/ directories and format them in parallel
 # Using --halt soon,fail=1 to stop at the first failure
-find ./src ./tests ./packages/hdp_bootloader/bootloader ./packages/hdp_bootloader/builtin_selection -name '*.cairo' ! -path "./tests/cairo_programs/cairo1_programs/*" | parallel --halt soon,fail=1 format_file
+find ./src ./tests ./packages/hdp_bootloader/bootloader ./packages/hdp_bootloader/builtin_selection -name '*.cairo' ! -path "./src/cairo1/*" | parallel --halt soon,fail=1 format_file
 
 # Find scarb projects and execute format_scarb_project in each
-find ./tests/cairo_programs/cairo1_programs -mindepth 1 -maxdepth 1 -type d | parallel --halt now,fail=1 format_scarb_project
+find ./src/cairo1 -mindepth 1 -maxdepth 1 -type d | parallel --halt now,fail=1 format_scarb_project
 
 # Capture the exit status of parallel
 exit_status=$?

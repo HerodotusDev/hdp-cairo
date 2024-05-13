@@ -276,8 +276,8 @@ func run{
     }(tasks_len, 0);
 
     Task.execute{
-        pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
+        pedersen_ptr=pedersen_ptr,
         bitwise_ptr=bitwise_ptr,
         poseidon_ptr=poseidon_ptr,
         account_dict=account_dict,

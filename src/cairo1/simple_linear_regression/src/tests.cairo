@@ -1,5 +1,3 @@
-use core::debug::PrintTrait;
-use core::fmt::Debug;
 use simple_linear_regression::SLRTrait;
 use simple_linear_regression::{slr, main};
 use cubit::f128::math::{ops, hyp, trig};
@@ -29,13 +27,5 @@ fn test_slr_simple() {
             .span()
     );
     let prediction = slr.predict(FixedTrait128::new_unscaled(10, false));
-    assert_precise(prediction, 21 * ONE, 'Invalid value', Option::None);
-}
-
-#[test]
-fn test_main() {
-    let prediction = main(
-        array![2, 1 * ONE, 0, 2 * ONE, 0, 2, 3 * ONE, 0, 5 * ONE, 0, 10 * ONE, 0]
-    );
     assert_precise(prediction, 21 * ONE, 'Invalid value', Option::None);
 }

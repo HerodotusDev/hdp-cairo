@@ -8,15 +8,26 @@ from starkware.cairo.common.uint256 import Uint256, felt_to_uint256, uint256_rev
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.registers import get_fp_and_pc
+from starkware.cairo.common.registers import get_fp_and_pc, get_label_location
 
 from src.types import BlockSampledDataLake, ComputationalTask, AccountValues, Header, Transaction
 from src.datalakes.datalake import Datalake
-from src.datalakes.block_sampled_datalake import init_block_sampled, fetch_data_points
+from src.datalakes.block_sampled_datalake import (
+    fetch_data_points,
+    fetch_account_data_points as fetch_account_data_points_default,
+    fetch_storage_data_points as fetch_storage_data_points_default,
+    fetch_header_data_points as fetch_header_data_points_default,
+)
+from src.tasks.aggregate_functions.slr import (
+    fetch_account_data_points as fetch_account_data_points_slr,
+    fetch_storage_data_points as fetch_storage_data_points_slr,
+    fetch_header_data_points as fetch_header_data_points_slr,
+)
 from src.tasks.aggregate_functions.sum import compute_sum
 from src.tasks.aggregate_functions.avg import compute_avg
 from src.tasks.aggregate_functions.min_max import uint256_min_le, uint256_max_le
 from src.tasks.aggregate_functions.count_if import count_if
+from src.tasks.aggregate_functions.slr import compute_slr
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
 
 namespace AGGREGATE_FN {
@@ -26,6 +37,7 @@ namespace AGGREGATE_FN {
     const MAX = 3;
     const COUNT = 4;
     const MERKLE = 5;
+    const SLR = 6;
 }
 
 namespace Task {
@@ -81,8 +93,8 @@ namespace Task {
 
     // Executes the aggregate_fn of the passed tasks
     func execute{
-        pedersen_ptr: HashBuiltin*,
         range_check_ptr,
+        pedersen_ptr: HashBuiltin*,
         bitwise_ptr: BitwiseBuiltin*,
         poseidon_ptr: PoseidonBuiltin*,
         account_dict: DictAccess*,
@@ -102,9 +114,19 @@ namespace Task {
             return ();
         }
 
-        let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
-
         if (tasks[index].aggregate_fn_id == AGGREGATE_FN.AVG) {
+            let (fetch_header_data_points_ptr) = get_label_location(
+                fetch_header_data_points_default
+            );
+            let (fetch_account_data_points_ptr) = get_label_location(
+                fetch_account_data_points_default
+            );
+            let (fetch_storage_data_points_ptr) = get_label_location(
+                fetch_storage_data_points_default
+            );
+            with fetch_header_data_points_ptr, fetch_account_data_points_ptr, fetch_storage_data_points_ptr {
+                let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
+            }
             let result = compute_avg(values=data_points, values_len=data_points_len);
             assert [results] = result;
 
@@ -112,6 +134,18 @@ namespace Task {
         }
 
         if (tasks[index].aggregate_fn_id == AGGREGATE_FN.SUM) {
+            let (fetch_header_data_points_ptr) = get_label_location(
+                fetch_header_data_points_default
+            );
+            let (fetch_account_data_points_ptr) = get_label_location(
+                fetch_account_data_points_default
+            );
+            let (fetch_storage_data_points_ptr) = get_label_location(
+                fetch_storage_data_points_default
+            );
+            with fetch_header_data_points_ptr, fetch_account_data_points_ptr, fetch_storage_data_points_ptr {
+                let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
+            }
             let result = compute_sum(values_le=data_points, values_len=data_points_len);
             assert [results] = result;
 
@@ -119,6 +153,18 @@ namespace Task {
         }
 
         if (tasks[index].aggregate_fn_id == AGGREGATE_FN.MIN) {
+            let (fetch_header_data_points_ptr) = get_label_location(
+                fetch_header_data_points_default
+            );
+            let (fetch_account_data_points_ptr) = get_label_location(
+                fetch_account_data_points_default
+            );
+            let (fetch_storage_data_points_ptr) = get_label_location(
+                fetch_storage_data_points_default
+            );
+            with fetch_header_data_points_ptr, fetch_account_data_points_ptr, fetch_storage_data_points_ptr {
+                let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
+            }
             let result = uint256_min_le(data_points, data_points_len);
             assert [results] = result;
 
@@ -126,6 +172,18 @@ namespace Task {
         }
 
         if (tasks[index].aggregate_fn_id == AGGREGATE_FN.MAX) {
+            let (fetch_header_data_points_ptr) = get_label_location(
+                fetch_header_data_points_default
+            );
+            let (fetch_account_data_points_ptr) = get_label_location(
+                fetch_account_data_points_default
+            );
+            let (fetch_storage_data_points_ptr) = get_label_location(
+                fetch_storage_data_points_default
+            );
+            with fetch_header_data_points_ptr, fetch_account_data_points_ptr, fetch_storage_data_points_ptr {
+                let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
+            }
             let result = uint256_max_le(data_points, data_points_len);
             assert [results] = result;
 
@@ -133,10 +191,37 @@ namespace Task {
         }
 
         if (tasks[index].aggregate_fn_id == AGGREGATE_FN.COUNT) {
+            let (fetch_header_data_points_ptr) = get_label_location(
+                fetch_header_data_points_default
+            );
+            let (fetch_account_data_points_ptr) = get_label_location(
+                fetch_account_data_points_default
+            );
+            let (fetch_storage_data_points_ptr) = get_label_location(
+                fetch_storage_data_points_default
+            );
+            with fetch_header_data_points_ptr, fetch_account_data_points_ptr, fetch_storage_data_points_ptr {
+                let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
+            }
             let (res_felt) = count_if(
                 data_points, data_points_len, tasks[index].ctx_operator, tasks[index].ctx_value
             );
             let result = felt_to_uint256(res_felt);
+            assert [results] = result;
+
+            return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
+        }
+
+        if (tasks[index].aggregate_fn_id == AGGREGATE_FN.SLR) {
+            let (fetch_header_data_points_ptr) = get_label_location(fetch_header_data_points_slr);
+            let (fetch_account_data_points_ptr) = get_label_location(fetch_account_data_points_slr);
+            let (fetch_storage_data_points_ptr) = get_label_location(fetch_storage_data_points_slr);
+            with fetch_header_data_points_ptr, fetch_account_data_points_ptr, fetch_storage_data_points_ptr {
+                let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
+            }
+            let result = compute_slr(
+                values=data_points, values_len=data_points_len, predict=Uint256(low=4952410, high=0)
+            );
             assert [results] = result;
 
             return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
