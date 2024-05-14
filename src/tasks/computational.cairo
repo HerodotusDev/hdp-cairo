@@ -173,7 +173,7 @@ namespace Task {
                 let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
             }
             let result = compute_slr(
-                values=data_points, values_len=data_points_len, predict=Uint256(low=4952410, high=0)
+                values=data_points, values_len=data_points_len, predict=tasks[index].ctx_value
             );
             assert [results] = result;
 
@@ -239,16 +239,33 @@ func extract_params_and_construct_task{
                 ctx_value=ctx_value,
             ),
         );
-    } else {
+    }
+    if (task == AGGREGATE_FN.SLR) {
+        let ctx_value_le = Uint256(
+            low=[input + 12] + [input + 13] * 0x10000000000000000,
+            high=[input + 14] + [input + 15] * 0x10000000000000000,
+        );
+        let (ctx_value) = uint256_reverse_endian(ctx_value_le);
+
         return (
             task=ComputationalTask(
                 hash=hash,
                 datalake_ptr=datalake_ptr,
                 datalake_type=datalake_type,
-                aggregate_fn_id=task,
+                aggregate_fn_id=AGGREGATE_FN.SLR,
                 ctx_operator=0,
-                ctx_value=Uint256(low=0, high=0),
+                ctx_value=ctx_value,
             ),
         );
     }
+    return (
+        task=ComputationalTask(
+            hash=hash,
+            datalake_ptr=datalake_ptr,
+            datalake_type=datalake_type,
+            aggregate_fn_id=task,
+            ctx_operator=0,
+            ctx_value=Uint256(low=0, high=0),
+        ),
+    );
 }
