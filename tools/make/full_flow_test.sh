@@ -50,6 +50,9 @@ cairo-compile --cairo_path="packages/eth_essentials" "src/hdp.cairo" --output "b
 # Clone the repository if the directory doesn't exist
 if [ ! -d "hdp-test" ]; then
     git clone https://github.com/HerodotusDev/hdp-test
+    cd hdp-test
+    git checkout slr
+    cd ../
 fi
 
 echo "Starting tests..."
