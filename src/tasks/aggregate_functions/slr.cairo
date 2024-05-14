@@ -151,13 +151,18 @@ func fetch_storage_data_points{
         return index;
     }
 
-    let (data_point) = StorageMemorizer.get(
+    local data_point0: Uint256 = Uint256(low=current_block_number, high=0x0);
+
+    let (data_point1) = StorageMemorizer.get(
         storage_slot=datalake.properties + 3,
         address=datalake.properties,
         block_number=current_block_number,
     );
 
-    assert [data_points + index * Uint256.SIZE] = data_point;
+    let (data_point1_reverse_endian) = uint256_reverse_endian(data_point1);
+
+    assert [data_points + index * 2 * Uint256.SIZE + 0 * Uint256.SIZE] = data_point0;
+    assert [data_points + index * 2 * Uint256.SIZE + 1 * Uint256.SIZE] = data_point1_reverse_endian;
 
     return fetch_storage_data_points(datalake=datalake, index=index + 1, data_points=data_points);
 }
@@ -185,11 +190,16 @@ func fetch_header_data_points{
 
     let header = HeaderMemorizer.get(block_number=current_block_number);
 
-    let data_point = HeaderDecoder.get_field{
+    local data_point0: Uint256 = Uint256(low=current_block_number, high=0x0);
+
+    let data_point1 = HeaderDecoder.get_field{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(rlp=header.rlp, field=[datalake.properties]);
 
-    assert [data_points + index * Uint256.SIZE] = data_point;
+    let (data_point1_reverse_endian) = uint256_reverse_endian(data_point1);
+
+    assert [data_points + index * 2 * Uint256.SIZE + 0 * Uint256.SIZE] = data_point0;
+    assert [data_points + index * 2 * Uint256.SIZE + 1 * Uint256.SIZE] = data_point1_reverse_endian;
 
     return fetch_header_data_points(datalake=datalake, index=index + 1, data_points=data_points);
 }
