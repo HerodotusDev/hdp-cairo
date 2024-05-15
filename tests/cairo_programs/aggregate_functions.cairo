@@ -240,7 +240,7 @@ func slr_main{
         hdp_bootloader_input = {
             "task": {
                 "type": "CairoSierra",
-                "path": "build/compiled_cairo_files/simple_linear_regression.sierra.json",
+                "path": "hdp_cairo_programs/simple_linear_regression.sierra.json",
                 "use_poseidon": True
             },
             "single_page": True

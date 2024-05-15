@@ -7,7 +7,7 @@ from starkware.cairo.bootloaders.fact_topology import (
     FactTopology,
     get_fact_topology_from_additional_data,
 )
-from packages.hdp_bootloader.bootloader.objects import (
+from hdp_bootloader.bootloader.objects import (
     CairoPieTask,
     RunProgramTask,
     Task,
