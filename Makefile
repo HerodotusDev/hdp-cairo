@@ -7,8 +7,8 @@ build:
 	./tools/make/build.sh
 
 setup:
+	./tools/make/build_cairo_vm.sh
 	./tools/make/setup.sh ${VENV_PATH}
-	./tools/make/install_cairo_vm.sh
 
 run-profile:
 	@echo "A script to select, compile, run & profile one Cairo file"
