@@ -1,17 +1,19 @@
-import tempfile
-import subprocess
-import dataclasses
 from abc import abstractmethod
 from dataclasses import field
-from typing import ClassVar, Dict, Optional, Type
-import marshmallow
-import marshmallow.fields as mfields
-import marshmallow_dataclass
 from marshmallow_oneofschema import OneOfSchema
 from starkware.cairo.lang.compiler.program import Program, ProgramBase, StrippedProgram
 from starkware.cairo.lang.vm.cairo_pie import CairoPie
 from starkware.starkware_utils.marshmallow_dataclass_fields import additional_metadata
 from starkware.starkware_utils.validated_dataclass import ValidatedMarshmallowDataclass
+from typing import ClassVar, Dict, Optional, Type, Any
+import dataclasses
+import json
+import marshmallow
+import marshmallow_dataclass
+import marshmallow.fields as mfields
+import os
+import subprocess
+import tempfile
 
 
 class TaskSpec(ValidatedMarshmallowDataclass):
@@ -103,38 +105,45 @@ class Cairo1ProgramPath(TaskSpec):
 @marshmallow_dataclass.dataclass(frozen=True)
 class CairoSierra(TaskSpec):
     TYPE: ClassVar[str] = "CairoSierra"
-    path: str
+    sierra_program: Dict[str, Any]
     use_poseidon: bool
 
     def load_task(self, memory=None, args_start=None, args_len=None) -> "CairoPieTask":
         """
         Builds and Loads the PIE to memory.
         """
-        with tempfile.NamedTemporaryFile() as cairo_pie_file:
-            cairo_pie_file_path = cairo_pie_file.name
+        with tempfile.NamedTemporaryFile(delete=False) as sierra_file:
+            sierra_file.write(json.dumps(self.sierra_program).encode("utf-8"))
+            sierra_file_path = sierra_file.name
 
-            args = [memory[args_start + i] for i in range(args_len)]
-            formatted_args = f'[{" ".join(map(str, args))}]'
+        try:
+            with tempfile.NamedTemporaryFile() as cairo_pie_file:
+                cairo_pie_file_path = cairo_pie_file.name
 
-            subprocess.run(
-                [
-                    "cairo1-run",
-                    self.path,
-                    "--layout",
-                    "all_cairo",
-                    "--args",
-                    formatted_args,
-                    "--cairo_pie_output",
-                    cairo_pie_file_path,
-                    "--append_return_values",
-                ],
-                check=True,
-            )
+                args = [memory[args_start + i] for i in range(args_len)]
+                formatted_args = f'[{" ".join(map(str, args))}]'
 
-            return CairoPieTask(
-                cairo_pie=CairoPie.from_file(cairo_pie_file_path),
-                use_poseidon=self.use_poseidon,
-            )
+                subprocess.run(
+                    [
+                        "cairo1-run",
+                        sierra_file_path,
+                        "--layout",
+                        "all_cairo",
+                        "--args",
+                        formatted_args,
+                        "--cairo_pie_output",
+                        cairo_pie_file_path,
+                        "--append_return_values",
+                    ],
+                    check=True,
+                )
+
+                return CairoPieTask(
+                    cairo_pie=CairoPie.from_file(cairo_pie_file_path),
+                    use_poseidon=self.use_poseidon,
+                )
+        finally:
+            os.remove(sierra_file_path)
 
 
 class TaskSchema(OneOfSchema):

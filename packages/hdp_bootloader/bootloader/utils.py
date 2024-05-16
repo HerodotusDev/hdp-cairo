@@ -1,16 +1,12 @@
-import json
-import os
-from typing import Any, List, Union
-import aiofiles
-from starkware.cairo.bootloaders.fact_topology import (
-    FactTopologiesFile,
-    FactTopology,
-    get_fact_topology_from_additional_data,
-)
 from hdp_bootloader.bootloader.objects import (
     CairoPieTask,
     RunProgramTask,
     Task,
+)
+from starkware.cairo.bootloaders.fact_topology import (
+    FactTopologiesFile,
+    FactTopology,
+    get_fact_topology_from_additional_data,
 )
 from starkware.cairo.common.hash_state import compute_hash_on_elements
 from starkware.cairo.lang.compiler.program import Program
@@ -22,6 +18,12 @@ from starkware.cairo.lang.vm.relocatable import (
     relocate_value,
 )
 from starkware.python.utils import WriteOnceDict, from_bytes
+from typing import Any, List, Union
+import aiofiles
+import importlib.resources as pkg_resources
+import json
+import os
+import sysconfig
 
 SIMPLE_BOOTLOADER_COMPILED_PATH = os.path.join(
     os.path.dirname(__file__), "simple_bootloader_compiled.json"
@@ -322,3 +324,10 @@ def calc_simple_bootloader_execution_resources(
         builtin_instance_counter=builtin_instance_counter,
         n_memory_holes=0,
     )
+
+
+def load_json_from_package(resource):
+    path = os.path.join(sysconfig.get_path("purelib"), resource)
+    with open(path, "r") as file:
+        # Load JSON data
+        return json.load(file)

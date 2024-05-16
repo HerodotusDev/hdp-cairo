@@ -35,16 +35,20 @@ with open("tools/make/requirements.txt") as requirements_file:
 setup(
     name="hdp-cairo",
     version="0.0.1",
-    packages=["hdp_bootloader", "tools"],
+    packages=["hdp_bootloader", "tools", "compiled_cairo1_modules"],
     install_requires=requirements,
     package_dir={
         "tools": "tools",
         "hdp_bootloader": "packages/hdp_bootloader",
+        "compiled_cairo1_modules": "src/cairo1",
     },
     zip_safe=False,
     package_data={
         "tools": ["*/*.py"],
         "hdp_bootloader": ["*.cairo", "*/*.cairo", "*/*.py"],
+        "compiled_cairo1_modules": [
+            "simple_linear_regression/target/dev/simple_linear_regression.sierra.json"
+        ],
     },
     cmdclass={"install": PostInstallCommand},
 )
