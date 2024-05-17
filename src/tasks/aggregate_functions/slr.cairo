@@ -7,7 +7,7 @@ from starkware.cairo.common.uint256 import (
     Uint256,
 )
 from starkware.cairo.common.registers import get_label_location
-from packages.hdp_bootloader.bootloader.hdp_bootloader import run_simple_bootloader
+from hdp_bootloader.bootloader.hdp_bootloader import run_simple_bootloader
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, HashBuiltin
 from starkware.cairo.common.memcpy import memcpy
@@ -53,10 +53,14 @@ func compute_slr{
     assert task_input_arr[1 + values_len * 2 * 2 + 1] = predict.high;
 
     %{
+        from hdp_bootloader.bootloader.utils import load_json_from_package
+
         hdp_bootloader_input = {
             "task": {
                 "type": "CairoSierra",
-                "path": "build/compiled_cairo_files/simple_linear_regression.sierra.json",
+                "sierra_program": load_json_from_package(
+                    "compiled_cairo1_modules/simple_linear_regression/target/dev/simple_linear_regression.sierra.json"
+                ),
                 "use_poseidon": True
             },
             "single_page": True
