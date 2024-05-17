@@ -53,7 +53,6 @@ func compute_slr{
     assert task_input_arr[1 + values_len * 2 * 2 + 1] = predict.high;
 
     %{
-        import compiled_cairo1_modules.simple_linear_regression.target.dev
         from hdp_bootloader.bootloader.utils import load_json_from_package
 
         hdp_bootloader_input = {
