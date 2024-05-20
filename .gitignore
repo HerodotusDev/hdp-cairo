@@ -5,6 +5,7 @@ __pycache__/
 build/
 *.egg-info/
 *.pickle
+dist/*
 
 # Source Data
 /src/single_chunk_processor/data/*.json

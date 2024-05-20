@@ -33,7 +33,7 @@ with open("tools/make/requirements.txt") as requirements_file:
     requirements = requirements_file.read().splitlines()
 
 setup(
-    name="hdp-cairo",
+    name="hdp-cairo-dev",
     version="0.0.1",
     packages=["hdp_bootloader", "tools", "compiled_cairo1_modules"],
     install_requires=requirements,
