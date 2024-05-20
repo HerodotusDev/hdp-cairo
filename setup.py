@@ -1,8 +1,9 @@
-import os
-import shutil
-import sysconfig
 from setuptools import setup
 from setuptools.command.install import install
+
+from pathlib import Path
+this_directory = Path(__file__).parent
+long_description = (this_directory / "package.md").read_text()
 
 
 class PostInstallCommand(install):
@@ -11,21 +12,6 @@ class PostInstallCommand(install):
     def run(self):
         # Run the standard install process first
         install.run(self)
-        # Perform additional post-installation steps
-        self.copy_binary()
-
-    def copy_binary(self):
-        # Path to the binary in the package
-        package_binary_path = os.path.join(
-            os.path.dirname(__file__), "build", "cairo1-run"
-        )
-        # Path to the virtualenv bin directory
-        install_binary_path = os.path.join(sysconfig.get_path("scripts"), "cairo1-run")
-
-        # Copy the binary
-        shutil.copyfile(package_binary_path, install_binary_path)
-        # Make the binary executable
-        os.chmod(install_binary_path, 0o755)
 
 
 # Read the requirements from the requirements.txt file
@@ -34,7 +20,9 @@ with open("tools/make/requirements.txt") as requirements_file:
 
 setup(
     name="hdp-cairo-dev",
-    version="0.0.1",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+    version="0.0.2",
     packages=["hdp_bootloader", "tools", "compiled_cairo1_modules"],
     install_requires=requirements,
     package_dir={
