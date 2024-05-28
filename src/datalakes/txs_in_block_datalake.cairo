@@ -10,6 +10,7 @@ from src.types import TransactionsInBlockDatalake, Transaction, TransactionProof
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
 from src.decoders.transaction_decoder import TransactionDecoder, TransactionType
 from src.decoders.header_decoder import HeaderDecoder, HeaderField
+from src.tasks.fetch_trait import FetchTrait
 
 namespace TX_IN_BLOCK_TYPES {
     const TX = 1;
@@ -81,12 +82,13 @@ func fetch_data_points{
     transaction_dict: DictAccess*,
     transactions: Transaction*,
     pow2_array: felt*,
+    fetch_trait: FetchTrait,
 }(datalake: TransactionsInBlockDatalake) -> (Uint256*, felt) {
     alloc_locals;
     let (data_points: Uint256*) = alloc();
 
     if (datalake.type == TX_IN_BLOCK_TYPES.TX) {
-        let data_points_len = fetch_tx_data_points(
+        let data_points_len = abstract_fetch_tx_data_points(
             datalake=datalake, index=0, result_counter=0, data_points=data_points
         );
 
@@ -101,6 +103,22 @@ func fetch_data_points{
     return (data_points, 0);
 }
 
+func abstract_fetch_tx_data_points{
+    range_check_ptr,
+    poseidon_ptr: PoseidonBuiltin*,
+    bitwise_ptr: BitwiseBuiltin*,
+    transaction_dict: DictAccess*,
+    transactions: Transaction*,
+    pow2_array: felt*,
+    fetch_trait: FetchTrait,
+}(
+    datalake: TransactionsInBlockDatalake, index: felt, result_counter: felt, data_points: Uint256*
+) -> felt {
+    jmp abs fetch_trait.transaction_datalake.fetch_tx_data_points_ptr;
+}
+
+// DEFAULT IMPLEMENTATION OF FETCH TRAIT
+
 func fetch_tx_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
@@ -108,6 +126,7 @@ func fetch_tx_data_points{
     transaction_dict: DictAccess*,
     transactions: Transaction*,
     pow2_array: felt*,
+    fetch_trait: FetchTrait,
 }(
     datalake: TransactionsInBlockDatalake, index: felt, result_counter: felt, data_points: Uint256*
 ) -> felt {

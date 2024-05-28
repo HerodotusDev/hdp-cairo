@@ -210,7 +210,7 @@ func abstract_fetch_account_data_points{
     pow2_array: felt*,
     fetch_trait: FetchTrait,
 }(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
-    jmp abs fetch_trait.fetch_account_data_points_ptr;
+    jmp abs fetch_trait.block_sampled_datalake.fetch_account_data_points_ptr;
 }
 
 // Collects the storage data points defined in the datalake from the memorizer recursivly
@@ -227,7 +227,7 @@ func abstract_fetch_storage_data_points{
     pow2_array: felt*,
     fetch_trait: FetchTrait,
 }(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
-    jmp abs fetch_trait.fetch_storage_data_points_ptr;
+    jmp abs fetch_trait.block_sampled_datalake.fetch_storage_data_points_ptr;
 }
 
 // Collects the header data points defined in the datalake from the memorizer recursivly.
@@ -240,7 +240,7 @@ func abstract_fetch_header_data_points{
     pow2_array: felt*,
     fetch_trait: FetchTrait,
 }(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
-    jmp abs fetch_trait.fetch_header_data_points_ptr;
+    jmp abs fetch_trait.block_sampled_datalake.fetch_header_data_points_ptr;
 }
 
 // Used for decoding the sampled property of block sampled headers.
@@ -328,6 +328,8 @@ func extract_constant_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(inpu
         block_range_start=block_range_start, block_range_end=block_range_end, increment=increment
     );
 }
+
+// DEFAULT IMPLEMENTATION OF FETCH TRAIT
 
 // Collects the account data points defined in the datalake from the memorizer recursivly
 // Inputs:
