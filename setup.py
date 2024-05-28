@@ -2,6 +2,7 @@ from setuptools import setup
 from setuptools.command.install import install
 
 from pathlib import Path
+
 this_directory = Path(__file__).parent
 long_description = (this_directory / "package.md").read_text()
 
@@ -21,7 +22,7 @@ with open("tools/make/requirements.txt") as requirements_file:
 setup(
     name="hdp-cairo-dev",
     long_description=long_description,
-    long_description_content_type='text/markdown',
+    long_description_content_type="text/markdown",
     version="0.0.2",
     packages=["hdp_bootloader", "tools", "compiled_cairo1_modules"],
     install_requires=requirements,
