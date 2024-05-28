@@ -117,6 +117,11 @@ namespace Task {
             let result = compute_avg(values=data_points, values_len=data_points_len);
             assert [results] = result;
 
+            %{
+                target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
+                print(f"Task Result({ids.index}): 0x{target_result}")
+            %}
+
             return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
         }
 
@@ -127,6 +132,11 @@ namespace Task {
             }
             let result = compute_sum(values_le=data_points, values_len=data_points_len);
             assert [results] = result;
+
+            %{
+                target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
+                print(f"Task Result({ids.index}): 0x{target_result}")
+            %}
 
             return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
         }
@@ -139,6 +149,11 @@ namespace Task {
             let result = uint256_min_le(data_points, data_points_len);
             assert [results] = result;
 
+            %{
+                target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
+                print(f"Task Result({ids.index}): 0x{target_result}")
+            %}
+
             return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
         }
 
@@ -149,6 +164,11 @@ namespace Task {
             }
             let result = uint256_max_le(data_points, data_points_len);
             assert [results] = result;
+
+            %{
+                target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
+                print(f"Task Result({ids.index}): 0x{target_result}")
+            %}
 
             return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
         }
@@ -164,6 +184,11 @@ namespace Task {
             let result = felt_to_uint256(res_felt);
             assert [results] = result;
 
+            %{
+                target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
+                print(f"Task Result({ids.index}): 0x{target_result}")
+            %}
+
             return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
         }
 
@@ -176,6 +201,11 @@ namespace Task {
                 values=data_points, values_len=data_points_len, predict=tasks[index].ctx_value
             );
             assert [results] = result;
+
+            %{
+                target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
+                print(f"Task Result({ids.index}): 0x{target_result}")
+            %}
 
             return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
         }
