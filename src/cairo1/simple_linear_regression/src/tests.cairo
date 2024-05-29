@@ -1,31 +1,29 @@
 use simple_linear_regression::SLRTrait;
 use simple_linear_regression::{slr, main};
-use cubit::f128::math::{ops, hyp, trig};
-use cubit::f128::{Fixed as Fixed128, FixedTrait as FixedTrait128, ONE};
-use cubit::f128::test::helpers::assert_precise;
+use simple_linear_regression::fraction::fraction::{Fraction, FractionImpl, FractionTrait, Sign};
 
 #[test]
 fn test_slr_simple() {
     let slr = slr(
         array![
-            FixedTrait128::new_unscaled(1, false),
-            FixedTrait128::new_unscaled(2, false),
-            FixedTrait128::new_unscaled(3, false),
-            FixedTrait128::new_unscaled(4, false),
-            FixedTrait128::new_unscaled(5, false),
-            FixedTrait128::new_unscaled(6, false)
+            FractionImpl::from_u256(Sign::Positive, 1),
+            FractionImpl::from_u256(Sign::Positive, 2),
+            FractionImpl::from_u256(Sign::Positive, 3),
+            FractionImpl::from_u256(Sign::Positive, 4),
+            FractionImpl::from_u256(Sign::Positive, 5),
+            FractionImpl::from_u256(Sign::Positive, 6),
         ]
             .span(),
         array![
-            FixedTrait128::new_unscaled(3, false),
-            FixedTrait128::new_unscaled(5, false),
-            FixedTrait128::new_unscaled(7, false),
-            FixedTrait128::new_unscaled(9, false),
-            FixedTrait128::new_unscaled(11, false),
-            FixedTrait128::new_unscaled(13, false)
+            FractionImpl::from_u256(Sign::Positive, 3),
+            FractionImpl::from_u256(Sign::Positive, 5),
+            FractionImpl::from_u256(Sign::Positive, 7),
+            FractionImpl::from_u256(Sign::Positive, 9),
+            FractionImpl::from_u256(Sign::Positive, 11),
+            FractionImpl::from_u256(Sign::Positive, 13),
         ]
             .span()
     );
-    let prediction = slr.predict(FixedTrait128::new_unscaled(10, false));
-    assert_precise(prediction, 21 * ONE, 'Invalid value', Option::None);
+    let prediction = slr.predict(FractionImpl::from_u256(Sign::Positive, 10));
+    assert(prediction == FractionImpl::from_u256(Sign::Positive, 21), 'Invalid value');
 }

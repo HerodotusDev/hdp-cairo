@@ -1,6 +1,5 @@
-use core::serde::Serde;
-use cubit::f128::math::{ops, hyp, trig};
-use cubit::f128::{Fixed as Fixed128, FixedTrait as FixedTrait128};
+pub mod fraction;
+use fraction::fraction::{Fraction, FractionImpl, FractionTrait, Sign};
 
 #[cfg(test)]
 mod tests;
@@ -23,40 +22,38 @@ fn main(input: Array<felt252>) -> u256 {
             Option::Some((
                 x, y
             )) => {
-                x_i.append(FixedTrait128::new_unscaled(x.try_into().unwrap(), false));
-                y_i.append(FixedTrait128::new(y.try_into().unwrap(), false));
+                x_i.append(FractionImpl::from_u256(Sign::Positive, x));
+                y_i.append(FractionImpl::from_u256(Sign::Positive, y));
             },
             Option::None => { break; }
         }
     };
 
     let regression = slr(x_i.span(), y_i.span());
-    let prediction = regression
-        .predict(FixedTrait128::new_unscaled(input.predicted.try_into().unwrap(), false));
-    u256 { low: prediction.mag, high: 0 }
+    regression.predict(FractionImpl::from_u256(Sign::Positive, input.predicted)).floor()
 }
 
 #[derive(Drop, Copy, PartialEq)]
 struct SLR {
-    a_hat: Fixed128,
-    b_hat: Fixed128
+    a_hat: Fraction,
+    b_hat: Fraction,
 }
 
 #[generate_trait]
 impl SLRImpl of SLRTrait {
-    fn predict(self: @SLR, x: Fixed128) -> Fixed128 {
+    fn predict(self: @SLR, x: Fraction) -> Fraction {
         *self.a_hat + *self.b_hat * x
     }
 }
 
-fn slr(x_i: Span<Fixed128>, y_i: Span<Fixed128>) -> SLR {
+fn slr(x_i: Span<Fraction>, y_i: Span<Fraction>) -> SLR {
     let x_y = mul_arr(x_i, y_i).span();
 
     let sigma_x = sigma(x_i);
     let sigma_y = sigma(y_i);
     let sigma_xy = sigma(x_y);
     let sigma_x2 = sigma_squared(x_i);
-    let n = FixedTrait128::new_unscaled(x_i.len().into(), false);
+    let n = FractionImpl::from_u256(Sign::Positive, x_i.len().into());
 
     let num = sigma_xy - (sigma_x * sigma_y) / n;
     let denom = sigma_x2 - (sigma_x * sigma_x) / n;
@@ -67,11 +64,11 @@ fn slr(x_i: Span<Fixed128>, y_i: Span<Fixed128>) -> SLR {
 }
 
 // ∑v
-fn sigma(mut arr: Span<Fixed128>) -> Fixed128 {
-    let mut ret = FixedTrait128::new_unscaled(0, false);
+fn sigma(mut arr: Span<Fraction>) -> Fraction {
+    let mut ret = FractionImpl::from_u256(Sign::Positive, 0);
     loop {
         match arr.pop_front() {
-            Option::Some(v) => { ret += *v; },
+            Option::Some(v) => { ret = ret + *v; },
             Option::None => { break; }
         }
     };
@@ -79,18 +76,18 @@ fn sigma(mut arr: Span<Fixed128>) -> Fixed128 {
 }
 
 // ∑(v^2)
-fn sigma_squared(mut arr: Span<Fixed128>) -> Fixed128 {
-    let mut ret = FixedTrait128::new_unscaled(0, false);
+fn sigma_squared(mut arr: Span<Fraction>) -> Fraction {
+    let mut ret = FractionImpl::from_u256(Sign::Positive, 0);
     loop {
         match arr.pop_front() {
-            Option::Some(v) => { ret += *v * *v; },
+            Option::Some(v) => { ret = ret + *v * *v; },
             Option::None => { break; }
         }
     };
     ret
 }
 
-fn mul_arr(mut arr1: Span<Fixed128>, mut arr2: Span<Fixed128>) -> Array<Fixed128> {
+fn mul_arr(mut arr1: Span<Fraction>, mut arr2: Span<Fraction>) -> Array<Fraction> {
     let mut ret = array![];
     loop {
         match (arr1.pop_front(), arr2.pop_front()) {
