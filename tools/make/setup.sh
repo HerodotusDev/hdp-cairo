@@ -57,7 +57,6 @@ source "$VENV_PATH/bin/activate" || { echo "Failed to activate virtual environme
 
 # Update dependencies
 echo "Updating dependencies..."
-pip install -U pip setuptools wheel || { echo "Failed to update pip."; exit 1; }
 pip install -r tools/make/requirements.txt || { echo "Failed to install requirements."; exit 1; }
 pip install . || { echo "Failed to install the package."; exit 1; }
 
