@@ -23,7 +23,7 @@ setup(
     name="hdp-cairo-dev",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    version="0.0.2",
+    version="0.0.3",
     packages=["hdp_bootloader", "tools", "compiled_cairo1_modules"],
     install_requires=requirements,
     package_dir={
