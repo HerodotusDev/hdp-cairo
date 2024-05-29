@@ -13,14 +13,10 @@ LOG_FILE="test_results_${filename}.log"
 # Ensure the log file exists, otherwise create it
 touch "$LOG_FILE"
 
-# Export the log file path to be available in subshells
-export LOG_FILE
-export filenname
-
 # Function to run tests on a given Cairo file
 run_tests() {
-    cairo_file="$1"
-    filename=$(basename "$cairo_file" .cairo)
+    local cairo_file="$1"
+    local filename=$(basename "$cairo_file" .cairo)
     local temp_output=$(mktemp)
 
     # Attempt to run the compiled program and capture output
@@ -44,6 +40,7 @@ run_tests() {
 }
 
 # Ensure the Cairo file is compiled before running parallel tests
+echo "Compiling the Cairo file..."
 cairo-compile --cairo_path="packages/eth_essentials" "$cairo_file" --output "build/compiled_cairo_files/$filename.json"
 
 # Export the function so it's accessible to subshells spawned by parallel
