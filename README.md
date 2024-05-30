@@ -1,16 +1,16 @@
 # Cairo HDP
 
-Cairo HDP is a set of Cairo0 programs that verify inclusion proofs and then runs computations on the data. This program can then be verified on-chain, enabling trustless computations on any historical data from Ethereum or integrated EVM chains.
+Cairo HDP is a collection of Cairo0 programs designed to verify inclusion proofs and perform computations on the data. These computations can be verified on-chain, enabling trustless operations on any historical data from Ethereum or integrated EVM chains.
 
 ## Installation and Setup
 
-Install the required dependencies and setup Python virtual environment by running:
+To install the required dependencies and set up the Python virtual environment, run:
 
 ```bash
 make setup
 ```
 
-Make sure to run the cairo program from the virtual environment. To activate the virtual environment, run:
+Ensure you run the Cairo program from the virtual environment. To activate the virtual environment, execute:
 
 ```bash
 source venv/bin/activate
@@ -18,57 +18,74 @@ source venv/bin/activate
 
 ## Running
 
-Before running the program, we need to make the program inputs available. The inputs are passed via the file `hdp_input.json` which is localed in the hdp root directory. The inputs can be generated with the [HDP CLI](https://github.com/HerodotusDev/hdp). Example inputs can be found in `tests/hdp/fixtures`.
+Before running the program, prepare the input data. The inputs are provided via the `hdp_input.json` file located in the root directory of the HDP project. These inputs can be generated using the [HDP CLI](https://github.com/HerodotusDev/hdp). Example inputs are available in `tests/hdp/fixtures`.
 
-Once the inputs are available, run the program by running:
+To run the program, use:
 
 ```bash
 make run-hdp
 ```
 
-The program now output the results root and tasks root. These can then be used to extract the results from the on-chain contract.
+The program will output the results root and tasks root. These roots can be used to extract the results from the on-chain contract.
 
-## How it works
+## How It Works
 
-Cairo HDP essentially runs in three stages. In the first stage, all of the passed state is verified. Once the state is deemed valid, the program will run the defined tasks on the data. As the last step, the tasks and results are added to a merkle tree, returning the respective roots as output.
+Cairo HDP operates in three main stages. First, it verifies the passed state. Upon validation, it executes the defined tasks on the data. Finally, the tasks and results are added to a Merkle tree, returning the respective roots as output.
 
 ### 1. Verification
 
-There are a number of different verification steps that can be run. Internally, they are run sequentially in the following order:
+Verification involves several sequential steps:
 
 #### a: Header Verification
 
-The first verification step is to verify the validity of the passed headers. This is done by recreating the MMR root, proving that every header is included in the MMR. Since the Herodotus header accumulator stores every Ethereum header, we can use it to verify the validity of the headers.
+The first step is to verify the validity of the passed headers by recreating the MMR root, proving each header's inclusion in the MMR. Since the Herodotus header accumulator stores every Ethereum header, it verifies the headers' validity.
 
 #### b: Account and Storage Slot Verification
 
-The second verification step is to verify the validity of the passed account and storage slot data. This can be achieved by verifying MPT proofs, with the state_root from the respective header.
+The second step is to verify the passed account and storage slot data's validity by checking MPT proofs against the state root from the respective header.
 
 ### 2. Computation
 
-Currently, there are three different operators available. These are:
+Currently, the following operators are available:
 
 - `min`: Returns the minimum value of the passed data.
 - `max`: Returns the maximum value of the passed data.
 - `sum`: Returns the sum of the passed data.
 - `avg`: Returns the average of the passed data.
 - `count_if`: Returns the number of elements that satisfy a condition.
+- `slr`: Returns the best-fit linear regression predicted point for the supplied data.
 
-It must be noted, that these operations can be run on any field that we verified in the previous stage. This means its currently possible to run these aggregation functions on non-numerical values like addresses or hashes, e.g. `parent_hash` of a header.
+These operations can be performed on any verified field, including non-numerical values like addresses or hashes, such as the `parent_hash` of a header.
 
 ### 3. Output Roots
 
-As a last step, the results and tasks are added to a merkle tree. The roots of these trees are then returned as output. The results can then be extracted from the on-chain contract by providing the respective roots. This wil enable the generation of multiple aggregations in a single execution. The roots can then be used to extract the results on-chain.
+In the final step, the results and tasks are added to a Merkle tree, and the roots of these trees are returned as output. These roots can be used to extract the results from the on-chain contract, enabling multiple aggregations in a single execution.
 
-## Adding a custom aggregation function
+## Adding a Custom Aggregation Function
 
-To add a new aggregation function, add it to `src/hdp/tasks/aggregate_functions`. Next, the function must then be integrated into the flow of datalake tasks handler. This will require an addition to the parameter decoder, and the execute fucntion. Currently only `BlockSampled` datalakes are used.
+To add a new aggregation function:
+
+1. Add the function to `src/tasks/aggregate_functions`.
+2. Integrate the function into the datalake tasks handler by updating the parameter decoder and the `execute` function.
+3. Define the `fetch_trait` function for this aggregation functionality.
+
+## Adding a Custom Cairo1 Module
+
+HDP can dynamically load Cairo1 programs at runtime, allowing the creation of Cairo1 modules with aggregate function logic. To add a Cairo1 module:
+
+1. Create a new Scarb project in `src/cairo1/`.
+2. Add the new aggregation function file to `src/tasks/aggregate_functions`.
+3. Define the `fetch_trait` function appropriate for this aggregation functionality.
+
+## Fetch Trait
+
+The `fetch_trait` is an abstract template containing datalake-specific data fetching functions. Each aggregate function must implement this template individually.
 
 ## Testing
 
-Some tests reply on Ethereum Mainnet RPC calls. For this reason, an ENV variable name `RPC_URL_MAINNET` must be available.
+Some tests require Ethereum Mainnet RPC calls. Ensure an environment variable named `RPC_URL_MAINNET` is set.
 
-To run (from VENV!):
+To run the tests (from the virtual environment), execute:
 
 ```bash
 make test-full
@@ -76,24 +93,19 @@ make test-full
 
 ## Roadmap
 
-Features that are planned or in progress:
-
 ### In Progress
 
-**Transaction Verifier:** verifies and decodes raw transactions.
-
-Status: ![](https://geps.dev/progress/65)
+- **Transaction Verifier:** Verifies and decodes raw transactions.
+  - Status: ![](https://geps.dev/progress/65)
 
 ### Planned
 
-**Merkelize:** extract data and add to merkle tree.
+- **Merkelize:** Extract data and add it to a Merkle tree.
+- **Transaction Datalake:** A datalake focused on transactions.
+- **Iterative Dynamic Layout Datalake:** Iterate through a dynamic layout, such as a Solidity mapping.
+- **Multi Task Executions:** Run multiple tasks in a single execution.
+- **Bloom Filter Aggregate:** Generate a bloom filter from the data.
 
-**Transaction Datalake:** a datalake focussed around transactions.
+Herodotus Dev Ltd - 2024
 
-**Iterative Dynamic Layout Datalake:** iterate through a dynamic layout, e.g. a solidity mapping.
-
-**Multi Task Executions:** run multiple tasks in a single execution.
-
-**Bloom Filter Aggregate:** generate a bloom filter from the data.
-
-Herodotus Dev Ltd - 2024.
+---
