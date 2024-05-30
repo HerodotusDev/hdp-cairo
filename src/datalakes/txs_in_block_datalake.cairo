@@ -132,7 +132,7 @@ func fetch_tx_data_points{
 ) -> felt {
     alloc_locals;
     let current_tx_index = datalake.start_index + index * datalake.increment;
-    %{ print("current_tx_index:", ids.current_tx_index) %}
+    // %{ print("current_tx_index:", ids.current_tx_index) %}
 
     local is_larger: felt;
     %{ ids.is_larger = 1 if ids.current_tx_index >= ids.datalake.end_index else 0 %}
