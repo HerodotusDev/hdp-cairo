@@ -11,7 +11,7 @@ To fully utilize the `hdp-cairo-dev` package and run HDP, two additional compone
 
 - **Tools**: This package includes class definitions and functionalities for fetching `Blocks` and `Transactions`, along with a set of utilities for developers.
 - **hdp_bootloader**: A fine-tuned implementation of the Cairo0 bootloader for HDP, enabling dynamic loading of Cairo1 bytecode modules. This allows for the definition of aggregate functions in the Cairo1 language.
-- **Compiled Cairo 1 Modules**: A set of compiled Cairo 1 modules used as aggregate functions within the HDP function set.
+- **Compiled Cairo1 Modules**: A set of compiled Cairo1 modules used as aggregate functions within the HDP function set.
 
 ---
 
