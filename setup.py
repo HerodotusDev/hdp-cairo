@@ -23,7 +23,7 @@ setup(
     name="hdp-cairo-dev",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    version="0.0.3",
+    version="0.0.4",
     packages=[
         "contract_bootloader",
         "hdp_bootloader",
