@@ -53,3 +53,4 @@ hdp/
 !tests/cairo_programs/fixtures/*.json
 !src/hdp_input.json
 !tools/js/package.json
+!packages/cairo-lang-0.13.1.zip
