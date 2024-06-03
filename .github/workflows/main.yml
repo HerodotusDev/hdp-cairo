@@ -26,56 +26,62 @@ jobs:
           version: "lab:latest"
           driver: cloud
           endpoint: "dataprocessor/github"
-      - name: Build and cache Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: environment.dockerfile
-          tags: "hdp-cairo:latest"
-          outputs: type=local,dest=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new
-          cache-from: type=local,src=/tmp/.buildx-cache
-      - name: Build test container
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ci.dockerfile
-          tags: "ci:test"
-          load: true # Load the image locally to run tests
-      - name: Run tests
-        run: docker run --rm ci:test
-  build-and-push:
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          version: latest  # Ensure you use the correct version setting, previously 'lab:latest' seems incorrect.
-          driver: cloud  # Make sure your project supports and is configured for cloud build driver.
-          endpoint: "dataprocessor/github"  # Ensure the endpoint configuration is correct for your Docker cloud setup.
-          use: true  # This ensures that the created Buildx instance is used by subsequent steps.
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: environment.dockerfile
-          tags: "hdp-cairo:latest"
+          tags: "dataprocessor/hdp-cairo:latest"
           push: true
           platforms: linux/amd64,linux/arm64  # Specifies the target platforms for the build.
-
-      - name: Cleanup
-        uses: docker/build-push-action@v5
-        with:
-          cleanup: true
+#      - name: Build and cache Docker image
+#        uses: docker/build-push-action@v5
+#        with:
+#          context: .
+#          file: environment.dockerfile
+#          tags: "hdp-cairo:latest"
+#          outputs: type=local,dest=/tmp/.buildx-cache
+#      - name: Build test container
+#        uses: docker/build-push-action@v5
+#        with:
+#          context: .
+#          file: ci.dockerfile
+#          tags: "ci:test"
+#          load: true # Load the image locally to run tests
+#      - name: Run tests
+#        run: docker run --rm ci:test
+#  build-and-push:
+#    if: github.event_name == 'push'
+#    runs-on: ubuntu-latest
+#    needs: test
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v2
+#
+#      - name: Log in to Docker Hub
+#        uses: docker/login-action@v3
+#        with:
+#          username: ${{ secrets.DOCKERHUB_USERNAME }}
+#          password: ${{ secrets.DOCKERHUB_TOKEN }}
+#
+#      - name: Set up Docker Buildx
+#        uses: docker/setup-buildx-action@v3
+#        with:
+#          version: latest  # Ensure you use the correct version setting, previously 'lab:latest' seems incorrect.
+#          driver: cloud  # Make sure your project supports and is configured for cloud build driver.
+#          endpoint: "dataprocessor/github"  # Ensure the endpoint configuration is correct for your Docker cloud setup.
+#          use: true  # This ensures that the created Buildx instance is used by subsequent steps.
+#
+#      - name: Build and push Docker image
+#        uses: docker/build-push-action@v5
+#        with:
+#          context: .
+#          file: environment.dockerfile
+#          tags: "hdp-cairo:latest"
+#          push: true
+#          platforms: linux/amd64,linux/arm64  # Specifies the target platforms for the build.
+#
+#      - name: Cleanup
+#        uses: docker/build-push-action@v5
+#        with:
+#          cleanup: true
