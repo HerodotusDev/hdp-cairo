@@ -1,9 +1,5 @@
 from starkware.cairo.builtin_selection.select_input_builtins import select_input_builtins
-from starkware.cairo.builtin_selection.validate_builtins import validate_builtins
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.cairo_builtins import KeccakBuiltin
-from starkware.cairo.common.dict import dict_read
-from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.find_element import find_element, search_sorted
 from starkware.cairo.common.math import assert_not_zero
 from starkware.cairo.common.registers import get_ap
@@ -11,43 +7,21 @@ from starkware.starknet.builtins.segment_arena.segment_arena import (
     SegmentArenaBuiltin,
     validate_segment_arena,
 )
-from starkware.starknet.common.syscalls import TxInfo as DeprecatedTxInfo
-from starkware.starknet.core.os.block_context import BlockContext
 from starkware.starknet.core.os.builtins import (
     BuiltinEncodings,
     BuiltinParams,
     BuiltinPointers,
-    NonSelectableBuiltins,
     SelectableBuiltins,
     update_builtin_ptrs,
 )
 from starkware.starknet.core.os.constants import (
     DEFAULT_ENTRY_POINT_SELECTOR,
-    ENTRY_POINT_GAS_COST,
     ENTRY_POINT_TYPE_CONSTRUCTOR,
     ENTRY_POINT_TYPE_EXTERNAL,
     ENTRY_POINT_TYPE_L1_HANDLER,
-    NOP_ENTRY_POINT_OFFSET,
 )
-from contract_bootloader.contract_class.compiled_class import (
-    CompiledClass,
-    CompiledClassEntryPoint,
-    CompiledClassFact,
-)
-from starkware.starknet.core.os.output import OsCarriedOutputs
-
-struct ExecutionInfo {
-    selector: felt,
-}
-
-// Represents the execution context during the execution of contract code.
-struct ExecutionContext {
-    entry_point_type: felt,
-    calldata_size: felt,
-    calldata: felt*,
-    // Additional information about the execution.
-    execution_info: ExecutionInfo*,
-}
+from contract_bootloader.contract_class.compiled_class import CompiledClass, CompiledClassEntryPoint
+from contract_bootloader.execute_syscalls import ExecutionContext, execute_syscalls
 
 // Represents the arguments pushed to the stack before calling an entry point.
 struct EntryPointCallArguments {
@@ -69,15 +43,10 @@ struct EntryPointReturnValues {
 
 // Performs a Cairo jump to the function 'execute_syscalls'.
 // This function's signature must match the signature of 'execute_syscalls'.
-func call_execute_syscalls{
-    range_check_ptr,
-    syscall_ptr: felt*,
-    builtin_ptrs: BuiltinPointers*,
-    contract_state_changes: DictAccess*,
-    contract_class_changes: DictAccess*,
-    outputs: OsCarriedOutputs*,
-}(block_context: BlockContext*, execution_context: ExecutionContext*, syscall_ptr_end: felt*) {
-    %{ print("call_execute_syscalls") %}
+func call_execute_syscalls{range_check_ptr, syscall_ptr: felt*, builtin_ptrs: BuiltinPointers*}(
+    execution_context: ExecutionContext*, syscall_ptr_end: felt*
+) {
+    execute_syscalls(execution_context, syscall_ptr_end);
     return ();
 }
 
@@ -160,10 +129,10 @@ func execute_entry_point{
     local syscall_ptr: felt*;
 
     %{
-        print("contract_entry_point:" , ids.contract_entry_point)
-        ids.syscall_ptr = segments.add()
         from bootloader.contract.syscall_handler import SyscallHandler
+
         syscall_handler = SyscallHandler(segments=segments)
+        ids.syscall_ptr = segments.add()
         syscall_handler.set_syscall_ptr(syscall_ptr=ids.syscall_ptr)
     %}
 
@@ -192,13 +161,6 @@ func execute_entry_point{
         calldata_end=calldata_end,
     );
     static_assert ap == current_ap + EntryPointCallArguments.SIZE;
-
-    %{
-        print("builtin_ptrs:" , ids.builtin_ptrs)
-        print("syscall_ptr:" , ids.syscall_ptr)
-        print("calldata_start:" , ids.calldata_start)
-        print("calldata_end:" , ids.calldata_end)
-    %}
 
     %{ vm_enter_scope({'syscall_handler': syscall_handler}) %}
     call abs contract_entry_point;
@@ -237,13 +199,12 @@ func execute_entry_point{
     validate_segment_arena(segment_arena=current_segment_arena);
 
     let builtin_ptrs = return_builtin_ptrs;
-    // with syscall_ptr {
-    //     call_execute_syscalls(
-    //         block_context=block_context,
-    //         execution_context=execution_context,
-    //         syscall_ptr_end=entry_point_return_values.syscall_ptr,
-    //     );
-    // }
+    with syscall_ptr {
+        call_execute_syscalls(
+            execution_context=execution_context,
+            syscall_ptr_end=entry_point_return_values.syscall_ptr,
+        );
+    }
 
     %{
         print(ids.entry_point_return_values.failure_flag)

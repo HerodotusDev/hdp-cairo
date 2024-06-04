@@ -18,14 +18,10 @@ from starkware.starknet.core.os.builtins import (
     NonSelectableBuiltins,
     BuiltinInstanceSizes,
     SelectableBuiltins,
-    update_builtin_ptrs,
 )
-from contract_bootloader.execute_entry_point import (
-    execute_entry_point,
-    ExecutionContext,
-    ExecutionInfo,
-)
+from contract_bootloader.execute_entry_point import execute_entry_point
 from starkware.starknet.core.os.constants import ENTRY_POINT_TYPE_EXTERNAL
+from contract_bootloader.execute_syscalls import ExecutionContext, ExecutionInfo
 
 func main{
     output_ptr: felt*,
@@ -145,11 +141,7 @@ func run_contract_bootloader{
 
     local calldata: felt*;
     %{ ids.calldata = segments.add() %}
-
-    assert calldata[0] = 0x3;
-    assert calldata[1] = 0x3;
-    assert calldata[2] = 0x4;
-    assert calldata[3] = 0x5;
+    assert calldata[0] = 0x0;
 
     local execution_info: ExecutionInfo = ExecutionInfo(
         selector=0x00e2054f8a912367e38a22ce773328ff8aabf8082c4120bad9ef085e1dbf29a7
@@ -157,7 +149,7 @@ func run_contract_bootloader{
 
     local execution_context: ExecutionContext = ExecutionContext(
         entry_point_type=ENTRY_POINT_TYPE_EXTERNAL,
-        calldata_size=4,
+        calldata_size=1,
         calldata=calldata,
         execution_info=&execution_info,
     );

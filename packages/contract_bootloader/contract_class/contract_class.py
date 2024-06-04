@@ -5,11 +5,9 @@ from abc import abstractmethod
 from dataclasses import field
 from enum import Enum, auto
 from typing import Any, Dict, List, Optional, Union
-
 import marshmallow
 import marshmallow.fields as mfields
 import marshmallow_dataclass
-
 from services.everest.definitions import fields as everest_fields
 from starkware.cairo.lang.cairo_constants import DEFAULT_PRIME
 from starkware.cairo.lang.compiler.identifier_manager import IdentifierManager

@@ -10,7 +10,6 @@ from starkware.cairo.common.hash_state_poseidon import (
 )
 from starkware.cairo.common.math import assert_lt_felt
 from starkware.cairo.common.poseidon_state import PoseidonBuiltinState
-from starkware.cairo.common.registers import get_fp_and_pc
 
 const COMPILED_CLASS_VERSION = 'COMPILED_CLASS_V1';
 
