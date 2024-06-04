@@ -129,7 +129,7 @@ func execute_entry_point{
     local syscall_ptr: felt*;
 
     %{
-        from bootloader.contract.syscall_handler import SyscallHandler
+        from contract_bootloader.syscall_handler import SyscallHandler
 
         syscall_handler = SyscallHandler(segments=segments)
         ids.syscall_ptr = segments.add()
@@ -207,8 +207,7 @@ func execute_entry_point{
     }
 
     %{
-        print(ids.entry_point_return_values.failure_flag)
-        for i in range(0, 4):
+        for i in range(0, 5):
             print(memory[ids.retdata_start + i])
     %}
 

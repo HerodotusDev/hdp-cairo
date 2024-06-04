@@ -111,8 +111,6 @@ func run_contract_bootloader{
     );
     let builtin_ptrs = &local_builtin_ptrs;
 
-    %{ print("builtin_ptrs.selectable.range_check: ", ids.builtin_ptrs.selectable.range_check) %}
-
     local local_builtin_encodings: BuiltinEncodings = BuiltinEncodings(
         pedersen='pedersen',
         range_check='range_check',

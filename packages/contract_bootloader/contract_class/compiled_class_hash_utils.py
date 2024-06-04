@@ -8,7 +8,7 @@ from starkware.cairo.lang.compiler.cairo_compile import compile_cairo_files
 from starkware.cairo.lang.compiler.program import Program
 from starkware.cairo.lang.compiler.scoped_name import ScopedName
 from starkware.python.utils import as_non_optional, from_bytes
-from contract_class.contract_class import (
+from contract_bootloader.contract_class.contract_class import (
     CompiledClass,
     EntryPointType,
 )

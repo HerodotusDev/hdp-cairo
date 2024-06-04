@@ -94,7 +94,6 @@ class SyscallHandlerBase(ABC):
         assert (
             syscall_info is not None
         ), f"Unsupported syscall selector {bytes.fromhex(hex(selector)[2:])!r}"
-        print("syscall_info", syscall_info.name)
         request = self._read_and_validate_request(
             request_struct=syscall_info.request_struct
         )
