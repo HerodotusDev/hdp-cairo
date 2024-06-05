@@ -1,17 +1,28 @@
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
+from starkware.cairo.common.cairo_builtins import (
+    PoseidonBuiltin,
+    BitwiseBuiltin,
+    HashBuiltin,
+    KeccakBuiltin,
+)
 from starkware.cairo.common.uint256 import Uint256, felt_to_uint256, uint256_reverse_endian
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.registers import get_fp_and_pc
-
-from src.types import BlockSampledDataLake, ComputationalTask, AccountValues, Header, Transaction
+from starkware.cairo.common.registers import get_fp_and_pc, get_label_location
 from src.datalakes.datalake import Datalake
-from src.datalakes.block_sampled_datalake import init_block_sampled, fetch_data_points
-from src.tasks.aggregate_functions.sum import compute_sum
-from src.tasks.aggregate_functions.avg import compute_avg
-from src.tasks.aggregate_functions.min_max import uint256_min_le, uint256_max_le
-from src.tasks.aggregate_functions.count_if import count_if
+from src.types import BlockSampledDataLake, ComputationalTask, AccountValues, Header, Transaction
+from src.tasks.aggregate_functions.sum import compute_sum, get_fetch_trait as get_sum_fetch_trait
+from src.tasks.aggregate_functions.avg import compute_avg, get_fetch_trait as get_avg_fetch_trait
+from src.tasks.aggregate_functions.min_max import (
+    uint256_min_le,
+    uint256_max_le,
+    get_fetch_trait as get_minmax_fetch_trait,
+)
+from src.tasks.aggregate_functions.count_if import (
+    count_if,
+    get_fetch_trait as get_count_fetch_trait,
+)
+from src.tasks.aggregate_functions.slr import compute_slr, get_fetch_trait as get_slr_fetch_trait
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
 
 namespace AGGREGATE_FN {
@@ -21,6 +32,7 @@ namespace AGGREGATE_FN {
     const MAX = 3;
     const COUNT = 4;
     const MERKLE = 5;
+    const SLR = 6;
 }
 
 namespace Task {
@@ -77,8 +89,9 @@ namespace Task {
     // Executes the aggregate_fn of the passed tasks
     func execute{
         range_check_ptr,
-        poseidon_ptr: PoseidonBuiltin*,
+        pedersen_ptr: HashBuiltin*,
         bitwise_ptr: BitwiseBuiltin*,
+        poseidon_ptr: PoseidonBuiltin*,
         account_dict: DictAccess*,
         account_values: AccountValues*,
         storage_dict: DictAccess*,
@@ -96,42 +109,103 @@ namespace Task {
             return ();
         }
 
-        let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
-
         if (tasks[index].aggregate_fn_id == AGGREGATE_FN.AVG) {
+            let fetch_trait = get_avg_fetch_trait();
+            with fetch_trait {
+                let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
+            }
             let result = compute_avg(values=data_points, values_len=data_points_len);
             assert [results] = result;
+
+            %{
+                target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
+                print(f"Task Result({ids.index}): 0x{target_result}")
+            %}
 
             return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
         }
 
         if (tasks[index].aggregate_fn_id == AGGREGATE_FN.SUM) {
+            let fetch_trait = get_sum_fetch_trait();
+            with fetch_trait {
+                let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
+            }
             let result = compute_sum(values_le=data_points, values_len=data_points_len);
             assert [results] = result;
+
+            %{
+                target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
+                print(f"Task Result({ids.index}): 0x{target_result}")
+            %}
 
             return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
         }
 
         if (tasks[index].aggregate_fn_id == AGGREGATE_FN.MIN) {
+            let fetch_trait = get_minmax_fetch_trait();
+            with fetch_trait {
+                let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
+            }
             let result = uint256_min_le(data_points, data_points_len);
             assert [results] = result;
+
+            %{
+                target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
+                print(f"Task Result({ids.index}): 0x{target_result}")
+            %}
 
             return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
         }
 
         if (tasks[index].aggregate_fn_id == AGGREGATE_FN.MAX) {
+            let fetch_trait = get_minmax_fetch_trait();
+            with fetch_trait {
+                let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
+            }
             let result = uint256_max_le(data_points, data_points_len);
             assert [results] = result;
+
+            %{
+                target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
+                print(f"Task Result({ids.index}): 0x{target_result}")
+            %}
 
             return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
         }
 
         if (tasks[index].aggregate_fn_id == AGGREGATE_FN.COUNT) {
+            let fetch_trait = get_count_fetch_trait();
+            with fetch_trait {
+                let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
+            }
             let (res_felt) = count_if(
                 data_points, data_points_len, tasks[index].ctx_operator, tasks[index].ctx_value
             );
             let result = felt_to_uint256(res_felt);
             assert [results] = result;
+
+            %{
+                target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
+                print(f"Task Result({ids.index}): 0x{target_result}")
+            %}
+
+            return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
+        }
+
+        if (tasks[index].aggregate_fn_id == AGGREGATE_FN.SLR) {
+            let fetch_trait = get_slr_fetch_trait();
+            with fetch_trait {
+                let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
+            }
+            let result = compute_slr(
+                values=data_points, values_len=data_points_len, predict=tasks[index].ctx_value
+            );
+            assert [results] = result;
+
+            %{
+                target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
+                print(f"Task Result({ids.index}): 0x{target_result}")
+            %}
 
             return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
         }
@@ -195,16 +269,33 @@ func extract_params_and_construct_task{
                 ctx_value=ctx_value,
             ),
         );
-    } else {
+    }
+    if (task == AGGREGATE_FN.SLR) {
+        let ctx_value_le = Uint256(
+            low=[input + 12] + [input + 13] * 0x10000000000000000,
+            high=[input + 14] + [input + 15] * 0x10000000000000000,
+        );
+        let (ctx_value) = uint256_reverse_endian(ctx_value_le);
+
         return (
             task=ComputationalTask(
                 hash=hash,
                 datalake_ptr=datalake_ptr,
                 datalake_type=datalake_type,
-                aggregate_fn_id=task,
+                aggregate_fn_id=AGGREGATE_FN.SLR,
                 ctx_operator=0,
-                ctx_value=Uint256(low=0, high=0),
+                ctx_value=ctx_value,
             ),
         );
     }
+    return (
+        task=ComputationalTask(
+            hash=hash,
+            datalake_ptr=datalake_ptr,
+            datalake_type=datalake_type,
+            aggregate_fn_id=task,
+            ctx_operator=0,
+            ctx_value=Uint256(low=0, high=0),
+        ),
+    );
 }

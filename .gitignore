@@ -1,14 +1,26 @@
+# Virtual Environment
 venv/
-*profiling*
-__pycache__
-/build/*.json
-/build/compiled_cairo_files/*.json
-*.pickle
-/src/single_chunk_processor/data/*.json
+.profiling/
 
+# Python Artifacts
+__pycache__/
+*.egg-info/
+*.pickle
+
+# Build Artifacts
+build/
+dist/
+
+# Data Files
+/src/single_chunk_processor/data/*.json
 /src/single_chunk_processor/data/*.zip
+
+# Environment Files
 *.env
 
+# Miscellaneous
+.idea/
+.vscode/
 *.zip
 *.json
 *.db
@@ -16,25 +28,28 @@ __pycache__
 cache/
 out/
 .gas-snapshot
-.vscode/
-.env
-.idea
-*.log
 .encryptedKey
 broadcast/
-.idea
-node_modules
+
+# Node.js
+node_modules/
 package-lock.json
 
-hdp-test
-hdp
-
+# System Files
 .DS_Store
 src/.DS_Store
 
+# Solidity Verifier
 solidity-verifier/lib/*
 
-# whitelist hdp fixtures
+# Cairo VM
+cairo-vm
+
+# HDP
+hdp-test/
+hdp/
+
+# Whitelist - these files should not be ignored
 !tests/cairo_programs/fixtures/*.json
 !src/hdp_input.json
 !tools/js/package.json

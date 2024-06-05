@@ -1,6 +1,11 @@
-%builtins output range_check bitwise keccak poseidon
+%builtins output pedersen range_check bitwise keccak poseidon
 
-from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, KeccakBuiltin
+from starkware.cairo.common.cairo_builtins import (
+    PoseidonBuiltin,
+    BitwiseBuiltin,
+    KeccakBuiltin,
+    HashBuiltin,
+)
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.dict_access import DictAccess
@@ -43,6 +48,7 @@ from src.chain_info import fetch_chain_info
 
 func main{
     output_ptr: felt*,
+    pedersen_ptr: HashBuiltin*,
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
@@ -50,6 +56,7 @@ func main{
 }() {
     run{
         output_ptr=output_ptr,
+        pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
@@ -61,6 +68,7 @@ func main{
 
 func run{
     output_ptr: felt*,
+    pedersen_ptr: HashBuiltin*,
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
@@ -269,8 +277,9 @@ func run{
 
     Task.execute{
         range_check_ptr=range_check_ptr,
-        poseidon_ptr=poseidon_ptr,
+        pedersen_ptr=pedersen_ptr,
         bitwise_ptr=bitwise_ptr,
+        poseidon_ptr=poseidon_ptr,
         account_dict=account_dict,
         account_values=account_values,
         storage_dict=storage_dict,

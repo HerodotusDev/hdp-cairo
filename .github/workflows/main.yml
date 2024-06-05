@@ -1,18 +1,24 @@
 name: Main
 
-on: [pull_request]
+on:
+  pull_request:
 
 jobs:
   main:
     runs-on: ubuntu-latest
+
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v3
 
+    - name: Setup Scarb
+      uses: software-mansion/setup-scarb@v1
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.9' # Specify the Python version you need
+        python-version: '3.9'
+
     - name: Cache Python environment
       uses: actions/cache@v3
       with:
@@ -22,20 +28,33 @@ jobs:
         key: ${{ runner.os }}-python-${{ hashFiles('**/requirements.txt') }}
         restore-keys: |
           ${{ runner.os }}-python-
-    - name: Install Dependencies
-      run: |
-        make setup
 
-    - name: Check python formatting
-      run: source venv/bin/activate && ./tools/make/python_format_check.sh
-    - name: Check cairo Formatting
+    - name: Install Dependencies
+      run: make setup
+
+    - name: Check Python formatting
       run: |
-        source venv/bin/activate && ./tools/make/cairo_format_check.sh
-    - name: Compile cairo files
-      run: source venv/bin/activate && make build
+        source venv/bin/activate
+        ./tools/make/python_format_check.sh
+
+    - name: Check Cairo formatting
+      run: |
+        source venv/bin/activate
+        ./tools/make/cairo_format_check.sh
+
+    - name: Compile Cairo files
+      run: |
+        source venv/bin/activate
+        make build
+
     - name: Run Unit Cairo tests
       env:
         RPC_URL_MAINNET: ${{ secrets.RPC_URL_MAINNET }}
-      run: source ./tools/make/cairo_tests.sh
+      run: |
+        source venv/bin/activate
+        ./tools/make/cairo_tests.sh
+
     - name: Run Full Flow tests
-      run: source ./tools/make/full_flow_test.sh
+      run: |
+        source venv/bin/activate
+        ./tools/make/full_flow_test.sh
