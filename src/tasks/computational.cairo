@@ -11,19 +11,23 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.registers import get_fp_and_pc, get_label_location
 from src.datalakes.datalake import Datalake
 from src.types import BlockSampledDataLake, ComputationalTask, AccountValues, Header, Transaction
-from src.tasks.aggregate_functions.sum import compute_sum, get_fetch_trait as get_sum_fetch_trait
-from src.tasks.aggregate_functions.avg import compute_avg, get_fetch_trait as get_avg_fetch_trait
-from src.tasks.aggregate_functions.min_max import (
-    uint256_min_le,
-    uint256_max_le,
-    get_fetch_trait as get_minmax_fetch_trait,
-)
-from src.tasks.aggregate_functions.count_if import (
-    count_if,
-    get_fetch_trait as get_count_fetch_trait,
-)
+from src.tasks.aggregate_functions.sum import compute_sum
+from src.tasks.aggregate_functions.avg import compute_avg
+from src.tasks.aggregate_functions.min_max import uint256_min_le, uint256_max_le
+from src.tasks.aggregate_functions.count_if import count_if
 from src.tasks.aggregate_functions.slr import compute_slr, get_fetch_trait as get_slr_fetch_trait
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
+from src.datalakes.block_sampled_datalake import (
+    fetch_header_data_points,
+    fetch_account_data_points,
+    fetch_storage_data_points,
+)
+from src.datalakes.txs_in_block_datalake import fetch_tx_data_points
+from src.tasks.fetch_trait import (
+    FetchTrait,
+    FetchTraitBlockSampledDatalake,
+    FetchTraitTransactionDatalake,
+)
 
 namespace AGGREGATE_FN {
     const AVG = 0;
@@ -110,7 +114,7 @@ namespace Task {
         }
 
         if (tasks[index].aggregate_fn_id == AGGREGATE_FN.AVG) {
-            let fetch_trait = get_avg_fetch_trait();
+            let fetch_trait = get_default_fetch_trait();
             with fetch_trait {
                 let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
             }
@@ -126,7 +130,7 @@ namespace Task {
         }
 
         if (tasks[index].aggregate_fn_id == AGGREGATE_FN.SUM) {
-            let fetch_trait = get_sum_fetch_trait();
+            let fetch_trait = get_default_fetch_trait();
             with fetch_trait {
                 let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
             }
@@ -142,7 +146,7 @@ namespace Task {
         }
 
         if (tasks[index].aggregate_fn_id == AGGREGATE_FN.MIN) {
-            let fetch_trait = get_minmax_fetch_trait();
+            let fetch_trait = get_default_fetch_trait();
             with fetch_trait {
                 let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
             }
@@ -158,7 +162,7 @@ namespace Task {
         }
 
         if (tasks[index].aggregate_fn_id == AGGREGATE_FN.MAX) {
-            let fetch_trait = get_minmax_fetch_trait();
+            let fetch_trait = get_default_fetch_trait();
             with fetch_trait {
                 let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
             }
@@ -174,7 +178,7 @@ namespace Task {
         }
 
         if (tasks[index].aggregate_fn_id == AGGREGATE_FN.COUNT) {
-            let fetch_trait = get_count_fetch_trait();
+            let fetch_trait = get_default_fetch_trait();
             with fetch_trait {
                 let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
             }
@@ -297,5 +301,30 @@ func extract_params_and_construct_task{
             ctx_operator=0,
             ctx_value=Uint256(low=0, high=0),
         ),
+    );
+}
+
+func get_default_fetch_trait() -> FetchTrait {
+    alloc_locals;
+    let (__fp__, _) = get_fp_and_pc();
+
+    let (fetch_header_data_points_ptr) = get_label_location(fetch_header_data_points);
+    let (fetch_account_data_points_ptr) = get_label_location(fetch_account_data_points);
+    let (fetch_storage_data_points_ptr) = get_label_location(fetch_storage_data_points);
+    let (fetch_tx_data_points_ptr) = get_label_location(fetch_tx_data_points);
+
+    local block_sampled_datalake: FetchTraitBlockSampledDatalake = FetchTraitBlockSampledDatalake(
+        fetch_header_data_points_ptr, fetch_account_data_points_ptr, fetch_storage_data_points_ptr
+    );
+
+    local transaction_datalake: FetchTraitTransactionDatalake = FetchTraitTransactionDatalake(
+        fetch_tx_data_points_ptr
+    );
+
+    return (
+        FetchTrait(
+            block_sampled_datalake=&block_sampled_datalake,
+            transaction_datalake=&transaction_datalake,
+        )
     );
 }
