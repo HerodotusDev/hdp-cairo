@@ -60,7 +60,7 @@ func verify_n_transaction_proofs{
 
     let tx = init_tx_stuct{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, poseidon_ptr=poseidon_ptr
-    }(tx_item=tx_item, tx_item_bytes_len=tx_item_bytes_len, block_number=tx_proof.block_number);
+    }(tx_item=tx_item, tx_item_bytes_len=tx_item_bytes_len);
 
     // decode tx-index from rlp-encoded key
     assert tx_proof.key.high = 0;  // sanity check
@@ -78,7 +78,6 @@ func verify_n_transaction_proofs{
 // Inputs:
 // - tx_item: The RLP-encoded transaction.
 // - tx_item_bytes_len: The length of the RLP-encoded transaction.
-// - block_number: The block number of the transaction.
 // Outputs:
 // - Transaction struct.
 func init_tx_stuct{
@@ -86,8 +85,7 @@ func init_tx_stuct{
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     pow2_array: felt*,
-    chain_info: ChainInfo,
-}(tx_item: felt*, tx_item_bytes_len: felt, block_number: felt) -> Transaction {
+}(tx_item: felt*, tx_item_bytes_len: felt) -> Transaction {
     alloc_locals;
 
     let first_byte = extract_byte_at_pos(tx_item[0], 0, pow2_array);

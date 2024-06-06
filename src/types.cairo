@@ -79,6 +79,22 @@ struct TransactionProof {
     key_leading_zeros: felt,
 }
 
+struct Receipt {
+    rlp: felt*,
+    rlp_len: felt,
+    bytes_len: felt,
+    type: felt,
+}
+
+struct ReceiptProof {
+    block_number: felt,
+    len: felt,
+    bytes_len: felt*,
+    proof: felt**,
+    key: Uint256,
+    key_leading_zeros: felt,
+}
+
 struct BlockSampledDataLake {
     block_range_start: felt,
     block_range_end: felt,

@@ -7,7 +7,7 @@ from starkware.cairo.common.builtin_poseidon.poseidon import (
     poseidon_hash_many,
 )
 from starkware.cairo.common.dict import dict_write, dict_read
-from src.types import Header, AccountValues, Transaction
+from src.types import Header, AccountValues, Transaction, Receipt
 from starkware.cairo.common.uint256 import Uint256
 
 const MEMORIZER_DEFAULT = 100000000;  // An arbitrary large number. We need to ensure each memorizer never contains >= number of elements.
@@ -134,6 +134,38 @@ namespace TransactionMemorizer {
     }
 }
 
+namespace ReceiptMemorizer {
+    func initialize{}() -> (receipt_dict: DictAccess*, receipt_dict_start: DictAccess*) {
+        let (receipt_dict) = default_dict_new(default_value=MEMORIZER_DEFAULT);
+        tempvar receipt_dict_start = receipt_dict;
+
+        return (receipt_dict=receipt_dict, receipt_dict_start=receipt_dict_start);
+    }
+
+    func add{poseidon_ptr: PoseidonBuiltin*, receipt_dict: DictAccess*}(
+        block_number: felt, key_low: felt, index: felt
+    ) {
+        let key = gen_receipt_key(block_number, key_low);
+
+        dict_write{dict_ptr=receipt_dict}(key=key, new_value=index);
+        return ();
+    }
+
+    func get{
+        receipt_dict: DictAccess*, receipts: Receipt*, poseidon_ptr: PoseidonBuiltin*
+    }(block_number: felt, key_low: felt) -> (receipt: Receipt) {
+        alloc_locals;
+        let key = gen_receipt_key(block_number, key_low);
+        let (index) = dict_read{dict_ptr=receipt_dict}(key);
+
+        if (index == MEMORIZER_DEFAULT) {
+            assert 1 = 0;
+        }
+
+        return (receipt=receipts[index]);
+    }
+}
+
 // the account key is h(slot.key, account_key).
 // ToDo: too much hashing
 func gen_storage_key{poseidon_ptr: PoseidonBuiltin*}(
@@ -158,6 +190,14 @@ func gen_account_key{poseidon_ptr: PoseidonBuiltin*}(address: felt*, block_numbe
 }
 
 func gen_transaction_key{poseidon_ptr: PoseidonBuiltin*}(
+    block_number: felt, key_low: felt
+) -> felt {
+    let (res) = poseidon_hash(block_number, key_low);
+
+    return res;
+}
+
+func gen_receipt_key{poseidon_ptr: PoseidonBuiltin*}(
     block_number: felt, key_low: felt
 ) -> felt {
     let (res) = poseidon_hash(block_number, key_low);

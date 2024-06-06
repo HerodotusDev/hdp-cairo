@@ -11,4 +11,5 @@ struct FetchTraitBlockSampledDatalake {
 
 struct FetchTraitTransactionDatalake {
     fetch_tx_data_points_ptr: felt*,
+    fetch_receipt_data_points_ptr: felt*,
 }

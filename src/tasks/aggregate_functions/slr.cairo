@@ -19,7 +19,8 @@ from src.datalakes.block_sampled_datalake import BlockSampledProperty
 from src.decoders.account_decoder import AccountDecoder
 from src.decoders.header_decoder import HeaderDecoder
 from src.decoders.transaction_decoder import TransactionDecoder, TransactionType
-from src.memorizer import AccountMemorizer, StorageMemorizer, HeaderMemorizer, TransactionMemorizer
+from src.decoders.receipt_decoder import ReceiptDecoder
+from src.memorizer import AccountMemorizer, StorageMemorizer, HeaderMemorizer, TransactionMemorizer, ReceiptMemorizer
 from src.types import (
     BlockSampledDataLake,
     AccountValues,
@@ -28,6 +29,7 @@ from src.types import (
     TransactionsInBlockDatalake,
     Transaction,
     TransactionProof,
+    Receipt
 )
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.registers import get_fp_and_pc
@@ -40,13 +42,14 @@ func get_fetch_trait() -> FetchTrait {
     let (fetch_account_data_points_ptr) = get_label_location(fetch_account_data_points);
     let (fetch_storage_data_points_ptr) = get_label_location(fetch_storage_data_points);
     let (fetch_tx_data_points_ptr) = get_label_location(fetch_tx_data_points);
+    let (fetch_receipt_data_points_ptr) = get_label_location(fetch_receipt_data_points);
 
     local block_sampled_datalake: FetchTraitBlockSampledDatalake = FetchTraitBlockSampledDatalake(
         fetch_header_data_points_ptr, fetch_account_data_points_ptr, fetch_storage_data_points_ptr
     );
 
     local transaction_datalake: FetchTraitTransactionDatalake = FetchTraitTransactionDatalake(
-        fetch_tx_data_points_ptr
+        fetch_tx_data_points_ptr, fetch_receipt_data_points_ptr
     );
 
     return (
@@ -280,6 +283,59 @@ func fetch_tx_data_points{
     ] = data_point_reverse_endian;
 
     return fetch_tx_data_points(
+        datalake=datalake,
+        index=index + 1,
+        result_counter=result_counter + 1,
+        data_points=data_points,
+    );
+}
+
+func fetch_receipt_data_points{
+    range_check_ptr,
+    poseidon_ptr: PoseidonBuiltin*,
+    bitwise_ptr: BitwiseBuiltin*,
+    receipt_dict: DictAccess*,
+    receipts: Receipt*,
+    pow2_array: felt*,
+    fetch_trait: FetchTrait,
+}(
+    datalake: TransactionsInBlockDatalake, index: felt, result_counter: felt, data_points: Uint256*
+) -> felt {
+    alloc_locals;
+    let current_receipt_index = datalake.start_index + index * datalake.increment;
+    // %{ print("current_receipt_index:", ids.current_receipt_index) %}
+
+    local is_larger: felt;
+    %{ ids.is_larger = 1 if ids.current_receipt_index >= ids.datalake.end_index else 0 %}
+
+    if (is_larger == 1) {
+        assert [range_check_ptr] = current_receipt_index - datalake.end_index;
+        tempvar range_check_ptr = range_check_ptr + 1;
+        return result_counter;
+    }
+
+    let (receipt) = ReceiptMemorizer.get(datalake.target_block, current_receipt_index);
+
+    if (datalake.included_types[receipt.type] == 0) {
+        return fetch_receipt_data_points(
+            datalake=datalake,
+            index=index + 1,
+            result_counter=result_counter,
+            data_points=data_points,
+        );
+    }
+
+    let data_point = ReceiptDecoder.get_field(receipt, datalake.sampled_property);
+    let (data_point_reverse_endian) = uint256_reverse_endian(data_point);
+
+    assert [data_points + result_counter * 2 * Uint256.SIZE + 0 * Uint256.SIZE] = Uint256(
+        low=current_receipt_index, high=0
+    );
+    assert [
+        data_points + result_counter * 2 * Uint256.SIZE + 1 * Uint256.SIZE
+    ] = data_point_reverse_endian;
+
+    return fetch_receipt_data_points(
         datalake=datalake,
         index=index + 1,
         result_counter=result_counter + 1,
