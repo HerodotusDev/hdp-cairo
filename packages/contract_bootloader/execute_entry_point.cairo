@@ -131,8 +131,12 @@ func execute_entry_point{
     %{
         from contract_bootloader.syscall_handler import SyscallHandler
 
-        syscall_handler = SyscallHandler(segments=segments)
         ids.syscall_ptr = segments.add()
+
+        if '__dict_manager' not in globals():
+            raise RuntimeError('Dictionary manager is not initialized')
+        syscall_handler = SyscallHandler(segments=segments, dict_manager=__dict_manager)
+
         syscall_handler.set_syscall_ptr(syscall_ptr=ids.syscall_ptr)
     %}
 
@@ -205,11 +209,6 @@ func execute_entry_point{
             syscall_ptr_end=entry_point_return_values.syscall_ptr,
         );
     }
-
-    %{
-        for i in range(0, 5):
-            print(memory[ids.retdata_start + i])
-    %}
 
     return (retdata_size=0, retdata=cast(0, felt*));
 }
