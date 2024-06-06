@@ -81,10 +81,7 @@ func verify_n_transaction_proofs{
 // Outputs:
 // - Transaction struct.
 func init_tx_stuct{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    poseidon_ptr: PoseidonBuiltin*,
-    pow2_array: felt*,
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, poseidon_ptr: PoseidonBuiltin*, pow2_array: felt*
 }(tx_item: felt*, tx_item_bytes_len: felt) -> Transaction {
     alloc_locals;
 

@@ -151,9 +151,9 @@ namespace ReceiptMemorizer {
         return ();
     }
 
-    func get{
-        receipt_dict: DictAccess*, receipts: Receipt*, poseidon_ptr: PoseidonBuiltin*
-    }(block_number: felt, key_low: felt) -> (receipt: Receipt) {
+    func get{receipt_dict: DictAccess*, receipts: Receipt*, poseidon_ptr: PoseidonBuiltin*}(
+        block_number: felt, key_low: felt
+    ) -> (receipt: Receipt) {
         alloc_locals;
         let key = gen_receipt_key(block_number, key_low);
         let (index) = dict_read{dict_ptr=receipt_dict}(key);
@@ -197,9 +197,7 @@ func gen_transaction_key{poseidon_ptr: PoseidonBuiltin*}(
     return res;
 }
 
-func gen_receipt_key{poseidon_ptr: PoseidonBuiltin*}(
-    block_number: felt, key_low: felt
-) -> felt {
+func gen_receipt_key{poseidon_ptr: PoseidonBuiltin*}(block_number: felt, key_low: felt) -> felt {
     let (res) = poseidon_hash(block_number, key_low);
 
     return res;

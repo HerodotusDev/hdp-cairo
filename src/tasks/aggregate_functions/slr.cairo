@@ -20,7 +20,13 @@ from src.decoders.account_decoder import AccountDecoder
 from src.decoders.header_decoder import HeaderDecoder
 from src.decoders.transaction_decoder import TransactionDecoder, TransactionType
 from src.decoders.receipt_decoder import ReceiptDecoder
-from src.memorizer import AccountMemorizer, StorageMemorizer, HeaderMemorizer, TransactionMemorizer, ReceiptMemorizer
+from src.memorizer import (
+    AccountMemorizer,
+    StorageMemorizer,
+    HeaderMemorizer,
+    TransactionMemorizer,
+    ReceiptMemorizer,
+)
 from src.types import (
     BlockSampledDataLake,
     AccountValues,
@@ -29,7 +35,7 @@ from src.types import (
     TransactionsInBlockDatalake,
     Transaction,
     TransactionProof,
-    Receipt
+    Receipt,
 )
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.registers import get_fp_and_pc

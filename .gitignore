@@ -51,5 +51,4 @@ hdp/
 
 # Whitelist - these files should not be ignored
 !tests/cairo_programs/fixtures/*.json
-!src/hdp_input.json
 !tools/js/package.json

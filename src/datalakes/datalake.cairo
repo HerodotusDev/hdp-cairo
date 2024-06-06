@@ -18,7 +18,7 @@ from src.types import (
     BlockSampledDataLake,
     TransactionsInBlockDatalake,
     Transaction,
-    Receipt
+    Receipt,
 )
 from src.datalakes.block_sampled_datalake import (
     fetch_header_data_points,

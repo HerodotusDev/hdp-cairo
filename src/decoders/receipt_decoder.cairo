@@ -11,14 +11,13 @@ namespace ReceiptField {
 }
 
 namespace ReceiptDecoder {
-
     func get_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
         receipt: Receipt, field: felt
     ) -> Uint256 {
         if (field == ReceiptField.LOGS) {
             assert 1 = 0;  // returns as felt
         }
-        
+
         if (field == ReceiptField.BLOOM) {
             assert 1 = 0;  // returns as felt
         }
@@ -27,12 +26,10 @@ namespace ReceiptDecoder {
         return le_chunks_to_uint256(res, res_len, bytes_len);
     }
 
-     func get_felt_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    func get_felt_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
         receipt: Receipt, field
     ) -> (value: felt*, value_len: felt, bytes_len: felt) {
-
         let (res, res_len, bytes_len) = rlp_list_retrieve(receipt.rlp, field, 0, 0);
         return (res, res_len, bytes_len);
     }
-
 }

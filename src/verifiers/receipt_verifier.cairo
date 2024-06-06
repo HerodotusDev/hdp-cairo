@@ -79,10 +79,7 @@ func verify_n_receipt_proofs{
 // Outputs:
 // - Receipt struct.
 func init_receipt_stuct{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    poseidon_ptr: PoseidonBuiltin*,
-    pow2_array: felt*,
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, poseidon_ptr: PoseidonBuiltin*, pow2_array: felt*
 }(receipt_item: felt*, receipt_item_bytes_len: felt) -> Receipt {
     alloc_locals;
 
@@ -132,7 +129,9 @@ func init_receipt_stuct{
         pow2_array=pow2_array,
     );
 
-    let receipt = Receipt(rlp=receipt_rlp, rlp_len=receipt_rlp_len, bytes_len=receipt_bytes_len, type=receipt_type);
+    let receipt = Receipt(
+        rlp=receipt_rlp, rlp_len=receipt_rlp_len, bytes_len=receipt_bytes_len, type=receipt_type
+    );
 
     return (receipt);
 }
