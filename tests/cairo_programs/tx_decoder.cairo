@@ -7,7 +7,6 @@ from src.decoders.header_decoder import HeaderDecoder
 from packages.eth_essentials.lib.utils import pow2alloc128
 from src.types import Transaction, ChainInfo
 from src.decoders.transaction_decoder import TransactionDecoder, TransactionSender, TransactionField
-from src.verifiers.transaction_verifier import init_tx_stuct
 from src.chain_info import fetch_chain_info
 from tests.utils.tx import test_tx_decoding_inner
 func main{
