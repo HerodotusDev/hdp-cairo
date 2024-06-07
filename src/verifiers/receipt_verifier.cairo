@@ -13,6 +13,7 @@ from src.rlp import chunk_to_felt_be
 from src.types import ReceiptProof, Receipt, Header
 from src.memorizer import HeaderMemorizer, ReceiptMemorizer
 from src.decoders.header_decoder import HeaderDecoder, HeaderField
+from src.verifiers.transaction_verifier import derive_tx_or_receipt_payload
 
 // Verfies an array of receipt proofs with the headers stored in the memorizer.
 // The verified receipts are then added to the memorizer.
@@ -45,7 +46,7 @@ func verify_n_receipt_proofs{
     let header = HeaderMemorizer.get(receipt_proof.block_number);
     let receipt_root = HeaderDecoder.get_field(header.rlp, HeaderField.RECEIPT_ROOT);
 
-    let (receipt_rlp, receipt_rlp_bytes_len) = verify_mpt_proof{
+    let (rlp, rlp_bytes_len) = verify_mpt_proof{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
     }(
         mpt_proof=receipt_proof.proof,
@@ -57,7 +58,16 @@ func verify_n_receipt_proofs{
         pow2_array=pow2_array,
     );
 
-    let receipt = init_receipt_stuct(receipt_rlp, receipt_rlp_bytes_len);
+    let (rlp, rlp_len, bytes_len, tx_type) = derive_tx_or_receipt_payload(
+        item=rlp, item_bytes_len=rlp_bytes_len
+    );
+    let receipt = Receipt(
+        rlp=rlp,
+        rlp_len=rlp_len,
+        bytes_len=bytes_len,
+        type=tx_type,
+        block_number=receipt_proof.block_number,
+    );
 
     // decode receipt-index from rlp-encoded key
     assert receipt_proof.key.high = 0;  // sanity check
@@ -70,68 +80,4 @@ func verify_n_receipt_proofs{
     return verify_n_receipt_proofs(
         receipt_proofs=receipt_proofs, receipt_proofs_len=receipt_proofs_len, index=index + 1
     );
-}
-
-// Derives a Receipt type and initializes a Receipt struct.
-// Inputs:
-// - receipt_item: The RLP-encoded transaction.
-// - receipt_item_bytes_len: The length of the RLP-encoded receipt.
-// Outputs:
-// - Receipt struct.
-func init_receipt_stuct{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, poseidon_ptr: PoseidonBuiltin*, pow2_array: felt*
-}(receipt_item: felt*, receipt_item_bytes_len: felt) -> Receipt {
-    alloc_locals;
-
-    let first_byte = extract_byte_at_pos(receipt_item[0], 0, pow2_array);
-    let second_byte = extract_byte_at_pos(receipt_item[0], 1, pow2_array);
-
-    local has_type_prefix: felt;
-    %{
-        # typed transactions have a type prefix in this range [1, 3]
-        if 0x0 < ids.first_byte < 0x04:
-            ids.has_type_prefix = 1
-        else:
-            ids.has_type_prefix = 0
-    %}
-
-    local receipt_type: felt;
-    local receipt_start_offset: felt;
-    if (has_type_prefix == 1) {
-        assert [range_check_ptr] = 0x3 - first_byte;
-        assert [range_check_ptr + 1] = 0xff - second_byte;
-        assert [range_check_ptr + 2] = second_byte - 0xf7;
-
-        assert receipt_type = first_byte;
-        let len_len = second_byte - 0xf7;
-        assert receipt_start_offset = 2 + len_len;  // type + prefix + len_len
-        assert [range_check_ptr + 3] = 7 - receipt_start_offset;
-        tempvar range_check_ptr = range_check_ptr + 4;
-    } else {
-        assert receipt_type = 0;
-
-        let len_len = first_byte - 0xf7;
-        assert receipt_start_offset = 1 + len_len;
-        // Legacy transactions must start with long list prefix
-        assert [range_check_ptr] = 0xff - first_byte;
-        assert [range_check_ptr + 1] = first_byte - 0xf7;
-        assert [range_check_ptr + 2] = 7 - receipt_start_offset;
-        tempvar range_check_ptr = range_check_ptr + 3;
-    }
-
-    let receipt_bytes_len = receipt_item_bytes_len - receipt_start_offset;
-    // retrieve the encoded receipt rlp fields
-    let (receipt_rlp, receipt_rlp_len) = extract_n_bytes_from_le_64_chunks_array(
-        array=receipt_item,
-        start_word=0,
-        start_offset=receipt_start_offset,
-        n_bytes=receipt_bytes_len,
-        pow2_array=pow2_array,
-    );
-
-    let receipt = Receipt(
-        rlp=receipt_rlp, rlp_len=receipt_rlp_len, bytes_len=receipt_bytes_len, type=receipt_type
-    );
-
-    return (receipt);
 }
