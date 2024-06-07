@@ -338,6 +338,7 @@ func run{
         receipt_dict=receipt_dict,
         pow2_array=pow2_array,
         tasks=tasks,
+        chain_info=chain_info,
     }(results=results, tasks_len=tasks_len, index=0);
 
     let tasks_root = compute_tasks_root{

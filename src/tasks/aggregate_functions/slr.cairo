@@ -36,6 +36,7 @@ from src.types import (
     Transaction,
     TransactionProof,
     Receipt,
+    ChainInfo,
 )
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.registers import get_fp_and_pc
@@ -304,6 +305,7 @@ func fetch_receipt_data_points{
     receipts: Receipt*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
+    chain_info: ChainInfo,
 }(
     datalake: TransactionsInBlockDatalake, index: felt, result_counter: felt, data_points: Uint256*
 ) -> felt {

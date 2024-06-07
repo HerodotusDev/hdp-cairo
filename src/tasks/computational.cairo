@@ -17,6 +17,7 @@ from src.types import (
     Header,
     Transaction,
     Receipt,
+    ChainInfo,
 )
 from src.tasks.aggregate_functions.sum import compute_sum
 from src.tasks.aggregate_functions.avg import compute_avg
@@ -104,6 +105,7 @@ namespace Task {
         receipt_dict: DictAccess*,
         pow2_array: felt*,
         tasks: ComputationalTask*,
+        chain_info: ChainInfo,
     }(results: Uint256*, tasks_len: felt, index: felt) {
         alloc_locals;
 

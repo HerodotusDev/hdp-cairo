@@ -6,7 +6,14 @@ from src.memorizer import HeaderMemorizer, TransactionMemorizer, ReceiptMemorize
 from starkware.cairo.common.dict_access import DictAccess
 from packages.eth_essentials.lib.utils import word_reverse_endian_64
 from packages.eth_essentials.lib.mpt import verify_mpt_proof
-from src.types import TransactionsInBlockDatalake, Transaction, TransactionProof, Header, Receipt
+from src.types import (
+    TransactionsInBlockDatalake,
+    Transaction,
+    TransactionProof,
+    Header,
+    Receipt,
+    ChainInfo,
+)
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
 from src.decoders.transaction_decoder import TransactionDecoder, TransactionType
 from src.decoders.receipt_decoder import ReceiptDecoder
@@ -86,6 +93,7 @@ func fetch_data_points{
     receipt_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
+    chain_info: ChainInfo,
 }(datalake: TransactionsInBlockDatalake) -> (Uint256*, felt) {
     alloc_locals;
     let (data_points: Uint256*) = alloc();
@@ -131,6 +139,7 @@ func abstract_fetch_receipt_data_points{
     receipts: Receipt*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
+    chain_info: ChainInfo,
 }(
     datalake: TransactionsInBlockDatalake, index: felt, result_counter: felt, data_points: Uint256*
 ) -> felt {
@@ -191,6 +200,7 @@ func fetch_receipt_data_points{
     receipts: Receipt*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
+    chain_info: ChainInfo,
 }(
     datalake: TransactionsInBlockDatalake, index: felt, result_counter: felt, data_points: Uint256*
 ) -> felt {

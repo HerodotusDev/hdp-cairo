@@ -11,6 +11,7 @@ from src.datalakes.txs_in_block_datalake import (
     init_txs_in_block,
     fetch_data_points as fetch_txs_in_block_data_points,
 )
+
 from src.types import (
     ComputationalTask,
     AccountValues,
@@ -19,6 +20,7 @@ from src.types import (
     TransactionsInBlockDatalake,
     Transaction,
     Receipt,
+    ChainInfo,
 )
 from src.datalakes.block_sampled_datalake import (
     fetch_header_data_points,
@@ -79,6 +81,7 @@ namespace Datalake {
         receipts: Receipt*,
         pow2_array: felt*,
         fetch_trait: FetchTrait,
+        chain_info: ChainInfo,
     }(task: ComputationalTask) -> (res: Uint256*, res_len: felt) {
         if (task.datalake_type == DatalakeType.BLOCK_SAMPLED) {
             let block_sampled_datalake: BlockSampledDataLake = [
