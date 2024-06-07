@@ -110,7 +110,7 @@ func compute_slr{
     return output.value;
 }
 
-// Collects the account data points defined in the datalake from the memorizer recursivly
+// Collects the account data points defined in the datalake from the memorizer recursively
 // Inputs:
 // datalake: the datalake to sample
 // index: the current index of the data_points array
@@ -154,7 +154,7 @@ func fetch_account_data_points{
     return fetch_account_data_points(datalake=datalake, index=index + 1, data_points=data_points);
 }
 
-// Collects the storage data points defined in the datalake from the memorizer recursivly
+// Collects the storage data points defined in the datalake from the memorizer recursively
 // Inputs:
 // datalake: the datalake to sample
 // index: the current index of the data_points array
@@ -196,7 +196,7 @@ func fetch_storage_data_points{
     return fetch_storage_data_points(datalake=datalake, index=index + 1, data_points=data_points);
 }
 
-// Collects the header data points defined in the datalake from the memorizer recursivly.
+// Collects the header data points defined in the datalake from the memorizer recursively.
 // Fills the data_points array with the values of the sampled property in LE
 func fetch_header_data_points{
     range_check_ptr,
