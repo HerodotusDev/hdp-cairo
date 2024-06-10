@@ -41,7 +41,6 @@ cairo-compile --cairo_path="packages/eth_essentials" "src/hdp.cairo" --output "b
 if [ ! -d "hdp-test" ]; then
     git clone https://github.com/HerodotusDev/hdp-test
     cd hdp-test
-    git checkout slr
     cd ..
 fi
 
