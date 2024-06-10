@@ -1,16 +1,26 @@
 from hexbytes.main import HexBytes
 from rlp import Serializable, encode
-from rlp.sedes import BigEndianInt, big_endian_int, Binary, binary, CountableList, boolean
+from rlp.sedes import (
+    BigEndianInt,
+    big_endian_int,
+    Binary,
+    binary,
+    CountableList,
+    boolean,
+)
 from web3 import Web3
 
-int256 =  Binary.fixed_length(256, allow_empty=True)
+int256 = Binary.fixed_length(256, allow_empty=True)
 address = Binary.fixed_length(20, allow_empty=True)
 hash32 = Binary.fixed_length(32)
+
 
 class LogEntry(Serializable):
     fields = [("address", address), ("topics", CountableList(hash32)), ("data", binary)]
 
+
 logs_type = CountableList(LogEntry)
+
 
 class Receipt(Serializable):
     fields = (
@@ -20,8 +30,6 @@ class Receipt(Serializable):
         ("logs", logs_type),
         ("type", big_endian_int),
         ("block_number", big_endian_int),
-
-
     )
 
     def hash(self) -> HexBytes:
@@ -29,7 +37,7 @@ class Receipt(Serializable):
 
     def raw_rlp(self) -> bytes:
         if self.bloom > 0:
-            bloom = self.bloom.to_bytes(256, 'big')
+            bloom = self.bloom.to_bytes(256, "big")
         else:
             bloom = self.bloom
         if self.type == 0:
@@ -42,7 +50,7 @@ class Receipt(Serializable):
                 ]
             )
         else:
-            return self.type.to_bytes(1, 'big') + encode(
+            return self.type.to_bytes(1, "big") + encode(
                 [
                     self.success,
                     self.cumulative_gas_used,
@@ -50,7 +58,8 @@ class Receipt(Serializable):
                     self.logs,
                 ]
             )
-    
+
+
 def build_receipt(receipt):
     logs_list = [
         LogEntry(
@@ -60,13 +69,9 @@ def build_receipt(receipt):
         )
         for entry in receipt["logs"]
     ]
-    tx_type = (
-        "0x0" if "type" not in receipt else receipt["type"]
-    )
+    tx_type = "0x0" if "type" not in receipt else receipt["type"]
 
-    status = (
-        "0x0" if "status" not in receipt else receipt["status"]
-    )
+    status = "0x0" if "status" not in receipt else receipt["status"]
 
     return Receipt(
         int(status, 16),
@@ -76,4 +81,3 @@ def build_receipt(receipt):
         int(tx_type, 16),
         int(receipt["blockNumber"], 16),
     )
-

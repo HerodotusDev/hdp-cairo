@@ -36,7 +36,7 @@ func test_receipt_decoding_inner{
     let (expected_logs) = alloc();
     local expected_logs_len: felt;
     local expected_logs_bytes_len: felt;
-    
+
     local block_number: felt;
     %{
         from tools.py.utils import (
@@ -66,7 +66,6 @@ func test_receipt_decoding_inner{
 
         ids.block_number = receipt_dict["block_number"]
         ids.expected_type = receipt_dict["type"]
-
     %}
 
     let (rlp, rlp_len, bytes_len, receipt_type) = derive_receipt_payload(
@@ -75,8 +74,10 @@ func test_receipt_decoding_inner{
 
     assert receipt_type = expected_type;
 
-    let receipt = Receipt(rlp=rlp, rlp_len=rlp_len, bytes_len=bytes_len, type=receipt_type, block_number=block_number);
-    
+    let receipt = Receipt(
+        rlp=rlp, rlp_len=rlp_len, bytes_len=bytes_len, type=receipt_type, block_number=block_number
+    );
+
     let success = ReceiptDecoder.get_field(receipt, ReceiptField.SUCCESS);
     assert success.low = expected_success.low;
     assert success.high = expected_success.high;
@@ -87,31 +88,18 @@ func test_receipt_decoding_inner{
 
     eval_felt_field{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-    }(
-        expected_bloom,
-        expected_bloom_len,
-        expected_bloom_bytes_len,
-        receipt,
-        ReceiptField.BLOOM,
-    );
+    }(expected_bloom, expected_bloom_len, expected_bloom_bytes_len, receipt, ReceiptField.BLOOM);
 
     eval_felt_field{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-    }(
-        expected_logs,
-        expected_logs_len,
-        expected_logs_bytes_len,
-        receipt,
-        ReceiptField.LOGS,
-    );
-    
-    return test_receipt_decoding_inner(receipts, index + 1); 
+    }(expected_logs, expected_logs_len, expected_logs_bytes_len, receipt, ReceiptField.LOGS);
 
+    return test_receipt_decoding_inner(receipts, index + 1);
 }
 
-func eval_felt_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, chain_info: ChainInfo}(
-    expected: felt*, expected_len: felt, expected_bytes_len: felt, receipt: Receipt, field: felt
-) {
+func eval_felt_field{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, chain_info: ChainInfo
+}(expected: felt*, expected_len: felt, expected_bytes_len: felt, receipt: Receipt, field: felt) {
     alloc_locals;
 
     let (res, res_len, res_bytes_len) = ReceiptDecoder.get_felt_field(receipt, field);

@@ -10,7 +10,6 @@ from src.decoders.transaction_decoder import TransactionDecoder, TransactionSend
 from src.chain_info import fetch_chain_info
 from tests.utils.receipt import test_receipt_decoding_inner
 
-
 func main{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -50,5 +49,3 @@ func main{
 
     return ();
 }
-
-

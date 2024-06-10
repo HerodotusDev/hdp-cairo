@@ -144,7 +144,7 @@ func derive_receipt_payload{
         tempvar range_check_ptr = range_check_ptr + 4;
     } else {
         assert tx_type = 0;
-        
+
         if (is_long_list == 1) {
             assert [range_check_ptr] = 0xff - first_byte;
             assert [range_check_ptr + 1] = first_byte - 0xf7;
@@ -161,7 +161,6 @@ func derive_receipt_payload{
     }
 
     tempvar range_check_ptr = range_check_ptr;
-
 
     let bytes_len = item_bytes_len - start_offset;
     let (rlp, rlp_len) = extract_n_bytes_from_le_64_chunks_array(

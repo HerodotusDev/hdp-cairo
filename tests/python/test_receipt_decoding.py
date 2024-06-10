@@ -49,7 +49,9 @@ def fetch_receipt_dict(receipt_hash):
     (low, high) = reverse_and_split_256_bytes(receipt.success.to_bytes(32, "big"))
     receipt_dict["success"] = {"low": low, "high": high}
 
-    (low, high) = reverse_and_split_256_bytes(receipt.cumulative_gas_used.to_bytes(32, "big"))
+    (low, high) = reverse_and_split_256_bytes(
+        receipt.cumulative_gas_used.to_bytes(32, "big")
+    )
     receipt_dict["cumulative_gas_used"] = {"low": low, "high": high}
     if receipt.bloom == 0:
         receipt_dict["bloom"] = {

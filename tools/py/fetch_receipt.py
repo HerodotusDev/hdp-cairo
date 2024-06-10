@@ -36,9 +36,7 @@ def fetch_latest_block_height_from_rpc(rpc_url: str) -> int:
     return int(result["result"], 16)
 
 
-def fetch_receipt_from_rpc(
-    receipt_hash: str, rpc_url: str
-) -> Receipt:
+def fetch_receipt_from_rpc(receipt_hash: str, rpc_url: str) -> Receipt:
     time.sleep(0.4)
     result = rpc_request(
         rpc_url,
