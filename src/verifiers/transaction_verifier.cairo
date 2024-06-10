@@ -58,7 +58,7 @@ func verify_n_transaction_proofs{
         pow2_array=pow2_array,
     );
 
-    let (rlp, rlp_len, bytes_len, tx_type) = derive_tx_or_receipt_payload(
+    let (rlp, rlp_len, bytes_len, tx_type) = derive_tx_payload(
         item=tx_item, item_bytes_len=tx_item_bytes_len
     );
     let tx = Transaction(rlp=rlp, rlp_len=rlp_len, bytes_len=bytes_len, type=tx_type);
@@ -84,7 +84,7 @@ func verify_n_transaction_proofs{
 // - rlp_len: length of the encoded payload
 // - bytes_len: length of the payload
 // - tx_type: type of the transaction
-func derive_tx_or_receipt_payload{
+func derive_tx_payload{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, poseidon_ptr: PoseidonBuiltin*, pow2_array: felt*
 }(item: felt*, item_bytes_len: felt) -> (
     rlp: felt*, rlp_len: felt, bytes_len: felt, tx_type: felt

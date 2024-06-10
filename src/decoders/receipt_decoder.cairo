@@ -7,8 +7,8 @@ from starkware.cairo.common.uint256 import Uint256
 namespace ReceiptField {
     const SUCCESS = 0;
     const CUMULATIVE_GAS_USED = 1;
-    const LOGS = 2;
-    const BLOOM = 3;
+    const BLOOM = 2;
+    const LOGS = 3;
 }
 
 namespace ReceiptDecoder {
@@ -50,6 +50,7 @@ namespace ReceiptDecoder {
     func get_felt_field{
         range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, chain_info: ChainInfo
     }(receipt: Receipt, field) -> (value: felt*, value_len: felt, bytes_len: felt) {
+        alloc_locals;
         if (field == ReceiptField.SUCCESS) {
             local is_byzantium: felt;
             %{
