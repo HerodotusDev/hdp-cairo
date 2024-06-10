@@ -210,7 +210,7 @@ func execute_entry_point{
         );
     }
 
-    return (retdata_size=0, retdata=cast(0, felt*));
+    return (retdata_size=retdata_end - retdata_start, retdata=retdata_start);
 }
 
 // Prepares the builtin pointer for the execution of an entry point.

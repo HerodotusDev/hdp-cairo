@@ -1,5 +1,3 @@
-%builtins output pedersen range_check ecdsa bitwise ec_op keccak poseidon
-
 from starkware.cairo.common.cairo_builtins import (
     HashBuiltin,
     PoseidonBuiltin,
@@ -23,56 +21,6 @@ from contract_bootloader.execute_entry_point import execute_entry_point
 from starkware.starknet.core.os.constants import ENTRY_POINT_TYPE_EXTERNAL
 from contract_bootloader.execute_syscalls import ExecutionContext, ExecutionInfo
 
-func main{
-    output_ptr: felt*,
-    pedersen_ptr: HashBuiltin*,
-    range_check_ptr,
-    ecdsa_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    ec_op_ptr,
-    keccak_ptr: KeccakBuiltin*,
-    poseidon_ptr: PoseidonBuiltin*,
-}() {
-    alloc_locals;
-    local compiled_class: CompiledClass*;
-
-    %{
-        from contract_bootloader.objects import ContractBootloaderInput
-        contract_bootloader_input = ContractBootloaderInput.Schema().load(program_input)
-    %}
-
-    // Fetch contract data form hints.
-    %{
-        from starkware.starknet.core.os.contract_class.compiled_class_hash import create_bytecode_segment_structure
-        from contract_bootloader.contract_class.compiled_class_hash_utils import get_compiled_class_struct
-
-        bytecode_segment_structure = create_bytecode_segment_structure(
-            bytecode=contract_bootloader_input.compiled_class.bytecode,
-            bytecode_segment_lengths=contract_bootloader_input.compiled_class.bytecode_segment_lengths,
-            visited_pcs=None,
-        )
-
-        cairo_contract = get_compiled_class_struct(
-            compiled_class=contract_bootloader_input.compiled_class,
-            bytecode=bytecode_segment_structure.bytecode_with_skipped_segments()
-        )
-        ids.compiled_class = segments.gen_arg(cairo_contract)
-    %}
-
-    assert compiled_class.bytecode_ptr[compiled_class.bytecode_length] = 0x208b7fff7fff7ffe;
-
-    %{
-        vm_load_program(
-            contract_bootloader_input.compiled_class.get_runnable_program(entrypoint_builtins=[]),
-            ids.compiled_class.bytecode_ptr
-        )
-    %}
-
-    run_contract_bootloader(compiled_class);
-
-    return ();
-}
-
 // Loads the programs and executes them.
 //
 // Hint Arguments:
@@ -82,7 +30,6 @@ func main{
 // Updated builtin pointers after executing all programs.
 // fact_topologies - that corresponds to the tasks (hint variable).
 func run_contract_bootloader{
-    output_ptr: felt*,
     pedersen_ptr: HashBuiltin*,
     range_check_ptr,
     ecdsa_ptr,
@@ -90,7 +37,7 @@ func run_contract_bootloader{
     ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-}(compiled_class: CompiledClass*) {
+}(compiled_class: CompiledClass*) -> (retdata_size: felt, retdata: felt*) {
     alloc_locals;
 
     // Prepare builtin pointers.
@@ -156,5 +103,5 @@ func run_contract_bootloader{
         let (retdata_size, retdata) = execute_entry_point(compiled_class, &execution_context);
     }
 
-    return ();
+    return (retdata_size, retdata);
 }

@@ -23,6 +23,7 @@ from src.tasks.aggregate_functions.count_if import (
     get_fetch_trait as get_count_fetch_trait,
 )
 from src.tasks.aggregate_functions.slr import compute_slr, get_fetch_trait as get_slr_fetch_trait
+from src.tasks.aggregate_functions.contract import compute_contract
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
 
 namespace AGGREGATE_FN {
@@ -33,6 +34,7 @@ namespace AGGREGATE_FN {
     const COUNT = 4;
     const MERKLE = 5;
     const SLR = 6;
+    const CONTRACT = 7;
 }
 
 namespace Task {
@@ -88,9 +90,12 @@ namespace Task {
 
     // Executes the aggregate_fn of the passed tasks
     func execute{
-        range_check_ptr,
         pedersen_ptr: HashBuiltin*,
+        range_check_ptr,
+        ecdsa_ptr,
         bitwise_ptr: BitwiseBuiltin*,
+        ec_op_ptr,
+        keccak_ptr: KeccakBuiltin*,
         poseidon_ptr: PoseidonBuiltin*,
         account_dict: DictAccess*,
         account_values: AccountValues*,
@@ -200,6 +205,18 @@ namespace Task {
             let result = compute_slr(
                 values=data_points, values_len=data_points_len, predict=tasks[index].ctx_value
             );
+            assert [results] = result;
+
+            %{
+                target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
+                print(f"Task Result({ids.index}): 0x{target_result}")
+            %}
+
+            return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
+        }
+
+        if (tasks[index].aggregate_fn_id == AGGREGATE_FN.CONTRACT) {
+            let result = compute_contract(contract_identifier=tasks[index].ctx_value);
             assert [results] = result;
 
             %{

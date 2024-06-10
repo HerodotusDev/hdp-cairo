@@ -1,10 +1,12 @@
-%builtins output pedersen range_check bitwise keccak poseidon
+%builtins output pedersen range_check ecdsa bitwise ec_op keccak poseidon
 
 from starkware.cairo.common.cairo_builtins import (
+    HashBuiltin,
     PoseidonBuiltin,
     BitwiseBuiltin,
     KeccakBuiltin,
-    HashBuiltin,
+    SignatureBuiltin,
+    EcOpBuiltin,
 )
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256
@@ -50,7 +52,9 @@ func main{
     output_ptr: felt*,
     pedersen_ptr: HashBuiltin*,
     range_check_ptr,
+    ecdsa_ptr,
     bitwise_ptr: BitwiseBuiltin*,
+    ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
 }() {
@@ -58,7 +62,9 @@ func main{
         output_ptr=output_ptr,
         pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
+        ecdsa_ptr=ecdsa_ptr,
         bitwise_ptr=bitwise_ptr,
+        ec_op_ptr=ec_op_ptr,
         keccak_ptr=keccak_ptr,
         poseidon_ptr=poseidon_ptr,
     }();
@@ -70,7 +76,9 @@ func run{
     output_ptr: felt*,
     pedersen_ptr: HashBuiltin*,
     range_check_ptr,
+    ecdsa_ptr,
     bitwise_ptr: BitwiseBuiltin*,
+    ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
 }() {
@@ -276,9 +284,12 @@ func run{
     }(tasks_len, 0);
 
     Task.execute{
-        range_check_ptr=range_check_ptr,
         pedersen_ptr=pedersen_ptr,
+        range_check_ptr=range_check_ptr,
+        ecdsa_ptr=ecdsa_ptr,
         bitwise_ptr=bitwise_ptr,
+        ec_op_ptr=ec_op_ptr,
+        keccak_ptr=keccak_ptr,
         poseidon_ptr=poseidon_ptr,
         account_dict=account_dict,
         account_values=account_values,
