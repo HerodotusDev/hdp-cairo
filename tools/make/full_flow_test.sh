@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# Get the Cairo file from the command line argument
-cairo_file="$1"
-filename=$(basename "$cairo_file" .cairo)
-
 # Define the log file path
 LOG_FILE="full_flow.log"
 
