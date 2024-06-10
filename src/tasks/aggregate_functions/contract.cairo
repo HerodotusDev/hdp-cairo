@@ -23,8 +23,11 @@ func compute_contract{
     local compiled_class: CompiledClass*;
 
     %{
-        from contract_bootloader.objects import ContractBootloaderInput
-        compiled_class = ContractBootloaderInput.Schema().load(program_input).compiled_class
+        # from src.objects import Module
+        from contract_bootloader.contract_class.contract_class import CompiledClass
+
+        # module = Module.Schema().load(program_input["module"])
+        compiled_class = CompiledClass.Schema().load(program_input["module_class"])
     %}
 
     // Fetch contract data form hints.

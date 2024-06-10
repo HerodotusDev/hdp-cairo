@@ -86,7 +86,7 @@ func run_contract_bootloader{
 
     local calldata: felt*;
     %{ ids.calldata = segments.add() %}
-    assert calldata[0] = 0x0;
+    assert calldata[0] = 0x2;
 
     local execution_info: ExecutionInfo = ExecutionInfo(
         selector=0x00e2054f8a912367e38a22ce773328ff8aabf8082c4120bad9ef085e1dbf29a7
