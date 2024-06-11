@@ -89,3 +89,8 @@ fuzz-header:
 	@echo "Fuzz testing header_decode.cairo..."
 	./tools/make/fuzzer.sh tests/fuzzing/header_decode.cairo
 	@echo "Fuzz testing header_decode.cairo complete."
+
+fuzz-receipt:
+	@echo "Fuzz testing receipt_decode.cairo..."
+	./tools/make/fuzzer.sh tests/fuzzing/receipt_decode.cairo
+	@echo "Fuzz testing receipt_decode.cairo complete."

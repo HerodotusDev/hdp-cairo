@@ -9,6 +9,7 @@ from src.types import Transaction, ChainInfo
 from src.decoders.transaction_decoder import TransactionDecoder, TransactionSender, TransactionField
 from src.chain_info import fetch_chain_info
 from tests.utils.tx import test_tx_decoding_inner
+from tests.utils.receipt import test_receipt_decoding_inner
 func main{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -19,11 +20,10 @@ func main{
     let pow2_array: felt* = pow2alloc128();
     let (local chain_info) = fetch_chain_info(1);
 
-    local n_test_txs: felt;
+    local n_test_receipts: felt;
 
     %{
-        tx_array = [
-            "0x2e923a6f09ba38f63ff9b722afd14b9e850432860b77df9011e92c1bf0eecf6b", # Type 0
+        receipt_array = [
             "0x237f99e622d67413956b8674cf16ea56b0ba0a18a9f68a5e254f4ac8d2050b51", # Type 0 (eip155)
             "0x423d6dfdeae9967847fb226e138ea5fad6279c12bf3343eae4d32c2477be3021", # Type 1
             "0x0d19225fe9ec3044d16008c3aceb0b9059cc22d66cd3ab847f6bd1e454342b4b", # Type 2
@@ -37,17 +37,18 @@ func main{
             "0xf7635229a06e479acce3f9e9a4bdf7b34ecbfac735c21bf7f0300c292c6ff188"
         ]
 
-        ids.n_test_txs = len(tx_array)
+        ids.n_test_receipts = len(receipt_array)
     %}
 
-    test_tx_decoding_inner{
+    // run default tests first
+    test_receipt_decoding_inner{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array,
         keccak_ptr=keccak_ptr,
         poseidon_ptr=poseidon_ptr,
         chain_info=chain_info,
-    }(n_test_txs, 0);
+    }(n_test_receipts, 0);
 
     return ();
 }

@@ -13,6 +13,9 @@ LOG_FILE="test_results_${filename}.log"
 # Ensure the log file exists, otherwise create it
 touch "$LOG_FILE"
 
+# Export the log file path so it is available in subshells
+export LOG_FILE
+
 # Function to run tests on a given Cairo file
 run_tests() {
     local cairo_file="$1"
