@@ -30,11 +30,11 @@ export -f format_scarb_project
 
 # Find all .cairo files and format them in parallel
 echo "Finding and formatting .cairo files..."
-find ./src ./tests ./packages/contract_bootloader/ ./packages/hdp_bootloader/ -name '*.cairo' ! -path "./src/cairo1/*" | parallel --halt soon,fail=1 format_file
+find ./src ./tests ./packages/contract_bootloader/ ./packages/hdp_bootloader/ -name '*.cairo' ! -path "./src/cairo1/*" ! -path "./src/contracts/*" | parallel --halt soon,fail=1 format_file
 
 # Find Scarb projects and format them in parallel
 echo "Finding and formatting Scarb projects..."
-find ./src/cairo1 -mindepth 1 -maxdepth 1 -type d | parallel --halt now,fail=1 format_scarb_project
+find ./src/cairo1 ./src/contracts -mindepth 1 -maxdepth 1 -type d | parallel --halt now,fail=1 format_scarb_project
 
 # Capture the exit status of parallel
 exit_status=$?

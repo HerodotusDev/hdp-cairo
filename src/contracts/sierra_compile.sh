@@ -1,0 +1,1 @@
+starknet-sierra-compile example/target/dev/example_HelloStarknet.contract_class.json contract_sierra.json --add-pythonic-hints

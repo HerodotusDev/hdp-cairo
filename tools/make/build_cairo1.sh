@@ -29,7 +29,7 @@ export -f process_scarb_project
 mkdir -p build/compiled_cairo_files
 
 # Find Scarb projects and execute process_scarb_project in each
-find ./src/cairo1 -mindepth 1 -maxdepth 1 -type d | parallel --halt now,fail=1 process_scarb_project
+find ./src/cairo1 ./src/contracts -mindepth 1 -maxdepth 1 -type d | parallel --halt now,fail=1 process_scarb_project
 
 # Capture the exit status of parallel
 exit_status=$?

@@ -206,30 +206,31 @@ namespace Task {
         //     );
         //     assert [results] = result;
 
-        //     %{
+        // %{
         //         target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
         //         print(f"Task Result({ids.index}): 0x{target_result}")
         //     %}
 
-        //     return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
+        // return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
         // }
 
-        if (tasks[index].aggregate_fn_id == AGGREGATE_FN.SLR) {
-            let result = compute_contract(contract_identifier=tasks[index].ctx_value);
-            assert [results] = result;
+        %{
+            # from src.objects import Module
+            from contract_bootloader.contract_class.contract_class import CompiledClass
 
-            %{
-                target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
-                print(f"Task Result({ids.index}): 0x{target_result}")
-            %}
+            # module = Module.Schema().load(program_input["module"])
+            compiled_class = CompiledClass.Schema().load(program_input["module_class"])
+        %}
 
-            return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
-        }
+        let result = compute_contract();
+        assert [results] = result;
 
-        // Unknonwn aggregate_fn_id
-        assert 0 = 1;
+        %{
+            target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
+            print(f"Task Result({ids.index}): 0x{target_result}")
+        %}
 
-        return ();
+        return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
     }
 }
 
