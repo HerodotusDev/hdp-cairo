@@ -2,6 +2,11 @@
 
 Cairo HDP is a collection of Cairo0 programs designed to verify inclusion proofs and perform computations on the data. These computations can be verified on-chain, enabling trustless operations on any historical data from Ethereum or integrated EVM chains.
 
+## Run docker test run
+```bash
+docker build -t hdp-cairo . && docker run hdp-cairo
+```
+
 ## Installation and Setup
 
 To install the required dependencies and set up the Python virtual environment, run:
