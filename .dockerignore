@@ -22,6 +22,8 @@ coverage.*
 .pytest_cache/
 
 # Rust
+cairo-vm
+hdp-test
 target/
 Cargo.lock
 
