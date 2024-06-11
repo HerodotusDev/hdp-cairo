@@ -1,0 +1,34 @@
+# Python
+*.pyc
+*.pyo
+*.pyd
+__pycache__
+*.swp
+*.swo
+.Python
+env/
+venv/
+ENV/
+*.egg-info
+.eggs/
+.dist-info
+*.egg
+*.whl
+.build/
+.tox/
+.coverage
+coverage.*
+.cache
+.pytest_cache/
+
+# Rust
+target/
+Cargo.lock
+
+# Docker files
+Dockerfile
+docker-compose.yml
+
+# Version control
+.git/
+.gitignore
