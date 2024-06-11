@@ -36,7 +36,7 @@ struct AccountValues {
 struct ChainInfo {
     id: felt,
     id_bytes_len: felt,
-    eip155_activation: felt,
+    byzantium: felt,
 }
 
 struct MMRMeta {
@@ -71,6 +71,23 @@ struct Transaction {
 }
 
 struct TransactionProof {
+    block_number: felt,
+    len: felt,
+    bytes_len: felt*,
+    proof: felt**,
+    key: Uint256,
+    key_leading_zeros: felt,
+}
+
+struct Receipt {
+    rlp: felt*,
+    rlp_len: felt,
+    bytes_len: felt,
+    type: felt,
+    block_number: felt,
+}
+
+struct ReceiptProof {
     block_number: felt,
     len: felt,
     bytes_len: felt*,

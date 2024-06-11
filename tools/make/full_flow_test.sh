@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# Get the Cairo file from the command line argument
-cairo_file="$1"
-filename=$(basename "$cairo_file" .cairo)
-
 # Define the log file path
 LOG_FILE="full_flow.log"
 
@@ -45,7 +41,6 @@ cairo-compile --cairo_path="packages/eth_essentials" "src/hdp.cairo" --output "b
 if [ ! -d "hdp-test" ]; then
     git clone https://github.com/HerodotusDev/hdp-test
     cd hdp-test
-    git checkout slr
     cd ..
 fi
 

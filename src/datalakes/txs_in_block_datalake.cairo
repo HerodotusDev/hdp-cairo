@@ -2,13 +2,21 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin,
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.alloc import alloc
-from src.memorizer import HeaderMemorizer, TransactionMemorizer
+from src.memorizer import HeaderMemorizer, TransactionMemorizer, ReceiptMemorizer
 from starkware.cairo.common.dict_access import DictAccess
 from packages.eth_essentials.lib.utils import word_reverse_endian_64
 from packages.eth_essentials.lib.mpt import verify_mpt_proof
-from src.types import TransactionsInBlockDatalake, Transaction, TransactionProof, Header
+from src.types import (
+    TransactionsInBlockDatalake,
+    Transaction,
+    TransactionProof,
+    Header,
+    Receipt,
+    ChainInfo,
+)
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
 from src.decoders.transaction_decoder import TransactionDecoder, TransactionType
+from src.decoders.receipt_decoder import ReceiptDecoder
 from src.decoders.header_decoder import HeaderDecoder, HeaderField
 from src.tasks.fetch_trait import FetchTrait
 
@@ -81,8 +89,11 @@ func fetch_data_points{
     bitwise_ptr: BitwiseBuiltin*,
     transaction_dict: DictAccess*,
     transactions: Transaction*,
+    receipts: Receipt*,
+    receipt_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
+    chain_info: ChainInfo,
 }(datalake: TransactionsInBlockDatalake) -> (Uint256*, felt) {
     alloc_locals;
     let (data_points: Uint256*) = alloc();
@@ -96,7 +107,10 @@ func fetch_data_points{
     }
 
     if (datalake.type == TX_IN_BLOCK_TYPES.RECEIPT) {
-        assert 1 = 0;
+        let data_points_len = abstract_fetch_receipt_data_points(
+            datalake=datalake, index=0, result_counter=0, data_points=data_points
+        );
+        return (data_points, data_points_len);
     }
 
     assert 1 = 0;
@@ -117,6 +131,21 @@ func abstract_fetch_tx_data_points{
     jmp abs fetch_trait.transaction_datalake.fetch_tx_data_points_ptr;
 }
 
+func abstract_fetch_receipt_data_points{
+    range_check_ptr,
+    poseidon_ptr: PoseidonBuiltin*,
+    bitwise_ptr: BitwiseBuiltin*,
+    receipt_dict: DictAccess*,
+    receipts: Receipt*,
+    pow2_array: felt*,
+    fetch_trait: FetchTrait,
+    chain_info: ChainInfo,
+}(
+    datalake: TransactionsInBlockDatalake, index: felt, result_counter: felt, data_points: Uint256*
+) -> felt {
+    jmp abs fetch_trait.transaction_datalake.fetch_receipt_data_points_ptr;
+}
+
 // DEFAULT IMPLEMENTATION OF FETCH TRAIT
 
 func fetch_tx_data_points{
@@ -132,7 +161,6 @@ func fetch_tx_data_points{
 ) -> felt {
     alloc_locals;
     let current_tx_index = datalake.start_index + index * datalake.increment;
-    // %{ print("current_tx_index:", ids.current_tx_index) %}
 
     local is_larger: felt;
     %{ ids.is_larger = 1 if ids.current_tx_index >= ids.datalake.end_index else 0 %}
@@ -157,6 +185,51 @@ func fetch_tx_data_points{
     let datapoint = TransactionDecoder.get_field(tx, datalake.sampled_property);
     assert data_points[result_counter] = datapoint;
     return fetch_tx_data_points(
+        datalake=datalake,
+        index=index + 1,
+        result_counter=result_counter + 1,
+        data_points=data_points,
+    );
+}
+
+func fetch_receipt_data_points{
+    range_check_ptr,
+    poseidon_ptr: PoseidonBuiltin*,
+    bitwise_ptr: BitwiseBuiltin*,
+    receipt_dict: DictAccess*,
+    receipts: Receipt*,
+    pow2_array: felt*,
+    fetch_trait: FetchTrait,
+    chain_info: ChainInfo,
+}(
+    datalake: TransactionsInBlockDatalake, index: felt, result_counter: felt, data_points: Uint256*
+) -> felt {
+    alloc_locals;
+    let current_receipt_index = datalake.start_index + index * datalake.increment;
+
+    local is_larger: felt;
+    %{ ids.is_larger = 1 if ids.current_receipt_index >= ids.datalake.end_index else 0 %}
+
+    if (is_larger == 1) {
+        assert [range_check_ptr] = current_receipt_index - datalake.end_index;
+        tempvar range_check_ptr = range_check_ptr + 1;
+        return result_counter;
+    }
+
+    let (receipt) = ReceiptMemorizer.get(datalake.target_block, current_receipt_index);
+
+    if (datalake.included_types[receipt.type] == 0) {
+        return fetch_receipt_data_points(
+            datalake=datalake,
+            index=index + 1,
+            result_counter=result_counter,
+            data_points=data_points,
+        );
+    }
+
+    let datapoint = ReceiptDecoder.get_field(receipt, datalake.sampled_property);
+    assert data_points[result_counter] = datapoint;
+    return fetch_receipt_data_points(
         datalake=datalake,
         index=index + 1,
         result_counter=result_counter + 1,

@@ -58,9 +58,10 @@ func verify_n_transaction_proofs{
         pow2_array=pow2_array,
     );
 
-    let tx = init_tx_stuct{
-        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, poseidon_ptr=poseidon_ptr
-    }(tx_item=tx_item, tx_item_bytes_len=tx_item_bytes_len, block_number=tx_proof.block_number);
+    let (rlp, rlp_len, bytes_len, tx_type) = derive_tx_payload(
+        item=tx_item, item_bytes_len=tx_item_bytes_len
+    );
+    let tx = Transaction(rlp=rlp, rlp_len=rlp_len, bytes_len=bytes_len, type=tx_type);
 
     // decode tx-index from rlp-encoded key
     assert tx_proof.key.high = 0;  // sanity check
@@ -74,24 +75,24 @@ func verify_n_transaction_proofs{
     );
 }
 
-// Derives a TX type and initializes a Transaction struct.
+// Derives a TX type and the payload params of a transaction or receipt. As this logic is the same for both, we use it for both.
 // Inputs:
-// - tx_item: The RLP-encoded transaction.
-// - tx_item_bytes_len: The length of the RLP-encoded transaction.
-// - block_number: The block number of the transaction.
+// - item: The RLP-encoded payload.
+// - item_bytes_len: The length of the RLP-encoded payload.
 // Outputs:
-// - Transaction struct.
-func init_tx_stuct{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    poseidon_ptr: PoseidonBuiltin*,
-    pow2_array: felt*,
-    chain_info: ChainInfo,
-}(tx_item: felt*, tx_item_bytes_len: felt, block_number: felt) -> Transaction {
+// - rlp: encoded payload
+// - rlp_len: length of the encoded payload
+// - bytes_len: length of the payload
+// - tx_type: type of the transaction
+func derive_tx_payload{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, poseidon_ptr: PoseidonBuiltin*, pow2_array: felt*
+}(item: felt*, item_bytes_len: felt) -> (
+    rlp: felt*, rlp_len: felt, bytes_len: felt, tx_type: felt
+) {
     alloc_locals;
 
-    let first_byte = extract_byte_at_pos(tx_item[0], 0, pow2_array);
-    let second_byte = extract_byte_at_pos(tx_item[0], 1, pow2_array);
+    let first_byte = extract_byte_at_pos(item[0], 0, pow2_array);
+    let second_byte = extract_byte_at_pos(item[0], 1, pow2_array);
 
     local has_type_prefix: felt;
     %{
@@ -103,7 +104,7 @@ func init_tx_stuct{
     %}
 
     local tx_type: felt;
-    local tx_start_offset: felt;
+    local start_offset: felt;
     if (has_type_prefix == 1) {
         assert [range_check_ptr] = 0x3 - first_byte;
         assert [range_check_ptr + 1] = 0xff - second_byte;
@@ -111,32 +112,30 @@ func init_tx_stuct{
 
         assert tx_type = first_byte;
         let len_len = second_byte - 0xf7;
-        assert tx_start_offset = 2 + len_len;  // type + prefix + len_len
-        assert [range_check_ptr + 3] = 7 - tx_start_offset;
+        assert start_offset = 2 + len_len;  // type + prefix + len_len
+        assert [range_check_ptr + 3] = 7 - start_offset;
         tempvar range_check_ptr = range_check_ptr + 4;
     } else {
         assert tx_type = 0;
 
         let len_len = first_byte - 0xf7;
-        assert tx_start_offset = 1 + len_len;
+        assert start_offset = 1 + len_len;
         // Legacy transactions must start with long list prefix
         assert [range_check_ptr] = 0xff - first_byte;
         assert [range_check_ptr + 1] = first_byte - 0xf7;
-        assert [range_check_ptr + 2] = 7 - tx_start_offset;
+        assert [range_check_ptr + 2] = 7 - start_offset;
         tempvar range_check_ptr = range_check_ptr + 3;
     }
 
-    let tx_bytes_len = tx_item_bytes_len - tx_start_offset;
+    let bytes_len = item_bytes_len - start_offset;
     // retrieve the encoded tx rlp fields
-    let (tx_rlp, tx_rlp_len) = extract_n_bytes_from_le_64_chunks_array(
-        array=tx_item,
+    let (rlp, rlp_len) = extract_n_bytes_from_le_64_chunks_array(
+        array=item,
         start_word=0,
-        start_offset=tx_start_offset,
-        n_bytes=tx_bytes_len,
+        start_offset=start_offset,
+        n_bytes=bytes_len,
         pow2_array=pow2_array,
     );
 
-    let tx = Transaction(rlp=tx_rlp, rlp_len=tx_rlp_len, bytes_len=tx_bytes_len, type=tx_type);
-
-    return (tx);
+    return (rlp=rlp, rlp_len=rlp_len, bytes_len=bytes_len, tx_type=tx_type);
 }

@@ -11,6 +11,7 @@ from src.datalakes.txs_in_block_datalake import (
     init_txs_in_block,
     fetch_data_points as fetch_txs_in_block_data_points,
 )
+
 from src.types import (
     ComputationalTask,
     AccountValues,
@@ -18,13 +19,15 @@ from src.types import (
     BlockSampledDataLake,
     TransactionsInBlockDatalake,
     Transaction,
+    Receipt,
+    ChainInfo,
 )
 from src.datalakes.block_sampled_datalake import (
     fetch_header_data_points,
     fetch_account_data_points,
     fetch_storage_data_points,
 )
-from src.datalakes.txs_in_block_datalake import fetch_tx_data_points
+from src.datalakes.txs_in_block_datalake import fetch_tx_data_points, fetch_receipt_data_points
 from src.tasks.fetch_trait import (
     FetchTrait,
     FetchTraitBlockSampledDatalake,
@@ -74,8 +77,11 @@ namespace Datalake {
         headers: Header*,
         transaction_dict: DictAccess*,
         transactions: Transaction*,
+        receipt_dict: DictAccess*,
+        receipts: Receipt*,
         pow2_array: felt*,
         fetch_trait: FetchTrait,
+        chain_info: ChainInfo,
     }(task: ComputationalTask) -> (res: Uint256*, res_len: felt) {
         if (task.datalake_type == DatalakeType.BLOCK_SAMPLED) {
             let block_sampled_datalake: BlockSampledDataLake = [
@@ -109,13 +115,14 @@ func get_default_fetch_trait() -> FetchTrait {
     let (fetch_account_data_points_ptr) = get_label_location(fetch_account_data_points);
     let (fetch_storage_data_points_ptr) = get_label_location(fetch_storage_data_points);
     let (fetch_tx_data_points_ptr) = get_label_location(fetch_tx_data_points);
+    let (fetch_receipt_data_points_ptr) = get_label_location(fetch_receipt_data_points);
 
     local block_sampled_datalake: FetchTraitBlockSampledDatalake = FetchTraitBlockSampledDatalake(
         fetch_header_data_points_ptr, fetch_account_data_points_ptr, fetch_storage_data_points_ptr
     );
 
     local transaction_datalake: FetchTraitTransactionDatalake = FetchTraitTransactionDatalake(
-        fetch_tx_data_points_ptr
+        fetch_tx_data_points_ptr, fetch_receipt_data_points_ptr
     );
 
     return (

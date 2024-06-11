@@ -21,6 +21,7 @@ from src.verifiers.storage_item_verifier import (
 from src.verifiers.header_verifier import verify_headers_inclusion
 from src.verifiers.mmr_verifier import verify_mmr_meta
 from src.verifiers.transaction_verifier import verify_n_transaction_proofs
+from src.verifiers.receipt_verifier import verify_n_receipt_proofs
 
 from src.types import (
     Header,
@@ -31,6 +32,8 @@ from src.types import (
     TransactionProof,
     Transaction,
     ComputationalTask,
+    Receipt,
+    ReceiptProof,
 )
 
 from src.memorizer import (
@@ -98,11 +101,17 @@ func run{
     let (transactions: Transaction*) = alloc();
     local transaction_proof_len: felt;
 
+    // Receipt Params
+    let (receipt_proofs: ReceiptProof*) = alloc();
+    let (receipts: Receipt*) = alloc();
+    local receipt_proof_len: felt;
+
     // Memorizers
     let (header_dict, header_dict_start) = HeaderMemorizer.initialize();
     let (account_dict, account_dict_start) = AccountMemorizer.initialize();
     let (storage_dict, storage_dict_start) = StorageMemorizer.initialize();
     let (transaction_dict, transaction_dict_start) = TransactionMemorizer.initialize();
+    let (receipt_dict, receipt_dict_start) = TransactionMemorizer.initialize();
 
     // Task Params
     let (tasks: ComputationalTask*) = alloc();
@@ -166,6 +175,28 @@ func run{
             else:
                 ids.transaction_proof_len = 0
 
+        def write_receipt_proofs(ptr, program_input):
+            offset = 0
+            if "transaction_receipts" in program_input:
+                receipt_proofs = program_input["transaction_receipts"]
+                ids.receipt_proof_len = len(receipt_proofs)
+
+                for receipt_proof in receipt_proofs:
+                    leading_zeroes = count_leading_zero_nibbles_from_hex(receipt_proof["key"])
+                    (key_low, key_high) = split_128(int(receipt_proof["key"], 16))
+
+                    memory[ptr._reference_value + offset] = receipt_proof["block_number"]
+                    memory[ptr._reference_value + offset + 1] = len(receipt_proof["proof"])
+                    memory[ptr._reference_value + offset + 2] = segments.gen_arg(receipt_proof["proof_bytes_len"])
+                    memory[ptr._reference_value + offset + 3] = segments.gen_arg(nested_hex_to_int_array(receipt_proof["proof"]))
+                    memory[ptr._reference_value + offset + 4] = key_low
+                    memory[ptr._reference_value + offset + 5] = key_high
+                    memory[ptr._reference_value + offset + 6] = leading_zeroes
+
+                    offset += 7
+            else:
+                ids.receipt_proof_len = 0
+
         def write_mmr_meta(mmr_meta):
             ids.mmr_meta.id = mmr_meta["id"]
             ids.mmr_meta.root = hex_to_int(mmr_meta["root"])
@@ -186,6 +217,9 @@ func run{
 
         # Transaction params
         write_tx_proofs(ids.transaction_proofs, program_input)
+
+        # Receipt params
+        write_receipt_proofs(ids.receipt_proofs, program_input)
 
         # Task and Datalake
         ids.tasks_len = len(program_input['tasks'])
@@ -265,7 +299,19 @@ func run{
         chain_info=chain_info,
     }(tx_proofs=transaction_proofs, tx_proofs_len=transaction_proof_len, index=0);
 
-    %{ print("headers verified") %}
+    // Check 6: Verify the receipt proofs
+    verify_n_receipt_proofs{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        poseidon_ptr=poseidon_ptr,
+        keccak_ptr=keccak_ptr,
+        receipts=receipts,
+        receipt_dict=receipt_dict,
+        headers=headers,
+        header_dict=header_dict,
+        pow2_array=pow2_array,
+    }(receipt_proofs=receipt_proofs, receipt_proofs_len=receipt_proof_len, index=0);
+
     // Verified data is now in memorizer, and can be used for further computation
     Task.init{
         range_check_ptr=range_check_ptr,
@@ -288,8 +334,11 @@ func run{
         headers=headers,
         transaction_dict=transaction_dict,
         transactions=transactions,
+        receipts=receipts,
+        receipt_dict=receipt_dict,
         pow2_array=pow2_array,
         tasks=tasks,
+        chain_info=chain_info,
     }(results=results, tasks_len=tasks_len, index=0);
 
     let tasks_root = compute_tasks_root{
@@ -322,6 +371,7 @@ func run{
     default_dict_finalize(account_dict_start, account_dict, MEMORIZER_DEFAULT);
     default_dict_finalize(storage_dict_start, storage_dict, MEMORIZER_DEFAULT);
     default_dict_finalize(transaction_dict_start, transaction_dict, MEMORIZER_DEFAULT);
+    default_dict_finalize(receipt_dict_start, receipt_dict, MEMORIZER_DEFAULT);
 
     [ap] = mmr_meta.root;
     [ap] = [output_ptr], ap++;
