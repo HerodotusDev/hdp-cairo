@@ -6,7 +6,13 @@ pub struct HDP {
 }
 
 #[derive(Serde, Drop)]
-struct Memorizer {
-    pub segment: felt252,
+pub struct RelocatableValue {
+    pub segment_index: felt252,
     pub offset: felt252,
+}
+
+#[derive(Serde, Drop)]
+struct Memorizer {
+    pub dict: RelocatableValue,
+    pub list: RelocatableValue,
 }

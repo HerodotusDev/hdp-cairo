@@ -1,8 +1,10 @@
 use core::option::OptionTrait;
 use example::contract::hdp_context::{Memorizer};
 use starknet::syscalls::call_contract_syscall;
-use starknet::{contract_address::contract_address_const, SyscallResult, SyscallResultTrait};
+use starknet::{SyscallResult, SyscallResultTrait};
 use core::poseidon::poseidon_hash_span;
+
+const HEADER_MEMORIZER_ID: felt252 = 0x0;
 
 #[derive(Serde, Drop)]
 pub struct HeaderKey {
@@ -24,11 +26,18 @@ pub impl HeaderKeyImpl of HeaderKeyTrait {
 pub impl HeaderMemorizerImpl of HeaderMemorizerTrait {
     fn get_parent(self: @Memorizer, key: HeaderKey) -> u256 {
         let value = call_contract_syscall(
-            contract_address_const::<0>(),
-            0x0,
-            array![*self.segment, *self.offset, key.derive()].span()
+            0x0.try_into().unwrap(),
+            HEADER_MEMORIZER_ID,
+            array![
+                *self.dict.segment_index,
+                *self.dict.offset,
+                *self.list.segment_index,
+                *self.list.offset,
+                5858992
+            ]
+                .span()
         )
             .unwrap_syscall();
-        u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }
+        0
     }
 }

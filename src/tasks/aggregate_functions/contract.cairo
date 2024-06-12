@@ -9,6 +9,8 @@ from starkware.cairo.common.cairo_builtins import (
 from contract_bootloader.contract_class.compiled_class import CompiledClass
 from starkware.cairo.common.uint256 import Uint256
 from contract_bootloader.contract_bootloader import run_contract_bootloader
+from starkware.cairo.common.dict_access import DictAccess
+from src.types import Header
 
 func compute_contract{
     pedersen_ptr: HashBuiltin*,
@@ -18,6 +20,8 @@ func compute_contract{
     ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
+    header_dict: DictAccess*,
+    headers: Header*,
 }() -> Uint256 {
     alloc_locals;
     local compiled_class: CompiledClass*;
@@ -49,7 +53,17 @@ func compute_contract{
         )
     %}
 
-    let (retdata_size, retdata) = run_contract_bootloader(compiled_class);
+    local calldata: felt* = nondet %{ segments.add() %};
+    assert calldata[0] = nondet %{ ids.header_dict.address_.segment_index %};
+    assert calldata[1] = nondet %{ ids.header_dict.address_.offset %};
+    assert calldata[2] = nondet %{ ids.headers.address_.segment_index %};
+    assert calldata[3] = nondet %{ ids.headers.address_.offset %};
+
+    local calldata_size = 4;
+
+    let (retdata_size, retdata) = run_contract_bootloader(
+        compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata
+    );
 
     %{
         for i in range(ids.retdata_size):

@@ -41,21 +41,34 @@ class SyscallHandler(SyscallHandlerBase):
     def _call_contract_helper(
         self, request: CairoStructProxy, syscall_name: str
     ) -> CallResult:
+        selector = request.selector
+        print("selector", selector)
+
         calldata = self._get_felt_range(
             start_addr=request.calldata_start, end_addr=request.calldata_end
         )
 
         dict_segment = calldata[0]
         dict_offset = calldata[1]
-        dict_key = calldata[2]
+        list_segment = calldata[2]
+        list_offset = calldata[3]
+        dict_key = calldata[4]
 
         dict_ptr = RelocatableValue.from_tuple([dict_segment, dict_offset])
         dictionary = self.dict_manager.get_dict(dict_ptr)
 
-        dict_value = int(dictionary[dict_key])
+        index = int(dictionary[dict_key])
+
+        list_ptr = RelocatableValue.from_tuple([list_segment, list_offset])
+        rlp_ptr = self.segments.memory[list_ptr + index * 6]
+        rlp_len = self.segments.memory[list_ptr + index * 6 + 1]
+
+        rlp = self._get_felt_range(start_addr=rlp_ptr, end_addr=rlp_ptr + rlp_len)
+
+        print("rlp", rlp)
 
         return CallResult(
             gas_consumed=0,
             failure_flag=0,
-            retdata=[dict_value],
+            retdata=[0],
         )
