@@ -53,10 +53,8 @@ func call_execute_syscalls{
     builtin_ptrs: BuiltinPointers*,
     header_dict: DictAccess*,
     headers: Header*,
-    pow2_array: felt*
-}(
-    execution_context: ExecutionContext*, syscall_ptr_end: felt*
-) {
+    pow2_array: felt*,
+}(execution_context: ExecutionContext*, syscall_ptr_end: felt*) {
     execute_syscalls(execution_context, syscall_ptr_end);
     return ();
 }
@@ -116,10 +114,13 @@ func get_entry_point{range_check_ptr}(
 // block_context - a global context that is fixed throughout the block.
 // execution_context - The context for the current execution.
 func execute_entry_point{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, builtin_ptrs: BuiltinPointers*, builtin_params: BuiltinParams*,
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    builtin_ptrs: BuiltinPointers*,
+    builtin_params: BuiltinParams*,
     header_dict: DictAccess*,
     headers: Header*,
-    pow2_array: felt*
+    pow2_array: felt*,
 }(compiled_class: CompiledClass*, execution_context: ExecutionContext*) -> (
     retdata_size: felt, retdata: felt*
 ) {

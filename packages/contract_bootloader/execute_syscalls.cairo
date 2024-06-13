@@ -42,10 +42,8 @@ func execute_syscalls{
     builtin_ptrs: BuiltinPointers*,
     header_dict: DictAccess*,
     headers: Header*,
-    pow2_array: felt*
-}(
-    execution_context: ExecutionContext*, syscall_ptr_end: felt*
-) {
+    pow2_array: felt*,
+}(execution_context: ExecutionContext*, syscall_ptr_end: felt*) {
     if (syscall_ptr == syscall_ptr_end) {
         return ();
     }
@@ -64,10 +62,8 @@ func execute_call_contract{
     builtin_ptrs: BuiltinPointers*,
     header_dict: DictAccess*,
     headers: Header*,
-    pow2_array: felt*
-}(
-    caller_execution_context: ExecutionContext*
-) {
+    pow2_array: felt*,
+}(caller_execution_context: ExecutionContext*) {
     alloc_locals;
     let request_header = cast(syscall_ptr, RequestHeader*);
     let syscall_ptr = syscall_ptr + RequestHeader.SIZE;
