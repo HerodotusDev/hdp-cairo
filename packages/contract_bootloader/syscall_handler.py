@@ -66,11 +66,14 @@ class SyscallHandler(SyscallHandlerBase):
 
         rlp = self._get_felt_range(start_addr=rlp_ptr, end_addr=rlp_ptr + rlp_len)
         block = decode(little_8_bytes_chunks_to_bytes(rlp, bytes_len), Block).as_dict()
-        
-        parentHash = int.from_bytes(block["parentHash"], byteorder='big')
+
+        parentHash = int.from_bytes(block["parentHash"], byteorder="big")
 
         return CallResult(
             gas_consumed=0,
             failure_flag=0,
-            retdata=[parentHash%0x100000000000000000000000000000000, parentHash//0x100000000000000000000000000000000],
+            retdata=[
+                parentHash % 0x100000000000000000000000000000000,
+                parentHash // 0x100000000000000000000000000000000,
+            ],
         )
