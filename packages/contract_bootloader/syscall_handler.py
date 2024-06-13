@@ -1,12 +1,15 @@
+from rlp import decode
 from typing import (
     Dict,
     Iterable,
 )
+from tools.py.utils import little_8_bytes_chunks_to_bytes
 from starkware.cairo.lang.vm.relocatable import RelocatableValue, MaybeRelocatable
 from starkware.cairo.lang.vm.memory_segments import MemorySegmentManager
 from contract_bootloader.syscall_handler_base import SyscallHandlerBase
 from starkware.cairo.common.dict import DictManager
 from starkware.cairo.common.structs import CairoStructProxy
+from tools.py.block_header import BlockHeaderDencun as Block
 from starkware.starknet.business_logic.execution.objects import (
     CallResult,
 )
@@ -41,9 +44,6 @@ class SyscallHandler(SyscallHandlerBase):
     def _call_contract_helper(
         self, request: CairoStructProxy, syscall_name: str
     ) -> CallResult:
-        selector = request.selector
-        print("selector", selector)
-
         calldata = self._get_felt_range(
             start_addr=request.calldata_start, end_addr=request.calldata_end
         )
@@ -62,13 +62,15 @@ class SyscallHandler(SyscallHandlerBase):
         list_ptr = RelocatableValue.from_tuple([list_segment, list_offset])
         rlp_ptr = self.segments.memory[list_ptr + index * 6]
         rlp_len = self.segments.memory[list_ptr + index * 6 + 1]
+        bytes_len = self.segments.memory[list_ptr + index * 6 + 2]
 
         rlp = self._get_felt_range(start_addr=rlp_ptr, end_addr=rlp_ptr + rlp_len)
-
-        print("rlp", rlp)
+        block = decode(little_8_bytes_chunks_to_bytes(rlp, bytes_len), Block).as_dict()
+        
+        parentHash = int.from_bytes(block["parentHash"], byteorder='big')
 
         return CallResult(
             gas_consumed=0,
             failure_flag=0,
-            retdata=[0],
+            retdata=[parentHash%0x100000000000000000000000000000000, parentHash//0x100000000000000000000000000000000],
         )

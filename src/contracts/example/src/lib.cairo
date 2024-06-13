@@ -10,6 +10,6 @@ mod contract {
 
     #[external(v0)]
     fn main(ref self: ContractState, hdp: HDP) -> u256 {
-        hdp.header_memorizer.get_parent(HeaderKey { chain_id: 1, block_number: 10, })
+        hdp.header_memorizer.get_parent(HeaderKey { chain_id: 1, block_number: 5858992, })
     }
 }

@@ -22,6 +22,7 @@ func compute_contract{
     poseidon_ptr: PoseidonBuiltin*,
     header_dict: DictAccess*,
     headers: Header*,
+    pow2_array: felt*,
 }() -> Uint256 {
     alloc_locals;
     local compiled_class: CompiledClass*;

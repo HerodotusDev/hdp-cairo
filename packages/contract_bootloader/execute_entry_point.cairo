@@ -1,3 +1,4 @@
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.builtin_selection.select_input_builtins import select_input_builtins
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.find_element import find_element, search_sorted
@@ -22,6 +23,8 @@ from starkware.starknet.core.os.constants import (
 )
 from contract_bootloader.contract_class.compiled_class import CompiledClass, CompiledClassEntryPoint
 from contract_bootloader.execute_syscalls import ExecutionContext, execute_syscalls
+from starkware.cairo.common.dict_access import DictAccess
+from src.types import Header
 
 // Represents the arguments pushed to the stack before calling an entry point.
 struct EntryPointCallArguments {
@@ -43,7 +46,15 @@ struct EntryPointReturnValues {
 
 // Performs a Cairo jump to the function 'execute_syscalls'.
 // This function's signature must match the signature of 'execute_syscalls'.
-func call_execute_syscalls{range_check_ptr, syscall_ptr: felt*, builtin_ptrs: BuiltinPointers*}(
+func call_execute_syscalls{
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    syscall_ptr: felt*,
+    builtin_ptrs: BuiltinPointers*,
+    header_dict: DictAccess*,
+    headers: Header*,
+    pow2_array: felt*
+}(
     execution_context: ExecutionContext*, syscall_ptr_end: felt*
 ) {
     execute_syscalls(execution_context, syscall_ptr_end);
@@ -105,7 +116,10 @@ func get_entry_point{range_check_ptr}(
 // block_context - a global context that is fixed throughout the block.
 // execution_context - The context for the current execution.
 func execute_entry_point{
-    range_check_ptr, builtin_ptrs: BuiltinPointers*, builtin_params: BuiltinParams*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, builtin_ptrs: BuiltinPointers*, builtin_params: BuiltinParams*,
+    header_dict: DictAccess*,
+    headers: Header*,
+    pow2_array: felt*
 }(compiled_class: CompiledClass*, execution_context: ExecutionContext*) -> (
     retdata_size: felt, retdata: felt*
 ) {

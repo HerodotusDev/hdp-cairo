@@ -20,6 +20,8 @@ from starkware.starknet.core.os.builtins import (
 from contract_bootloader.execute_entry_point import execute_entry_point
 from starkware.starknet.core.os.constants import ENTRY_POINT_TYPE_EXTERNAL
 from contract_bootloader.execute_syscalls import ExecutionContext, ExecutionInfo
+from starkware.cairo.common.dict_access import DictAccess
+from src.types import Header
 
 // Loads the programs and executes them.
 //
@@ -37,6 +39,9 @@ func run_contract_bootloader{
     ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
+    header_dict: DictAccess*,
+    headers: Header*,
+    pow2_array: felt*
 }(compiled_class: CompiledClass*, calldata_size: felt, calldata: felt*) -> (
     retdata_size: felt, retdata: felt*
 ) {

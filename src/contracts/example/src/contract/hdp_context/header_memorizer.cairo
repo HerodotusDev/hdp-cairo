@@ -33,11 +33,11 @@ pub impl HeaderMemorizerImpl of HeaderMemorizerTrait {
                 *self.dict.offset,
                 *self.list.segment_index,
                 *self.list.offset,
-                5858992
+                key.block_number,
             ]
                 .span()
         )
             .unwrap_syscall();
-        0
+        u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }
     }
 }
