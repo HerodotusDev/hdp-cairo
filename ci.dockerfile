@@ -1,8 +1,8 @@
-FROM hdp-cairo:latest
+FROM dataprocessor/hdp-cairo:latest
 
 # Set the default shell to bash and the working directory in the container
 SHELL ["/bin/bash", "-ci"]
-WORKDIR /hdp-cairo
+WORKDIR /hdp
 
 # Update package lists and install GNU Parallel
 RUN apt-get update && \

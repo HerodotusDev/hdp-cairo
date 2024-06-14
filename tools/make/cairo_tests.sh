@@ -24,9 +24,6 @@ run_tests() {
     rm -f "$temp_output"
 }
 
-# Activate the virtual environment
-source venv/bin/activate
-
 # Export the function so it's available in subshells
 export -f run_tests
 
