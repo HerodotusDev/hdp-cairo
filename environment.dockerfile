@@ -32,8 +32,8 @@ COPY . .
 # Install Python package modules
 RUN pip install .
 
-# Compile the cairo files
+# Compile the HDP
 RUN cairo-compile --cairo_path="packages/eth_essentials" "src/hdp.cairo" --output "build/hdp.json"
 
-# Export Program Hash
+# Export HDP Program Hash
 RUN cairo-hash-program --program build/hdp.json >> build/program_hash.txt
