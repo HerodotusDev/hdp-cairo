@@ -31,6 +31,3 @@ COPY . .
 
 # Install Python package modules
 RUN pip install .
-
-# Set the default command to execute
-CMD ["bash", "-c", "source /root/.bashrc && python tools/make/launch_cairo_files.py -run_hdp"]
