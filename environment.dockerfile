@@ -3,7 +3,7 @@ FROM python:3.9
 
 # Set the default shell to bash and the working directory in the container
 SHELL ["/bin/bash", "-ci"]
-WORKDIR /hdp
+WORKDIR /hdp-cairo
 
 # Install Rust using Rustup
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
@@ -32,5 +32,8 @@ COPY . .
 # Install Python package modules
 RUN pip install .
 
-# Set the default command to execute
-CMD ["bash", "-c", "source /root/.bashrc && python tools/make/launch_cairo_files.py -run_hdp"]
+# Compile the HDP
+RUN cairo-compile --cairo_path="packages/eth_essentials" "src/hdp.cairo" --output "build/hdp.json"
+
+# Export HDP Program Hash
+RUN cairo-hash-program --program build/hdp.json >> build/program_hash.txt
