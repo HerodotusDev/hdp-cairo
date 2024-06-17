@@ -39,7 +39,7 @@ jobs:
           tags: "ci:test"
           load: true
       - name: Run tests
-        run: docker run --rm ci:test || { echo "The command inside the container failed with exit code $?"; exit $?; }
+        run: docker run --rm ci:test
 
   build-and-push:
     if: github.event_name == 'push'
