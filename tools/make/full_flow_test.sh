@@ -45,11 +45,17 @@ if [ ! -d "hdp-test" ]; then
 fi
 
 echo "Starting tests..."
-find ./hdp-test/fixtures -name "input.json" | parallel --halt soon,fail=1 run_tests $filename
+# Use find to locate all input.json files in hdp-test/fixtures directory and run them in parallel
+find ./hdp-test/fixtures -name "input.json" | parallel --halt soon,fail=1 run_tests {}
 
 # Capture the exit status of parallel
 exit_status=$?
 
 # Exit with the captured status
-echo "Parallel execution exited with status: $exit_status"
+if [ $exit_status -ne 0 ]; then
+    echo "Parallel execution exited with status: $exit_status. Some tests failed."
+else
+    echo "Parallel execution exited successfully. All tests passed."
+fi
+
 exit $exit_status

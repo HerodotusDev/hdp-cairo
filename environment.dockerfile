@@ -1,5 +1,5 @@
 # Use the official Python 3.9 image from the Docker Hub
-FROM python:3.9
+FROM python:3.9.0
 
 # Set the default shell to bash and the working directory in the container
 SHELL ["/bin/bash", "-ci"]
@@ -20,7 +20,7 @@ RUN git clone https://github.com/HerodotusDev/cairo-vm.git && \
 
 # Copy project requirements and install them
 COPY tools/make/requirements.txt tools/make/requirements.txt
-RUN pip install -r tools/make/requirements.txt
+RUN python -m pip install --upgrade pip && pip install -r tools/make/requirements.txt
 
 # Copy and install Contract bootloader SNOS dependencies
 COPY packages/cairo-lang-0.13.1.zip packages/cairo-lang-0.13.1.zip

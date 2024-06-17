@@ -32,3 +32,6 @@ docker-compose.yml
 # Version control
 .git/
 .gitignore
+
+hdp-test
+cairo-vm
