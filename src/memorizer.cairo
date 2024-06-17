@@ -166,39 +166,77 @@ namespace ReceiptMemorizer {
     }
 }
 
-// the account key is h(slot.key, account_key).
-// ToDo: too much hashing
-func gen_storage_key{poseidon_ptr: PoseidonBuiltin*}(
-    storage_slot: felt*, address: felt*, block_number: felt
+func gen_header_key{poseidon_ptr: PoseidonBuiltin*}(
+    chain_id: felt, block_number: felt
 ) -> felt {
     alloc_locals;
 
-    let account_key = gen_account_key(address, block_number);
-    let (h_key) = poseidon_hash_many(4, storage_slot);
-    let (res) = poseidon_hash(h_key, account_key);
+    local data: felt* = nondet %{ segment.add() %};
+    assert data[0] = chain_id;
+    assert data[1] = block_number;
 
+    let (res) = poseidon_hash_many(2, data);
     return res;
 }
 
-// the account key is h(h(address), block_number).
-// ToDo: too much hashing
-func gen_account_key{poseidon_ptr: PoseidonBuiltin*}(address: felt*, block_number: felt) -> felt {
-    let (h_addr) = poseidon_hash_many(3, address);
-    let (res) = poseidon_hash(h_addr, block_number);
+func gen_storage_key{poseidon_ptr: PoseidonBuiltin*}(
+    chain_id: felt, block_number: felt, address: felt*, storage_slot: felt*
+) -> felt {
+    alloc_locals;
 
+    local data: felt* = nondet %{ segment.add() %};
+    assert data[0] = chain_id;
+    assert data[1] = block_number;
+    assert data[2] = address[0];
+    assert data[3] = address[1];
+    assert data[4] = address[2];
+    assert data[5] = storage_slot[0];
+    assert data[6] = storage_slot[1];
+    assert data[7] = storage_slot[2];
+    assert data[8] = storage_slot[3];
+
+    let (res) = poseidon_hash_many(9, data);
+    return res;
+}
+
+func gen_account_key{poseidon_ptr: PoseidonBuiltin*}(chain_id: felt, block_number: felt, address: felt*) -> felt {
+    alloc_locals;
+
+    local data: felt* = nondet %{ segment.add() %};
+    assert data[0] = chain_id;
+    assert data[1] = block_number;
+    assert data[2] = address[0];
+    assert data[3] = address[1];
+    assert data[4] = address[2];
+
+    let (res) = poseidon_hash_many(5, data);
     return res;
 }
 
 func gen_transaction_key{poseidon_ptr: PoseidonBuiltin*}(
-    block_number: felt, key_low: felt
+    chain_id: felt, block_number: felt, key_low: felt
 ) -> felt {
-    let (res) = poseidon_hash(block_number, key_low);
+    alloc_locals;
 
+    local data: felt* = nondet %{ segment.add() %};
+    assert data[0] = chain_id;
+    assert data[1] = block_number;
+    assert data[2] = key_low;
+
+    let (res) = poseidon_hash_many(3, data);
     return res;
 }
 
-func gen_receipt_key{poseidon_ptr: PoseidonBuiltin*}(block_number: felt, key_low: felt) -> felt {
-    let (res) = poseidon_hash(block_number, key_low);
+func gen_receipt_key{poseidon_ptr: PoseidonBuiltin*}(
+    chain_id: felt, block_number: felt, key_low: felt
+) -> felt {
+    alloc_locals;
 
+    local data: felt* = nondet %{ segment.add() %};
+    assert data[0] = chain_id;
+    assert data[1] = block_number;
+    assert data[2] = key_low;
+
+    let (res) = poseidon_hash_many(3, data);
     return res;
 }
