@@ -6,7 +6,7 @@ on:
       - main
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: python:3.9
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -34,20 +34,15 @@ jobs:
       - name: Setup Scarb
         uses: software-mansion/setup-scarb@v1
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-
       - name: Cache Python environment
         uses: actions/cache@v3
         with:
           path: |
             ~/.cache/pip
             venv
-          key: ${{ runner.os }}-python-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('tools/make/setup,sh') }}
+          key: ${{ runner.os }}-python-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('tools/make/setup.sh') }}
           restore-keys: |
-              ${{ runner.os }}-python-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('tools/make/setup,sh') }}
+              ${{ runner.os }}-python-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('tools/make/setup.sh') }}
               ${{ runner.os }}-python-
       - name: Install Dependencies
         run: make setup
