@@ -9,16 +9,15 @@ process_scarb_project() {
     # Change to the project directory and build the project
     if (cd "$project_dir" && scarb build); then
         echo "Copying built files from $project_dir/target/dev to $build_dir"
-        cp "$project_dir/target/dev/"* "$build_dir/"
-        
-        local status=$?
-        if [ $status -eq 0 ]; then
+        if cp "$project_dir/target/dev/"* "$build_dir/"; then
             echo "$(date '+%Y-%m-%d %H:%M:%S') - Successfully built and copied files for Scarb project in $project_dir"
         else
             echo "$(date '+%Y-%m-%d %H:%M:%S') - Built Scarb project in $project_dir, but failed to copy files"
+            return 1
         fi
     else
         echo "$(date '+%Y-%m-%d %H:%M:%S') - Failed to build Scarb project in $project_dir"
+        return 1
     fi
 }
 
@@ -29,7 +28,7 @@ export -f process_scarb_project
 mkdir -p build/compiled_cairo_files
 
 # Find Scarb projects and execute process_scarb_project in each
-find ./src/cairo1 -mindepth 1 -maxdepth 1 -type d | parallel --halt now,fail=1 process_scarb_project
+find ./src/cairo1 -mindepth 1 -maxdepth 1 -type d | parallel --halt now,fail=1 process_scarb_project {}
 
 # Capture the exit status of parallel
 exit_status=$?

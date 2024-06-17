@@ -23,7 +23,7 @@ export -f process_cairo_file
 mkdir -p build/compiled_cairo_files
 
 # Find Cairo files and process them in parallel
-find ./src ./tests/cairo_programs ./packages/hdp_bootloader/bootloader ./packages/hdp_bootloader/builtin_selection -name "*.cairo" ! -path "./src/cairo1/*" | parallel --halt now,fail=1 process_cairo_file
+find ./src ./tests/cairo_programs ./packages/hdp_bootloader/bootloader ./packages/hdp_bootloader/builtin_selection -name "*.cairo" ! -path "./src/cairo1/*" | parallel --halt now,fail=1 process_cairo_file {}
 
 # Capture the exit status of parallel
 exit_status=$?
