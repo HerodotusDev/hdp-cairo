@@ -400,7 +400,7 @@ func fetch_storage_data_points{
         chain_id=chain_id,
         block_number=current_block_number,
         address=datalake.properties,
-        storage_slot=datalake.properties + 3
+        storage_slot=datalake.properties + 3,
     );
 
     assert [data_points + index * Uint256.SIZE] = data_point;
@@ -417,7 +417,7 @@ func fetch_header_data_points{
     headers: Header*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
-}(chain_id:felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
+}(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     alloc_locals;
     let current_block_number = datalake.block_range_start + index * datalake.increment;
 
@@ -437,5 +437,7 @@ func fetch_header_data_points{
 
     assert [data_points + index * Uint256.SIZE] = data_point;
 
-    return fetch_header_data_points(chain_id=chain_id, datalake=datalake, index=index + 1, data_points=data_points);
+    return fetch_header_data_points(
+        chain_id=chain_id, datalake=datalake, index=index + 1, data_points=data_points
+    );
 }

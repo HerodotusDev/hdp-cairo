@@ -157,7 +157,7 @@ func fetch_tx_data_points{
     pow2_array: felt*,
     fetch_trait: FetchTrait,
 }(
-    datalake: TransactionsInBlockDatalake, index: felt, result_counter: felt, data_points: Uint256*
+    chain_id: felt, datalake: TransactionsInBlockDatalake, index: felt, result_counter: felt, data_points: Uint256*
 ) -> felt {
     alloc_locals;
     let current_tx_index = datalake.start_index + index * datalake.increment;
@@ -171,7 +171,7 @@ func fetch_tx_data_points{
         return result_counter;
     }
 
-    let (tx) = TransactionMemorizer.get(datalake.target_block, current_tx_index);
+    let (tx) = TransactionMemorizer.get(chain_id=chain_id, block_number=datalake.target_block, key_low=current_tx_index);
 
     if (datalake.included_types[tx.type] == 0) {
         return fetch_tx_data_points(
@@ -185,6 +185,7 @@ func fetch_tx_data_points{
     let datapoint = TransactionDecoder.get_field(tx, datalake.sampled_property);
     assert data_points[result_counter] = datapoint;
     return fetch_tx_data_points(
+        chain_id=chain_id
         datalake=datalake,
         index=index + 1,
         result_counter=result_counter + 1,

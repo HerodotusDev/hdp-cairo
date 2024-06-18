@@ -253,7 +253,7 @@ func fetch_tx_data_points{
     pow2_array: felt*,
     fetch_trait: FetchTrait,
 }(
-    datalake: TransactionsInBlockDatalake, index: felt, result_counter: felt, data_points: Uint256*
+    chain_id:felt, datalake: TransactionsInBlockDatalake, index: felt, result_counter: felt, data_points: Uint256*
 ) -> felt {
     alloc_locals;
     let current_tx_index = datalake.start_index + index * datalake.increment;
@@ -268,7 +268,7 @@ func fetch_tx_data_points{
         return result_counter;
     }
 
-    let (tx) = TransactionMemorizer.get(datalake.target_block, current_tx_index);
+    let (tx) = TransactionMemorizer.get(chain_id=chain_id, block_number=datalake.target_block, key_low=current_tx_index);
 
     if (datalake.included_types[tx.type] == 0) {
         return fetch_tx_data_points(
@@ -291,6 +291,7 @@ func fetch_tx_data_points{
     ] = data_point_reverse_endian;
 
     return fetch_tx_data_points(
+        chain_id=chain_id
         datalake=datalake,
         index=index + 1,
         result_counter=result_counter + 1,
@@ -308,7 +309,7 @@ func fetch_receipt_data_points{
     fetch_trait: FetchTrait,
     chain_info: ChainInfo,
 }(
-    datalake: TransactionsInBlockDatalake, index: felt, result_counter: felt, data_points: Uint256*
+    chain_id: felt, datalake: TransactionsInBlockDatalake, index: felt, result_counter: felt, data_points: Uint256*
 ) -> felt {
     alloc_locals;
     let current_receipt_index = datalake.start_index + index * datalake.increment;
@@ -323,7 +324,7 @@ func fetch_receipt_data_points{
         return result_counter;
     }
 
-    let (receipt) = ReceiptMemorizer.get(datalake.target_block, current_receipt_index);
+    let (receipt) = ReceiptMemorizer.get(chain_id=chain_id, block_number=datalake.target_block, key_low=current_receipt_index);
 
     if (datalake.included_types[receipt.type] == 0) {
         return fetch_receipt_data_points(
@@ -345,6 +346,7 @@ func fetch_receipt_data_points{
     ] = data_point_reverse_endian;
 
     return fetch_receipt_data_points(
+        chain_id=chain_id
         datalake=datalake,
         index=index + 1,
         result_counter=result_counter + 1,

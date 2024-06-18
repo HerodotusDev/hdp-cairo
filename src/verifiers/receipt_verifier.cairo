@@ -73,7 +73,7 @@ func verify_n_receipt_proofs{
     assert receipt_proof.key.high = 0;  // sanity check
     let receipt_index = chunk_to_felt_be(receipt_proof.key.low);
 
-    ReceiptMemorizer.add(receipt_proof.block_number, receipt_index, index);
+    ReceiptMemorizer.add(chain_id=chain_id, block_number=receipt_proof.block_number, key_low=receipt_index, index=index);
 
     assert receipts[index] = receipt;
 
