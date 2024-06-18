@@ -94,13 +94,13 @@ func fetch_data_points{
     pow2_array: felt*,
     fetch_trait: FetchTrait,
     chain_info: ChainInfo,
-}(datalake: TransactionsInBlockDatalake) -> (Uint256*, felt) {
+}(chain_id: felt, datalake: TransactionsInBlockDatalake) -> (Uint256*, felt) {
     alloc_locals;
     let (data_points: Uint256*) = alloc();
 
     if (datalake.type == TX_IN_BLOCK_TYPES.TX) {
         let data_points_len = abstract_fetch_tx_data_points(
-            datalake=datalake, index=0, result_counter=0, data_points=data_points
+            chain_id=chain_id, datalake=datalake, index=0, result_counter=0, data_points=data_points
         );
 
         return (data_points, data_points_len);
@@ -108,7 +108,7 @@ func fetch_data_points{
 
     if (datalake.type == TX_IN_BLOCK_TYPES.RECEIPT) {
         let data_points_len = abstract_fetch_receipt_data_points(
-            datalake=datalake, index=0, result_counter=0, data_points=data_points
+            chain_id=chain_id, datalake=datalake, index=0, result_counter=0, data_points=data_points
         );
         return (data_points, data_points_len);
     }
@@ -126,7 +126,11 @@ func abstract_fetch_tx_data_points{
     pow2_array: felt*,
     fetch_trait: FetchTrait,
 }(
-    datalake: TransactionsInBlockDatalake, index: felt, result_counter: felt, data_points: Uint256*
+    chain_id: felt,
+    datalake: TransactionsInBlockDatalake,
+    index: felt,
+    result_counter: felt,
+    data_points: Uint256*,
 ) -> felt {
     jmp abs fetch_trait.transaction_datalake.fetch_tx_data_points_ptr;
 }
@@ -141,7 +145,11 @@ func abstract_fetch_receipt_data_points{
     fetch_trait: FetchTrait,
     chain_info: ChainInfo,
 }(
-    datalake: TransactionsInBlockDatalake, index: felt, result_counter: felt, data_points: Uint256*
+    chain_id: felt,
+    datalake: TransactionsInBlockDatalake,
+    index: felt,
+    result_counter: felt,
+    data_points: Uint256*,
 ) -> felt {
     jmp abs fetch_trait.transaction_datalake.fetch_receipt_data_points_ptr;
 }

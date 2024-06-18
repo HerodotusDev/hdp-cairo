@@ -51,6 +51,7 @@ namespace Task {
         if (index == n_tasks) {
             return ();
         } else {
+            local task_chain_id: felt;
             let (datalake_input: felt*) = alloc();
             local datalake_input_bytes_len: felt;
             local datalake_type: felt;
@@ -58,6 +59,9 @@ namespace Task {
             let (tasks_input: felt*) = alloc();
             local tasks_input_bytes_len: felt;
             %{
+                # TODO load it from program_input
+                ids.task_chain_id = 1
+
                 task = program_input["tasks"][ids.index]
                 segments.write_arg(ids.datalake_input, hex_to_int_array(task["encoded_datalake"]))
                 ids.datalake_input_bytes_len = task["datalake_bytes_len"]
@@ -75,6 +79,7 @@ namespace Task {
             let (local task) = extract_params_and_construct_task{
                 range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
             }(
+                chain_id=task_chain_id,
                 input=tasks_input,
                 input_bytes_len=tasks_input_bytes_len,
                 datalake_hash=datalake_hash,
@@ -218,22 +223,21 @@ namespace Task {
             return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
         }
 
-        // %{
-        //     from contract_bootloader.objects import Module
-        //     module = Module.Schema().load(program_input["module"])
-        //     compiled_class = module.module_class
-        // %}
+        %{
+            from contract_bootloader.objects import Module
+            module = Module.Schema().load(program_input["module"])
+            compiled_class = module.module_class
+        %}
 
-        // let result = compute_contract();
-        // assert [results] = result;
+        let result = compute_contract();
+        assert [results] = result;
 
-        // %{
-        //     target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
-        //     print(f"Task Result({ids.index}): 0x{target_result}")
-        // %}
+        %{
+            target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
+            print(f"Task Result({ids.index}): 0x{target_result}")
+        %}
 
-        // return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
-        return();
+        return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
     }
 }
 
@@ -241,6 +245,7 @@ namespace Task {
 func extract_params_and_construct_task{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*
 }(
+    chain_id: felt,
     input: felt*,
     input_bytes_len: felt,
     datalake_hash: Uint256,
@@ -281,6 +286,7 @@ func extract_params_and_construct_task{
 
         return (
             task=ComputationalTask(
+                chain_id=chain_id,
                 hash=hash,
                 datalake_ptr=datalake_ptr,
                 datalake_type=datalake_type,
@@ -299,6 +305,7 @@ func extract_params_and_construct_task{
 
         return (
             task=ComputationalTask(
+                chain_id=chain_id,
                 hash=hash,
                 datalake_ptr=datalake_ptr,
                 datalake_type=datalake_type,
@@ -310,6 +317,7 @@ func extract_params_and_construct_task{
     }
     return (
         task=ComputationalTask(
+            chain_id=chain_id,
             hash=hash,
             datalake_ptr=datalake_ptr,
             datalake_type=datalake_type,

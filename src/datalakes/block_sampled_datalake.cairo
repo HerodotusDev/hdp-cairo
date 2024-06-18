@@ -162,14 +162,14 @@ func fetch_data_points{
     headers: Header*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
-}(datalake: BlockSampledDataLake) -> (Uint256*, felt) {
+}(chain_id: felt, datalake: BlockSampledDataLake) -> (Uint256*, felt) {
     alloc_locals;
 
     let (data_points: Uint256*) = alloc();
 
     if (datalake.property_type == BlockSampledProperty.HEADER) {
         let data_points_len = abstract_fetch_header_data_points(
-            datalake=datalake, index=0, data_points=data_points
+            chain_id=chain_id, datalake=datalake, index=0, data_points=data_points
         );
 
         return (data_points, data_points_len);
@@ -177,7 +177,7 @@ func fetch_data_points{
 
     if (datalake.property_type == BlockSampledProperty.ACCOUNT) {
         let data_points_len = abstract_fetch_account_data_points(
-            datalake=datalake, index=0, data_points=data_points
+            chain_id=chain_id, datalake=datalake, index=0, data_points=data_points
         );
 
         return (data_points, data_points_len);
@@ -185,7 +185,7 @@ func fetch_data_points{
 
     if (datalake.property_type == BlockSampledProperty.STORAGE_SLOT) {
         let data_points_len = abstract_fetch_storage_data_points(
-            datalake=datalake, index=0, data_points=data_points
+            chain_id=chain_id, datalake=datalake, index=0, data_points=data_points
         );
 
         return (data_points, data_points_len);
@@ -209,7 +209,7 @@ func abstract_fetch_account_data_points{
     account_values: AccountValues*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
-}(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
+}(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     jmp abs fetch_trait.block_sampled_datalake.fetch_account_data_points_ptr;
 }
 
@@ -226,7 +226,7 @@ func abstract_fetch_storage_data_points{
     storage_values: Uint256*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
-}(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
+}(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     jmp abs fetch_trait.block_sampled_datalake.fetch_storage_data_points_ptr;
 }
 
@@ -234,12 +234,13 @@ func abstract_fetch_storage_data_points{
 // Fills the data_points array with the values of the sampled property in LE
 func abstract_fetch_header_data_points{
     range_check_ptr,
+    poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     header_dict: DictAccess*,
     headers: Header*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
-}(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
+}(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     jmp abs fetch_trait.block_sampled_datalake.fetch_header_data_points_ptr;
 }
 
