@@ -49,7 +49,7 @@ namespace HeaderMemorizer {
 func gen_header_key{poseidon_ptr: PoseidonBuiltin*}(chain_id: felt, block_number: felt) -> felt {
     alloc_locals;
 
-    local data: felt* = nondet %{ segment.add() %};
+    local data: felt* = nondet %{ segments.add() %};
     assert data[0] = chain_id;
     assert data[1] = block_number;
 
@@ -93,7 +93,7 @@ func gen_account_key{poseidon_ptr: PoseidonBuiltin*}(
 ) -> felt {
     alloc_locals;
 
-    local data: felt* = nondet %{ segment.add() %};
+    local data: felt* = nondet %{ segments.add() %};
     assert data[0] = chain_id;
     assert data[1] = block_number;
     memcpy(dst=data + 2, src=address, len=3);
@@ -138,7 +138,7 @@ func gen_storage_key{poseidon_ptr: PoseidonBuiltin*}(
 ) -> felt {
     alloc_locals;
 
-    local data: felt* = nondet %{ segment.add() %};
+    local data: felt* = nondet %{ segments.add() %};
     assert data[0] = chain_id;
     assert data[1] = block_number;
     memcpy(dst=data + 2, src=address, len=3);
@@ -184,7 +184,7 @@ func gen_transaction_key{poseidon_ptr: PoseidonBuiltin*}(
 ) -> felt {
     alloc_locals;
 
-    local data: felt* = nondet %{ segment.add() %};
+    local data: felt* = nondet %{ segments.add() %};
     assert data[0] = chain_id;
     assert data[1] = block_number;
     assert data[2] = key_low;
@@ -229,7 +229,7 @@ func gen_receipt_key{poseidon_ptr: PoseidonBuiltin*}(
 ) -> felt {
     alloc_locals;
 
-    local data: felt* = nondet %{ segment.add() %};
+    local data: felt* = nondet %{ segments.add() %};
     assert data[0] = chain_id;
     assert data[1] = block_number;
     assert data[2] = key_low;

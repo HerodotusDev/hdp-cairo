@@ -218,21 +218,22 @@ namespace Task {
             return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
         }
 
-        %{
-            from contract_bootloader.objects import Module
-            module = Module.Schema().load(program_input["module"])
-            compiled_class = module.module_class
-        %}
+        // %{
+        //     from contract_bootloader.objects import Module
+        //     module = Module.Schema().load(program_input["module"])
+        //     compiled_class = module.module_class
+        // %}
 
-        let result = compute_contract();
-        assert [results] = result;
+        // let result = compute_contract();
+        // assert [results] = result;
 
-        %{
-            target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
-            print(f"Task Result({ids.index}): 0x{target_result}")
-        %}
+        // %{
+        //     target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
+        //     print(f"Task Result({ids.index}): 0x{target_result}")
+        // %}
 
-        return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
+        // return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
+        return();
     }
 }
 
