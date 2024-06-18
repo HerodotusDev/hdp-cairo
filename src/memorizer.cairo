@@ -9,6 +9,7 @@ from starkware.cairo.common.builtin_poseidon.poseidon import (
 from starkware.cairo.common.dict import dict_write, dict_read
 from src.types import Header, AccountValues, Transaction, Receipt
 from starkware.cairo.common.uint256 import Uint256
+from starkware.cairo.common.memcpy import memcpy
 
 const MEMORIZER_DEFAULT = 100000000;  // An arbitrary large number. We need to ensure each memorizer never contains >= number of elements.
 
@@ -95,9 +96,7 @@ func gen_account_key{poseidon_ptr: PoseidonBuiltin*}(
     local data: felt* = nondet %{ segment.add() %};
     assert data[0] = chain_id;
     assert data[1] = block_number;
-    assert data[2] = address[0];
-    assert data[3] = address[1];
-    assert data[4] = address[2];
+    memcpy(dst=data[2], src=address, len=3);
 
     let (res) = poseidon_hash_many(5, data);
     return res;
@@ -144,13 +143,8 @@ func gen_storage_key{poseidon_ptr: PoseidonBuiltin*}(
     local data: felt* = nondet %{ segment.add() %};
     assert data[0] = chain_id;
     assert data[1] = block_number;
-    assert data[2] = address[0];
-    assert data[3] = address[1];
-    assert data[4] = address[2];
-    assert data[5] = storage_slot[0];
-    assert data[6] = storage_slot[1];
-    assert data[7] = storage_slot[2];
-    assert data[8] = storage_slot[3];
+    memcpy(dst=data[2], src=address, len=3);
+    memcpy(dst=data[5], src=storage_slot, len=4);
 
     let (res) = poseidon_hash_many(9, data);
     return res;
