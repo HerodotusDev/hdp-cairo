@@ -142,7 +142,7 @@ func gen_storage_key{poseidon_ptr: PoseidonBuiltin*}(
     assert data[0] = chain_id;
     assert data[1] = block_number;
     memcpy(dst=data + 2, src=address, len=3);
-    memcpy(dst=data + 7, src=storage_slot, len=4);
+    memcpy(dst=data + 5, src=storage_slot, len=4);
 
     let (res) = poseidon_hash_many(9, data);
     return res;

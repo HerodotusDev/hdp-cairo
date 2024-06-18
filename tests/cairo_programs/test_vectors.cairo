@@ -119,6 +119,7 @@ namespace BlockSampledTaskMocker {
         %}
 
         let task = ComputationalTask(
+            chain_id=0x1,
             hash=Uint256(
                 low=0x407E98D423A7BB2DBF09B0E42601FC9B, high=0xEF8B01F35B404615F0339EEFAE7719A2
             ),
@@ -171,6 +172,7 @@ namespace BlockSampledTaskMocker {
         let datalake_ptr: felt* = cast(&datalake, felt*);
 
         let task = ComputationalTask(
+            chain_id=0x1,
             hash=Uint256(
                 low=0x407E98D423A7BB2DBF09B0E42601FC9B, high=0xEF8B01F35B404615F0339EEFAE7719A2
             ),
@@ -211,6 +213,7 @@ namespace BlockSampledTaskMocker {
         let datalake_ptr: felt* = cast(&datalake, felt*);
 
         let task = ComputationalTask(
+            chain_id=0x1,
             hash=Uint256(
                 low=0x3CB6684D1B4B7FDEA3FBACAEA422C944, high=0x02F8516E3F7BE7FCCFDE22FB4A98DF37
             ),
@@ -253,6 +256,7 @@ namespace BlockSampledTaskMocker {
         let datalake_ptr: felt* = cast(&datalake, felt*);
 
         let task = ComputationalTask(
+            chain_id=0x1,
             hash=Uint256(
                 low=0x9F439795EE0CA868B463479E5A905BF0, high=0x72CEFA1188B199ECEEAB39767CD32605
             ),
@@ -295,6 +299,7 @@ namespace BlockSampledTaskMocker {
         let datalake_ptr: felt* = cast(&datalake, felt*);
 
         let task = ComputationalTask(
+            chain_id=0x1,
             hash=Uint256(
                 low=0x1CD2E160D860B4D1BD1E327B6AA209BD, high=0xCABA4809710EB228D6A31DE1B852DFB7
             ),
@@ -337,6 +342,7 @@ namespace BlockSampledTaskMocker {
         let datalake_ptr: felt* = cast(&datalake, felt*);
 
         let task = ComputationalTask(
+            chain_id=0x1,
             hash=Uint256(
                 low=0xAE5641FEA9032C936D7E54D7CF36E2C3, high=0xA53CFAB970F9780B3C39CFAC1DD3D425
             ),
