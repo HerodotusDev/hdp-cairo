@@ -344,7 +344,7 @@ func fetch_account_data_points{
     account_values: AccountValues*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
-}(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
+}(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     alloc_locals;
 
     let current_block_number = datalake.block_range_start + index * datalake.increment;
@@ -358,7 +358,7 @@ func fetch_account_data_points{
     }
 
     let (account_value) = AccountMemorizer.get(
-        address=datalake.properties + 1, block_number=current_block_number
+        chain_id=chain_id, address=datalake.properties + 1, block_number=current_block_number
     );
 
     let data_point = AccountDecoder.get_field{
@@ -397,9 +397,10 @@ func fetch_storage_data_points{
     }
 
     let (data_point) = StorageMemorizer.get(
-        storage_slot=datalake.properties + 3,
-        address=datalake.properties,
+        chain_id=chain_id,
         block_number=current_block_number,
+        address=datalake.properties,
+        storage_slot=datalake.properties + 3
     );
 
     assert [data_points + index * Uint256.SIZE] = data_point;

@@ -142,7 +142,7 @@ func verify_account{
     assert account_values[account_value_idx] = AccountValues(values=value, values_len=value_len);
 
     // add account to memorizer
-    AccountMemorizer.add(account.address, account_proof.block_number, account_value_idx);
+    AccountMemorizer.add(chain_id=chain_id, block_number=account_proof.block_number, address=account.address, index=account_value_idx);
 
     return verify_account(
         chain_id=chain_id,
