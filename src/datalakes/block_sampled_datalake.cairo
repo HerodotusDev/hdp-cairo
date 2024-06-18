@@ -358,7 +358,7 @@ func fetch_account_data_points{
     }
 
     let (account_value) = AccountMemorizer.get(
-        chain_id=chain_id, address=datalake.properties + 1, block_number=current_block_number
+        chain_id=chain_id, block_number=current_block_number, address=datalake.properties + 1
     );
 
     let data_point = AccountDecoder.get_field{
@@ -367,7 +367,9 @@ func fetch_account_data_points{
 
     assert [data_points + index * Uint256.SIZE] = data_point;
 
-    return fetch_account_data_points(datalake=datalake, index=index + 1, data_points=data_points);
+    return fetch_account_data_points(
+        chain_id=chain_id, datalake=datalake, index=index + 1, data_points=data_points
+    );
 }
 
 // Collects the storage data points defined in the datalake from the memorizer recursivly
@@ -383,7 +385,7 @@ func fetch_storage_data_points{
     storage_values: Uint256*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
-}(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
+}(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     alloc_locals;
 
     let current_block_number = datalake.block_range_start + index * datalake.increment;
@@ -405,13 +407,16 @@ func fetch_storage_data_points{
 
     assert [data_points + index * Uint256.SIZE] = data_point;
 
-    return fetch_storage_data_points(datalake=datalake, index=index + 1, data_points=data_points);
+    return fetch_storage_data_points(
+        chain_id=chain_id, datalake=datalake, index=index + 1, data_points=data_points
+    );
 }
 
 // Collects the header data points defined in the datalake from the memorizer recursivly.
 // Fills the data_points array with the values of the sampled property in LE
 func fetch_header_data_points{
     range_check_ptr,
+    poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     header_dict: DictAccess*,
     headers: Header*,

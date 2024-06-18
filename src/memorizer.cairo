@@ -23,18 +23,20 @@ namespace HeaderMemorizer {
         return (header_dict=header_dict, header_dict_start=header_dict_start);
     }
 
-    func add{header_dict: DictAccess*}(chain_id: felt, block_number: felt, index: felt) {
-        dict_write{dict_ptr=header_dict}(
-            key=gen_header_key(chain_id, block_number), new_value=index
-        );
+    func add{poseidon_ptr: PoseidonBuiltin*, header_dict: DictAccess*}(
+        chain_id: felt, block_number: felt, index: felt
+    ) {
+        let key = gen_header_key(chain_id, block_number);
+        dict_write{dict_ptr=header_dict}(key=key, new_value=index);
         return ();
     }
 
-    func get{header_dict: DictAccess*, headers: Header*}(
+    func get{poseidon_ptr: PoseidonBuiltin*, header_dict: DictAccess*, headers: Header*}(
         chain_id: felt, block_number: felt
     ) -> Header {
         alloc_locals;
-        let (index) = dict_read{dict_ptr=header_dict}(key=gen_header_key(chain_id, block_number));
+        let key = gen_header_key(chain_id, block_number);
+        let (index) = dict_read{dict_ptr=header_dict}(key=key);
 
         if (index == MEMORIZER_DEFAULT) {
             assert 1 = 0;
@@ -66,19 +68,17 @@ namespace AccountMemorizer {
     func add{poseidon_ptr: PoseidonBuiltin*, account_dict: DictAccess*}(
         chain_id: felt, block_number: felt, address: felt*, index: felt
     ) {
-        dict_write{dict_ptr=account_dict}(
-            key=gen_account_key(chain_id, block_number, address), new_value=index
-        );
+        let key = gen_account_key(chain_id, block_number, address);
+        dict_write{dict_ptr=account_dict}(key=key, new_value=index);
         return ();
     }
 
     func get{
-        account_dict: DictAccess*, account_values: AccountValues*, poseidon_ptr: PoseidonBuiltin*
+        poseidon_ptr: PoseidonBuiltin*, account_dict: DictAccess*, account_values: AccountValues*
     }(chain_id: felt, block_number: felt, address: felt*) -> (account_value: AccountValues) {
         alloc_locals;
-        let (index) = dict_read{dict_ptr=account_dict}(
-            gen_account_key(chain_id, block_number, address)
-        );
+        let key = gen_account_key(chain_id, block_number, address);
+        let (index) = dict_read{dict_ptr=account_dict}(key=key);
 
         if (index == MEMORIZER_DEFAULT) {
             assert 1 = 0;
@@ -96,7 +96,7 @@ func gen_account_key{poseidon_ptr: PoseidonBuiltin*}(
     local data: felt* = nondet %{ segment.add() %};
     assert data[0] = chain_id;
     assert data[1] = block_number;
-    memcpy(dst=data[2], src=address, len=3);
+    memcpy(dst=data + 2, src=address, len=3);
 
     let (res) = poseidon_hash_many(5, data);
     return res;
@@ -113,19 +113,17 @@ namespace StorageMemorizer {
     func add{poseidon_ptr: PoseidonBuiltin*, storage_dict: DictAccess*}(
         chain_id: felt, block_number: felt, address: felt*, storage_slot: felt*, index: felt
     ) {
-        dict_write{dict_ptr=storage_dict}(
-            key=gen_storage_key(chain_id, block_number, address, storage_slot), new_value=index
-        );
+        let key = gen_storage_key(chain_id, block_number, address, storage_slot);
+        dict_write{dict_ptr=storage_dict}(key=key, new_value=index);
         return ();
     }
 
-    func get{storage_dict: DictAccess*, storage_values: Uint256*, poseidon_ptr: PoseidonBuiltin*}(
+    func get{poseidon_ptr: PoseidonBuiltin*, storage_dict: DictAccess*, storage_values: Uint256*}(
         chain_id: felt, block_number: felt, address: felt*, storage_slot: felt*
     ) -> (storage_value: Uint256) {
         alloc_locals;
-        let (index) = dict_read{dict_ptr=storage_dict}(
-            gen_storage_key(chain_id, block_number, address, storage_slot)
-        );
+        let key = gen_storage_key(chain_id, block_number, address, storage_slot);
+        let (index) = dict_read{dict_ptr=storage_dict}(key=key);
 
         if (index == MEMORIZER_DEFAULT) {
             assert 1 = 0;
@@ -143,8 +141,8 @@ func gen_storage_key{poseidon_ptr: PoseidonBuiltin*}(
     local data: felt* = nondet %{ segment.add() %};
     assert data[0] = chain_id;
     assert data[1] = block_number;
-    memcpy(dst=data[2], src=address, len=3);
-    memcpy(dst=data[5], src=storage_slot, len=4);
+    memcpy(dst=data + 2, src=address, len=3);
+    memcpy(dst=data + 7, src=storage_slot, len=4);
 
     let (res) = poseidon_hash_many(9, data);
     return res;
@@ -161,19 +159,17 @@ namespace TransactionMemorizer {
     func add{poseidon_ptr: PoseidonBuiltin*, transaction_dict: DictAccess*}(
         chain_id: felt, block_number: felt, key_low: felt, index: felt
     ) {
-        dict_write{dict_ptr=transaction_dict}(
-            key=gen_transaction_key(chain_id, block_number, key_low), new_value=index
-        );
+        let key = gen_transaction_key(chain_id, block_number, key_low);
+        dict_write{dict_ptr=transaction_dict}(key=key, new_value=index);
         return ();
     }
 
     func get{
-        transaction_dict: DictAccess*, transactions: Transaction*, poseidon_ptr: PoseidonBuiltin*
+        poseidon_ptr: PoseidonBuiltin*, transaction_dict: DictAccess*, transactions: Transaction*
     }(chain_id: felt, block_number: felt, key_low: felt) -> (transaction: Transaction) {
         alloc_locals;
-        let (index) = dict_read{dict_ptr=transaction_dict}(
-            gen_transaction_key(chain_id, block_number, key_low)
-        );
+        let key = gen_transaction_key(chain_id, block_number, key_low);
+        let (index) = dict_read{dict_ptr=transaction_dict}(key=key);
 
         if (index == MEMORIZER_DEFAULT) {
             assert 1 = 0;
@@ -208,19 +204,17 @@ namespace ReceiptMemorizer {
     func add{poseidon_ptr: PoseidonBuiltin*, receipt_dict: DictAccess*}(
         chain_id: felt, block_number: felt, key_low: felt, index: felt
     ) {
-        dict_write{dict_ptr=receipt_dict}(
-            key=gen_receipt_key(chain_id, block_number, key_low), new_value=index
-        );
+        let key = gen_receipt_key(chain_id, block_number, key_low);
+        dict_write{dict_ptr=receipt_dict}(key=key, new_value=index);
         return ();
     }
 
-    func get{receipt_dict: DictAccess*, receipts: Receipt*, poseidon_ptr: PoseidonBuiltin*}(
+    func get{poseidon_ptr: PoseidonBuiltin*, receipt_dict: DictAccess*, receipts: Receipt*}(
         chain_id: felt, block_number: felt, key_low: felt
     ) -> (receipt: Receipt) {
         alloc_locals;
-        let (index) = dict_read{dict_ptr=receipt_dict}(
-            gen_receipt_key(chain_id, block_number, key_low)
-        );
+        let key = gen_receipt_key(chain_id, block_number, key_low);
+        let (index) = dict_read{dict_ptr=receipt_dict}(key=key);
 
         if (index == MEMORIZER_DEFAULT) {
             assert 1 = 0;

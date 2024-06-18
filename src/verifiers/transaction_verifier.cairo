@@ -67,7 +67,9 @@ func verify_n_transaction_proofs{
     assert tx_proof.key.high = 0;  // sanity check
     let tx_index = chunk_to_felt_be(tx_proof.key.low);
 
-    TransactionMemorizer.add(chain_id=chain_id, block_number=tx_proof.block_number, key_low=tx_index, index=index);
+    TransactionMemorizer.add(
+        chain_id=chain_id, block_number=tx_proof.block_number, key_low=tx_index, index=index
+    );
     assert transactions[index] = tx;
 
     return verify_n_transaction_proofs(

@@ -55,7 +55,11 @@ func verify_headers_inclusion{
         HeaderMemorizer.add(chain_id=chain_id, block_number=block_number, index=index);
 
         return verify_headers_inclusion(
-            headers=headers, mmr_size=mmr_size, n_headers=n_headers, index=index + 1
+            chain_id=chain_id,
+            headers=headers,
+            mmr_size=mmr_size,
+            n_headers=n_headers,
+            index=index + 1,
         );
     }
 
@@ -77,6 +81,6 @@ func verify_headers_inclusion{
     HeaderMemorizer.add(chain_id=chain_id, block_number=block_number, index=index);
 
     return verify_headers_inclusion(
-        headers=headers, mmr_size=mmr_size, n_headers=n_headers, index=index + 1
+        chain_id=chain_id, headers=headers, mmr_size=mmr_size, n_headers=n_headers, index=index + 1
     );
 }

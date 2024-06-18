@@ -1,4 +1,4 @@
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
 from starkware.cairo.builtin_selection.select_input_builtins import select_input_builtins
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.find_element import find_element, search_sorted

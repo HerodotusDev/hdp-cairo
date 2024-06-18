@@ -6,7 +6,7 @@ from starkware.starknet.common.new_syscalls import (
     ResponseHeader,
     FailureReason,
 )
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
 from starkware.starknet.core.os.builtins import BuiltinPointers
 from starkware.cairo.common.dict_access import DictAccess
 from src.types import Header
@@ -76,7 +76,7 @@ func execute_call_contract{
     let chain_id = call_contract_request.calldata_start[4];
     let block_number = call_contract_request.calldata_start[5];
 
-    let header = HeaderMemorizer.get(gen_header_key(chain_id=chain_id, block_number=block_number));
+    let header = HeaderMemorizer.get(chain_id=chain_id, block_number=block_number);
     let parentHash = HeaderDecoder.get_field(header.rlp, HeaderField.PARENT);
     let (value) = uint256_reverse_endian(parentHash);
 

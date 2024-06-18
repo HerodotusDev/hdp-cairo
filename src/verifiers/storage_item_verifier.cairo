@@ -82,7 +82,13 @@ func verify_n_storage_items{
     account_dict: DictAccess*,
     storage_dict: DictAccess*,
     pow2_array: felt*,
-}(chain_id:felt, storage_items: StorageItem*, storage_items_len: felt, storage_values: Uint256*, state_idx: felt) {
+}(
+    chain_id: felt,
+    storage_items: StorageItem*,
+    storage_items_len: felt,
+    storage_values: Uint256*,
+    state_idx: felt,
+) {
     if (storage_items_len == 0) {
         return ();
     }
@@ -98,6 +104,7 @@ func verify_n_storage_items{
     );
 
     return verify_n_storage_items(
+        chain_id=chain_id,
         storage_items=storage_items,
         storage_items_len=storage_items_len - 1,
         storage_values=storage_values,
@@ -119,7 +126,13 @@ func verify_storage_item{
     account_dict: DictAccess*,
     storage_dict: DictAccess*,
     pow2_array: felt*,
-}(chain_id:felt, storage_item: StorageItem, storage_values: Uint256*, proof_idx: felt, state_idx: felt) -> felt {
+}(
+    chain_id: felt,
+    storage_item: StorageItem,
+    storage_values: Uint256*,
+    proof_idx: felt,
+    state_idx: felt,
+) -> felt {
     alloc_locals;
     if (proof_idx == storage_item.proofs_len) {
         return state_idx;
@@ -128,7 +141,9 @@ func verify_storage_item{
     let slot_proof = storage_item.proofs[proof_idx];
 
     // get state_root from verified headers
-    let (account_value) = AccountMemorizer.get(chain_id=chain_id, block_number=slot_proof.block_number, address=storage_item.address);
+    let (account_value) = AccountMemorizer.get(
+        chain_id=chain_id, block_number=slot_proof.block_number, address=storage_item.address
+    );
     let state_root = AccountDecoder.get_field(account_value.values, AccountField.STATE_ROOT);
 
     let (value: felt*, value_bytes_len: felt) = verify_mpt_proof(
@@ -145,7 +160,11 @@ func verify_storage_item{
     assert storage_values[state_idx] = decoded_value;
 
     StorageMemorizer.add(
-        chain_id=chain_id, block_number=slot_proof.block_number, address=storage_item.address, storage_slotstorage_item.slot, index=state_idx
+        chain_id=chain_id,
+        block_number=slot_proof.block_number,
+        address=storage_item.address,
+        storage_slot=storage_item.slot,
+        index=state_idx,
     );
 
     return verify_storage_item(
