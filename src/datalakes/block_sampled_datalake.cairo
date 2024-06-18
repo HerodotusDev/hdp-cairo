@@ -416,7 +416,7 @@ func fetch_header_data_points{
     headers: Header*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
-}(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
+}(chain_id:felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     alloc_locals;
     let current_block_number = datalake.block_range_start + index * datalake.increment;
 
@@ -428,7 +428,7 @@ func fetch_header_data_points{
         return index;
     }
 
-    let header = HeaderMemorizer.get(block_number=current_block_number);
+    let header = HeaderMemorizer.get(chain_id=chain_id, block_number=current_block_number);
 
     let data_point = HeaderDecoder.get_field{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
@@ -436,5 +436,5 @@ func fetch_header_data_points{
 
     assert [data_points + index * Uint256.SIZE] = data_point;
 
-    return fetch_header_data_points(datalake=datalake, index=index + 1, data_points=data_points);
+    return fetch_header_data_points(chain_id=chain_id, datalake=datalake, index=index + 1, data_points=data_points);
 }

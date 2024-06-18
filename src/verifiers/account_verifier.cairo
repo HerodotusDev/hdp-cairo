@@ -115,7 +115,7 @@ func verify_account{
     account_dict: DictAccess*,
     pow2_array: felt*,
 }(
-    account: Account, account_values: AccountValues*, account_value_idx: felt, proof_idx: felt
+    chain_id:felt, account: Account, account_values: AccountValues*, account_value_idx: felt, proof_idx: felt
 ) -> felt {
     alloc_locals;
     if (proof_idx == account.proofs_len) {
@@ -125,7 +125,7 @@ func verify_account{
     let account_proof = account.proofs[proof_idx];
 
     // get state_root from verified headers
-    let header = HeaderMemorizer.get(account_proof.block_number);
+    let header = HeaderMemorizer.get(chain_id=chain_id, account_proof.block_number);
     let state_root = HeaderDecoder.get_field(header.rlp, HeaderField.STATE_ROOT);
 
     let (value: felt*, value_len: felt) = verify_mpt_proof(
@@ -145,6 +145,7 @@ func verify_account{
     AccountMemorizer.add(account.address, account_proof.block_number, account_value_idx);
 
     return verify_account(
+        chain_id=chain_id,
         account=account,
         account_values=account_values,
         account_value_idx=account_value_idx + 1,

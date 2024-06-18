@@ -10,7 +10,7 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.starknet.core.os.builtins import BuiltinPointers
 from starkware.cairo.common.dict_access import DictAccess
 from src.types import Header
-from src.memorizer import HeaderMemorizer
+from src.memorizer import HeaderMemorizer, gen_header_key
 from src.decoders.header_decoder import HeaderDecoder, HeaderField
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 
@@ -38,6 +38,7 @@ const HEADER_MEMORIZER_ID = 0;
 func execute_syscalls{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
     syscall_ptr: felt*,
     builtin_ptrs: BuiltinPointers*,
     header_dict: DictAccess*,
@@ -58,6 +59,7 @@ func execute_syscalls{
 func execute_call_contract{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
     syscall_ptr: felt*,
     builtin_ptrs: BuiltinPointers*,
     header_dict: DictAccess*,
@@ -71,9 +73,10 @@ func execute_call_contract{
     let call_contract_request = cast(syscall_ptr, CallContractRequest*);
     let syscall_ptr = syscall_ptr + CallContractRequest.SIZE;
 
-    let key = call_contract_request.calldata_start[4];
+    let chain_id = call_contract_request.calldata_start[4];
+    let block_number = call_contract_request.calldata_start[5];
 
-    let header = HeaderMemorizer.get(key);
+    let header = HeaderMemorizer.get(gen_header_key(chain_id=chain_id, block_number=block_number));
     let parentHash = HeaderDecoder.get_field(header.rlp, HeaderField.PARENT);
     let (value) = uint256_reverse_endian(parentHash);
 

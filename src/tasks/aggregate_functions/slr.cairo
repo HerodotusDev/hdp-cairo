@@ -215,7 +215,7 @@ func fetch_header_data_points{
     headers: Header*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
-}(datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
+}(chain_id:felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     alloc_locals;
     let current_block_number = datalake.block_range_start + index * datalake.increment;
 
@@ -227,7 +227,7 @@ func fetch_header_data_points{
         return index;
     }
 
-    let header = HeaderMemorizer.get(block_number=current_block_number);
+    let header = HeaderMemorizer.get(chain_id=chain_id, block_number=current_block_number);
 
     local data_point0: Uint256 = Uint256(low=current_block_number, high=0x0);
 
@@ -240,7 +240,7 @@ func fetch_header_data_points{
     assert [data_points + index * 2 * Uint256.SIZE + 0 * Uint256.SIZE] = data_point0;
     assert [data_points + index * 2 * Uint256.SIZE + 1 * Uint256.SIZE] = data_point1_reverse_endian;
 
-    return fetch_header_data_points(datalake=datalake, index=index + 1, data_points=data_points);
+    return fetch_header_data_points(chain_id=chain_id, datalake=datalake, index=index + 1, data_points=data_points);
 }
 
 func fetch_tx_data_points{

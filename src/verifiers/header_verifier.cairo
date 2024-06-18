@@ -35,7 +35,7 @@ func verify_headers_inclusion{
     pow2_array: felt*,
     peaks_dict: DictAccess*,
     header_dict: DictAccess*,
-}(headers: Header*, mmr_size: felt, n_headers: felt, index: felt) {
+}(chain_id: felt, headers: Header*, mmr_size: felt, n_headers: felt, index: felt) {
     alloc_locals;
     if (index == n_headers) {
         return ();
@@ -52,7 +52,7 @@ func verify_headers_inclusion{
 
         // add to memorizer
         let block_number = HeaderDecoder.get_block_number(headers[index].rlp);
-        HeaderMemorizer.add(block_number=block_number, index=index);
+        HeaderMemorizer.add(chain_id=chain_id, block_number=block_number, index=index);
 
         return verify_headers_inclusion(
             headers=headers, mmr_size=mmr_size, n_headers=n_headers, index=index + 1
@@ -74,7 +74,7 @@ func verify_headers_inclusion{
 
     // add to memorizer
     let block_number = HeaderDecoder.get_block_number(headers[index].rlp);
-    HeaderMemorizer.add(block_number=block_number, index=index);
+    HeaderMemorizer.add(chain_id=chain_id, block_number=block_number, index=index);
 
     return verify_headers_inclusion(
         headers=headers, mmr_size=mmr_size, n_headers=n_headers, index=index + 1

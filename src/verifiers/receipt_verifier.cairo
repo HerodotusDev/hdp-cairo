@@ -34,7 +34,7 @@ func verify_n_receipt_proofs{
     headers: Header*,
     header_dict: DictAccess*,
     pow2_array: felt*,
-}(receipt_proofs: ReceiptProof*, receipt_proofs_len: felt, index: felt) {
+}(chain_id: felt, receipt_proofs: ReceiptProof*, receipt_proofs_len: felt, index: felt) {
     alloc_locals;
 
     if (receipt_proofs_len == index) {
@@ -42,7 +42,7 @@ func verify_n_receipt_proofs{
     }
 
     let receipt_proof = receipt_proofs[index];
-    let header = HeaderMemorizer.get(receipt_proof.block_number);
+    let header = HeaderMemorizer.get(chain_id=chain_id, block_number=receipt_proof.block_number);
     let receipt_root = HeaderDecoder.get_field(header.rlp, HeaderField.RECEIPT_ROOT);
 
     let (rlp, rlp_bytes_len) = verify_mpt_proof{
@@ -78,7 +78,7 @@ func verify_n_receipt_proofs{
     assert receipts[index] = receipt;
 
     return verify_n_receipt_proofs(
-        receipt_proofs=receipt_proofs, receipt_proofs_len=receipt_proofs_len, index=index + 1
+        chain_id=chain_id, receipt_proofs=receipt_proofs, receipt_proofs_len=receipt_proofs_len, index=index + 1
     );
 }
 

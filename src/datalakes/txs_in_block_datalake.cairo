@@ -2,7 +2,7 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin,
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.alloc import alloc
-from src.memorizer import HeaderMemorizer, TransactionMemorizer, ReceiptMemorizer
+from src.memorizer import TransactionMemorizer, ReceiptMemorizer
 from starkware.cairo.common.dict_access import DictAccess
 from packages.eth_essentials.lib.utils import word_reverse_endian_64
 from packages.eth_essentials.lib.mpt import verify_mpt_proof
