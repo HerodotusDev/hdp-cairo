@@ -34,15 +34,25 @@ export -f format_scarb_project
 
 # Find all .cairo files under src/ and tests/ directories and format them in parallel
 echo "Formatting .cairo files..."
-find ./src ./tests ./packages/contract_bootloader/ ./packages/hdp_bootloader/ -name '*.cairo' ! -path "./src/cairo1/*" ! -path "./src/contracts/*" | parallel --halt soon,fail=1 format_file
+find ./src ./tests ./packages/contract_bootloader/ ./packages/hdp_bootloader/ -name '*.cairo' ! -path "./src/cairo1/*" ! -path "./src/contracts/*" | parallel --halt soon,fail=1 format_file {}
+
+# Capture the exit status of parallel for .cairo files
+exit_status_cairo_files=$?
 
 # Find Scarb projects and execute format_scarb_project in each
 echo "Formatting Scarb projects..."
-find ./src/cairo1 ./src/contracts -mindepth 1 -maxdepth 1 -type d | parallel --halt now,fail=1 format_scarb_project
+find ./src/cairo1 ./src/contracts -mindepth 1 -maxdepth 1 -type d | parallel --halt now,fail=1 format_scarb_project {}
 
-# Capture the exit status of parallel
-exit_status=$?
+# Capture the exit status of parallel for Scarb projects
+exit_status_scarb_projects=$?
 
-# Exit with the captured status
-echo "Parallel execution exited with status: $exit_status"
-exit $exit_status
+# Determine the final exit status
+if [ $exit_status_cairo_files -ne 0 ] || [ $exit_status_scarb_projects -ne 0 ]; then
+    final_exit_status=1
+else
+    final_exit_status=0
+fi
+
+# Exit with the determined status
+echo "Parallel execution exited with status: $final_exit_status"
+exit $final_exit_status
