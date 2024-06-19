@@ -1,1 +1,1 @@
-starknet-sierra-compile example/target/dev/example_contract.contract_class.json contract_sierra.json --add-pythonic-hints
+starknet-sierra-compile simple_linear_regression/target/dev/simple_linear_regression_slr.contract_class.json contract_sierra.json --add-pythonic-hints
