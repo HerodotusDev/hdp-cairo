@@ -77,7 +77,13 @@ func verify_n_accounts{
     header_dict: DictAccess*,
     account_dict: DictAccess*,
     pow2_array: felt*,
-}(accounts: Account*, accounts_len: felt, account_values: AccountValues*, account_value_idx: felt) {
+}(
+    chain_id,
+    accounts: Account*,
+    accounts_len: felt,
+    account_values: AccountValues*,
+    account_value_idx: felt,
+) {
     alloc_locals;
     if (accounts_len == 0) {
         return ();
@@ -86,6 +92,7 @@ func verify_n_accounts{
     let account_idx = accounts_len - 1;
 
     let account_value_idx = verify_account(
+        chain_id=chain_id,
         account=accounts[account_idx],
         account_values=account_values,
         account_value_idx=account_value_idx,
@@ -93,6 +100,7 @@ func verify_n_accounts{
     );
 
     return verify_n_accounts(
+        chain_id=chain_id,
         accounts=accounts,
         accounts_len=accounts_len - 1,
         account_values=account_values,
@@ -115,7 +123,11 @@ func verify_account{
     account_dict: DictAccess*,
     pow2_array: felt*,
 }(
-    account: Account, account_values: AccountValues*, account_value_idx: felt, proof_idx: felt
+    chain_id: felt,
+    account: Account,
+    account_values: AccountValues*,
+    account_value_idx: felt,
+    proof_idx: felt,
 ) -> felt {
     alloc_locals;
     if (proof_idx == account.proofs_len) {
@@ -125,7 +137,7 @@ func verify_account{
     let account_proof = account.proofs[proof_idx];
 
     // get state_root from verified headers
-    let header = HeaderMemorizer.get(account_proof.block_number);
+    let header = HeaderMemorizer.get(chain_id=chain_id, block_number=account_proof.block_number);
     let state_root = HeaderDecoder.get_field(header.rlp, HeaderField.STATE_ROOT);
 
     let (value: felt*, value_len: felt) = verify_mpt_proof(
@@ -142,9 +154,15 @@ func verify_account{
     assert account_values[account_value_idx] = AccountValues(values=value, values_len=value_len);
 
     // add account to memorizer
-    AccountMemorizer.add(account.address, account_proof.block_number, account_value_idx);
+    AccountMemorizer.add(
+        chain_id=chain_id,
+        block_number=account_proof.block_number,
+        address=account.address,
+        index=account_value_idx,
+    );
 
     return verify_account(
+        chain_id=chain_id,
         account=account,
         account_values=account_values,
         account_value_idx=account_value_idx + 1,

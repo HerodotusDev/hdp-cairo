@@ -24,6 +24,7 @@ from src.tasks.aggregate_functions.avg import compute_avg
 from src.tasks.aggregate_functions.min_max import uint256_min_le, uint256_max_le
 from src.tasks.aggregate_functions.count_if import count_if
 from src.tasks.aggregate_functions.slr import compute_slr, get_fetch_trait as get_slr_fetch_trait
+from src.tasks.aggregate_functions.contract import compute_contract
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
 
 namespace AGGREGATE_FN {
@@ -50,6 +51,7 @@ namespace Task {
         if (index == n_tasks) {
             return ();
         } else {
+            local task_chain_id: felt;
             let (datalake_input: felt*) = alloc();
             local datalake_input_bytes_len: felt;
             local datalake_type: felt;
@@ -57,6 +59,9 @@ namespace Task {
             let (tasks_input: felt*) = alloc();
             local tasks_input_bytes_len: felt;
             %{
+                # TODO load it from program_input
+                ids.task_chain_id = 1
+
                 task = program_input["tasks"][ids.index]
                 segments.write_arg(ids.datalake_input, hex_to_int_array(task["encoded_datalake"]))
                 ids.datalake_input_bytes_len = task["datalake_bytes_len"]
@@ -74,6 +79,7 @@ namespace Task {
             let (local task) = extract_params_and_construct_task{
                 range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
             }(
+                chain_id=task_chain_id,
                 input=tasks_input,
                 input_bytes_len=tasks_input_bytes_len,
                 datalake_hash=datalake_hash,
@@ -89,9 +95,12 @@ namespace Task {
 
     // Executes the aggregate_fn of the passed tasks
     func execute{
-        range_check_ptr,
         pedersen_ptr: HashBuiltin*,
+        range_check_ptr,
+        ecdsa_ptr,
         bitwise_ptr: BitwiseBuiltin*,
+        ec_op_ptr,
+        keccak_ptr: KeccakBuiltin*,
         poseidon_ptr: PoseidonBuiltin*,
         account_dict: DictAccess*,
         account_values: AccountValues*,
@@ -214,10 +223,21 @@ namespace Task {
             return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
         }
 
-        // Unknonwn aggregate_fn_id
-        assert 0 = 1;
+        %{
+            from contract_bootloader.objects import Module
+            module = Module.Schema().load(program_input["module"])
+            compiled_class = module.module_class
+        %}
 
-        return ();
+        let result = compute_contract();
+        assert [results] = result;
+
+        %{
+            target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
+            print(f"Task Result({ids.index}): 0x{target_result}")
+        %}
+
+        return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
     }
 }
 
@@ -225,6 +245,7 @@ namespace Task {
 func extract_params_and_construct_task{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*
 }(
+    chain_id: felt,
     input: felt*,
     input_bytes_len: felt,
     datalake_hash: Uint256,
@@ -265,6 +286,7 @@ func extract_params_and_construct_task{
 
         return (
             task=ComputationalTask(
+                chain_id=chain_id,
                 hash=hash,
                 datalake_ptr=datalake_ptr,
                 datalake_type=datalake_type,
@@ -283,6 +305,7 @@ func extract_params_and_construct_task{
 
         return (
             task=ComputationalTask(
+                chain_id=chain_id,
                 hash=hash,
                 datalake_ptr=datalake_ptr,
                 datalake_type=datalake_type,
@@ -294,6 +317,7 @@ func extract_params_and_construct_task{
     }
     return (
         task=ComputationalTask(
+            chain_id=chain_id,
             hash=hash,
             datalake_ptr=datalake_ptr,
             datalake_type=datalake_type,

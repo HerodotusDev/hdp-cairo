@@ -87,7 +87,9 @@ namespace Datalake {
             let block_sampled_datalake: BlockSampledDataLake = [
                 cast(task.datalake_ptr, BlockSampledDataLake*)
             ];
-            let (res, res_len) = fetch_block_sampled_data_points(block_sampled_datalake);
+            let (res, res_len) = fetch_block_sampled_data_points(
+                task.chain_id, block_sampled_datalake
+            );
 
             return (res=res, res_len=res_len);
         }
@@ -96,7 +98,9 @@ namespace Datalake {
             let tx_in_block_datalake: TransactionsInBlockDatalake = [
                 cast(task.datalake_ptr, TransactionsInBlockDatalake*)
             ];
-            let (res, res_len) = fetch_txs_in_block_data_points(tx_in_block_datalake);
+            let (res, res_len) = fetch_txs_in_block_data_points(
+                task.chain_id, tx_in_block_datalake
+            );
 
             return (res=res, res_len=res_len);
         }

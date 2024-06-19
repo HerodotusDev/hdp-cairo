@@ -22,6 +22,8 @@ coverage.*
 .pytest_cache/
 
 # Rust
+cairo-vm
+hdp-test
 target/
 Cargo.lock
 
@@ -32,6 +34,3 @@ docker-compose.yml
 # Version control
 .git/
 .gitignore
-
-hdp-test
-cairo-vm

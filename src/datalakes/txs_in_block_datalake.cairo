@@ -2,7 +2,7 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin,
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.alloc import alloc
-from src.memorizer import HeaderMemorizer, TransactionMemorizer, ReceiptMemorizer
+from src.memorizer import TransactionMemorizer, ReceiptMemorizer
 from starkware.cairo.common.dict_access import DictAccess
 from packages.eth_essentials.lib.utils import word_reverse_endian_64
 from packages.eth_essentials.lib.mpt import verify_mpt_proof
@@ -94,13 +94,13 @@ func fetch_data_points{
     pow2_array: felt*,
     fetch_trait: FetchTrait,
     chain_info: ChainInfo,
-}(datalake: TransactionsInBlockDatalake) -> (Uint256*, felt) {
+}(chain_id: felt, datalake: TransactionsInBlockDatalake) -> (Uint256*, felt) {
     alloc_locals;
     let (data_points: Uint256*) = alloc();
 
     if (datalake.type == TX_IN_BLOCK_TYPES.TX) {
         let data_points_len = abstract_fetch_tx_data_points(
-            datalake=datalake, index=0, result_counter=0, data_points=data_points
+            chain_id=chain_id, datalake=datalake, index=0, result_counter=0, data_points=data_points
         );
 
         return (data_points, data_points_len);
@@ -108,7 +108,7 @@ func fetch_data_points{
 
     if (datalake.type == TX_IN_BLOCK_TYPES.RECEIPT) {
         let data_points_len = abstract_fetch_receipt_data_points(
-            datalake=datalake, index=0, result_counter=0, data_points=data_points
+            chain_id=chain_id, datalake=datalake, index=0, result_counter=0, data_points=data_points
         );
         return (data_points, data_points_len);
     }
@@ -126,7 +126,11 @@ func abstract_fetch_tx_data_points{
     pow2_array: felt*,
     fetch_trait: FetchTrait,
 }(
-    datalake: TransactionsInBlockDatalake, index: felt, result_counter: felt, data_points: Uint256*
+    chain_id: felt,
+    datalake: TransactionsInBlockDatalake,
+    index: felt,
+    result_counter: felt,
+    data_points: Uint256*,
 ) -> felt {
     jmp abs fetch_trait.transaction_datalake.fetch_tx_data_points_ptr;
 }
@@ -141,7 +145,11 @@ func abstract_fetch_receipt_data_points{
     fetch_trait: FetchTrait,
     chain_info: ChainInfo,
 }(
-    datalake: TransactionsInBlockDatalake, index: felt, result_counter: felt, data_points: Uint256*
+    chain_id: felt,
+    datalake: TransactionsInBlockDatalake,
+    index: felt,
+    result_counter: felt,
+    data_points: Uint256*,
 ) -> felt {
     jmp abs fetch_trait.transaction_datalake.fetch_receipt_data_points_ptr;
 }
@@ -157,7 +165,11 @@ func fetch_tx_data_points{
     pow2_array: felt*,
     fetch_trait: FetchTrait,
 }(
-    datalake: TransactionsInBlockDatalake, index: felt, result_counter: felt, data_points: Uint256*
+    chain_id: felt,
+    datalake: TransactionsInBlockDatalake,
+    index: felt,
+    result_counter: felt,
+    data_points: Uint256*,
 ) -> felt {
     alloc_locals;
     let current_tx_index = datalake.start_index + index * datalake.increment;
@@ -171,10 +183,13 @@ func fetch_tx_data_points{
         return result_counter;
     }
 
-    let (tx) = TransactionMemorizer.get(datalake.target_block, current_tx_index);
+    let (tx) = TransactionMemorizer.get(
+        chain_id=chain_id, block_number=datalake.target_block, key_low=current_tx_index
+    );
 
     if (datalake.included_types[tx.type] == 0) {
         return fetch_tx_data_points(
+            chain_id=chain_id,
             datalake=datalake,
             index=index + 1,
             result_counter=result_counter,
@@ -185,6 +200,7 @@ func fetch_tx_data_points{
     let datapoint = TransactionDecoder.get_field(tx, datalake.sampled_property);
     assert data_points[result_counter] = datapoint;
     return fetch_tx_data_points(
+        chain_id=chain_id,
         datalake=datalake,
         index=index + 1,
         result_counter=result_counter + 1,
@@ -202,7 +218,11 @@ func fetch_receipt_data_points{
     fetch_trait: FetchTrait,
     chain_info: ChainInfo,
 }(
-    datalake: TransactionsInBlockDatalake, index: felt, result_counter: felt, data_points: Uint256*
+    chain_id: felt,
+    datalake: TransactionsInBlockDatalake,
+    index: felt,
+    result_counter: felt,
+    data_points: Uint256*,
 ) -> felt {
     alloc_locals;
     let current_receipt_index = datalake.start_index + index * datalake.increment;
@@ -216,10 +236,13 @@ func fetch_receipt_data_points{
         return result_counter;
     }
 
-    let (receipt) = ReceiptMemorizer.get(datalake.target_block, current_receipt_index);
+    let (receipt) = ReceiptMemorizer.get(
+        chain_id=chain_id, block_number=datalake.target_block, key_low=current_receipt_index
+    );
 
     if (datalake.included_types[receipt.type] == 0) {
         return fetch_receipt_data_points(
+            chain_id=chain_id,
             datalake=datalake,
             index=index + 1,
             result_counter=result_counter,
@@ -230,6 +253,7 @@ func fetch_receipt_data_points{
     let datapoint = ReceiptDecoder.get_field(receipt, datalake.sampled_property);
     assert data_points[result_counter] = datapoint;
     return fetch_receipt_data_points(
+        chain_id=chain_id,
         datalake=datalake,
         index=index + 1,
         result_counter=result_counter + 1,
