@@ -33,6 +33,7 @@ pub impl HeaderMemorizerImpl of HeaderMemorizerTrait {
                 *self.dict.offset,
                 *self.list.segment_index,
                 *self.list.offset,
+                key.chain_id,
                 key.block_number,
             ]
                 .span()
