@@ -27,10 +27,7 @@ jobs:
         with:
           file: environment.dockerfile
           tags: "dataprocessor/hdp-cairo:latest"
-
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-
+#
       - name: Setup Scarb
         uses: software-mansion/setup-scarb@v1
 
@@ -49,18 +46,19 @@ jobs:
           restore-keys: |
               ${{ runner.os }}-python-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('tools/make/setup.sh') }}
               ${{ runner.os }}-python-
-      # Cache Cargo directories
-      - name: Cache Cargo directories
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('tools/make/install_cairo1_run.sh') }}
-          restore-keys: |
-            key: ${{ runner.os }}-cargo-${{ hashFiles('tools/make/install_cairo1_run.sh') }}
-            ${{ runner.os }}-cargo-
+
+#      - name: Cache Cargo directories
+#        uses: actions/cache@v3
+#        with:
+#          path: |
+#            ~/.cargo/bin/
+#            ~/.cargo/registry/index/
+#            ~/.cargo/registry/cache/
+#            ~/.cargo/git/db/
+#            cairo-vm/cargo-run/target
+#          key: ${{ runner.os }}-cargo-${{ hashFiles('tools/make/install_cairo1_run.sh') }}
+#          restore-keys: ${{ runner.os }}-cargo-
+
       - name: Install Dependencies
         run: make setup
 
