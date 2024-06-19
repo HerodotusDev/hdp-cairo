@@ -205,23 +205,23 @@ namespace Task {
             return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
         }
 
-        if (tasks[index].aggregate_fn_id == AGGREGATE_FN.SLR) {
-            let fetch_trait = get_slr_fetch_trait();
-            with fetch_trait {
-                let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
-            }
-            let result = compute_slr(
-                values=data_points, values_len=data_points_len, predict=tasks[index].ctx_value
-            );
-            assert [results] = result;
+        // if (tasks[index].aggregate_fn_id == AGGREGATE_FN.SLR) {
+        //     let fetch_trait = get_slr_fetch_trait();
+        //     with fetch_trait {
+        //         let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
+        //     }
+        //     let result = compute_slr(
+        //         values=data_points, values_len=data_points_len, predict=tasks[index].ctx_value
+        //     );
+        //     assert [results] = result;
 
-            %{
-                target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
-                print(f"Task Result({ids.index}): 0x{target_result}")
-            %}
+        //     %{
+        //         target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
+        //         print(f"Task Result({ids.index}): 0x{target_result}")
+        //     %}
 
-            return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
-        }
+        //     return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
+        // }
 
         %{
             from contract_bootloader.objects import Module
