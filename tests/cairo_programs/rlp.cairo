@@ -25,7 +25,6 @@ func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuilt
             uint256_reverse_endian,
             split_128,
             reverse_endian,
-            bytes_to_8_bytes_chunks,
         )
         import rlp
     %}
