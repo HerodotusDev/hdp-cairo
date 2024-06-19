@@ -243,8 +243,10 @@ func run{
         array=mmr_meta.peaks, index=mmr_meta.peaks_len - 1
     );
 
+    let chain_id = 0x1;
+
     // Fetch matching chain info
-    let (local chain_info) = fetch_chain_info(1);
+    let (local chain_info) = fetch_chain_info(chain_id);
 
     // Check 2: Ensure the header is contained in a peak, and that the peak is known
     verify_headers_inclusion{
@@ -253,7 +255,7 @@ func run{
         pow2_array=pow2_array,
         peaks_dict=peaks_dict,
         header_dict=header_dict,
-    }(headers=headers, mmr_size=mmr_meta.size, n_headers=headers_len, index=0);
+    }(chain_id=chain_id, headers=headers, mmr_size=mmr_meta.size, n_headers=headers_len, index=0);
 
     populate_account_segments(accounts=accounts, n_accounts=accounts_len, index=0);
 
@@ -271,6 +273,7 @@ func run{
         account_dict=account_dict,
         pow2_array=pow2_array,
     }(
+        chain_id=chain_id,
         accounts=accounts,
         accounts_len=accounts_len,
         account_values=account_values,
@@ -287,6 +290,7 @@ func run{
         storage_dict=storage_dict,
         pow2_array=pow2_array,
     }(
+        chain_id=chain_id,
         storage_items=storage_items,
         storage_items_len=storage_items_len,
         storage_values=storage_values,
@@ -305,7 +309,12 @@ func run{
         header_dict=header_dict,
         pow2_array=pow2_array,
         chain_info=chain_info,
-    }(tx_proofs=transaction_proofs, tx_proofs_len=transaction_proof_len, index=0);
+    }(
+        chain_id=chain_id,
+        tx_proofs=transaction_proofs,
+        tx_proofs_len=transaction_proof_len,
+        index=0,
+    );
 
     // Check 6: Verify the receipt proofs
     verify_n_receipt_proofs{
@@ -318,7 +327,12 @@ func run{
         headers=headers,
         header_dict=header_dict,
         pow2_array=pow2_array,
-    }(receipt_proofs=receipt_proofs, receipt_proofs_len=receipt_proof_len, index=0);
+    }(
+        chain_id=chain_id,
+        receipt_proofs=receipt_proofs,
+        receipt_proofs_len=receipt_proof_len,
+        index=0,
+    );
 
     // Verified data is now in memorizer, and can be used for further computation
     Task.init{

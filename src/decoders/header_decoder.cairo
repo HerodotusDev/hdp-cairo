@@ -15,7 +15,6 @@ from packages.eth_essentials.lib.block_header import (
     extract_block_number_big,
     reverse_block_header_chunks,
 )
-from src.memorizer import HeaderMemorizer
 
 namespace HeaderField {
     const PARENT = 0;

@@ -35,7 +35,7 @@ func verify_n_transaction_proofs{
     header_dict: DictAccess*,
     pow2_array: felt*,
     chain_info: ChainInfo,
-}(tx_proofs: TransactionProof*, tx_proofs_len: felt, index: felt) {
+}(chain_id: felt, tx_proofs: TransactionProof*, tx_proofs_len: felt, index: felt) {
     alloc_locals;
 
     if (tx_proofs_len == index) {
@@ -43,7 +43,7 @@ func verify_n_transaction_proofs{
     }
 
     let tx_proof = tx_proofs[index];
-    let header = HeaderMemorizer.get(tx_proof.block_number);
+    let header = HeaderMemorizer.get(chain_id=chain_id, block_number=tx_proof.block_number);
     let tx_root = HeaderDecoder.get_field(header.rlp, HeaderField.TRANSACTION_ROOT);
 
     let (tx_item, tx_item_bytes_len) = verify_mpt_proof{
@@ -67,11 +67,13 @@ func verify_n_transaction_proofs{
     assert tx_proof.key.high = 0;  // sanity check
     let tx_index = chunk_to_felt_be(tx_proof.key.low);
 
-    TransactionMemorizer.add(tx_proof.block_number, tx_index, index);
+    TransactionMemorizer.add(
+        chain_id=chain_id, block_number=tx_proof.block_number, key_low=tx_index, index=index
+    );
     assert transactions[index] = tx;
 
     return verify_n_transaction_proofs(
-        tx_proofs=tx_proofs, tx_proofs_len=tx_proofs_len, index=index + 1
+        chain_id=chain_id, tx_proofs=tx_proofs, tx_proofs_len=tx_proofs_len, index=index + 1
     );
 }
 

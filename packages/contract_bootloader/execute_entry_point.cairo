@@ -1,4 +1,4 @@
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
 from starkware.cairo.builtin_selection.select_input_builtins import select_input_builtins
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.find_element import find_element, search_sorted
@@ -49,6 +49,7 @@ struct EntryPointReturnValues {
 func call_execute_syscalls{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
     syscall_ptr: felt*,
     builtin_ptrs: BuiltinPointers*,
     header_dict: DictAccess*,
@@ -116,6 +117,7 @@ func get_entry_point{range_check_ptr}(
 func execute_entry_point{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
     builtin_ptrs: BuiltinPointers*,
     builtin_params: BuiltinParams*,
     header_dict: DictAccess*,

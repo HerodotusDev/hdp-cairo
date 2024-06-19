@@ -10,6 +10,7 @@ from contract_bootloader.syscall_handler_base import SyscallHandlerBase
 from starkware.cairo.common.dict import DictManager
 from starkware.cairo.common.structs import CairoStructProxy
 from tools.py.block_header import BlockHeaderDencun as Block
+from starkware.cairo.lang.vm.crypto import poseidon_hash_many
 from starkware.starknet.business_logic.execution.objects import (
     CallResult,
 )
@@ -52,7 +53,8 @@ class SyscallHandler(SyscallHandlerBase):
         dict_offset = calldata[1]
         list_segment = calldata[2]
         list_offset = calldata[3]
-        dict_key = calldata[4]
+
+        dict_key = poseidon_hash_many([calldata[4], calldata[5]])
 
         dict_ptr = RelocatableValue.from_tuple([dict_segment, dict_offset])
         dictionary = self.dict_manager.get_dict(dict_ptr)
