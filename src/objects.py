@@ -92,7 +92,7 @@ class ProcessedDatalakeCompute:
 
 
 @dataclass(frozen=True)
-class DatalakeComputeTask:
+class DatalakeTask:
     datalake_compute: ProcessedDatalakeCompute
 
 
@@ -103,7 +103,7 @@ class ModuleTask:
 
 @marshmallow_dataclass.dataclass(frozen=True)
 class InputTask(ValidatedMarshmallowDataclass):
-    task: Union[DatalakeComputeTask, ModuleTask] = field(
+    task: Union[DatalakeTask, ModuleTask] = field(
         metadata=additional_metadata(marshmallow_field=mfields.Raw())
     )
 
