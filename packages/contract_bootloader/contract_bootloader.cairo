@@ -39,9 +39,6 @@ func run_contract_bootloader{
     ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    header_dict: DictAccess*,
-    headers: Header*,
-    pow2_array: felt*,
 }(compiled_class: CompiledClass*, calldata_size: felt, calldata: felt*) -> (
     retdata_size: felt, retdata: felt*
 ) {

@@ -2,18 +2,12 @@ from typing import List, Optional, Union
 import marshmallow_dataclass
 from dataclasses import dataclass, field
 import marshmallow.fields as mfields
-from contract_bootloader.objects import Module
+from contract_bootloader.contract_class.contract_class import CompiledClass
 from starkware.starkware_utils.validated_dataclass import ValidatedMarshmallowDataclass
 from starkware.starkware_utils.marshmallow_dataclass_fields import (
     IntAsHex,
     additional_metadata,
 )
-
-
-@dataclass(frozen=True)
-class ProcessedHeaderProof:
-    leaf_idx: int
-    mmr_path: List[str]
 
 
 @dataclass(frozen=True)
@@ -33,20 +27,21 @@ class MMRMeta:
 
 
 @dataclass(frozen=True)
-class ProcessedHeader:
+class HeaderProof:
     rlp: str
-    proof: ProcessedHeaderProof
+    leaf_idx: int
+    mmr_path: List[str]
 
 
 @dataclass(frozen=True)
-class ProcessedAccount:
+class AccountProof:
     address: str
     account_key: str
     proofs: List[ProcessedMPTProof]
 
 
 @dataclass(frozen=True)
-class ProcessedStorage:
+class StorageProof:
     address: str
     slot: str
     storage_key: str
@@ -54,31 +49,31 @@ class ProcessedStorage:
 
 
 @dataclass(frozen=True)
-class ProcessedTransaction:
+class TransactionProof:
     key: str
     block_number: int
     proof: List[str]
 
 
 @dataclass(frozen=True)
-class ProcessedReceipt:
+class ReceiptProof:
     key: str
     block_number: int
     proof: List[str]
 
 
 @marshmallow_dataclass.dataclass(frozen=True)
-class ProcessedBlockProofs(ValidatedMarshmallowDataclass):
+class Proofs(ValidatedMarshmallowDataclass):
     mmr_meta: MMRMeta
-    headers: List[ProcessedHeader]
-    accounts: List[ProcessedAccount]
-    storages: List[ProcessedStorage]
-    transactions: List[ProcessedTransaction]
-    transaction_receipts: List[ProcessedReceipt]
+    headers: List[HeaderProof]
+    accounts: List[AccountProof]
+    storages: List[StorageProof]
+    transactions: List[TransactionProof]
+    transaction_receipts: List[ReceiptProof]
 
 
 @dataclass(frozen=True)
-class ProcessedDatalakeCompute:
+class Datalake:
     task_bytes_len: int
     encoded_task: List[int] = field(
         metadata=additional_metadata(marshmallow_field=mfields.List(IntAsHex()))
@@ -91,9 +86,19 @@ class ProcessedDatalakeCompute:
     property_type: int
 
 
+@marshmallow_dataclass.dataclass(frozen=True)
+class Module(ValidatedMarshmallowDataclass):
+    inputs: List[int] = field(
+        metadata=additional_metadata(
+            marshmallow_field=mfields.List(IntAsHex(), required=True)
+        )
+    )
+    module_class: CompiledClass
+
+
 @dataclass(frozen=True)
 class DatalakeTask:
-    datalake_compute: ProcessedDatalakeCompute
+    datalake: Datalake
 
 
 @dataclass(frozen=True)
@@ -109,12 +114,12 @@ class InputTask(ValidatedMarshmallowDataclass):
 
 
 @marshmallow_dataclass.dataclass(frozen=True)
-class RunnerInput(ValidatedMarshmallowDataclass):
+class HDPInput(ValidatedMarshmallowDataclass):
     task_root: int = field(metadata=additional_metadata(marshmallow_field=IntAsHex()))
     result_root: Optional[int] = field(
         default=None, metadata=additional_metadata(marshmallow_field=IntAsHex())
     )
-    proofs: ProcessedBlockProofs
+    proofs: Proofs
     tasks: List[InputTask] = field(
         metadata=additional_metadata(
             marshmallow_field=mfields.List(mfields.Nested(InputTask))

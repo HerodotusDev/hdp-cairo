@@ -13,13 +13,22 @@ from starkware.cairo.common.uint256 import (
 from starkware.cairo.common.registers import get_label_location
 from hdp_bootloader.bootloader.hdp_bootloader import run_simple_bootloader
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, HashBuiltin
+from starkware.cairo.common.cairo_builtins import (
+    HashBuiltin,
+    PoseidonBuiltin,
+    BitwiseBuiltin,
+    KeccakBuiltin,
+    SignatureBuiltin,
+    EcOpBuiltin,
+)
 from starkware.cairo.common.memcpy import memcpy
 from src.datalakes.block_sampled_datalake import BlockSampledProperty
 from src.decoders.account_decoder import AccountDecoder
 from src.decoders.header_decoder import HeaderDecoder
 from src.decoders.transaction_decoder import TransactionDecoder, TransactionType
 from src.decoders.receipt_decoder import ReceiptDecoder
+from contract_bootloader.contract_class.compiled_class import CompiledClass
+from contract_bootloader.contract_bootloader import run_contract_bootloader
 from src.memorizer import (
     AccountMemorizer,
     StorageMemorizer,
@@ -74,7 +83,10 @@ struct Output {
 func compute_slr{
     pedersen_ptr: HashBuiltin*,
     range_check_ptr,
+    ecdsa_ptr,
     bitwise_ptr: BitwiseBuiltin*,
+    ec_op_ptr,
+    keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
 }(values: Uint256*, values_len: felt, predict: Uint256) -> Uint256 {
     alloc_locals;
@@ -88,36 +100,53 @@ func compute_slr{
     assert task_input_arr[1 + values_len * 2 * 2 + 1] = predict.high;
 
     %{
-        from hdp_bootloader.bootloader.utils import load_json_from_package
-
-        hdp_bootloader_input = {
-            "task": {
-                "type": "CairoSierra",
-                "sierra_program": load_json_from_package(
-                    "compiled_cairo1_modules/simple_linear_regression/target/dev/simple_linear_regression.sierra.json"
-                ),
-                "use_poseidon": True
-            },
-            "single_page": True
-        }
+        from src.utils import load_json_from_package
+        from contract_bootloader.contract_class.contract_class import CompiledClass
+        compiled_class = CompiledClass.Schema().load(load_json_from_package("compiled_contracts/simple_linear_regression_contract.json"))
     %}
 
-    local return_ptr: felt*;
-    %{ ids.return_ptr = segments.add() %}
+    local compiled_class: CompiledClass*;
 
-    run_simple_bootloader{
-        output_ptr=return_ptr,
-        pedersen_ptr=pedersen_ptr,
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        poseidon_ptr=poseidon_ptr,
-    }(task_input_arr=task_input_arr, task_input_len=1 + values_len * 2 * 2 + 2);
+    // Fetch contract data form hints.
+    %{
+        from starkware.starknet.core.os.contract_class.compiled_class_hash import create_bytecode_segment_structure
+        from contract_bootloader.contract_class.compiled_class_hash_utils import get_compiled_class_struct
 
-    let output = cast(return_ptr - Output.SIZE, Output*);
+        # Append necessary footer to the bytecode of the contract
+        compiled_class.bytecode.append(0x208b7fff7fff7ffe)
+        compiled_class.bytecode_segment_lengths[-1] += 1
 
-    %{ print(f"SLR prediction for {ids.predict.low} is {ids.output.value.low}") %}
+        bytecode_segment_structure = create_bytecode_segment_structure(
+            bytecode=compiled_class.bytecode,
+            bytecode_segment_lengths=compiled_class.bytecode_segment_lengths,
+            visited_pcs=None,
+        )
 
-    return output.value;
+        cairo_contract = get_compiled_class_struct(
+            compiled_class=compiled_class,
+            bytecode=bytecode_segment_structure.bytecode_with_skipped_segments()
+        )
+        ids.compiled_class = segments.gen_arg(cairo_contract)
+    %}
+
+    assert compiled_class.bytecode_ptr[compiled_class.bytecode_length] = 0x208b7fff7fff7ffe;
+
+    %{
+        vm_load_program(
+            compiled_class.get_runnable_program(entrypoint_builtins=[]),
+            ids.compiled_class.bytecode_ptr
+        )
+    %}
+
+    let (retdata_size, retdata) = run_contract_bootloader(
+        compiled_class=compiled_class,
+        calldata_size=1 + values_len * 2 * 2 + 2,
+        calldata=task_input_arr,
+    );
+
+    assert retdata_size = 2;
+    let res: Uint256 = Uint256(low=retdata[0], high=retdata[1]);
+    return res;
 }
 
 // Collects the account data points defined in the datalake from the memorizer recursivly

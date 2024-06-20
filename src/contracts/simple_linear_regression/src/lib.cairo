@@ -32,7 +32,7 @@ mod slr {
     struct Storage {}
 
     #[external(v0)]
-    pub fn main(ref self: ContractState, hdp: HDP, mut input: Input) -> u256 {
+    pub fn main(ref self: ContractState, mut input: Input) -> u256 {
         let mut x_i = array![];
         let mut y_i = array![];
 
