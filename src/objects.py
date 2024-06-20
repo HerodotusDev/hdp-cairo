@@ -1,6 +1,6 @@
 from typing import List, Optional, Union
 import marshmallow_dataclass
-from dataclasses import dataclass, field
+from dataclasses import field
 import marshmallow.fields as mfields
 from contract_bootloader.contract_class.contract_class import CompiledClass
 from starkware.starkware_utils.validated_dataclass import ValidatedMarshmallowDataclass
@@ -10,13 +10,13 @@ from starkware.starkware_utils.marshmallow_dataclass_fields import (
 )
 
 
-@dataclass(frozen=True)
+@marshmallow_dataclass.dataclass(frozen=True)
 class ProcessedMPTProof:
     block_number: int
     proof: List[str]
 
 
-@dataclass(frozen=True)
+@marshmallow_dataclass.dataclass(frozen=True)
 class MMRMeta:
     id: int
     root: str
@@ -26,21 +26,21 @@ class MMRMeta:
     )
 
 
-@dataclass(frozen=True)
+@marshmallow_dataclass.dataclass(frozen=True)
 class HeaderProof:
     rlp: str
     leaf_idx: int
     mmr_path: List[str]
 
 
-@dataclass(frozen=True)
+@marshmallow_dataclass.dataclass(frozen=True)
 class AccountProof:
     address: str
     account_key: str
     proofs: List[ProcessedMPTProof]
 
 
-@dataclass(frozen=True)
+@marshmallow_dataclass.dataclass(frozen=True)
 class StorageProof:
     address: str
     slot: str
@@ -48,14 +48,14 @@ class StorageProof:
     proofs: List[ProcessedMPTProof]
 
 
-@dataclass(frozen=True)
+@marshmallow_dataclass.dataclass(frozen=True)
 class TransactionProof:
     key: str
     block_number: int
     proof: List[str]
 
 
-@dataclass(frozen=True)
+@marshmallow_dataclass.dataclass(frozen=True)
 class ReceiptProof:
     key: str
     block_number: int
@@ -72,7 +72,7 @@ class Proofs(ValidatedMarshmallowDataclass):
     transaction_receipts: List[ReceiptProof]
 
 
-@dataclass(frozen=True)
+@marshmallow_dataclass.dataclass(frozen=True)
 class Datalake:
     task_bytes_len: int
     encoded_task: List[int] = field(
@@ -96,12 +96,12 @@ class Module(ValidatedMarshmallowDataclass):
     module_class: CompiledClass
 
 
-@dataclass(frozen=True)
+@marshmallow_dataclass.dataclass(frozen=True)
 class DatalakeTask:
     datalake: Datalake
 
 
-@dataclass(frozen=True)
+@marshmallow_dataclass.dataclass(frozen=True)
 class ModuleTask:
     module: Module
 
