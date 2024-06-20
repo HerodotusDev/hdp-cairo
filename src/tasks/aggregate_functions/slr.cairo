@@ -11,7 +11,6 @@ from starkware.cairo.common.uint256 import (
     Uint256,
 )
 from starkware.cairo.common.registers import get_label_location
-from hdp_bootloader.bootloader.hdp_bootloader import run_simple_bootloader
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.cairo_builtins import (
     HashBuiltin,
