@@ -241,8 +241,10 @@ func slr_main{
     %{ segments.write_arg(ids.array, [1, 0, 3, 0, 2, 0, 5, 0]) %}
 
     let values: Uint256* = cast(array, Uint256*);
-    let output = compute_slr(values=values, values_len=2, predict=Uint256(low=10, high=0));
+    let (program_hash, result) = compute_slr(
+        values=values, values_len=2, predict=Uint256(low=10, high=0)
+    );
 
-    assert output.low = 21;
+    assert result.low = 21;
     return ();
 }

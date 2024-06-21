@@ -27,7 +27,7 @@ from src.decoders.header_decoder import HeaderDecoder
 from src.decoders.transaction_decoder import TransactionDecoder, TransactionType
 from src.decoders.receipt_decoder import ReceiptDecoder
 from contract_bootloader.contract_class.compiled_class import CompiledClass
-from contract_bootloader.contract_bootloader import run_contract_bootloader
+from contract_bootloader.contract_bootloader import run_contract_bootloader, compute_program_hash
 from src.memorizer import (
     AccountMemorizer,
     StorageMemorizer,
@@ -87,7 +87,7 @@ func compute_slr{
     ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-}(values: Uint256*, values_len: felt, predict: Uint256) -> Uint256 {
+}(values: Uint256*, values_len: felt, predict: Uint256) -> (program_hash: felt, result: Uint256) {
     alloc_locals;
 
     let (local task_input_arr: felt*) = alloc();
@@ -129,6 +129,9 @@ func compute_slr{
     %}
 
     assert compiled_class.bytecode_ptr[compiled_class.bytecode_length] = 0x208b7fff7fff7ffe;
+    let (program_hash) = compute_program_hash(
+        bytecode_length=compiled_class.bytecode_length, bytecode_ptr=compiled_class.bytecode_ptr
+    );
 
     %{
         vm_load_program(
@@ -144,8 +147,8 @@ func compute_slr{
     );
 
     assert retdata_size = 2;
-    let res: Uint256 = Uint256(low=retdata[0], high=retdata[1]);
-    return res;
+    let result: Uint256 = Uint256(low=retdata[0], high=retdata[1]);
+    return (program_hash=program_hash, result=result);
 }
 
 // Collects the account data points defined in the datalake from the memorizer recursivly

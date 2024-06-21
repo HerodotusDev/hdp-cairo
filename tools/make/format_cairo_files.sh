@@ -41,7 +41,7 @@ exit_status_cairo_files=$?
 
 # Find Scarb projects and execute format_scarb_project in each
 echo "Formatting Scarb projects..."
-find ./src/cairo1 ./src/contracts -mindepth 1 -maxdepth 1 -type d | parallel --halt now,fail=1 format_scarb_project {}
+find ./src/contracts -mindepth 1 -maxdepth 1 -type d | parallel --halt now,fail=1 format_scarb_project {}
 
 # Capture the exit status of parallel for Scarb projects
 exit_status_scarb_projects=$?

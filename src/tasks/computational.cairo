@@ -210,7 +210,7 @@ namespace Task {
             with fetch_trait {
                 let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
             }
-            let result = compute_slr(
+            let (program_hash, result) = compute_slr(
                 values=data_points, values_len=data_points_len, predict=tasks[index].ctx_value
             );
             assert [results] = result;
