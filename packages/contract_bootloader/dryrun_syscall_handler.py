@@ -49,6 +49,8 @@ class SyscallHandler(SyscallHandlerBase):
             start_addr=request.calldata_start, end_addr=request.calldata_end
         )
 
+        
+
         return CallResult(
             gas_consumed=0,
             failure_flag=0,
