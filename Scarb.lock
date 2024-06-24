@@ -2,9 +2,14 @@
 version = 1
 
 [[package]]
+name = "hdp_cairo"
+version = "0.1.0"
+
+[[package]]
 name = "simple_linear_regression"
 version = "0.1.0"
 dependencies = [
+ "hdp_cairo",
  "snforge_std",
 ]
 
