@@ -1,6 +1,6 @@
-use simple_linear_regression::SLRTrait;
-use simple_linear_regression::{slr, main};
-use simple_linear_regression::fraction::fraction::{Fraction, FractionImpl, FractionTrait, Sign};
+use super::SLRTrait;
+use super::{slr};
+use super::fraction::fraction::{Fraction, FractionImpl, FractionTrait, Sign};
 
 #[test]
 fn test_slr_simple() {

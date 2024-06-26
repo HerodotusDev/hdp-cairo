@@ -23,10 +23,13 @@ export -f process_cairo_file
 mkdir -p build/compiled_cairo_files
 
 # Find Cairo files and process them in parallel
-find ./src ./tests/cairo_programs ./packages/contract_bootloader ./packages/hdp_bootloader -name "*.cairo" ! -path "./src/cairo1/*" ! -path "./src/contracts/*" | parallel --halt now,fail=1 process_cairo_file {}
+find ./src ./tests/cairo_programs ./packages/contract_bootloader -name "*.cairo" ! -path "./src/cairo1/*" ! -path "./src/contracts/*" | parallel --halt now,fail=1 process_cairo_file {}
 
 # Capture the exit status of parallel
 exit_status=$?
+
+# Build Cairo1 workspace
+scarb build
 
 # Exit with the captured status
 echo "Parallel execution exited with status: $exit_status"

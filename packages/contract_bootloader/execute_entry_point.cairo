@@ -23,8 +23,6 @@ from starkware.starknet.core.os.constants import (
 )
 from contract_bootloader.contract_class.compiled_class import CompiledClass, CompiledClassEntryPoint
 from contract_bootloader.execute_syscalls import ExecutionContext, execute_syscalls
-from starkware.cairo.common.dict_access import DictAccess
-from src.types import Header
 
 // Represents the arguments pushed to the stack before calling an entry point.
 struct EntryPointCallArguments {
@@ -52,9 +50,6 @@ func call_execute_syscalls{
     poseidon_ptr: PoseidonBuiltin*,
     syscall_ptr: felt*,
     builtin_ptrs: BuiltinPointers*,
-    header_dict: DictAccess*,
-    headers: Header*,
-    pow2_array: felt*,
 }(execution_context: ExecutionContext*, syscall_ptr_end: felt*) {
     execute_syscalls(execution_context, syscall_ptr_end);
     return ();
@@ -120,9 +115,6 @@ func execute_entry_point{
     poseidon_ptr: PoseidonBuiltin*,
     builtin_ptrs: BuiltinPointers*,
     builtin_params: BuiltinParams*,
-    header_dict: DictAccess*,
-    headers: Header*,
-    pow2_array: felt*,
 }(compiled_class: CompiledClass*, execution_context: ExecutionContext*) -> (
     retdata_size: felt, retdata: felt*
 ) {
@@ -148,12 +140,12 @@ func execute_entry_point{
     %{
         from contract_bootloader.syscall_handler import SyscallHandler
 
-        ids.syscall_ptr = segments.add()
-
         if '__dict_manager' not in globals():
-            raise RuntimeError('Dictionary manager is not initialized')
-        syscall_handler = SyscallHandler(segments=segments, dict_manager=__dict_manager)
+            from starkware.cairo.common.dict import DictManager
+            __dict_manager = DictManager()
 
+        ids.syscall_ptr = segments.add()
+        syscall_handler = SyscallHandler(segments=segments, dict_manager=__dict_manager)
         syscall_handler.set_syscall_ptr(syscall_ptr=ids.syscall_ptr)
     %}
 
@@ -176,7 +168,7 @@ func execute_entry_point{
     // Use tempvar to pass the rest of the arguments to contract_entry_point().
     let current_ap = ap;
     tempvar args = EntryPointCallArguments(
-        gas_builtin=1000000,
+        gas_builtin=2 ** 64 - 1,
         syscall_ptr=syscall_ptr,
         calldata_start=calldata_start,
         calldata_end=calldata_end,

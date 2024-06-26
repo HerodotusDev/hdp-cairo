@@ -1,4 +1,4 @@
-pub mod header_memorizer;
+pub mod memorizer;
 
 #[derive(Serde, Drop)]
 pub struct HDP {

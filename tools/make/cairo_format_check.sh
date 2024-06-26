@@ -35,9 +35,9 @@ find ./src ./tests ./packages/contract_bootloader/ ./packages/hdp_bootloader/ -n
 # Capture the exit status of parallel for .cairo files
 exit_status_cairo_files=$?
 
-# Find Scarb projects and format them in parallel
-echo "Finding and formatting Scarb projects..."
-find ./src/cairo1 ./src/contracts -mindepth 1 -maxdepth 1 -type d | parallel --halt now,fail=1 format_scarb_project {}
+# Format Scarb workspace
+echo "Formatting Scarb workspace..."
+scarb fmt
 
 # Capture the exit status of parallel for Scarb projects
 exit_status_scarb_projects=$?

@@ -17,6 +17,7 @@ from starkware.starknet.core.os.builtins import (
     BuiltinInstanceSizes,
     SelectableBuiltins,
 )
+from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash_many
 from contract_bootloader.execute_entry_point import execute_entry_point
 from starkware.starknet.core.os.constants import ENTRY_POINT_TYPE_EXTERNAL
 from contract_bootloader.execute_syscalls import ExecutionContext, ExecutionInfo
@@ -39,9 +40,6 @@ func run_contract_bootloader{
     ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    header_dict: DictAccess*,
-    headers: Header*,
-    pow2_array: felt*,
 }(compiled_class: CompiledClass*, calldata_size: felt, calldata: felt*) -> (
     retdata_size: felt, retdata: felt*
 ) {
@@ -107,4 +105,18 @@ func run_contract_bootloader{
     }
 
     return (retdata_size, retdata);
+}
+
+// Computes the hash of a program.
+// Arguments:
+//  * program_data_ptr - the pointer to the program to be hashed.
+// Return values:
+//  * hash - the computed program hash.
+func compute_program_hash{poseidon_ptr: PoseidonBuiltin*}(
+    bytecode_length: felt, bytecode_ptr: felt*
+) -> (hash: felt) {
+    let (hash) = poseidon_hash_many{poseidon_ptr=poseidon_ptr}(
+        n=bytecode_length, elements=bytecode_ptr
+    );
+    return (hash=hash);
 }
