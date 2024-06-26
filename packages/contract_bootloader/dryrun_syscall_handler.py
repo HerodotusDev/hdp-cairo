@@ -16,7 +16,7 @@ from starkware.starknet.business_logic.execution.objects import (
 )
 
 
-class SyscallHandler(SyscallHandlerBase):
+class DryRunSyscallHandler(SyscallHandlerBase):
     """
     A handler for system calls; used by the BusinessLogic entry point execution.
     """
