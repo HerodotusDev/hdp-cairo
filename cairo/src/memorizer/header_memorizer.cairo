@@ -1,5 +1,4 @@
-use core::option::OptionTrait;
-use super::{Memorizer};
+use hdp_cairo::Memorizer;
 use starknet::syscalls::call_contract_syscall;
 use starknet::{SyscallResult, SyscallResultTrait};
 use core::poseidon::poseidon_hash_span;

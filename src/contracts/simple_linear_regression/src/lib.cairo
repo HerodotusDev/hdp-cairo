@@ -1,8 +1,5 @@
 #[starknet::contract]
 mod slr {
-    pub mod hdp_context;
-    use hdp_context::HDP;
-
     pub mod fraction;
     use fraction::fraction::{Fraction, FractionImpl, FractionTrait, Sign};
 
