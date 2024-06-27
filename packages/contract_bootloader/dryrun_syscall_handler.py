@@ -91,6 +91,8 @@ class DryRunSyscallHandler(SyscallHandlerBase):
 class DryRunAccountMemorizerHandler(AbstractAccountMemorizerBase):
     def __init__(self, memorizer: Memorizer):
         super().__init__(memorizer=memorizer)
+        self.fetch_keys_registry: set[AccountMemorizerKey] = {}
 
     def get_balance(self, key: AccountMemorizerKey) -> Tuple[int, int]:
+        self.fetch_keys_registry.add(key)
         pass
