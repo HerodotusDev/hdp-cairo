@@ -1,6 +1,15 @@
 from enum import Enum
-from typing import List
+from marshmallow import fields
+from typing import List, Union
+from marshmallow_dataclass import dataclass
 from starkware.cairo.lang.vm.relocatable import RelocatableValue
+from contract_bootloader.memorizer.account_memorizer import (
+    MemorizerKey as AccountMemorizerKey,
+)
+from contract_bootloader.memorizer.header_memorizer import (
+    MemorizerKey as HeaderMemorizerKey,
+)
+from starkware.starkware_utils.marshmallow_dataclass_fields import additional_metadata
 
 
 class MemorizerId(Enum):
@@ -37,3 +46,10 @@ class Memorizer:
     @classmethod
     def size(cls) -> int:
         return 2 + 2
+
+
+@dataclass(frozen=True)
+class MemorizerKeyUnion:
+    key: Union[HeaderMemorizerKey, AccountMemorizerKey] = fields.Field(
+        metadata=additional_metadata(marshmallow_field=fields.Raw())
+    )

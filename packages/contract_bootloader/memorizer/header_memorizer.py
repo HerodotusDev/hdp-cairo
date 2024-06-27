@@ -2,6 +2,7 @@ from enum import Enum
 from typing import List, Tuple
 from abc import ABC, abstractmethod
 from contract_bootloader.memorizer import Memorizer
+from marshmallow_dataclass import dataclass
 
 
 class MemorizerFunctionId(Enum):
@@ -17,6 +18,7 @@ class MemorizerFunctionId(Enum):
         raise ValueError(f"{value} is not a valid {cls.__name__}")
 
 
+@dataclass(frozen=True)
 class MemorizerKey:
     def __init__(self, chain_id: int, block_number: int):
         self.chain_id = chain_id

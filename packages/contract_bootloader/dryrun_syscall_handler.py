@@ -18,6 +18,11 @@ from contract_bootloader.memorizer.account_memorizer import (
     MemorizerKey as AccountMemorizerKey,
 )
 
+from packages.contract_bootloader.provider.account_key_provider import (
+    AccountKeyEVMProvider,
+)
+from packages.contract_bootloader.provider.evm_provider import EVMProvider
+
 
 class DryRunSyscallHandler(SyscallHandlerBase):
     """
@@ -89,10 +94,21 @@ class DryRunSyscallHandler(SyscallHandlerBase):
 
 
 class DryRunAccountMemorizerHandler(AbstractAccountMemorizerBase):
-    def __init__(self, memorizer: Memorizer):
+    def __init__(self, memorizer: Memorizer, evm_provider_url: str):
         super().__init__(memorizer=memorizer)
+        self.evm_provider = AccountKeyEVMProvider(provider_url=evm_provider_url)
         self.fetch_keys_registry: set[AccountMemorizerKey] = {}
 
     def get_balance(self, key: AccountMemorizerKey) -> Tuple[int, int]:
-        self.fetch_keys_registry.add(key)
-        pass
+        self.fetch_keys_registry.add(AccountMemorizerKey)
+        print("get_balance", key.chain_id)
+        print("get_balance", key.block_number)
+        print("get_balance", key.address)
+
+        balance = self.evm_provider.get_balance(key=key)
+        print("balance", balance)
+
+        (
+            balance % 0x100000000000000000000000000000000,
+            balance // 0x100000000000000000000000000000000,
+        )

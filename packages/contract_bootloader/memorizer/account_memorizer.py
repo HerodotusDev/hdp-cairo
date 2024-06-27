@@ -2,6 +2,7 @@ from enum import Enum
 from typing import List, Tuple
 from abc import ABC, abstractmethod
 from contract_bootloader.memorizer import Memorizer
+from marshmallow_dataclass import dataclass
 
 
 class MemorizerFunctionId(Enum):
@@ -21,6 +22,7 @@ class MemorizerFunctionId(Enum):
         return 1
 
 
+@dataclass(frozen=True)
 class MemorizerKey:
     def __init__(self, chain_id: int, block_number: int, address: int):
         self.chain_id = chain_id
