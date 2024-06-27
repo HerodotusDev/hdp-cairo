@@ -1,18 +1,21 @@
-from rlp import decode
 from typing import (
     Dict,
     Iterable,
+    Tuple,
 )
-from tools.py.utils import little_8_bytes_chunks_to_bytes
 from starkware.cairo.lang.vm.relocatable import RelocatableValue, MaybeRelocatable
 from starkware.cairo.lang.vm.memory_segments import MemorySegmentManager
 from contract_bootloader.syscall_handler_base import SyscallHandlerBase
 from starkware.cairo.common.dict import DictManager
 from starkware.cairo.common.structs import CairoStructProxy
-from tools.py.block_header import BlockHeaderDencun as Block
-from starkware.cairo.lang.vm.crypto import poseidon_hash_many
 from starkware.starknet.business_logic.execution.objects import (
     CallResult,
+)
+from contract_bootloader.memorizer import MemorizerId, Memorizer
+from contract_bootloader.memorizer.account_memorizer import (
+    AbstractAccountMemorizerBase,
+    MemorizerFunctionId as AccountMemorizerFunctionId,
+    MemorizerKey as AccountMemorizerKey,
 )
 
 
@@ -49,8 +52,45 @@ class DryRunSyscallHandler(SyscallHandlerBase):
             start_addr=request.calldata_start, end_addr=request.calldata_end
         )
 
+        memorizerId = MemorizerId.from_int(calldata[0])
+
+        if memorizerId == MemorizerId.Account:
+            total_size = (
+                MemorizerId.size()
+                + AccountMemorizerFunctionId.size()
+                + Memorizer.size()
+                + AccountMemorizerKey.size()
+            )
+
+        if len(calldata) != total_size:
+            raise ValueError(
+                f"Memorizer must be initialized with a list of {total_size} integers"
+            )
+
+        idx = MemorizerId.size()
+        function_id = AccountMemorizerFunctionId.from_int(calldata[idx])
+
+        idx += AccountMemorizerFunctionId.size()
+        memorizer = Memorizer.from_int(calldata[idx : idx + Memorizer.size()])
+
+        idx += Memorizer.size()
+        key = AccountMemorizerKey.from_int(
+            calldata[idx : idx + AccountMemorizerKey.size()]
+        )
+
+        handler = DryRunAccountMemorizerHandler(memorizer=memorizer)
+        retdata = handler.handle(function_id=function_id, key=key)
+
         return CallResult(
             gas_consumed=0,
             failure_flag=0,
-            retdata=[],
+            retdata=retdata,
         )
+
+
+class DryRunAccountMemorizerHandler(AbstractAccountMemorizerBase):
+    def __init__(self, memorizer: Memorizer):
+        super().__init__(memorizer=memorizer)
+
+    def get_balance(self, key: AccountMemorizerKey) -> Tuple[int, int]:
+        pass
