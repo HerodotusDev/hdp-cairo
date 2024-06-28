@@ -26,7 +26,6 @@ from src.memorizer import TransactionMemorizer, ReceiptMemorizer
 from src.memorizer_v2 import HeaderMemorizer, AccountMemorizer, StorageMemorizer
 from src.types import (
     BlockSampledDataLake,
-    AccountValues,
     ComputationalTask,
     Header,
     TransactionsInBlockDatalake,

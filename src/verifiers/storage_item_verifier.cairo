@@ -4,7 +4,7 @@ from packages.eth_essentials.lib.mpt import verify_mpt_proof
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.builtin_keccak.keccak import keccak_bigend
 from starkware.cairo.common.alloc import alloc
-from src.types import AccountValues, StorageItemProof, StorageItem
+from src.types import StorageItemProof, StorageItem
 from src.rlp import decode_rlp_word_to_uint256
 from packages.eth_essentials.lib.rlp_little import (
     extract_byte_at_pos,
@@ -85,8 +85,6 @@ func verify_n_storage_items{
     chain_id: felt,
     storage_items: StorageItem*,
     storage_items_len: felt,
-    storage_values: Uint256*,
-    state_idx: felt,
 ) {
     if (storage_items_len == 0) {
         return ();
@@ -94,20 +92,16 @@ func verify_n_storage_items{
 
     let storage_item_idx = storage_items_len - 1;
 
-    let state_idx = verify_storage_item(
+    verify_storage_item(
         chain_id=chain_id,
         storage_item=storage_items[storage_item_idx],
-        storage_values=storage_values,
         proof_idx=0,
-        state_idx=state_idx,
     );
 
     return verify_n_storage_items(
         chain_id=chain_id,
         storage_items=storage_items,
         storage_items_len=storage_items_len - 1,
-        storage_values=storage_values,
-        state_idx=state_idx,
     );
 }
 
@@ -127,13 +121,11 @@ func verify_storage_item{
 }(
     chain_id: felt,
     storage_item: StorageItem,
-    storage_values: Uint256*,
     proof_idx: felt,
-    state_idx: felt,
-) -> felt {
+) {
     alloc_locals;
     if (proof_idx == storage_item.proofs_len) {
-        return state_idx;
+        return ();
     }
 
     let slot_proof = storage_item.proofs[proof_idx];
@@ -165,8 +157,6 @@ func verify_storage_item{
     return verify_storage_item(
         chain_id=chain_id,
         storage_item=storage_item,
-        storage_values=storage_values,
         proof_idx=proof_idx + 1,
-        state_idx=state_idx + 1,
     );
 }

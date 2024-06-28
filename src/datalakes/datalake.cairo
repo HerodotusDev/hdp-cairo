@@ -14,7 +14,6 @@ from src.datalakes.txs_in_block_datalake import (
 
 from src.types import (
     ComputationalTask,
-    AccountValues,
     Header,
     BlockSampledDataLake,
     TransactionsInBlockDatalake,

@@ -33,11 +33,6 @@ struct AccountProof {
     proof: felt**,
 }
 
-struct AccountValues {
-    values: felt*,
-    values_len: felt,
-}
-
 struct ChainInfo {
     id: felt,
     id_bytes_len: felt,

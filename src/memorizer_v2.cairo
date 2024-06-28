@@ -9,7 +9,7 @@ from starkware.cairo.common.builtin_poseidon.poseidon import (
     poseidon_hash_many,
 )
 from starkware.cairo.common.dict import dict_write, dict_read
-from src.types import Header, AccountValues, Transaction, Receipt
+from src.types import Header, Transaction, Receipt
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.alloc import alloc

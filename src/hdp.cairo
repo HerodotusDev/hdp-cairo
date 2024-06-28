@@ -29,7 +29,6 @@ from src.types import (
     Header,
     MMRMeta,
     Account,
-    AccountValues,
     StorageItem,
     TransactionProof,
     Transaction,
@@ -103,12 +102,10 @@ func run{
 
     // Account Params
     let (accounts: Account*) = alloc();
-    let (account_values: AccountValues*) = alloc();
     local accounts_len: felt;
 
     // Storage Params
     let (storage_items: StorageItem*) = alloc();
-    let (storage_values: Uint256*) = alloc();
     local storage_items_len: felt;
 
     // Transaction Params
@@ -275,7 +272,6 @@ func run{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
-        headers=headers,
         header_dict=header_dict,
         account_dict=account_dict,
         pow2_array=pow2_array,
@@ -283,8 +279,6 @@ func run{
         chain_id=chain_id,
         accounts=accounts,
         accounts_len=accounts_len,
-        account_values=account_values,
-        account_value_idx=0,
     );
 
     // Check 4: Ensure the account slot proofs are valid
@@ -299,8 +293,6 @@ func run{
         chain_id=chain_id,
         storage_items=storage_items,
         storage_items_len=storage_items_len,
-        storage_values=storage_values,
-        state_idx=0,
     );
 
     // Check 5: Verify the transaction proofs

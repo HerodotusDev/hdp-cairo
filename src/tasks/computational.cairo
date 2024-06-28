@@ -13,7 +13,6 @@ from src.datalakes.datalake import Datalake, get_default_fetch_trait
 from src.types import (
     BlockSampledDataLake,
     ComputationalTask,
-    AccountValues,
     Header,
     Transaction,
     Receipt,
