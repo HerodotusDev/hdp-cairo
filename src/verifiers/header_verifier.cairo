@@ -13,8 +13,7 @@ from packages.eth_essentials.lib.block_header import (
     extract_block_number_big,
     reverse_block_header_chunks,
 )
-from src.memorizer import HeaderMemorizer
-
+from src.memorizer_v2 import HeaderMemorizer
 from src.decoders.header_decoder import HeaderDecoder
 
 // Guard function that verifies the inclusion of headers in the MMR.
@@ -52,7 +51,7 @@ func verify_headers_inclusion{
 
         // add to memorizer
         let block_number = HeaderDecoder.get_block_number(headers[index].rlp);
-        HeaderMemorizer.add(chain_id=chain_id, block_number=block_number, index=index);
+        HeaderMemorizer.add(chain_id=chain_id, block_number=block_number, rlp=headers[index].rlp);
 
         return verify_headers_inclusion(
             chain_id=chain_id,
@@ -78,7 +77,7 @@ func verify_headers_inclusion{
 
     // add to memorizer
     let block_number = HeaderDecoder.get_block_number(headers[index].rlp);
-    HeaderMemorizer.add(chain_id=chain_id, block_number=block_number, index=index);
+    HeaderMemorizer.add(chain_id=chain_id, block_number=block_number, rlp=headers[index].rlp);
 
     return verify_headers_inclusion(
         chain_id=chain_id, headers=headers, mmr_size=mmr_size, n_headers=n_headers, index=index + 1

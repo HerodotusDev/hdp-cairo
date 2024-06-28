@@ -6,7 +6,7 @@ from starkware.cairo.common.builtin_keccak.keccak import keccak_bigend
 from starkware.cairo.common.alloc import alloc
 from src.types import Account, AccountProof, Header, AccountValues
 from packages.eth_essentials.lib.block_header import extract_state_root_little
-from src.memorizer import HeaderMemorizer, AccountMemorizer
+from src.memorizer_v2 import HeaderMemorizer, AccountMemorizer
 
 from src.decoders.header_decoder import HeaderDecoder, HeaderField
 
@@ -158,7 +158,7 @@ func verify_account{
         chain_id=chain_id,
         block_number=account_proof.block_number,
         address=account.address,
-        index=account_value_idx,
+        rlp=value,
     );
 
     return verify_account(

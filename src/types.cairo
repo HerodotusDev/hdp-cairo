@@ -21,6 +21,11 @@ struct Account {
     proofs: AccountProof*,
 }
 
+struct RlpState {
+    rlp: felt*,
+    bytes_len: felt,
+}
+
 struct AccountProof {
     block_number: felt,
     proof_len: felt,

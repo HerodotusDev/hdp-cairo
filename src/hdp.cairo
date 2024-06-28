@@ -36,14 +36,21 @@ from src.types import (
     ComputationalTask,
     Receipt,
     ReceiptProof,
+    // MemorizerState,
 )
 
 from src.memorizer import (
+    // HeaderMemorizer,
+    // AccountMemorizer,
+    // StorageMemorizer,
+    TransactionMemorizer,
+    MEMORIZER_DEFAULT,
+)
+
+from src.memorizer_v2 import (
     HeaderMemorizer,
     AccountMemorizer,
     StorageMemorizer,
-    TransactionMemorizer,
-    MEMORIZER_DEFAULT,
 )
 from packages.eth_essentials.lib.utils import pow2alloc128, write_felt_array_to_dict_keys
 
@@ -96,12 +103,10 @@ func run{
 
     // Account Params
     let (accounts: Account*) = alloc();
-    let (account_values: AccountValues*) = alloc();
     local accounts_len: felt;
 
     // Storage Params
     let (storage_items: StorageItem*) = alloc();
-    let (storage_values: Uint256*) = alloc();
     local storage_items_len: felt;
 
     // Transaction Params
@@ -115,9 +120,9 @@ func run{
     local receipt_proof_len: felt;
 
     // Memorizers
-    let (header_dict, header_dict_start) = HeaderMemorizer.initialize();
-    let (account_dict, account_dict_start) = AccountMemorizer.initialize();
-    let (storage_dict, storage_dict_start) = StorageMemorizer.initialize();
+    let (header_dict, header_dict_start) = HeaderMemorizer.init();
+    let (account_dict, account_dict_start) = AccountMemorizer.init();
+    let (storage_dict, storage_dict_start) = StorageMemorizer.init();
     let (transaction_dict, transaction_dict_start) = TransactionMemorizer.initialize();
     let (receipt_dict, receipt_dict_start) = TransactionMemorizer.initialize();
 
@@ -297,42 +302,42 @@ func run{
         state_idx=0,
     );
 
-    // Check 5: Verify the transaction proofs
-    verify_n_transaction_proofs{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        poseidon_ptr=poseidon_ptr,
-        keccak_ptr=keccak_ptr,
-        transactions=transactions,
-        transaction_dict=transaction_dict,
-        headers=headers,
-        header_dict=header_dict,
-        pow2_array=pow2_array,
-        chain_info=chain_info,
-    }(
-        chain_id=chain_id,
-        tx_proofs=transaction_proofs,
-        tx_proofs_len=transaction_proof_len,
-        index=0,
-    );
+    // // Check 5: Verify the transaction proofs
+    // verify_n_transaction_proofs{
+    //     range_check_ptr=range_check_ptr,
+    //     bitwise_ptr=bitwise_ptr,
+    //     poseidon_ptr=poseidon_ptr,
+    //     keccak_ptr=keccak_ptr,
+    //     transactions=transactions,
+    //     transaction_dict=transaction_dict,
+    //     headers=headers,
+    //     header_dict=header_dict,
+    //     pow2_array=pow2_array,
+    //     chain_info=chain_info,
+    // }(
+    //     chain_id=chain_id,
+    //     tx_proofs=transaction_proofs,
+    //     tx_proofs_len=transaction_proof_len,
+    //     index=0,
+    // );
 
-    // Check 6: Verify the receipt proofs
-    verify_n_receipt_proofs{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        poseidon_ptr=poseidon_ptr,
-        keccak_ptr=keccak_ptr,
-        receipts=receipts,
-        receipt_dict=receipt_dict,
-        headers=headers,
-        header_dict=header_dict,
-        pow2_array=pow2_array,
-    }(
-        chain_id=chain_id,
-        receipt_proofs=receipt_proofs,
-        receipt_proofs_len=receipt_proof_len,
-        index=0,
-    );
+    // // Check 6: Verify the receipt proofs
+    // verify_n_receipt_proofs{
+    //     range_check_ptr=range_check_ptr,
+    //     bitwise_ptr=bitwise_ptr,
+    //     poseidon_ptr=poseidon_ptr,
+    //     keccak_ptr=keccak_ptr,
+    //     receipts=receipts,
+    //     receipt_dict=receipt_dict,
+    //     headers=headers,
+    //     header_dict=header_dict,
+    //     pow2_array=pow2_array,
+    // }(
+    //     chain_id=chain_id,
+    //     receipt_proofs=receipt_proofs,
+    //     receipt_proofs_len=receipt_proof_len,
+    //     index=0,
+    // );
 
     // Verified data is now in memorizer, and can be used for further computation
     Task.init{
@@ -352,9 +357,7 @@ func run{
         keccak_ptr=keccak_ptr,
         poseidon_ptr=poseidon_ptr,
         account_dict=account_dict,
-        account_values=account_values,
         storage_dict=storage_dict,
-        storage_values=storage_values,
         header_dict=header_dict,
         headers=headers,
         transaction_dict=transaction_dict,
@@ -392,9 +395,9 @@ func run{
 
     // Post Verification Checks: Ensure dict consistency
     default_dict_finalize(peaks_dict_start, peaks_dict, 0);
-    default_dict_finalize(header_dict_start, header_dict, MEMORIZER_DEFAULT);
-    default_dict_finalize(account_dict_start, account_dict, MEMORIZER_DEFAULT);
-    default_dict_finalize(storage_dict_start, storage_dict, MEMORIZER_DEFAULT);
+    default_dict_finalize(header_dict_start, header_dict, 7);
+    default_dict_finalize(account_dict_start, account_dict, 7);
+    default_dict_finalize(storage_dict_start, storage_dict, 7);
     default_dict_finalize(transaction_dict_start, transaction_dict, MEMORIZER_DEFAULT);
     default_dict_finalize(receipt_dict_start, receipt_dict, MEMORIZER_DEFAULT);
 
@@ -418,6 +421,9 @@ func run{
 
     [ap] = output_ptr + 6, ap++;
     let output_ptr = output_ptr + 6;
-
+    %{
+        print("Done")
+    
+    %}
     return ();
 }

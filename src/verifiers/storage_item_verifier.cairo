@@ -11,7 +11,7 @@ from packages.eth_essentials.lib.rlp_little import (
     extract_n_bytes_from_le_64_chunks_array,
 )
 
-from src.memorizer import StorageMemorizer, AccountMemorizer
+from src.memorizer_v2 import StorageMemorizer, AccountMemorizer
 from src.decoders.account_decoder import AccountDecoder, AccountField
 
 from packages.eth_essentials.lib.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64
@@ -78,7 +78,6 @@ func verify_n_storage_items{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    account_values: AccountValues*,
     account_dict: DictAccess*,
     storage_dict: DictAccess*,
     pow2_array: felt*,
@@ -141,12 +140,12 @@ func verify_storage_item{
     let slot_proof = storage_item.proofs[proof_idx];
 
     // get state_root from verified headers
-    let (account_value) = AccountMemorizer.get(
+    let (account_rlp) = AccountMemorizer.get(
         chain_id=chain_id, block_number=slot_proof.block_number, address=storage_item.address
     );
-    let state_root = AccountDecoder.get_field(account_value.values, AccountField.STATE_ROOT);
+    let state_root = AccountDecoder.get_field(account_rlp, AccountField.STATE_ROOT);
 
-    let (value: felt*, value_bytes_len: felt) = verify_mpt_proof(
+    let (rlp: felt*, _value_bytes_len: felt) = verify_mpt_proof(
         mpt_proof=slot_proof.proof,
         mpt_proof_bytes_len=slot_proof.proof_bytes_len,
         mpt_proof_len=slot_proof.proof_len,
@@ -156,15 +155,12 @@ func verify_storage_item{
         pow2_array=pow2_array,
     );
 
-    let decoded_value = decode_rlp_word_to_uint256(value, value_bytes_len);
-    assert storage_values[state_idx] = decoded_value;
-
     StorageMemorizer.add(
         chain_id=chain_id,
         block_number=slot_proof.block_number,
         address=storage_item.address,
         storage_slot=storage_item.slot,
-        index=state_idx,
+        rlp=rlp,
     );
 
     return verify_storage_item(

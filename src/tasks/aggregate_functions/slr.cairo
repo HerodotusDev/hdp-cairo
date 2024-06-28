@@ -20,12 +20,16 @@ from src.decoders.account_decoder import AccountDecoder
 from src.decoders.header_decoder import HeaderDecoder
 from src.decoders.transaction_decoder import TransactionDecoder, TransactionType
 from src.decoders.receipt_decoder import ReceiptDecoder
+from src.decoders.storage_slot_decoder import StorageSlotDecoder
+
 from src.memorizer import (
-    AccountMemorizer,
-    StorageMemorizer,
-    HeaderMemorizer,
     TransactionMemorizer,
     ReceiptMemorizer,
+)
+from src.memorizer_v2 import (
+    HeaderMemorizer,
+    AccountMemorizer,
+    StorageMemorizer
 )
 from src.types import (
     BlockSampledDataLake,
@@ -146,7 +150,7 @@ func fetch_account_data_points{
         return index;
     }
 
-    let (account_value) = AccountMemorizer.get(
+    let (rlp) = AccountMemorizer.get(
         chain_id=chain_id, block_number=current_block_number, address=datalake.properties + 1
     );
 
@@ -154,7 +158,7 @@ func fetch_account_data_points{
 
     let data_point1 = AccountDecoder.get_field{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-    }(rlp=account_value.values, field=[datalake.properties]);  // field_idx ios always at 0
+    }(rlp=rlp, field=[datalake.properties]);  // field_idx ios always at 0
 
     let (data_point1_reverse_endian) = uint256_reverse_endian(data_point1);
 
@@ -194,12 +198,13 @@ func fetch_storage_data_points{
 
     local data_point0: Uint256 = Uint256(low=current_block_number, high=0x0);
 
-    let (data_point1) = StorageMemorizer.get(
+    let (rlp) = StorageMemorizer.get(
         chain_id=chain_id,
         block_number=current_block_number,
         address=datalake.properties,
         storage_slot=datalake.properties + 3,
     );
+    let data_point1 = StorageSlotDecoder.get_word(rlp=rlp);
 
     let (data_point1_reverse_endian) = uint256_reverse_endian(data_point1);
 
@@ -233,13 +238,13 @@ func fetch_header_data_points{
         return index;
     }
 
-    let header = HeaderMemorizer.get(chain_id=chain_id, block_number=current_block_number);
+    let (rlp) = HeaderMemorizer.get(chain_id=chain_id, block_number=current_block_number);
 
     local data_point0: Uint256 = Uint256(low=current_block_number, high=0x0);
 
     let data_point1 = HeaderDecoder.get_field{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-    }(rlp=header.rlp, field=[datalake.properties]);
+    }(rlp=rlp, field=[datalake.properties]);
 
     let (data_point1_reverse_endian) = uint256_reverse_endian(data_point1);
 
