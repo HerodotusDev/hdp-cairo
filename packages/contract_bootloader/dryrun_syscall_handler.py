@@ -64,7 +64,6 @@ class DryRunSyscallHandler(SyscallHandlerBase):
         )
 
         memorizerId = MemorizerId.from_int(request.contract_address)
-        print("memorizerId", memorizerId)
         if memorizerId == MemorizerId.Account:
             total_size = Memorizer.size() + AccountMemorizerKey.size()
 
