@@ -22,15 +22,8 @@ from src.decoders.transaction_decoder import TransactionDecoder, TransactionType
 from src.decoders.receipt_decoder import ReceiptDecoder
 from src.decoders.storage_slot_decoder import StorageSlotDecoder
 
-from src.memorizer import (
-    TransactionMemorizer,
-    ReceiptMemorizer,
-)
-from src.memorizer_v2 import (
-    HeaderMemorizer,
-    AccountMemorizer,
-    StorageMemorizer
-)
+from src.memorizer import TransactionMemorizer, ReceiptMemorizer
+from src.memorizer_v2 import HeaderMemorizer, AccountMemorizer, StorageMemorizer
 from src.types import (
     BlockSampledDataLake,
     AccountValues,
@@ -134,7 +127,6 @@ func fetch_account_data_points{
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     account_dict: DictAccess*,
-    account_values: AccountValues*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
 }(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
@@ -180,7 +172,6 @@ func fetch_storage_data_points{
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     storage_dict: DictAccess*,
-    storage_values: Uint256*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
 }(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {

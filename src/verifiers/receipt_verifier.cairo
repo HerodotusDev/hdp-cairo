@@ -11,7 +11,8 @@ from packages.eth_essentials.lib.rlp_little import (
 
 from src.rlp import chunk_to_felt_be
 from src.types import ReceiptProof, Receipt, Header
-from src.memorizer import HeaderMemorizer, ReceiptMemorizer
+from src.memorizer import ReceiptMemorizer
+from src.memorizer_v2 import HeaderMemorizer
 from src.decoders.header_decoder import HeaderDecoder, HeaderField
 
 // Verfies an array of receipt proofs with the headers stored in the memorizer.

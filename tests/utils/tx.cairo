@@ -4,7 +4,7 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin,
 
 from src.types import Transaction, ChainInfo
 from src.decoders.transaction_decoder import TransactionDecoder, TransactionSender, TransactionField
-from src.verifiers.transaction_verifier import derive_tx_payload
+from src.verifiers.transaction_verifier import open_tx_envelope
 
 func test_tx_decoding_inner{
     range_check_ptr,
@@ -116,7 +116,7 @@ func test_tx_decoding_inner{
             ids.expected_max_fee_per_blob_gas.high = tx_dict["max_fee_per_blob_gas"]["high"]
     %}
 
-    let (rlp, rlp_len, bytes_len, tx_type) = derive_tx_payload(
+    let (rlp, rlp_len, bytes_len, tx_type) = open_tx_envelope(
         item=rlp, item_bytes_len=rlp_bytes_len
     );
     let tx = Transaction(rlp=rlp, rlp_len=rlp_len, bytes_len=bytes_len, type=tx_type);

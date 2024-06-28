@@ -18,7 +18,7 @@ from packages.eth_essentials.lib.rlp_little import array_copy
 // ) -> (value_start: felt, bytes_len: felt) {
 //     let first_byte = extract_byte_at_pos(rlp[item_starts_at_word], item_start_offset, pow2_array);
 
-//     local is_long: felt;
+// local is_long: felt;
 //     %{
 //         if 0xc0 <= ids.first_byte <= 0xf6:
 //             ids.is_long = 0 # short list
@@ -28,8 +28,7 @@ from packages.eth_essentials.lib.rlp_little import array_copy
 //             assert False, "Invalid RLP list"
 //     %}
 
-
-//     local value_start: felt;
+// local value_start: felt;
 //     local bytes_len: felt;
 //     if (is_long == 0) {
 //         assert [range_check_ptr] = first_byte - 0xc0;
@@ -37,20 +36,20 @@ from packages.eth_essentials.lib.rlp_little import array_copy
 //         assert bytes_len = first_byte - 0xc0;
 //         assert value_start = 1;
 
-//         tempvar range_check_ptr = range_check_ptr + 2;
+// tempvar range_check_ptr = range_check_ptr + 2;
 //     } else {
 //         assert [range_check_ptr] = first_byte - 0xf7;
 //         assert [range_check_ptr + 1] = 0xff - first_byte;
 //         tempvar range_check_ptr = range_check_ptr + 2;
 
-//         let len_len = first_byte - 0xf7;
+// let len_len = first_byte - 0xf7;
 //         let bytes_len = decode_long_value_len(
 //             rlp=rlp, item_starts_at_byte=item_starts_at_byte + 1, len_len=len_len, pow2_array=pow2_array
 //         );
 //         assert value_start = 1 + len_len;
 //     }
 
-//     return (value_start=value_start, bytes_len=bytes_len);
+// return (value_start=value_start, bytes_len=bytes_len);
 // }
 
 // retrieves an element from an RLP encoded list (LE chunks). The element is selected via its index in the list.
@@ -65,7 +64,6 @@ func rlp_list_retrieve{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array
     rlp: felt*, field: felt, item_starts_at_byte: felt, counter: felt
 ) -> (res: felt*, res_len: felt, bytes_len: felt) {
     alloc_locals;
-
 
     let (item_starts_at_word, item_start_offset) = felt_divmod(item_starts_at_byte, 8);
     // %{
@@ -130,7 +128,10 @@ func rlp_list_retrieve{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array
         let len_len = current_item - 0xb7;
 
         let value_len = decode_long_value_len(
-            rlp=rlp, item_starts_at_byte=item_starts_at_byte + 1, len_len=len_len, pow2_array=pow2_array
+            rlp=rlp,
+            item_starts_at_byte=item_starts_at_byte + 1,
+            len_len=len_len,
+            pow2_array=pow2_array,
         );
 
         assert current_value_len = value_len;
@@ -161,7 +162,10 @@ func rlp_list_retrieve{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array
         tempvar range_check_ptr = range_check_ptr + 2;
         let len_len = current_item - 0xf7;
         let item_len = decode_long_value_len(
-            rlp=rlp, item_starts_at_byte=item_starts_at_byte + 1, len_len=len_len, pow2_array=pow2_array
+            rlp=rlp,
+            item_starts_at_byte=item_starts_at_byte + 1,
+            len_len=len_len,
+            pow2_array=pow2_array,
         );
 
         assert current_value_len = item_len;
@@ -201,7 +205,7 @@ func rlp_list_retrieve{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array
 func decode_long_value_len{range_check_ptr}(
     rlp: felt*, item_starts_at_byte: felt, len_len: felt, pow2_array: felt*
 ) -> felt {
-    let (word, offset) = felt_divmod(item_starts_at_byte + 1, 8);
+    let (word, offset) = felt_divmod(item_starts_at_byte, 8);
 
     let (current_value_len_list, _) = extract_n_bytes_from_le_64_chunks_array(
         array=rlp, start_word=word, start_offset=offset, n_bytes=len_len, pow2_array=pow2_array

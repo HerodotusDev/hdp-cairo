@@ -121,7 +121,6 @@ func verify_storage_item{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    account_values: AccountValues*,
     account_dict: DictAccess*,
     storage_dict: DictAccess*,
     pow2_array: felt*,

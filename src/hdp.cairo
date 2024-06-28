@@ -103,10 +103,12 @@ func run{
 
     // Account Params
     let (accounts: Account*) = alloc();
+    let (account_values: AccountValues*) = alloc();
     local accounts_len: felt;
 
     // Storage Params
     let (storage_items: StorageItem*) = alloc();
+    let (storage_values: Uint256*) = alloc();
     local storage_items_len: felt;
 
     // Transaction Params
@@ -290,7 +292,6 @@ func run{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
-        account_values=account_values,
         account_dict=account_dict,
         storage_dict=storage_dict,
         pow2_array=pow2_array,
@@ -302,42 +303,42 @@ func run{
         state_idx=0,
     );
 
-    // // Check 5: Verify the transaction proofs
-    // verify_n_transaction_proofs{
-    //     range_check_ptr=range_check_ptr,
-    //     bitwise_ptr=bitwise_ptr,
-    //     poseidon_ptr=poseidon_ptr,
-    //     keccak_ptr=keccak_ptr,
-    //     transactions=transactions,
-    //     transaction_dict=transaction_dict,
-    //     headers=headers,
-    //     header_dict=header_dict,
-    //     pow2_array=pow2_array,
-    //     chain_info=chain_info,
-    // }(
-    //     chain_id=chain_id,
-    //     tx_proofs=transaction_proofs,
-    //     tx_proofs_len=transaction_proof_len,
-    //     index=0,
-    // );
+    // Check 5: Verify the transaction proofs
+    verify_n_transaction_proofs{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        poseidon_ptr=poseidon_ptr,
+        keccak_ptr=keccak_ptr,
+        transactions=transactions,
+        transaction_dict=transaction_dict,
+        headers=headers,
+        header_dict=header_dict,
+        pow2_array=pow2_array,
+        chain_info=chain_info,
+    }(
+        chain_id=chain_id,
+        tx_proofs=transaction_proofs,
+        tx_proofs_len=transaction_proof_len,
+        index=0,
+    );
 
-    // // Check 6: Verify the receipt proofs
-    // verify_n_receipt_proofs{
-    //     range_check_ptr=range_check_ptr,
-    //     bitwise_ptr=bitwise_ptr,
-    //     poseidon_ptr=poseidon_ptr,
-    //     keccak_ptr=keccak_ptr,
-    //     receipts=receipts,
-    //     receipt_dict=receipt_dict,
-    //     headers=headers,
-    //     header_dict=header_dict,
-    //     pow2_array=pow2_array,
-    // }(
-    //     chain_id=chain_id,
-    //     receipt_proofs=receipt_proofs,
-    //     receipt_proofs_len=receipt_proof_len,
-    //     index=0,
-    // );
+    // Check 6: Verify the receipt proofs
+    verify_n_receipt_proofs{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        poseidon_ptr=poseidon_ptr,
+        keccak_ptr=keccak_ptr,
+        receipts=receipts,
+        receipt_dict=receipt_dict,
+        headers=headers,
+        header_dict=header_dict,
+        pow2_array=pow2_array,
+    }(
+        chain_id=chain_id,
+        receipt_proofs=receipt_proofs,
+        receipt_proofs_len=receipt_proof_len,
+        index=0,
+    );
 
     // Verified data is now in memorizer, and can be used for further computation
     Task.init{

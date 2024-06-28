@@ -11,7 +11,8 @@ from packages.eth_essentials.lib.rlp_little import (
 
 from src.rlp import chunk_to_felt_be
 from src.types import TransactionProof, Transaction, Header, ChainInfo
-from src.memorizer import HeaderMemorizer, TransactionMemorizer
+from src.memorizer import TransactionMemorizer
+from src.memorizer_v2 import HeaderMemorizer
 from src.decoders.header_decoder import HeaderDecoder, HeaderField
 
 // Verfies an array of transaction proofs with the headers stored in the memorizer.

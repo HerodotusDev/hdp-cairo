@@ -588,7 +588,7 @@ func test_decode_rlp_word_to_uint256_inner{
         write_case_values(decode_rlp_word_to_uint256[ids.index])
     %}
 
-    let result_le = decode_rlp_word_to_uint256(chunks, bytes_len);
+    let result_le = decode_rlp_word_to_uint256(chunks);
     let (local result_be) = uint256_reverse_endian(result_le);
 
     assert expected_le.low = result_le.low;
