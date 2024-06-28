@@ -1,12 +1,21 @@
+from enum import Enum
+import json
 from typing import List, Optional, Union
+from marshmallow import Schema
 import marshmallow_dataclass
-from dataclasses import field
+from dataclasses import asdict, field
 import marshmallow.fields as mfields
 from contract_bootloader.contract_class.contract_class import CompiledClass
 from starkware.starkware_utils.validated_dataclass import ValidatedMarshmallowDataclass
 from starkware.starkware_utils.marshmallow_dataclass_fields import (
     IntAsHex,
     additional_metadata,
+)
+from contract_bootloader.memorizer.account_memorizer import (
+    MemorizerKey as AccountMemorizerKey,
+)
+from contract_bootloader.memorizer.header_memorizer import (
+    MemorizerKey as HeaderMemorizerKey,
 )
 
 
@@ -116,12 +125,12 @@ class InputTask(ValidatedMarshmallowDataclass):
 @marshmallow_dataclass.dataclass(frozen=True)
 class HDPInput(ValidatedMarshmallowDataclass):
     task_root: int = field(metadata=additional_metadata(marshmallow_field=IntAsHex()))
-    result_root: Optional[int] = field(
-        default=None, metadata=additional_metadata(marshmallow_field=IntAsHex())
-    )
     proofs: Proofs
     tasks: List[InputTask] = field(
         metadata=additional_metadata(
             marshmallow_field=mfields.List(mfields.Nested(InputTask))
         )
+    )
+    result_root: Optional[int] = field(
+        default=None, metadata=additional_metadata(marshmallow_field=IntAsHex())
     )

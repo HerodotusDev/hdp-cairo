@@ -1,8 +1,8 @@
 from enum import Enum
 from typing import List, Tuple
 from abc import ABC, abstractmethod
-from contract_bootloader.memorizer import Memorizer
-from marshmallow_dataclass import dataclass
+from contract_bootloader.memorizer.memorizer import Memorizer
+from marshmallow_dataclass import class_schema, dataclass
 
 
 class MemorizerFunctionId(Enum):
@@ -20,9 +20,8 @@ class MemorizerFunctionId(Enum):
 
 @dataclass(frozen=True)
 class MemorizerKey:
-    def __init__(self, chain_id: int, block_number: int):
-        self.chain_id = chain_id
-        self.block_number = block_number
+    chain_id: int
+    block_number: int
 
     @classmethod
     def from_int(cls, values: List[int]):
@@ -38,14 +37,14 @@ class MemorizerKey:
 
 
 class AbstractAccountMemorizerBase(ABC):
-    def __init__(self):
-        self.memorizer = Memorizer
+    def __init__(self, memorizer: Memorizer):
+        self.memorizer = memorizer
 
     def handle(
         self, function_id: MemorizerFunctionId, key: MemorizerKey
     ) -> Tuple[int, int]:
         if function_id == MemorizerFunctionId.GET_PARENT:
-            self.get_parent(self, key=key)
+            return self.get_parent(self, key=key)
 
     @abstractmethod
     def get_parent(self, key: MemorizerKey) -> Tuple[int, int]:

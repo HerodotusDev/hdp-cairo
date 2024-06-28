@@ -1,8 +1,10 @@
 from enum import Enum
 from typing import List, Tuple
 from abc import ABC, abstractmethod
-from contract_bootloader.memorizer import Memorizer
-from marshmallow_dataclass import dataclass
+from contract_bootloader.memorizer.memorizer import Memorizer
+from marshmallow_dataclass import dataclass, class_schema
+from web3.eth import ChecksumAddress
+from web3 import Web3
 
 
 class MemorizerFunctionId(Enum):
@@ -24,10 +26,9 @@ class MemorizerFunctionId(Enum):
 
 @dataclass(frozen=True)
 class MemorizerKey:
-    def __init__(self, chain_id: int, block_number: int, address: int):
-        self.chain_id = chain_id
-        self.block_number = block_number
-        self.address = address
+    chain_id: int
+    block_number: int
+    address: ChecksumAddress
 
     @classmethod
     def from_int(cls, values: List[int]):
@@ -35,7 +36,7 @@ class MemorizerKey:
             raise ValueError(
                 "MemorizerKey must be initialized with a list of three integers"
             )
-        return cls(values[0], values[1], values[2])
+        return cls(values[0], values[1], Web3.toChecksumAddress(hex(values[2])))
 
     @classmethod
     def size(cls) -> int:
@@ -43,14 +44,14 @@ class MemorizerKey:
 
 
 class AbstractAccountMemorizerBase(ABC):
-    def __init__(self):
-        self.memorizer = Memorizer
+    def __init__(self, memorizer: Memorizer):
+        self.memorizer = memorizer
 
     def handle(
         self, function_id: MemorizerFunctionId, key: MemorizerKey
     ) -> Tuple[int, int]:
         if function_id == MemorizerFunctionId.GET_BALANCE:
-            self.get_balance(self, key=key)
+            return self.get_balance(key=key)
 
     @abstractmethod
     def get_balance(self, key: MemorizerKey) -> Tuple[int, int]:

@@ -32,19 +32,20 @@ func main{
         from src.objects import Module
         module = Module.Schema().load(program_input)
         inputs = module.inputs
-        compiled_class = module.compiled_class
+        compiled_class = module.module_class
     %}
 
     local calldata: felt* = nondet %{ segments.add() %};
-    local calldata_size: felt;
+    local calldata_size: felt = 8;
 
-    %{
-        offset = 0
-        for input in inputs:
-            memory[ids.calldata + offset] = input
-            offset +=1
-        ids.calldata_size = offset
-    %}
+    assert calldata[0] = 0x0;
+    assert calldata[1] = 0x0;
+    assert calldata[2] = 0x0;
+    assert calldata[3] = 0x0;
+    assert calldata[4] = 0x0;
+    assert calldata[5] = 0x0;
+    assert calldata[6] = 0x0;
+    assert calldata[7] = 0x0;
 
     local compiled_class: CompiledClass*;
 
@@ -71,9 +72,10 @@ func main{
     %}
 
     assert compiled_class.bytecode_ptr[compiled_class.bytecode_length] = 0x208b7fff7fff7ffe;
-    let (program_hash) = compute_program_hash(
+    let (program_hash_volotile) = compute_program_hash(
         bytecode_length=compiled_class.bytecode_length, bytecode_ptr=compiled_class.bytecode_ptr
     );
+    local program_hash = program_hash_volotile;
 
     %{
         vm_load_program(
@@ -97,7 +99,7 @@ func main{
     );
 
     assert retdata_size = 2;
-    let result: Uint256 = Uint256(low=retdata[0], high=retdata[1]);
+    local result: Uint256 = Uint256(low=retdata[0], high=retdata[1]);
 
     %{
         print("program_hash", hex(ids.program_hash))
