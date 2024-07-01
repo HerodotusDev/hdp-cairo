@@ -72,14 +72,6 @@ struct TransactionProof {
     key_leading_zeros: felt,
 }
 
-struct Receipt {
-    rlp: felt*,
-    rlp_len: felt,
-    bytes_len: felt,
-    type: felt,
-    block_number: felt,
-}
-
 struct ReceiptProof {
     block_number: felt,
     len: felt,

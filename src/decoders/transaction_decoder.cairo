@@ -147,10 +147,11 @@ namespace TransactionDecoder {
 
         if (has_type_prefix == 1) {
             assert [range_check_ptr] = 0x3 - first_byte;
-            assert [range_check_ptr + 1] = 0xff - second_byte;
-            assert [range_check_ptr + 2] = second_byte - 0xf7;
+            assert [range_check_ptr + 1] = first_byte - 1;
+            assert [range_check_ptr + 2] = 0xff - second_byte;
+            assert [range_check_ptr + 3] = second_byte - 0xf7;
 
-            tempvar range_check_ptr = range_check_ptr + 3;
+            tempvar range_check_ptr = range_check_ptr + 4;
             return (tx_type=first_byte, rlp_start_offset=1);
         } else {
             // Legacy transactions must start with long list prefix

@@ -32,13 +32,16 @@ from src.types import (
     StorageItem,
     TransactionProof,
     ComputationalTask,
-    Receipt,
     ReceiptProof,
 )
 
-from src.memorizer import ReceiptMemorizer, MEMORIZER_DEFAULT
-
-from src.memorizer_v2 import HeaderMemorizer, AccountMemorizer, StorageMemorizer, BlockTxMemorizer
+from src.memorizer import (
+    HeaderMemorizer,
+    AccountMemorizer,
+    StorageMemorizer,
+    BlockTxMemorizer,
+    BlockReceiptMemorizer,
+)
 from packages.eth_essentials.lib.utils import pow2alloc128, write_felt_array_to_dict_keys
 
 from src.tasks.computational import Task
@@ -102,7 +105,6 @@ func run{
 
     // Receipt Params
     let (receipt_proofs: ReceiptProof*) = alloc();
-    let (receipts: Receipt*) = alloc();
     local receipt_proof_len: felt;
 
     // Memorizers
@@ -110,7 +112,7 @@ func run{
     let (account_dict, account_dict_start) = AccountMemorizer.init();
     let (storage_dict, storage_dict_start) = StorageMemorizer.init();
     let (block_tx_dict, block_tx_dict_start) = BlockTxMemorizer.init();
-    let (receipt_dict, receipt_dict_start) = ReceiptMemorizer.initialize();
+    let (block_receipt_dict, block_receipt_dict_start) = BlockReceiptMemorizer.init();
 
     // Task Params
     let (tasks: ComputationalTask*) = alloc();
@@ -297,8 +299,7 @@ func run{
         bitwise_ptr=bitwise_ptr,
         poseidon_ptr=poseidon_ptr,
         keccak_ptr=keccak_ptr,
-        receipts=receipts,
-        receipt_dict=receipt_dict,
+        block_receipt_dict=block_receipt_dict,
         headers=headers,
         header_dict=header_dict,
         pow2_array=pow2_array,
@@ -329,10 +330,9 @@ func run{
         account_dict=account_dict,
         storage_dict=storage_dict,
         header_dict=header_dict,
-        headers=headers,
         block_tx_dict=block_tx_dict,
-        receipts=receipts,
-        receipt_dict=receipt_dict,
+        block_receipt_dict=block_receipt_dict,
+        headers=headers,
         pow2_array=pow2_array,
         tasks=tasks,
         chain_info=chain_info,
@@ -368,7 +368,7 @@ func run{
     default_dict_finalize(account_dict_start, account_dict, 7);
     default_dict_finalize(storage_dict_start, storage_dict, 7);
     default_dict_finalize(block_tx_dict_start, block_tx_dict, 7);
-    default_dict_finalize(receipt_dict_start, receipt_dict, MEMORIZER_DEFAULT);
+    default_dict_finalize(block_receipt_dict_start, block_receipt_dict, 7);
 
     [ap] = mmr_meta.root;
     [ap] = [output_ptr], ap++;

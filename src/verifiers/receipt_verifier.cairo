@@ -10,9 +10,8 @@ from packages.eth_essentials.lib.rlp_little import (
 )
 
 from src.rlp import chunk_to_felt_be
-from src.types import ReceiptProof, Receipt, Header
-from src.memorizer import ReceiptMemorizer
-from src.memorizer_v2 import HeaderMemorizer
+from src.types import ReceiptProof, Header
+from src.memorizer import HeaderMemorizer, BlockReceiptMemorizer
 from src.decoders.header_decoder import HeaderDecoder, HeaderField
 
 // Verfies an array of receipt proofs with the headers stored in the memorizer.
@@ -30,8 +29,7 @@ func verify_n_receipt_proofs{
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     keccak_ptr: KeccakBuiltin*,
-    receipts: Receipt*,
-    receipt_dict: DictAccess*,
+    block_receipt_dict: DictAccess*,
     headers: Header*,
     header_dict: DictAccess*,
     pow2_array: felt*,
@@ -58,30 +56,27 @@ func verify_n_receipt_proofs{
         pow2_array=pow2_array,
     );
 
-    let (rlp, rlp_len, bytes_len, tx_type) = derive_receipt_payload(
-        item=rlp, item_bytes_len=rlp_bytes_len
-    );
+    // let (rlp, rlp_len, bytes_len, tx_type) = derive_receipt_payload(
+    //     item=rlp, item_bytes_len=rlp_bytes_len
+    // );
 
-    let receipt = Receipt(
-        rlp=rlp,
-        rlp_len=rlp_len,
-        bytes_len=bytes_len,
-        type=tx_type,
-        block_number=receipt_proof.block_number,
-    );
+    // let receipt = Receipt(
+    //     rlp=rlp,
+    //     rlp_len=rlp_len,
+    //     bytes_len=bytes_len,
+    //     type=tx_type,
+    //     block_number=receipt_proof.block_number,
+    // );
 
     // decode receipt-index from rlp-encoded key
-    assert receipt_proof.key.high = 0;  // sanity check
+    // assert receipt_proof.key.high = 0;  // sanity check
     let receipt_index = chunk_to_felt_be(receipt_proof.key.low);
 
-    ReceiptMemorizer.add(
-        chain_id=chain_id,
-        block_number=receipt_proof.block_number,
-        key_low=receipt_index,
-        index=index,
+    BlockReceiptMemorizer.add(
+        chain_id=chain_id, block_number=receipt_proof.block_number, key_low=receipt_index, rlp=rlp
     );
 
-    assert receipts[index] = receipt;
+    // assert receipts[index] = receipt;
 
     return verify_n_receipt_proofs(
         chain_id=chain_id,

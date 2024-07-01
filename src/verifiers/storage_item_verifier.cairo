@@ -11,7 +11,7 @@ from packages.eth_essentials.lib.rlp_little import (
     extract_n_bytes_from_le_64_chunks_array,
 )
 
-from src.memorizer_v2 import StorageMemorizer, AccountMemorizer
+from src.memorizer import StorageMemorizer, AccountMemorizer
 from src.decoders.account_decoder import AccountDecoder, AccountField
 
 from packages.eth_essentials.lib.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64

@@ -10,7 +10,7 @@ from packages.eth_essentials.lib.utils import (
 )
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
 from src.types import BlockSampledDataLake, ComputationalTask, Header
-from src.memorizer_v2 import HeaderMemorizer, AccountMemorizer, StorageMemorizer
+from src.memorizer import HeaderMemorizer, AccountMemorizer, StorageMemorizer
 from src.tasks.fetch_trait import FetchTrait
 from src.decoders.header_decoder import HeaderDecoder
 from src.decoders.account_decoder import AccountDecoder
@@ -393,10 +393,6 @@ func fetch_storage_data_points{
         tempvar range_check_ptr = range_check_ptr + 1;
         return index;
     }
-    %{
-        print("chain_id", ids.chain_id)
-        print("current_block_number", ids.current_block_number)
-    %}
 
     let (rlp) = StorageMemorizer.get(
         chain_id=chain_id,

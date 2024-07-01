@@ -13,7 +13,7 @@ from packages.eth_essentials.lib.block_header import (
     extract_block_number_big,
     reverse_block_header_chunks,
 )
-from src.memorizer_v2 import HeaderMemorizer
+from src.memorizer import HeaderMemorizer
 from src.decoders.header_decoder import HeaderDecoder
 
 // Guard function that verifies the inclusion of headers in the MMR.

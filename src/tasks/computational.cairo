@@ -10,13 +10,7 @@ from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.registers import get_fp_and_pc
 from src.datalakes.datalake import Datalake, get_default_fetch_trait
-from src.types import (
-    BlockSampledDataLake,
-    ComputationalTask,
-    Header,
-    Receipt,
-    ChainInfo,
-)
+from src.types import BlockSampledDataLake, ComputationalTask, Header, ChainInfo
 from src.tasks.aggregate_functions.sum import compute_sum
 from src.tasks.aggregate_functions.avg import compute_avg
 from src.tasks.aggregate_functions.min_max import uint256_min_le, uint256_max_le
@@ -103,10 +97,9 @@ namespace Task {
         account_dict: DictAccess*,
         storage_dict: DictAccess*,
         header_dict: DictAccess*,
-        headers: Header*,
         block_tx_dict: DictAccess*,
-        receipts: Receipt*,
-        receipt_dict: DictAccess*,
+        block_receipt_dict: DictAccess*,
+        headers: Header*,
         pow2_array: felt*,
         tasks: ComputationalTask*,
         chain_info: ChainInfo,
