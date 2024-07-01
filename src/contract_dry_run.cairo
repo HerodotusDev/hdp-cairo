@@ -29,7 +29,7 @@ func main{
     alloc_locals;
 
     %{
-        from tools.schema import HDPDryRunInput
+        from tools.py.schema import HDPDryRunInput
         dry_run_input = HDPDryRunInput.Schema().load(program_input)
         fetch_keys_file_path = dry_run_input.fetch_keys_file_path
         inputs = dry_run_input.modules[0].inputs
