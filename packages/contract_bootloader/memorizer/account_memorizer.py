@@ -2,7 +2,7 @@ from enum import Enum
 from typing import List, Tuple
 from abc import ABC, abstractmethod
 from contract_bootloader.memorizer.memorizer import Memorizer
-from marshmallow_dataclass import dataclass, class_schema
+from marshmallow_dataclass import dataclass
 from web3.eth import ChecksumAddress
 from web3 import Web3
 

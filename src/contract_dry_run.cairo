@@ -29,10 +29,11 @@ func main{
     alloc_locals;
 
     %{
-        from src.objects import Module
-        module = Module.Schema().load(program_input)
-        inputs = module.inputs
-        compiled_class = module.module_class
+        from src.objects import HDPDryRunInput
+        dry_run_input = HDPDryRunInput.Schema().load(program_input)
+        fetch_keys_file_path = dry_run_input.fetch_keys_file_path
+        inputs = dry_run_input.module.inputs
+        compiled_class = dry_run_input.module.module_class
     %}
 
     local calldata: felt* = nondet %{ segments.add() %};
@@ -105,6 +106,13 @@ func main{
         print("program_hash", hex(ids.program_hash))
         print("result.low", hex(ids.result.low))
         print("result.high", hex(ids.result.high))
+    %}
+
+    %{
+        import json
+        dictionary = syscall_handler.fetch_keys_dict()
+        with open(fetch_keys_file_path, 'w') as json_file:
+            json.dump(dictionary, json_file)
     %}
 
     return ();

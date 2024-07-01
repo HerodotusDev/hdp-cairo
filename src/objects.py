@@ -134,3 +134,9 @@ class HDPInput(ValidatedMarshmallowDataclass):
     result_root: Optional[int] = field(
         default=None, metadata=additional_metadata(marshmallow_field=IntAsHex())
     )
+
+
+@marshmallow_dataclass.dataclass(frozen=True)
+class HDPDryRunInput(ValidatedMarshmallowDataclass):
+    fetch_keys_file_path: str
+    module: Module

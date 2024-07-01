@@ -4,7 +4,6 @@ from typing import (
     Iterable,
     Tuple,
 )
-import json
 from starkware.cairo.lang.vm.relocatable import RelocatableValue, MaybeRelocatable
 from starkware.cairo.lang.vm.memory_segments import MemorySegmentManager
 from contract_bootloader.syscall_handler_base import SyscallHandlerBase
@@ -40,9 +39,13 @@ class DryRunSyscallHandler(SyscallHandlerBase):
         dict_manager: DictManager,
         segments: MemorySegmentManager,
     ):
-        super().__init__(segments=segments, initial_syscall_ptr=None)
-        self.syscall_counter: Dict[str, int] = {}
+        super().__init__(
+            segments=segments,
+            initial_syscall_ptr=None,
+        )
+        self.syscall_counter: Dict[str, int] = dict()
         self.dict_manager = dict_manager
+        self.fetch_keys_registry = list()
 
     def set_syscall_ptr(self, syscall_ptr: RelocatableValue):
         assert self._syscall_ptr is None, "syscall_ptr is already set."
@@ -86,23 +89,19 @@ class DryRunSyscallHandler(SyscallHandlerBase):
             )
             retdata = handler.handle(function_id=function_id, key=key)
 
-            def create_dict(key):
-                data = {}
-                data["key"] = asdict(key)
-                if isinstance(key, HeaderMemorizerKey):
-                    data["type"] = "HeaderMemorizerKey"
-                elif isinstance(key, AccountMemorizerKey):
-                    data["type"] = "AccountMemorizerKey"
-                return data
-
-            data_list = [create_dict(key) for key in list(handler.fetch_keys_registry)]
-            print(json.dumps(data_list, indent=2))
+            self.fetch_keys_registry.append(handler.fetch_keys_dict())
 
         return CallResult(
             gas_consumed=0,
             failure_flag=0,
             retdata=list(retdata),
         )
+
+    def clear_fetch_keys_registry(self):
+        self.fetch_keys_registry.clear()
+
+    def fetch_keys_dict(self) -> list[dict]:
+        return self.fetch_keys_registry
 
 
 class DryRunAccountMemorizerHandler(AbstractAccountMemorizerBase):
@@ -118,3 +117,20 @@ class DryRunAccountMemorizerHandler(AbstractAccountMemorizerBase):
             balance % 0x100000000000000000000000000000000,
             balance // 0x100000000000000000000000000000000,
         )
+
+    def fetch_keys_dict(self) -> set:
+        def create_dict(key):
+            data = dict()
+            data["key"] = asdict(key)
+            if isinstance(key, HeaderMemorizerKey):
+                data["type"] = "HeaderMemorizerKey"
+            elif isinstance(key, AccountMemorizerKey):
+                data["type"] = "AccountMemorizerKey"
+            return data
+
+        dictionary = dict()
+
+        for fetch_key in list(self.fetch_keys_registry):
+            dictionary.update(create_dict(fetch_key))
+
+        return dictionary
