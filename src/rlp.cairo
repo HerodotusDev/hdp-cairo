@@ -9,48 +9,83 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, word_reverse_endian
 from packages.eth_essentials.lib.rlp_little import array_copy
 
-// Returns the index of the first list element, and the list length in bytes.
-// This function can be used to derive the item_starts_at_byte param for rlp_list_retrieve.
+// Returns the index of the first list element. This index is used to retrieve elements from an RLP list.
 // Params:
 // - rlp: an RLP encoded list (long or short)
-// func rlp_get_list_meta{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*} (
-//     rlp: felt*
-// ) -> (value_start: felt, bytes_len: felt) {
-//     let first_byte = extract_byte_at_pos(rlp[item_starts_at_word], item_start_offset, pow2_array);
+// - rlp_start_offset: the offset of the RLP encoded data. This is used to skip over the TX envelope prefix.
+func get_rlp_list_meta{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    rlp: felt*, rlp_start_offset: felt
+) -> (value_start_offset: felt) {
+    alloc_locals;
+    let first_byte = extract_byte_at_pos(rlp[0], rlp_start_offset, pow2_array);
 
-// local is_long: felt;
-//     %{
-//         if 0xc0 <= ids.first_byte <= 0xf6:
-//             ids.is_long = 0 # short list
-//         elif 0xf7 <= ids.first_byte <= 0xff:
-//             ids.is_long = 1 # long list
-//         else:
-//             assert False, "Invalid RLP list"
-//     %}
+    local is_long: felt;
+    %{
+        if 0xc0 <= ids.first_byte <= 0xf6:
+            ids.is_long = 0 # short list
+        elif 0xf7 <= ids.first_byte <= 0xff:
+            ids.is_long = 1 # long list
+        else:
+            assert False, "Invalid RLP list"
+    %}
 
-// local value_start: felt;
-//     local bytes_len: felt;
-//     if (is_long == 0) {
-//         assert [range_check_ptr] = first_byte - 0xc0;
-//         assert [range_check_ptr + 1] = 0xf6 - first_byte;
-//         assert bytes_len = first_byte - 0xc0;
-//         assert value_start = 1;
+    local value_start_offset: felt;
+    local bytes_len: felt;
+    if (is_long == 0) {
+        assert [range_check_ptr] = first_byte - 0xc0;
+        assert [range_check_ptr + 1] = 0xf6 - first_byte;
 
-// tempvar range_check_ptr = range_check_ptr + 2;
-//     } else {
-//         assert [range_check_ptr] = first_byte - 0xf7;
-//         assert [range_check_ptr + 1] = 0xff - first_byte;
-//         tempvar range_check_ptr = range_check_ptr + 2;
+        tempvar range_check_ptr = range_check_ptr + 2;
+        return (value_start_offset=rlp_start_offset + 1);
+    } else {
+        assert [range_check_ptr] = first_byte - 0xf7;
+        assert [range_check_ptr + 1] = 0xff - first_byte;
+        tempvar range_check_ptr = range_check_ptr + 2;
 
-// let len_len = first_byte - 0xf7;
-//         let bytes_len = decode_long_value_len(
-//             rlp=rlp, item_starts_at_byte=item_starts_at_byte + 1, len_len=len_len, pow2_array=pow2_array
-//         );
-//         assert value_start = 1 + len_len;
-//     }
+        let len_len = first_byte - 0xf7;
+        return (value_start_offset=1 + len_len + rlp_start_offset);
+    }
+}
 
-// return (value_start=value_start, bytes_len=bytes_len);
-// }
+func get_rlp_list_bytes_len{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    rlp: felt*, rlp_start_offset: felt
+) -> (list_bytes_len: felt) {
+    alloc_locals;
+    let first_byte = extract_byte_at_pos(rlp[0], rlp_start_offset, pow2_array);
+
+    local is_long: felt;
+    %{
+        if 0xc0 <= ids.first_byte <= 0xf6:
+            ids.is_long = 0 # short list
+        elif 0xf7 <= ids.first_byte <= 0xff:
+            ids.is_long = 1 # long list
+        else:
+            assert False, "Invalid RLP list"
+    %}
+
+    local value_start_offset: felt;
+    local bytes_len: felt;
+    if (is_long == 0) {
+        assert [range_check_ptr] = first_byte - 0xc0;
+        assert [range_check_ptr + 1] = 0xf6 - first_byte;
+
+        tempvar range_check_ptr = range_check_ptr + 2;
+        return (list_bytes_len=first_byte - 0xc0);
+    } else {
+        assert [range_check_ptr] = first_byte - 0xf7;
+        assert [range_check_ptr + 1] = 0xff - first_byte;
+        tempvar range_check_ptr = range_check_ptr + 2;
+
+        let len_len = first_byte - 0xf7;
+        let value_bytes_len = decode_long_value_len(
+            rlp=rlp,
+            item_starts_at_byte=rlp_start_offset + 1,
+            len_len=len_len,
+            pow2_array=pow2_array,
+        );
+        return (list_bytes_len=value_bytes_len);
+    }
+}
 
 // retrieves an element from an RLP encoded list (LE chunks). The element is selected via its index in the list.
 // The passed rlp chunks should not contain the RLP list prefix, only the elements.

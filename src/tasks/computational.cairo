@@ -14,7 +14,6 @@ from src.types import (
     BlockSampledDataLake,
     ComputationalTask,
     Header,
-    Transaction,
     Receipt,
     ChainInfo,
 )
@@ -105,8 +104,7 @@ namespace Task {
         storage_dict: DictAccess*,
         header_dict: DictAccess*,
         headers: Header*,
-        transaction_dict: DictAccess*,
-        transactions: Transaction*,
+        block_tx_dict: DictAccess*,
         receipts: Receipt*,
         receipt_dict: DictAccess*,
         pow2_array: felt*,

@@ -37,8 +37,8 @@ echo "Formatting .cairo files..."
 find ./src ./tests ./packages/contract_bootloader/ ./packages/hdp_bootloader/ -name '*.cairo' ! -path "./src/cairo1/*" ! -path "./src/contracts/*" | parallel --halt soon,fail=1 format_file
 
 # Find Scarb projects and execute format_scarb_project in each
-echo "Formatting Scarb projects..."
-find ./src/cairo1 ./src/contracts -mindepth 1 -maxdepth 1 -type d | parallel --halt now,fail=1 format_scarb_project
+# echo "Formatting Scarb projects..."
+# find ./src/cairo1 ./src/contracts -mindepth 1 -maxdepth 1 -type d | parallel --halt now,fail=1 format_scarb_project
 
 # Capture the exit status of parallel
 exit_status=$?

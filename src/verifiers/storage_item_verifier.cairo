@@ -81,11 +81,7 @@ func verify_n_storage_items{
     account_dict: DictAccess*,
     storage_dict: DictAccess*,
     pow2_array: felt*,
-}(
-    chain_id: felt,
-    storage_items: StorageItem*,
-    storage_items_len: felt,
-) {
+}(chain_id: felt, storage_items: StorageItem*, storage_items_len: felt) {
     if (storage_items_len == 0) {
         return ();
     }
@@ -93,15 +89,11 @@ func verify_n_storage_items{
     let storage_item_idx = storage_items_len - 1;
 
     verify_storage_item(
-        chain_id=chain_id,
-        storage_item=storage_items[storage_item_idx],
-        proof_idx=0,
+        chain_id=chain_id, storage_item=storage_items[storage_item_idx], proof_idx=0
     );
 
     return verify_n_storage_items(
-        chain_id=chain_id,
-        storage_items=storage_items,
-        storage_items_len=storage_items_len - 1,
+        chain_id=chain_id, storage_items=storage_items, storage_items_len=storage_items_len - 1
     );
 }
 
@@ -118,11 +110,7 @@ func verify_storage_item{
     account_dict: DictAccess*,
     storage_dict: DictAccess*,
     pow2_array: felt*,
-}(
-    chain_id: felt,
-    storage_item: StorageItem,
-    proof_idx: felt,
-) {
+}(chain_id: felt, storage_item: StorageItem, proof_idx: felt) {
     alloc_locals;
     if (proof_idx == storage_item.proofs_len) {
         return ();
@@ -155,8 +143,6 @@ func verify_storage_item{
     );
 
     return verify_storage_item(
-        chain_id=chain_id,
-        storage_item=storage_item,
-        proof_idx=proof_idx + 1,
+        chain_id=chain_id, storage_item=storage_item, proof_idx=proof_idx + 1
     );
 }

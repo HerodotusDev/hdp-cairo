@@ -22,7 +22,7 @@ from src.verifiers.storage_item_verifier import (
 )
 from src.verifiers.header_verifier import verify_headers_inclusion
 from src.verifiers.mmr_verifier import verify_mmr_meta
-from src.verifiers.transaction_verifier import verify_n_transaction_proofs
+from src.verifiers.block_tx_verifier import verify_n_block_tx_proofs
 from src.verifiers.receipt_verifier import verify_n_receipt_proofs
 
 from src.types import (
@@ -31,26 +31,14 @@ from src.types import (
     Account,
     StorageItem,
     TransactionProof,
-    Transaction,
     ComputationalTask,
     Receipt,
     ReceiptProof,
-    // MemorizerState,
 )
 
-from src.memorizer import (
-    // HeaderMemorizer,
-    // AccountMemorizer,
-    // StorageMemorizer,
-    TransactionMemorizer,
-    MEMORIZER_DEFAULT,
-)
+from src.memorizer import ReceiptMemorizer, MEMORIZER_DEFAULT
 
-from src.memorizer_v2 import (
-    HeaderMemorizer,
-    AccountMemorizer,
-    StorageMemorizer,
-)
+from src.memorizer_v2 import HeaderMemorizer, AccountMemorizer, StorageMemorizer, BlockTxMemorizer
 from packages.eth_essentials.lib.utils import pow2alloc128, write_felt_array_to_dict_keys
 
 from src.tasks.computational import Task
@@ -110,7 +98,6 @@ func run{
 
     // Transaction Params
     let (transaction_proofs: TransactionProof*) = alloc();
-    let (transactions: Transaction*) = alloc();
     local transaction_proof_len: felt;
 
     // Receipt Params
@@ -122,8 +109,8 @@ func run{
     let (header_dict, header_dict_start) = HeaderMemorizer.init();
     let (account_dict, account_dict_start) = AccountMemorizer.init();
     let (storage_dict, storage_dict_start) = StorageMemorizer.init();
-    let (transaction_dict, transaction_dict_start) = TransactionMemorizer.initialize();
-    let (receipt_dict, receipt_dict_start) = TransactionMemorizer.initialize();
+    let (block_tx_dict, block_tx_dict_start) = BlockTxMemorizer.init();
+    let (receipt_dict, receipt_dict_start) = ReceiptMemorizer.initialize();
 
     // Task Params
     let (tasks: ComputationalTask*) = alloc();
@@ -275,11 +262,7 @@ func run{
         header_dict=header_dict,
         account_dict=account_dict,
         pow2_array=pow2_array,
-    }(
-        chain_id=chain_id,
-        accounts=accounts,
-        accounts_len=accounts_len,
-    );
+    }(chain_id=chain_id, accounts=accounts, accounts_len=accounts_len);
 
     // Check 4: Ensure the account slot proofs are valid
     verify_n_storage_items{
@@ -289,21 +272,15 @@ func run{
         account_dict=account_dict,
         storage_dict=storage_dict,
         pow2_array=pow2_array,
-    }(
-        chain_id=chain_id,
-        storage_items=storage_items,
-        storage_items_len=storage_items_len,
-    );
+    }(chain_id=chain_id, storage_items=storage_items, storage_items_len=storage_items_len);
 
     // Check 5: Verify the transaction proofs
-    verify_n_transaction_proofs{
+    verify_n_block_tx_proofs{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         poseidon_ptr=poseidon_ptr,
         keccak_ptr=keccak_ptr,
-        transactions=transactions,
-        transaction_dict=transaction_dict,
-        headers=headers,
+        block_tx_dict=block_tx_dict,
         header_dict=header_dict,
         pow2_array=pow2_array,
         chain_info=chain_info,
@@ -353,8 +330,7 @@ func run{
         storage_dict=storage_dict,
         header_dict=header_dict,
         headers=headers,
-        transaction_dict=transaction_dict,
-        transactions=transactions,
+        block_tx_dict=block_tx_dict,
         receipts=receipts,
         receipt_dict=receipt_dict,
         pow2_array=pow2_array,
@@ -391,7 +367,7 @@ func run{
     default_dict_finalize(header_dict_start, header_dict, 7);
     default_dict_finalize(account_dict_start, account_dict, 7);
     default_dict_finalize(storage_dict_start, storage_dict, 7);
-    default_dict_finalize(transaction_dict_start, transaction_dict, MEMORIZER_DEFAULT);
+    default_dict_finalize(block_tx_dict_start, block_tx_dict, 7);
     default_dict_finalize(receipt_dict_start, receipt_dict, MEMORIZER_DEFAULT);
 
     [ap] = mmr_meta.root;
@@ -414,9 +390,6 @@ func run{
 
     [ap] = output_ptr + 6, ap++;
     let output_ptr = output_ptr + 6;
-    %{
-        print("Done")
-    
-    %}
+    %{ print("Done") %}
     return ();
 }

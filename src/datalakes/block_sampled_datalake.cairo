@@ -396,7 +396,6 @@ func fetch_storage_data_points{
     %{
         print("chain_id", ids.chain_id)
         print("current_block_number", ids.current_block_number)
-        
     %}
 
     let (rlp) = StorageMemorizer.get(

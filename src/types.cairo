@@ -63,13 +63,6 @@ struct StorageItemProof {
     proof: felt**,
 }
 
-struct Transaction {
-    rlp: felt*,
-    rlp_len: felt,
-    bytes_len: felt,
-    type: felt,
-}
-
 struct TransactionProof {
     block_number: felt,
     len: felt,

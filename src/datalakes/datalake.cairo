@@ -17,7 +17,6 @@ from src.types import (
     Header,
     BlockSampledDataLake,
     TransactionsInBlockDatalake,
-    Transaction,
     Receipt,
     ChainInfo,
 )
@@ -72,8 +71,7 @@ namespace Datalake {
         storage_dict: DictAccess*,
         header_dict: DictAccess*,
         headers: Header*,
-        transaction_dict: DictAccess*,
-        transactions: Transaction*,
+        block_tx_dict: DictAccess*,
         receipt_dict: DictAccess*,
         receipts: Receipt*,
         pow2_array: felt*,

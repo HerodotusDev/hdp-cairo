@@ -22,14 +22,13 @@ from src.decoders.transaction_decoder import TransactionDecoder, TransactionType
 from src.decoders.receipt_decoder import ReceiptDecoder
 from src.decoders.storage_slot_decoder import StorageSlotDecoder
 
-from src.memorizer import TransactionMemorizer, ReceiptMemorizer
-from src.memorizer_v2 import HeaderMemorizer, AccountMemorizer, StorageMemorizer
+from src.memorizer import ReceiptMemorizer
+from src.memorizer_v2 import HeaderMemorizer, AccountMemorizer, StorageMemorizer, BlockTxMemorizer
 from src.types import (
     BlockSampledDataLake,
     ComputationalTask,
     Header,
     TransactionsInBlockDatalake,
-    Transaction,
     TransactionProof,
     Receipt,
     ChainInfo,
@@ -250,8 +249,7 @@ func fetch_tx_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    transaction_dict: DictAccess*,
-    transactions: Transaction*,
+    block_tx_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
 }(
@@ -274,11 +272,13 @@ func fetch_tx_data_points{
         return result_counter;
     }
 
-    let (tx) = TransactionMemorizer.get(
+    let (rlp) = BlockTxMemorizer.get(
         chain_id=chain_id, block_number=datalake.target_block, key_low=current_tx_index
     );
 
-    if (datalake.included_types[tx.type] == 0) {
+    let (tx_type, rlp_start_offset) = TransactionDecoder.open_tx_envelope(rlp);
+
+    if (datalake.included_types[tx_type] == 0) {
         return fetch_tx_data_points(
             chain_id=chain_id,
             datalake=datalake,
@@ -288,8 +288,9 @@ func fetch_tx_data_points{
         );
     }
 
-    let data_point = TransactionDecoder.get_field(tx, datalake.sampled_property);
-
+    let data_point = TransactionDecoder.get_field(
+        rlp, datalake.sampled_property, rlp_start_offset, tx_type
+    );
     let (data_point_reverse_endian) = uint256_reverse_endian(data_point);
 
     assert [data_points + result_counter * 2 * Uint256.SIZE + 0 * Uint256.SIZE] = Uint256(

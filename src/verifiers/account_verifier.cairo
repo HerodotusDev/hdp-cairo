@@ -76,11 +76,7 @@ func verify_n_accounts{
     header_dict: DictAccess*,
     account_dict: DictAccess*,
     pow2_array: felt*,
-}(
-    chain_id,
-    accounts: Account*,
-    accounts_len: felt,
-) {
+}(chain_id, accounts: Account*, accounts_len: felt) {
     alloc_locals;
     if (accounts_len == 0) {
         return ();
@@ -88,17 +84,9 @@ func verify_n_accounts{
 
     let account_idx = accounts_len - 1;
 
-    verify_account(
-        chain_id=chain_id,
-        account=accounts[account_idx],
-        proof_idx=0,
-    );
+    verify_account(chain_id=chain_id, account=accounts[account_idx], proof_idx=0);
 
-    return verify_n_accounts(
-        chain_id=chain_id,
-        accounts=accounts,
-        accounts_len=accounts_len - 1,
-    );
+    return verify_n_accounts(chain_id=chain_id, accounts=accounts, accounts_len=accounts_len - 1);
 }
 
 // Verifies the validity of an account's account_proofs
@@ -114,11 +102,7 @@ func verify_account{
     header_dict: DictAccess*,
     account_dict: DictAccess*,
     pow2_array: felt*,
-}(
-    chain_id: felt,
-    account: Account,
-    proof_idx: felt,
-) {
+}(chain_id: felt, account: Account, proof_idx: felt) {
     alloc_locals;
     if (proof_idx == account.proofs_len) {
         return ();
@@ -148,9 +132,5 @@ func verify_account{
         rlp=value,
     );
 
-    return verify_account(
-        chain_id=chain_id,
-        account=account,
-        proof_idx=proof_idx + 1,
-    );
+    return verify_account(chain_id=chain_id, account=account, proof_idx=proof_idx + 1);
 }
