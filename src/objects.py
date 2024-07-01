@@ -128,7 +128,7 @@ class HDPInput(ValidatedMarshmallowDataclass):
     proofs: Proofs
     tasks: List[InputTask] = field(
         metadata=additional_metadata(
-            marshmallow_field=mfields.List(mfields.Nested(InputTask))
+            marshmallow_field=mfields.List(mfields.Nested(InputTask.Schema))
         )
     )
     result_root: Optional[int] = field(
@@ -139,4 +139,8 @@ class HDPInput(ValidatedMarshmallowDataclass):
 @marshmallow_dataclass.dataclass(frozen=True)
 class HDPDryRunInput(ValidatedMarshmallowDataclass):
     fetch_keys_file_path: str
-    module: Module
+    modules: List[Module] = field(
+        metadata=additional_metadata(
+            marshmallow_field=mfields.List(mfields.Nested(Module.Schema))
+        )
+    )

@@ -32,8 +32,8 @@ func main{
         from src.objects import HDPDryRunInput
         dry_run_input = HDPDryRunInput.Schema().load(program_input)
         fetch_keys_file_path = dry_run_input.fetch_keys_file_path
-        inputs = dry_run_input.module.inputs
-        compiled_class = dry_run_input.module.module_class
+        inputs = dry_run_input.modules[0].inputs
+        compiled_class = dry_run_input.modules[0].module_class
     %}
 
     local calldata: felt* = nondet %{ segments.add() %};
