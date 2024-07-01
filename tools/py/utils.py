@@ -4,6 +4,13 @@ import json
 import os
 import shutil
 import requests
+import sysconfig
+
+
+def load_json_from_package(resource):
+    path = os.path.join(sysconfig.get_path("purelib"), resource)
+    with open(path, "r") as file:
+        return json.load(file)
 
 
 def split_128(a):

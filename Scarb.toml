@@ -5,7 +5,8 @@ edition = "2023_11"
 
 members = [
     "cairo",
-    "src/contracts/simple_linear_regression"
+    "src/contracts/simple_linear_regression",
+    "src/contracts/dry_run_test"
 ]
 
 [workspace.dependencies]
