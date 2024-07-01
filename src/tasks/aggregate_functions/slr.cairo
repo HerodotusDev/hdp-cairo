@@ -99,7 +99,7 @@ func compute_slr{
     assert task_input_arr[1 + values_len * 2 * 2 + 1] = predict.high;
 
     %{
-        from src.utils import load_json_from_package
+        from tools.py.utils import load_json_from_package
         from contract_bootloader.contract_class.contract_class import CompiledClass
         compiled_class = CompiledClass.Schema().load(load_json_from_package("compiled_contracts/simple_linear_regression_contract.json"))
     %}
