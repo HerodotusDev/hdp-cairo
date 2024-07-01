@@ -18,7 +18,7 @@ from contract_bootloader.memorizer.account_memorizer import (
     MemorizerFunctionId as AccountMemorizerFunctionId,
     MemorizerKey as AccountMemorizerKey,
 )
-from packages.contract_bootloader.provider.account_key_provider import (
+from contract_bootloader.provider.account_key_provider import (
     AccountKeyEVMProvider,
 )
 from contract_bootloader.memorizer.account_memorizer import (

@@ -1,7 +1,7 @@
 from contract_bootloader.memorizer.account_memorizer import (
     MemorizerKey as AccountMemorizerKey,
 )
-from packages.contract_bootloader.provider.evm_provider import EVMProvider
+from contract_bootloader.provider.evm_provider import EVMProvider
 
 
 class AccountKeyEVMProvider(EVMProvider):
