@@ -9,9 +9,20 @@ from starkware.cairo.common.cairo_secp.signature import (
     public_key_point_to_eth_address,
 )
 
-from src.rlp import rlp_list_retrieve, le_chunks_to_uint256, prepend_le_chunks, append_be_chunk
-from src.types import Transaction, ChainInfo
-from packages.eth_essentials.lib.rlp_little import extract_n_bytes_from_le_64_chunks_array
+from packages.eth_essentials.lib.rlp_little import (
+    extract_byte_at_pos,
+    extract_n_bytes_from_le_64_chunks_array,
+)
+
+from src.rlp import (
+    rlp_list_retrieve,
+    le_chunks_to_uint256,
+    prepend_le_chunks,
+    append_be_chunk,
+    get_rlp_list_meta,
+    get_rlp_list_bytes_len,
+)
+from src.types import ChainInfo
 from src.utils import get_felt_bytes_len, reverse_chunk_endianess
 
 namespace TransactionField {
@@ -40,19 +51,10 @@ namespace TransactionType {
 }
 
 namespace TransactionDecoder {
-    func get_nonce{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
-        tx: Transaction
-    ) -> felt {
-        let index = TxTypeFieldMap.get_field_index(tx.type, 0);
-        let (nonce, nonce_len, _bytes_len) = rlp_list_retrieve(tx.rlp, index, 0, 0);
-
-        assert nonce_len = 1;
-        return (nonce[0]);
-    }
-
     func get_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
-        tx: Transaction, field: felt
+        rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt
     ) -> Uint256 {
+        alloc_locals;
         if (field == TransactionField.RECEIVER) {
             assert 1 = 0;  // returns as felt
         }
@@ -69,14 +71,16 @@ namespace TransactionDecoder {
             assert 1 = 0;  // returns as felt
         }
 
-        let index = TxTypeFieldMap.get_field_index(tx.type, field);
-        let (res, res_len, bytes_len) = rlp_list_retrieve(tx.rlp, index, 0, 0);
+        let (local value_start_offset) = get_rlp_list_meta(rlp, rlp_start_offset);
+        let field_index = TxTypeFieldMap.get_field_index(tx_type, field);
+
+        let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, field_index, value_start_offset, 0);
 
         return le_chunks_to_uint256(res, res_len, bytes_len);
     }
 
     func get_field_and_bytes_len{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
-        tx: Transaction, field: felt
+        rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt
     ) -> (value: Uint256, bytes_len: felt) {
         alloc_locals;
         if (field == TransactionField.RECEIVER) {
@@ -95,20 +99,68 @@ namespace TransactionDecoder {
             assert 1 = 0;  // returns as felt
         }
 
-        let index = TxTypeFieldMap.get_field_index(tx.type, field);
-        let (local res, res_len, bytes_len) = rlp_list_retrieve(tx.rlp, index, 0, 0);
+        let (local value_start_offset) = get_rlp_list_meta(rlp, rlp_start_offset);
+        let field_index = TxTypeFieldMap.get_field_index(tx_type, field);
+
+        let (local res, res_len, bytes_len) = rlp_list_retrieve(
+            rlp, field_index, value_start_offset, 0
+        );
         let value = le_chunks_to_uint256(res, res_len, bytes_len);
         return (value=value, bytes_len=bytes_len);
     }
 
     func get_felt_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
-        tx: Transaction, field
+        rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt
     ) -> (value: felt*, value_len: felt, bytes_len: felt) {
-        let index = TxTypeFieldMap.get_field_index(tx.type, field);
+        alloc_locals;
 
-        let (res, res_len, bytes_len) = rlp_list_retrieve(tx.rlp, index, 0, 0);
+        let (local value_start_offset) = get_rlp_list_meta(rlp, rlp_start_offset);
+        let field_index = TxTypeFieldMap.get_field_index(tx_type, field);
+
+        let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, field_index, value_start_offset, 0);
 
         return (res, res_len, bytes_len);
+    }
+
+    // Opens the EIP-2718 transaction envelope. It returns the transaction type and the index where the RLP-encoded payload starts.
+    // Inputs:
+    // - item: The eveloped transaction
+    // Outputs:
+    // - tx_type: The type of the transaction
+    // - rlp_start_offset: The index where the RLP-encoded payload starts
+    func open_tx_envelope{range_check_ptr, pow2_array: felt*, bitwise_ptr: BitwiseBuiltin*}(
+        item: felt*
+    ) -> (tx_type: felt, rlp_start_offset: felt) {
+        alloc_locals;
+
+        let first_byte = extract_byte_at_pos(item[0], 0, pow2_array);
+        let second_byte = extract_byte_at_pos(item[0], 1, pow2_array);
+
+        local has_type_prefix: felt;
+        %{
+            # typed transactions have a type prefix in this range [1, 3]
+            if 0x0 < ids.first_byte < 0x04:
+                ids.has_type_prefix = 1
+            else:
+                ids.has_type_prefix = 0
+        %}
+
+        if (has_type_prefix == 1) {
+            assert [range_check_ptr] = 0x3 - first_byte;
+            assert [range_check_ptr + 1] = first_byte - 1;
+            assert [range_check_ptr + 2] = 0xff - second_byte;
+            assert [range_check_ptr + 3] = second_byte - 0xf7;
+
+            tempvar range_check_ptr = range_check_ptr + 4;
+            return (tx_type=first_byte, rlp_start_offset=1);
+        } else {
+            // Legacy transactions must start with long list prefix
+            assert [range_check_ptr] = 0xff - first_byte;
+            assert [range_check_ptr + 1] = first_byte - 0xf7;
+
+            tempvar range_check_ptr = range_check_ptr + 2;
+            return (tx_type=0, rlp_start_offset=0);
+        }
     }
 }
 
@@ -126,35 +178,35 @@ namespace TransactionSender {
         pow2_array: felt*,
         keccak_ptr: KeccakBuiltin*,
         chain_info: ChainInfo,
-    }(tx: Transaction) -> felt {
+    }(rlp: felt*, rlp_start_offset: felt, tx_type: felt) -> felt {
         alloc_locals;
 
-        let v_le = TransactionDecoder.get_field(tx, TransactionField.V);
+        let v_le = TransactionDecoder.get_field(rlp, TransactionField.V, rlp_start_offset, tx_type);
         let (v) = uint256_reverse_endian(v_le);
         let (v_norm, is_eip155) = normalize_v{
             range_check_ptr=range_check_ptr, chain_info=chain_info
-        }(tx.type, v);
+        }(tx_type, v);
 
         let (r_le, r_bytes_len) = TransactionDecoder.get_field_and_bytes_len(
-            tx, TransactionField.R
+            rlp, TransactionField.R, rlp_start_offset, tx_type
         );
         let (r) = uint256_reverse_endian(r_le);
         let (s_le, s_bytes_len) = TransactionDecoder.get_field_and_bytes_len(
-            tx, TransactionField.S
+            rlp, TransactionField.S, rlp_start_offset, tx_type
         );
         let (s) = uint256_reverse_endian(s_le);
 
         // Step 1: Unpack the RLP list and omit signature parameters
         let (tx_payload, tx_payload_len, tx_payload_bytes_len) = extract_tx_payload{
             range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-        }(tx, r_bytes_len + s_bytes_len + 3, is_eip155);  // + 2 for s + r prefix, +1 for v
+        }(rlp, rlp_start_offset, r_bytes_len + s_bytes_len + 3, is_eip155);  // + 2 for s + r prefix, +1 for v
 
         // Step 2: RLP encode the TX params to create the signing payload and add TX type prefix
         let (
             encoded_tx_payload, encoded_tx_payload_len, encoded_tx_payload_bytes_len
         ) = encode_signing_payload{
             range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-        }(tx, tx_payload, tx_payload_len, tx_payload_bytes_len);
+        }(tx_type, tx_payload, tx_payload_len, tx_payload_bytes_len);
 
         // Step 3: Calculate the keccak hash of the encoded tx payload
         let (msg_hash) = keccak_bigend(encoded_tx_payload, encoded_tx_payload_bytes_len);
@@ -186,18 +238,23 @@ namespace TransactionSender {
     // The RLP prefix is also removed
     func extract_tx_payload{
         range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, chain_info: ChainInfo
-    }(tx: Transaction, sig_bytes_len: felt, is_eip155: felt) -> (
+    }(rlp: felt*, rlp_start_offset: felt, sig_bytes_len: felt, is_eip155: felt) -> (
         tx_payload: felt*, tx_payload_len: felt, tx_payload_bytes_len: felt
     ) {
         alloc_locals;
 
-        let tx_params_bytes_len = tx.bytes_len - sig_bytes_len;
+        // Calculate the rlp bytes length. The version prefix is ignored here
+        let (rlp_bytes_len) = get_rlp_list_bytes_len(rlp, rlp_start_offset);
+        let tx_params_bytes_len = rlp_bytes_len - sig_bytes_len;
 
-        // since the TX doesnt contain the list prefix, we simply retrieve the bytes, ignoring the signature ones
+        // retrieve the start index of the values (without list prefix)
+        let (value_start_offset) = get_rlp_list_meta(rlp, rlp_start_offset);
+
+        // Now we cut the TX params from the rlp
         let (tx_params, tx_params_len) = extract_n_bytes_from_le_64_chunks_array(
-            array=tx.rlp,
+            array=rlp,
             start_word=0,
-            start_offset=0,
+            start_offset=value_start_offset,
             n_bytes=tx_params_bytes_len,
             pow2_array=pow2_array,
         );
@@ -228,7 +285,7 @@ namespace TransactionSender {
     //     signed_payload_len: felt - The number of 64bit chunks in the signed_payload
     //     signed_payload_bytes_len: felt - The number of bytes in the signed_payload
     func encode_signing_payload{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
-        tx: Transaction, tx_payload: felt*, tx_payload_len: felt, tx_payload_bytes_len: felt
+        tx_type: felt, tx_payload: felt*, tx_payload_len: felt, tx_payload_bytes_len: felt
     ) -> (signed_payload: felt*, signed_payload_len: felt, signed_payload_bytes_len: felt) {
         alloc_locals;
         local prefix: felt;
@@ -256,7 +313,7 @@ namespace TransactionSender {
         }
         let pow2_array = pow2_array;
         local typed_prefix: felt;
-        if (tx.type == TransactionType.LEGACY) {
+        if (tx_type == TransactionType.LEGACY) {
             // Legacy txs have no type prefix
             assert prefix_bytes_len = current_len;
             let le_prefix = reverse_chunk_endianess(prefix, prefix_bytes_len);
@@ -264,12 +321,12 @@ namespace TransactionSender {
             tempvar range_check_ptr = range_check_ptr;
         } else {
             // All txs past EIP155 have a type prefix
-            assert [range_check_ptr] = tx.type - 1;
+            assert [range_check_ptr] = tx_type - 1;
             tempvar range_check_ptr = range_check_ptr + 1;
             assert prefix_bytes_len = current_len + 1;
 
             // prepend the tx type to the prefix and convert to LE
-            let be_typed_prefix = tx.type * pow2_array[8 * current_len] + prefix;
+            let be_typed_prefix = tx_type * pow2_array[8 * current_len] + prefix;
             let le_typed_prefix = reverse_chunk_endianess(be_typed_prefix, prefix_bytes_len);
 
             assert typed_prefix = le_typed_prefix;

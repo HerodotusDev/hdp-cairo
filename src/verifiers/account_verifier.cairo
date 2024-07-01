@@ -4,7 +4,7 @@ from packages.eth_essentials.lib.mpt import verify_mpt_proof
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.builtin_keccak.keccak import keccak_bigend
 from starkware.cairo.common.alloc import alloc
-from src.types import Account, AccountProof, Header, AccountValues
+from src.types import Account, AccountProof, Header
 from packages.eth_essentials.lib.block_header import extract_state_root_little
 from src.memorizer import HeaderMemorizer, AccountMemorizer
 
@@ -73,17 +73,10 @@ func verify_n_accounts{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    headers: Header*,
     header_dict: DictAccess*,
     account_dict: DictAccess*,
     pow2_array: felt*,
-}(
-    chain_id,
-    accounts: Account*,
-    accounts_len: felt,
-    account_values: AccountValues*,
-    account_value_idx: felt,
-) {
+}(chain_id, accounts: Account*, accounts_len: felt) {
     alloc_locals;
     if (accounts_len == 0) {
         return ();
@@ -91,21 +84,9 @@ func verify_n_accounts{
 
     let account_idx = accounts_len - 1;
 
-    let account_value_idx = verify_account(
-        chain_id=chain_id,
-        account=accounts[account_idx],
-        account_values=account_values,
-        account_value_idx=account_value_idx,
-        proof_idx=0,
-    );
+    verify_account(chain_id=chain_id, account=accounts[account_idx], proof_idx=0);
 
-    return verify_n_accounts(
-        chain_id=chain_id,
-        accounts=accounts,
-        accounts_len=accounts_len - 1,
-        account_values=account_values,
-        account_value_idx=account_value_idx,
-    );
+    return verify_n_accounts(chain_id=chain_id, accounts=accounts, accounts_len=accounts_len - 1);
 }
 
 // Verifies the validity of an account's account_proofs
@@ -118,20 +99,13 @@ func verify_account{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    headers: Header*,
     header_dict: DictAccess*,
     account_dict: DictAccess*,
     pow2_array: felt*,
-}(
-    chain_id: felt,
-    account: Account,
-    account_values: AccountValues*,
-    account_value_idx: felt,
-    proof_idx: felt,
-) -> felt {
+}(chain_id: felt, account: Account, proof_idx: felt) {
     alloc_locals;
     if (proof_idx == account.proofs_len) {
-        return account_value_idx;
+        return ();
     }
 
     let account_proof = account.proofs[proof_idx];
@@ -150,22 +124,13 @@ func verify_account{
         pow2_array=pow2_array,
     );
 
-    // write verified account state
-    assert account_values[account_value_idx] = AccountValues(values=value, values_len=value_len);
-
     // add account to memorizer
     AccountMemorizer.add(
         chain_id=chain_id,
         block_number=account_proof.block_number,
         address=account.address,
-        index=account_value_idx,
+        rlp=value,
     );
 
-    return verify_account(
-        chain_id=chain_id,
-        account=account,
-        account_values=account_values,
-        account_value_idx=account_value_idx + 1,
-        proof_idx=proof_idx + 1,
-    );
+    return verify_account(chain_id=chain_id, account=account, proof_idx=proof_idx + 1);
 }

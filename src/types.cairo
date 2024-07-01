@@ -21,16 +21,16 @@ struct Account {
     proofs: AccountProof*,
 }
 
+struct RlpState {
+    rlp: felt*,
+    bytes_len: felt,
+}
+
 struct AccountProof {
     block_number: felt,
     proof_len: felt,
     proof_bytes_len: felt*,
     proof: felt**,
-}
-
-struct AccountValues {
-    values: felt*,
-    values_len: felt,
 }
 
 struct ChainInfo {
@@ -63,13 +63,6 @@ struct StorageItemProof {
     proof: felt**,
 }
 
-struct Transaction {
-    rlp: felt*,
-    rlp_len: felt,
-    bytes_len: felt,
-    type: felt,
-}
-
 struct TransactionProof {
     block_number: felt,
     len: felt,
@@ -77,14 +70,6 @@ struct TransactionProof {
     proof: felt**,
     key: Uint256,
     key_leading_zeros: felt,
-}
-
-struct Receipt {
-    rlp: felt*,
-    rlp_len: felt,
-    bytes_len: felt,
-    type: felt,
-    block_number: felt,
 }
 
 struct ReceiptProof {

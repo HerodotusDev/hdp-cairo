@@ -22,19 +22,16 @@ from src.verifiers.storage_item_verifier import (
 )
 from src.verifiers.header_verifier import verify_headers_inclusion
 from src.verifiers.mmr_verifier import verify_mmr_meta
-from src.verifiers.transaction_verifier import verify_n_transaction_proofs
+from src.verifiers.block_tx_verifier import verify_n_block_tx_proofs
 from src.verifiers.receipt_verifier import verify_n_receipt_proofs
 
 from src.types import (
     Header,
     MMRMeta,
     Account,
-    AccountValues,
     StorageItem,
     TransactionProof,
-    Transaction,
     ComputationalTask,
-    Receipt,
     ReceiptProof,
 )
 
@@ -42,8 +39,8 @@ from src.memorizer import (
     HeaderMemorizer,
     AccountMemorizer,
     StorageMemorizer,
-    TransactionMemorizer,
-    MEMORIZER_DEFAULT,
+    BlockTxMemorizer,
+    BlockReceiptMemorizer,
 )
 from packages.eth_essentials.lib.utils import pow2alloc128, write_felt_array_to_dict_keys
 
@@ -96,30 +93,26 @@ func run{
 
     // Account Params
     let (accounts: Account*) = alloc();
-    let (account_values: AccountValues*) = alloc();
     local accounts_len: felt;
 
     // Storage Params
     let (storage_items: StorageItem*) = alloc();
-    let (storage_values: Uint256*) = alloc();
     local storage_items_len: felt;
 
     // Transaction Params
     let (transaction_proofs: TransactionProof*) = alloc();
-    let (transactions: Transaction*) = alloc();
     local transaction_proof_len: felt;
 
     // Receipt Params
     let (receipt_proofs: ReceiptProof*) = alloc();
-    let (receipts: Receipt*) = alloc();
     local receipt_proof_len: felt;
 
     // Memorizers
-    let (header_dict, header_dict_start) = HeaderMemorizer.initialize();
-    let (account_dict, account_dict_start) = AccountMemorizer.initialize();
-    let (storage_dict, storage_dict_start) = StorageMemorizer.initialize();
-    let (transaction_dict, transaction_dict_start) = TransactionMemorizer.initialize();
-    let (receipt_dict, receipt_dict_start) = TransactionMemorizer.initialize();
+    let (header_dict, header_dict_start) = HeaderMemorizer.init();
+    let (account_dict, account_dict_start) = AccountMemorizer.init();
+    let (storage_dict, storage_dict_start) = StorageMemorizer.init();
+    let (block_tx_dict, block_tx_dict_start) = BlockTxMemorizer.init();
+    let (block_receipt_dict, block_receipt_dict_start) = BlockReceiptMemorizer.init();
 
     // Task Params
     let (tasks: ComputationalTask*) = alloc();
@@ -268,44 +261,28 @@ func run{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
-        headers=headers,
         header_dict=header_dict,
         account_dict=account_dict,
         pow2_array=pow2_array,
-    }(
-        chain_id=chain_id,
-        accounts=accounts,
-        accounts_len=accounts_len,
-        account_values=account_values,
-        account_value_idx=0,
-    );
+    }(chain_id=chain_id, accounts=accounts, accounts_len=accounts_len);
 
     // Check 4: Ensure the account slot proofs are valid
     verify_n_storage_items{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
-        account_values=account_values,
         account_dict=account_dict,
         storage_dict=storage_dict,
         pow2_array=pow2_array,
-    }(
-        chain_id=chain_id,
-        storage_items=storage_items,
-        storage_items_len=storage_items_len,
-        storage_values=storage_values,
-        state_idx=0,
-    );
+    }(chain_id=chain_id, storage_items=storage_items, storage_items_len=storage_items_len);
 
     // Check 5: Verify the transaction proofs
-    verify_n_transaction_proofs{
+    verify_n_block_tx_proofs{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         poseidon_ptr=poseidon_ptr,
         keccak_ptr=keccak_ptr,
-        transactions=transactions,
-        transaction_dict=transaction_dict,
-        headers=headers,
+        block_tx_dict=block_tx_dict,
         header_dict=header_dict,
         pow2_array=pow2_array,
         chain_info=chain_info,
@@ -322,8 +299,7 @@ func run{
         bitwise_ptr=bitwise_ptr,
         poseidon_ptr=poseidon_ptr,
         keccak_ptr=keccak_ptr,
-        receipts=receipts,
-        receipt_dict=receipt_dict,
+        block_receipt_dict=block_receipt_dict,
         headers=headers,
         header_dict=header_dict,
         pow2_array=pow2_array,
@@ -352,15 +328,11 @@ func run{
         keccak_ptr=keccak_ptr,
         poseidon_ptr=poseidon_ptr,
         account_dict=account_dict,
-        account_values=account_values,
         storage_dict=storage_dict,
-        storage_values=storage_values,
         header_dict=header_dict,
+        block_tx_dict=block_tx_dict,
+        block_receipt_dict=block_receipt_dict,
         headers=headers,
-        transaction_dict=transaction_dict,
-        transactions=transactions,
-        receipts=receipts,
-        receipt_dict=receipt_dict,
         pow2_array=pow2_array,
         tasks=tasks,
         chain_info=chain_info,
@@ -392,11 +364,11 @@ func run{
 
     // Post Verification Checks: Ensure dict consistency
     default_dict_finalize(peaks_dict_start, peaks_dict, 0);
-    default_dict_finalize(header_dict_start, header_dict, MEMORIZER_DEFAULT);
-    default_dict_finalize(account_dict_start, account_dict, MEMORIZER_DEFAULT);
-    default_dict_finalize(storage_dict_start, storage_dict, MEMORIZER_DEFAULT);
-    default_dict_finalize(transaction_dict_start, transaction_dict, MEMORIZER_DEFAULT);
-    default_dict_finalize(receipt_dict_start, receipt_dict, MEMORIZER_DEFAULT);
+    default_dict_finalize(header_dict_start, header_dict, 7);
+    default_dict_finalize(account_dict_start, account_dict, 7);
+    default_dict_finalize(storage_dict_start, storage_dict, 7);
+    default_dict_finalize(block_tx_dict_start, block_tx_dict, 7);
+    default_dict_finalize(block_receipt_dict_start, block_receipt_dict, 7);
 
     [ap] = mmr_meta.root;
     [ap] = [output_ptr], ap++;
@@ -418,6 +390,6 @@ func run{
 
     [ap] = output_ptr + 6, ap++;
     let output_ptr = output_ptr + 6;
-
+    %{ print("Done") %}
     return ();
 }

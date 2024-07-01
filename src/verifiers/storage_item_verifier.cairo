@@ -4,7 +4,7 @@ from packages.eth_essentials.lib.mpt import verify_mpt_proof
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.builtin_keccak.keccak import keccak_bigend
 from starkware.cairo.common.alloc import alloc
-from src.types import AccountValues, StorageItemProof, StorageItem
+from src.types import StorageItemProof, StorageItem
 from src.rlp import decode_rlp_word_to_uint256
 from packages.eth_essentials.lib.rlp_little import (
     extract_byte_at_pos,
@@ -78,37 +78,22 @@ func verify_n_storage_items{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    account_values: AccountValues*,
     account_dict: DictAccess*,
     storage_dict: DictAccess*,
     pow2_array: felt*,
-}(
-    chain_id: felt,
-    storage_items: StorageItem*,
-    storage_items_len: felt,
-    storage_values: Uint256*,
-    state_idx: felt,
-) {
+}(chain_id: felt, storage_items: StorageItem*, storage_items_len: felt) {
     if (storage_items_len == 0) {
         return ();
     }
 
     let storage_item_idx = storage_items_len - 1;
 
-    let state_idx = verify_storage_item(
-        chain_id=chain_id,
-        storage_item=storage_items[storage_item_idx],
-        storage_values=storage_values,
-        proof_idx=0,
-        state_idx=state_idx,
+    verify_storage_item(
+        chain_id=chain_id, storage_item=storage_items[storage_item_idx], proof_idx=0
     );
 
     return verify_n_storage_items(
-        chain_id=chain_id,
-        storage_items=storage_items,
-        storage_items_len=storage_items_len - 1,
-        storage_values=storage_values,
-        state_idx=state_idx,
+        chain_id=chain_id, storage_items=storage_items, storage_items_len=storage_items_len - 1
     );
 }
 
@@ -122,31 +107,24 @@ func verify_storage_item{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    account_values: AccountValues*,
     account_dict: DictAccess*,
     storage_dict: DictAccess*,
     pow2_array: felt*,
-}(
-    chain_id: felt,
-    storage_item: StorageItem,
-    storage_values: Uint256*,
-    proof_idx: felt,
-    state_idx: felt,
-) -> felt {
+}(chain_id: felt, storage_item: StorageItem, proof_idx: felt) {
     alloc_locals;
     if (proof_idx == storage_item.proofs_len) {
-        return state_idx;
+        return ();
     }
 
     let slot_proof = storage_item.proofs[proof_idx];
 
     // get state_root from verified headers
-    let (account_value) = AccountMemorizer.get(
+    let (account_rlp) = AccountMemorizer.get(
         chain_id=chain_id, block_number=slot_proof.block_number, address=storage_item.address
     );
-    let state_root = AccountDecoder.get_field(account_value.values, AccountField.STATE_ROOT);
+    let state_root = AccountDecoder.get_field(account_rlp, AccountField.STATE_ROOT);
 
-    let (value: felt*, value_bytes_len: felt) = verify_mpt_proof(
+    let (rlp: felt*, _value_bytes_len: felt) = verify_mpt_proof(
         mpt_proof=slot_proof.proof,
         mpt_proof_bytes_len=slot_proof.proof_bytes_len,
         mpt_proof_len=slot_proof.proof_len,
@@ -156,22 +134,15 @@ func verify_storage_item{
         pow2_array=pow2_array,
     );
 
-    let decoded_value = decode_rlp_word_to_uint256(value, value_bytes_len);
-    assert storage_values[state_idx] = decoded_value;
-
     StorageMemorizer.add(
         chain_id=chain_id,
         block_number=slot_proof.block_number,
         address=storage_item.address,
         storage_slot=storage_item.slot,
-        index=state_idx,
+        rlp=rlp,
     );
 
     return verify_storage_item(
-        chain_id=chain_id,
-        storage_item=storage_item,
-        storage_values=storage_values,
-        proof_idx=proof_idx + 1,
-        state_idx=state_idx + 1,
+        chain_id=chain_id, storage_item=storage_item, proof_idx=proof_idx + 1
     );
 }
