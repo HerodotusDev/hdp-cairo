@@ -26,24 +26,21 @@ from src.decoders.account_decoder import AccountDecoder
 from src.decoders.header_decoder import HeaderDecoder
 from src.decoders.transaction_decoder import TransactionDecoder, TransactionType
 from src.decoders.receipt_decoder import ReceiptDecoder
+from src.decoders.storage_slot_decoder import StorageSlotDecoder
+
 from contract_bootloader.contract_class.compiled_class import CompiledClass
 from contract_bootloader.contract_bootloader import run_contract_bootloader, compute_program_hash
 from src.memorizer import (
+    HeaderMemorizer,
     AccountMemorizer,
     StorageMemorizer,
-    HeaderMemorizer,
-    TransactionMemorizer,
-    ReceiptMemorizer,
+    BlockTxMemorizer,
+    BlockReceiptMemorizer,
 )
 from src.types import (
     BlockSampledDataLake,
-    AccountValues,
     ComputationalTask,
-    Header,
     TransactionsInBlockDatalake,
-    Transaction,
-    TransactionProof,
-    Receipt,
     ChainInfo,
 )
 from starkware.cairo.common.dict_access import DictAccess
@@ -171,7 +168,6 @@ func fetch_account_data_points{
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     account_dict: DictAccess*,
-    account_values: AccountValues*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
 }(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
@@ -187,7 +183,7 @@ func fetch_account_data_points{
         return index;
     }
 
-    let (account_value) = AccountMemorizer.get(
+    let (rlp) = AccountMemorizer.get(
         chain_id=chain_id, block_number=current_block_number, address=datalake.properties + 1
     );
 
@@ -195,7 +191,7 @@ func fetch_account_data_points{
 
     let data_point1 = AccountDecoder.get_field{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-    }(rlp=account_value.values, field=[datalake.properties]);  // field_idx ios always at 0
+    }(rlp=rlp, field=[datalake.properties]);  // field_idx ios always at 0
 
     let (data_point1_reverse_endian) = uint256_reverse_endian(data_point1);
 
@@ -217,7 +213,6 @@ func fetch_storage_data_points{
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     storage_dict: DictAccess*,
-    storage_values: Uint256*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
 }(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
@@ -235,12 +230,13 @@ func fetch_storage_data_points{
 
     local data_point0: Uint256 = Uint256(low=current_block_number, high=0x0);
 
-    let (data_point1) = StorageMemorizer.get(
+    let (rlp) = StorageMemorizer.get(
         chain_id=chain_id,
         block_number=current_block_number,
         address=datalake.properties,
         storage_slot=datalake.properties + 3,
     );
+    let data_point1 = StorageSlotDecoder.get_word(rlp=rlp);
 
     let (data_point1_reverse_endian) = uint256_reverse_endian(data_point1);
 
@@ -259,7 +255,6 @@ func fetch_header_data_points{
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     header_dict: DictAccess*,
-    headers: Header*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
 }(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
@@ -274,13 +269,13 @@ func fetch_header_data_points{
         return index;
     }
 
-    let header = HeaderMemorizer.get(chain_id=chain_id, block_number=current_block_number);
+    let (rlp) = HeaderMemorizer.get(chain_id=chain_id, block_number=current_block_number);
 
     local data_point0: Uint256 = Uint256(low=current_block_number, high=0x0);
 
     let data_point1 = HeaderDecoder.get_field{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-    }(rlp=header.rlp, field=[datalake.properties]);
+    }(rlp=rlp, field=[datalake.properties]);
 
     let (data_point1_reverse_endian) = uint256_reverse_endian(data_point1);
 
@@ -296,8 +291,7 @@ func fetch_tx_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    transaction_dict: DictAccess*,
-    transactions: Transaction*,
+    block_tx_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
 }(
@@ -320,11 +314,13 @@ func fetch_tx_data_points{
         return result_counter;
     }
 
-    let (tx) = TransactionMemorizer.get(
+    let (rlp) = BlockTxMemorizer.get(
         chain_id=chain_id, block_number=datalake.target_block, key_low=current_tx_index
     );
 
-    if (datalake.included_types[tx.type] == 0) {
+    let (tx_type, rlp_start_offset) = TransactionDecoder.open_tx_envelope(rlp);
+
+    if (datalake.included_types[tx_type] == 0) {
         return fetch_tx_data_points(
             chain_id=chain_id,
             datalake=datalake,
@@ -334,8 +330,9 @@ func fetch_tx_data_points{
         );
     }
 
-    let data_point = TransactionDecoder.get_field(tx, datalake.sampled_property);
-
+    let data_point = TransactionDecoder.get_field(
+        rlp, datalake.sampled_property, rlp_start_offset, tx_type
+    );
     let (data_point_reverse_endian) = uint256_reverse_endian(data_point);
 
     assert [data_points + result_counter * 2 * Uint256.SIZE + 0 * Uint256.SIZE] = Uint256(
@@ -358,8 +355,7 @@ func fetch_receipt_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    receipt_dict: DictAccess*,
-    receipts: Receipt*,
+    block_receipt_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
     chain_info: ChainInfo,
@@ -383,11 +379,13 @@ func fetch_receipt_data_points{
         return result_counter;
     }
 
-    let (receipt) = ReceiptMemorizer.get(
+    let (rlp) = BlockReceiptMemorizer.get(
         chain_id=chain_id, block_number=datalake.target_block, key_low=current_receipt_index
     );
 
-    if (datalake.included_types[receipt.type] == 0) {
+    let (tx_type, rlp_start_offset) = ReceiptDecoder.open_receipt_envelope(rlp);
+
+    if (datalake.included_types[tx_type] == 0) {
         return fetch_receipt_data_points(
             chain_id=chain_id,
             datalake=datalake,
@@ -397,7 +395,9 @@ func fetch_receipt_data_points{
         );
     }
 
-    let data_point = ReceiptDecoder.get_field(receipt, datalake.sampled_property);
+    let data_point = ReceiptDecoder.get_field(
+        rlp, datalake.sampled_property, rlp_start_offset, tx_type, datalake.target_block
+    );
     let (data_point_reverse_endian) = uint256_reverse_endian(data_point);
 
     assert [data_points + result_counter * 2 * Uint256.SIZE + 0 * Uint256.SIZE] = Uint256(
