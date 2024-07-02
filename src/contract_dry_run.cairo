@@ -106,18 +106,20 @@ func main{
 
     %{
         import json
-
+        list = list()
         dictionary = dict()
 
-        dictionary["fetch_keys_dict"] = syscall_handler.fetch_keys_dict()
+        dictionary["fetch_keys"] = syscall_handler.fetch_keys_dict()
         dictionary["result"] = {
             "low": hex(ids.result.low),
             "high": hex(ids.result.high)
         }
-        dictionary["program_hash"] = hex(ids.program_hash)
+        dictionary["class_hash"] = hex(ids.program_hash)
+
+        list.append(dictionary)
 
         with open(dry_run_output_path, 'w') as json_file:
-            json.dump(dictionary, json_file)
+            json.dump(list, json_file)
     %}
 
     return ();

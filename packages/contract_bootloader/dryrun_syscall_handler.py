@@ -73,7 +73,10 @@ class DryRunSyscallHandler(SyscallHandlerBase):
                 )
 
             function_id = AccountMemorizerFunctionId.from_int(request.selector)
-            memorizer = Memorizer.from_int(calldata[0 : Memorizer.size()])
+            memorizer = Memorizer(
+                dict_raw_ptrs=calldata[0 : Memorizer.size()],
+                dict_manager=self.dict_manager,
+            )
 
             idx = Memorizer.size()
             key = AccountMemorizerKey.from_int(
@@ -109,10 +112,10 @@ class DryRunAccountMemorizerHandler(AbstractAccountMemorizerBase):
 
     def get_balance(self, key: AccountMemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        balance = self.evm_provider.get_balance(key=key)
+        value = self.evm_provider.get_balance(key=key)
         return (
-            balance % 0x100000000000000000000000000000000,
-            balance // 0x100000000000000000000000000000000,
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
         )
 
     def fetch_keys_dict(self) -> set:
