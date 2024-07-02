@@ -14,11 +14,9 @@ from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
 
-// from src.verifiers.receipt_verifier import verify_n_receipt_proofs
-
 from src.verifiers.verify import run_state_verification
 
-from src.types import MMRMeta, ComputationalTask
+from src.types import MMRMeta, ComputationalTask, ChainInfo
 
 from src.memorizer import (
     HeaderMemorizer,
@@ -92,6 +90,7 @@ func run{
     // Misc
     let pow2_array: felt* = pow2alloc128();
     local chain_id: felt;
+    local hdp_version: felt;
 
     %{
         from tools.py.utils import split_128, count_leading_zero_nibbles_from_hex
@@ -125,6 +124,10 @@ func run{
         ids.tasks_len = len(program_input['tasks'])
 
         ids.chain_id = 1
+        if "hdp_version" in program_input:
+            ids.hdp_version = hex_to_int(program_input["hdp_version"])
+        else:
+            ids.hdp_version = 1
     %}
 
     // Fetch matching chain info
@@ -146,16 +149,8 @@ func run{
         chain_info=chain_info,
     }();
 
-    // Verified data is now in memorizer, and can be used for further computation
-    Task.init{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        keccak_ptr=keccak_ptr,
-        tasks=tasks,
-        pow2_array=pow2_array,
-    }(tasks_len, 0);
-
-    Task.execute{
+    
+    let (local results) = compute_tasks{
         pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
         ecdsa_ptr=ecdsa_ptr,
@@ -171,7 +166,7 @@ func run{
         pow2_array=pow2_array,
         tasks=tasks,
         chain_info=chain_info,
-    }(results=results, tasks_len=tasks_len, index=0);
+    }(hdp_version=hdp_version, tasks_len=tasks_len, index=0);
 
     let tasks_root = compute_tasks_root{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
@@ -225,6 +220,51 @@ func run{
 
     [ap] = output_ptr + 6, ap++;
     let output_ptr = output_ptr + 6;
-    %{ print("Done") %}
     return ();
+}
+
+// Entrypoint for running the different hdp versions. Either with "classical" v1 approach, or bootloaded custom modules
+func compute_tasks{
+    pedersen_ptr: HashBuiltin*,
+    range_check_ptr,
+    ecdsa_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    ec_op_ptr,
+    keccak_ptr: KeccakBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
+    account_dict: DictAccess*,
+    storage_dict: DictAccess*,
+    header_dict: DictAccess*,
+    block_tx_dict: DictAccess*,
+    block_receipt_dict: DictAccess*,
+    pow2_array: felt*,
+    tasks: ComputationalTask*,
+    chain_info: ChainInfo,
+} (hdp_version: felt, tasks_len: felt, index: felt) -> (results: Uint256*) {
+    alloc_locals;
+
+    let (results: Uint256*) = alloc();
+
+    if (hdp_version == 1) {
+        Task.init{
+            range_check_ptr=range_check_ptr,
+            bitwise_ptr=bitwise_ptr,
+            keccak_ptr=keccak_ptr,
+            tasks=tasks,
+            chain_info=chain_info,
+            pow2_array=pow2_array,
+        }(tasks_len, 0);
+
+        Task.execute(results=results, tasks_len=tasks_len, index=0);
+
+        return (results=results);
+    }
+
+    if (hdp_version == 2) {
+        assert 1 = 1;
+        return (results=results);
+    }
+
+    assert 1 = 0;
+    return (results=results);
 }
