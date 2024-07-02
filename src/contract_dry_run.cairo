@@ -37,16 +37,12 @@ func main{
     %}
 
     local calldata: felt* = nondet %{ segments.add() %};
-    local calldata_size: felt = 8;
+    local calldata_size: felt = 4;
 
     assert calldata[0] = 0x0;
     assert calldata[1] = 0x0;
     assert calldata[2] = 0x0;
     assert calldata[3] = 0x0;
-    assert calldata[4] = 0x0;
-    assert calldata[5] = 0x0;
-    assert calldata[6] = 0x0;
-    assert calldata[7] = 0x0;
 
     local compiled_class: CompiledClass*;
 

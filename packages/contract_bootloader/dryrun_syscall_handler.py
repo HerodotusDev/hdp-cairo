@@ -72,7 +72,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
 
             if len(calldata) != total_size:
                 raise ValueError(
-                    f"Memorizer must be initialized with a list of {total_size} integers"
+                    f"Memorizer read must be initialized with a list of {total_size} integers"
                 )
 
             function_id = AccountMemorizerFunctionId.from_int(request.selector)

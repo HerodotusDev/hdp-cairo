@@ -22,18 +22,17 @@ class MemorizerId(Enum):
 
 
 class Memorizer:
-    def __init__(self, dict_values: List[int], list_values: List[int]):
-        self.dict = RelocatableValue.from_tuple(dict_values)
-        self.list = RelocatableValue.from_tuple(list_values)
+    def __init__(self, dict_ptrs: List[int]):
+        self.dict = RelocatableValue.from_tuple(dict_ptrs)
 
     @classmethod
     def from_int(cls, values: List[int]):
         if len(values) != cls.size():
             raise ValueError(
-                "Memorizer must be initialized with a list of four integers"
+                "Memorizer must be initialized with a list of two integers"
             )
-        return cls(values[:2], values[2:])
+        return cls(values[:2])
 
     @classmethod
     def size(cls) -> int:
-        return 2 + 2
+        return 2

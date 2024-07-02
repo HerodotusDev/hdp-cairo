@@ -15,5 +15,4 @@ pub struct RelocatableValue {
 #[derive(Serde, Drop)]
 struct Memorizer {
     pub dict: RelocatableValue,
-    pub list: RelocatableValue,
 }

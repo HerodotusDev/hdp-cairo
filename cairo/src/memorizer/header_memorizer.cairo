@@ -21,8 +21,6 @@ pub impl HeaderMemorizerImpl of HeaderMemorizerTrait {
             array![
                 *self.dict.segment_index,
                 *self.dict.offset,
-                *self.list.segment_index,
-                *self.list.offset,
                 key.chain_id,
                 key.block_number,
             ]
