@@ -149,7 +149,6 @@ func run{
         chain_info=chain_info,
     }();
 
-    
     let (local results) = compute_tasks{
         pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
@@ -240,7 +239,7 @@ func compute_tasks{
     pow2_array: felt*,
     tasks: ComputationalTask*,
     chain_info: ChainInfo,
-} (hdp_version: felt, tasks_len: felt, index: felt) -> (results: Uint256*) {
+}(hdp_version: felt, tasks_len: felt, index: felt) -> (results: Uint256*) {
     alloc_locals;
 
     let (results: Uint256*) = alloc();

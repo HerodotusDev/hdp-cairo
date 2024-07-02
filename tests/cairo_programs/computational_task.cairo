@@ -15,7 +15,6 @@ from src.merkle import compute_tasks_root
 from packages.eth_essentials.lib.utils import pow2alloc128
 from src.chain_info import fetch_chain_info
 
-
 func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}() {
     alloc_locals;
 
@@ -42,7 +41,11 @@ func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuilt
 }
 
 func test_computational_task_init{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, chain_info: ChainInfo, pow2_array: felt*
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
+    chain_info: ChainInfo,
+    pow2_array: felt*,
 }() {
     alloc_locals;
     let (__fp__, _) = get_fp_and_pc();
@@ -119,7 +122,11 @@ func test_computational_task_init{
 }
 
 func test_computational_task_param_decoding{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, chain_info: ChainInfo,  pow2_array: felt*
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
+    chain_info: ChainInfo,
+    pow2_array: felt*,
 }() {
     alloc_locals;
     let (__fp__, _) = get_fp_and_pc();
