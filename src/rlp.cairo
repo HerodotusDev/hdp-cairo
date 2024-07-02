@@ -433,12 +433,12 @@ func right_shift_le_chunks{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_a
 func prepend_le_chunks{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
     item_bytes_len: felt, item: felt, rlp: felt*, rlp_len: felt, expected_bytes_len: felt
 ) -> (encoded: felt*, encoded_len: felt) {
+    alloc_locals;
+
     // we have no item_bytes_len if the prefix is 0
     if (item_bytes_len == 0) {
         return (encoded=rlp, encoded_len=rlp_len);
     }
-
-    alloc_locals;
 
     assert [range_check_ptr] = 8 - item_bytes_len;
     let range_check_ptr = range_check_ptr + 1;
@@ -551,6 +551,7 @@ func append_be_chunk{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: 
 func get_rlp_len{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
     rlp: felt*, item_start_offset: felt
 ) -> felt {
+    alloc_locals;
     let current_item = extract_byte_at_pos(rlp[0], item_start_offset, pow2_array);
 
     local item_type: felt;
@@ -634,4 +635,8 @@ func get_rlp_len{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt
 
         return item_len + len_len + 1;
     }
+
+    // Unknown item_type
+    assert 1 = 0;
+    return 0;
 }
