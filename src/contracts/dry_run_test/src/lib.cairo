@@ -17,7 +17,7 @@ mod contract {
                     .account_memorizer
                     .get_balance(
                         AccountKey {
-                            chain_id: 1,
+                            chain_id: 11155111,
                             block_number: (6203471 + i).into(),
                             address: 0x13CB6AE34A13a0977F4d7101eBc24B87Bb23F0d5
                         }

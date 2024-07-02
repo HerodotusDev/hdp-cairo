@@ -1,3 +1,4 @@
+from web3 import Web3
 from contract_bootloader.memorizer.account_memorizer import (
     MemorizerKey as AccountMemorizerKey,
 )
@@ -9,12 +10,13 @@ class AccountKeyEVMProvider(EVMProvider):
         super().__init__(provider_url=provider_url)
 
     def get_balance(self, key: AccountMemorizerKey):
-        if not self.web3.isAddress(key.address):
-            raise ValueError(f"Invalid Ethereum address: {key.address}")
+        address = Web3.toChecksumAddress(hex(key.address))
+        if not self.web3.isAddress(address):
+            raise ValueError(f"Invalid Ethereum address: {address}")
 
         try:
             balance = self.web3.eth.get_balance(
-                key.address, block_identifier=key.block_number
+                address, block_identifier=key.block_number
             )
             return int(balance)
         except Exception as e:

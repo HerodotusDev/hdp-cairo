@@ -21,9 +21,6 @@ from contract_bootloader.memorizer.account_memorizer import (
 from contract_bootloader.provider.account_key_provider import (
     AccountKeyEVMProvider,
 )
-from contract_bootloader.memorizer.account_memorizer import (
-    MemorizerKey as AccountMemorizerKey,
-)
 from contract_bootloader.memorizer.header_memorizer import (
     MemorizerKey as HeaderMemorizerKey,
 )
@@ -72,11 +69,14 @@ class DryRunSyscallHandler(SyscallHandlerBase):
 
             if len(calldata) != total_size:
                 raise ValueError(
-                    f"Memorizer must be initialized with a list of {total_size} integers"
+                    f"Memorizer read must be initialized with a list of {total_size} integers"
                 )
 
             function_id = AccountMemorizerFunctionId.from_int(request.selector)
-            memorizer = Memorizer.from_int(calldata[0 : Memorizer.size()])
+            memorizer = Memorizer(
+                dict_raw_ptrs=calldata[0 : Memorizer.size()],
+                dict_manager=self.dict_manager,
+            )
 
             idx = Memorizer.size()
             key = AccountMemorizerKey.from_int(
@@ -112,16 +112,16 @@ class DryRunAccountMemorizerHandler(AbstractAccountMemorizerBase):
 
     def get_balance(self, key: AccountMemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        balance = self.evm_provider.get_balance(key=key)
+        value = self.evm_provider.get_balance(key=key)
         return (
-            balance % 0x100000000000000000000000000000000,
-            balance // 0x100000000000000000000000000000000,
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
         )
 
     def fetch_keys_dict(self) -> set:
-        def create_dict(key):
+        def create_dict(key: AccountMemorizerKey):
             data = dict()
-            data["key"] = asdict(key)
+            data["key"] = key.to_dict()
             if isinstance(key, HeaderMemorizerKey):
                 data["type"] = "HeaderMemorizerKey"
             elif isinstance(key, AccountMemorizerKey):
@@ -129,8 +129,6 @@ class DryRunAccountMemorizerHandler(AbstractAccountMemorizerBase):
             return data
 
         dictionary = dict()
-
         for fetch_key in list(self.fetch_keys_registry):
             dictionary.update(create_dict(fetch_key))
-
         return dictionary

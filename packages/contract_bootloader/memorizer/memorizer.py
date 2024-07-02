@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import List
+from starkware.cairo.common.dict import DictManager
 from starkware.cairo.lang.vm.relocatable import RelocatableValue
 
 
@@ -22,18 +23,17 @@ class MemorizerId(Enum):
 
 
 class Memorizer:
-    def __init__(self, dict_values: List[int], list_values: List[int]):
-        self.dict = RelocatableValue.from_tuple(dict_values)
-        self.list = RelocatableValue.from_tuple(list_values)
-
-    @classmethod
-    def from_int(cls, values: List[int]):
-        if len(values) != cls.size():
+    def __init__(self, dict_raw_ptrs: List[int], dict_manager: DictManager):
+        if len(dict_raw_ptrs) != self.size():
             raise ValueError(
-                "Memorizer must be initialized with a list of four integers"
+                "Memorizer must be initialized with a list of two integers"
             )
-        return cls(values[:2], values[2:])
+        self.dict_ptr = RelocatableValue.from_tuple(dict_raw_ptrs)
+        self.dict_manager = dict_manager
 
     @classmethod
     def size(cls) -> int:
-        return 2 + 2
+        return 2
+
+    def read(self, key: int) -> int:
+        self.dict_manager.get_dict(self.dict_ptr)[key]

@@ -2,6 +2,8 @@ from rlp import decode
 from typing import (
     Dict,
     Iterable,
+    List,
+    Tuple,
 )
 from tools.py.utils import little_8_bytes_chunks_to_bytes
 from starkware.cairo.lang.vm.relocatable import RelocatableValue, MaybeRelocatable
@@ -9,10 +11,16 @@ from starkware.cairo.lang.vm.memory_segments import MemorySegmentManager
 from contract_bootloader.syscall_handler_base import SyscallHandlerBase
 from starkware.cairo.common.dict import DictManager
 from starkware.cairo.common.structs import CairoStructProxy
-from tools.py.block_header import BlockHeaderDencun as Block
-from starkware.cairo.lang.vm.crypto import poseidon_hash_many
+from tools.py.account import Account
+from tools.py.rlp import get_rlp_len
 from starkware.starknet.business_logic.execution.objects import (
     CallResult,
+)
+from contract_bootloader.memorizer.memorizer import MemorizerId, Memorizer
+from contract_bootloader.memorizer.account_memorizer import (
+    AbstractAccountMemorizerBase,
+    MemorizerFunctionId as AccountMemorizerFunctionId,
+    MemorizerKey as AccountMemorizerKey,
 )
 
 
@@ -49,33 +57,101 @@ class SyscallHandler(SyscallHandlerBase):
             start_addr=request.calldata_start, end_addr=request.calldata_end
         )
 
-        dict_segment = calldata[0]
-        dict_offset = calldata[1]
-        list_segment = calldata[2]
-        list_offset = calldata[3]
+        memorizerId = MemorizerId.from_int(request.contract_address)
+        if memorizerId == MemorizerId.Account:
+            total_size = Memorizer.size() + AccountMemorizerKey.size()
 
-        dict_key = poseidon_hash_many([calldata[4], calldata[5]])
+            if len(calldata) != total_size:
+                raise ValueError(
+                    f"Memorizer read must be initialized with a list of {total_size} integers"
+                )
 
-        dict_ptr = RelocatableValue.from_tuple([dict_segment, dict_offset])
-        dictionary = self.dict_manager.get_dict(dict_ptr)
+            function_id = AccountMemorizerFunctionId.from_int(request.selector)
+            memorizer = Memorizer(
+                dict_raw_ptrs=calldata[0 : Memorizer.size()],
+                dict_manager=self.dict_manager,
+            )
 
-        index = int(dictionary[dict_key])
+            idx = Memorizer.size()
+            key = AccountMemorizerKey.from_int(
+                calldata[idx : idx + AccountMemorizerKey.size()]
+            )
 
-        list_ptr = RelocatableValue.from_tuple([list_segment, list_offset])
-        rlp_ptr = self.segments.memory[list_ptr + index * 6]
-        rlp_len = self.segments.memory[list_ptr + index * 6 + 1]
-        bytes_len = self.segments.memory[list_ptr + index * 6 + 2]
+            handler = AccountMemorizerHandler(
+                segments=self.segments,
+                memorizer=memorizer,
+            )
+            retdata = handler.handle(function_id=function_id, key=key)
 
-        rlp = self._get_felt_range(start_addr=rlp_ptr, end_addr=rlp_ptr + rlp_len)
-        block = decode(little_8_bytes_chunks_to_bytes(rlp, bytes_len), Block).as_dict()
+        # dict_segment = calldata[0]
+        # dict_offset = calldata[1]
+        # list_segment = calldata[2]
+        # list_offset = calldata[3]
 
-        parentHash = int.from_bytes(block["parentHash"], byteorder="big")
+        # dict_key = poseidon_hash_many([calldata[4], calldata[5]])
+
+        # dict_ptr = RelocatableValue.from_tuple([dict_segment, dict_offset])
+        # dictionary = self.dict_manager.get_dict(dict_ptr)
+
+        # index = int(dictionary[dict_key])
+
+        # list_ptr = RelocatableValue.from_tuple([list_segment, list_offset])
+        # rlp_ptr = self.segments.memory[list_ptr + index * 6]
+        # rlp_len = self.segments.memory[list_ptr + index * 6 + 1]
+        # bytes_len = self.segments.memory[list_ptr + index * 6 + 2]
+
+        # rlp = self._get_felt_range(start_addr=rlp_ptr, end_addr=rlp_ptr + rlp_len)
+        # block = decode(little_8_bytes_chunks_to_bytes(rlp, bytes_len), Block).as_dict()
+
+        # parentHash = int.from_bytes(block["parentHash"], byteorder="big")
 
         return CallResult(
             gas_consumed=0,
             failure_flag=0,
-            retdata=[
-                parentHash % 0x100000000000000000000000000000000,
-                parentHash // 0x100000000000000000000000000000000,
-            ],
+            retdata=list(retdata),
         )
+
+
+class AccountMemorizerHandler(AbstractAccountMemorizerBase):
+    def __init__(self, segments: MemorySegmentManager, memorizer: Memorizer):
+        super().__init__(memorizer=memorizer)
+        self.segments = segments
+
+    def get_balance(self, key: AccountMemorizerKey) -> Tuple[int, int]:
+        memorizer_value_ptr = self.memorizer.read(key=key.derive())
+
+        rlp_len = get_rlp_len(
+            rlp=self.segments.memory[memorizer_value_ptr], item_start_offset=0
+        )
+        rlp = self._get_felt_range(
+            start_addr=memorizer_value_ptr,
+            end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
+        )
+
+        value = int.from_bytes(
+            decode(little_8_bytes_chunks_to_bytes(rlp, rlp_len), Account).as_dict()[
+                "balance"
+            ],
+            byteorder="big",
+        )
+
+        return (
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
+        )
+
+    def _get_felt_range(self, start_addr: int, end_addr: int) -> List[int]:
+        assert isinstance(start_addr, RelocatableValue)
+        assert isinstance(end_addr, RelocatableValue)
+        assert start_addr.segment_index == end_addr.segment_index, (
+            "Inconsistent start and end segment indices "
+            f"({start_addr.segment_index} != {end_addr.segment_index})."
+        )
+
+        assert start_addr.offset <= end_addr.offset, (
+            "The start offset cannot be greater than the end offset"
+            f"({start_addr.offset} > {end_addr.offset})."
+        )
+
+        size = end_addr.offset - start_addr.offset
+        return self.segments.memory.get_range_as_ints(addr=start_addr, size=size)

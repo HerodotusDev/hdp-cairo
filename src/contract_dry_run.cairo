@@ -31,22 +31,18 @@ func main{
     %{
         from tools.py.schema import HDPDryRunInput
         dry_run_input = HDPDryRunInput.Schema().load(program_input)
-        fetch_keys_file_path = dry_run_input.fetch_keys_file_path
+        dry_run_output_path = dry_run_input.dry_run_output_path
         inputs = dry_run_input.modules[0].inputs
         compiled_class = dry_run_input.modules[0].module_class
     %}
 
     local calldata: felt* = nondet %{ segments.add() %};
-    local calldata_size: felt = 8;
+    local calldata_size: felt = 4;
 
     assert calldata[0] = 0x0;
     assert calldata[1] = 0x0;
     assert calldata[2] = 0x0;
     assert calldata[3] = 0x0;
-    assert calldata[4] = 0x0;
-    assert calldata[5] = 0x0;
-    assert calldata[6] = 0x0;
-    assert calldata[7] = 0x0;
 
     local compiled_class: CompiledClass*;
 
@@ -110,9 +106,20 @@ func main{
 
     %{
         import json
-        dictionary = syscall_handler.fetch_keys_dict()
-        with open(fetch_keys_file_path, 'w') as json_file:
-            json.dump(dictionary, json_file)
+        list = list()
+        dictionary = dict()
+
+        dictionary["fetch_keys"] = syscall_handler.fetch_keys_dict()
+        dictionary["result"] = {
+            "low": hex(ids.result.low),
+            "high": hex(ids.result.high)
+        }
+        dictionary["class_hash"] = hex(ids.program_hash)
+
+        list.append(dictionary)
+
+        with open(dry_run_output_path, 'w') as json_file:
+            json.dump(list, json_file)
     %}
 
     return ();
