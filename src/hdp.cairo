@@ -25,6 +25,8 @@ from src.verifiers.mmr_verifier import verify_mmr_meta
 from src.verifiers.block_tx_verifier import verify_n_block_tx_proofs
 from src.verifiers.receipt_verifier import verify_n_receipt_proofs
 
+from src.verifiers.verify import run_state_verification
+
 from src.types import (
     Header,
     MMRMeta,
@@ -84,10 +86,6 @@ func run{
 }() {
     alloc_locals;
 
-    // Header Params
-    local headers_len: felt;
-    let (headers: Header*) = alloc();
-
     // MMR Params
     local mmr_meta: MMRMeta;
 
@@ -107,6 +105,10 @@ func run{
     let (receipt_proofs: ReceiptProof*) = alloc();
     local receipt_proof_len: felt;
 
+    // Peaks Dict
+    let (local peaks_dict) = default_dict_new(default_value=0);
+    tempvar peaks_dict_start = peaks_dict;
+    
     // Memorizers
     let (header_dict, header_dict_start) = HeaderMemorizer.init();
     let (account_dict, account_dict_start) = AccountMemorizer.init();
@@ -140,19 +142,6 @@ func run{
 
         def nested_hex_to_int_array(hex_array):
             return [[int(x, 16) for x in y] for y in hex_array]
-
-        def write_headers(ptr, headers):
-            offset = 0
-            ids.headers_len = len(headers)
-
-            for header in headers:
-                memory[ptr._reference_value + offset] = segments.gen_arg(hex_to_int_array(header["rlp"]))
-                memory[ptr._reference_value + offset + 1] = len(header["rlp"])
-                memory[ptr._reference_value + offset + 2] = header["rlp_bytes_len"]
-                memory[ptr._reference_value + offset + 3] = header["proof"]["leaf_idx"]
-                memory[ptr._reference_value + offset + 4] = len(header["proof"]["mmr_path"])
-                memory[ptr._reference_value + offset + 5] = segments.gen_arg(hex_to_int_array(header["proof"]["mmr_path"]))
-                offset += 6
 
         def write_tx_proofs(ptr, program_input):
             offset = 0
@@ -209,8 +198,6 @@ func run{
         # MMR Meta
         write_mmr_meta(program_input['mmr'])
 
-        # Header Params
-        write_headers(ids.headers, program_input["headers"])
 
         # Account + Storage Params
         ids.accounts_len = len(program_input['accounts'])
@@ -224,31 +211,38 @@ func run{
 
         # Task and Datalake
         ids.tasks_len = len(program_input['tasks'])
+
+        ids.chain_id = 1
     %}
 
-    // Check 1: Ensure we have a valid pair of mmr_root and peaks
-    verify_mmr_meta{pow2_array=pow2_array}(mmr_meta);
-
-    // Write the peaks to the dict if valid
-    let (local peaks_dict) = default_dict_new(default_value=0);
-    tempvar peaks_dict_start = peaks_dict;
-    write_felt_array_to_dict_keys{dict_end=peaks_dict}(
-        array=mmr_meta.peaks, index=mmr_meta.peaks_len - 1
-    );
-
-    let chain_id = 0x1;
 
     // Fetch matching chain info
     let (local chain_info) = fetch_chain_info(chain_id);
 
-    // Check 2: Ensure the header is contained in a peak, and that the peak is known
-    verify_headers_inclusion{
+    run_state_verification{
         range_check_ptr=range_check_ptr,
         poseidon_ptr=poseidon_ptr,
+        keccak_ptr=keccak_ptr,
+        bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array,
         peaks_dict=peaks_dict,
         header_dict=header_dict,
-    }(chain_id=chain_id, headers=headers, mmr_size=mmr_meta.size, n_headers=headers_len, index=0);
+        account_dict=account_dict,
+        storage_dict=storage_dict,
+        block_tx_dict=block_tx_dict,
+        block_receipt_dict=block_receipt_dict,
+        mmr_meta=mmr_meta,
+        chain_info=chain_info,
+    }();
+
+    // Check 2: Ensure the header is contained in a peak, and that the peak is known
+    // verify_headers_inclusion{
+    //     range_check_ptr=range_check_ptr,
+    //     poseidon_ptr=poseidon_ptr,
+    //     pow2_array=pow2_array,
+    //     peaks_dict=peaks_dict,
+    //     header_dict=header_dict,
+    // }(chain_id=chain_id, headers=headers, mmr_size=mmr_meta.size, n_headers=headers_len, index=0);
 
     populate_account_segments(accounts=accounts, n_accounts=accounts_len, index=0);
 
@@ -300,7 +294,6 @@ func run{
         poseidon_ptr=poseidon_ptr,
         keccak_ptr=keccak_ptr,
         block_receipt_dict=block_receipt_dict,
-        headers=headers,
         header_dict=header_dict,
         pow2_array=pow2_array,
     }(
@@ -332,7 +325,6 @@ func run{
         header_dict=header_dict,
         block_tx_dict=block_tx_dict,
         block_receipt_dict=block_receipt_dict,
-        headers=headers,
         pow2_array=pow2_array,
         tasks=tasks,
         chain_info=chain_info,

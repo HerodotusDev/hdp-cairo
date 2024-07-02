@@ -21,7 +21,6 @@ func compute_contract{
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     header_dict: DictAccess*,
-    headers: Header*,
     pow2_array: felt*,
 }() -> Uint256 {
     alloc_locals;
@@ -55,10 +54,10 @@ func compute_contract{
     %}
 
     local calldata: felt* = nondet %{ segments.add() %};
-    assert calldata[0] = nondet %{ ids.header_dict.address_.segment_index %};
-    assert calldata[1] = nondet %{ ids.header_dict.address_.offset %};
-    assert calldata[2] = nondet %{ ids.headers.address_.segment_index %};
-    assert calldata[3] = nondet %{ ids.headers.address_.offset %};
+    // assert calldata[0] = nondet %{ ids.header_dict.address_.segment_index %};
+    // assert calldata[1] = nondet %{ ids.header_dict.address_.offset %};
+    // assert calldata[2] = nondet %{ ids.headers.address_.segment_index %};
+    // assert calldata[3] = nondet %{ ids.headers.address_.offset %};
 
     local calldata_size = 4;
 

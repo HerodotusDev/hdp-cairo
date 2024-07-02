@@ -69,7 +69,6 @@ namespace Datalake {
         account_dict: DictAccess*,
         storage_dict: DictAccess*,
         header_dict: DictAccess*,
-        headers: Header*,
         block_tx_dict: DictAccess*,
         block_receipt_dict: DictAccess*,
         pow2_array: felt*,

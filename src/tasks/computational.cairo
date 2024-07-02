@@ -99,7 +99,6 @@ namespace Task {
         header_dict: DictAccess*,
         block_tx_dict: DictAccess*,
         block_receipt_dict: DictAccess*,
-        headers: Header*,
         pow2_array: felt*,
         tasks: ComputationalTask*,
         chain_info: ChainInfo,

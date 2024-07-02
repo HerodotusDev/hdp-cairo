@@ -158,7 +158,6 @@ func fetch_data_points{
     account_dict: DictAccess*,
     storage_dict: DictAccess*,
     header_dict: DictAccess*,
-    headers: Header*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
 }(chain_id: felt, datalake: BlockSampledDataLake) -> (Uint256*, felt) {
@@ -234,7 +233,6 @@ func abstract_fetch_header_data_points{
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     header_dict: DictAccess*,
-    headers: Header*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
 }(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
@@ -417,7 +415,6 @@ func fetch_header_data_points{
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     header_dict: DictAccess*,
-    headers: Header*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
 }(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {

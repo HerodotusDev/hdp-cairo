@@ -30,7 +30,6 @@ func verify_n_receipt_proofs{
     poseidon_ptr: PoseidonBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     block_receipt_dict: DictAccess*,
-    headers: Header*,
     header_dict: DictAccess*,
     pow2_array: felt*,
 }(chain_id: felt, receipt_proofs: ReceiptProof*, receipt_proofs_len: felt, index: felt) {
