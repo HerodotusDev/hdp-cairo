@@ -138,7 +138,7 @@ class HDPInput(ValidatedMarshmallowDataclass):
 
 @marshmallow_dataclass.dataclass(frozen=True)
 class HDPDryRunInput(ValidatedMarshmallowDataclass):
-    fetch_keys_file_path: str
+    dry_run_output_path: str
     modules: List[Module] = field(
         metadata=additional_metadata(
             marshmallow_field=mfields.List(mfields.Nested(Module.Schema))

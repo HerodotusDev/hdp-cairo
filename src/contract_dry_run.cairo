@@ -31,7 +31,7 @@ func main{
     %{
         from tools.py.schema import HDPDryRunInput
         dry_run_input = HDPDryRunInput.Schema().load(program_input)
-        fetch_keys_file_path = dry_run_input.fetch_keys_file_path
+        dry_run_output_path = dry_run_input.dry_run_output_path
         inputs = dry_run_input.modules[0].inputs
         compiled_class = dry_run_input.modules[0].module_class
     %}
@@ -106,8 +106,17 @@ func main{
 
     %{
         import json
-        dictionary = syscall_handler.fetch_keys_dict()
-        with open(fetch_keys_file_path, 'w') as json_file:
+
+        dictionary = dict()
+
+        dictionary["fetch_keys_dict"] = syscall_handler.fetch_keys_dict()
+        dictionary["result"] = {
+            "low": hex(ids.result.low),
+            "high": hex(ids.result.high)
+        }
+        dictionary["program_hash"] = hex(ids.program_hash)
+
+        with open(dry_run_output_path, 'w') as json_file:
             json.dump(dictionary, json_file)
     %}
 

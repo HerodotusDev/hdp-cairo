@@ -21,9 +21,6 @@ from contract_bootloader.memorizer.account_memorizer import (
 from contract_bootloader.provider.account_key_provider import (
     AccountKeyEVMProvider,
 )
-from contract_bootloader.memorizer.account_memorizer import (
-    MemorizerKey as AccountMemorizerKey,
-)
 from contract_bootloader.memorizer.header_memorizer import (
     MemorizerKey as HeaderMemorizerKey,
 )
@@ -119,9 +116,9 @@ class DryRunAccountMemorizerHandler(AbstractAccountMemorizerBase):
         )
 
     def fetch_keys_dict(self) -> set:
-        def create_dict(key):
+        def create_dict(key: AccountMemorizerKey):
             data = dict()
-            data["key"] = asdict(key)
+            data["key"] = key.to_dict()
             if isinstance(key, HeaderMemorizerKey):
                 data["type"] = "HeaderMemorizerKey"
             elif isinstance(key, AccountMemorizerKey):
@@ -129,8 +126,6 @@ class DryRunAccountMemorizerHandler(AbstractAccountMemorizerBase):
             return data
 
         dictionary = dict()
-
         for fetch_key in list(self.fetch_keys_registry):
             dictionary.update(create_dict(fetch_key))
-
         return dictionary

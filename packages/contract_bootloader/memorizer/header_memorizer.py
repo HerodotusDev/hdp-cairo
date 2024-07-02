@@ -3,6 +3,7 @@ from typing import List, Tuple
 from abc import ABC, abstractmethod
 from contract_bootloader.memorizer.memorizer import Memorizer
 from marshmallow_dataclass import dataclass
+from starkware.cairo.lang.vm.crypto import poseidon_hash_many
 
 
 class MemorizerFunctionId(Enum):
@@ -30,6 +31,15 @@ class MemorizerKey:
                 "MemorizerKey must be initialized with a list of two integers"
             )
         return cls(values[0], values[1])
+
+    def derive(self) -> int:
+        return poseidon_hash_many([self.chain_id, self.block_number])
+
+    def to_dict(self):
+        return {
+            "chain_id": self.chain_id,
+            "block_number": self.block_number,
+        }
 
     @classmethod
     def size(cls) -> int:
