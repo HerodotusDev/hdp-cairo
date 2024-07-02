@@ -9,14 +9,11 @@ CAIRO_FILES := $(shell find ./tests/cairo_programs -name "*.cairo")
 build: clean
 	@echo "Building project..."
 	./tools/make/build.sh
-	./tools/make/build_cairo1.sh
 	@echo "Build complete."
 
 # Setup environment
 setup:
 	@echo "Setting up the environment..."
-	./tools/make/install_cairo1_run.sh
-	./tools/make/build_cairo1.sh
 	./tools/make/setup.sh $(VENV_PATH)
 	@echo "Setup complete."
 
@@ -41,6 +38,12 @@ run-hdp:
 	@echo "Compiling and running HDP..."
 	@echo "Total number of steps will be shown at the end of the run."
 	./tools/make/launch_cairo_files.py -run_hdp
+	@echo "HDP run complete."
+
+contract-dry-run:
+	@echo "Compiling and running HDP..."
+	@echo "Total number of steps will be shown at the end of the run."
+	./tools/make/launch_cairo_files.py -contract_dry_run
 	@echo "HDP run complete."
 
 format-cairo:

@@ -53,12 +53,23 @@ func compute_contract{
     %}
 
     local calldata: felt* = nondet %{ segments.add() %};
-    // assert calldata[0] = nondet %{ ids.header_dict.address_.segment_index %};
-    // assert calldata[1] = nondet %{ ids.header_dict.address_.offset %};
+    assert calldata[0] = nondet %{ ids.header_dict.address_.segment_index %};
+    assert calldata[1] = nondet %{ ids.header_dict.address_.offset %};
     // assert calldata[2] = nondet %{ ids.headers.address_.segment_index %};
     // assert calldata[3] = nondet %{ ids.headers.address_.offset %};
+    assert calldata[4] = 2;
+    assert calldata[5] = 1;
+    assert calldata[6] = 0;
+    assert calldata[7] = 1;
+    assert calldata[8] = 0;
+    assert calldata[9] = 2;
+    assert calldata[10] = 0;
+    assert calldata[11] = 2;
+    assert calldata[12] = 0;
+    assert calldata[13] = 5;
+    assert calldata[14] = 0;
 
-    local calldata_size = 4;
+    local calldata_size = 15;
 
     let (retdata_size, retdata) = run_contract_bootloader(
         compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata
