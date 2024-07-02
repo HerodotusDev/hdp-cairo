@@ -4,7 +4,7 @@ from packages.eth_essentials.lib.mpt import verify_mpt_proof
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.builtin_keccak.keccak import keccak_bigend
 from starkware.cairo.common.alloc import alloc
-from src.types import Account, AccountProof, Header, ChainInfo
+from src.types import ChainInfo
 from packages.eth_essentials.lib.block_header import extract_state_root_little
 from src.memorizer import HeaderMemorizer, AccountMemorizer
 
@@ -48,7 +48,7 @@ func verify_accounts_inner{
     let (address: felt*) = alloc();
     local key: Uint256;
     local key_leading_zeros: felt;
-    %{  
+    %{
         account = program_input["accounts"][ids.index]
         ids.key_leading_zeros = count_leading_zero_nibbles_from_hex(account["account_key"])
         segments.write_arg(ids.address, hex_to_int_array(account["address"]))
@@ -114,11 +114,14 @@ func verify_account{
 
     // add account to memorizer
     AccountMemorizer.add(
-        chain_id=chain_info.id,
-        block_number=block_number,
-        address=address,
-        rlp=rlp,
+        chain_id=chain_info.id, block_number=block_number, address=address, rlp=rlp
     );
 
-    return verify_account(address=address, key=key, key_leading_zeros=key_leading_zeros, n_proofs=n_proofs, proof_idx=proof_idx + 1);
+    return verify_account(
+        address=address,
+        key=key,
+        key_leading_zeros=key_leading_zeros,
+        n_proofs=n_proofs,
+        proof_idx=proof_idx + 1,
+    );
 }

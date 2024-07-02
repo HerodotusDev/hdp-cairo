@@ -1,7 +1,6 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.uint256 import Uint256
-from src.types import Account, AccountProof, Header
 from src.rlp import rlp_list_retrieve, le_chunks_to_uint256
 
 namespace AccountField {

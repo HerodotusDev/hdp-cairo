@@ -6,7 +6,7 @@ from src.memorizer import BlockTxMemorizer, BlockReceiptMemorizer
 from starkware.cairo.common.dict_access import DictAccess
 from packages.eth_essentials.lib.utils import word_reverse_endian_64
 from packages.eth_essentials.lib.mpt import verify_mpt_proof
-from src.types import TransactionsInBlockDatalake, TransactionProof, Header, ChainInfo
+from src.types import TransactionsInBlockDatalake, ChainInfo
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
 from src.decoders.transaction_decoder import TransactionDecoder, TransactionType
 from src.decoders.receipt_decoder import ReceiptDecoder

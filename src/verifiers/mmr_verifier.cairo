@@ -14,7 +14,9 @@ from packages.eth_essentials.lib.mmr import (
 // Params:
 // mmr_meta: MMRMeta - the MMR metadata
 // mmr_peaks: felt* - the MMR peaks
-func verify_mmr_meta{range_check_ptr, poseidon_ptr: PoseidonBuiltin*, pow2_array: felt*, mmr_meta: MMRMeta}() {
+func verify_mmr_meta{
+    range_check_ptr, poseidon_ptr: PoseidonBuiltin*, pow2_array: felt*, mmr_meta: MMRMeta
+}() {
     alloc_locals;
 
     // ensure the mmr_size is valid

@@ -9,7 +9,7 @@ from packages.eth_essentials.lib.utils import (
     felt_divmod,
 )
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
-from src.types import BlockSampledDataLake, ComputationalTask, Header
+from src.types import BlockSampledDataLake, ComputationalTask
 from src.memorizer import HeaderMemorizer, AccountMemorizer, StorageMemorizer
 from src.tasks.fetch_trait import FetchTrait
 from src.decoders.header_decoder import HeaderDecoder

@@ -2,6 +2,7 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin,
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.alloc import alloc
+from starkware.cairo.common.uint256 import Uint256
 from packages.eth_essentials.lib.mpt import verify_mpt_proof
 from packages.eth_essentials.lib.utils import felt_divmod
 from packages.eth_essentials.lib.rlp_little import (
@@ -10,169 +11,85 @@ from packages.eth_essentials.lib.rlp_little import (
 )
 
 from src.rlp import chunk_to_felt_be
-from src.types import ReceiptProof, Header
+from src.types import ChainInfo
 from src.memorizer import HeaderMemorizer, BlockReceiptMemorizer
 from src.decoders.header_decoder import HeaderDecoder, HeaderField
 
 // Verfies an array of receipt proofs with the headers stored in the memorizer.
 // The verified receipts are then added to the memorizer.
-// Inputs:
-// - receipt_proofs: An array of receipt proofs.
-// - receipt_proofs_len: The length of the array.
-// - index: The index of the current receipt proof to verify.
-// Outputs:
-// The outputs are added to the implicit args.
-// - receipts: An array of receipts.
-// - receipt_dict: A dictionary of receipts (memorizer).
-func verify_n_receipt_proofs{
+func verify_block_receipt_proofs{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     block_receipt_dict: DictAccess*,
     header_dict: DictAccess*,
+    chain_info: ChainInfo,
     pow2_array: felt*,
-}(chain_id: felt, receipt_proofs: ReceiptProof*, receipt_proofs_len: felt, index: felt) {
+}() {
     alloc_locals;
 
-    if (receipt_proofs_len == index) {
+    local n_receipts: felt;
+    %{ ids.n_receipts = len(program_input["transaction_receipts"]) %}
+
+    verify_block_receipt_proofs_inner(n_receipts, 0);
+    return ();
+}
+
+func verify_block_receipt_proofs_inner{
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
+    block_receipt_dict: DictAccess*,
+    header_dict: DictAccess*,
+    chain_info: ChainInfo,
+    pow2_array: felt*,
+}(n_receipts: felt, index: felt) {
+    alloc_locals;
+
+    if (n_receipts == index) {
         return ();
     }
 
-    let receipt_proof = receipt_proofs[index];
-    let header = HeaderMemorizer.get(chain_id=chain_id, block_number=receipt_proof.block_number);
-    let receipt_root = HeaderDecoder.get_field(header.rlp, HeaderField.RECEIPT_ROOT);
+    local block_number: felt;
+    local proof_len: felt;
+    let (mpt_proof: felt**) = alloc();
+    let (proof_bytes_len: felt*) = alloc();
+    local key: Uint256;
+    local key_leading_zeros: felt;
+    %{
+        transaction = program_input["transaction_receipts"][ids.index]
+        ids.key_leading_zeros = count_leading_zero_nibbles_from_hex(transaction["key"])
+        (key_low, key_high) = split_128(int(transaction["key"], 16))
+        ids.key.low = key_low
+        ids.key.high = key_high
+        ids.block_number = transaction["block_number"]
+        segments.write_arg(ids.mpt_proof, nested_hex_to_int_array(transaction["proof"]))
+        segments.write_arg(ids.proof_bytes_len, transaction["proof_bytes_len"])
+        ids.proof_len = len(transaction["proof"])
+    %}
+
+    let (header_rlp) = HeaderMemorizer.get(chain_id=chain_info.id, block_number=block_number);
+    let receipt_root = HeaderDecoder.get_field(header_rlp, HeaderField.RECEIPT_ROOT);
 
     let (rlp, rlp_bytes_len) = verify_mpt_proof{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
     }(
-        mpt_proof=receipt_proof.proof,
-        mpt_proof_bytes_len=receipt_proof.bytes_len,
-        mpt_proof_len=receipt_proof.len,
-        key_be=receipt_proof.key,
-        key_be_leading_zeroes_nibbles=receipt_proof.key_leading_zeros,
+        mpt_proof=mpt_proof,
+        mpt_proof_bytes_len=proof_bytes_len,
+        mpt_proof_len=proof_len,
+        key_be=key,
+        key_be_leading_zeroes_nibbles=key_leading_zeros,
         root=receipt_root,
         pow2_array=pow2_array,
     );
 
-    // let (rlp, rlp_len, bytes_len, tx_type) = derive_receipt_payload(
-    //     item=rlp, item_bytes_len=rlp_bytes_len
-    // );
-
-    // let receipt = Receipt(
-    //     rlp=rlp,
-    //     rlp_len=rlp_len,
-    //     bytes_len=bytes_len,
-    //     type=tx_type,
-    //     block_number=receipt_proof.block_number,
-    // );
-
-    // decode receipt-index from rlp-encoded key
-    // assert receipt_proof.key.high = 0;  // sanity check
-    let receipt_index = chunk_to_felt_be(receipt_proof.key.low);
+    let receipt_index = chunk_to_felt_be(key.low);
 
     BlockReceiptMemorizer.add(
-        chain_id=chain_id, block_number=receipt_proof.block_number, key_low=receipt_index, rlp=rlp
+        chain_id=chain_info.id, block_number=block_number, key_low=receipt_index, rlp=rlp
     );
 
-    // assert receipts[index] = receipt;
-
-    return verify_n_receipt_proofs(
-        chain_id=chain_id,
-        receipt_proofs=receipt_proofs,
-        receipt_proofs_len=receipt_proofs_len,
-        index=index + 1,
-    );
-}
-
-// Derives a TX type and the payload params of a transaction or receipt. As this logic is the same for both, we use it for both.
-// Inputs:
-// - item: The RLP-encoded payload.
-// - item_bytes_len: The length of the RLP-encoded payload.
-// Outputs:
-// - rlp: encoded payload
-// - rlp_len: length of the encoded payload
-// - bytes_len: length of the payload
-// - tx_type: type of the transaction
-func derive_receipt_payload{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, poseidon_ptr: PoseidonBuiltin*, pow2_array: felt*
-}(item: felt*, item_bytes_len: felt) -> (
-    rlp: felt*, rlp_len: felt, bytes_len: felt, tx_type: felt
-) {
-    alloc_locals;
-
-    let first_byte = extract_byte_at_pos(item[0], 0, pow2_array);
-    let second_byte = extract_byte_at_pos(item[0], 1, pow2_array);
-
-    local has_type_prefix: felt;
-    local is_long_list: felt;
-    %{
-        # typed receipts have a type prefix in this range [1, 3]
-        if 0x0 < ids.first_byte < 0x04:
-            ids.has_type_prefix = 1
-            if 0xc0 <= ids.second_byte <= 0xf6:
-                ids.is_long_list = 0
-            elif 0xf7 <= ids.second_byte <= 0xff:
-                ids.is_long_list = 1
-            else:
-                raise Exception("Invalid second byte")
-        else:
-            ids.has_type_prefix = 0
-            if 0xc0 <= ids.first_byte <= 0xf6:
-                ids.is_long_list = 0
-            elif 0xf7 <= ids.first_byte <= 0xff:
-                ids.is_long_list = 1
-            else:
-                raise Exception("Invalid first byte")
-    %}
-
-    local tx_type: felt;
-    local start_offset: felt;
-    if (has_type_prefix == 1) {
-        assert [range_check_ptr] = 0x3 - first_byte;
-        assert tx_type = first_byte;
-
-        if (is_long_list == 1) {
-            assert [range_check_ptr + 1] = 0xff - second_byte;
-            assert [range_check_ptr + 2] = second_byte - 0xf7;
-            let len_len = second_byte - 0xf7;
-            assert start_offset = 2 + len_len;  // type + prefix + len_len
-        } else {
-            assert [range_check_ptr + 1] = 0xf6 - second_byte;
-            assert [range_check_ptr + 2] = second_byte - 0xc0;
-            assert start_offset = 2;
-        }
-
-        assert [range_check_ptr + 3] = 7 - start_offset;
-        tempvar range_check_ptr = range_check_ptr + 4;
-    } else {
-        assert tx_type = 0;
-
-        if (is_long_list == 1) {
-            assert [range_check_ptr] = 0xff - first_byte;
-            assert [range_check_ptr + 1] = first_byte - 0xf7;
-            let len_len = first_byte - 0xf7;
-            assert start_offset = 1 + len_len;  // type + prefix + len_len
-        } else {
-            assert [range_check_ptr] = 0xf6 - first_byte;
-            assert [range_check_ptr + 1] = first_byte - 0xc0;
-            assert start_offset = 1;
-        }
-
-        assert [range_check_ptr + 2] = 7 - start_offset;
-        tempvar range_check_ptr = range_check_ptr + 3;
-    }
-
-    tempvar range_check_ptr = range_check_ptr;
-
-    let bytes_len = item_bytes_len - start_offset;
-    let (rlp, rlp_len) = extract_n_bytes_from_le_64_chunks_array(
-        array=item,
-        start_word=0,
-        start_offset=start_offset,
-        n_bytes=bytes_len,
-        pow2_array=pow2_array,
-    );
-
-    return (rlp=rlp, rlp_len=rlp_len, bytes_len=bytes_len, tx_type=tx_type);
+    return verify_block_receipt_proofs_inner(n_receipts=n_receipts, index=index + 1);
 }

@@ -8,7 +8,7 @@ from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash, pose
 from starkware.cairo.common.uint256 import Uint256
 from packages.eth_essentials.lib.utils import felt_divmod
 from packages.eth_essentials.lib.mmr import hash_subtree_path
-from src.types import Header, HeaderProof, MMRMeta, ChainInfo
+from src.types import MMRMeta, ChainInfo
 from packages.eth_essentials.lib.block_header import (
     extract_block_number_big,
     reverse_block_header_chunks,
@@ -24,7 +24,7 @@ func verify_headers_inclusion{
     peaks_dict: DictAccess*,
     header_dict: DictAccess*,
     mmr_meta: MMRMeta,
-    chain_info: ChainInfo
+    chain_info: ChainInfo,
 }() {
     alloc_locals;
 
@@ -54,7 +54,7 @@ func verify_headers_inclusion_inner{
     peaks_dict: DictAccess*,
     header_dict: DictAccess*,
     mmr_meta: MMRMeta,
-    chain_info: ChainInfo
+    chain_info: ChainInfo,
 }(n_headers: felt, index: felt) {
     alloc_locals;
     if (index == n_headers) {
@@ -83,15 +83,12 @@ func verify_headers_inclusion_inner{
         let block_number = HeaderDecoder.get_block_number(rlp);
         HeaderMemorizer.add(chain_id=chain_info.id, block_number=block_number, rlp=rlp);
 
-        return verify_headers_inclusion_inner(
-            n_headers=n_headers,
-            index=index + 1,
-        );
+        return verify_headers_inclusion_inner(n_headers=n_headers, index=index + 1);
     }
 
     let (mmr_path) = alloc();
     local mmr_path_len: felt;
-    %{  
+    %{
         segments.write_arg(ids.mmr_path, hex_to_int_array(program_input["headers"][ids.index]["proof"]["mmr_path"]))
         ids.mmr_path_len = len(program_input["headers"][ids.index]["proof"]["mmr_path"])
     %}
@@ -113,12 +110,8 @@ func verify_headers_inclusion_inner{
     let block_number = HeaderDecoder.get_block_number(rlp);
     HeaderMemorizer.add(chain_id=chain_info.id, block_number=block_number, rlp=rlp);
 
-    return verify_headers_inclusion_inner(
-        n_headers=n_headers, index=index + 1
-    );
+    return verify_headers_inclusion_inner(n_headers=n_headers, index=index + 1);
 }
-
-
 
 // // def write_account(account_ptr, proofs_ptr, account):
 // leading_zeroes = count_leading_zero_nibbles_from_hex(account["account_key"])

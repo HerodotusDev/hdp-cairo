@@ -14,29 +14,11 @@ from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
 
-// Verifiers:
-from src.verifiers.account_verifier import verify_
-accounts
-from src.verifiers.storage_item_verifier import (
-    populate_storage_item_segments,
-    verify_n_storage_items,
-)
-from src.verifiers.header_verifier import verify_headers_inclusion
-from src.verifiers.mmr_verifier import verify_mmr_meta
-from src.verifiers.block_tx_verifier import verify_n_block_tx_proofs
-from src.verifiers.receipt_verifier import verify_n_receipt_proofs
+// from src.verifiers.receipt_verifier import verify_n_receipt_proofs
 
 from src.verifiers.verify import run_state_verification
 
-from src.types import (
-    Header,
-    MMRMeta,
-    Account,
-    StorageItem,
-    TransactionProof,
-    ComputationalTask,
-    ReceiptProof,
-)
+from src.types import MMRMeta, ComputationalTask
 
 from src.memorizer import (
     HeaderMemorizer,
@@ -90,26 +72,10 @@ func run{
     // MMR Params
     local mmr_meta: MMRMeta;
 
-    // Account Params
-    let (accounts: Account*) = alloc();
-    local accounts_len: felt;
-
-    // Storage Params
-    let (storage_items: StorageItem*) = alloc();
-    local storage_items_len: felt;
-
-    // Transaction Params
-    let (transaction_proofs: TransactionProof*) = alloc();
-    local transaction_proof_len: felt;
-
-    // Receipt Params
-    let (receipt_proofs: ReceiptProof*) = alloc();
-    local receipt_proof_len: felt;
-
     // Peaks Dict
     let (local peaks_dict) = default_dict_new(default_value=0);
     tempvar peaks_dict_start = peaks_dict;
-    
+
     // Memorizers
     let (header_dict, header_dict_start) = HeaderMemorizer.init();
     let (account_dict, account_dict_start) = AccountMemorizer.init();
@@ -144,50 +110,6 @@ func run{
         def nested_hex_to_int_array(hex_array):
             return [[int(x, 16) for x in y] for y in hex_array]
 
-        def write_tx_proofs(ptr, program_input):
-            offset = 0
-            if "transactions" in program_input:
-                tx_proofs = program_input["transactions"]
-                ids.transaction_proof_len = len(tx_proofs)
-
-                for tx_proof in tx_proofs:
-                    leading_zeroes = count_leading_zero_nibbles_from_hex(tx_proof["key"])
-                    (key_low, key_high) = split_128(int(tx_proof["key"], 16))
-
-                    memory[ptr._reference_value + offset] = tx_proof["block_number"]
-                    memory[ptr._reference_value + offset + 1] = len(tx_proof["proof"])
-                    memory[ptr._reference_value + offset + 2] = segments.gen_arg(tx_proof["proof_bytes_len"])
-                    memory[ptr._reference_value + offset + 3] = segments.gen_arg(nested_hex_to_int_array(tx_proof["proof"]))
-                    memory[ptr._reference_value + offset + 4] = key_low
-                    memory[ptr._reference_value + offset + 5] = key_high
-                    memory[ptr._reference_value + offset + 6] = leading_zeroes
-
-                    offset += 7
-            else:
-                ids.transaction_proof_len = 0
-
-        def write_receipt_proofs(ptr, program_input):
-            offset = 0
-            if "transaction_receipts" in program_input:
-                receipt_proofs = program_input["transaction_receipts"]
-                ids.receipt_proof_len = len(receipt_proofs)
-
-                for receipt_proof in receipt_proofs:
-                    leading_zeroes = count_leading_zero_nibbles_from_hex(receipt_proof["key"])
-                    (key_low, key_high) = split_128(int(receipt_proof["key"], 16))
-
-                    memory[ptr._reference_value + offset] = receipt_proof["block_number"]
-                    memory[ptr._reference_value + offset + 1] = len(receipt_proof["proof"])
-                    memory[ptr._reference_value + offset + 2] = segments.gen_arg(receipt_proof["proof_bytes_len"])
-                    memory[ptr._reference_value + offset + 3] = segments.gen_arg(nested_hex_to_int_array(receipt_proof["proof"]))
-                    memory[ptr._reference_value + offset + 4] = key_low
-                    memory[ptr._reference_value + offset + 5] = key_high
-                    memory[ptr._reference_value + offset + 6] = leading_zeroes
-
-                    offset += 7
-            else:
-                ids.receipt_proof_len = 0
-
         def write_mmr_meta(mmr_meta):
             ids.mmr_meta.id = mmr_meta["id"]
             ids.mmr_meta.root = hex_to_int(mmr_meta["root"])
@@ -199,23 +121,11 @@ func run{
         # MMR Meta
         write_mmr_meta(program_input['mmr'])
 
-
-        # Account + Storage Params
-        ids.accounts_len = len(program_input['accounts'])
-        ids.storage_items_len = len(program_input['storages'])
-
-        # Transaction params
-        write_tx_proofs(ids.transaction_proofs, program_input)
-
-        # Receipt params
-        write_receipt_proofs(ids.receipt_proofs, program_input)
-
         # Task and Datalake
         ids.tasks_len = len(program_input['tasks'])
 
         ids.chain_id = 1
     %}
-
 
     // Fetch matching chain info
     let (local chain_info) = fetch_chain_info(chain_id);
@@ -235,74 +145,6 @@ func run{
         mmr_meta=mmr_meta,
         chain_info=chain_info,
     }();
-
-    // Check 2: Ensure the header is contained in a peak, and that the peak is known
-    // verify_headers_inclusion{
-    //     range_check_ptr=range_check_ptr,
-    //     poseidon_ptr=poseidon_ptr,
-    //     pow2_array=pow2_array,
-    //     peaks_dict=peaks_dict,
-    //     header_dict=header_dict,
-    // }(chain_id=chain_id, headers=headers, mmr_size=mmr_meta.size, n_headers=headers_len, index=0);
-
-    // populate_account_segments(accounts=accounts, n_accounts=accounts_len, index=0);
-
-    populate_storage_item_segments(
-        storage_items=storage_items, n_storage_items=storage_items_len, index=0
-    );
-
-    // Check 3: Ensure the account proofs are valid
-    // verify_n_accounts{
-    //     range_check_ptr=range_check_ptr,
-    //     bitwise_ptr=bitwise_ptr,
-    //     keccak_ptr=keccak_ptr,
-    //     header_dict=header_dict,
-    //     account_dict=account_dict,
-    //     pow2_array=pow2_array,
-    // }(chain_id=chain_id, accounts=accounts, accounts_len=accounts_len);
-
-    // Check 4: Ensure the account slot proofs are valid
-    verify_n_storage_items{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        keccak_ptr=keccak_ptr,
-        account_dict=account_dict,
-        storage_dict=storage_dict,
-        pow2_array=pow2_array,
-    }(chain_id=chain_id, storage_items=storage_items, storage_items_len=storage_items_len);
-
-    // Check 5: Verify the transaction proofs
-    verify_n_block_tx_proofs{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        poseidon_ptr=poseidon_ptr,
-        keccak_ptr=keccak_ptr,
-        block_tx_dict=block_tx_dict,
-        header_dict=header_dict,
-        pow2_array=pow2_array,
-        chain_info=chain_info,
-    }(
-        chain_id=chain_id,
-        tx_proofs=transaction_proofs,
-        tx_proofs_len=transaction_proof_len,
-        index=0,
-    );
-
-    // Check 6: Verify the receipt proofs
-    verify_n_receipt_proofs{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        poseidon_ptr=poseidon_ptr,
-        keccak_ptr=keccak_ptr,
-        block_receipt_dict=block_receipt_dict,
-        header_dict=header_dict,
-        pow2_array=pow2_array,
-    }(
-        chain_id=chain_id,
-        receipt_proofs=receipt_proofs,
-        receipt_proofs_len=receipt_proof_len,
-        index=0,
-    );
 
     // Verified data is now in memorizer, and can be used for further computation
     Task.init{

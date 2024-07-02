@@ -32,9 +32,7 @@ from src.memorizer import (
 from src.types import (
     BlockSampledDataLake,
     ComputationalTask,
-    Header,
     TransactionsInBlockDatalake,
-    TransactionProof,
     ChainInfo,
 )
 from starkware.cairo.common.dict_access import DictAccess
@@ -216,7 +214,6 @@ func fetch_header_data_points{
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     header_dict: DictAccess*,
-    // headers: Header*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
 }(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {

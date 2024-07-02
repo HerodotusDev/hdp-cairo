@@ -10,7 +10,6 @@ from contract_bootloader.contract_class.compiled_class import CompiledClass
 from starkware.cairo.common.uint256 import Uint256
 from contract_bootloader.contract_bootloader import run_contract_bootloader
 from starkware.cairo.common.dict_access import DictAccess
-from src.types import Header
 
 func compute_contract{
     pedersen_ptr: HashBuiltin*,

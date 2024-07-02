@@ -15,7 +15,9 @@ namespace ReceiptField {
 namespace ReceiptDecoder {
     func get_field{
         range_check_ptr, bitwise_ptr: BitwiseBuiltin*, chain_info: ChainInfo, pow2_array: felt*
-    }(rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt, block_number: felt) -> Uint256 {
+    }(
+        rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt, block_number: felt
+    ) -> Uint256 {
         alloc_locals;
         if (field == ReceiptField.LOGS) {
             assert 1 = 0;  // returns as felt

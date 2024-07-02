@@ -546,3 +546,92 @@ func append_be_chunk{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: 
         return (list=result, list_len=word + 1, list_bytes_len=list_bytes_len + chunk_bytes_len);
     }
 }
+
+// Returns the length of an RLP item. This includes the length of the prefix and the length of the value.
+func get_rlp_len{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    rlp: felt*, item_start_offset: felt
+) -> felt {
+    let current_item = extract_byte_at_pos(rlp[0], item_start_offset, pow2_array);
+
+    local item_type: felt;
+    %{
+        #print("current item:", hex(ids.current_item))
+        if ids.current_item <= 0x7f:
+            ids.item_type = 0 # single byte
+        elif 0x80 <= ids.current_item <= 0xb6:
+            ids.item_type = 1 # short string
+        elif 0xb7 <= ids.current_item <= 0xbf:
+            ids.item_type = 2 # long string
+        elif 0xc0 <= ids.current_item <= 0xf6:
+            ids.item_type = 3 # short list
+        elif 0xf7 <= ids.current_item <= 0xff:
+            ids.item_type = 4 # long list
+        else:
+            assert False, "Invalid RLP item"
+    %}
+
+    local current_value_len: felt;
+    // Single Byte
+    if (item_type == 0) {
+        assert [range_check_ptr] = 0x7f - current_item;
+        assert current_value_len = 1;
+        tempvar range_check_ptr = range_check_ptr + 1;
+
+        return 1;
+    }
+
+    // Short String
+    if (item_type == 1) {
+        assert [range_check_ptr] = current_item - 0x80;
+        assert [range_check_ptr + 1] = 0xb6 - current_item;
+        assert current_value_len = current_item - 0x80;
+        tempvar range_check_ptr = range_check_ptr + 2;
+
+        return current_value_len + 1;
+    }
+
+    // Long String
+    if (item_type == 2) {
+        assert [range_check_ptr] = current_item - 0xb7;
+        assert [range_check_ptr + 1] = 0xbf - current_item;
+        tempvar range_check_ptr = range_check_ptr + 2;
+        let len_len = current_item - 0xb7;
+
+        let value_len = decode_long_value_len(
+            rlp=rlp,
+            item_starts_at_byte=item_start_offset + 1,
+            len_len=len_len,
+            pow2_array=pow2_array,
+        );
+
+        return value_len + len_len + 1;
+    }
+
+    // Short List
+    if (item_type == 3) {
+        assert [range_check_ptr] = current_item - 0xc0;
+        assert [range_check_ptr + 1] = 0xf6 - current_item;
+        tempvar range_check_ptr = range_check_ptr + 2;
+
+        assert current_value_len = current_item - 0xc0;
+        return current_value_len + 1;
+    } else {
+        tempvar range_check_ptr = range_check_ptr;
+    }
+
+    // Long List
+    if (item_type == 4) {
+        assert [range_check_ptr] = current_item - 0xf7;
+        assert [range_check_ptr + 1] = 0xff - current_item;
+        tempvar range_check_ptr = range_check_ptr + 2;
+        let len_len = current_item - 0xf7;
+        let item_len = decode_long_value_len(
+            rlp=rlp,
+            item_starts_at_byte=item_start_offset + 1,
+            len_len=len_len,
+            pow2_array=pow2_array,
+        );
+
+        return item_len + len_len + 1;
+    }
+}
