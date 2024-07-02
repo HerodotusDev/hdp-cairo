@@ -15,7 +15,8 @@ from starkware.cairo.common.default_dict import default_dict_new, default_dict_f
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
 
 // Verifiers:
-from src.verifiers.account_verifier import populate_account_segments, verify_n_accounts
+from src.verifiers.account_verifier import verify_
+accounts
 from src.verifiers.storage_item_verifier import (
     populate_storage_item_segments,
     verify_n_storage_items,
@@ -244,21 +245,21 @@ func run{
     //     header_dict=header_dict,
     // }(chain_id=chain_id, headers=headers, mmr_size=mmr_meta.size, n_headers=headers_len, index=0);
 
-    populate_account_segments(accounts=accounts, n_accounts=accounts_len, index=0);
+    // populate_account_segments(accounts=accounts, n_accounts=accounts_len, index=0);
 
     populate_storage_item_segments(
         storage_items=storage_items, n_storage_items=storage_items_len, index=0
     );
 
     // Check 3: Ensure the account proofs are valid
-    verify_n_accounts{
-        range_check_ptr=range_check_ptr,
-        bitwise_ptr=bitwise_ptr,
-        keccak_ptr=keccak_ptr,
-        header_dict=header_dict,
-        account_dict=account_dict,
-        pow2_array=pow2_array,
-    }(chain_id=chain_id, accounts=accounts, accounts_len=accounts_len);
+    // verify_n_accounts{
+    //     range_check_ptr=range_check_ptr,
+    //     bitwise_ptr=bitwise_ptr,
+    //     keccak_ptr=keccak_ptr,
+    //     header_dict=header_dict,
+    //     account_dict=account_dict,
+    //     pow2_array=pow2_array,
+    // }(chain_id=chain_id, accounts=accounts, accounts_len=accounts_len);
 
     // Check 4: Ensure the account slot proofs are valid
     verify_n_storage_items{

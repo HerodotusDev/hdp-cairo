@@ -4,96 +4,72 @@ from packages.eth_essentials.lib.mpt import verify_mpt_proof
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.builtin_keccak.keccak import keccak_bigend
 from starkware.cairo.common.alloc import alloc
-from src.types import Account, AccountProof, Header
+from src.types import Account, AccountProof, Header, ChainInfo
 from packages.eth_essentials.lib.block_header import extract_state_root_little
 from src.memorizer import HeaderMemorizer, AccountMemorizer
 
 from src.decoders.header_decoder import HeaderDecoder, HeaderField
 
-// Initializes the accounts, ensuring that the passed address matches the key.
-// Params:
-// - accounts: empty accounts array that the accounts will be writte too.
-// - n_accounts: the number of accounts to initialize.
-// - index: the current index of the account being initialized.
-func populate_account_segments{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
-}(accounts: Account*, n_accounts: felt, index: felt) {
-    alloc_locals;
-    if (index == n_accounts) {
-        return ();
-    } else {
-        local account: Account;
-        let (proofs: AccountProof*) = alloc();
-
-        %{
-            def write_account(account_ptr, proofs_ptr, account):
-                leading_zeroes = count_leading_zero_nibbles_from_hex(account["account_key"])
-                (key_low, key_high) = split_128(int(account["account_key"], 16))
-
-                memory[account_ptr._reference_value] = segments.gen_arg(hex_to_int_array(account["address"]))
-                memory[account_ptr._reference_value + 1] = len(account["proofs"])
-                memory[account_ptr._reference_value + 2] = key_low
-                memory[account_ptr._reference_value + 3] = key_high
-                memory[account_ptr._reference_value + 4] = leading_zeroes
-                memory[account_ptr._reference_value + 5] = proofs_ptr._reference_value
-
-            def write_proofs(ptr, proofs):
-                offset = 0
-                for proof in proofs:
-                    memory[ptr._reference_value + offset] = proof["block_number"]
-                    memory[ptr._reference_value + offset + 1] = len(proof["proof"])
-                    memory[ptr._reference_value + offset + 2] = segments.gen_arg(proof["proof_bytes_len"])
-                    memory[ptr._reference_value + offset + 3] = segments.gen_arg(nested_hex_to_int_array(proof["proof"]))
-                    offset += 4
-
-            account = program_input["accounts"][ids.index]
-
-            write_proofs(ids.proofs, account["proofs"])
-            write_account(ids.account, ids.proofs, account)
-        %}
-
-        // ensure that address matches the key
-        let (hash: Uint256) = keccak_bigend(account.address, 20);
-        assert account.key.low = hash.low;
-        assert account.key.high = hash.high;
-
-        assert accounts[index] = account;
-
-        return populate_account_segments(accounts=accounts, n_accounts=n_accounts, index=index + 1);
-    }
-}
-
-// Verifies the validity of all of the accounts account_proofs
-// Params:
-// - accounts: the accounts to verify.
-// - accounts_len: the number of accounts to verify.
-// - pow2_array: the array of powers of 2.
-func verify_n_accounts{
+// Verifies the validity of all of the available account proofs and writes them to the memorizer
+func verify_accounts{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     header_dict: DictAccess*,
     account_dict: DictAccess*,
+    chain_info: ChainInfo,
     pow2_array: felt*,
-}(chain_id, accounts: Account*, accounts_len: felt) {
+}() {
     alloc_locals;
-    if (accounts_len == 0) {
+    local n_accounts: felt;
+    %{ ids.n_accounts = len(program_input["accounts"]) %}
+
+    verify_accounts_inner(n_accounts, 0);
+
+    return ();
+}
+
+func verify_accounts_inner{
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
+    header_dict: DictAccess*,
+    account_dict: DictAccess*,
+    chain_info: ChainInfo,
+    pow2_array: felt*,
+}(n_accounts: felt, index: felt) {
+    alloc_locals;
+    if (n_accounts == index) {
         return ();
     }
 
-    let account_idx = accounts_len - 1;
+    let (address: felt*) = alloc();
+    local key: Uint256;
+    local key_leading_zeros: felt;
+    %{  
+        account = program_input["accounts"][ids.index]
+        ids.key_leading_zeros = count_leading_zero_nibbles_from_hex(account["account_key"])
+        segments.write_arg(ids.address, hex_to_int_array(account["address"]))
+        (key_low, key_high) = split_128(int(account["account_key"], 16))
+        ids.key.low = key_low
+        ids.key.high = key_high
+    %}
 
-    verify_account(chain_id=chain_id, account=accounts[account_idx], proof_idx=0);
+    // Validate MPT key matches address
+    let (hash: Uint256) = keccak_bigend(address, 20);
+    assert key.low = hash.low;
+    assert key.high = hash.high;
 
-    return verify_n_accounts(chain_id=chain_id, accounts=accounts, accounts_len=accounts_len - 1);
+    local n_proofs: felt;
+    %{ ids.n_proofs = len(account["proofs"]) %}
+
+    verify_account(address, key, key_leading_zeros, n_proofs, 0);
+
+    return verify_accounts_inner(n_accounts=n_accounts, index=index + 1);
 }
 
-// Verifies the validity of an account's account_proofs
-// Params:
-// - account: the account to verify.
-// - proof_idx: the index of the proof to verify.
-// - pow2_array: the array of powers of 2.
 func verify_account{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -101,36 +77,48 @@ func verify_account{
     poseidon_ptr: PoseidonBuiltin*,
     header_dict: DictAccess*,
     account_dict: DictAccess*,
+    chain_info: ChainInfo,
     pow2_array: felt*,
-}(chain_id: felt, account: Account, proof_idx: felt) {
+}(address: felt*, key: Uint256, key_leading_zeros: felt, n_proofs: felt, proof_idx: felt) {
     alloc_locals;
-    if (proof_idx == account.proofs_len) {
+    if (proof_idx == n_proofs) {
         return ();
     }
 
-    let account_proof = account.proofs[proof_idx];
+    local block_number: felt;
+    let (mpt_proof: felt**) = alloc();
+    local proof_len: felt;
+    let (proof_bytes_len: felt*) = alloc();
+
+    %{
+        proof = account["proofs"][ids.proof_idx]
+        ids.block_number = proof["block_number"]
+        segments.write_arg(ids.mpt_proof, nested_hex_to_int_array(proof["proof"]))
+        segments.write_arg(ids.proof_bytes_len, proof["proof_bytes_len"])
+        ids.proof_len = len(proof["proof"])
+    %}
 
     // get state_root from verified headers
-    let header = HeaderMemorizer.get(chain_id=chain_id, block_number=account_proof.block_number);
-    let state_root = HeaderDecoder.get_field(header.rlp, HeaderField.STATE_ROOT);
+    let (header_rlp) = HeaderMemorizer.get(chain_id=chain_info.id, block_number=block_number);
+    let state_root = HeaderDecoder.get_field(header_rlp, HeaderField.STATE_ROOT);
 
-    let (value: felt*, value_len: felt) = verify_mpt_proof(
-        mpt_proof=account_proof.proof,
-        mpt_proof_bytes_len=account_proof.proof_bytes_len,
-        mpt_proof_len=account_proof.proof_len,
-        key_be=account.key,
-        key_be_leading_zeroes_nibbles=account.key_leading_zeros,
+    let (rlp: felt*, value_len: felt) = verify_mpt_proof(
+        mpt_proof=mpt_proof,
+        mpt_proof_bytes_len=proof_bytes_len,
+        mpt_proof_len=proof_len,
+        key_be=key,
+        key_be_leading_zeroes_nibbles=key_leading_zeros,
         root=state_root,
         pow2_array=pow2_array,
     );
 
     // add account to memorizer
     AccountMemorizer.add(
-        chain_id=chain_id,
-        block_number=account_proof.block_number,
-        address=account.address,
-        rlp=value,
+        chain_id=chain_info.id,
+        block_number=block_number,
+        address=address,
+        rlp=rlp,
     );
 
-    return verify_account(chain_id=chain_id, account=account, proof_idx=proof_idx + 1);
+    return verify_account(address=address, key=key, key_leading_zeros=key_leading_zeros, n_proofs=n_proofs, proof_idx=proof_idx + 1);
 }

@@ -65,16 +65,9 @@ func verify_headers_inclusion_inner{
     local rlp_len: felt;
     local leaf_idx: felt;
     %{
-        print(ids.index)
-        print(program_input["headers"][ids.index]["rlp"])
         segments.write_arg(ids.rlp, hex_to_int_array(program_input["headers"][ids.index]["rlp"]))
         ids.rlp_len = len(program_input["headers"][ids.index]["rlp"])
         ids.leaf_idx = program_input["headers"][ids.index]["proof"]["leaf_idx"]
-
-        print(ids.rlp)
-        print(ids.rlp_len)
-        print(ids.leaf_idx)
-
     %}
 
     // compute the hash of the header
@@ -124,3 +117,23 @@ func verify_headers_inclusion_inner{
         n_headers=n_headers, index=index + 1
     );
 }
+
+
+
+// // def write_account(account_ptr, proofs_ptr, account):
+// leading_zeroes = count_leading_zero_nibbles_from_hex(account["account_key"])
+// (key_low, key_high) = split_128(int(account["account_key"], 16))
+
+// memory[account_ptr._reference_value] = segments.gen_arg(hex_to_int_array(account["address"]))
+// memory[account_ptr._reference_value + 1] = len(account["proofs"])
+// memory[account_ptr._reference_value + 2] = key_low
+// memory[account_ptr._reference_value + 3] = key_high
+// memory[account_ptr._reference_value + 4] = leading_zeroes
+// memory[account_ptr._reference_value + 5] = proofs_ptr._reference_value
+
+// for proof in proofs:
+//     memory[ptr._reference_value + offset] = proof["block_number"]
+//     memory[ptr._reference_value + offset + 1] = len(proof["proof"])
+//     memory[ptr._reference_value + offset + 2] = segments.gen_arg(proof["proof_bytes_len"])
+//     memory[ptr._reference_value + offset + 3] = segments.gen_arg(nested_hex_to_int_array(proof["proof"]))
+//     offset += 4

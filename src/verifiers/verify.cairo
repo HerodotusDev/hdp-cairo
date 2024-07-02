@@ -1,4 +1,4 @@
-from src.verifiers.account_verifier import populate_account_segments, verify_n_accounts
+from src.verifiers.account_verifier import verify_accounts
 from src.verifiers.storage_item_verifier import (
     populate_storage_item_segments,
     verify_n_storage_items,
@@ -48,6 +48,8 @@ func run_state_verification{
 
     // Step 2: Verify the headers inclusion
     verify_headers_inclusion();
+
+    verify_accounts();
 
     return ();
 }
