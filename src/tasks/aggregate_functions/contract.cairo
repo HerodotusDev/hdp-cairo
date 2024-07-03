@@ -67,9 +67,8 @@ func compute_contract{
     assert calldata[1] = nondet %{ ids.header_dict.address_.offset %};
     assert calldata[2] = nondet %{ ids.account_dict.address_.segment_index %};
     assert calldata[3] = nondet %{ ids.account_dict.address_.offset %};
-    // memcpy(dst=calldata + 4, src=inputs, len=inputs_len);
-    // let calldata_size = inputs_len + 4;
-    let calldata_size = 4;
+    memcpy(dst=calldata + 4, src=inputs, len=inputs_len);
+    let calldata_size = inputs_len + 4;
 
     with header_dict, account_dict {
         let (retdata_size, retdata) = run_contract_bootloader(
