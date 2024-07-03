@@ -118,7 +118,7 @@ func run{
             # ids.chain_id = mmr_meta["chain_id"]
 
         # MMR Meta
-        write_mmr_meta(program_input['mmr'])
+        write_mmr_meta(program_input['proofs']['mmr_meta'])
 
         # Task and Datalake
         ids.tasks_len = len(program_input['tasks'])
@@ -133,6 +133,8 @@ func run{
     // Fetch matching chain info
     let (local chain_info) = fetch_chain_info(chain_id);
 
+    // Run the inclusion proofs for all the data found in inputs.json
+    // The verified data is then added to the respecitve memorizers, making the verified data available for later use
     run_state_verification{
         range_check_ptr=range_check_ptr,
         poseidon_ptr=poseidon_ptr,
@@ -148,7 +150,8 @@ func run{
         mmr_meta=mmr_meta,
         chain_info=chain_info,
     }();
-
+    
+    // Run computations on the verified data
     let (local results) = compute_tasks{
         pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
@@ -239,21 +242,13 @@ func compute_tasks{
     pow2_array: felt*,
     tasks: ComputationalTask*,
     chain_info: ChainInfo,
-}(hdp_version: felt, tasks_len: felt, index: felt) -> (results: Uint256*) {
+} (hdp_version: felt, tasks_len: felt, index: felt) -> (results: Uint256*) {
     alloc_locals;
 
     let (results: Uint256*) = alloc();
 
     if (hdp_version == 1) {
-        Task.init{
-            range_check_ptr=range_check_ptr,
-            bitwise_ptr=bitwise_ptr,
-            keccak_ptr=keccak_ptr,
-            tasks=tasks,
-            chain_info=chain_info,
-            pow2_array=pow2_array,
-        }(tasks_len, 0);
-
+        Task.init(tasks_len, 0);
         Task.execute(results=results, tasks_len=tasks_len, index=0);
 
         return (results=results);

@@ -29,7 +29,7 @@ func verify_storage_items{
 }() {
     alloc_locals;
     local n_storage_items: felt;
-    %{ ids.n_storage_items = len(program_input["storages"]) %}
+    %{ ids.n_storage_items = len(program_input["proofs"]["storages"]) %}
 
     verify_storage_items_inner(n_storage_items, 0);
 
@@ -58,7 +58,7 @@ func verify_storage_items_inner{
     local key: Uint256;
     local key_leading_zeros: felt;
     %{
-        storage_item = program_input["storages"][ids.index]
+        storage_item = program_input["proofs"]["storages"][ids.index]
         ids.n_proofs = len(storage_item["proofs"])
         segments.write_arg(ids.address, hex_to_int_array(storage_item["address"]))
         segments.write_arg(ids.slot, hex_to_int_array(storage_item["slot"]))

@@ -23,7 +23,7 @@ func verify_accounts{
 }() {
     alloc_locals;
     local n_accounts: felt;
-    %{ ids.n_accounts = len(program_input["accounts"]) %}
+    %{ ids.n_accounts = len(program_input["proofs"]["accounts"]) %}
 
     verify_accounts_inner(n_accounts, 0);
 
@@ -49,7 +49,7 @@ func verify_accounts_inner{
     local key: Uint256;
     local key_leading_zeros: felt;
     %{
-        account = program_input["accounts"][ids.index]
+        account = program_input["proofs"]["accounts"][ids.index]
         ids.key_leading_zeros = count_leading_zero_nibbles_from_hex(account["account_key"])
         segments.write_arg(ids.address, hex_to_int_array(account["address"]))
         (key_low, key_high) = split_128(int(account["account_key"], 16))

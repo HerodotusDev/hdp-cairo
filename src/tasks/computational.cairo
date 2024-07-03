@@ -52,7 +52,10 @@ namespace Task {
             let (tasks_input: felt*) = alloc();
             local tasks_input_bytes_len: felt;
             %{
-                task = program_input["tasks"][ids.index]
+                if program_input["tasks"][ids.index]["type"] != "datalake_compute":
+                    raise Exception(f"Task type {task['type']} not supported in v1 flow")
+                task = program_input["tasks"][ids.index]["context"]
+
                 segments.write_arg(ids.datalake_input, hex_to_int_array(task["encoded_datalake"]))
                 ids.datalake_input_bytes_len = task["datalake_bytes_len"]
                 ids.datalake_type = task["datalake_type"]

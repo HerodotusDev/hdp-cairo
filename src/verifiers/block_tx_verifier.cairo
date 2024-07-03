@@ -31,7 +31,7 @@ func verify_block_tx_proofs{
     alloc_locals;
 
     local n_tx_proofs: felt;
-    %{ ids.n_tx_proofs = len(program_input["transactions"]) %}
+    %{ ids.n_tx_proofs = len(program_input["proofs"]["transactions"]) %}
 
     verify_block_tx_proofs_inner(n_tx_proofs, 0);
     return ();
@@ -60,7 +60,7 @@ func verify_block_tx_proofs_inner{
     local key: Uint256;
     local key_leading_zeros: felt;
     %{
-        transaction = program_input["transactions"][ids.index]
+        transaction = program_input["proofs"]["transactions"][ids.index]
         ids.key_leading_zeros = count_leading_zero_nibbles_from_hex(transaction["key"])
         (key_low, key_high) = split_128(int(transaction["key"], 16))
         ids.key.low = key_low
