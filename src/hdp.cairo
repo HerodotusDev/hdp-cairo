@@ -28,7 +28,7 @@ from src.memorizer import (
 from packages.eth_essentials.lib.utils import pow2alloc128, write_felt_array_to_dict_keys
 
 from src.tasks.computational import Task
-from src.merkle import compute_tasks_root, compute_results_root
+from src.merkle import compute_tasks_root_v1, compute_results_root, compute_tasks_hash_v2, compute_tasks_root_v2, compute_results_root_v2
 from src.chain_info import fetch_chain_info
 from src.tasks.aggregate_functions.contract import compute_contract
 
@@ -152,7 +152,7 @@ func run{
         chain_info=chain_info,
     }();
 
-    let (local results) = compute_tasks{
+    let (tasks_root, results_root) = compute_tasks{
         pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
         ecdsa_ptr=ecdsa_ptr,
@@ -168,15 +168,7 @@ func run{
         pow2_array=pow2_array,
         tasks=tasks,
         chain_info=chain_info,
-    }(hdp_version=hdp_version, tasks_len=tasks_len, index=0);
-
-    let tasks_root = compute_tasks_root{
-        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
-    }(tasks=tasks, tasks_len=tasks_len);
-
-    let results_root = compute_results_root{
-        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
-    }(tasks=tasks, results=results, tasks_len=tasks_len);
+    }(hdp_version=hdp_version, tasks_len=tasks_len);
 
     %{
         print(f"Tasks Root: {hex(ids.tasks_root.low)} {hex(ids.tasks_root.high)}")
@@ -185,13 +177,13 @@ func run{
 
     // Post Verification Checks: Ensure the roots match the expected roots
     %{
-        if "results_root" in program_input:
-            assert ids.results_root.low == hex_to_int(program_input["results_root"]["low"]), "Expected results root mismatch"
-            assert ids.results_root.high == hex_to_int(program_input["results_root"]["high"]), "Expected results root mismatch"
+        if "result_root" in program_input:
+            assert ids.results_root.low == hex_to_int(program_input["result_root"]["low"]), "Expected results root mismatch"
+            assert ids.results_root.high == hex_to_int(program_input["result_root"]["high"]), "Expected results root mismatch"
 
-        if "tasks_root" in program_input:
-            assert ids.tasks_root.low == hex_to_int(program_input["tasks_root"]["low"]), "Expected tasks root mismatch"
-            assert ids.tasks_root.high == hex_to_int(program_input["tasks_root"]["high"]), "Expected tasks root mismatch"
+        if "task_root" in program_input:
+            assert ids.tasks_root.low == hex_to_int(program_input["task_root"]["low"]), "Expected tasks root mismatch"
+            assert ids.tasks_root.high == hex_to_int(program_input["task_root"]["high"]), "Expected tasks root mismatch"
     %}
 
     // Post Verification Checks: Ensure dict consistency
@@ -242,7 +234,7 @@ func compute_tasks{
     pow2_array: felt*,
     tasks: ComputationalTask*,
     chain_info: ChainInfo,
-}(hdp_version: felt, tasks_len: felt, index: felt) -> (results: Uint256*) {
+}(hdp_version: felt, tasks_len: felt) -> (tasks_root: Uint256, results_root: Uint256) {
     alloc_locals;
 
     let (results: Uint256*) = alloc();
@@ -251,59 +243,51 @@ func compute_tasks{
         Task.init(tasks_len, 0);
         Task.execute(results=results, tasks_len=tasks_len, index=0);
 
-        return (results=results);
+        let tasks_root = compute_tasks_root_v1{
+            range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
+        }(tasks=tasks, tasks_len=tasks_len);
+
+        let results_root = compute_results_root{
+            range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
+        }(tasks=tasks, results=results, tasks_len=tasks_len);
+
+
+        return (tasks_root=tasks_root, results_root=results_root);
     }
 
     if (hdp_version == 2) {
-        with results {
-            run_module_tasks(tasks_len, 0);
-        }
-        return (results=results);
+        local inputs_len: felt;
+        let (inputs) = alloc();
+
+        %{
+            from tools.py.schema import CompiledClass
+
+            task = program_input["tasks"][0]["context"]
+            compiled_class = CompiledClass.Schema().load(task["module_class"])
+
+            ids.inputs_len = len(task["inputs"])
+            segments.write_arg(ids.inputs, hex_to_int_array(task["inputs"]))
+        %}
+
+        let (result, program_hash) = compute_contract(inputs, inputs_len);
+
+        let task_hash = compute_tasks_hash_v2{
+            range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
+        }(program_hash=program_hash, inputs=inputs, inputs_len=inputs_len);
+
+        %{ print("task_hash;", hex(ids.task_hash.high), hex(ids.task_hash.low)) %}
+
+        let tasks_root = compute_tasks_root_v2{
+            range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
+        }(task_hash=task_hash);
+
+        let results_root = compute_results_root_v2{
+            range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
+        }(task_hash=task_hash, result=result);
+
+        return (tasks_root=tasks_root, results_root=results_root);
     }
 
     assert 1 = 0;
-    return (results=results);
-}
-
-func run_module_tasks{
-    pedersen_ptr: HashBuiltin*,
-    range_check_ptr,
-    ecdsa_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    ec_op_ptr,
-    keccak_ptr: KeccakBuiltin*,
-    poseidon_ptr: PoseidonBuiltin*,
-    account_dict: DictAccess*,
-    storage_dict: DictAccess*,
-    header_dict: DictAccess*,
-    block_tx_dict: DictAccess*,
-    block_receipt_dict: DictAccess*,
-    pow2_array: felt*,
-    results: Uint256*,
-}(n_tasks: felt, index: felt) {
-    alloc_locals;
-
-    if (n_tasks == index) {
-        return ();
-    }
-
-    local inputs_len: felt;
-    let (inputs) = alloc();
-
-    %{
-        from tools.py.schema import CompiledClass
-
-        task = program_input["tasks"][ids.index]["context"]
-
-        # Load the dry run input
-        compiled_class = CompiledClass.Schema().load(task["module_class"])
-
-        ids.inputs_len = len(task["inputs"])
-        segments.write_arg(ids.inputs, hex_to_int_array(task["inputs"]))
-    %}
-
-    let result = compute_contract(inputs, inputs_len);
-    assert results[index] = result;
-
-    return run_module_tasks(n_tasks=n_tasks, index=index + 1);
+    return (tasks_root=Uint256(0, 0), results_root=Uint256(0, 0));
 }
