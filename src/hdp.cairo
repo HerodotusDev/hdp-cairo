@@ -277,7 +277,7 @@ func run_module_tasks{
     account_dict: DictAccess*,
     pow2_array: felt*,
     results: Uint256*,
-} (n_tasks: felt, index: felt) {
+}(n_tasks: felt, index: felt) {
     alloc_locals;
 
     if (n_tasks == index) {
@@ -291,7 +291,7 @@ func run_module_tasks{
         from tools.py.schema import CompiledClass
 
         task = program_input["tasks"][ids.index]["context"]
-        
+
         # Load the dry run input
         compiled_class = CompiledClass.Schema().load(task["module_class"])
 

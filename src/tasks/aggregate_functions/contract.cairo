@@ -12,7 +12,6 @@ from contract_bootloader.contract_bootloader import run_contract_bootloader
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.memcpy import memcpy
 
-
 func compute_contract{
     pedersen_ptr: HashBuiltin*,
     range_check_ptr,
