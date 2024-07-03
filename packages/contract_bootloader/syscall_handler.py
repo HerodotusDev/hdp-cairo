@@ -58,6 +58,8 @@ class SyscallHandler(SyscallHandlerBase):
         )
 
         memorizerId = MemorizerId.from_int(request.contract_address)
+        functionId = AccountMemorizerFunctionId.from_int(request.selector)
+        
         if memorizerId == MemorizerId.Account:
             total_size = Memorizer.size() + AccountMemorizerKey.size()
 
@@ -66,7 +68,6 @@ class SyscallHandler(SyscallHandlerBase):
                     f"Memorizer read must be initialized with a list of {total_size} integers"
                 )
 
-            function_id = AccountMemorizerFunctionId.from_int(request.selector)
             memorizer = Memorizer(
                 dict_raw_ptrs=calldata[0 : Memorizer.size()],
                 dict_manager=self.dict_manager,
@@ -81,7 +82,7 @@ class SyscallHandler(SyscallHandlerBase):
                 segments=self.segments,
                 memorizer=memorizer,
             )
-            retdata = handler.handle(function_id=function_id, key=key)
+            retdata = handler.handle(function_id=functionId, key=key)
 
         # dict_segment = calldata[0]
         # dict_offset = calldata[1]

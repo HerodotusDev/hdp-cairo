@@ -11,6 +11,7 @@ from starkware.starknet.core.os.builtins import BuiltinPointers
 from src.memorizer import HeaderMemorizer
 from src.decoders.header_decoder import HeaderDecoder, HeaderField
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
+from starkware.cairo.common.dict_access import DictAccess
 
 struct ExecutionInfo {
     selector: felt,
@@ -25,8 +26,6 @@ struct ExecutionContext {
     execution_info: ExecutionInfo*,
 }
 
-const HEADER_MEMORIZER_ID = 0;
-
 // Executes the system calls in syscall_ptr.
 // The signature of the function 'call_execute_syscalls' must match this function's signature.
 //
@@ -39,6 +38,8 @@ func execute_syscalls{
     poseidon_ptr: PoseidonBuiltin*,
     syscall_ptr: felt*,
     builtin_ptrs: BuiltinPointers*,
+    header_dict: DictAccess*,
+    account_dict: DictAccess*,
 }(execution_context: ExecutionContext*, syscall_ptr_end: felt*) {
     if (syscall_ptr == syscall_ptr_end) {
         return ();
@@ -50,6 +51,15 @@ func execute_syscalls{
     return execute_syscalls(execution_context=execution_context, syscall_ptr_end=syscall_ptr_end);
 }
 
+namespace MemorizerId {
+    const HEADER = 0;
+    const ACCOUNT = 1;
+}
+
+namespace AccountMemorizerFunctionId {
+    const GET_BALANCE = 0;
+}
+
 // Executes a syscall that calls another contract.
 func execute_call_contract{
     range_check_ptr,
@@ -57,6 +67,8 @@ func execute_call_contract{
     poseidon_ptr: PoseidonBuiltin*,
     syscall_ptr: felt*,
     builtin_ptrs: BuiltinPointers*,
+    header_dict: DictAccess*,
+    account_dict: DictAccess*,
 }(caller_execution_context: ExecutionContext*) {
     alloc_locals;
     let request_header = cast(syscall_ptr, RequestHeader*);
@@ -70,6 +82,21 @@ func execute_call_contract{
 
     let call_contract_response = cast(syscall_ptr, CallContractResponse*);
     let syscall_ptr = syscall_ptr + CallContractResponse.SIZE;
+
+    let memorizerId = call_contract_request.contract_address;
+    let functionId = call_contract_request.selector;
+
+    if (memorizerId == MemorizerId.ACCOUNT) {
+        if (functionId == AccountMemorizerFunctionId.GET_BALANCE) {
+            return ();
+        }
+
+        // Unknown AccountMemorizerFunctionId
+        assert 1 = 0;
+    }
+
+    // Unknown MemorizerId
+    assert 1 = 0;
 
     return ();
 }
