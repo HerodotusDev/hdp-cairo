@@ -124,7 +124,7 @@ func run{
         # Task and Datalake
         ids.tasks_len = len(program_input['tasks'])
 
-        ids.chain_id = 1
+        ids.chain_id = 11155111
         if program_input["tasks"][0]["type"] == "datalake_compute":
             ids.hdp_version = 1
         elif program_input["tasks"][0]["type"] == "module":
@@ -273,8 +273,11 @@ func run_module_tasks{
     ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    header_dict: DictAccess*,
     account_dict: DictAccess*,
+    storage_dict: DictAccess*,
+    header_dict: DictAccess*,
+    block_tx_dict: DictAccess*,
+    block_receipt_dict: DictAccess*,
     pow2_array: felt*,
     results: Uint256*,
 }(n_tasks: felt, index: felt) {

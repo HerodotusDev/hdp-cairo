@@ -20,8 +20,11 @@ func compute_contract{
     ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    header_dict: DictAccess*,
     account_dict: DictAccess*,
+    storage_dict: DictAccess*,
+    header_dict: DictAccess*,
+    block_tx_dict: DictAccess*,
+    block_receipt_dict: DictAccess*,
     pow2_array: felt*,
 }(inputs: felt*, inputs_len: felt) -> Uint256 {
     alloc_locals;
@@ -64,8 +67,9 @@ func compute_contract{
     assert calldata[1] = nondet %{ ids.header_dict.address_.offset %};
     assert calldata[2] = nondet %{ ids.account_dict.address_.segment_index %};
     assert calldata[3] = nondet %{ ids.account_dict.address_.offset %};
-    memcpy(dst=calldata + 4, src=inputs, len=inputs_len);
-    let calldata_size = inputs_len + 4;
+    // memcpy(dst=calldata + 4, src=inputs, len=inputs_len);
+    // let calldata_size = inputs_len + 4;
+    let calldata_size = 4;
 
     with header_dict, account_dict {
         let (retdata_size, retdata) = run_contract_bootloader(

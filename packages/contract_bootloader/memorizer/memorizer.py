@@ -36,4 +36,4 @@ class Memorizer:
         return 2
 
     def read(self, key: int) -> int:
-        self.dict_manager.get_dict(self.dict_ptr)[key]
+        return self.dict_manager.get_dict(self.dict_ptr)[key]
