@@ -262,37 +262,3 @@ namespace BlockReceiptMemorizer {
         return (rlp=rlp);
     }
 }
-
-// func main{poseidon_ptr: PoseidonBuiltin*}() {
-//     let (rlp) = alloc();
-//     %{
-//         segments.write_arg(ids.rlp, [1,2,3,4])
-//     %}
-
-// let (header_dict, header_dict_start) = HeaderMemorizer.init();
-//     HeaderMemorizer.add{
-//         dict_ptr=header_dict,
-//         poseidon_ptr=poseidon_ptr
-//     }(
-//         chain_id=1,
-//         block_number=2,
-//         rlp=rlp
-//     );
-//     let (res) = HeaderMemorizer.get{
-//         dict_ptr=header_dict,
-//         poseidon_ptr=poseidon_ptr
-//     }(
-//         chain_id=1,
-//         block_number=2
-//     );
-
-// %{
-//         print(memory[ids.res])
-//         print(memory[ids.res + 1])
-//         print(memory[ids.res + 2])
-//         print(memory[ids.res + 3])
-
-// %}
-
-// return ();
-// }
