@@ -70,9 +70,9 @@ func compute_contract{
     memcpy(dst=calldata + 4, src=inputs, len=inputs_len);
     let calldata_size = inputs_len + 4;
 
-    with header_dict, account_dict {
+    with account_dict, storage_dict, header_dict, block_tx_dict, block_receipt_dict, pow2_array {
         let (retdata_size, retdata) = run_contract_bootloader(
-            compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata
+            compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata, dry_run=0
         );
     }
 

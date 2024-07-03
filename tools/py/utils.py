@@ -27,6 +27,10 @@ def uint256_reverse_endian(x: int):
     return int.from_bytes(x.to_bytes(32, "big"), "little")
 
 
+def hex_to_int_array(hex_array):
+    return [int(x, 16) for x in hex_array]
+
+
 def reverse_endian(x: int):
     hex_str = hex(x)[2:]
     if len(hex_str) % 2 != 0:
