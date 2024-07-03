@@ -30,7 +30,15 @@ func main{
 
     %{
         from tools.py.schema import HDPDryRunInput
+
+        # Load the dry run input
         dry_run_input = HDPDryRunInput.Schema().load(program_input)
+
+        # Check if the modules list contains more than one element
+        if len(dry_run_input.modules) > 1:
+            raise ValueError("The modules list contains more than one element, which is not supported.")
+
+        # Extract values
         dry_run_output_path = dry_run_input.dry_run_output_path
         inputs = dry_run_input.modules[0].inputs
         compiled_class = dry_run_input.modules[0].module_class
