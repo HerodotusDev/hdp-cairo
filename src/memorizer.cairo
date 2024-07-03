@@ -26,7 +26,7 @@ namespace PackParams {
         return (params=params, params_len=2);
     }
 
-    func account(chain_id: felt, block_number: felt, address: felt*) -> (
+    func account(chain_id: felt, block_number: felt, address: felt) -> (
         params: felt*, params_len: felt
     ) {
         alloc_locals;
@@ -34,12 +34,12 @@ namespace PackParams {
         local params: felt* = nondet %{ segments.add() %};
         assert params[0] = chain_id;
         assert params[1] = block_number;
-        memcpy(dst=params + 2, src=address, len=3);
+        assert params[2] = address;
 
-        return (params=params, params_len=5);
+        return (params=params, params_len=3);
     }
 
-    func storage(chain_id: felt, block_number: felt, address: felt*, storage_slot: felt*) -> (
+    func storage(chain_id: felt, block_number: felt, address: felt, storage_slot: felt*) -> (
         params: felt*, params_len: felt
     ) {
         alloc_locals;
@@ -47,10 +47,10 @@ namespace PackParams {
         local params: felt* = nondet %{ segments.add() %};
         assert params[0] = chain_id;
         assert params[1] = block_number;
-        memcpy(dst=params + 2, src=address, len=3);
-        memcpy(dst=params + 5, src=storage_slot, len=4);
+        assert params[2] = address;
+        memcpy(dst=params + 3, src=storage_slot, len=4);
 
-        return (params=params, params_len=9);
+        return (params=params, params_len=7);
     }
 
     func block_tx(chain_id: felt, block_number: felt, key_low: felt) -> (
@@ -142,7 +142,7 @@ namespace AccountMemorizer {
     }
 
     func add{account_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
-        chain_id: felt, block_number: felt, address: felt*, rlp: felt*
+        chain_id: felt, block_number: felt, address: felt, rlp: felt*
     ) {
         let (params, params_len) = PackParams.account(
             chain_id=chain_id, block_number=block_number, address=address
@@ -155,7 +155,7 @@ namespace AccountMemorizer {
     }
 
     func get{account_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
-        chain_id: felt, block_number: felt, address: felt*
+        chain_id: felt, block_number: felt, address: felt
     ) -> (rlp: felt*) {
         let (params, params_len) = PackParams.account(
             chain_id=chain_id, block_number=block_number, address=address
@@ -174,7 +174,7 @@ namespace StorageMemorizer {
     }
 
     func add{storage_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
-        chain_id: felt, block_number: felt, address: felt*, storage_slot: felt*, rlp: felt*
+        chain_id: felt, block_number: felt, address: felt, storage_slot: felt*, rlp: felt*
     ) {
         let (params, params_len) = PackParams.storage(
             chain_id=chain_id, block_number=block_number, address=address, storage_slot=storage_slot
@@ -187,7 +187,7 @@ namespace StorageMemorizer {
     }
 
     func get{storage_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
-        chain_id: felt, block_number: felt, address: felt*, storage_slot: felt*
+        chain_id: felt, block_number: felt, address: felt, storage_slot: felt*
     ) -> (rlp: felt*) {
         let (params, params_len) = PackParams.storage(
             chain_id=chain_id, block_number=block_number, address=address, storage_slot=storage_slot
