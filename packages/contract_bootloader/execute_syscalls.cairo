@@ -8,8 +8,9 @@ from starkware.starknet.common.new_syscalls import (
 )
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
 from starkware.starknet.core.os.builtins import BuiltinPointers
-from src.memorizer import HeaderMemorizer
-from src.decoders.header_decoder import HeaderDecoder, HeaderField
+from src.memorizer import HeaderMemorizer, AccountMemorizer
+from src.decoders.header_decoder import HeaderDecoder
+from src.decoders.account_decoder import AccountMemorizer
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.dict_access import DictAccess
 
@@ -88,6 +89,16 @@ func execute_call_contract{
 
     if (memorizerId == MemorizerId.ACCOUNT) {
         if (functionId == AccountMemorizerFunctionId.GET_BALANCE) {
+            assert 2 + 3 = call_contract_request.calldata_end - call_contract_request.calldata_start;
+            assert 2 = call_contract_response.retdata_end - call_contract_response.retdata_start;
+
+            let rlp = AccountMemorizer.get(chain_id=call_contract_request.calldata_start[2], block_number=call_contract_request.calldata_start[3], address=call_contract_request.calldata_start[4]);
+            let field: Uint256 = AccountDecoder.get_field(rlp=rlp, field=AccountField.BALANCE);
+            let (value) = uint256_reverse_endian(num=field);
+
+            assert call_contract_response.retdata_start[0] = value.low;
+            assert call_contract_response.retdata_start[1] = value.high;
+
             return ();
         }
 
