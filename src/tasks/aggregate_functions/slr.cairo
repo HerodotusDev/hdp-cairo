@@ -190,7 +190,7 @@ func fetch_account_data_points{
     }
 
     let (rlp) = AccountMemorizer.get(
-        chain_id=chain_id, block_number=current_block_number, address=datalake.properties + 1
+        chain_id=chain_id, block_number=current_block_number, address=[datalake.properties + 1]
     );
 
     local data_point0: Uint256 = Uint256(low=current_block_number, high=0x0);
@@ -239,8 +239,8 @@ func fetch_storage_data_points{
     let (rlp) = StorageMemorizer.get(
         chain_id=chain_id,
         block_number=current_block_number,
-        address=datalake.properties,
-        storage_slot=datalake.properties + 3,
+        address=[datalake.properties],
+        storage_slot=datalake.properties + 1,
     );
     let data_point1 = StorageSlotDecoder.get_word(rlp=rlp);
 

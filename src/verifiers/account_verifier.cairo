@@ -7,6 +7,7 @@ from starkware.cairo.common.alloc import alloc
 from src.types import ChainInfo
 from packages.eth_essentials.lib.block_header import extract_state_root_little
 from src.memorizer import HeaderMemorizer, AccountMemorizer
+from src.converter import le_address_chunks_to_felt
 
 from src.decoders.header_decoder import HeaderDecoder, HeaderField
 
@@ -112,9 +113,11 @@ func verify_account{
         pow2_array=pow2_array,
     );
 
+    let (felt_address) = le_address_chunks_to_felt(address);
+
     // add account to memorizer
     AccountMemorizer.add(
-        chain_id=chain_info.id, block_number=block_number, address=address, rlp=rlp
+        chain_id=chain_info.id, block_number=block_number, address=felt_address, rlp=rlp
     );
 
     return verify_account(

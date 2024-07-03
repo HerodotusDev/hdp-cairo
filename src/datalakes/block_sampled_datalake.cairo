@@ -15,6 +15,7 @@ from src.tasks.fetch_trait import FetchTrait
 from src.decoders.header_decoder import HeaderDecoder
 from src.decoders.account_decoder import AccountDecoder
 from src.decoders.storage_slot_decoder import StorageSlotDecoder
+from src.converter import le_address_chunks_to_felt
 
 namespace BlockSampledProperty {
     const HEADER = 1;
@@ -69,9 +70,8 @@ func init_block_sampled{
         );
 
         // write address to properties
-        assert [properties + 1] = [address];
-        assert [properties + 2] = [address + 1];
-        assert [properties + 3] = [address + 2];
+        let (felt_address) = le_address_chunks_to_felt(address);
+        assert [properties + 1] = felt_address;
 
         return (
             res=BlockSampledDataLake(
@@ -91,9 +91,8 @@ func init_block_sampled{
         );
 
         // write address to properties
-        assert [properties] = [address];
-        assert [properties + 1] = [address + 1];
-        assert [properties + 2] = [address + 2];
+        let (felt_address) = le_address_chunks_to_felt(address);
+        assert [properties] = felt_address;
 
         extract_and_write_slot{
             range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, properties=properties
@@ -137,10 +136,10 @@ func extract_and_write_slot{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, prope
     let (trash, rlp_3_left) = felt_divmod(rlp_4, divsor);
     let word_3 = rlp_3_left * shifter + rlp_3_right;
 
-    assert [properties + 3] = word_0;
-    assert [properties + 4] = word_1;
-    assert [properties + 5] = word_2;
-    assert [properties + 6] = word_3;
+    assert [properties + 1] = word_0;
+    assert [properties + 2] = word_1;
+    assert [properties + 3] = word_2;
+    assert [properties + 4] = word_3;
 
     return ();
 }
@@ -353,7 +352,7 @@ func fetch_account_data_points{
     }
 
     let (rlp) = AccountMemorizer.get(
-        chain_id=chain_id, block_number=current_block_number, address=datalake.properties + 1
+        chain_id=chain_id, block_number=current_block_number, address=[datalake.properties + 1]
     );
 
     let data_point = AccountDecoder.get_field{
@@ -395,8 +394,8 @@ func fetch_storage_data_points{
     let (rlp) = StorageMemorizer.get(
         chain_id=chain_id,
         block_number=current_block_number,
-        address=datalake.properties,
-        storage_slot=datalake.properties + 3,
+        address=[datalake.properties],
+        storage_slot=datalake.properties + 1,
     );
 
     let data_point = StorageSlotDecoder.get_word(rlp=rlp);

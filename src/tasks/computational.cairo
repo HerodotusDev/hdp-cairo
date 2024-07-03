@@ -211,6 +211,7 @@ namespace Task {
             return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
         }
 
+        assert 1 = 0;
         return ();
     }
 }

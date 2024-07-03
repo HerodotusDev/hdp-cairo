@@ -10,7 +10,7 @@ from packages.eth_essentials.lib.rlp_little import (
     extract_byte_at_pos,
     extract_n_bytes_from_le_64_chunks_array,
 )
-
+from src.converter import le_address_chunks_to_felt
 from src.memorizer import StorageMemorizer, AccountMemorizer
 from src.decoders.account_decoder import AccountDecoder, AccountField
 
@@ -68,8 +68,11 @@ func verify_storage_items_inner{
         ids.key_leading_zeros = count_leading_zero_nibbles_from_hex(storage_item["storage_key"])
     %}
 
+    // ToDo: this should happen in a hint
+    let (felt_address) = le_address_chunks_to_felt(address);
+
     verify_storage_item(
-        address=address,
+        address=felt_address,
         slot=slot,
         key=key,
         key_leading_zeros=key_leading_zeros,
@@ -90,7 +93,7 @@ func verify_storage_item{
     chain_info: ChainInfo,
     pow2_array: felt*,
 }(
-    address: felt*,
+    address: felt,
     slot: felt*,
     key: Uint256,
     key_leading_zeros: felt,
