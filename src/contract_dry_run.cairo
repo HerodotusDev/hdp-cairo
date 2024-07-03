@@ -36,14 +36,6 @@ func main{
         compiled_class = dry_run_input.modules[0].module_class
     %}
 
-    local calldata: felt* = nondet %{ segments.add() %};
-    local calldata_size: felt = 4;
-
-    assert calldata[0] = 0x0;
-    assert calldata[1] = 0x0;
-    assert calldata[2] = 0x0;
-    assert calldata[3] = 0x0;
-
     local compiled_class: CompiledClass*;
 
     // Fetch contract data form hints.
@@ -81,6 +73,9 @@ func main{
         )
     %}
 
+    let (local header_dict: DictAccess*) = default_dict_new(default_value=7);
+    let (local account_dict: DictAccess*) = default_dict_new(default_value=7);
+
     %{
         from contract_bootloader.dryrun_syscall_handler import DryRunSyscallHandler
 
@@ -91,9 +86,27 @@ func main{
         syscall_handler = DryRunSyscallHandler(segments=segments, dict_manager=__dict_manager)
     %}
 
-    let (retdata_size, retdata) = run_contract_bootloader(
-        compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata
-    );
+    local calldata: felt* = nondet %{ segments.add() %};
+    local calldata_size: felt;
+
+    assert calldata[0] = nondet %{ ids.header_dict.address_.segment_index %};
+    assert calldata[1] = nondet %{ ids.header_dict.address_.offset %};
+    assert calldata[2] = nondet %{ ids.account_dict.address_.segment_index %};
+    assert calldata[3] = nondet %{ ids.account_dict.address_.offset %};
+
+    %{
+        i = 4
+        for input in inputs:
+            memory[ids.calldata + i] = int(input)
+            i += 1
+        ids.calldata_size = i
+    %}
+
+    with header_dict, account_dict {
+        let (retdata_size, retdata) = run_contract_bootloader(
+            compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata
+        );
+    }
 
     assert retdata_size = 2;
     local result: Uint256 = Uint256(low=retdata[0], high=retdata[1]);

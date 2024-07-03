@@ -59,7 +59,7 @@ class SyscallHandler(SyscallHandlerBase):
 
         memorizerId = MemorizerId.from_int(request.contract_address)
         functionId = AccountMemorizerFunctionId.from_int(request.selector)
-        
+
         if memorizerId == MemorizerId.Account:
             total_size = Memorizer.size() + AccountMemorizerKey.size()
 

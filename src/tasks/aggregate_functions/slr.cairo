@@ -26,6 +26,7 @@ from src.decoders.account_decoder import AccountDecoder
 from src.decoders.header_decoder import HeaderDecoder
 from src.decoders.transaction_decoder import TransactionDecoder, TransactionType
 from src.decoders.receipt_decoder import ReceiptDecoder
+from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
 from src.decoders.storage_slot_decoder import StorageSlotDecoder
 
 from contract_bootloader.contract_class.compiled_class import CompiledClass
@@ -137,6 +138,9 @@ func compute_slr{
         )
     %}
 
+    let (local header_dict: DictAccess*) = default_dict_new(default_value=7);
+    let (local account_dict: DictAccess*) = default_dict_new(default_value=7);
+
     %{
         from contract_bootloader.syscall_handler import SyscallHandler
 
@@ -147,11 +151,13 @@ func compute_slr{
         syscall_handler = SyscallHandler(segments=segments, dict_manager=__dict_manager)
     %}
 
-    let (retdata_size, retdata) = run_contract_bootloader(
-        compiled_class=compiled_class,
-        calldata_size=1 + values_len * 2 * 2 + 2,
-        calldata=task_input_arr,
-    );
+    with header_dict, account_dict {
+        let (retdata_size, retdata) = run_contract_bootloader(
+            compiled_class=compiled_class,
+            calldata_size=1 + values_len * 2 * 2 + 2,
+            calldata=task_input_arr,
+        );
+    }
 
     assert retdata_size = 2;
     let result: Uint256 = Uint256(low=retdata[0], high=retdata[1]);
