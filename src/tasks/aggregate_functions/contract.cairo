@@ -10,6 +10,8 @@ from contract_bootloader.contract_class.compiled_class import CompiledClass
 from starkware.cairo.common.uint256 import Uint256
 from contract_bootloader.contract_bootloader import run_contract_bootloader
 from starkware.cairo.common.dict_access import DictAccess
+from starkware.cairo.common.memcpy import memcpy
+
 
 func compute_contract{
     pedersen_ptr: HashBuiltin*,
@@ -22,7 +24,7 @@ func compute_contract{
     header_dict: DictAccess*,
     account_dict: DictAccess*,
     pow2_array: felt*,
-}() -> Uint256 {
+}(inputs: felt*, inputs_len: felt) -> Uint256 {
     alloc_locals;
     local compiled_class: CompiledClass*;
 
@@ -30,6 +32,10 @@ func compute_contract{
     %{
         from starkware.starknet.core.os.contract_class.compiled_class_hash import create_bytecode_segment_structure
         from contract_bootloader.contract_class.compiled_class_hash_utils import get_compiled_class_struct
+
+        # Append necessary footer to the bytecode of the contract
+        compiled_class.bytecode.append(0x208b7fff7fff7ffe)
+        compiled_class.bytecode_segment_lengths[-1] += 1
 
         bytecode_segment_structure = create_bytecode_segment_structure(
             bytecode=compiled_class.bytecode,
@@ -54,22 +60,21 @@ func compute_contract{
     %}
 
     local calldata: felt* = nondet %{ segments.add() %};
+
     assert calldata[0] = nondet %{ ids.header_dict.address_.segment_index %};
     assert calldata[1] = nondet %{ ids.header_dict.address_.offset %};
     assert calldata[2] = nondet %{ ids.account_dict.address_.segment_index %};
     assert calldata[3] = nondet %{ ids.account_dict.address_.offset %};
+    memcpy(dst=calldata + 4, src=inputs, len=inputs_len);
+    let calldata_size = inputs_len + 4;
 
-    local calldata_size = 4;
+    with header_dict, account_dict {
+        let (retdata_size, retdata) = run_contract_bootloader(
+            compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata
+        );
+    }
 
-    let (retdata_size, retdata) = run_contract_bootloader(
-        compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata
-    );
-
-    %{
-        for i in range(ids.retdata_size):
-            print(hex(memory[ids.retdata + i]))
-    %}
-
-    let value: Uint256 = Uint256(low=0x0, high=0x0);
-    return value;
+    assert retdata_size = 2;
+    local result: Uint256 = Uint256(low=retdata[0], high=retdata[1]);
+    return result;
 }
