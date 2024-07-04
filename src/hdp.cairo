@@ -196,7 +196,6 @@ func run{
         import json
 
         dictionary = dict()
-
         dictionary["task_root"] = hex(ids.tasks_root.high * 2 ** 128 + ids.tasks_root.low )
         dictionary["results_root"] = hex(ids.results_root.high * 2 ** 128 + ids.results_root.low)
         results = list()
@@ -295,8 +294,10 @@ func compute_tasks{
 
         let (result, program_hash) = compute_contract(inputs, inputs_len);
         assert results[0] = result;
-
-        %{ print("Result:", ids.result.high * 2 ** 128 + ids.result.low) %}
+        %{
+            target_result = hex(ids.result.high * 2 ** 128 + ids.result.low)
+            print(f"Task Result: {target_result}")
+        %}
 
         let task_hash = compute_tasks_hash_v2{
             range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
