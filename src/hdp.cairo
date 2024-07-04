@@ -30,6 +30,7 @@ from packages.eth_essentials.lib.utils import pow2alloc128, write_felt_array_to_
 from src.tasks.computational import Task
 from src.merkle import compute_tasks_root, compute_results_root
 from src.chain_info import fetch_chain_info
+from src.tasks.aggregate_functions.contract import compute_contract
 
 func main{
     output_ptr: felt*,
@@ -118,16 +119,18 @@ func run{
             # ids.chain_id = mmr_meta["chain_id"]
 
         # MMR Meta
-        write_mmr_meta(program_input['mmr'])
+        write_mmr_meta(program_input["proofs"]['mmr_meta'])
 
         # Task and Datalake
         ids.tasks_len = len(program_input['tasks'])
 
-        ids.chain_id = 1
-        if "hdp_version" in program_input:
-            ids.hdp_version = hex_to_int(program_input["hdp_version"])
-        else:
+        ids.chain_id = 11155111
+        if program_input["tasks"][0]["type"] == "datalake_compute":
             ids.hdp_version = 1
+        elif program_input["tasks"][0]["type"] == "module":
+            ids.hdp_version = 2
+        else:
+            raise ValueError("Invalid HDP version")
     %}
 
     // Fetch matching chain info
@@ -245,25 +248,62 @@ func compute_tasks{
     let (results: Uint256*) = alloc();
 
     if (hdp_version == 1) {
-        Task.init{
-            range_check_ptr=range_check_ptr,
-            bitwise_ptr=bitwise_ptr,
-            keccak_ptr=keccak_ptr,
-            tasks=tasks,
-            chain_info=chain_info,
-            pow2_array=pow2_array,
-        }(tasks_len, 0);
-
+        Task.init(tasks_len, 0);
         Task.execute(results=results, tasks_len=tasks_len, index=0);
 
         return (results=results);
     }
 
     if (hdp_version == 2) {
-        assert 1 = 1;
+        with results {
+            run_module_tasks(tasks_len, 0);
+        }
         return (results=results);
     }
 
     assert 1 = 0;
     return (results=results);
+}
+
+func run_module_tasks{
+    pedersen_ptr: HashBuiltin*,
+    range_check_ptr,
+    ecdsa_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    ec_op_ptr,
+    keccak_ptr: KeccakBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
+    account_dict: DictAccess*,
+    storage_dict: DictAccess*,
+    header_dict: DictAccess*,
+    block_tx_dict: DictAccess*,
+    block_receipt_dict: DictAccess*,
+    pow2_array: felt*,
+    results: Uint256*,
+}(n_tasks: felt, index: felt) {
+    alloc_locals;
+
+    if (n_tasks == index) {
+        return ();
+    }
+
+    local inputs_len: felt;
+    let (inputs) = alloc();
+
+    %{
+        from tools.py.schema import CompiledClass
+
+        task = program_input["tasks"][ids.index]["context"]
+
+        # Load the dry run input
+        compiled_class = CompiledClass.Schema().load(task["module_class"])
+
+        ids.inputs_len = len(task["inputs"])
+        segments.write_arg(ids.inputs, hex_to_int_array(task["inputs"]))
+    %}
+
+    let result = compute_contract(inputs, inputs_len);
+    assert results[index] = result;
+
+    return run_module_tasks(n_tasks=n_tasks, index=index + 1);
 }

@@ -107,12 +107,9 @@ class AccountMemorizerHandler(AbstractAccountMemorizerBase):
             end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
         )
 
-        value = int.from_bytes(
-            decode(little_8_bytes_chunks_to_bytes(rlp, rlp_len), Account).as_dict()[
-                "balance"
-            ],
-            byteorder="big",
-        )
+        value = decode(little_8_bytes_chunks_to_bytes(rlp, rlp_len), Account).as_dict()[
+            "balance"
+        ]
 
         return (
             value % 0x100000000000000000000000000000000,

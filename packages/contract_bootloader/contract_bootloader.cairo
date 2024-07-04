@@ -41,7 +41,8 @@ func run_contract_bootloader{
     poseidon_ptr: PoseidonBuiltin*,
     header_dict: DictAccess*,
     account_dict: DictAccess*,
-}(compiled_class: CompiledClass*, calldata_size: felt, calldata: felt*) -> (
+    pow2_array: felt*,
+}(compiled_class: CompiledClass*, calldata_size: felt, calldata: felt*, dry_run: felt) -> (
     retdata_size: felt, retdata: felt*
 ) {
     alloc_locals;
@@ -102,7 +103,9 @@ func run_contract_bootloader{
     );
 
     with builtin_ptrs, builtin_params {
-        let (retdata_size, retdata) = execute_entry_point(compiled_class, &execution_context);
+        let (retdata_size, retdata) = execute_entry_point(
+            compiled_class, &execution_context, dry_run=dry_run
+        );
     }
 
     return (retdata_size, retdata);

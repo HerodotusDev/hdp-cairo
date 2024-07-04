@@ -138,8 +138,12 @@ func compute_slr{
         )
     %}
 
-    let (local header_dict: DictAccess*) = default_dict_new(default_value=7);
-    let (local account_dict: DictAccess*) = default_dict_new(default_value=7);
+    let (local account_dict) = default_dict_new(default_value=7);
+    let (local storage_dict) = default_dict_new(default_value=7);
+    let (local header_dict) = default_dict_new(default_value=7);
+    let (local block_tx_dict) = default_dict_new(default_value=7);
+    let (local block_receipt_dict) = default_dict_new(default_value=7);
+    local pow2_array: felt* = nondet %{ segments.add() %};
 
     %{
         from contract_bootloader.syscall_handler import SyscallHandler
@@ -151,11 +155,12 @@ func compute_slr{
         syscall_handler = SyscallHandler(segments=segments, dict_manager=__dict_manager)
     %}
 
-    with header_dict, account_dict {
+    with account_dict, storage_dict, header_dict, block_tx_dict, block_receipt_dict, pow2_array {
         let (retdata_size, retdata) = run_contract_bootloader(
             compiled_class=compiled_class,
             calldata_size=1 + values_len * 2 * 2 + 2,
             calldata=task_input_arr,
+            dry_run=0,
         );
     }
 
