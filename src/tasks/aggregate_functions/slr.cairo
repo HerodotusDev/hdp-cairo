@@ -85,12 +85,6 @@ func compute_slr{
     ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    account_dict: DictAccess*,
-    storage_dict: DictAccess*,
-    header_dict: DictAccess*,
-    block_tx_dict: DictAccess*,
-    block_receipt_dict: DictAccess*,
-    pow2_array: felt*,
 }(values: Uint256*, values_len: felt, predict: Uint256) -> (program_hash: felt, result: Uint256) {
     alloc_locals;
 
@@ -144,6 +138,13 @@ func compute_slr{
         )
     %}
 
+    let (local account_dict) = default_dict_new(default_value=7);
+    let (local storage_dict) = default_dict_new(default_value=7);
+    let (local header_dict) = default_dict_new(default_value=7);
+    let (local block_tx_dict) = default_dict_new(default_value=7);
+    let (local block_receipt_dict) = default_dict_new(default_value=7);
+    local pow2_array: felt* = nondet %{ segments.add() %};
+
     %{
         from contract_bootloader.syscall_handler import SyscallHandler
 
@@ -154,11 +155,14 @@ func compute_slr{
         syscall_handler = SyscallHandler(segments=segments, dict_manager=__dict_manager)
     %}
 
-    let (retdata_size, retdata) = run_contract_bootloader(
-        compiled_class=compiled_class,
-        calldata_size=1 + values_len * 2 * 2 + 2,
-        calldata=task_input_arr,
-    );
+    with account_dict, storage_dict, header_dict, block_tx_dict, block_receipt_dict, pow2_array {
+        let (retdata_size, retdata) = run_contract_bootloader(
+            compiled_class=compiled_class,
+            calldata_size=1 + values_len * 2 * 2 + 2,
+            calldata=task_input_arr,
+            dry_run=0,
+        );
+    }
 
     assert retdata_size = 2;
     let result: Uint256 = Uint256(low=retdata[0], high=retdata[1]);

@@ -54,7 +54,11 @@ func call_execute_syscalls{
     header_dict: DictAccess*,
     account_dict: DictAccess*,
     pow2_array: felt*,
-}(execution_context: ExecutionContext*, syscall_ptr_end: felt*) {
+}(execution_context: ExecutionContext*, syscall_ptr_end: felt*, dry_run: felt) {
+    if (dry_run == 1) {
+        return ();
+    }
+
     execute_syscalls(execution_context, syscall_ptr_end);
     return ();
 }
@@ -122,7 +126,7 @@ func execute_entry_point{
     header_dict: DictAccess*,
     account_dict: DictAccess*,
     pow2_array: felt*,
-}(compiled_class: CompiledClass*, execution_context: ExecutionContext*) -> (
+}(compiled_class: CompiledClass*, execution_context: ExecutionContext*, dry_run: felt) -> (
     retdata_size: felt, retdata: felt*
 ) {
     alloc_locals;
@@ -219,10 +223,12 @@ func execute_entry_point{
     validate_segment_arena(segment_arena=current_segment_arena);
 
     let builtin_ptrs = return_builtin_ptrs;
+
     with syscall_ptr {
         call_execute_syscalls(
             execution_context=execution_context,
             syscall_ptr_end=entry_point_return_values.syscall_ptr,
+            dry_run=dry_run,
         );
     }
 

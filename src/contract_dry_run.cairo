@@ -15,6 +15,7 @@ from starkware.cairo.common.default_dict import default_dict_new, default_dict_f
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
 from contract_bootloader.contract_class.compiled_class import CompiledClass
 from contract_bootloader.contract_bootloader import run_contract_bootloader, compute_program_hash
+from starkware.cairo.common.memcpy import memcpy
 
 func main{
     output_ptr: felt*,
@@ -27,6 +28,9 @@ func main{
     poseidon_ptr: PoseidonBuiltin*,
 }() {
     alloc_locals;
+
+    local inputs_len: felt;
+    let (inputs) = alloc();
 
     %{
         from tools.py.schema import HDPDryRunInput
@@ -42,6 +46,8 @@ func main{
         dry_run_output_path = dry_run_input.dry_run_output_path
         inputs = dry_run_input.modules[0].inputs
         compiled_class = dry_run_input.modules[0].module_class
+        ids.inputs_len = len(inputs)
+        segments.write_arg(ids.inputs, inputs)
     %}
 
     local compiled_class: CompiledClass*;
@@ -70,7 +76,7 @@ func main{
 
     assert compiled_class.bytecode_ptr[compiled_class.bytecode_length] = 0x208b7fff7fff7ffe;
     let (program_hash_volotile) = compute_program_hash(
-        bytecode_length=compiled_class.bytecode_length, bytecode_ptr=compiled_class.bytecode_ptr
+        bytecode_length=compiled_class.bytecode_length - 1, bytecode_ptr=compiled_class.bytecode_ptr
     );
     local program_hash = program_hash_volotile;
 
@@ -81,8 +87,12 @@ func main{
         )
     %}
 
-    let (local header_dict: DictAccess*) = default_dict_new(default_value=7);
-    let (local account_dict: DictAccess*) = default_dict_new(default_value=7);
+    let (local account_dict) = default_dict_new(default_value=7);
+    let (local storage_dict) = default_dict_new(default_value=7);
+    let (local header_dict) = default_dict_new(default_value=7);
+    let (local block_tx_dict) = default_dict_new(default_value=7);
+    let (local block_receipt_dict) = default_dict_new(default_value=7);
+    local pow2_array: felt* = nondet %{ segments.add() %};
 
     %{
         from contract_bootloader.dryrun_syscall_handler import DryRunSyscallHandler
@@ -95,24 +105,17 @@ func main{
     %}
 
     local calldata: felt* = nondet %{ segments.add() %};
-    local calldata_size: felt;
 
     assert calldata[0] = nondet %{ ids.header_dict.address_.segment_index %};
     assert calldata[1] = nondet %{ ids.header_dict.address_.offset %};
     assert calldata[2] = nondet %{ ids.account_dict.address_.segment_index %};
     assert calldata[3] = nondet %{ ids.account_dict.address_.offset %};
+    memcpy(dst=calldata + 4, src=inputs, len=inputs_len);
+    let calldata_size = inputs_len + 4;
 
-    %{
-        i = 4
-        for input in inputs:
-            memory[ids.calldata + i] = int(input)
-            i += 1
-        ids.calldata_size = i
-    %}
-
-    with header_dict, account_dict {
+    with account_dict, storage_dict, header_dict, block_tx_dict, block_receipt_dict, pow2_array {
         let (retdata_size, retdata) = run_contract_bootloader(
-            compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata
+            compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata, dry_run=1
         );
     }
 
