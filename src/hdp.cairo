@@ -28,7 +28,13 @@ from src.memorizer import (
 from packages.eth_essentials.lib.utils import pow2alloc128, write_felt_array_to_dict_keys
 
 from src.tasks.computational import Task
-from src.merkle import compute_tasks_root_v1, compute_results_root, compute_tasks_hash_v2, compute_tasks_root_v2, compute_results_root_v2
+from src.merkle import (
+    compute_tasks_root_v1,
+    compute_results_root,
+    compute_tasks_hash_v2,
+    compute_tasks_root_v2,
+    compute_results_root_v2,
+)
 from src.chain_info import fetch_chain_info
 from src.tasks.aggregate_functions.contract import compute_contract
 
@@ -250,7 +256,6 @@ func compute_tasks{
         let results_root = compute_results_root{
             range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
         }(tasks=tasks, results=results, tasks_len=tasks_len);
-
 
         return (tasks_root=tasks_root, results_root=results_root);
     }

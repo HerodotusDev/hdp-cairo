@@ -55,7 +55,7 @@ func compute_contract{
     assert compiled_class.bytecode_ptr[compiled_class.bytecode_length] = 0x208b7fff7fff7ffe;
 
     let (program_hash_volotile) = compute_program_hash(
-        bytecode_length=compiled_class.bytecode_length-1, bytecode_ptr=compiled_class.bytecode_ptr
+        bytecode_length=compiled_class.bytecode_length - 1, bytecode_ptr=compiled_class.bytecode_ptr
     );
     local program_hash = program_hash_volotile;
 
