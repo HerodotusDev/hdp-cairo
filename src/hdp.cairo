@@ -196,7 +196,7 @@ func run{
         import json
 
         dictionary = dict()
-        dictionary["task_root"] = hex(ids.tasks_root.high * 2 ** 128 + ids.tasks_root.low )
+        dictionary["tasks_root"] = hex(ids.tasks_root.high * 2 ** 128 + ids.tasks_root.low )
         dictionary["results_root"] = hex(ids.results_root.high * 2 ** 128 + ids.results_root.low)
         results = list()
         for i in range(ids.results_len):
