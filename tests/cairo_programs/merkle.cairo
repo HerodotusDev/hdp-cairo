@@ -3,7 +3,7 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, KeccakBuiltin
 from starkware.cairo.common.alloc import alloc
 from tests.cairo_programs.test_vectors import BlockSampledTaskMocker
-from src.merkle import compute_tasks_root, compute_results_root, hash_pair, compute_merkle_root
+from src.merkle import compute_tasks_root_v1, compute_results_root, hash_pair, compute_merkle_root
 from src.utils import compute_results_entry
 from src.types import ComputationalTask
 
@@ -31,7 +31,7 @@ func computes_output_roots{
     let (tasks: ComputationalTask*) = alloc();
     assert tasks[0] = task;
 
-    let tasks_root = compute_tasks_root{
+    let tasks_root = compute_tasks_root_v1{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
     }(tasks, tasks_len);
 

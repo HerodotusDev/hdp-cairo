@@ -11,7 +11,6 @@ from src.decoders.header_decoder import HeaderField
 from src.datalakes.datalake import DatalakeType
 from src.datalakes.block_sampled_datalake import BlockSampledProperty
 from src.types import BlockSampledDataLake, ComputationalTask, ChainInfo
-from src.merkle import compute_tasks_root
 from packages.eth_essentials.lib.utils import pow2alloc128
 from src.chain_info import fetch_chain_info
 
