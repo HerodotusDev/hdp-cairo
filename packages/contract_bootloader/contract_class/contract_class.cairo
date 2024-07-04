@@ -8,7 +8,7 @@ from starkware.cairo.common.hash_state_poseidon import (
 )
 from starkware.starknet.common.storage import normalize_address
 
-const CONTRACT_CLASS_VERSION = 'CONTRACT_CLASS_V0.1.0';
+const CONTRACT_CLASS_VERSION = 'COMPILED_CLASS_V1';
 
 struct ContractEntryPoint {
     // A field element that encodes the signature of the called function.

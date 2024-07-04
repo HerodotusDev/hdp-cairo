@@ -6,11 +6,12 @@ from starkware.cairo.common.cairo_builtins import (
     SignatureBuiltin,
     EcOpBuiltin,
 )
-from contract_bootloader.contract_class.compiled_class import CompiledClass
+from contract_bootloader.contract_class.compiled_class import CompiledClass, compiled_class_hash
 from starkware.cairo.common.uint256 import Uint256
-from contract_bootloader.contract_bootloader import run_contract_bootloader
+from contract_bootloader.contract_bootloader import run_contract_bootloader, compute_program_hash
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.memcpy import memcpy
+from starkware.cairo.common.registers import get_fp_and_pc
 
 func compute_contract{
     pedersen_ptr: HashBuiltin*,
@@ -26,7 +27,7 @@ func compute_contract{
     block_tx_dict: DictAccess*,
     block_receipt_dict: DictAccess*,
     pow2_array: felt*,
-}(inputs: felt*, inputs_len: felt) -> Uint256 {
+}(inputs: felt*, inputs_len: felt) -> (result: Uint256, program_hash: felt) {
     alloc_locals;
     local compiled_class: CompiledClass*;
 
@@ -35,15 +36,23 @@ func compute_contract{
         from starkware.starknet.core.os.contract_class.compiled_class_hash import create_bytecode_segment_structure
         from contract_bootloader.contract_class.compiled_class_hash_utils import get_compiled_class_struct
 
-        # Append necessary footer to the bytecode of the contract
-        compiled_class.bytecode.append(0x208b7fff7fff7ffe)
-        compiled_class.bytecode_segment_lengths[-1] += 1
-
-        bytecode_segment_structure = create_bytecode_segment_structure(
+        bytecode_segment_structure_no_footer = create_bytecode_segment_structure(
             bytecode=compiled_class.bytecode,
             bytecode_segment_lengths=compiled_class.bytecode_segment_lengths,
             visited_pcs=None,
         )
+
+        # Append necessary footer to the bytecode of the contract
+        compiled_class.bytecode.append(0x208b7fff7fff7ffe)
+        compiled_class.bytecode_segment_lengths[-1] += 1
+
+        bytecode_segment_structure_with_footer = create_bytecode_segment_structure(
+            bytecode=compiled_class.bytecode,
+            bytecode_segment_lengths=compiled_class.bytecode_segment_lengths,
+            visited_pcs=None,
+        )
+
+        bytecode_segment_structure = bytecode_segment_structure_with_footer
 
         cairo_contract = get_compiled_class_struct(
             compiled_class=compiled_class,
@@ -53,6 +62,14 @@ func compute_contract{
     %}
 
     assert compiled_class.bytecode_ptr[compiled_class.bytecode_length] = 0x208b7fff7fff7ffe;
+
+    %{ bytecode_segment_structure = bytecode_segment_structure_no_footer %}
+
+    let (local program_hash) = compiled_class_hash(compiled_class=compiled_class);
+
+    %{ bytecode_segment_structure = bytecode_segment_structure_with_footer %}
+
+    %{ print("program_hash", hex(ids.program_hash)) %}
 
     %{
         vm_load_program(
@@ -78,5 +95,5 @@ func compute_contract{
 
     assert retdata_size = 2;
     local result: Uint256 = Uint256(low=retdata[0], high=retdata[1]);
-    return result;
+    return (result=result, program_hash=program_hash);
 }
