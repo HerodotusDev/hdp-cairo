@@ -192,14 +192,6 @@ func run{
             assert ids.tasks_root.high * 2 ** 128 + ids.tasks_root.low  == hex_to_int(program_input["task_root"]), "Expected results root mismatch"
     %}
 
-    // Post Verification Checks: Ensure dict consistency
-    default_dict_finalize(peaks_dict_start, peaks_dict, 0);
-    default_dict_finalize(header_dict_start, header_dict, 7);
-    default_dict_finalize(account_dict_start, account_dict, 7);
-    default_dict_finalize(storage_dict_start, storage_dict, 7);
-    default_dict_finalize(block_tx_dict_start, block_tx_dict, 7);
-    default_dict_finalize(block_receipt_dict_start, block_receipt_dict, 7);
-
     %{
         import json
 
@@ -207,12 +199,16 @@ func run{
 
         dictionary["task_root"] = hex(ids.tasks_root.high * 2 ** 128 + ids.tasks_root.low )
         dictionary["results_root"] = hex(ids.results_root.high * 2 ** 128 + ids.results_root.low)
+        dict_results = list()
         dictionary["results"] = list()
 
-        results = ids.results
+        print(f"Results len: {ids.results_len}")
+        for i in range(ids.results_len):
+            dict_results.append(memory[ids.results + i])
 
-        for result in results:
-            dictionary["result"].append({
+
+        for result in dict_results:
+            dictionary["results"].append({
                 "low": hex(result.low),
                 "high": hex(result.high)
             })
@@ -220,6 +216,14 @@ func run{
         with open(cairo_run_output_path, 'w') as json_file:
             json.dump(list, json_file)
     %}
+
+    // Post Verification Checks: Ensure dict consistency
+    default_dict_finalize(peaks_dict_start, peaks_dict, 0);
+    default_dict_finalize(header_dict_start, header_dict, 7);
+    default_dict_finalize(account_dict_start, account_dict, 7);
+    default_dict_finalize(storage_dict_start, storage_dict, 7);
+    default_dict_finalize(block_tx_dict_start, block_tx_dict, 7);
+    default_dict_finalize(block_receipt_dict_start, block_receipt_dict, 7);
 
     [ap] = mmr_meta.root;
     [ap] = [output_ptr], ap++;
