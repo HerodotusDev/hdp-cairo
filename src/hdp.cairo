@@ -137,6 +137,8 @@ func run{
             ids.hdp_version = 2
         else:
             raise ValueError("Invalid HDP version")
+
+        cairo_run_output_path = program_input["cairo_run_output_path"]
     %}
 
     // Fetch matching chain info
@@ -158,7 +160,7 @@ func run{
         chain_info=chain_info,
     }();
 
-    let (tasks_root, results_root) = compute_tasks{
+    let (tasks_root, results_root, results, results_len) = compute_tasks{
         pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
         ecdsa_ptr=ecdsa_ptr,
@@ -197,6 +199,27 @@ func run{
     default_dict_finalize(storage_dict_start, storage_dict, 7);
     default_dict_finalize(block_tx_dict_start, block_tx_dict, 7);
     default_dict_finalize(block_receipt_dict_start, block_receipt_dict, 7);
+
+    %{
+        import json
+
+        dictionary = dict()
+
+        dictionary["task_root"] = hex(ids.tasks_root.high * 2 ** 128 + ids.tasks_root.low )
+        dictionary["results_root"] = hex(ids.results_root.high * 2 ** 128 + ids.results_root.low)
+        dictionary["results"] = list()
+
+        results = ids.results
+
+        for result in results:
+            dictionary["result"].append({
+                "low": hex(result.low),
+                "high": hex(result.high)
+            })
+
+        with open(cairo_run_output_path, 'w') as json_file:
+            json.dump(list, json_file)
+    %}
 
     [ap] = mmr_meta.root;
     [ap] = [output_ptr], ap++;
@@ -238,7 +261,9 @@ func compute_tasks{
     pow2_array: felt*,
     tasks: ComputationalTask*,
     chain_info: ChainInfo,
-}(hdp_version: felt, tasks_len: felt) -> (tasks_root: Uint256, results_root: Uint256) {
+}(hdp_version: felt, tasks_len: felt) -> (
+    tasks_root: Uint256, results_root: Uint256, results: Uint256*, results_len: felt
+) {
     alloc_locals;
 
     let (results: Uint256*) = alloc();
@@ -255,7 +280,9 @@ func compute_tasks{
             range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
         }(tasks=tasks, results=results, tasks_len=tasks_len);
 
-        return (tasks_root=tasks_root, results_root=results_root);
+        return (
+            tasks_root=tasks_root, results_root=results_root, results=results, results_len=tasks_len
+        );
     }
 
     if (hdp_version == 2) {
@@ -273,6 +300,7 @@ func compute_tasks{
         %}
 
         let (result, program_hash) = compute_contract(inputs, inputs_len);
+        assert results[0] = result;
 
         %{ print("Result:", ids.result.high * 2 ** 128 + ids.result.low) %}
 
@@ -292,9 +320,9 @@ func compute_tasks{
             range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
         }(task_hash=flipped_task_hash, result=result);
 
-        return (tasks_root=tasks_root, results_root=results_root);
+        return (tasks_root=tasks_root, results_root=results_root, results=results, results_len=1);
     }
 
     assert 1 = 0;
-    return (tasks_root=Uint256(0, 0), results_root=Uint256(0, 0));
+    return (tasks_root=Uint256(0, 0), results_root=Uint256(0, 0), results=results, results_len=0);
 }

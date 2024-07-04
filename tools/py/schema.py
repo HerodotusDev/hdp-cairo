@@ -124,6 +124,7 @@ class InputTask(ValidatedMarshmallowDataclass):
 
 @marshmallow_dataclass.dataclass(frozen=True)
 class HDPInput(ValidatedMarshmallowDataclass):
+    cairo_run_output_path: str
     task_root: int = field(metadata=additional_metadata(marshmallow_field=IntAsHex()))
     proofs: Proofs
     tasks: List[InputTask] = field(
