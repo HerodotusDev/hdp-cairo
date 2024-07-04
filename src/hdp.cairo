@@ -199,22 +199,12 @@ func run{
 
         dictionary["task_root"] = hex(ids.tasks_root.high * 2 ** 128 + ids.tasks_root.low )
         dictionary["results_root"] = hex(ids.results_root.high * 2 ** 128 + ids.results_root.low)
-        dict_results = list()
-        dictionary["results"] = list()
-
-        print(f"Results len: {ids.results_len}")
+        results = list()
         for i in range(ids.results_len):
-            dict_results.append(memory[ids.results + i])
-
-
-        for result in dict_results:
-            dictionary["results"].append({
-                "low": hex(result.low),
-                "high": hex(result.high)
-            })
-
+            results.append(memory[ids.results.address_ + i])
+        dictionary["results"] = results
         with open(cairo_run_output_path, 'w') as json_file:
-            json.dump(list, json_file)
+            json.dump(dictionary, json_file)
     %}
 
     // Post Verification Checks: Ensure dict consistency
