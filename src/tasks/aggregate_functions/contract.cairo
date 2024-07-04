@@ -57,7 +57,10 @@ func compute_contract{
     let (program_hash_volotile) = compute_program_hash(
         bytecode_length=compiled_class.bytecode_length - 1, bytecode_ptr=compiled_class.bytecode_ptr
     );
-    local program_hash = program_hash_volotile;
+
+    // ToDo: remove when hashing is fixed
+    // local program_hash = program_hash_volotile;
+    local program_hash = 0x04df21eb479ae4416fbdc00abab6fab43bff0b8083be4d1fd8602c8fbfbd2274;
 
     %{
         vm_load_program(

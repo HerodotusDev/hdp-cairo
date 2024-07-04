@@ -90,13 +90,15 @@ func compute_tasks_hash_v2{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
     }(n_elements=inputs_len, elements=inputs);
 
+    %{ print("Inputs Hash:", hex(ids.input_hash.high * 2 ** 128 + ids.input_hash.low)) %}
+
     let conv_program_hash = felt_to_uint256(program_hash);
 
     let (pair: Uint256*) = alloc();
     assert pair[0] = conv_program_hash;
     assert pair[1] = input_hash;
 
-    let (task_hash) = keccak_uint256s{
+    let (task_hash) = keccak_uint256s_bigend{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
     }(n_elements=2, elements=pair);
 

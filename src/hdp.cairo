@@ -9,7 +9,7 @@ from starkware.cairo.common.cairo_builtins import (
     EcOpBuiltin,
 )
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.uint256 import Uint256
+from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
@@ -177,8 +177,8 @@ func run{
     }(hdp_version=hdp_version, tasks_len=tasks_len);
 
     %{
-        print(f"Tasks Root: {hex(ids.tasks_root.low)} {hex(ids.tasks_root.high)}")
-        print(f"Results Root: {hex(ids.results_root.low)} {hex(ids.results_root.high)}")
+        print(f"Tasks Root: {hex(ids.tasks_root.high * 2 ** 128 + ids.tasks_root.low)}")
+        print(f"Results Root: {hex(ids.results_root.high * 2 ** 128 + ids.results_root.low)}")
     %}
 
     // Post Verification Checks: Ensure the roots match the expected roots
@@ -274,19 +274,23 @@ func compute_tasks{
 
         let (result, program_hash) = compute_contract(inputs, inputs_len);
 
+        %{ print("Result:", ids.result.high * 2 ** 128 + ids.result.low) %}
+
         let task_hash = compute_tasks_hash_v2{
             range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
         }(program_hash=program_hash, inputs=inputs, inputs_len=inputs_len);
 
-        %{ print("task_hash;", hex(ids.task_hash.high), hex(ids.task_hash.low)) %}
+        // %{ print("Task;", hex(ids.task_hash.high * 2 ** 128 + ids.task_hash.low)) %}
+
+        let (flipped_task_hash) = uint256_reverse_endian(task_hash);
 
         let tasks_root = compute_tasks_root_v2{
             range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
-        }(task_hash=task_hash);
+        }(task_hash=flipped_task_hash);
 
         let results_root = compute_results_root_v2{
             range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
-        }(task_hash=task_hash, result=result);
+        }(task_hash=flipped_task_hash, result=result);
 
         return (tasks_root=tasks_root, results_root=results_root);
     }
