@@ -11,8 +11,5 @@ RUN apt-get update && \
 # Install scarb
 RUN curl --proto '=https' --tlsv1.2 -sSf https://docs.swmansion.com/scarb/install.sh | bash
 
-# Download testing fixtures
-RUN git clone https://github.com/HerodotusDev/hdp-test
-
 # Set the default command to execute
 CMD ["bash", "-c", "source /root/.bashrc && ./tools/make/full_flow_test.sh"]
