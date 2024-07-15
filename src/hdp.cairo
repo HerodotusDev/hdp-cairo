@@ -17,6 +17,7 @@ from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
 from src.verifiers.verify import run_state_verification
 
 from src.types import MMRMeta, ComputationalTask, ChainInfo
+from src.utils import write_output_ptr
 
 from src.memorizer import (
     HeaderMemorizer,
@@ -76,6 +77,7 @@ func run{
 
     // MMR Params
     let (mmr_metas: MMRMeta*) = alloc();
+    local mmr_metas_len: felt;
 
     // Peaks Dict
     let (local peaks_dict) = default_dict_new(default_value=0);
@@ -118,7 +120,7 @@ func run{
 
         def write_mmr_metas(ptr, mmr_metas):
             offset = 0
-            
+            ids.mmr_metas_len = len(mmr_metas)
             ids.chain_id = mmr_metas[0]["chain_id"]
 
             for mmr_meta in mmr_metas:
@@ -165,7 +167,7 @@ func run{
         block_receipt_dict=block_receipt_dict,
         mmr_metas=mmr_metas,
         chain_info=chain_info,
-    }();
+    }(mmr_metas_len=mmr_metas_len);
 
     let (tasks_root, results_root, results, results_len) = compute_tasks{
         pedersen_ptr=pedersen_ptr,
@@ -221,26 +223,13 @@ func run{
     default_dict_finalize(block_tx_dict_start, block_tx_dict, 7);
     default_dict_finalize(block_receipt_dict_start, block_receipt_dict, 7);
 
-    [ap] = mmr_metas[0].root;
-    [ap] = [output_ptr], ap++;
+    write_output_ptr{output_ptr=output_ptr}(
+        mmr_metas=mmr_metas,
+        mmr_metas_len=mmr_metas_len,
+        tasks_root=tasks_root,
+        results_root=results_root,
+    );
 
-    [ap] = mmr_metas[0].size;
-    [ap] = [output_ptr + 1], ap++;
-
-    [ap] = results_root.low;
-    [ap] = [output_ptr + 2], ap++;
-
-    [ap] = results_root.high;
-    [ap] = [output_ptr + 3], ap++;
-
-    [ap] = tasks_root.low;
-    [ap] = [output_ptr + 4], ap++;
-
-    [ap] = tasks_root.high;
-    [ap] = [output_ptr + 5], ap++;
-
-    [ap] = output_ptr + 6, ap++;
-    let output_ptr = output_ptr + 6;
     return ();
 }
 

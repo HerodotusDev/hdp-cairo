@@ -17,7 +17,7 @@ from packages.eth_essentials.lib.mmr import (
 // mmr_meta: MMRMeta - the MMR metadata
 // mmr_peaks: felt* - the MMR peaks
 func verify_mmr_meta{
-    range_check_ptr, poseidon_ptr: PoseidonBuiltin*, pow2_array: felt*, peaks_dict: DictAccess*,
+    range_check_ptr, poseidon_ptr: PoseidonBuiltin*, pow2_array: felt*, peaks_dict: DictAccess*
 }(mmr_metas: MMRMeta*, mmr_metas_len: felt) {
     alloc_locals;
 
