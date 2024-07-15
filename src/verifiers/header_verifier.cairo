@@ -23,7 +23,7 @@ func verify_headers_inclusion{
     pow2_array: felt*,
     peaks_dict: DictAccess*,
     header_dict: DictAccess*,
-    mmr_meta: MMRMeta,
+    mmr_metas: MMRMeta*,
     chain_info: ChainInfo,
 }() {
     alloc_locals;
@@ -53,7 +53,7 @@ func verify_headers_inclusion_inner{
     pow2_array: felt*,
     peaks_dict: DictAccess*,
     header_dict: DictAccess*,
-    mmr_meta: MMRMeta,
+    mmr_metas: MMRMeta*,
     chain_info: ChainInfo,
 }(n_headers: felt, index: felt) {
     alloc_locals;
@@ -64,8 +64,10 @@ func verify_headers_inclusion_inner{
     let (rlp) = alloc();
     local rlp_len: felt;
     local leaf_idx: felt;
+    local mmr_idx: felt;
     %{
         header = program_input["proofs"]["headers"][ids.index]
+        ids.mmr_idx = 0 # ToDo: load from header input, once available
         segments.write_arg(ids.rlp, hex_to_int_array(header["rlp"]))
         ids.rlp_len = len(header["rlp"])
         ids.leaf_idx = header["proof"]["leaf_idx"]
@@ -75,7 +77,7 @@ func verify_headers_inclusion_inner{
     let (poseidon_hash) = poseidon_hash_many(n=rlp_len, elements=rlp);
 
     // a header can be the right-most peak
-    if (leaf_idx == mmr_meta.size) {
+    if (leaf_idx == mmr_metas[mmr_idx].size) {
         // instead of running an inclusion proof, we ensure its a known peak
         let (contains_peak) = dict_read{dict_ptr=peaks_dict}(poseidon_hash);
         assert contains_peak = 1;
