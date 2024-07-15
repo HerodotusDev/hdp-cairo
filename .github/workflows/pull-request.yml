@@ -47,18 +47,6 @@ jobs:
               ${{ runner.os }}-python-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('tools/make/setup.sh') }}
               ${{ runner.os }}-python-
 
-#      - name: Cache Cargo directories
-#        uses: actions/cache@v3
-#        with:
-#          path: |
-#            ~/.cargo/bin/
-#            ~/.cargo/registry/index/
-#            ~/.cargo/registry/cache/
-#            ~/.cargo/git/db/
-#            cairo-vm/cargo-run/target
-#          key: ${{ runner.os }}-cargo-${{ hashFiles('tools/make/install_cairo1_run.sh') }}
-#          restore-keys: ${{ runner.os }}-cargo-
-
       - name: Install Dependencies
         run: make setup
 

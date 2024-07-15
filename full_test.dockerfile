@@ -9,7 +9,7 @@ RUN apt-get update && \
     apt-get install -y parallel
 
 # Install scarb
-RUN curl --proto '=https' --tlsv1.2 -sSf https://docs.swmansion.com/scarb/install.sh | sh
+RUN curl --proto '=https' --tlsv1.2 -sSf https://docs.swmansion.com/scarb/install.sh | bash
 
 # Download testing fixtures
 RUN git clone https://github.com/HerodotusDev/hdp-test
