@@ -22,6 +22,7 @@ from contract_bootloader.execute_entry_point import execute_entry_point
 from starkware.starknet.core.os.constants import ENTRY_POINT_TYPE_EXTERNAL
 from contract_bootloader.execute_syscalls import ExecutionContext, ExecutionInfo
 from starkware.cairo.common.dict_access import DictAccess
+from starkware.cairo.common.alloc import alloc
 
 // Loads the programs and executes them.
 //

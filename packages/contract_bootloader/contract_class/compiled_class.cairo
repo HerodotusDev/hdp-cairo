@@ -105,7 +105,7 @@ func compiled_class_hash{range_check_ptr, poseidon_ptr: PoseidonBuiltin*}(
 
         // Hash bytecode.
         let bytecode_hash = bytecode_hash_node(
-            data_ptr=compiled_class.bytecode_ptr, data_length=compiled_class.bytecode_length - 1
+            data_ptr=compiled_class.bytecode_ptr, data_length=compiled_class.bytecode_length
         );
         hash_update_single(item=bytecode_hash);
     }

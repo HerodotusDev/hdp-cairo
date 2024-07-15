@@ -1,3 +1,4 @@
+from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.cairo_builtins import (
     HashBuiltin,
     PoseidonBuiltin,
@@ -36,23 +37,11 @@ func compute_contract{
         from starkware.starknet.core.os.contract_class.compiled_class_hash import create_bytecode_segment_structure
         from contract_bootloader.contract_class.compiled_class_hash_utils import get_compiled_class_struct
 
-        bytecode_segment_structure_no_footer = create_bytecode_segment_structure(
+        bytecode_segment_structure = create_bytecode_segment_structure(
             bytecode=compiled_class.bytecode,
             bytecode_segment_lengths=compiled_class.bytecode_segment_lengths,
             visited_pcs=None,
         )
-
-        # Append necessary footer to the bytecode of the contract
-        compiled_class.bytecode.append(0x208b7fff7fff7ffe)
-        compiled_class.bytecode_segment_lengths[-1] += 1
-
-        bytecode_segment_structure_with_footer = create_bytecode_segment_structure(
-            bytecode=compiled_class.bytecode,
-            bytecode_segment_lengths=compiled_class.bytecode_segment_lengths,
-            visited_pcs=None,
-        )
-
-        bytecode_segment_structure = bytecode_segment_structure_with_footer
 
         cairo_contract = get_compiled_class_struct(
             compiled_class=compiled_class,
@@ -61,13 +50,19 @@ func compute_contract{
         ids.compiled_class = segments.gen_arg(cairo_contract)
     %}
 
-    assert compiled_class.bytecode_ptr[compiled_class.bytecode_length] = 0x208b7fff7fff7ffe;
+    let (builtin_costs: felt*) = alloc();
+    assert builtin_costs[0] = 0;
+    assert builtin_costs[1] = 0;
+    assert builtin_costs[2] = 0;
+    assert builtin_costs[3] = 0;
+    assert builtin_costs[4] = 0;
 
-    %{ bytecode_segment_structure = bytecode_segment_structure_no_footer %}
+    assert compiled_class.bytecode_ptr[compiled_class.bytecode_length] = 0x208b7fff7fff7ffe;
+    assert compiled_class.bytecode_ptr[compiled_class.bytecode_length + 1] = cast(
+        builtin_costs, felt
+    );
 
     let (local program_hash) = compiled_class_hash(compiled_class=compiled_class);
-
-    %{ bytecode_segment_structure = bytecode_segment_structure_with_footer %}
 
     %{ print("program_hash", hex(ids.program_hash)) %}
 
