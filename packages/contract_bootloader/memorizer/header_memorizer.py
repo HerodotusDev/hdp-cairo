@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from contract_bootloader.memorizer.memorizer import Memorizer
 from marshmallow_dataclass import dataclass
 from starkware.cairo.lang.vm.crypto import poseidon_hash_many
+from starkware.cairo.lang.vm.relocatable import RelocatableValue
 
 
 class MemorizerFunctionId(Enum):
@@ -46,7 +47,7 @@ class MemorizerKey:
         return 2
 
 
-class AbstractAccountMemorizerBase(ABC):
+class AbstractHeaderMemorizerBase(ABC):
     def __init__(self, memorizer: Memorizer):
         self.memorizer = memorizer
 
@@ -59,3 +60,19 @@ class AbstractAccountMemorizerBase(ABC):
     @abstractmethod
     def get_parent(self, key: MemorizerKey) -> Tuple[int, int]:
         pass
+
+    def _get_felt_range(self, start_addr: int, end_addr: int) -> List[int]:
+        assert isinstance(start_addr, RelocatableValue)
+        assert isinstance(end_addr, RelocatableValue)
+        assert start_addr.segment_index == end_addr.segment_index, (
+            "Inconsistent start and end segment indices "
+            f"({start_addr.segment_index} != {end_addr.segment_index})."
+        )
+
+        assert start_addr.offset <= end_addr.offset, (
+            "The start offset cannot be greater than the end offset"
+            f"({start_addr.offset} > {end_addr.offset})."
+        )
+
+        size = end_addr.offset - start_addr.offset
+        return self.segments.memory.get_range_as_ints(addr=start_addr, size=size)

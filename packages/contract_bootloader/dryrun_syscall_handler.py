@@ -1,4 +1,3 @@
-from dataclasses import asdict
 from typing import (
     Dict,
     Iterable,
@@ -18,12 +17,19 @@ from contract_bootloader.memorizer.account_memorizer import (
     MemorizerFunctionId as AccountMemorizerFunctionId,
     MemorizerKey as AccountMemorizerKey,
 )
+from contract_bootloader.provider.header_key_provider import (
+    HeaderKeyEVMProvider,
+)
 from contract_bootloader.provider.account_key_provider import (
     AccountKeyEVMProvider,
 )
 from contract_bootloader.memorizer.header_memorizer import (
+    AbstractHeaderMemorizerBase,
+    MemorizerFunctionId as HeaderMemorizerFunctionId,
     MemorizerKey as HeaderMemorizerKey,
 )
+
+EVM_PROVIDER_URL = "https://sepolia.ethereum.iosis.tech/"
 
 
 class DryRunSyscallHandler(SyscallHandlerBase):
@@ -64,7 +70,34 @@ class DryRunSyscallHandler(SyscallHandlerBase):
         )
 
         memorizerId = MemorizerId.from_int(request.contract_address)
-        if memorizerId == MemorizerId.Account:
+        if memorizerId == MemorizerId.Header:
+            total_size = Memorizer.size() + HeaderMemorizerKey.size()
+
+            if len(calldata) != total_size:
+                raise ValueError(
+                    f"Memorizer read must be initialized with a list of {total_size} integers"
+                )
+
+            function_id = HeaderMemorizerFunctionId.from_int(request.selector)
+            memorizer = Memorizer(
+                dict_raw_ptrs=calldata[0 : Memorizer.size()],
+                dict_manager=self.dict_manager,
+            )
+
+            idx = Memorizer.size()
+            key = HeaderMemorizerKey.from_int(
+                calldata[idx : idx + HeaderMemorizerKey.size()]
+            )
+
+            handler = DryRunHeaderMemorizerHandler(
+                memorizer=memorizer,
+                evm_provider_url=EVM_PROVIDER_URL,
+            )
+            retdata = handler.handle(function_id=function_id, key=key)
+
+            self.fetch_keys_registry.append(handler.fetch_keys_dict())
+
+        elif memorizerId == MemorizerId.Account:
             total_size = Memorizer.size() + AccountMemorizerKey.size()
 
             if len(calldata) != total_size:
@@ -85,7 +118,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
 
             handler = DryRunAccountMemorizerHandler(
                 memorizer=memorizer,
-                evm_provider_url="https://sepolia.ethereum.iosis.tech/",
+                evm_provider_url=EVM_PROVIDER_URL,
             )
             retdata = handler.handle(function_id=function_id, key=key)
 
@@ -102,6 +135,33 @@ class DryRunSyscallHandler(SyscallHandlerBase):
 
     def fetch_keys_dict(self) -> list[dict]:
         return self.fetch_keys_registry
+
+
+class DryRunHeaderMemorizerHandler(AbstractHeaderMemorizerBase):
+    def __init__(self, memorizer: Memorizer, evm_provider_url: str):
+        super().__init__(memorizer=memorizer)
+        self.evm_provider = HeaderKeyEVMProvider(provider_url=evm_provider_url)
+        self.fetch_keys_registry: set[HeaderMemorizerKey] = set()
+
+    def get_parent(self, key: HeaderMemorizerKey) -> Tuple[int, int]:
+        self.fetch_keys_registry.add(key)
+        value = self.evm_provider.get_parent(key=key)
+        return (
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
+        )
+
+    def fetch_keys_dict(self) -> set:
+        def create_dict(key: HeaderMemorizerKey):
+            data = dict()
+            data["type"] = "HeaderMemorizerKey"
+            data["key"] = key.to_dict()
+            return data
+
+        dictionary = dict()
+        for fetch_key in list(self.fetch_keys_registry):
+            dictionary.update(create_dict(fetch_key))
+        return dictionary
 
 
 class DryRunAccountMemorizerHandler(AbstractAccountMemorizerBase):
@@ -121,11 +181,8 @@ class DryRunAccountMemorizerHandler(AbstractAccountMemorizerBase):
     def fetch_keys_dict(self) -> set:
         def create_dict(key: AccountMemorizerKey):
             data = dict()
+            data["type"] = "AccountMemorizerKey"
             data["key"] = key.to_dict()
-            if isinstance(key, HeaderMemorizerKey):
-                data["type"] = "HeaderMemorizerKey"
-            elif isinstance(key, AccountMemorizerKey):
-                data["type"] = "AccountMemorizerKey"
             return data
 
         dictionary = dict()

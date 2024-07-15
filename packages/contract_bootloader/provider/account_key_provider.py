@@ -9,7 +9,7 @@ class AccountKeyEVMProvider(EVMProvider):
     def __init__(self, provider_url: str):
         super().__init__(provider_url=provider_url)
 
-    def get_balance(self, key: AccountMemorizerKey):
+    def get_balance(self, key: AccountMemorizerKey) -> int:
         address = Web3.toChecksumAddress(hex(key.address))
         if not self.web3.isAddress(address):
             raise ValueError(f"Invalid Ethereum address: {address}")
