@@ -17,10 +17,10 @@ from contract_bootloader.memorizer.header_memorizer import (
     MemorizerFunctionId as HeaderMemorizerFunctionId,
     MemorizerKey as HeaderMemorizerKey,
 )
-from contract_bootloader.dryrun_syscall_handler.header_memorizer_handler import (
+from contract_bootloader.dryrun_syscall_handler_memorizer.header_memorizer_handler import (
     DryRunHeaderMemorizerHandler,
 )
-from contract_bootloader.dryrun_syscall_handler.account_memorizer_handler import (
+from contract_bootloader.dryrun_syscall_handler_memorizer.account_memorizer_handler import (
     DryRunAccountMemorizerHandler,
 )
 

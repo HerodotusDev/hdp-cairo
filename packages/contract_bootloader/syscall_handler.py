@@ -17,10 +17,10 @@ from contract_bootloader.memorizer.account_memorizer import (
     MemorizerFunctionId as AccountMemorizerFunctionId,
     MemorizerKey as AccountMemorizerKey,
 )
-from contract_bootloader.syscall_handler.account_memorizer_handler import (
+from contract_bootloader.syscall_handler_memorizer.account_memorizer_handler import (
     AccountMemorizerHandler,
 )
-from contract_bootloader.syscall_handler.header_memorizer_handler import (
+from contract_bootloader.syscall_handler_memorizer.header_memorizer_handler import (
     HeaderMemorizerHandler,
 )
 
