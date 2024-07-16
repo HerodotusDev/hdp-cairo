@@ -2,6 +2,7 @@ from rlp import decode
 from typing import (
     Dict,
     Iterable,
+    List,
     Tuple,
 )
 from tools.py.utils import little_8_bytes_chunks_to_bytes
@@ -11,17 +12,11 @@ from contract_bootloader.syscall_handler_base import SyscallHandlerBase
 from starkware.cairo.common.dict import DictManager
 from starkware.cairo.common.structs import CairoStructProxy
 from tools.py.account import Account
-from tools.py.block_header import BlockHeaderDencun
 from tools.py.rlp import get_rlp_len
 from starkware.starknet.business_logic.execution.objects import (
     CallResult,
 )
 from contract_bootloader.memorizer.memorizer import MemorizerId, Memorizer
-from contract_bootloader.memorizer.header_memorizer import (
-    AbstractHeaderMemorizerBase,
-    MemorizerFunctionId as HeaderMemorizerFunctionId,
-    MemorizerKey as HeaderMemorizerKey,
-)
 from contract_bootloader.memorizer.account_memorizer import (
     AbstractAccountMemorizerBase,
     MemorizerFunctionId as AccountMemorizerFunctionId,
@@ -64,32 +59,8 @@ class SyscallHandler(SyscallHandlerBase):
 
         memorizerId = MemorizerId.from_int(request.contract_address)
         functionId = AccountMemorizerFunctionId.from_int(request.selector)
-        if memorizerId == MemorizerId.Header:
-            total_size = Memorizer.size() + HeaderMemorizerKey.size()
 
-            if len(calldata) != total_size:
-                raise ValueError(
-                    f"Memorizer read must be initialized with a list of {total_size} integers"
-                )
-
-            function_id = HeaderMemorizerFunctionId.from_int(request.selector)
-            memorizer = Memorizer(
-                dict_raw_ptrs=calldata[0 : Memorizer.size()],
-                dict_manager=self.dict_manager,
-            )
-
-            idx = Memorizer.size()
-            key = HeaderMemorizerKey.from_int(
-                calldata[idx : idx + HeaderMemorizerKey.size()]
-            )
-
-            handler = HeaderMemorizerHandler(
-                segments=self.segments,
-                memorizer=memorizer,
-            )
-            retdata = handler.handle(function_id=function_id, key=key)
-
-        elif memorizerId == MemorizerId.Account:
+        if memorizerId == MemorizerId.Account:
             total_size = Memorizer.size() + AccountMemorizerKey.size()
 
             if len(calldata) != total_size:
@@ -120,32 +91,6 @@ class SyscallHandler(SyscallHandlerBase):
         )
 
 
-class HeaderMemorizerHandler(AbstractHeaderMemorizerBase):
-    def __init__(self, segments: MemorySegmentManager, memorizer: Memorizer):
-        super().__init__(memorizer=memorizer)
-        self.segments = segments
-
-    def get_parent(self, key: HeaderMemorizerKey) -> Tuple[int, int]:
-        memorizer_value_ptr = self.memorizer.read(key=key.derive())
-
-        rlp_len = get_rlp_len(
-            rlp=self.segments.memory[memorizer_value_ptr], item_start_offset=0
-        )
-        rlp = self._get_felt_range(
-            start_addr=memorizer_value_ptr,
-            end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
-        )
-
-        value = decode(
-            little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun
-        ).as_dict()["parentHash"]
-
-        return (
-            value % 0x100000000000000000000000000000000,
-            value // 0x100000000000000000000000000000000,
-        )
-
-
 class AccountMemorizerHandler(AbstractAccountMemorizerBase):
     def __init__(self, segments: MemorySegmentManager, memorizer: Memorizer):
         super().__init__(memorizer=memorizer)
@@ -170,3 +115,19 @@ class AccountMemorizerHandler(AbstractAccountMemorizerBase):
             value % 0x100000000000000000000000000000000,
             value // 0x100000000000000000000000000000000,
         )
+
+    def _get_felt_range(self, start_addr: int, end_addr: int) -> List[int]:
+        assert isinstance(start_addr, RelocatableValue)
+        assert isinstance(end_addr, RelocatableValue)
+        assert start_addr.segment_index == end_addr.segment_index, (
+            "Inconsistent start and end segment indices "
+            f"({start_addr.segment_index} != {end_addr.segment_index})."
+        )
+
+        assert start_addr.offset <= end_addr.offset, (
+            "The start offset cannot be greater than the end offset"
+            f"({start_addr.offset} > {end_addr.offset})."
+        )
+
+        size = end_addr.offset - start_addr.offset
+        return self.segments.memory.get_range_as_ints(addr=start_addr, size=size)
