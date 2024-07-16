@@ -99,7 +99,7 @@ func compute_slr{
     assert task_input_arr[1 + values_len * 2 * 2 + 1] = predict.high;
 
     %{
-        from src.utils import load_json_from_package
+        from tools.py.utils import load_json_from_package
         from contract_bootloader.contract_class.contract_class import CompiledClass
         compiled_class = CompiledClass.Schema().load(load_json_from_package("compiled_contracts/simple_linear_regression_contract.json"))
     %}
@@ -138,6 +138,16 @@ func compute_slr{
             compiled_class.get_runnable_program(entrypoint_builtins=[]),
             ids.compiled_class.bytecode_ptr
         )
+    %}
+
+    %{
+        from contract_bootloader.syscall_handler import SyscallHandler
+
+        if '__dict_manager' not in globals():
+                from starkware.cairo.common.dict import DictManager
+                __dict_manager = DictManager()
+
+        syscall_handler = SyscallHandler(segments=segments, dict_manager=__dict_manager)
     %}
 
     let (retdata_size, retdata) = run_contract_bootloader(

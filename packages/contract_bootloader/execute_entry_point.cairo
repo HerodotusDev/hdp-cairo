@@ -138,14 +138,14 @@ func execute_entry_point{
     local syscall_ptr: felt*;
 
     %{
-        from contract_bootloader.syscall_handler import SyscallHandler
-
-        if '__dict_manager' not in globals():
-            from starkware.cairo.common.dict import DictManager
-            __dict_manager = DictManager()
+        if 'syscall_handler' not in globals():
+            from contract_bootloader.syscall_handler import SyscallHandler
+            if '__dict_manager' not in globals():
+                from starkware.cairo.common.dict import DictManager
+                __dict_manager = DictManager()
+            syscall_handler = SyscallHandler(segments=segments, dict_manager=__dict_manager)
 
         ids.syscall_ptr = segments.add()
-        syscall_handler = SyscallHandler(segments=segments, dict_manager=__dict_manager)
         syscall_handler.set_syscall_ptr(syscall_ptr=ids.syscall_ptr)
     %}
 

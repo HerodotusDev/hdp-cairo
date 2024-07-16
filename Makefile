@@ -40,6 +40,12 @@ run-hdp:
 	./tools/make/launch_cairo_files.py -run_hdp
 	@echo "HDP run complete."
 
+contract-dry-run:
+	@echo "Compiling and running HDP..."
+	@echo "Total number of steps will be shown at the end of the run."
+	./tools/make/launch_cairo_files.py -contract_dry_run
+	@echo "HDP run complete."
+
 format-cairo:
 	@echo "Formatting all .cairo files..."
 	./tools/make/format_cairo_files.sh
