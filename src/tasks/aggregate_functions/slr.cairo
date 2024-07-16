@@ -236,6 +236,20 @@ func fetch_storage_data_points{
 }(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     alloc_locals;
 
+    let storage_slot = Uint256(low=[datalake.properties + 2], high=[datalake.properties + 1]);
+    return fetch_storage_data_points_inner(chain_id, datalake, index, data_points, storage_slot);
+}
+
+func fetch_storage_data_points_inner{
+    range_check_ptr,
+    poseidon_ptr: PoseidonBuiltin*,
+    bitwise_ptr: BitwiseBuiltin*,
+    storage_dict: DictAccess*,
+    pow2_array: felt*,
+    fetch_trait: FetchTrait,
+}(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*, storage_slot: Uint256) -> felt {
+    alloc_locals;
+
     let current_block_number = datalake.block_range_start + index * datalake.increment;
 
     local exit_condition: felt;
@@ -252,7 +266,7 @@ func fetch_storage_data_points{
         chain_id=chain_id,
         block_number=current_block_number,
         address=[datalake.properties],
-        storage_slot=datalake.properties + 1,
+        storage_slot=storage_slot,
     );
     let data_point1 = StorageSlotDecoder.get_word(rlp=rlp);
 
@@ -261,8 +275,8 @@ func fetch_storage_data_points{
     assert [data_points + index * 2 * Uint256.SIZE + 0 * Uint256.SIZE] = data_point0;
     assert [data_points + index * 2 * Uint256.SIZE + 1 * Uint256.SIZE] = data_point1_reverse_endian;
 
-    return fetch_storage_data_points(
-        chain_id=chain_id, datalake=datalake, index=index + 1, data_points=data_points
+    return fetch_storage_data_points_inner(
+        chain_id=chain_id, datalake=datalake, index=index + 1, data_points=data_points, storage_slot=storage_slot
     );
 }
 

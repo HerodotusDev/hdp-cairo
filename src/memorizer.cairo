@@ -39,7 +39,7 @@ namespace PackParams {
         return (params=params, params_len=3);
     }
 
-    func storage(chain_id: felt, block_number: felt, address: felt, storage_slot: felt*) -> (
+    func storage(chain_id: felt, block_number: felt, address: felt, storage_slot: Uint256) -> (
         params: felt*, params_len: felt
     ) {
         alloc_locals;
@@ -48,9 +48,10 @@ namespace PackParams {
         assert params[0] = chain_id;
         assert params[1] = block_number;
         assert params[2] = address;
-        memcpy(dst=params + 3, src=storage_slot, len=4);
+        assert params[3] = storage_slot.high;
+        assert params[4] = storage_slot.low;
 
-        return (params=params, params_len=7);
+        return (params=params, params_len=5);
     }
 
     func block_tx(chain_id: felt, block_number: felt, key_low: felt) -> (
@@ -174,7 +175,7 @@ namespace StorageMemorizer {
     }
 
     func add{storage_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
-        chain_id: felt, block_number: felt, address: felt, storage_slot: felt*, rlp: felt*
+        chain_id: felt, block_number: felt, address: felt, storage_slot: Uint256, rlp: felt*
     ) {
         let (params, params_len) = PackParams.storage(
             chain_id=chain_id, block_number=block_number, address=address, storage_slot=storage_slot
@@ -187,7 +188,7 @@ namespace StorageMemorizer {
     }
 
     func get{storage_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
-        chain_id: felt, block_number: felt, address: felt, storage_slot: felt*
+        chain_id: felt, block_number: felt, address: felt, storage_slot: Uint256
     ) -> (rlp: felt*) {
         let (params, params_len) = PackParams.storage(
             chain_id=chain_id, block_number=block_number, address=address, storage_slot=storage_slot
