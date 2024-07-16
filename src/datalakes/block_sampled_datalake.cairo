@@ -116,9 +116,9 @@ func init_block_sampled{
 }
 
 // Decodes slot from datalake definition and writes it to the properties array
-func extract_and_write_slot{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, properties: felt*}(
-    chunks: felt*
-) {
+func extract_and_write_slot{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, properties: felt*
+}(chunks: felt*) {
     let divsor = 0x10000000000;
     let shifter = 0x1000000;
     let (acc) = alloc();
@@ -145,6 +145,7 @@ func extract_and_write_slot{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_
 
     let slot_le = le_chunks_to_uint256(acc, 4, 32);
     let (slot_be) = uint256_reverse_endian(slot_le);
+    %{ print("slot_be:", hex(ids.slot_be.high), hex(ids.slot_be.low)) %}
 
     assert [properties + 1] = slot_be.high;
     assert [properties + 2] = slot_be.low;
@@ -400,7 +401,13 @@ func fetch_storage_data_points_inner{
     storage_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
-}(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*, storage_slot: Uint256) -> felt {
+}(
+    chain_id: felt,
+    datalake: BlockSampledDataLake,
+    index: felt,
+    data_points: Uint256*,
+    storage_slot: Uint256,
+) -> felt {
     alloc_locals;
 
     let current_block_number = datalake.block_range_start + index * datalake.increment;
@@ -425,7 +432,11 @@ func fetch_storage_data_points_inner{
     assert [data_points + index * Uint256.SIZE] = data_point;
 
     return fetch_storage_data_points_inner(
-        chain_id=chain_id, datalake=datalake, index=index + 1, data_points=data_points, storage_slot=storage_slot
+        chain_id=chain_id,
+        datalake=datalake,
+        index=index + 1,
+        data_points=data_points,
+        storage_slot=storage_slot,
     );
 }
 
