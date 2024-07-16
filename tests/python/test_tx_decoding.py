@@ -39,7 +39,6 @@ def fetch_transaction_dict(tx_hash):
     tx = fetch_tx(tx_hash)
     assert tx_hash == tx.hash().hex(), "TX hashes do not match!"
     rlp = bytes_to_8_bytes_chunks_little(tx.raw_rlp())
-
     tx_dict = {
         "rlp": rlp,
         "rlp_bytes_len": len(tx.raw_rlp()),

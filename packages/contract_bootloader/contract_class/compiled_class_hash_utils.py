@@ -95,7 +95,7 @@ def get_compiled_class_struct(
     assert len(bytecode) == len(compiled_class.bytecode)
 
     return structs.CompiledClass(
-        compiled_class_version="",
+        compiled_class_version=22904329030628021342914013343516106642993,  # COMPILED_CLASS_V1
         n_external_functions=len(external_functions),
         external_functions=flat_external_functions,
         n_l1_handlers=len(l1_handlers),

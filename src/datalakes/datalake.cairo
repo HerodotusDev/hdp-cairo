@@ -14,12 +14,8 @@ from src.datalakes.txs_in_block_datalake import (
 
 from src.types import (
     ComputationalTask,
-    AccountValues,
-    Header,
     BlockSampledDataLake,
     TransactionsInBlockDatalake,
-    Transaction,
-    Receipt,
     ChainInfo,
 )
 from src.datalakes.block_sampled_datalake import (
@@ -70,15 +66,10 @@ namespace Datalake {
         poseidon_ptr: PoseidonBuiltin*,
         bitwise_ptr: BitwiseBuiltin*,
         account_dict: DictAccess*,
-        account_values: AccountValues*,
         storage_dict: DictAccess*,
-        storage_values: Uint256*,
         header_dict: DictAccess*,
-        headers: Header*,
-        transaction_dict: DictAccess*,
-        transactions: Transaction*,
-        receipt_dict: DictAccess*,
-        receipts: Receipt*,
+        block_tx_dict: DictAccess*,
+        block_receipt_dict: DictAccess*,
         pow2_array: felt*,
         fetch_trait: FetchTrait,
         chain_info: ChainInfo,

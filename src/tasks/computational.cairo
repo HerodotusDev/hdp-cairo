@@ -10,15 +10,7 @@ from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.registers import get_fp_and_pc
 from src.datalakes.datalake import Datalake, get_default_fetch_trait
-from src.types import (
-    BlockSampledDataLake,
-    ComputationalTask,
-    AccountValues,
-    Header,
-    Transaction,
-    Receipt,
-    ChainInfo,
-)
+from src.types import BlockSampledDataLake, ComputationalTask, ChainInfo
 from src.tasks.aggregate_functions.sum import compute_sum
 from src.tasks.aggregate_functions.avg import compute_avg
 from src.tasks.aggregate_functions.min_max import uint256_min_le, uint256_max_le
@@ -43,6 +35,7 @@ namespace Task {
         bitwise_ptr: BitwiseBuiltin*,
         keccak_ptr: KeccakBuiltin*,
         tasks: ComputationalTask*,
+        chain_info: ChainInfo,
         pow2_array: felt*,
     }(n_tasks: felt, index: felt) {
         alloc_locals;
@@ -59,10 +52,10 @@ namespace Task {
             let (tasks_input: felt*) = alloc();
             local tasks_input_bytes_len: felt;
             %{
-                # TODO load it from program_input
-                ids.task_chain_id = 1
+                if program_input["tasks"][ids.index]["type"] != "datalake_compute":
+                    raise Exception(f"Task type {task['type']} not supported in v1 flow")
+                task = program_input["tasks"][ids.index]["context"]
 
-                task = program_input["tasks"][ids.index]
                 segments.write_arg(ids.datalake_input, hex_to_int_array(task["encoded_datalake"]))
                 ids.datalake_input_bytes_len = task["datalake_bytes_len"]
                 ids.datalake_type = task["datalake_type"]
@@ -79,7 +72,7 @@ namespace Task {
             let (local task) = extract_params_and_construct_task{
                 range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
             }(
-                chain_id=task_chain_id,
+                chain_id=chain_info.id,
                 input=tasks_input,
                 input_bytes_len=tasks_input_bytes_len,
                 datalake_hash=datalake_hash,
@@ -103,15 +96,10 @@ namespace Task {
         keccak_ptr: KeccakBuiltin*,
         poseidon_ptr: PoseidonBuiltin*,
         account_dict: DictAccess*,
-        account_values: AccountValues*,
         storage_dict: DictAccess*,
-        storage_values: Uint256*,
         header_dict: DictAccess*,
-        headers: Header*,
-        transaction_dict: DictAccess*,
-        transactions: Transaction*,
-        receipts: Receipt*,
-        receipt_dict: DictAccess*,
+        block_tx_dict: DictAccess*,
+        block_receipt_dict: DictAccess*,
         pow2_array: felt*,
         tasks: ComputationalTask*,
         chain_info: ChainInfo,
@@ -223,6 +211,7 @@ namespace Task {
             return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
         }
 
+        assert 1 = 0;
         return ();
     }
 }

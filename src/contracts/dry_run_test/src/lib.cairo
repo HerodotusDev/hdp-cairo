@@ -8,19 +8,21 @@ mod contract {
     struct Storage {}
 
     #[external(v0)]
-    pub fn main(ref self: ContractState, hdp: HDP) -> u256 {
-        let mut i: u32 = 0;
+    pub fn main(
+        ref self: ContractState,
+        hdp: HDP,
+        block_range_start: u32,
+        block_range_end: u32,
+        address: felt252
+    ) -> u256 {
+        let mut i: u32 = block_range_start;
         let mut sum: u256 = 0;
         loop {
-            if i < 10 {
+            if i < block_range_end {
                 sum += hdp
                     .account_memorizer
                     .get_balance(
-                        AccountKey {
-                            chain_id: 11155111,
-                            block_number: (6203471 + i).into(),
-                            address: 0x13CB6AE34A13a0977F4d7101eBc24B87Bb23F0d5
-                        }
+                        AccountKey { chain_id: 11155111, block_number: i.into(), address: address }
                     )
             } else {
                 break;

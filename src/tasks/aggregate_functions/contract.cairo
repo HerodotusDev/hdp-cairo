@@ -6,11 +6,12 @@ from starkware.cairo.common.cairo_builtins import (
     SignatureBuiltin,
     EcOpBuiltin,
 )
-from contract_bootloader.contract_class.compiled_class import CompiledClass
+from contract_bootloader.contract_class.compiled_class import CompiledClass, compiled_class_hash
 from starkware.cairo.common.uint256 import Uint256
-from contract_bootloader.contract_bootloader import run_contract_bootloader
+from contract_bootloader.contract_bootloader import run_contract_bootloader, compute_program_hash
 from starkware.cairo.common.dict_access import DictAccess
-from src.types import Header
+from starkware.cairo.common.memcpy import memcpy
+from starkware.cairo.common.registers import get_fp_and_pc
 
 func compute_contract{
     pedersen_ptr: HashBuiltin*,
@@ -20,10 +21,13 @@ func compute_contract{
     ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
+    account_dict: DictAccess*,
+    storage_dict: DictAccess*,
     header_dict: DictAccess*,
-    headers: Header*,
+    block_tx_dict: DictAccess*,
+    block_receipt_dict: DictAccess*,
     pow2_array: felt*,
-}() -> Uint256 {
+}(inputs: felt*, inputs_len: felt) -> (result: Uint256, program_hash: felt) {
     alloc_locals;
     local compiled_class: CompiledClass*;
 
@@ -32,11 +36,23 @@ func compute_contract{
         from starkware.starknet.core.os.contract_class.compiled_class_hash import create_bytecode_segment_structure
         from contract_bootloader.contract_class.compiled_class_hash_utils import get_compiled_class_struct
 
-        bytecode_segment_structure = create_bytecode_segment_structure(
+        bytecode_segment_structure_no_footer = create_bytecode_segment_structure(
             bytecode=compiled_class.bytecode,
             bytecode_segment_lengths=compiled_class.bytecode_segment_lengths,
             visited_pcs=None,
         )
+
+        # Append necessary footer to the bytecode of the contract
+        compiled_class.bytecode.append(0x208b7fff7fff7ffe)
+        compiled_class.bytecode_segment_lengths[-1] += 1
+
+        bytecode_segment_structure_with_footer = create_bytecode_segment_structure(
+            bytecode=compiled_class.bytecode,
+            bytecode_segment_lengths=compiled_class.bytecode_segment_lengths,
+            visited_pcs=None,
+        )
+
+        bytecode_segment_structure = bytecode_segment_structure_with_footer
 
         cairo_contract = get_compiled_class_struct(
             compiled_class=compiled_class,
@@ -47,6 +63,14 @@ func compute_contract{
 
     assert compiled_class.bytecode_ptr[compiled_class.bytecode_length] = 0x208b7fff7fff7ffe;
 
+    %{ bytecode_segment_structure = bytecode_segment_structure_no_footer %}
+
+    let (local program_hash) = compiled_class_hash(compiled_class=compiled_class);
+
+    %{ bytecode_segment_structure = bytecode_segment_structure_with_footer %}
+
+    %{ print("program_hash", hex(ids.program_hash)) %}
+
     %{
         vm_load_program(
             compiled_class.get_runnable_program(entrypoint_builtins=[]),
@@ -55,33 +79,21 @@ func compute_contract{
     %}
 
     local calldata: felt* = nondet %{ segments.add() %};
+
     assert calldata[0] = nondet %{ ids.header_dict.address_.segment_index %};
     assert calldata[1] = nondet %{ ids.header_dict.address_.offset %};
-    assert calldata[2] = nondet %{ ids.headers.address_.segment_index %};
-    assert calldata[3] = nondet %{ ids.headers.address_.offset %};
-    assert calldata[4] = 2;
-    assert calldata[5] = 1;
-    assert calldata[6] = 0;
-    assert calldata[7] = 1;
-    assert calldata[8] = 0;
-    assert calldata[9] = 2;
-    assert calldata[10] = 0;
-    assert calldata[11] = 2;
-    assert calldata[12] = 0;
-    assert calldata[13] = 5;
-    assert calldata[14] = 0;
+    assert calldata[2] = nondet %{ ids.account_dict.address_.segment_index %};
+    assert calldata[3] = nondet %{ ids.account_dict.address_.offset %};
+    memcpy(dst=calldata + 4, src=inputs, len=inputs_len);
+    let calldata_size = inputs_len + 4;
 
-    local calldata_size = 15;
+    with account_dict, storage_dict, header_dict, block_tx_dict, block_receipt_dict, pow2_array {
+        let (retdata_size, retdata) = run_contract_bootloader(
+            compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata, dry_run=0
+        );
+    }
 
-    let (retdata_size, retdata) = run_contract_bootloader(
-        compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata
-    );
-
-    %{
-        for i in range(ids.retdata_size):
-            print(hex(memory[ids.retdata + i]))
-    %}
-
-    let value: Uint256 = Uint256(low=0x0, high=0x0);
-    return value;
+    assert retdata_size = 2;
+    local result: Uint256 = Uint256(low=retdata[0], high=retdata[1]);
+    return (result=result, program_hash=program_hash);
 }

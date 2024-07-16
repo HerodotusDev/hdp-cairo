@@ -10,7 +10,7 @@ from src.rlp import rlp_list_retrieve, le_chunks_to_uint256
 from packages.eth_essentials.lib.utils import felt_divmod
 
 from packages.eth_essentials.lib.mmr import hash_subtree_path
-from src.types import Header, HeaderProof, MMRMeta
+from src.types import MMRMeta
 from packages.eth_essentials.lib.block_header import (
     extract_block_number_big,
     reverse_block_header_chunks,

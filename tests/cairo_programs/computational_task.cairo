@@ -10,17 +10,21 @@ from src.tasks.computational import Task, extract_params_and_construct_task, AGG
 from src.decoders.header_decoder import HeaderField
 from src.datalakes.datalake import DatalakeType
 from src.datalakes.block_sampled_datalake import BlockSampledProperty
-from src.types import BlockSampledDataLake, ComputationalTask
-from src.merkle import compute_tasks_root
+from src.types import BlockSampledDataLake, ComputationalTask, ChainInfo
 from packages.eth_essentials.lib.utils import pow2alloc128
+from src.chain_info import fetch_chain_info
 
 func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}() {
+    alloc_locals;
+
     let pow2_array: felt* = pow2alloc128();
+    let (local chain_info) = fetch_chain_info(0x01);
 
     test_computational_task_init{
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
+        chain_info=chain_info,
         pow2_array=pow2_array,
     }();
 
@@ -28,6 +32,7 @@ func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuilt
         range_check_ptr=range_check_ptr,
         bitwise_ptr=bitwise_ptr,
         keccak_ptr=keccak_ptr,
+        chain_info=chain_info,
         pow2_array=pow2_array,
     }();
 
@@ -35,7 +40,11 @@ func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuilt
 }
 
 func test_computational_task_init{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
+    chain_info: ChainInfo,
+    pow2_array: felt*,
 }() {
     alloc_locals;
     let (__fp__, _) = get_fp_and_pc();
@@ -52,12 +61,15 @@ func test_computational_task_init{
             return [int(x, 16) for x in hex_array]
 
         program_input["tasks"] = [{
-            "task_bytes_len": 128,
-            "encoded_task": ["0x25ca8521ba63d557", "0xc9f9f40f48f31e27", "0x739b20c59ba605a5", "0x813cc91cdc15ae0e", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0"],
-            "datalake_bytes_len": 224,
-            "encoded_datalake": ["0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0xf826540000000000", "0x0", "0x0", "0x0", "0x1527540000000000", "0x0", "0x0", "0x0", "0x100000000000000", "0x0", "0x0", "0x0", "0xa000000000000000", "0x0", "0x0", "0x0", "0x200000000000000", "0x1101", "0x0", "0x0", "0x0"],
-            "datalake_type": 0,
-            "property_type": 1
+            "type": "datalake_compute",
+            "context": {
+                "task_bytes_len": 128,
+                "encoded_task": ["0x25ca8521ba63d557", "0xc9f9f40f48f31e27", "0x739b20c59ba605a5", "0x813cc91cdc15ae0e", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0"],
+                "datalake_bytes_len": 224,
+                "encoded_datalake": ["0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0xf826540000000000", "0x0", "0x0", "0x0", "0x1527540000000000", "0x0", "0x0", "0x0", "0x100000000000000", "0x0", "0x0", "0x0", "0xa000000000000000", "0x0", "0x0", "0x0", "0x200000000000000", "0x1101", "0x0", "0x0", "0x0"],
+                "datalake_type": 0,
+                "property_type": 1
+            }
         }]
 
         ids.tasks_len = len(program_input["tasks"])
@@ -112,7 +124,11 @@ func test_computational_task_init{
 }
 
 func test_computational_task_param_decoding{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
+    chain_info: ChainInfo,
+    pow2_array: felt*,
 }() {
     alloc_locals;
     let (__fp__, _) = get_fp_and_pc();

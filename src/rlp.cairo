@@ -9,6 +9,84 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, word_reverse_endian
 from packages.eth_essentials.lib.rlp_little import array_copy
 
+// Returns the index of the first list element. This index is used to retrieve elements from an RLP list.
+// Params:
+// - rlp: an RLP encoded list (long or short)
+// - rlp_start_offset: the offset of the RLP encoded data. This is used to skip over the TX envelope prefix.
+func get_rlp_list_meta{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    rlp: felt*, rlp_start_offset: felt
+) -> (value_start_offset: felt) {
+    alloc_locals;
+    let first_byte = extract_byte_at_pos(rlp[0], rlp_start_offset, pow2_array);
+
+    local is_long: felt;
+    %{
+        if 0xc0 <= ids.first_byte <= 0xf6:
+            ids.is_long = 0 # short list
+        elif 0xf7 <= ids.first_byte <= 0xff:
+            ids.is_long = 1 # long list
+        else:
+            assert False, "Invalid RLP list"
+    %}
+
+    local value_start_offset: felt;
+    local bytes_len: felt;
+    if (is_long == 0) {
+        assert [range_check_ptr] = first_byte - 0xc0;
+        assert [range_check_ptr + 1] = 0xf6 - first_byte;
+
+        tempvar range_check_ptr = range_check_ptr + 2;
+        return (value_start_offset=rlp_start_offset + 1);
+    } else {
+        assert [range_check_ptr] = first_byte - 0xf7;
+        assert [range_check_ptr + 1] = 0xff - first_byte;
+        tempvar range_check_ptr = range_check_ptr + 2;
+
+        let len_len = first_byte - 0xf7;
+        return (value_start_offset=1 + len_len + rlp_start_offset);
+    }
+}
+
+func get_rlp_list_bytes_len{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    rlp: felt*, rlp_start_offset: felt
+) -> (list_bytes_len: felt) {
+    alloc_locals;
+    let first_byte = extract_byte_at_pos(rlp[0], rlp_start_offset, pow2_array);
+
+    local is_long: felt;
+    %{
+        if 0xc0 <= ids.first_byte <= 0xf6:
+            ids.is_long = 0 # short list
+        elif 0xf7 <= ids.first_byte <= 0xff:
+            ids.is_long = 1 # long list
+        else:
+            assert False, "Invalid RLP list"
+    %}
+
+    local value_start_offset: felt;
+    local bytes_len: felt;
+    if (is_long == 0) {
+        assert [range_check_ptr] = first_byte - 0xc0;
+        assert [range_check_ptr + 1] = 0xf6 - first_byte;
+
+        tempvar range_check_ptr = range_check_ptr + 2;
+        return (list_bytes_len=first_byte - 0xc0);
+    } else {
+        assert [range_check_ptr] = first_byte - 0xf7;
+        assert [range_check_ptr + 1] = 0xff - first_byte;
+        tempvar range_check_ptr = range_check_ptr + 2;
+
+        let len_len = first_byte - 0xf7;
+        let value_bytes_len = decode_long_value_len(
+            rlp=rlp,
+            item_starts_at_byte=rlp_start_offset + 1,
+            len_len=len_len,
+            pow2_array=pow2_array,
+        );
+        return (list_bytes_len=value_bytes_len);
+    }
+}
+
 // retrieves an element from an RLP encoded list (LE chunks). The element is selected via its index in the list.
 // The passed rlp chunks should not contain the RLP list prefix, only the elements.
 // Params:
@@ -23,6 +101,12 @@ func rlp_list_retrieve{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array
     alloc_locals;
 
     let (item_starts_at_word, item_start_offset) = felt_divmod(item_starts_at_byte, 8);
+    // %{
+    //     print("item_starts_at_word:", ids.item_starts_at_word)
+    //     print("item_start_offset:", ids.item_start_offset)
+    //     print("item_starts_at_byte:", ids.item_starts_at_byte)
+    //     print ("rlp0:", hex(memory[ids.rlp]))
+    // %}
 
     let current_item = extract_byte_at_pos(rlp[item_starts_at_word], item_start_offset, pow2_array);
 
@@ -78,8 +162,11 @@ func rlp_list_retrieve{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array
         tempvar range_check_ptr = range_check_ptr + 2;
         let len_len = current_item - 0xb7;
 
-        let value_len = decode_value_len(
-            rlp=rlp, item_starts_at_byte=item_starts_at_byte, len_len=len_len, pow2_array=pow2_array
+        let value_len = decode_long_value_len(
+            rlp=rlp,
+            item_starts_at_byte=item_starts_at_byte + 1,
+            len_len=len_len,
+            pow2_array=pow2_array,
         );
 
         assert current_value_len = value_len;
@@ -109,8 +196,11 @@ func rlp_list_retrieve{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array
         assert [range_check_ptr + 1] = 0xff - current_item;
         tempvar range_check_ptr = range_check_ptr + 2;
         let len_len = current_item - 0xf7;
-        let item_len = decode_value_len(
-            rlp=rlp, item_starts_at_byte=item_starts_at_byte, len_len=len_len, pow2_array=pow2_array
+        let item_len = decode_long_value_len(
+            rlp=rlp,
+            item_starts_at_byte=item_starts_at_byte + 1,
+            len_len=len_len,
+            pow2_array=pow2_array,
         );
 
         assert current_value_len = item_len;
@@ -145,12 +235,12 @@ func rlp_list_retrieve{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array
     }
 }
 
-// decodes the length prefix of an RLP value. This is used for long strings and lists.
+// decodes the length prefix of an RLP value. This is used for long strings and long lists.
 // A prefix larger then 56bits will cause the function to fail. Should be sufficient for the current use case.
-func decode_value_len{range_check_ptr}(
+func decode_long_value_len{range_check_ptr}(
     rlp: felt*, item_starts_at_byte: felt, len_len: felt, pow2_array: felt*
 ) -> felt {
-    let (word, offset) = felt_divmod(item_starts_at_byte + 1, 8);
+    let (word, offset) = felt_divmod(item_starts_at_byte, 8);
 
     let (current_value_len_list, _) = extract_n_bytes_from_le_64_chunks_array(
         array=rlp, start_word=word, start_offset=offset, n_bytes=len_len, pow2_array=pow2_array
@@ -198,29 +288,17 @@ func chunk_to_felt_be{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array:
 // Outputs:
 // - the decoded uint256
 func decode_rlp_word_to_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
-    elements: felt*, elements_bytes_len: felt
+    rlp: felt*
 ) -> Uint256 {
     alloc_locals;
-    // if its a single byte, we can just return it
-    if (elements_bytes_len == 1) {
-        return (Uint256(low=0, high=elements[0] * pow2_array[120]));
-    }
 
-    // fetch length from rlp prefix
-    let prefix = extract_byte_at_pos{bitwise_ptr=bitwise_ptr}(elements[0], 0, pow2_array);
-    local result_bytes_len = prefix - 0x80;  // works since word has max. 32 bytes
-
-    let (result_chunks, result_len) = extract_n_bytes_from_le_64_chunks_array(
-        array=elements,
-        start_word=0,
-        start_offset=1,
-        n_bytes=result_bytes_len,
-        pow2_array=pow2_array,
+    let (value, value_len, value_bytes_len) = rlp_list_retrieve(
+        rlp=rlp, field=0, item_starts_at_byte=0, counter=0
     );
 
     // convert to uint256
     let result = le_chunks_to_uint256(
-        elements=result_chunks, elements_len=result_len, bytes_len=result_bytes_len
+        elements=value, elements_len=value_len, bytes_len=value_bytes_len
     );
 
     return result;
@@ -355,12 +433,12 @@ func right_shift_le_chunks{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_a
 func prepend_le_chunks{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
     item_bytes_len: felt, item: felt, rlp: felt*, rlp_len: felt, expected_bytes_len: felt
 ) -> (encoded: felt*, encoded_len: felt) {
+    alloc_locals;
+
     // we have no item_bytes_len if the prefix is 0
     if (item_bytes_len == 0) {
         return (encoded=rlp, encoded_len=rlp_len);
     }
-
-    alloc_locals;
 
     assert [range_check_ptr] = 8 - item_bytes_len;
     let range_check_ptr = range_check_ptr + 1;
@@ -467,4 +545,98 @@ func append_be_chunk{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: 
     } else {
         return (list=result, list_len=word + 1, list_bytes_len=list_bytes_len + chunk_bytes_len);
     }
+}
+
+// Returns the length of an RLP item. This includes the length of the prefix and the length of the value.
+func get_rlp_len{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    rlp: felt*, item_start_offset: felt
+) -> felt {
+    alloc_locals;
+    let current_item = extract_byte_at_pos(rlp[0], item_start_offset, pow2_array);
+
+    local item_type: felt;
+    %{
+        #print("current item:", hex(ids.current_item))
+        if ids.current_item <= 0x7f:
+            ids.item_type = 0 # single byte
+        elif 0x80 <= ids.current_item <= 0xb6:
+            ids.item_type = 1 # short string
+        elif 0xb7 <= ids.current_item <= 0xbf:
+            ids.item_type = 2 # long string
+        elif 0xc0 <= ids.current_item <= 0xf6:
+            ids.item_type = 3 # short list
+        elif 0xf7 <= ids.current_item <= 0xff:
+            ids.item_type = 4 # long list
+        else:
+            assert False, "Invalid RLP item"
+    %}
+
+    local current_value_len: felt;
+    // Single Byte
+    if (item_type == 0) {
+        assert [range_check_ptr] = 0x7f - current_item;
+        assert current_value_len = 1;
+        tempvar range_check_ptr = range_check_ptr + 1;
+
+        return 1;
+    }
+
+    // Short String
+    if (item_type == 1) {
+        assert [range_check_ptr] = current_item - 0x80;
+        assert [range_check_ptr + 1] = 0xb6 - current_item;
+        assert current_value_len = current_item - 0x80;
+        tempvar range_check_ptr = range_check_ptr + 2;
+
+        return current_value_len + 1;
+    }
+
+    // Long String
+    if (item_type == 2) {
+        assert [range_check_ptr] = current_item - 0xb7;
+        assert [range_check_ptr + 1] = 0xbf - current_item;
+        tempvar range_check_ptr = range_check_ptr + 2;
+        let len_len = current_item - 0xb7;
+
+        let value_len = decode_long_value_len(
+            rlp=rlp,
+            item_starts_at_byte=item_start_offset + 1,
+            len_len=len_len,
+            pow2_array=pow2_array,
+        );
+
+        return value_len + len_len + 1;
+    }
+
+    // Short List
+    if (item_type == 3) {
+        assert [range_check_ptr] = current_item - 0xc0;
+        assert [range_check_ptr + 1] = 0xf6 - current_item;
+        tempvar range_check_ptr = range_check_ptr + 2;
+
+        assert current_value_len = current_item - 0xc0;
+        return current_value_len + 1;
+    } else {
+        tempvar range_check_ptr = range_check_ptr;
+    }
+
+    // Long List
+    if (item_type == 4) {
+        assert [range_check_ptr] = current_item - 0xf7;
+        assert [range_check_ptr + 1] = 0xff - current_item;
+        tempvar range_check_ptr = range_check_ptr + 2;
+        let len_len = current_item - 0xf7;
+        let item_len = decode_long_value_len(
+            rlp=rlp,
+            item_starts_at_byte=item_start_offset + 1,
+            len_len=len_len,
+            pow2_array=pow2_array,
+        );
+
+        return item_len + len_len + 1;
+    }
+
+    // Unknown item_type
+    assert 1 = 0;
+    return 0;
 }

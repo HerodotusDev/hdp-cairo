@@ -58,6 +58,8 @@ class SyscallHandler(SyscallHandlerBase):
         )
 
         memorizerId = MemorizerId.from_int(request.contract_address)
+        functionId = AccountMemorizerFunctionId.from_int(request.selector)
+
         if memorizerId == MemorizerId.Account:
             total_size = Memorizer.size() + AccountMemorizerKey.size()
 
@@ -66,7 +68,6 @@ class SyscallHandler(SyscallHandlerBase):
                     f"Memorizer read must be initialized with a list of {total_size} integers"
                 )
 
-            function_id = AccountMemorizerFunctionId.from_int(request.selector)
             memorizer = Memorizer(
                 dict_raw_ptrs=calldata[0 : Memorizer.size()],
                 dict_manager=self.dict_manager,
@@ -81,29 +82,7 @@ class SyscallHandler(SyscallHandlerBase):
                 segments=self.segments,
                 memorizer=memorizer,
             )
-            retdata = handler.handle(function_id=function_id, key=key)
-
-        # dict_segment = calldata[0]
-        # dict_offset = calldata[1]
-        # list_segment = calldata[2]
-        # list_offset = calldata[3]
-
-        # dict_key = poseidon_hash_many([calldata[4], calldata[5]])
-
-        # dict_ptr = RelocatableValue.from_tuple([dict_segment, dict_offset])
-        # dictionary = self.dict_manager.get_dict(dict_ptr)
-
-        # index = int(dictionary[dict_key])
-
-        # list_ptr = RelocatableValue.from_tuple([list_segment, list_offset])
-        # rlp_ptr = self.segments.memory[list_ptr + index * 6]
-        # rlp_len = self.segments.memory[list_ptr + index * 6 + 1]
-        # bytes_len = self.segments.memory[list_ptr + index * 6 + 2]
-
-        # rlp = self._get_felt_range(start_addr=rlp_ptr, end_addr=rlp_ptr + rlp_len)
-        # block = decode(little_8_bytes_chunks_to_bytes(rlp, bytes_len), Block).as_dict()
-
-        # parentHash = int.from_bytes(block["parentHash"], byteorder="big")
+            retdata = handler.handle(function_id=functionId, key=key)
 
         return CallResult(
             gas_consumed=0,
@@ -128,12 +107,9 @@ class AccountMemorizerHandler(AbstractAccountMemorizerBase):
             end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
         )
 
-        value = int.from_bytes(
-            decode(little_8_bytes_chunks_to_bytes(rlp, rlp_len), Account).as_dict()[
-                "balance"
-            ],
-            byteorder="big",
-        )
+        value = decode(little_8_bytes_chunks_to_bytes(rlp, rlp_len), Account).as_dict()[
+            "balance"
+        ]
 
         return (
             value % 0x100000000000000000000000000000000,

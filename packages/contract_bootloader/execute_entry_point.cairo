@@ -4,6 +4,7 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.find_element import find_element, search_sorted
 from starkware.cairo.common.math import assert_not_zero
 from starkware.cairo.common.registers import get_ap
+from starkware.cairo.common.dict_access import DictAccess
 from starkware.starknet.builtins.segment_arena.segment_arena import (
     SegmentArenaBuiltin,
     validate_segment_arena,
@@ -50,7 +51,14 @@ func call_execute_syscalls{
     poseidon_ptr: PoseidonBuiltin*,
     syscall_ptr: felt*,
     builtin_ptrs: BuiltinPointers*,
-}(execution_context: ExecutionContext*, syscall_ptr_end: felt*) {
+    header_dict: DictAccess*,
+    account_dict: DictAccess*,
+    pow2_array: felt*,
+}(execution_context: ExecutionContext*, syscall_ptr_end: felt*, dry_run: felt) {
+    if (dry_run == 1) {
+        return ();
+    }
+
     execute_syscalls(execution_context, syscall_ptr_end);
     return ();
 }
@@ -115,7 +123,10 @@ func execute_entry_point{
     poseidon_ptr: PoseidonBuiltin*,
     builtin_ptrs: BuiltinPointers*,
     builtin_params: BuiltinParams*,
-}(compiled_class: CompiledClass*, execution_context: ExecutionContext*) -> (
+    header_dict: DictAccess*,
+    account_dict: DictAccess*,
+    pow2_array: felt*,
+}(compiled_class: CompiledClass*, execution_context: ExecutionContext*, dry_run: felt) -> (
     retdata_size: felt, retdata: felt*
 ) {
     alloc_locals;
@@ -212,10 +223,12 @@ func execute_entry_point{
     validate_segment_arena(segment_arena=current_segment_arena);
 
     let builtin_ptrs = return_builtin_ptrs;
+
     with syscall_ptr {
         call_execute_syscalls(
             execution_context=execution_context,
             syscall_ptr_end=entry_point_return_values.syscall_ptr,
+            dry_run=dry_run,
         );
     }
 

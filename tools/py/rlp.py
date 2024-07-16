@@ -12,7 +12,6 @@ def decode_long_value_len(word_64_little: int, item_starts_at_byte: int, len_len
     value_len = 0
     for i in range(len_len):
         byte = extract_byte_at_pos(word_64_little, item_starts_at_byte + i)
-        print(hex(byte))
         value_len = (value_len << 8) + byte
     return value_len
 
