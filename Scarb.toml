@@ -1,0 +1,13 @@
+[workspace]
+name = "hdp_cairo"
+version = "0.1.0"
+edition = "2023_11"
+
+members = [
+    "cairo",
+    "src/contracts/simple_linear_regression",
+    "src/contracts/dry_run_test"
+]
+
+[workspace.dependencies]
+hdp_cairo = { path = "cairo" }

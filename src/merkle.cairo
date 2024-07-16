@@ -1,10 +1,15 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
-from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_uint256s
+from starkware.cairo.common.builtin_keccak.keccak import (
+    keccak,
+    keccak_uint256s,
+    keccak_uint256s_bigend,
+    keccak_felts_bigend,
+)
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
 from src.types import ComputationalTask
 from src.utils import compute_results_entry
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
+from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian, felt_to_uint256
 
 // Computes the results merkle root
 // Inputs:
@@ -50,9 +55,9 @@ func compute_results_entries{
 //  - tasks_len: The number of tasks
 // Outputs:
 //  - The merkle root of the tasks
-func compute_tasks_root{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(
-    tasks: ComputationalTask*, tasks_len: felt
-) -> Uint256 {
+func compute_tasks_root_v1{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
+}(tasks: ComputationalTask*, tasks_len: felt) -> Uint256 {
     alloc_locals;
     let (local leafs: Uint256*) = alloc();
 
@@ -73,6 +78,56 @@ func compute_tasks_root{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_pt
     return compute_merkle_root{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
     }(leafs=leafs, leafs_len=tasks_len);
+}
+
+// Computes the tasks merkle root for v2 flow
+func compute_tasks_hash_v2{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
+}(program_hash: felt, inputs: felt*, inputs_len: felt) -> Uint256 {
+    alloc_locals;
+
+    let (input_hash) = keccak_felts_bigend{
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
+    }(n_elements=inputs_len, elements=inputs);
+
+    %{ print("Inputs Hash:", hex(ids.input_hash.high * 2 ** 128 + ids.input_hash.low)) %}
+
+    let conv_program_hash = felt_to_uint256(program_hash);
+
+    let (pair: Uint256*) = alloc();
+    assert pair[0] = conv_program_hash;
+    assert pair[1] = input_hash;
+
+    let (task_hash) = keccak_uint256s_bigend{
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
+    }(n_elements=2, elements=pair);
+
+    return task_hash;
+}
+
+func compute_tasks_root_v2{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
+}(task_hash: Uint256) -> Uint256 {
+    let (leafs: Uint256*) = alloc();
+    assert leafs[0] = task_hash;
+
+    return compute_merkle_root{
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
+    }(leafs=leafs, leafs_len=1);
+}
+
+func compute_results_root_v2{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
+}(task_hash: Uint256, result: Uint256) -> Uint256 {
+    alloc_locals;
+    let (local leafs: Uint256*) = alloc();
+
+    let entry_hash = compute_results_entry(task_hash, result);
+    assert leafs[0] = entry_hash;
+
+    return compute_merkle_root{
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
+    }(leafs=leafs, leafs_len=1);
 }
 
 func compute_merkle_root{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(

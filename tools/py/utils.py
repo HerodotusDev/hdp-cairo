@@ -4,6 +4,13 @@ import json
 import os
 import shutil
 import requests
+import sysconfig
+
+
+def load_json_from_package(resource):
+    path = os.path.join(sysconfig.get_path("purelib"), resource)
+    with open(path, "r") as file:
+        return json.load(file)
 
 
 def split_128(a):
@@ -18,6 +25,10 @@ def from_uint256(a):
 
 def uint256_reverse_endian(x: int):
     return int.from_bytes(x.to_bytes(32, "big"), "little")
+
+
+def hex_to_int_array(hex_array):
+    return [int(x, 16) for x in hex_array]
 
 
 def reverse_endian(x: int):
@@ -132,7 +143,7 @@ def rpc_request(url, rpc_request):
     return response.json()
 
 
-def bytes_to_8_bytes_chunks_little(input_bytes):
+def bytes_to_8_bytes_chunks_little(input_bytes: bytes):
     # Split the input_bytes into 8-byte chunks
     byte_chunks = [input_bytes[i : i + 8] for i in range(0, len(input_bytes), 8)]
     # Convert each chunk to little-endian integers
@@ -142,7 +153,30 @@ def bytes_to_8_bytes_chunks_little(input_bytes):
     return little_endian_ints
 
 
-def bytes_to_8_bytes_chunks(input_bytes):
+def little_8_bytes_chunks_to_bytes(little_endian_ints: list[int], bytes_len: int):
+    assert bytes_len >= 0, "bytes_len must be a non-negative integer"
+    last_chunk_index = 8 * (len(little_endian_ints) - 1)
+    assert (
+        bytes_len > last_chunk_index
+    ), "bytes_len is not sufficient to hold all integers"
+    # Convert each little-endian integer to an 8-byte chunk
+    byte_chunks = [
+        int.to_bytes(integer, length=8, byteorder="little")
+        for integer in little_endian_ints[:-1]
+    ]
+    byte_chunks.append(
+        int.to_bytes(
+            little_endian_ints[-1],
+            length=bytes_len - last_chunk_index,
+            byteorder="little",
+        )
+    )
+    # Concatenate all byte chunks into a single bytes object
+    output_bytes = b"".join(byte_chunks)
+    return output_bytes
+
+
+def bytes_to_8_bytes_chunks_big(input_bytes: bytes):
     # Split the input_bytes into 8-byte chunks
     byte_chunks = [input_bytes[i : i + 8] for i in range(0, len(input_bytes), 8)]
     # Convert each chunk to big-endian integers
@@ -150,12 +184,58 @@ def bytes_to_8_bytes_chunks(input_bytes):
     return big_endian_ints
 
 
-def bytes_to_16_bytes_chunks(input_bytes):
+def big_8_bytes_chunks_to_bytes(big_endian_ints: list[int], bytes_len: int):
+    assert bytes_len >= 0, "bytes_len must be a non-negative integer"
+    last_chunk_index = 8 * (len(big_endian_ints) - 1)
+    assert (
+        bytes_len > last_chunk_index
+    ), "bytes_len is not sufficient to hold all integers"
+    # Convert each big-endian integer to an 8-byte chunk
+    byte_chunks = [
+        int.to_bytes(integer, length=8, byteorder="big")
+        for integer in big_endian_ints[:-1]
+    ]
+    byte_chunks.append(
+        int.to_bytes(
+            big_endian_ints[-1],
+            length=bytes_len - last_chunk_index,
+            byteorder="big",
+        )
+    )
+    # Concatenate all byte chunks into a single bytes object
+    output_bytes = b"".join(byte_chunks)
+    return output_bytes
+
+
+def bytes_to_16_bytes_chunks_big(input_bytes: bytes):
     # Split the input_bytes into 8-byte chunks
     byte_chunks = [input_bytes[i : i + 16] for i in range(0, len(input_bytes), 16)]
     # Convert each chunk to big-endian integers
     big_endian_ints = [int.from_bytes(chunk, byteorder="big") for chunk in byte_chunks]
     return big_endian_ints
+
+
+def big_16_bytes_chunks_to_bytes(big_endian_ints: list[int], bytes_len: int):
+    assert bytes_len >= 0, "bytes_len must be a non-negative integer"
+    last_chunk_index = 16 * (len(big_endian_ints) - 1)
+    assert (
+        bytes_len > last_chunk_index
+    ), "bytes_len is not sufficient to hold all integers"
+    # Convert each big-endian integer to an 16-byte chunk
+    byte_chunks = [
+        int.to_bytes(integer, length=16, byteorder="big")
+        for integer in big_endian_ints[:-1]
+    ]
+    byte_chunks.append(
+        int.to_bytes(
+            big_endian_ints[-1],
+            length=bytes_len - last_chunk_index,
+            byteorder="big",
+        )
+    )
+    # Concatenate all byte chunks into a single bytes object
+    output_bytes = b"".join(byte_chunks)
+    return output_bytes
 
 
 def write_to_json(filename, data):

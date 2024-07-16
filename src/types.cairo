@@ -1,38 +1,5 @@
 from starkware.cairo.common.uint256 import Uint256
 
-struct HeaderProof {
-    leaf_idx: felt,
-    mmr_path_len: felt,
-    mmr_path: felt*,
-}
-
-struct Header {
-    rlp: felt*,
-    rlp_len: felt,
-    bytes_len: felt,
-    proof: HeaderProof,
-}
-
-struct Account {
-    address: felt*,
-    proofs_len: felt,
-    key: Uint256,
-    key_leading_zeros: felt,
-    proofs: AccountProof*,
-}
-
-struct AccountProof {
-    block_number: felt,
-    proof_len: felt,
-    proof_bytes_len: felt*,
-    proof: felt**,
-}
-
-struct AccountValues {
-    values: felt*,
-    values_len: felt,
-}
-
 struct ChainInfo {
     id: felt,
     id_bytes_len: felt,
@@ -45,55 +12,7 @@ struct MMRMeta {
     size: felt,
     peaks_len: felt,
     peaks: felt*,
-}
-
-struct StorageItem {
-    address: felt*,
-    slot: felt*,
-    proofs_len: felt,
-    key: Uint256,
-    key_leading_zeros: felt,
-    proofs: StorageItemProof*,
-}
-
-struct StorageItemProof {
-    block_number: felt,
-    proof_len: felt,
-    proof_bytes_len: felt*,
-    proof: felt**,
-}
-
-struct Transaction {
-    rlp: felt*,
-    rlp_len: felt,
-    bytes_len: felt,
-    type: felt,
-}
-
-struct TransactionProof {
-    block_number: felt,
-    len: felt,
-    bytes_len: felt*,
-    proof: felt**,
-    key: Uint256,
-    key_leading_zeros: felt,
-}
-
-struct Receipt {
-    rlp: felt*,
-    rlp_len: felt,
-    bytes_len: felt,
-    type: felt,
-    block_number: felt,
-}
-
-struct ReceiptProof {
-    block_number: felt,
-    len: felt,
-    bytes_len: felt*,
-    proof: felt**,
-    key: Uint256,
-    key_leading_zeros: felt,
+    chain_id: felt,
 }
 
 struct BlockSampledDataLake {
@@ -115,6 +34,7 @@ struct TransactionsInBlockDatalake {
 }
 
 struct ComputationalTask {
+    chain_id: felt,
     hash: Uint256,
     datalake_ptr: felt*,
     datalake_type: felt,

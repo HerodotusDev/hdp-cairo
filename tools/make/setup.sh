@@ -58,6 +58,7 @@ source "$VENV_PATH/bin/activate" || { echo "Failed to activate virtual environme
 # Update dependencies
 echo "Updating dependencies..."
 pip install -r tools/make/requirements.txt || { echo "Failed to install requirements."; exit 1; }
+pip install packages/cairo-lang-0.13.1.zip || { echo "Failed to install cairo-lang-0.13.1."; exit 1; }
 pip install . || { echo "Failed to install the package."; exit 1; }
 
 # Update submodules

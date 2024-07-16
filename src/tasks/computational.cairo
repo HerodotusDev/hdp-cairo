@@ -10,20 +10,13 @@ from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.registers import get_fp_and_pc
 from src.datalakes.datalake import Datalake, get_default_fetch_trait
-from src.types import (
-    BlockSampledDataLake,
-    ComputationalTask,
-    AccountValues,
-    Header,
-    Transaction,
-    Receipt,
-    ChainInfo,
-)
+from src.types import BlockSampledDataLake, ComputationalTask, ChainInfo
 from src.tasks.aggregate_functions.sum import compute_sum
 from src.tasks.aggregate_functions.avg import compute_avg
 from src.tasks.aggregate_functions.min_max import uint256_min_le, uint256_max_le
 from src.tasks.aggregate_functions.count_if import count_if
 from src.tasks.aggregate_functions.slr import compute_slr, get_fetch_trait as get_slr_fetch_trait
+from src.tasks.aggregate_functions.contract import compute_contract
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
 
 namespace AGGREGATE_FN {
@@ -42,6 +35,7 @@ namespace Task {
         bitwise_ptr: BitwiseBuiltin*,
         keccak_ptr: KeccakBuiltin*,
         tasks: ComputationalTask*,
+        chain_info: ChainInfo,
         pow2_array: felt*,
     }(n_tasks: felt, index: felt) {
         alloc_locals;
@@ -50,6 +44,7 @@ namespace Task {
         if (index == n_tasks) {
             return ();
         } else {
+            local task_chain_id: felt;
             let (datalake_input: felt*) = alloc();
             local datalake_input_bytes_len: felt;
             local datalake_type: felt;
@@ -57,7 +52,10 @@ namespace Task {
             let (tasks_input: felt*) = alloc();
             local tasks_input_bytes_len: felt;
             %{
-                task = program_input["tasks"][ids.index]
+                if program_input["tasks"][ids.index]["type"] != "datalake_compute":
+                    raise Exception(f"Task type {task['type']} not supported in v1 flow")
+                task = program_input["tasks"][ids.index]["context"]
+
                 segments.write_arg(ids.datalake_input, hex_to_int_array(task["encoded_datalake"]))
                 ids.datalake_input_bytes_len = task["datalake_bytes_len"]
                 ids.datalake_type = task["datalake_type"]
@@ -74,6 +72,7 @@ namespace Task {
             let (local task) = extract_params_and_construct_task{
                 range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
             }(
+                chain_id=chain_info.id,
                 input=tasks_input,
                 input_bytes_len=tasks_input_bytes_len,
                 datalake_hash=datalake_hash,
@@ -89,20 +88,18 @@ namespace Task {
 
     // Executes the aggregate_fn of the passed tasks
     func execute{
-        range_check_ptr,
         pedersen_ptr: HashBuiltin*,
+        range_check_ptr,
+        ecdsa_ptr,
         bitwise_ptr: BitwiseBuiltin*,
+        ec_op_ptr,
+        keccak_ptr: KeccakBuiltin*,
         poseidon_ptr: PoseidonBuiltin*,
         account_dict: DictAccess*,
-        account_values: AccountValues*,
         storage_dict: DictAccess*,
-        storage_values: Uint256*,
         header_dict: DictAccess*,
-        headers: Header*,
-        transaction_dict: DictAccess*,
-        transactions: Transaction*,
-        receipts: Receipt*,
-        receipt_dict: DictAccess*,
+        block_tx_dict: DictAccess*,
+        block_receipt_dict: DictAccess*,
         pow2_array: felt*,
         tasks: ComputationalTask*,
         chain_info: ChainInfo,
@@ -201,7 +198,7 @@ namespace Task {
             with fetch_trait {
                 let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
             }
-            let result = compute_slr(
+            let (program_hash, result) = compute_slr(
                 values=data_points, values_len=data_points_len, predict=tasks[index].ctx_value
             );
             assert [results] = result;
@@ -214,9 +211,7 @@ namespace Task {
             return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
         }
 
-        // Unknonwn aggregate_fn_id
-        assert 0 = 1;
-
+        assert 1 = 0;
         return ();
     }
 }
@@ -225,6 +220,7 @@ namespace Task {
 func extract_params_and_construct_task{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*
 }(
+    chain_id: felt,
     input: felt*,
     input_bytes_len: felt,
     datalake_hash: Uint256,
@@ -265,6 +261,7 @@ func extract_params_and_construct_task{
 
         return (
             task=ComputationalTask(
+                chain_id=chain_id,
                 hash=hash,
                 datalake_ptr=datalake_ptr,
                 datalake_type=datalake_type,
@@ -283,6 +280,7 @@ func extract_params_and_construct_task{
 
         return (
             task=ComputationalTask(
+                chain_id=chain_id,
                 hash=hash,
                 datalake_ptr=datalake_ptr,
                 datalake_type=datalake_type,
@@ -294,6 +292,7 @@ func extract_params_and_construct_task{
     }
     return (
         task=ComputationalTask(
+            chain_id=chain_id,
             hash=hash,
             datalake_ptr=datalake_ptr,
             datalake_type=datalake_type,

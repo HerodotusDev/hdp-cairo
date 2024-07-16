@@ -16,6 +16,43 @@ from packages.eth_essentials.lib.utils import (
     get_felt_bitlength,
 )
 
+from src.types import MMRMeta
+
+// Writes all required fields to the output_ptr.
+// The first 4 words are reserved for the tasks and results root.
+// The rest of the words are reserved for the MMR metas. Each MMR will contain 4 fields, and we can add an arbitrary amount of them.
+func write_output_ptr{output_ptr: felt*}(
+    mmr_metas: MMRMeta*, mmr_metas_len: felt, tasks_root: Uint256, results_root: Uint256
+) {
+    assert [output_ptr] = results_root.low;
+    assert [output_ptr + 1] = results_root.high;
+    assert [output_ptr + 2] = tasks_root.low;
+    assert [output_ptr + 3] = tasks_root.high;
+    let output_ptr = output_ptr + 4;
+
+    tempvar counter = 0;
+
+    loop:
+    let counter = [ap - 1];
+
+    %{ memory[ap] = 1 if (ids.mmr_metas_len == ids.counter) else 0 %}
+    jmp end_loop if [ap] != 0, ap++;
+
+    assert [output_ptr + counter * 4] = mmr_metas[counter].id;
+    assert [output_ptr + counter * 4 + 1] = mmr_metas[counter].size;
+    assert [output_ptr + counter * 4 + 2] = mmr_metas[counter].chain_id;
+    assert [output_ptr + counter * 4 + 3] = mmr_metas[counter].root;
+
+    [ap] = counter + 1, ap++;
+
+    jmp loop;
+
+    end_loop:
+    let output_ptr = output_ptr + mmr_metas_len * 4;
+
+    return ();
+}
+
 // computes the result entry. This maps the result to a task_hash/id. It computes h(task_hash, result), which is a leaf in the results tree.
 // Inputs:
 // - task_hash: the task hash

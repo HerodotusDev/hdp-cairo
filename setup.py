@@ -23,21 +23,23 @@ setup(
     name="hdp-cairo-dev",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    version="0.0.3",
-    packages=["hdp_bootloader", "tools", "compiled_cairo1_modules"],
+    version="0.0.4",
+    packages=[
+        "tools",
+        "contract_bootloader",
+        "compiled_contracts",
+    ],
     install_requires=requirements,
     package_dir={
         "tools": "tools",
-        "hdp_bootloader": "packages/hdp_bootloader",
-        "compiled_cairo1_modules": "src/cairo1",
+        "contract_bootloader": "packages/contract_bootloader",
+        "compiled_contracts": "src/contracts/",
     },
     zip_safe=False,
     package_data={
         "tools": ["*/*.py"],
-        "hdp_bootloader": ["*.cairo", "*/*.cairo", "*/*.py"],
-        "compiled_cairo1_modules": [
-            "simple_linear_regression/target/dev/simple_linear_regression.sierra.json"
-        ],
+        "contract_bootloader": ["*.cairo", "*/*.cairo", "*/*.py"],
+        "compiled_contracts": ["simple_linear_regression_contract.json"],
     },
     cmdclass={"install": PostInstallCommand},
 )

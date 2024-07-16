@@ -37,6 +37,9 @@ class CairoRunner:
         parser.add_argument("-test", action="store_true", help="Run all tests")
         parser.add_argument("-test_hdp", action="store_true", help="Run hdp tests")
         parser.add_argument("-run_hdp", action="store_true", help="Run HDP")
+        parser.add_argument(
+            "-contract_dry_run", action="store_true", help="Run contract dry run"
+        )
         return parser.parse_args()
 
     def setup_autocomplete(self):
@@ -149,6 +152,12 @@ class CairoRunner:
         cmd_base = f"cairo-run --program={compiled_path} --layout=starknet_with_keccak  --program_input=src/hdp_input.json --print_output"
         os.system(cmd_base)
 
+    def contract_dry_run(self):
+        self.filename_dot_cairo_path = "src/contract_dry_run.cairo"
+        compiled_path = self.compile_cairo_file()
+        cmd_base = f"cairo-run --program={compiled_path} --layout=starknet_with_keccak  --program_input=src/dry_run_input.json --print_output"
+        os.system(cmd_base)
+
     def run(self):
         self.prompt_for_cairo_file()
         print(f"Selected Cairo file: {self.filename_dot_cairo_path}")
@@ -168,8 +177,8 @@ class CairoRunner:
             if test_file == "tests/cairo_programs/test_vectors.cairo":
                 continue
 
-            # if test_file != "tests/cairo_programs/txs_in_block_datalake.cairo":
-            #     continue
+            if test_file != "tests/cairo_programs/rlp.cairo":
+                continue
 
             self.filename_dot_cairo_path = test_file
             self.filename_dot_cairo = os.path.basename(test_file)
@@ -201,5 +210,7 @@ if __name__ == "__main__":
         x.test()
     elif x.args.run_hdp:
         x.run_hdp()
+    elif x.args.contract_dry_run:
+        x.contract_dry_run()
     else:
         x.run()

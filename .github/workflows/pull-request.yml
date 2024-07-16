@@ -3,7 +3,7 @@ name: CI Build and Test Workflow
 on:
   pull_request:
     branches:
-      - main
+      - '**'  # This pattern matches all branches
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -27,7 +27,7 @@ jobs:
         with:
           file: environment.dockerfile
           tags: "dataprocessor/hdp-cairo:latest"
-#
+
       - name: Setup Scarb
         uses: software-mansion/setup-scarb@v1
 
@@ -46,18 +46,6 @@ jobs:
           restore-keys: |
               ${{ runner.os }}-python-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('tools/make/setup.sh') }}
               ${{ runner.os }}-python-
-
-#      - name: Cache Cargo directories
-#        uses: actions/cache@v3
-#        with:
-#          path: |
-#            ~/.cargo/bin/
-#            ~/.cargo/registry/index/
-#            ~/.cargo/registry/cache/
-#            ~/.cargo/git/db/
-#            cairo-vm/cargo-run/target
-#          key: ${{ runner.os }}-cargo-${{ hashFiles('tools/make/install_cairo1_run.sh') }}
-#          restore-keys: ${{ runner.os }}-cargo-
 
       - name: Install Dependencies
         run: make setup
