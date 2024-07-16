@@ -9,7 +9,10 @@ from starkware.cairo.lang.vm.relocatable import RelocatableValue
 
 
 class MemorizerFunctionId(Enum):
-    GET_BALANCE = 0
+    GET_NONCE = 0
+    GET_BALANCE = 1
+    GET_STATE_ROOT = 2
+    GET_CODE_HASH = 3
 
     @classmethod
     def from_int(cls, value: int):
@@ -57,15 +60,35 @@ class MemorizerKey:
 class AbstractAccountMemorizerBase(ABC):
     def __init__(self, memorizer: Memorizer):
         self.memorizer = memorizer
+        self.function_map = {
+            MemorizerFunctionId.GET_NONCE: self.get_nonce,
+            MemorizerFunctionId.GET_BALANCE: self.get_balance,
+            MemorizerFunctionId.GET_STATE_ROOT: self.get_state_root,
+            MemorizerFunctionId.GET_CODE_HASH: self.get_code_hash,
+        }
 
     def handle(
         self, function_id: MemorizerFunctionId, key: MemorizerKey
     ) -> Tuple[int, int]:
-        if function_id == MemorizerFunctionId.GET_BALANCE:
-            return self.get_balance(key=key)
+        if function_id in self.function_map:
+            return self.function_map[function_id](key=key)
+        else:
+            raise ValueError(f"Function ID {function_id} is not recognized.")
+
+    @abstractmethod
+    def get_nonce(self, key: MemorizerKey) -> Tuple[int, int]:
+        pass
 
     @abstractmethod
     def get_balance(self, key: MemorizerKey) -> Tuple[int, int]:
+        pass
+
+    @abstractmethod
+    def get_state_root(self, key: MemorizerKey) -> Tuple[int, int]:
+        pass
+
+    @abstractmethod
+    def get_code_hash(self, key: MemorizerKey) -> Tuple[int, int]:
         pass
 
     def _get_felt_range(self, start_addr: int, end_addr: int) -> List[int]:

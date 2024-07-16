@@ -1,32 +1,27 @@
 from typing import (
     Dict,
     Iterable,
-    Tuple,
 )
 from starkware.cairo.lang.vm.relocatable import RelocatableValue, MaybeRelocatable
 from starkware.cairo.lang.vm.memory_segments import MemorySegmentManager
 from contract_bootloader.syscall_handler_base import SyscallHandlerBase
 from starkware.cairo.common.dict import DictManager
 from starkware.cairo.common.structs import CairoStructProxy
-from starkware.starknet.business_logic.execution.objects import (
-    CallResult,
-)
+from starkware.starknet.business_logic.execution.objects import CallResult
 from contract_bootloader.memorizer.memorizer import MemorizerId, Memorizer
 from contract_bootloader.memorizer.account_memorizer import (
-    AbstractAccountMemorizerBase,
     MemorizerFunctionId as AccountMemorizerFunctionId,
     MemorizerKey as AccountMemorizerKey,
 )
-from contract_bootloader.provider.header_key_provider import (
-    HeaderKeyEVMProvider,
-)
-from contract_bootloader.provider.account_key_provider import (
-    AccountKeyEVMProvider,
-)
 from contract_bootloader.memorizer.header_memorizer import (
-    AbstractHeaderMemorizerBase,
     MemorizerFunctionId as HeaderMemorizerFunctionId,
     MemorizerKey as HeaderMemorizerKey,
+)
+from contract_bootloader.dryrun_syscall_handler.header_memorizer_handler import (
+    DryRunHeaderMemorizerHandler,
+)
+from contract_bootloader.dryrun_syscall_handler.account_memorizer_handler import (
+    DryRunAccountMemorizerHandler,
 )
 
 EVM_PROVIDER_URL = "https://sepolia.ethereum.iosis.tech/"
@@ -135,57 +130,3 @@ class DryRunSyscallHandler(SyscallHandlerBase):
 
     def fetch_keys_dict(self) -> list[dict]:
         return self.fetch_keys_registry
-
-
-class DryRunHeaderMemorizerHandler(AbstractHeaderMemorizerBase):
-    def __init__(self, memorizer: Memorizer, evm_provider_url: str):
-        super().__init__(memorizer=memorizer)
-        self.evm_provider = HeaderKeyEVMProvider(provider_url=evm_provider_url)
-        self.fetch_keys_registry: set[HeaderMemorizerKey] = set()
-
-    def get_parent(self, key: HeaderMemorizerKey) -> Tuple[int, int]:
-        self.fetch_keys_registry.add(key)
-        value = self.evm_provider.get_parent(key=key)
-        return (
-            value % 0x100000000000000000000000000000000,
-            value // 0x100000000000000000000000000000000,
-        )
-
-    def fetch_keys_dict(self) -> set:
-        def create_dict(key: HeaderMemorizerKey):
-            data = dict()
-            data["type"] = "HeaderMemorizerKey"
-            data["key"] = key.to_dict()
-            return data
-
-        dictionary = dict()
-        for fetch_key in list(self.fetch_keys_registry):
-            dictionary.update(create_dict(fetch_key))
-        return dictionary
-
-
-class DryRunAccountMemorizerHandler(AbstractAccountMemorizerBase):
-    def __init__(self, memorizer: Memorizer, evm_provider_url: str):
-        super().__init__(memorizer=memorizer)
-        self.evm_provider = AccountKeyEVMProvider(provider_url=evm_provider_url)
-        self.fetch_keys_registry: set[AccountMemorizerKey] = set()
-
-    def get_balance(self, key: AccountMemorizerKey) -> Tuple[int, int]:
-        self.fetch_keys_registry.add(key)
-        value = self.evm_provider.get_balance(key=key)
-        return (
-            value % 0x100000000000000000000000000000000,
-            value // 0x100000000000000000000000000000000,
-        )
-
-    def fetch_keys_dict(self) -> set:
-        def create_dict(key: AccountMemorizerKey):
-            data = dict()
-            data["type"] = "AccountMemorizerKey"
-            data["key"] = key.to_dict()
-            return data
-
-        dictionary = dict()
-        for fetch_key in list(self.fetch_keys_registry):
-            dictionary.update(create_dict(fetch_key))
-        return dictionary
