@@ -16,6 +16,7 @@ from src.decoders.header_decoder import HeaderDecoder
 from src.decoders.account_decoder import AccountDecoder
 from src.decoders.storage_slot_decoder import StorageSlotDecoder
 from src.converter import le_address_chunks_to_felt
+from src.rlp import le_chunks_to_uint256
 
 namespace BlockSampledProperty {
     const HEADER = 1;
@@ -115,11 +116,12 @@ func init_block_sampled{
 }
 
 // Decodes slot from datalake definition and writes it to the properties array
-func extract_and_write_slot{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, properties: felt*}(
-    chunks: felt*
-) {
+func extract_and_write_slot{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, properties: felt*
+}(chunks: felt*) {
     let divsor = 0x10000000000;
     let shifter = 0x1000000;
+    let (acc) = alloc();
 
     let rlp_0 = [chunks];
     let (rlp_0_left, _) = felt_divmod(rlp_0, divsor);
@@ -136,10 +138,17 @@ func extract_and_write_slot{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, prope
     let (trash, rlp_3_left) = felt_divmod(rlp_4, divsor);
     let word_3 = rlp_3_left * shifter + rlp_3_right;
 
-    assert [properties + 1] = word_0;
-    assert [properties + 2] = word_1;
-    assert [properties + 3] = word_2;
-    assert [properties + 4] = word_3;
+    assert [acc] = word_0;
+    assert [acc + 1] = word_1;
+    assert [acc + 2] = word_2;
+    assert [acc + 3] = word_3;
+
+    let slot_le = le_chunks_to_uint256(acc, 4, 32);
+    let (slot_be) = uint256_reverse_endian(slot_le);
+    %{ print("slot_be:", hex(ids.slot_be.high), hex(ids.slot_be.low)) %}
+
+    assert [properties + 1] = slot_be.high;
+    assert [properties + 2] = slot_be.low;
 
     return ();
 }
@@ -381,6 +390,26 @@ func fetch_storage_data_points{
 }(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     alloc_locals;
 
+    let storage_slot = Uint256(low=[datalake.properties + 2], high=[datalake.properties + 1]);
+    return fetch_storage_data_points_inner(chain_id, datalake, index, data_points, storage_slot);
+}
+
+func fetch_storage_data_points_inner{
+    range_check_ptr,
+    poseidon_ptr: PoseidonBuiltin*,
+    bitwise_ptr: BitwiseBuiltin*,
+    storage_dict: DictAccess*,
+    pow2_array: felt*,
+    fetch_trait: FetchTrait,
+}(
+    chain_id: felt,
+    datalake: BlockSampledDataLake,
+    index: felt,
+    data_points: Uint256*,
+    storage_slot: Uint256,
+) -> felt {
+    alloc_locals;
+
     let current_block_number = datalake.block_range_start + index * datalake.increment;
 
     local exit_condition: felt;
@@ -395,15 +424,19 @@ func fetch_storage_data_points{
         chain_id=chain_id,
         block_number=current_block_number,
         address=[datalake.properties],
-        storage_slot=datalake.properties + 1,
+        storage_slot=storage_slot,
     );
 
     let data_point = StorageSlotDecoder.get_word(rlp=rlp);
 
     assert [data_points + index * Uint256.SIZE] = data_point;
 
-    return fetch_storage_data_points(
-        chain_id=chain_id, datalake=datalake, index=index + 1, data_points=data_points
+    return fetch_storage_data_points_inner(
+        chain_id=chain_id,
+        datalake=datalake,
+        index=index + 1,
+        data_points=data_points,
+        storage_slot=storage_slot,
     );
 }
 
