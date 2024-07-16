@@ -13,6 +13,14 @@ class DryRunAccountMemorizerHandler(AbstractAccountMemorizerBase):
         self.evm_provider = AccountKeyEVMProvider(provider_url=evm_provider_url)
         self.fetch_keys_registry: set[MemorizerKey] = set()
 
+    def get_nonce(self, key: MemorizerKey) -> Tuple[int]:
+        self.fetch_keys_registry.add(key)
+        value = self.evm_provider.get_nonce(key=key)
+        return (
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
+        )
+
     def get_balance(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
         value = self.evm_provider.get_balance(key=key)
@@ -21,14 +29,21 @@ class DryRunAccountMemorizerHandler(AbstractAccountMemorizerBase):
             value // 0x100000000000000000000000000000000,
         )
 
-    def get_balance(self, key: MemorizerKey) -> Tuple[int, int]:
-        pass
-
     def get_state_root(self, key: MemorizerKey) -> Tuple[int, int]:
-        pass
+        self.fetch_keys_registry.add(key)
+        value = self.evm_provider.get_state_root(key=key)
+        return (
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
+        )
 
     def get_code_hash(self, key: MemorizerKey) -> Tuple[int, int]:
-        pass
+        self.fetch_keys_registry.add(key)
+        value = self.evm_provider.get_code_hash(key=key)
+        return (
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
+        )
 
     def fetch_keys_dict(self) -> set:
         def create_dict(key: MemorizerKey):

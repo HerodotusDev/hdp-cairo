@@ -15,56 +15,121 @@ class DryRunHeaderMemorizerHandler(AbstractHeaderMemorizerBase):
 
     def get_parent(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        value = self.evm_provider.get_parent(key=key)
+        value = int(self.evm_provider.get_block(key=key)["parentHash"])
         return (
             value % 0x100000000000000000000000000000000,
             value // 0x100000000000000000000000000000000,
         )
 
     def get_uncle(self, key: MemorizerKey) -> Tuple[int, int]:
-        pass
+        self.fetch_keys_registry.add(key)
+        value = int(self.evm_provider.get_block(key=key)["sha3Uncles"])
+        return (
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
+        )
 
     def get_coinbase(self, key: MemorizerKey) -> Tuple[int, int]:
-        pass
+        self.fetch_keys_registry.add(key)
+        value = int(self.evm_provider.get_block(key=key)["miner"])
+        return (
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
+        )
 
     def get_state_root(self, key: MemorizerKey) -> Tuple[int, int]:
-        pass
+        self.fetch_keys_registry.add(key)
+        value = int(self.evm_provider.get_block(key=key)["stateRoot"])
+        return (
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
+        )
 
     def get_transaction_root(self, key: MemorizerKey) -> Tuple[int, int]:
-        pass
+        self.fetch_keys_registry.add(key)
+        value = int(self.evm_provider.get_block(key=key)["transactionsRoot"])
+        return (
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
+        )
 
     def get_receipt_root(self, key: MemorizerKey) -> Tuple[int, int]:
-        pass
+        self.fetch_keys_registry.add(key)
+        value = int(self.evm_provider.get_block(key=key)["receiptRoot"])
+        return (
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
+        )
 
     def get_bloom(self, key: MemorizerKey) -> Tuple[int, int]:
         pass
 
     def get_difficulty(self, key: MemorizerKey) -> Tuple[int, int]:
-        pass
+        self.fetch_keys_registry.add(key)
+        value = int(self.evm_provider.get_block(key=key)["difficulty"])
+        return (
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
+        )
 
     def get_number(self, key: MemorizerKey) -> Tuple[int, int]:
-        pass
+        self.fetch_keys_registry.add(key)
+        value = int(self.evm_provider.get_block(key=key)["number"])
+        return (
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
+        )
 
     def get_gas_limit(self, key: MemorizerKey) -> Tuple[int, int]:
-        pass
+        self.fetch_keys_registry.add(key)
+        value = int(self.evm_provider.get_block(key=key)["gasLimit"])
+        return (
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
+        )
 
     def get_gas_used(self, key: MemorizerKey) -> Tuple[int, int]:
-        pass
+        self.fetch_keys_registry.add(key)
+        value = int(self.evm_provider.get_block(key=key)["gasUsed"])
+        return (
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
+        )
 
     def get_timestamp(self, key: MemorizerKey) -> Tuple[int, int]:
-        pass
+        self.fetch_keys_registry.add(key)
+        value = int(self.evm_provider.get_block(key=key)["timestamp"])
+        return (
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
+        )
 
     def get_extra_data(self, key: MemorizerKey) -> Tuple[int, int]:
         pass
 
     def get_mix_hash(self, key: MemorizerKey) -> Tuple[int, int]:
-        pass
+        self.fetch_keys_registry.add(key)
+        value = int(self.evm_provider.get_block(key=key)["mixHash"])
+        return (
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
+        )
 
     def get_nonce(self, key: MemorizerKey) -> Tuple[int, int]:
-        pass
+        self.fetch_keys_registry.add(key)
+        value = int(self.evm_provider.get_block(key=key)["nonce"])
+        return (
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
+        )
 
     def get_base_fee_per_gas(self, key: MemorizerKey) -> Tuple[int, int]:
-        pass
+        self.fetch_keys_registry.add(key)
+        value = int(self.evm_provider.get_block(key=key)["baseFeePerGas"])
+        return (
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
+        )
 
     def get_withdrawals_root(self, key: MemorizerKey) -> Tuple[int, int]:
         pass
