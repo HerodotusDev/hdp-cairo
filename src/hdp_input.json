@@ -3,7 +3,7 @@
   "task_root": "0xa51a6cc7bc840aec540121e72180d35414db998f26ecb1eda7c8896baaf451b7",
   "result_root": "0x5fe7dd5abe72bbb124c33cbd4b25dfc1ccebe944a918dfd5a93015f85589e117",
   "proofs": {
-    "mmr_meta": {
+    "mmr_metas": [{
       "id": 27,
       "root": "0x492627ffa5084ec078f4d461408dfaa50b504a022c5471452d598da0040c066",
       "size": 13024091,
@@ -21,8 +21,9 @@
         "0x25cd2f0b579c902c41ac26df96ed5b21e16a3127dce2b471973dc86eb4c099f",
         "0x5fdedfd0123b7461d5b3162fe82f7f3172c42fda6209415367870086f7c7918",
         "0x7c0a415d5a6c4c90fd2dde1b340c3be305a72aa3b758dd26b8d7b4a78b53681"
-      ]
-    },
+      ],
+      "chain_id": 11155111
+    }],
     "headers": [
       {
         "rlp": [

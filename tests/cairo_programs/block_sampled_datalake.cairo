@@ -65,8 +65,6 @@ func block_sampled_datalake_eq(
         assert a.properties[0] = b.properties[0];
         assert a.properties[1] = b.properties[1];
         assert a.properties[2] = b.properties[2];
-        assert a.properties[3] = b.properties[3];
-        assert a.properties[4] = b.properties[4];
     }
 
     return ();

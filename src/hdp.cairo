@@ -17,6 +17,7 @@ from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
 from src.verifiers.verify import run_state_verification
 
 from src.types import MMRMeta, ComputationalTask, ChainInfo
+from src.utils import write_output_ptr
 
 from src.memorizer import (
     HeaderMemorizer,
@@ -75,7 +76,8 @@ func run{
     alloc_locals;
 
     // MMR Params
-    local mmr_meta: MMRMeta;
+    let (mmr_metas: MMRMeta*) = alloc();
+    local mmr_metas_len: felt;
 
     // Peaks Dict
     let (local peaks_dict) = default_dict_new(default_value=0);
@@ -116,16 +118,23 @@ func run{
         def nested_hex_to_int_array(hex_array):
             return [[int(x, 16) for x in y] for y in hex_array]
 
-        def write_mmr_meta(mmr_meta):
-            ids.mmr_meta.id = mmr_meta["id"]
-            ids.mmr_meta.root = hex_to_int(mmr_meta["root"])
-            ids.mmr_meta.size = mmr_meta["size"]
-            ids.mmr_meta.peaks_len = len(mmr_meta["peaks"])
-            ids.mmr_meta.peaks = segments.gen_arg(hex_to_int_array(mmr_meta["peaks"]))
-            # ids.chain_id = mmr_meta["chain_id"]
+        def write_mmr_metas(ptr, mmr_metas):
+            offset = 0
+            ids.mmr_metas_len = len(mmr_metas)
+            ids.chain_id = mmr_metas[0]["chain_id"]
+
+            for mmr_meta in mmr_metas:
+                assert mmr_meta["chain_id"] == ids.chain_id, "Chain ID mismatch!"
+                memory[ptr._reference_value + offset] = mmr_meta["id"]
+                memory[ptr._reference_value + offset + 1] = hex_to_int(mmr_meta["root"])
+                memory[ptr._reference_value + offset + 2] = mmr_meta["size"]
+                memory[ptr._reference_value + offset + 3] = len(mmr_meta["peaks"])
+                memory[ptr._reference_value + offset + 4] = segments.gen_arg(hex_to_int_array(mmr_meta["peaks"]))
+                memory[ptr._reference_value + offset + 5] = mmr_meta["chain_id"]
+                offset += 6
 
         # MMR Meta
-        write_mmr_meta(program_input["proofs"]['mmr_meta'])
+        write_mmr_metas(ids.mmr_metas, program_input["proofs"]['mmr_metas'])
 
         # Task and Datalake
         ids.tasks_len = len(program_input['tasks'])
@@ -156,9 +165,9 @@ func run{
         storage_dict=storage_dict,
         block_tx_dict=block_tx_dict,
         block_receipt_dict=block_receipt_dict,
-        mmr_meta=mmr_meta,
+        mmr_metas=mmr_metas,
         chain_info=chain_info,
-    }();
+    }(mmr_metas_len=mmr_metas_len);
 
     let (tasks_root, results_root, results, results_len) = compute_tasks{
         pedersen_ptr=pedersen_ptr,
@@ -214,26 +223,13 @@ func run{
     default_dict_finalize(block_tx_dict_start, block_tx_dict, 7);
     default_dict_finalize(block_receipt_dict_start, block_receipt_dict, 7);
 
-    [ap] = mmr_meta.root;
-    [ap] = [output_ptr], ap++;
+    write_output_ptr{output_ptr=output_ptr}(
+        mmr_metas=mmr_metas,
+        mmr_metas_len=mmr_metas_len,
+        tasks_root=tasks_root,
+        results_root=results_root,
+    );
 
-    [ap] = mmr_meta.size;
-    [ap] = [output_ptr + 1], ap++;
-
-    [ap] = results_root.low;
-    [ap] = [output_ptr + 2], ap++;
-
-    [ap] = results_root.high;
-    [ap] = [output_ptr + 3], ap++;
-
-    [ap] = tasks_root.low;
-    [ap] = [output_ptr + 4], ap++;
-
-    [ap] = tasks_root.high;
-    [ap] = [output_ptr + 5], ap++;
-
-    [ap] = output_ptr + 6, ap++;
-    let output_ptr = output_ptr + 6;
     return ();
 }
 
