@@ -1,4 +1,4 @@
-use simple_linear_regression::fraction::fraction::{Fraction, FractionTrait, Sign};
+use super::fraction::{Fraction, FractionTrait, Sign};
 
 #[test]
 fn test_reduce() {

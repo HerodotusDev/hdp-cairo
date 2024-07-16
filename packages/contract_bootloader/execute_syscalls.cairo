@@ -8,8 +8,6 @@ from starkware.starknet.common.new_syscalls import (
 )
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
 from starkware.starknet.core.os.builtins import BuiltinPointers
-from starkware.cairo.common.dict_access import DictAccess
-from src.types import Header
 from src.memorizer import HeaderMemorizer, gen_header_key
 from src.decoders.header_decoder import HeaderDecoder, HeaderField
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
@@ -41,9 +39,6 @@ func execute_syscalls{
     poseidon_ptr: PoseidonBuiltin*,
     syscall_ptr: felt*,
     builtin_ptrs: BuiltinPointers*,
-    header_dict: DictAccess*,
-    headers: Header*,
-    pow2_array: felt*,
 }(execution_context: ExecutionContext*, syscall_ptr_end: felt*) {
     if (syscall_ptr == syscall_ptr_end) {
         return ();
@@ -62,9 +57,6 @@ func execute_call_contract{
     poseidon_ptr: PoseidonBuiltin*,
     syscall_ptr: felt*,
     builtin_ptrs: BuiltinPointers*,
-    header_dict: DictAccess*,
-    headers: Header*,
-    pow2_array: felt*,
 }(caller_execution_context: ExecutionContext*) {
     alloc_locals;
     let request_header = cast(syscall_ptr, RequestHeader*);
@@ -73,22 +65,11 @@ func execute_call_contract{
     let call_contract_request = cast(syscall_ptr, CallContractRequest*);
     let syscall_ptr = syscall_ptr + CallContractRequest.SIZE;
 
-    let chain_id = call_contract_request.calldata_start[4];
-    let block_number = call_contract_request.calldata_start[5];
-
-    let header = HeaderMemorizer.get(chain_id=chain_id, block_number=block_number);
-    let parentHash = HeaderDecoder.get_field(header.rlp, HeaderField.PARENT);
-    let (value) = uint256_reverse_endian(parentHash);
-
     let response_header = cast(syscall_ptr, ResponseHeader*);
     let syscall_ptr = syscall_ptr + ResponseHeader.SIZE;
 
     let call_contract_response = cast(syscall_ptr, CallContractResponse*);
     let syscall_ptr = syscall_ptr + CallContractResponse.SIZE;
-
-    assert call_contract_response.retdata_end - call_contract_response.retdata_start = 2;
-    assert call_contract_response.retdata_start[0] = value.low;
-    assert call_contract_response.retdata_start[1] = value.high;
 
     return ();
 }

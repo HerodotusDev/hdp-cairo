@@ -3,7 +3,7 @@ name: CI Build and Test Workflow
 on:
   pull_request:
     branches:
-      - main
+      - '**'  # This pattern matches all branches
 jobs:
   test:
     runs-on: ubuntu-latest

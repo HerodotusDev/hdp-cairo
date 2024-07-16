@@ -57,4 +57,9 @@ src/hdp_input.json
 # Whitelist - these files should not be ignored
 !tests/cairo_programs/fixtures/*.json
 !tools/js/package.json
+!*_contract.json
 !packages/cairo-lang-0.13.1.zip
+
+# Scarb & snfoundry
+target
+.snfoundry_cache/

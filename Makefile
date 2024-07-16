@@ -9,14 +9,11 @@ CAIRO_FILES := $(shell find ./tests/cairo_programs -name "*.cairo")
 build: clean
 	@echo "Building project..."
 	./tools/make/build.sh
-	./tools/make/build_cairo1.sh
 	@echo "Build complete."
 
 # Setup environment
 setup:
 	@echo "Setting up the environment..."
-	./tools/make/install_cairo1_run.sh
-	./tools/make/build_cairo1.sh
 	./tools/make/setup.sh $(VENV_PATH)
 	@echo "Setup complete."
 
