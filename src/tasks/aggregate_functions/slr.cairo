@@ -234,10 +234,7 @@ func fetch_storage_data_points{
     pow2_array: felt*,
     fetch_trait: FetchTrait,
 }(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
-    alloc_locals;
-
     let storage_slot = Uint256(low=[datalake.properties + 2], high=[datalake.properties + 1]);
-    %{ print("storage_slot_ddd:", hex(ids.storage_slot.high), hex(ids.storage_slot.low)) %}
     return fetch_storage_data_points_inner(chain_id, datalake, index, data_points, storage_slot);
 }
 
