@@ -2,9 +2,12 @@ use hdp_cairo::Memorizer;
 use starknet::syscalls::call_contract_syscall;
 use starknet::{SyscallResult, SyscallResultTrait};
 
-const ACCOUNT_MEMORIZER_ID: felt252 = 0x1;
+const ACCOUNT_MEMORIZER: felt252 = 0x1;
 
-const ACCOUNT_MEMORIZER_GET_BALANCE_ID: felt252 = 0x0;
+const ACCOUNT_MEMORIZER_GET_NONCE: felt252 = 0;
+const ACCOUNT_MEMORIZER_GET_BALANCE: felt252 = 1;
+const ACCOUNT_MEMORIZER_GET_STATE_ROOT: felt252 = 2;
+const ACCOUNT_MEMORIZER_GET_CODE_HASH: felt252 = 3;
 
 #[derive(Serde, Drop)]
 pub struct AccountKey {
@@ -17,8 +20,8 @@ pub struct AccountKey {
 pub impl AccountMemorizerImpl of AccountMemorizerTrait {
     fn get_balance(self: @Memorizer, key: AccountKey) -> u256 {
         let value = call_contract_syscall(
-            ACCOUNT_MEMORIZER_ID.try_into().unwrap(),
-            ACCOUNT_MEMORIZER_GET_BALANCE_ID,
+            ACCOUNT_MEMORIZER.try_into().unwrap(),
+            ACCOUNT_MEMORIZER_GET_BALANCE,
             array![
                 *self.dict.segment_index,
                 *self.dict.offset,

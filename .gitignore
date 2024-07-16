@@ -52,8 +52,6 @@ hdp/
 *.memory
 *.trace
 
-src/hdp_input.json
-
 # Whitelist - these files should not be ignored
 !tests/cairo_programs/fixtures/*.json
 !tools/js/package.json

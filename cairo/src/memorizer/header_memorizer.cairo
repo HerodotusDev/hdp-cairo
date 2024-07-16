@@ -2,9 +2,28 @@ use hdp_cairo::Memorizer;
 use starknet::syscalls::call_contract_syscall;
 use starknet::{SyscallResult, SyscallResultTrait};
 
-const HEADER_MEMORIZER_ID: felt252 = 0x0;
+const HEADER_MEMORIZER: felt252 = 0x0;
 
-const HEADER_MEMORIZER_GET_PARENT_ID: felt252 = 0x0;
+const HEADER_MEMORIZER_GET_PARENT: felt252 = 0;
+const HEADER_MEMORIZER_GET_UNCLE: felt252 = 1;
+const HEADER_MEMORIZER_GET_COINBASE: felt252 = 2;
+const HEADER_MEMORIZER_GET_STATE_ROOT: felt252 = 3;
+const HEADER_MEMORIZER_GET_TRANSACTION_ROOT: felt252 = 4;
+const HEADER_MEMORIZER_GET_RECEIPT_ROOT: felt252 = 5;
+const HEADER_MEMORIZER_GET_BLOOM: felt252 = 6;
+const HEADER_MEMORIZER_GET_DIFFICULTY: felt252 = 7;
+const HEADER_MEMORIZER_GET_NUMBER: felt252 = 8;
+const HEADER_MEMORIZER_GET_GAS_LIMIT: felt252 = 9;
+const HEADER_MEMORIZER_GET_GAS_USED: felt252 = 10;
+const HEADER_MEMORIZER_GET_TIMESTAMP: felt252 = 11;
+const HEADER_MEMORIZER_GET_EXTRA_DATA: felt252 = 12;
+const HEADER_MEMORIZER_GET_MIX_HASH: felt252 = 13;
+const HEADER_MEMORIZER_GET_NONCE: felt252 = 14;
+const HEADER_MEMORIZER_GET_BASE_FEE_PER_GAS: felt252 = 15;
+const HEADER_MEMORIZER_GET_WITHDRAWALS_ROOT: felt252 = 16;
+const HEADER_MEMORIZER_GET_BLOB_GAS_USED: felt252 = 17;
+const HEADER_MEMORIZER_GET_EXCESS_BLOB_GAS: felt252 = 18;
+const HEADER_MEMORIZER_GET_PARENT_BEACON_BLOCK_ROOT: felt252 = 19;
 
 #[derive(Serde, Drop)]
 pub struct HeaderKey {
@@ -16,8 +35,8 @@ pub struct HeaderKey {
 pub impl HeaderMemorizerImpl of HeaderMemorizerTrait {
     fn get_parent(self: @Memorizer, key: HeaderKey) -> u256 {
         let value = call_contract_syscall(
-            HEADER_MEMORIZER_ID.try_into().unwrap(),
-            HEADER_MEMORIZER_GET_PARENT_ID,
+            HEADER_MEMORIZER.try_into().unwrap(),
+            HEADER_MEMORIZER_GET_PARENT,
             array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
                 .span()
         )
