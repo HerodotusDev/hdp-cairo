@@ -1,11 +1,11 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
 from starkware.cairo.common.dict_access import DictAccess
 from packages.eth_essentials.lib.mpt import verify_mpt_proof
-from starkware.cairo.common.uint256 import Uint256
+from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.builtin_keccak.keccak import keccak_bigend
 from starkware.cairo.common.alloc import alloc
 from src.types import ChainInfo
-from src.rlp import decode_rlp_word_to_uint256
+from src.rlp import decode_rlp_word_to_uint256, le_chunks_to_uint256
 from packages.eth_essentials.lib.rlp_little import (
     extract_byte_at_pos,
     extract_n_bytes_from_le_64_chunks_array,
@@ -68,12 +68,20 @@ func verify_storage_items_inner{
         ids.key_leading_zeros = count_leading_zero_nibbles_from_hex(storage_item["storage_key"])
     %}
 
-    // ToDo: this should happen in a hint
+    // ensure that slot matches the key
+    let (hash: Uint256) = keccak_bigend(slot, 32);
+    assert key.low = hash.low;
+    assert key.high = hash.high;
+
+    // convertes chunks to LE uint256
+    let slot_le = le_chunks_to_uint256(slot, 4, 32);
+    let (slot_be) = uint256_reverse_endian(slot_le);
+
     let (felt_address) = le_address_chunks_to_felt(address);
 
     verify_storage_item(
         address=felt_address,
-        slot=slot,
+        slot=slot_be,
         key=key,
         key_leading_zeros=key_leading_zeros,
         n_proofs=n_proofs,
@@ -94,7 +102,7 @@ func verify_storage_item{
     pow2_array: felt*,
 }(
     address: felt,
-    slot: felt*,
+    slot: Uint256,
     key: Uint256,
     key_leading_zeros: felt,
     n_proofs: felt,
