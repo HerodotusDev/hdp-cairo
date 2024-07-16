@@ -82,7 +82,10 @@ namespace HeaderMemorizerFunctionId {
 }
 
 namespace AccountMemorizerFunctionId {
-    const GET_BALANCE = 0;
+    const GET_NONCE = 0;
+    const GET_BALANCE = 1;
+    const GET_STATE_ROOT = 2;
+    const GET_CODE_HASH = 3;
 }
 
 // Executes a syscall that calls another contract.
