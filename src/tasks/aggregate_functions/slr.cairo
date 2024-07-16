@@ -29,7 +29,7 @@ from src.decoders.receipt_decoder import ReceiptDecoder
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
 from src.decoders.storage_slot_decoder import StorageSlotDecoder
 
-from contract_bootloader.contract_class.compiled_class import CompiledClass
+from contract_bootloader.contract_class.compiled_class import CompiledClass, compiled_class_hash
 from contract_bootloader.contract_bootloader import run_contract_bootloader, compute_program_hash
 from src.memorizer import (
     HeaderMemorizer,
@@ -109,10 +109,6 @@ func compute_slr{
         from starkware.starknet.core.os.contract_class.compiled_class_hash import create_bytecode_segment_structure
         from contract_bootloader.contract_class.compiled_class_hash_utils import get_compiled_class_struct
 
-        # Append necessary footer to the bytecode of the contract
-        compiled_class.bytecode.append(0x208b7fff7fff7ffe)
-        compiled_class.bytecode_segment_lengths[-1] += 1
-
         bytecode_segment_structure = create_bytecode_segment_structure(
             bytecode=compiled_class.bytecode,
             bytecode_segment_lengths=compiled_class.bytecode_segment_lengths,
@@ -126,10 +122,21 @@ func compute_slr{
         ids.compiled_class = segments.gen_arg(cairo_contract)
     %}
 
+    let (builtin_costs: felt*) = alloc();
+    assert builtin_costs[0] = 0;
+    assert builtin_costs[1] = 0;
+    assert builtin_costs[2] = 0;
+    assert builtin_costs[3] = 0;
+    assert builtin_costs[4] = 0;
+
     assert compiled_class.bytecode_ptr[compiled_class.bytecode_length] = 0x208b7fff7fff7ffe;
-    let (program_hash) = compute_program_hash(
-        bytecode_length=compiled_class.bytecode_length, bytecode_ptr=compiled_class.bytecode_ptr
+    assert compiled_class.bytecode_ptr[compiled_class.bytecode_length + 1] = cast(
+        builtin_costs, felt
     );
+
+    let (local program_hash) = compiled_class_hash(compiled_class=compiled_class);
+
+    %{ print("program_hash", hex(ids.program_hash)) %}
 
     %{
         vm_load_program(

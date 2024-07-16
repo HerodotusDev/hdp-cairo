@@ -1,4 +1,4 @@
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin, HashBuiltin
 from starkware.cairo.builtin_selection.select_input_builtins import select_input_builtins
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.find_element import find_element, search_sorted
@@ -223,6 +223,13 @@ func execute_entry_point{
     validate_segment_arena(segment_arena=current_segment_arena);
 
     let builtin_ptrs = return_builtin_ptrs;
+
+    let pedersen_ptr = cast(builtin_ptrs.selectable.pedersen, HashBuiltin*);
+    let ecdsa_ptr = builtin_ptrs.selectable.ecdsa;
+    let bitwise_ptr = builtin_ptrs.selectable.bitwise;
+    let ec_op_ptr = builtin_ptrs.selectable.ec_op;
+    let keccak_ptr = builtin_ptrs.non_selectable.keccak;
+    let poseidon_ptr = cast(builtin_ptrs.selectable.poseidon, PoseidonBuiltin*);
 
     with syscall_ptr {
         call_execute_syscalls(
