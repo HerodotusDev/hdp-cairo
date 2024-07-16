@@ -30,15 +30,13 @@ func run_state_verification{
     storage_dict: DictAccess*,
     block_tx_dict: DictAccess*,
     block_receipt_dict: DictAccess*,
-    mmr_meta: MMRMeta,
+    mmr_metas: MMRMeta*,
     chain_info: ChainInfo,
-}() {
+}(mmr_metas_len: felt) {
     alloc_locals;
+
     // Step 1: Verify the MMR meta and store peaks
-    verify_mmr_meta();
-    write_felt_array_to_dict_keys{dict_end=peaks_dict}(
-        array=mmr_meta.peaks, index=mmr_meta.peaks_len - 1
-    );
+    verify_mmr_meta(mmr_metas, mmr_metas_len);
 
     // Step 2: Verify the headers inclusion
     verify_headers_inclusion();
