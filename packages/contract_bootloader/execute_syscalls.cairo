@@ -58,6 +58,29 @@ namespace MemorizerId {
     const ACCOUNT = 1;
 }
 
+namespace HeaderMemorizerFunctionId {
+    const GET_PARENT = 0;
+    const GET_UNCLE = 1;
+    const GET_COINBASE = 2;
+    const GET_STATE_ROOT = 3;
+    const GET_TRANSACTION_ROOT = 4;
+    const GET_RECEIPT_ROOT = 5;
+    const GET_BLOOM = 6;
+    const GET_DIFFICULTY = 7;
+    const GET_NUMBER = 8;
+    const GET_GAS_LIMIT = 9;
+    const GET_GAS_USED = 10;
+    const GET_TIMESTAMP = 11;
+    const GET_EXTRA_DATA = 12;
+    const GET_MIX_HASH = 13;
+    const GET_NONCE = 14;
+    const GET_BASE_FEE_PER_GAS = 15;
+    const GET_WITHDRAWALS_ROOT = 16;
+    const GET_BLOB_GAS_USED = 17;
+    const GET_EXCESS_BLOB_GAS = 18;
+    const GET_PARENT_BEACON_BLOCK_ROOT = 19;
+}
+
 namespace AccountMemorizerFunctionId {
     const GET_BALANCE = 0;
 }
