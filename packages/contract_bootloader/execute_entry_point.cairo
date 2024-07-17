@@ -53,6 +53,7 @@ func call_execute_syscalls{
     builtin_ptrs: BuiltinPointers*,
     header_dict: DictAccess*,
     account_dict: DictAccess*,
+    storage_dict: DictAccess*,
     pow2_array: felt*,
 }(execution_context: ExecutionContext*, syscall_ptr_end: felt*, dry_run: felt) {
     if (dry_run == 1) {
