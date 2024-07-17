@@ -13,7 +13,7 @@ class DryRunAccountMemorizerHandler(AbstractAccountMemorizerBase):
         self.evm_provider = AccountKeyEVMProvider(provider_url=evm_provider_url)
         self.fetch_keys_registry: set[MemorizerKey] = set()
 
-    def get_nonce(self, key: MemorizerKey) -> Tuple[int]:
+    def get_nonce(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
         value = self.evm_provider.get_nonce(key=key)
         return (

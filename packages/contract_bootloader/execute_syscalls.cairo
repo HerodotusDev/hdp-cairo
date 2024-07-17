@@ -9,7 +9,7 @@ from starkware.starknet.common.new_syscalls import (
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
 from starkware.starknet.core.os.builtins import BuiltinPointers
 from src.memorizer import HeaderMemorizer, AccountMemorizer
-from src.decoders.header_decoder import HeaderDecoder
+from src.decoders.header_decoder import HeaderDecoder, HeaderField
 from src.decoders.account_decoder import AccountDecoder, AccountField
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.dict_access import DictAccess
@@ -115,18 +115,182 @@ func execute_call_contract{
     let memorizerId = call_contract_request.contract_address;
     let functionId = call_contract_request.selector;
 
-    if (memorizerId == MemorizerId.ACCOUNT) {
-        if (functionId == AccountMemorizerFunctionId.GET_BALANCE) {
-            assert 2 + 3 = call_contract_request.calldata_end -
-                call_contract_request.calldata_start;
-            assert 2 = call_contract_response.retdata_end - call_contract_response.retdata_start;
+    if (memorizerId == MemorizerId.HEADER) {
+        let (rlp) = HeaderMemorizer.get(
+            chain_id=call_contract_request.calldata_start[2],
+            block_number=call_contract_request.calldata_start[3],
+        );
+        if (functionId == HeaderMemorizerFunctionId.GET_PARENT) {
+            let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.PARENT);
+            let (value) = uint256_reverse_endian(num=field);
 
-            let (rlp) = AccountMemorizer.get(
-                chain_id=call_contract_request.calldata_start[2],
-                block_number=call_contract_request.calldata_start[3],
-                address=call_contract_request.calldata_start[4],
+            assert call_contract_response.retdata_start[0] = value.low;
+            assert call_contract_response.retdata_start[1] = value.high;
+
+            return ();
+        }
+        if (functionId == HeaderMemorizerFunctionId.GET_UNCLE) {
+            let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.UNCLE);
+            let (value) = uint256_reverse_endian(num=field);
+
+            assert call_contract_response.retdata_start[0] = value.low;
+            assert call_contract_response.retdata_start[1] = value.high;
+
+            return ();
+        }
+        if (functionId == HeaderMemorizerFunctionId.GET_COINBASE) {
+            let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.COINBASE);
+            let (value) = uint256_reverse_endian(num=field);
+
+            assert call_contract_response.retdata_start[0] = value.low;
+            assert call_contract_response.retdata_start[1] = value.high;
+
+            return ();
+        }
+        if (functionId == HeaderMemorizerFunctionId.GET_STATE_ROOT) {
+            let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.STATE_ROOT);
+            let (value) = uint256_reverse_endian(num=field);
+
+            assert call_contract_response.retdata_start[0] = value.low;
+            assert call_contract_response.retdata_start[1] = value.high;
+
+            return ();
+        }
+        if (functionId == HeaderMemorizerFunctionId.GET_TRANSACTION_ROOT) {
+            let field: Uint256 = HeaderDecoder.get_field(
+                rlp=rlp, field=HeaderField.TRANSACTION_ROOT
             );
+            let (value) = uint256_reverse_endian(num=field);
+
+            assert call_contract_response.retdata_start[0] = value.low;
+            assert call_contract_response.retdata_start[1] = value.high;
+
+            return ();
+        }
+        if (functionId == HeaderMemorizerFunctionId.GET_RECEIPT_ROOT) {
+            let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.RECEIPT_ROOT);
+            let (value) = uint256_reverse_endian(num=field);
+
+            assert call_contract_response.retdata_start[0] = value.low;
+            assert call_contract_response.retdata_start[1] = value.high;
+
+            return ();
+        }
+        if (functionId == HeaderMemorizerFunctionId.GET_DIFFICULTY) {
+            let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.DIFFICULTY);
+            let (value) = uint256_reverse_endian(num=field);
+
+            assert call_contract_response.retdata_start[0] = value.low;
+            assert call_contract_response.retdata_start[1] = value.high;
+
+            return ();
+        }
+        if (functionId == HeaderMemorizerFunctionId.GET_NUMBER) {
+            let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.NUMBER);
+            let (value) = uint256_reverse_endian(num=field);
+
+            assert call_contract_response.retdata_start[0] = value.low;
+            assert call_contract_response.retdata_start[1] = value.high;
+
+            return ();
+        }
+        if (functionId == HeaderMemorizerFunctionId.GET_GAS_LIMIT) {
+            let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.GAS_LIMIT);
+            let (value) = uint256_reverse_endian(num=field);
+
+            assert call_contract_response.retdata_start[0] = value.low;
+            assert call_contract_response.retdata_start[1] = value.high;
+
+            return ();
+        }
+        if (functionId == HeaderMemorizerFunctionId.GET_GAS_USED) {
+            let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.GAS_USED);
+            let (value) = uint256_reverse_endian(num=field);
+
+            assert call_contract_response.retdata_start[0] = value.low;
+            assert call_contract_response.retdata_start[1] = value.high;
+
+            return ();
+        }
+        if (functionId == HeaderMemorizerFunctionId.GET_TIMESTAMP) {
+            let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.TIMESTAMP);
+            let (value) = uint256_reverse_endian(num=field);
+
+            assert call_contract_response.retdata_start[0] = value.low;
+            assert call_contract_response.retdata_start[1] = value.high;
+
+            return ();
+        }
+        if (functionId == HeaderMemorizerFunctionId.GET_EXTRA_DATA) {
+            let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.MIX_HASH);
+            let (value) = uint256_reverse_endian(num=field);
+
+            assert call_contract_response.retdata_start[0] = value.low;
+            assert call_contract_response.retdata_start[1] = value.high;
+
+            return ();
+        }
+        if (functionId == HeaderMemorizerFunctionId.GET_NONCE) {
+            let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.NONCE);
+            let (value) = uint256_reverse_endian(num=field);
+
+            assert call_contract_response.retdata_start[0] = value.low;
+            assert call_contract_response.retdata_start[1] = value.high;
+
+            return ();
+        }
+        if (functionId == HeaderMemorizerFunctionId.GET_BASE_FEE_PER_GAS) {
+            let field: Uint256 = HeaderDecoder.get_field(
+                rlp=rlp, field=HeaderField.BASE_FEE_PER_GAS
+            );
+            let (value) = uint256_reverse_endian(num=field);
+
+            assert call_contract_response.retdata_start[0] = value.low;
+            assert call_contract_response.retdata_start[1] = value.high;
+
+            return ();
+        }
+
+        // Unknown HeaderMemorizerFunctionId
+        assert 1 = 0;
+
+        return ();
+    }
+    if (memorizerId == MemorizerId.ACCOUNT) {
+        let (rlp) = AccountMemorizer.get(
+            chain_id=call_contract_request.calldata_start[2],
+            block_number=call_contract_request.calldata_start[3],
+            address=call_contract_request.calldata_start[4],
+        );
+        if (functionId == AccountMemorizerFunctionId.GET_NONCE) {
+            let field: Uint256 = AccountDecoder.get_field(rlp=rlp, field=AccountField.NONCE);
+            let (value) = uint256_reverse_endian(num=field);
+
+            assert call_contract_response.retdata_start[0] = value.low;
+            assert call_contract_response.retdata_start[1] = value.high;
+
+            return ();
+        }
+        if (functionId == AccountMemorizerFunctionId.GET_BALANCE) {
             let field: Uint256 = AccountDecoder.get_field(rlp=rlp, field=AccountField.BALANCE);
+            let (value) = uint256_reverse_endian(num=field);
+
+            assert call_contract_response.retdata_start[0] = value.low;
+            assert call_contract_response.retdata_start[1] = value.high;
+
+            return ();
+        }
+        if (functionId == AccountMemorizerFunctionId.GET_STATE_ROOT) {
+            let field: Uint256 = AccountDecoder.get_field(rlp=rlp, field=AccountField.STATE_ROOT);
+            let (value) = uint256_reverse_endian(num=field);
+
+            assert call_contract_response.retdata_start[0] = value.low;
+            assert call_contract_response.retdata_start[1] = value.high;
+
+            return ();
+        }
+        if (functionId == AccountMemorizerFunctionId.GET_CODE_HASH) {
+            let field: Uint256 = AccountDecoder.get_field(rlp=rlp, field=AccountField.CODE_HASH);
             let (value) = uint256_reverse_endian(num=field);
 
             assert call_contract_response.retdata_start[0] = value.low;
@@ -137,6 +301,8 @@ func execute_call_contract{
 
         // Unknown AccountMemorizerFunctionId
         assert 1 = 0;
+
+        return ();
     }
 
     // Unknown MemorizerId
