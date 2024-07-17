@@ -125,6 +125,7 @@ func execute_entry_point{
     builtin_params: BuiltinParams*,
     header_dict: DictAccess*,
     account_dict: DictAccess*,
+    storage_dict: DictAccess*,
     pow2_array: felt*,
 }(compiled_class: CompiledClass*, execution_context: ExecutionContext*, dry_run: felt) -> (
     retdata_size: felt, retdata: felt*

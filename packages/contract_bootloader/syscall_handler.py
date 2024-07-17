@@ -17,11 +17,18 @@ from contract_bootloader.memorizer.account_memorizer import (
     MemorizerFunctionId as AccountMemorizerFunctionId,
     MemorizerKey as AccountMemorizerKey,
 )
+from contract_bootloader.memorizer.storage_memorizer import (
+    MemorizerFunctionId as StorageMemorizerFunctionId,
+    MemorizerKey as StorageMemorizerKey,
+)
 from contract_bootloader.syscall_memorizer_handler.account_memorizer_handler import (
     AccountMemorizerHandler,
 )
 from contract_bootloader.syscall_memorizer_handler.header_memorizer_handler import (
     HeaderMemorizerHandler,
+)
+from contract_bootloader.syscall_memorizer_handler.storage_memorizer_handler import (
+    StorageMemorizerHandler,
 )
 
 
@@ -108,6 +115,33 @@ class SyscallHandler(SyscallHandlerBase):
                 memorizer=memorizer,
             )
             retdata = handler.handle(function_id=functionId, key=key)
+
+        elif memorizerId == MemorizerId.Storage:
+            total_size = Memorizer.size() + StorageMemorizerKey.size()
+
+            if len(calldata) != total_size:
+                raise ValueError(
+                    f"Memorizer read must be initialized with a list of {total_size} integers"
+                )
+
+            memorizer = Memorizer(
+                dict_raw_ptrs=calldata[0 : Memorizer.size()],
+                dict_manager=self.dict_manager,
+            )
+
+            idx = Memorizer.size()
+            key = StorageMemorizerKey.from_int(
+                calldata[idx : idx + StorageMemorizerKey.size()]
+            )
+
+            handler = StorageMemorizerHandler(
+                segments=self.segments,
+                memorizer=memorizer,
+            )
+            retdata = handler.handle(function_id=functionId, key=key)
+
+        else:
+            raise ValueError(f"MemorizerId {memorizerId} not matched")
 
         return CallResult(
             gas_consumed=0,

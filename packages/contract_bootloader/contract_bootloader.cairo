@@ -42,6 +42,7 @@ func run_contract_bootloader{
     poseidon_ptr: PoseidonBuiltin*,
     header_dict: DictAccess*,
     account_dict: DictAccess*,
+    storage_dict: DictAccess*,
     pow2_array: felt*,
 }(compiled_class: CompiledClass*, calldata_size: felt, calldata: felt*, dry_run: felt) -> (
     retdata_size: felt, retdata: felt*

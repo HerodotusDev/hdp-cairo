@@ -8,9 +8,10 @@ from starkware.starknet.common.new_syscalls import (
 )
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
 from starkware.starknet.core.os.builtins import BuiltinPointers
-from src.memorizer import HeaderMemorizer, AccountMemorizer
+from src.memorizer import HeaderMemorizer, AccountMemorizer, StorageMemorizer
 from src.decoders.header_decoder import HeaderDecoder, HeaderField
 from src.decoders.account_decoder import AccountDecoder, AccountField
+from src.decoders.storage_slot_decoder import StorageSlotDecoder
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.dict_access import DictAccess
 
@@ -41,6 +42,7 @@ func execute_syscalls{
     builtin_ptrs: BuiltinPointers*,
     header_dict: DictAccess*,
     account_dict: DictAccess*,
+    storage_dict: DictAccess*,
     pow2_array: felt*,
 }(execution_context: ExecutionContext*, syscall_ptr_end: felt*) {
     if (syscall_ptr == syscall_ptr_end) {
@@ -56,6 +58,7 @@ func execute_syscalls{
 namespace MemorizerId {
     const HEADER = 0;
     const ACCOUNT = 1;
+    const STORAGE = 2;
 }
 
 namespace HeaderMemorizerFunctionId {
@@ -88,6 +91,10 @@ namespace AccountMemorizerFunctionId {
     const GET_CODE_HASH = 3;
 }
 
+namespace StorageMemorizerFunctionId {
+    const GET_SLOT = 0;
+}
+
 // Executes a syscall that calls another contract.
 func execute_call_contract{
     range_check_ptr,
@@ -97,6 +104,7 @@ func execute_call_contract{
     builtin_ptrs: BuiltinPointers*,
     header_dict: DictAccess*,
     account_dict: DictAccess*,
+    storage_dict: DictAccess*,
     pow2_array: felt*,
 }(caller_execution_context: ExecutionContext*) {
     alloc_locals;
@@ -300,6 +308,30 @@ func execute_call_contract{
         }
 
         // Unknown AccountMemorizerFunctionId
+        assert 1 = 0;
+
+        return ();
+    }
+    if (memorizerId == MemorizerId.STORAGE) {
+        let (rlp) = StorageMemorizer.get(
+            chain_id=call_contract_request.calldata_start[2],
+            block_number=call_contract_request.calldata_start[3],
+            address=call_contract_request.calldata_start[4],
+            storage_slot=Uint256(
+                call_contract_request.calldata_start[5], call_contract_request.calldata_start[6]
+            ),
+        );
+        if (functionId == StorageMemorizerFunctionId.GET_SLOT) {
+            let field: Uint256 = StorageSlotDecoder.get_word(rlp=rlp);
+            let (value) = uint256_reverse_endian(num=field);
+
+            assert call_contract_response.retdata_start[0] = value.low;
+            assert call_contract_response.retdata_start[1] = value.high;
+
+            return ();
+        }
+
+        // Unknown StorageMemorizerFunctionId
         assert 1 = 0;
 
         return ();
