@@ -86,21 +86,35 @@ func compute_tasks_hash_v2{
 }(program_hash: felt, inputs: felt*, inputs_len: felt) -> Uint256 {
     alloc_locals;
 
-    let (input_hash) = keccak_felts_bigend{
+    local data: felt* = nondet %{ segments.add() %};
+    local offset: Uint256 = Uint256(low=0x40, high=0x0);
+    local input_length: Uint256 = Uint256(low=inputs_len, high=0x0);
+
+    assert data[0] = program_hash;
+    assert data[1] = offset.high;
+    assert data[2] = offset.low;
+    assert data[3] = input_length.high;
+    assert data[4] = input_length.low;
+
+    let data = data[5];
+
+    tempvar i = 0;
+
+    copy_loop:
+    let i = [ap - 1];
+    if (i == inputs_len) {
+        jmp end_loop;
+    }
+
+    assert data[i] = inputs[i];
+    [ap] = i + 1, ap++;
+    jmp copy_loop;
+
+    end_loop:
+
+    let (task_hash) = keccak_felts_bigend{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
-    }(n_elements=inputs_len, elements=inputs);
-
-    %{ print("Inputs Hash:", hex(ids.input_hash.high * 2 ** 128 + ids.input_hash.low)) %}
-
-    let conv_program_hash = felt_to_uint256(program_hash);
-
-    let (pair: Uint256*) = alloc();
-    assert pair[0] = conv_program_hash;
-    assert pair[1] = input_hash;
-
-    let (task_hash) = keccak_uint256s_bigend{
-        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
-    }(n_elements=2, elements=pair);
+    }(n_elements=inputs_len+5, elements=data);
 
     return task_hash;
 }
