@@ -86,17 +86,16 @@ func compute_tasks_hash_v2{
 }(program_hash: felt, inputs: felt*, inputs_len: felt) -> Uint256 {
     alloc_locals;
 
-    local data: felt* = nondet %{ segments.add() %};
+    let (local data: Uint256*) = alloc();
     local offset: Uint256 = Uint256(low=0x40, high=0x0);
     local input_length: Uint256 = Uint256(low=inputs_len, high=0x0);
+    let conv_program_hash: Uint256 = felt_to_uint256(program_hash);
 
-    assert data[0] = program_hash;
-    assert data[1] = offset.high;
-    assert data[2] = offset.low;
-    assert data[3] = input_length.high;
-    assert data[4] = input_length.low;
+    assert data[0] = conv_program_hash;
+    assert data[1] = offset;
+    assert data[2] = input_length;
 
-    let data_copy: felt* = data + 5;
+    let data_copy: Uint256* = data + 3;
 
     tempvar i = 0;
 
@@ -111,16 +110,21 @@ func compute_tasks_hash_v2{
     jmp copy_loop;
 
     end_loop:
-
-    let (task_hash) = keccak_felts_bigend{
+    let (task_hash) = keccak_uint256s_bigend{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
-    }(n_elements=inputs_len+5, elements=data);
+    }(n_elements=inputs_len + 3, elements=data);
 
     %{
-        print(hex(ids.task_hash.low))
-        print(hex(ids.task_hash.high))
+        print("Task hash:", ids.inputs_len)
+        for i in range(0, 6):
+            print("Task;", hex(memory[ids.data+i]))
     %}
-    
+
+    %{
+        target_hash = hex(ids.task_hash.low + ids.task_hash.high*2**128)[2:]
+        print(f"Task hash: 0x{target_hash}")
+    %}
+
     return task_hash;
 }
 
