@@ -8,7 +8,7 @@ from starkware.cairo.lang.vm.crypto import poseidon_hash_many
 
 
 class MemorizerFunctionId(Enum):
-    GET_BALANCE = 0
+    GET_BALANCE = 1
 
     @classmethod
     def from_int(cls, value: int):

@@ -4,7 +4,7 @@ use starknet::{SyscallResult, SyscallResultTrait};
 
 const ACCOUNT_MEMORIZER_ID: felt252 = 0x1;
 
-const ACCOUNT_MEMORIZER_GET_BALANCE_ID: felt252 = 0x0;
+const ACCOUNT_MEMORIZER_GET_BALANCE_ID: felt252 = 0x1;
 
 #[derive(Serde, Drop)]
 pub struct AccountKey {

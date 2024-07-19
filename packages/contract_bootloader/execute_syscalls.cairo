@@ -59,7 +59,7 @@ namespace MemorizerId {
 }
 
 namespace AccountMemorizerFunctionId {
-    const GET_BALANCE = 0;
+    const GET_BALANCE = 1;
 }
 
 // Executes a syscall that calls another contract.

@@ -96,7 +96,7 @@ func compute_tasks_hash_v2{
     assert data[3] = input_length.high;
     assert data[4] = input_length.low;
 
-    let data = data[5];
+    let data_copy: felt* = data + 5;
 
     tempvar i = 0;
 
@@ -106,7 +106,7 @@ func compute_tasks_hash_v2{
         jmp end_loop;
     }
 
-    assert data[i] = inputs[i];
+    assert data_copy[i] = inputs[i];
     [ap] = i + 1, ap++;
     jmp copy_loop;
 
@@ -116,6 +116,11 @@ func compute_tasks_hash_v2{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
     }(n_elements=inputs_len+5, elements=data);
 
+    %{
+        print(hex(ids.task_hash.low))
+        print(hex(ids.task_hash.high))
+    %}
+    
     return task_hash;
 }
 
