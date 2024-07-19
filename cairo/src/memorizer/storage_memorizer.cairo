@@ -2,7 +2,7 @@ use hdp_cairo::Memorizer;
 use starknet::syscalls::call_contract_syscall;
 use starknet::{SyscallResult, SyscallResultTrait};
 
-const STORAGE_MEMORIZER: felt252 = 0x2;
+const STORAGE_MEMORIZER: felt252 = 2;
 
 const STORAGE_MEMORIZER_GET_SLOT: felt252 = 0;
 

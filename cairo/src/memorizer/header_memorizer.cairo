@@ -2,7 +2,7 @@ use hdp_cairo::Memorizer;
 use starknet::syscalls::call_contract_syscall;
 use starknet::{SyscallResult, SyscallResultTrait};
 
-const HEADER_MEMORIZER: felt252 = 0x0;
+const HEADER_MEMORIZER: felt252 = 0;
 
 const HEADER_MEMORIZER_GET_PARENT: felt252 = 0;
 const HEADER_MEMORIZER_GET_UNCLE: felt252 = 1;
@@ -37,6 +37,126 @@ pub impl HeaderMemorizerImpl of HeaderMemorizerTrait {
         let value = call_contract_syscall(
             HEADER_MEMORIZER.try_into().unwrap(),
             HEADER_MEMORIZER_GET_PARENT,
+            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+                .span()
+        )
+            .unwrap_syscall();
+        u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }
+    }
+    fn get_uncle(self: @Memorizer, key: HeaderKey) -> u256 {
+        let value = call_contract_syscall(
+            HEADER_MEMORIZER.try_into().unwrap(),
+            HEADER_MEMORIZER_GET_UNCLE,
+            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+                .span()
+        )
+            .unwrap_syscall();
+        u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }
+    }
+    fn get_coinbase(self: @Memorizer, key: HeaderKey) -> u256 {
+        let value = call_contract_syscall(
+            HEADER_MEMORIZER.try_into().unwrap(),
+            HEADER_MEMORIZER_GET_COINBASE,
+            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+                .span()
+        )
+            .unwrap_syscall();
+        u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }
+    }
+    fn get_state_root(self: @Memorizer, key: HeaderKey) -> u256 {
+        let value = call_contract_syscall(
+            HEADER_MEMORIZER.try_into().unwrap(),
+            HEADER_MEMORIZER_GET_STATE_ROOT,
+            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+                .span()
+        )
+            .unwrap_syscall();
+        u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }
+    }
+    fn get_transaction_root(self: @Memorizer, key: HeaderKey) -> u256 {
+        let value = call_contract_syscall(
+            HEADER_MEMORIZER.try_into().unwrap(),
+            HEADER_MEMORIZER_GET_TRANSACTION_ROOT,
+            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+                .span()
+        )
+            .unwrap_syscall();
+        u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }
+    }
+    fn get_receipt_root(self: @Memorizer, key: HeaderKey) -> u256 {
+        let value = call_contract_syscall(
+            HEADER_MEMORIZER.try_into().unwrap(),
+            HEADER_MEMORIZER_GET_RECEIPT_ROOT,
+            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+                .span()
+        )
+            .unwrap_syscall();
+        u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }
+    }
+    fn get_difficulty(self: @Memorizer, key: HeaderKey) -> u256 {
+        let value = call_contract_syscall(
+            HEADER_MEMORIZER.try_into().unwrap(),
+            HEADER_MEMORIZER_GET_DIFFICULTY,
+            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+                .span()
+        )
+            .unwrap_syscall();
+        u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }
+    }
+    fn get_number(self: @Memorizer, key: HeaderKey) -> u256 {
+        let value = call_contract_syscall(
+            HEADER_MEMORIZER.try_into().unwrap(),
+            HEADER_MEMORIZER_GET_NUMBER,
+            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+                .span()
+        )
+            .unwrap_syscall();
+        u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }
+    }
+    fn get_gas_limit(self: @Memorizer, key: HeaderKey) -> u256 {
+        let value = call_contract_syscall(
+            HEADER_MEMORIZER.try_into().unwrap(),
+            HEADER_MEMORIZER_GET_GAS_LIMIT,
+            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+                .span()
+        )
+            .unwrap_syscall();
+        u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }
+    }
+    fn get_gas_used(self: @Memorizer, key: HeaderKey) -> u256 {
+        let value = call_contract_syscall(
+            HEADER_MEMORIZER.try_into().unwrap(),
+            HEADER_MEMORIZER_GET_GAS_USED,
+            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+                .span()
+        )
+            .unwrap_syscall();
+        u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }
+    }
+    fn get_mix_hash(self: @Memorizer, key: HeaderKey) -> u256 {
+        let value = call_contract_syscall(
+            HEADER_MEMORIZER.try_into().unwrap(),
+            HEADER_MEMORIZER_GET_MIX_HASH,
+            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+                .span()
+        )
+            .unwrap_syscall();
+        u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }
+    }
+    fn get_nonce(self: @Memorizer, key: HeaderKey) -> u256 {
+        let value = call_contract_syscall(
+            HEADER_MEMORIZER.try_into().unwrap(),
+            HEADER_MEMORIZER_GET_NONCE,
+            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+                .span()
+        )
+            .unwrap_syscall();
+        u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }
+    }
+    fn get_base_fee_per_gas(self: @Memorizer, key: HeaderKey) -> u256 {
+        let value = call_contract_syscall(
+            HEADER_MEMORIZER.try_into().unwrap(),
+            HEADER_MEMORIZER_GET_BASE_FEE_PER_GAS,
             array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
                 .span()
         )

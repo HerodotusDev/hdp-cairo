@@ -2,7 +2,7 @@ use hdp_cairo::Memorizer;
 use starknet::syscalls::call_contract_syscall;
 use starknet::{SyscallResult, SyscallResultTrait};
 
-const ACCOUNT_MEMORIZER: felt252 = 0x1;
+const ACCOUNT_MEMORIZER: felt252 = 1;
 
 const ACCOUNT_MEMORIZER_GET_NONCE: felt252 = 0;
 const ACCOUNT_MEMORIZER_GET_BALANCE: felt252 = 1;
@@ -18,10 +18,58 @@ pub struct AccountKey {
 
 #[generate_trait]
 pub impl AccountMemorizerImpl of AccountMemorizerTrait {
+    fn get_nonce(self: @Memorizer, key: AccountKey) -> u256 {
+        let value = call_contract_syscall(
+            ACCOUNT_MEMORIZER.try_into().unwrap(),
+            ACCOUNT_MEMORIZER_GET_NONCE,
+            array![
+                *self.dict.segment_index,
+                *self.dict.offset,
+                key.chain_id,
+                key.block_number,
+                key.address,
+            ]
+                .span()
+        )
+            .unwrap_syscall();
+        u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }
+    }
     fn get_balance(self: @Memorizer, key: AccountKey) -> u256 {
         let value = call_contract_syscall(
             ACCOUNT_MEMORIZER.try_into().unwrap(),
             ACCOUNT_MEMORIZER_GET_BALANCE,
+            array![
+                *self.dict.segment_index,
+                *self.dict.offset,
+                key.chain_id,
+                key.block_number,
+                key.address,
+            ]
+                .span()
+        )
+            .unwrap_syscall();
+        u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }
+    }
+    fn get_state_root(self: @Memorizer, key: AccountKey) -> u256 {
+        let value = call_contract_syscall(
+            ACCOUNT_MEMORIZER.try_into().unwrap(),
+            ACCOUNT_MEMORIZER_GET_STATE_ROOT,
+            array![
+                *self.dict.segment_index,
+                *self.dict.offset,
+                key.chain_id,
+                key.block_number,
+                key.address,
+            ]
+                .span()
+        )
+            .unwrap_syscall();
+        u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }
+    }
+    fn get_code_hash(self: @Memorizer, key: AccountKey) -> u256 {
+        let value = call_contract_syscall(
+            ACCOUNT_MEMORIZER.try_into().unwrap(),
+            ACCOUNT_MEMORIZER_GET_CODE_HASH,
             array![
                 *self.dict.segment_index,
                 *self.dict.offset,
