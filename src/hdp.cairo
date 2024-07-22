@@ -300,7 +300,7 @@ func compute_tasks{
 
         let task_hash = compute_tasks_hash_v2{
             range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
-        }(program_hash=program_hash, inputs=module_task.module_inputs, inputs_len= module_task.module_inputs_len);
+        }(encoded_task=encoded_task, task_bytes_len=task_bytes_len);
 
         // %{ print("Task;", hex(ids.task_hash.high * 2 ** 128 + ids.task_hash.low)) %}
 

@@ -25,7 +25,7 @@ func init_module{
                 module_inputs=module_inputs,
             ),
         );
-    }else {
+    } else {
         let (module_inputs) = extract_dynamic_params{
             range_check_ptr=range_check_ptr
         }(encoded_module=input,module_inputs_len=module_inputs_len);
@@ -79,7 +79,7 @@ func extract_constant_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(inpu
 
 // Decodes the dynamic parameters of the Module
 // Inputs:
-// input: le 8-byte chunks, 
+// input: encoded_module, module_inputs_len
 // Outputs:
 // module_inputs
 func extract_dynamic_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(encoded_module: felt*, module_inputs_len: felt) -> (
@@ -95,7 +95,6 @@ func extract_dynamic_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(encod
 
     let (module_inputs) = alloc();
 
-    // copy the leafs to a new array.
     tempvar i = 0;
 
     copy_loop:
@@ -110,9 +109,13 @@ func extract_dynamic_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(encod
         print(f"offset2 = {12+ ids.offset}")
     %}
     let (target_input_low_first) = word_reverse_endian_64([encoded_module + 12 + offset]);
+    tempvar bitwise_ptr = bitwise_ptr + 3;
     let (target_input_low_second) = word_reverse_endian_64([encoded_module + 13 + offset]);
+    tempvar bitwise_ptr = bitwise_ptr + 3;
     let (target_input_high_first) = word_reverse_endian_64([encoded_module + 14 + offset]);
+    tempvar bitwise_ptr = bitwise_ptr + 3;
     let (target_input_high_second) = word_reverse_endian_64([encoded_module + 15 + offset]);
+
     let target_input_low = target_input_low_first  * 0x10000000000000000 + target_input_low_second;
     let target_input_high = target_input_high_first * 0x10000000000000000 + target_input_high_second ;
     local target_input: felt;
@@ -123,6 +126,7 @@ func extract_dynamic_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(encod
     %}
     assert module_inputs[i] = target_input;
     [ap] = i + 1, ap++;
+
     jmp copy_loop;
 
     end_loop:
@@ -131,3 +135,4 @@ func extract_dynamic_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(encod
         module_inputs=module_inputs
     );
 }
+
