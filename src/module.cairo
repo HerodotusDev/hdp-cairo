@@ -39,11 +39,29 @@ func extract_constant_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(inpu
 
     // Copy class_hash
     let (class_hash_low_first) = word_reverse_endian_64([input]);
+    %{
+        print(f"class_hash_low_first = {ids.class_hash_low_first}")
+    %}
     let (class_hash_low_second) = word_reverse_endian_64([input + 1]);
+    %{
+        print(f"class_hash_low_second = {ids.class_hash_low_second}")
+    %}
     let (class_hash_high_first) = word_reverse_endian_64([input + 2]);
+    %{
+        print(f"class_hash_high_first = {ids.class_hash_high_first}")
+    %}
     let (class_hash_high_second) = word_reverse_endian_64([input + 3]);
-    let class_hash_low = class_hash_low_first + class_hash_low_second * 0x10000000000000000;
-    let class_hash_high = class_hash_high_first + class_hash_high_second * 0x10000000000000000;
+    %{
+        print(f"class_hash_high_second = {ids.class_hash_high_second}")
+    %}
+    let class_hash_low = class_hash_low_first  * 0x10000000000000000 + class_hash_low_second;
+    %{
+        print(f"class_hash_low = {ids.class_hash_low}")
+    %}
+    let class_hash_high = class_hash_high_first * 0x10000000000000000 + class_hash_high_second ;
+    %{
+        print(f"class_hash_low = {ids.class_hash_high}")
+    %}
     local class_hash: felt;
     %{
         class_hash = ids.class_hash_low * 2**128 + ids.class_hash_high
