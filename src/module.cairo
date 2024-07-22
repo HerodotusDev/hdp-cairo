@@ -26,9 +26,10 @@ func init_module{
             ),
         );
     } else {
-        let (module_inputs) = extract_dynamic_params{
+        let (module_inputs) = alloc();
+        extract_dynamic_params{
             range_check_ptr=range_check_ptr
-        }(encoded_module=input,module_inputs_len=module_inputs_len);
+        }(encoded_module=input, module_inputs_len=module_inputs_len, index=0, extracted_inputs=module_inputs);
 
         return (
             res=ModuleTask(
@@ -80,52 +81,30 @@ func extract_constant_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(inpu
 // input: encoded_module, module_inputs_len
 // Outputs:
 // module_inputs
-func extract_dynamic_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(encoded_module: felt*, module_inputs_len: felt) -> (
-    module_inputs: felt*
-) {
+func extract_dynamic_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(encoded_module: felt*, module_inputs_len: felt, index: felt, extracted_inputs: felt*) -> () {
     alloc_locals;
     // ModuleTask Layout:
     // 0-4: class_hash
     // 4-8: dynamic_input_offset
     // 8-12: module_inputs_len
-    // 12-16: input 1
-    // .
-    // .
-    // .
+    // 12-16: input 1...
+    // ...
 
-    let (module_inputs) = alloc();
-
-    tempvar i = 0;
-
-    copy_loop:
-    let i = [ap - 1];
-    if (i == module_inputs_len) {
-        jmp end_loop;
+    if (module_inputs_len == index) {
+        return();
     }
-   
-    let offset = i * 4;
-     %{
-        print(f"offset = {ids.offset}")
-        print(f"offset2 = {12+ ids.offset}")
-    %}
-    let (target_input_low_first) = word_reverse_endian_64([encoded_module + 12 + offset]);
-    let (target_input_low_second) = word_reverse_endian_64([encoded_module + 13 + offset]);
-    let (target_input_high_first) = word_reverse_endian_64([encoded_module + 14 + offset]);
-    let (target_input_high_second) = word_reverse_endian_64([encoded_module + 15 + offset]);
+
+    let (target_input_low_first) = word_reverse_endian_64([encoded_module + 12 + index*4]);
+    let (target_input_low_second) = word_reverse_endian_64([encoded_module + 13 + index*4]);
+    let (target_input_high_first) = word_reverse_endian_64([encoded_module + 14 + index*4]);
+    let (target_input_high_second) = word_reverse_endian_64([encoded_module + 15 + index*4]);
 
     let target_input_low = target_input_low_first  * 0x10000000000000000 + target_input_low_second;
     let target_input_high = target_input_high_first * 0x10000000000000000 + target_input_high_second;
     let target_input = target_input_high * 0x100000000000000000000000000000000 + target_input_low;
 
-    assert module_inputs[i] = target_input;
-    [ap] = i + 1, ap++;
+    assert extracted_inputs[0] = target_input;
 
-    jmp copy_loop;
-
-    end_loop:
-
-    return (
-        module_inputs=module_inputs
-    );
+    return extract_dynamic_params(encoded_module=encoded_module, module_inputs_len=module_inputs_len, index=index+1, extracted_inputs=extracted_inputs+1);
 }
 
