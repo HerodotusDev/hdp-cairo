@@ -85,11 +85,13 @@ func extract_dynamic_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(encod
 ) {
     alloc_locals;
     // ModuleTask Layout:
-    // 0-3: class_hash
-    // 4-7: dynamic_input_offset
-    // 8-11: module_inputs_len
-    // 12-15: input 1 ... 
-    // ...
+    // 0-4: class_hash
+    // 4-8: dynamic_input_offset
+    // 8-12: module_inputs_len
+    // 12-16: input 1
+    // .
+    // .
+    // .
 
     let (module_inputs) = alloc();
 
@@ -107,21 +109,14 @@ func extract_dynamic_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(encod
         print(f"offset2 = {12+ ids.offset}")
     %}
     let (target_input_low_first) = word_reverse_endian_64([encoded_module + 12 + offset]);
-    tempvar bitwise_ptr = bitwise_ptr + 3;
     let (target_input_low_second) = word_reverse_endian_64([encoded_module + 13 + offset]);
-    tempvar bitwise_ptr = bitwise_ptr + 3;
     let (target_input_high_first) = word_reverse_endian_64([encoded_module + 14 + offset]);
-    tempvar bitwise_ptr = bitwise_ptr + 3;
     let (target_input_high_second) = word_reverse_endian_64([encoded_module + 15 + offset]);
 
     let target_input_low = target_input_low_first  * 0x10000000000000000 + target_input_low_second;
-    let target_input_high = target_input_high_first * 0x10000000000000000 + target_input_high_second ;
-    local target_input: felt;
-    %{
-        target_input = ids.target_input_low * 2**128 + ids.target_input_high
-        print(f"target_input = {target_input}")
-        ids.target_input = target_input
-    %}
+    let target_input_high = target_input_high_first * 0x10000000000000000 + target_input_high_second;
+    let target_input = target_input_high * 0x100000000000000000000000000000000 + target_input_low;
+
     assert module_inputs[i] = target_input;
     [ap] = i + 1, ap++;
 
