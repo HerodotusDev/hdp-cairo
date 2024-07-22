@@ -16,6 +16,7 @@ struct MMRMeta {
 }
 
 struct BlockSampledDataLake {
+    chain_id: felt,
     block_range_start: felt,
     block_range_end: felt,
     increment: felt,
@@ -24,6 +25,7 @@ struct BlockSampledDataLake {
 }
 
 struct TransactionsInBlockDatalake {
+    chain_id: felt,
     target_block: felt,
     start_index: felt,
     end_index: felt,

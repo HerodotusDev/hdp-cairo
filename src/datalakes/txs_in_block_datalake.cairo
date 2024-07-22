@@ -26,46 +26,52 @@ func init_txs_in_block{
 
     // HeaderProp Input Layout:
     // 0-3: DatalakeCode.BlockSampled
-    // 4-7: target_block
-    // 8-11: start_index
-    // 12-15: end_index
-    // 16-19: increment
-    // 20-23: included_types
-    // 24-27: dynamic data offset
-    // 28-31: dynamic data element count
-    // 32-35: sampled_property (type, field)
+    // 4-7: chain_id
+    // 8-11: target_block
+    // 12-15: start_index
+    // 16-19: end_index
+    // 20-23: increment
+    // 24-27: included_types
+    // 28-31: dynamic data offset
+    // 32-35: dynamic data element count
+    // 36-39: sampled_property (type, field)
+
     assert [input + 3] = 0x100000000000000;  // DatalakeCode.TxsInBlock == 1
 
-    assert [input + 6] = 0;  // first 3 chunks of target_block should be 0
-    let (target_block) = word_reverse_endian_64([input + 7]);
+    assert [input + 6] = 0;  // first 3 chunks of chain_id should be 0
+    let (chain_id) = word_reverse_endian_64([input + 7]);
 
-    assert [input + 10] = 0;  // first 3 chunks of start_index should be 0
-    let (start_index) = word_reverse_endian_64([input + 11]);
+    assert [input + 10] = 0;  // first 3 chunks of target_block should be 0
+    let (target_block) = word_reverse_endian_64([input + 11]);
 
-    assert [input + 14] = 0;  // first 3 chunks of end_index should be 0
-    let (end_index) = word_reverse_endian_64([input + 15]);
+    assert [input + 14] = 0;  // first 3 chunks of start_index should be 0
+    let (start_index) = word_reverse_endian_64([input + 15]);
 
-    assert [input + 18] = 0;  // first 3 chunks of increment should be 0
-    let (increment) = word_reverse_endian_64([input + 19]);
+    assert [input + 18] = 0;  // first 3 chunks of end_index should be 0
+    let (end_index) = word_reverse_endian_64([input + 19]);
+
+    assert [input + 22] = 0;  // first 3 chunks of increment should be 0
+    let (increment) = word_reverse_endian_64([input + 23]);
 
     // Extract and add filter flags
     let (included_types) = alloc();
-    let legacy = extract_byte_at_pos([input + 23], 4, pow2_array);
+    let legacy = extract_byte_at_pos([input + 27], 4, pow2_array);
     assert included_types[TransactionType.LEGACY] = legacy;
-    let eip2930 = extract_byte_at_pos([input + 23], 5, pow2_array);
+    let eip2930 = extract_byte_at_pos([input + 27], 5, pow2_array);
     assert included_types[TransactionType.EIP2930] = eip2930;
-    let eip1559 = extract_byte_at_pos([input + 23], 6, pow2_array);
+    let eip1559 = extract_byte_at_pos([input + 27], 6, pow2_array);
     assert included_types[TransactionType.EIP1559] = eip1559;
-    let eip4844 = extract_byte_at_pos([input + 23], 7, pow2_array);
+    let eip4844 = extract_byte_at_pos([input + 27], 7, pow2_array);
     assert included_types[TransactionType.EIP4844] = eip4844;
 
-    let type = extract_byte_at_pos([input + 32], 0, pow2_array);
-    let property = extract_byte_at_pos([input + 32], 1, pow2_array);
+    let type = extract_byte_at_pos([input + 36], 0, pow2_array);
+    let property = extract_byte_at_pos([input + 36], 1, pow2_array);
 
-    assert [input + 33] = 0;  // remaining chunks should be 0
+    assert [input + 37] = 0;  // remaining chunks should be 0
 
     return (
         res=TransactionsInBlockDatalake(
+            chain_id=chain_id,
             target_block=target_block,
             start_index=start_index,
             end_index=end_index,
