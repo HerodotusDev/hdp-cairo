@@ -12,6 +12,7 @@ func init_module{
         range_check_ptr=range_check_ptr
     }(input=input);
 
+    // TODO get input dynamically base on module_inputs_len
     let (module_inputs) = alloc();
 
     return (
