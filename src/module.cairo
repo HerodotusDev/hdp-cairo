@@ -47,8 +47,8 @@ func extract_constant_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(inpu
 ) {
     alloc_locals;
     // ModuleTask Layout:
-    // 0-4: class_hash
-    // 4-8: dynamic_input_offset
+    // 0-3: class_hash
+    // 4-7: dynamic_input_offset
     // 8-11: module_inputs_len
 
     // Copy class_hash
@@ -79,11 +79,11 @@ func extract_dynamic_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
 ) -> () {
     alloc_locals;
     // ModuleTask Layout:
-    // 0-4: class_hash
-    // 4-8: dynamic_input_offset
-    // 8-12: module_inputs_len
-    // 12-16: input 1...
-    // 16-20: ...
+    // 0-3: class_hash
+    // 4-7: dynamic_input_offset
+    // 8-11: module_inputs_len
+    // 12-15: input 1...
+    // 16-19: ...
     // ...
 
     if (module_inputs_len == index) {
