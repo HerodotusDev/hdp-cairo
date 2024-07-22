@@ -97,11 +97,10 @@ class Datalake:
 
 @marshmallow_dataclass.dataclass(frozen=True)
 class Module(ValidatedMarshmallowDataclass):
-    inputs: List[int] = field(
-        metadata=additional_metadata(
-            marshmallow_field=mfields.List(IntAsHex(), required=True)
-        )
+    encoded_task: List[int] = field(
+        metadata=additional_metadata(marshmallow_field=mfields.List(IntAsHex()))
     )
+    task_bytes_len: int
     module_class: CompiledClass
 
 

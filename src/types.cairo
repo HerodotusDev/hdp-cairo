@@ -42,3 +42,9 @@ struct ComputationalTask {
     ctx_operator: felt,
     ctx_value: Uint256,
 }
+
+struct ModuleTask {
+   class_hash: felt,
+   module_inputs_len: felt,
+   module_inputs: felt*,
+}

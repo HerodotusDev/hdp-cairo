@@ -105,7 +105,7 @@ func compute_tasks_hash_v2{
         jmp end_loop;
     }
 
-    assert data_copy[i] = inputs[i];
+    assert data_copy[i] = Uint256(low=inputs[i], high=0x0);
     [ap] = i + 1, ap++;
     jmp copy_loop;
 
