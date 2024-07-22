@@ -51,8 +51,8 @@ func extract_constant_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(inpu
 ) {
     alloc_locals;
     // ModuleTask Layout:
-    // 0-3: class_hash
-    // 4-7: dynamic_input_offset
+    // 0-4: class_hash
+    // 4-8: dynamic_input_offset
     // 8-11: module_inputs_len
 
     // Copy class_hash
@@ -61,15 +61,13 @@ func extract_constant_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(inpu
     let (class_hash_high_first) = word_reverse_endian_64([input + 2]);
     let (class_hash_high_second) = word_reverse_endian_64([input + 3]);
     let class_hash_low = class_hash_low_first  * 0x10000000000000000 + class_hash_low_second;
-    let class_hash_high = class_hash_high_first * 0x10000000000000000 + class_hash_high_second ;
-    local class_hash: felt;
-    %{
-        class_hash = ids.class_hash_low * 2**128 + ids.class_hash_high
-        print(f"class_hash = {class_hash}")
-        ids.class_hash = class_hash
-    %}
+    let class_hash_high = class_hash_high_first * 0x10000000000000000 + class_hash_high_second;
+    let class_hash = class_hash_high * 0x100000000000000000000000000000000 + class_hash_high;
 
-    assert [input + 10] = 0;  // first 3 chunks of increment should be 0
+    // first 3 chunks of module_inputs_len should be 0
+    assert [input + 8] = 0x0;
+    assert [input + 9] = 0x0;
+    assert [input + 10] = 0x0;
     let (module_inputs_len) = word_reverse_endian_64([input + 11]);
 
     return (
