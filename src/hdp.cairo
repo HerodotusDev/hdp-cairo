@@ -291,7 +291,9 @@ func compute_tasks{
 
         let (local module_task) = init_module(encoded_task, encoded_task_len);
 
-        let (result, program_hash) = compute_contract(module_task.module_inputs, module_task.module_inputs_len);
+        let (result, program_hash) = compute_contract(
+            module_task.module_inputs, module_task.module_inputs_len
+        );
         assert results[0] = result;
         %{
             target_result = hex(ids.result.high * 2 ** 128 + ids.result.low)

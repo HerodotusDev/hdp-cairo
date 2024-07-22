@@ -89,9 +89,7 @@ func compute_tasks_hash_v2{
 
     let (task_hash) = keccak(encoded_task, task_bytes_len);
 
-    %{
-        print(f"Task hash: {ids.task_hash}")
-    %}
+    %{ print(f"Task hash: {ids.task_hash}") %}
 
     return task_hash;
 }

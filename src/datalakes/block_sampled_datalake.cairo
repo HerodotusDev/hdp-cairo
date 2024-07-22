@@ -336,7 +336,10 @@ func extract_constant_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(inpu
     let (increment) = word_reverse_endian_64([input + 19]);
 
     return (
-        chain_id=chain_id, block_range_start=block_range_start, block_range_end=block_range_end, increment=increment
+        chain_id=chain_id,
+        block_range_start=block_range_start,
+        block_range_end=block_range_end,
+        increment=increment,
     );
 }
 
