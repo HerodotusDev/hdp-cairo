@@ -65,6 +65,8 @@ class SyscallHandler(SyscallHandlerBase):
             start_addr=request.calldata_start, end_addr=request.calldata_end
         )
 
+        retdata = []
+
         memorizerId = MemorizerId.from_int(request.contract_address)
         functionId = AccountMemorizerFunctionId.from_int(request.selector)
         if memorizerId == MemorizerId.Header:

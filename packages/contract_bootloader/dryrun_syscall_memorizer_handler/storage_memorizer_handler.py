@@ -24,7 +24,7 @@ class DryRunStorageMemorizerHandler(AbstractStorageMemorizerBase):
     def fetch_keys_dict(self) -> set:
         def create_dict(key: MemorizerKey):
             data = dict()
-            data["type"] = "AccountMemorizerKey"
+            data["type"] = "StorageMemorizerKey"
             data["key"] = key.to_dict()
             return data
 

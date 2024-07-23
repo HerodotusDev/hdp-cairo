@@ -71,6 +71,8 @@ class DryRunSyscallHandler(SyscallHandlerBase):
             start_addr=request.calldata_start, end_addr=request.calldata_end
         )
 
+        retdata = []
+
         memorizerId = MemorizerId.from_int(request.contract_address)
         if memorizerId == MemorizerId.Header:
             total_size = Memorizer.size() + HeaderMemorizerKey.size()

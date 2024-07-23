@@ -15,7 +15,7 @@ class DryRunHeaderMemorizerHandler(AbstractHeaderMemorizerBase):
 
     def get_parent(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        value = int(self.evm_provider.get_block(key=key)["parentHash"])
+        value = self.evm_provider.get_parent(key=key)
         return (
             value % 0x100000000000000000000000000000000,
             value // 0x100000000000000000000000000000000,
@@ -23,7 +23,7 @@ class DryRunHeaderMemorizerHandler(AbstractHeaderMemorizerBase):
 
     def get_uncle(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        value = int(self.evm_provider.get_block(key=key)["sha3Uncles"])
+        value = self.evm_provider.get_uncle(key=key)
         return (
             value % 0x100000000000000000000000000000000,
             value // 0x100000000000000000000000000000000,
@@ -31,7 +31,7 @@ class DryRunHeaderMemorizerHandler(AbstractHeaderMemorizerBase):
 
     def get_coinbase(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        value = int(self.evm_provider.get_block(key=key)["miner"])
+        value = self.evm_provider.get_coinbase(key=key)
         return (
             value % 0x100000000000000000000000000000000,
             value // 0x100000000000000000000000000000000,
@@ -39,7 +39,7 @@ class DryRunHeaderMemorizerHandler(AbstractHeaderMemorizerBase):
 
     def get_state_root(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        value = int(self.evm_provider.get_block(key=key)["stateRoot"])
+        value = self.evm_provider.get_state_root(key=key)
         return (
             value % 0x100000000000000000000000000000000,
             value // 0x100000000000000000000000000000000,
@@ -47,7 +47,7 @@ class DryRunHeaderMemorizerHandler(AbstractHeaderMemorizerBase):
 
     def get_transaction_root(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        value = int(self.evm_provider.get_block(key=key)["transactionsRoot"])
+        value = self.evm_provider.get_transaction_root(key=key)
         return (
             value % 0x100000000000000000000000000000000,
             value // 0x100000000000000000000000000000000,
@@ -55,18 +55,23 @@ class DryRunHeaderMemorizerHandler(AbstractHeaderMemorizerBase):
 
     def get_receipt_root(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        value = int(self.evm_provider.get_block(key=key)["receiptRoot"])
+        value = self.evm_provider.get_receipt_root(key=key)
         return (
             value % 0x100000000000000000000000000000000,
             value // 0x100000000000000000000000000000000,
         )
 
     def get_bloom(self, key: MemorizerKey) -> Tuple[int, int]:
-        pass
+        self.fetch_keys_registry.add(key)
+        value = self.evm_provider.get_bloom(key=key)
+        return (
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
+        )
 
     def get_difficulty(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        value = int(self.evm_provider.get_block(key=key)["difficulty"])
+        value = self.evm_provider.get_difficulty(key=key)
         return (
             value % 0x100000000000000000000000000000000,
             value // 0x100000000000000000000000000000000,
@@ -74,7 +79,7 @@ class DryRunHeaderMemorizerHandler(AbstractHeaderMemorizerBase):
 
     def get_number(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        value = int(self.evm_provider.get_block(key=key)["number"])
+        value = self.evm_provider.get_number(key=key)
         return (
             value % 0x100000000000000000000000000000000,
             value // 0x100000000000000000000000000000000,
@@ -82,7 +87,7 @@ class DryRunHeaderMemorizerHandler(AbstractHeaderMemorizerBase):
 
     def get_gas_limit(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        value = int(self.evm_provider.get_block(key=key)["gasLimit"])
+        value = self.evm_provider.get_gas_limit(key=key)
         return (
             value % 0x100000000000000000000000000000000,
             value // 0x100000000000000000000000000000000,
@@ -90,7 +95,7 @@ class DryRunHeaderMemorizerHandler(AbstractHeaderMemorizerBase):
 
     def get_gas_used(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        value = int(self.evm_provider.get_block(key=key)["gasUsed"])
+        value = self.evm_provider.get_gas_used(key=key)
         return (
             value % 0x100000000000000000000000000000000,
             value // 0x100000000000000000000000000000000,
@@ -98,18 +103,23 @@ class DryRunHeaderMemorizerHandler(AbstractHeaderMemorizerBase):
 
     def get_timestamp(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        value = int(self.evm_provider.get_block(key=key)["timestamp"])
+        value = self.evm_provider.get_timestamp(key=key)
         return (
             value % 0x100000000000000000000000000000000,
             value // 0x100000000000000000000000000000000,
         )
 
     def get_extra_data(self, key: MemorizerKey) -> Tuple[int, int]:
-        pass
+        self.fetch_keys_registry.add(key)
+        value = self.evm_provider.get_extra_data(key=key)
+        return (
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
+        )
 
     def get_mix_hash(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        value = int(self.evm_provider.get_block(key=key)["mixHash"])
+        value = self.evm_provider.get_mix_hash(key=key)
         return (
             value % 0x100000000000000000000000000000000,
             value // 0x100000000000000000000000000000000,
@@ -117,7 +127,7 @@ class DryRunHeaderMemorizerHandler(AbstractHeaderMemorizerBase):
 
     def get_nonce(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        value = int(self.evm_provider.get_block(key=key)["nonce"])
+        value = self.evm_provider.get_nonce(key=key)
         return (
             value % 0x100000000000000000000000000000000,
             value // 0x100000000000000000000000000000000,
@@ -125,23 +135,43 @@ class DryRunHeaderMemorizerHandler(AbstractHeaderMemorizerBase):
 
     def get_base_fee_per_gas(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        value = int(self.evm_provider.get_block(key=key)["baseFeePerGas"])
+        value = self.evm_provider.get_base_fee_per_gas(key=key)
         return (
             value % 0x100000000000000000000000000000000,
             value // 0x100000000000000000000000000000000,
         )
 
     def get_withdrawals_root(self, key: MemorizerKey) -> Tuple[int, int]:
-        pass
+        self.fetch_keys_registry.add(key)
+        value = self.evm_provider.get_withdrawals_root(key=key)
+        return (
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
+        )
 
     def get_blob_gas_used(self, key: MemorizerKey) -> Tuple[int, int]:
-        pass
+        self.fetch_keys_registry.add(key)
+        value = self.evm_provider.get_blob_gas_used(key=key)
+        return (
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
+        )
 
     def get_excess_blob_gas(self, key: MemorizerKey) -> Tuple[int, int]:
-        pass
+        self.fetch_keys_registry.add(key)
+        value = self.evm_provider.get_excess_blob_gas(key=key)
+        return (
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
+        )
 
     def get_parent_beacon_block_root(self, key: MemorizerKey) -> Tuple[int, int]:
-        pass
+        self.fetch_keys_registry.add(key)
+        value = self.evm_provider.get_parent_beacon_block_root(key=key)
+        return (
+            value % 0x100000000000000000000000000000000,
+            value // 0x100000000000000000000000000000000,
+        )
 
     def fetch_keys_dict(self) -> set:
         def create_dict(key: MemorizerKey):

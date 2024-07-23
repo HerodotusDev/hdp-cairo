@@ -27,9 +27,12 @@ class HeaderMemorizerHandler(AbstractHeaderMemorizerBase):
             end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
         )
 
-        value = decode(
-            little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun
-        ).as_dict()["parentHash"]
+        value = int(
+            decode(little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun)
+            .as_dict()["parentHash"]
+            .hex(),
+            16,
+        )
 
         return (
             value % 0x100000000000000000000000000000000,
@@ -47,9 +50,12 @@ class HeaderMemorizerHandler(AbstractHeaderMemorizerBase):
             end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
         )
 
-        value = decode(
-            little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun
-        ).as_dict()["unclesHash"]
+        value = int(
+            decode(little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun)
+            .as_dict()["unclesHash"]
+            .hex(),
+            16,
+        )
 
         return (
             value % 0x100000000000000000000000000000000,
