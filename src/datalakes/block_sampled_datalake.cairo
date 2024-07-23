@@ -64,11 +64,11 @@ func init_block_sampled{
         // Account Input Layout:
 
         // extract & write field_idx
-        let field_idx = extract_byte_at_pos([input + 26], 5, pow2_array);
+        let field_idx = extract_byte_at_pos([input + 30], 5, pow2_array);
         assert [properties] = field_idx;
 
         let (address) = extract_address{bitwise_ptr=bitwise_ptr}(
-            chunk_one=[input + 24], chunk_two=[input + 25], chunk_three=[input + 26]
+            chunk_one=[input + 28], chunk_two=[input + 29], chunk_three=[input + 30]
         );
 
         // write address to properties
@@ -90,7 +90,7 @@ func init_block_sampled{
         // Account Slot Input Layout:
 
         let (address) = extract_address{bitwise_ptr=bitwise_ptr}(
-            chunk_one=[input + 24], chunk_two=[input + 25], chunk_three=[input + 26]
+            chunk_one=[input + 28], chunk_two=[input + 29], chunk_three=[input + 30]
         );
 
         // write address to properties
@@ -99,7 +99,7 @@ func init_block_sampled{
 
         extract_and_write_slot{
             range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, properties=properties
-        }(chunks=input + 26);
+        }(chunks=input + 30);
 
         return (
             res=BlockSampledDataLake(
