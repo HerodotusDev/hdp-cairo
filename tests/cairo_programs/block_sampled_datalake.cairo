@@ -47,6 +47,7 @@ func test_block_sampled_datalake_decoding{
 func block_sampled_datalake_eq(
     a: BlockSampledDataLake, b: BlockSampledDataLake, property_type: felt
 ) {
+    assert a.chain_id = b.chain_id;
     assert a.block_range_start = b.block_range_start;
     assert a.block_range_end = b.block_range_end;
     assert a.increment = b.increment;

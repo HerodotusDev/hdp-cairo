@@ -60,7 +60,7 @@ run-pie:
 
 get-program-hash:
 	@echo "Getting hdp.cairo program's hash..."
-	cairo-compile ./src/hdp.cairo --output $(BUILD_DIR)/hdp.json
+	cairo-compile --cairo_path="packages/eth_essentials" "src/hdp.cairo" --output $(BUILD_DIR)/hdp.json
 	cairo-hash-program --program $(BUILD_DIR)/hdp.json
 	@echo "Program hash retrieved."
 
