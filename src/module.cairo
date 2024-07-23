@@ -8,7 +8,7 @@ func init_module{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*
 }(input: felt*, input_bytes_len: felt) -> (res: ModuleTask) {
     alloc_locals;
-    let (class_hash, module_inputs_len) = extract_constant_params{range_check_ptr=range_check_ptr}(
+    let (program_hash, module_inputs_len) = extract_constant_params{range_check_ptr=range_check_ptr}(
         input=input
     );
 
@@ -32,7 +32,7 @@ func init_module{
 
     return (
         res=ModuleTask(
-            class_hash=class_hash, module_inputs_len=module_inputs_len, module_inputs=module_inputs
+            program_hash=program_hash, module_inputs_len=module_inputs_len, module_inputs=module_inputs
         ),
     );
 }
@@ -41,24 +41,24 @@ func init_module{
 // Inputs:
 // input: le 8-byte chunks
 // Outputs:
-// class_hash, module_inputs_len
+// program_hash, module_inputs_len
 func extract_constant_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(input: felt*) -> (
-    class_hash: felt, module_inputs_len: felt
+    program_hash: felt, module_inputs_len: felt
 ) {
     alloc_locals;
     // ModuleTask Layout:
-    // 0-3: class_hash
+    // 0-3: program_hash
     // 4-7: dynamic_input_offset
     // 8-11: module_inputs_len
 
-    // Copy class_hash
-    let (class_hash_low_first) = word_reverse_endian_64([input]);
-    let (class_hash_low_second) = word_reverse_endian_64([input + 1]);
-    let (class_hash_high_first) = word_reverse_endian_64([input + 2]);
-    let (class_hash_high_second) = word_reverse_endian_64([input + 3]);
-    let class_hash_first = class_hash_low_first * 0x10000000000000000 + class_hash_low_second;
-    let class_hash_second = class_hash_high_first * 0x10000000000000000 + class_hash_high_second;
-    let class_hash = class_hash_first * 0x100000000000000000000000000000000 + class_hash_second;
+    // Copy program_hash
+    let (program_hash_low_first) = word_reverse_endian_64([input]);
+    let (program_hash_low_second) = word_reverse_endian_64([input + 1]);
+    let (program_hash_high_first) = word_reverse_endian_64([input + 2]);
+    let (program_hash_high_second) = word_reverse_endian_64([input + 3]);
+    let program_hash_first = program_hash_low_first * 0x10000000000000000 + program_hash_low_second;
+    let program_hash_second = program_hash_high_first * 0x10000000000000000 + program_hash_high_second;
+    let program_hash = program_hash_first * 0x100000000000000000000000000000000 + program_hash_second;
 
     // first 3 chunks of module_inputs_len should be 0
     assert [input + 8] = 0x0;
@@ -66,7 +66,7 @@ func extract_constant_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(inpu
     assert [input + 10] = 0x0;
     let (module_inputs_len) = word_reverse_endian_64([input + 11]);
 
-    return (class_hash=class_hash, module_inputs_len=module_inputs_len);
+    return (program_hash=program_hash, module_inputs_len=module_inputs_len);
 }
 
 // Decodes the dynamic parameters of the Module
@@ -79,7 +79,7 @@ func extract_dynamic_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
 ) -> () {
     alloc_locals;
     // ModuleTask Layout:
-    // 0-3: class_hash
+    // 0-3: program_hash
     // 4-7: dynamic_input_offset
     // 8-11: module_inputs_len
     // 12-15: input 1...
