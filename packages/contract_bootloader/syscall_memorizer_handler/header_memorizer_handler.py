@@ -73,9 +73,12 @@ class HeaderMemorizerHandler(AbstractHeaderMemorizerBase):
             end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
         )
 
-        value = decode(
-            little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun
-        ).as_dict()["coinbase"]
+        value = int(
+            decode(little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun)
+            .as_dict()["coinbase"]
+            .hex(),
+            16,
+        )
 
         return (
             value % 0x100000000000000000000000000000000,
@@ -93,9 +96,12 @@ class HeaderMemorizerHandler(AbstractHeaderMemorizerBase):
             end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
         )
 
-        value = decode(
-            little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun
-        ).as_dict()["stateRoot"]
+        value = int(
+            decode(little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun)
+            .as_dict()["stateRoot"]
+            .hex(),
+            16,
+        )
 
         return (
             value % 0x100000000000000000000000000000000,
@@ -113,9 +119,12 @@ class HeaderMemorizerHandler(AbstractHeaderMemorizerBase):
             end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
         )
 
-        value = decode(
-            little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun
-        ).as_dict()["transactionsRoot"]
+        value = int(
+            decode(little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun)
+            .as_dict()["transactionsRoot"]
+            .hex(),
+            16,
+        )
 
         return (
             value % 0x100000000000000000000000000000000,
@@ -133,9 +142,12 @@ class HeaderMemorizerHandler(AbstractHeaderMemorizerBase):
             end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
         )
 
-        value = decode(
-            little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun
-        ).as_dict()["receiptsRoot"]
+        value = int(
+            decode(little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun)
+            .as_dict()["receiptsRoot"]
+            .hex(),
+            16,
+        )
 
         return (
             value % 0x100000000000000000000000000000000,
@@ -156,9 +168,11 @@ class HeaderMemorizerHandler(AbstractHeaderMemorizerBase):
             end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
         )
 
-        value = decode(
-            little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun
-        ).as_dict()["difficulty"]
+        value = int(
+            decode(
+                little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun
+            ).as_dict()["difficulty"]
+        )
 
         return (
             value % 0x100000000000000000000000000000000,
@@ -176,9 +190,11 @@ class HeaderMemorizerHandler(AbstractHeaderMemorizerBase):
             end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
         )
 
-        value = decode(
-            little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun
-        ).as_dict()["number"]
+        value = int(
+            decode(
+                little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun
+            ).as_dict()["number"]
+        )
 
         return (
             value % 0x100000000000000000000000000000000,
@@ -196,9 +212,11 @@ class HeaderMemorizerHandler(AbstractHeaderMemorizerBase):
             end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
         )
 
-        value = decode(
-            little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun
-        ).as_dict()["gasLimit"]
+        value = int(
+            decode(
+                little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun
+            ).as_dict()["gasLimit"]
+        )
 
         return (
             value % 0x100000000000000000000000000000000,
@@ -216,9 +234,11 @@ class HeaderMemorizerHandler(AbstractHeaderMemorizerBase):
             end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
         )
 
-        value = decode(
-            little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun
-        ).as_dict()["gasUsed"]
+        value = int(
+            decode(
+                little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun
+            ).as_dict()["gasUsed"]
+        )
 
         return (
             value % 0x100000000000000000000000000000000,
@@ -236,9 +256,11 @@ class HeaderMemorizerHandler(AbstractHeaderMemorizerBase):
             end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
         )
 
-        value = decode(
-            little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun
-        ).as_dict()["timestamp"]
+        value = int(
+            decode(
+                little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun
+            ).as_dict()["timestamp"]
+        )
 
         return (
             value % 0x100000000000000000000000000000000,
@@ -259,9 +281,12 @@ class HeaderMemorizerHandler(AbstractHeaderMemorizerBase):
             end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
         )
 
-        value = decode(
-            little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun
-        ).as_dict()["mixHash"]
+        value = int(
+            decode(little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun)
+            .as_dict()["mixHash"]
+            .hex(),
+            16,
+        )
 
         return (
             value % 0x100000000000000000000000000000000,
@@ -279,9 +304,12 @@ class HeaderMemorizerHandler(AbstractHeaderMemorizerBase):
             end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
         )
 
-        value = decode(
-            little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun
-        ).as_dict()["nonce"]
+        value = int(
+            decode(little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun)
+            .as_dict()["nonce"]
+            .hex(),
+            16,
+        )
 
         return (
             value % 0x100000000000000000000000000000000,
@@ -299,9 +327,11 @@ class HeaderMemorizerHandler(AbstractHeaderMemorizerBase):
             end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
         )
 
-        value = decode(
-            little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun
-        ).as_dict()["baseFeePerGas"]
+        value = int(
+            decode(
+                little_8_bytes_chunks_to_bytes(rlp, rlp_len), BlockHeaderDencun
+            ).as_dict()["baseFeePerGas"]
+        )
 
         return (
             value % 0x100000000000000000000000000000000,

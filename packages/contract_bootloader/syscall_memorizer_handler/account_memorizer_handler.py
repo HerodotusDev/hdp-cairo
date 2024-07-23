@@ -27,9 +27,11 @@ class AccountMemorizerHandler(AbstractAccountMemorizerBase):
             end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
         )
 
-        value = decode(little_8_bytes_chunks_to_bytes(rlp, rlp_len), Account).as_dict()[
-            "nonce"
-        ]
+        value = int(
+            decode(little_8_bytes_chunks_to_bytes(rlp, rlp_len), Account).as_dict()[
+                "nonce"
+            ]
+        )
 
         return (
             value % 0x100000000000000000000000000000000,
@@ -47,9 +49,11 @@ class AccountMemorizerHandler(AbstractAccountMemorizerBase):
             end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
         )
 
-        value = decode(little_8_bytes_chunks_to_bytes(rlp, rlp_len), Account).as_dict()[
-            "balance"
-        ]
+        value = int(
+            decode(little_8_bytes_chunks_to_bytes(rlp, rlp_len), Account).as_dict()[
+                "balance"
+            ]
+        )
 
         return (
             value % 0x100000000000000000000000000000000,
@@ -67,9 +71,12 @@ class AccountMemorizerHandler(AbstractAccountMemorizerBase):
             end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
         )
 
-        value = decode(little_8_bytes_chunks_to_bytes(rlp, rlp_len), Account).as_dict()[
-            "storageRoot"
-        ]
+        value = int(
+            decode(little_8_bytes_chunks_to_bytes(rlp, rlp_len), Account)
+            .as_dict()["storageRoot"]
+            .hex(),
+            16,
+        )
 
         return (
             value % 0x100000000000000000000000000000000,
@@ -87,9 +94,12 @@ class AccountMemorizerHandler(AbstractAccountMemorizerBase):
             end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
         )
 
-        value = decode(little_8_bytes_chunks_to_bytes(rlp, rlp_len), Account).as_dict()[
-            "codeHash"
-        ]
+        value = int(
+            decode(little_8_bytes_chunks_to_bytes(rlp, rlp_len), Account)
+            .as_dict()["codeHash"]
+            .hex(),
+            16,
+        )
 
         return (
             value % 0x100000000000000000000000000000000,

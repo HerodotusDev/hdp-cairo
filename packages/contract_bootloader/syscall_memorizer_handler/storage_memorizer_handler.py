@@ -27,8 +27,11 @@ class StorageMemorizerHandler(AbstractStorageMemorizerBase):
             end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
         )
 
-        value = decode(
-            little_8_bytes_chunks_to_bytes(rlp, rlp_len), Binary.fixed_length(32)
+        value = int(
+            decode(
+                little_8_bytes_chunks_to_bytes(rlp, rlp_len), Binary.fixed_length(32)
+            ).hex(),
+            16,
         )
 
         return (
