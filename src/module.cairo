@@ -8,9 +8,9 @@ func init_module{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*
 }(input: felt*, input_bytes_len: felt) -> (res: ModuleTask) {
     alloc_locals;
-    let (program_hash, module_inputs_len) = extract_constant_params{range_check_ptr=range_check_ptr}(
-        input=input
-    );
+    let (program_hash, module_inputs_len) = extract_constant_params{
+        range_check_ptr=range_check_ptr
+    }(input=input);
 
     %{ print(f"module_inputs_len = {ids.module_inputs_len}") %}
 
@@ -32,7 +32,9 @@ func init_module{
 
     return (
         res=ModuleTask(
-            program_hash=program_hash, module_inputs_len=module_inputs_len, module_inputs=module_inputs
+            program_hash=program_hash,
+            module_inputs_len=module_inputs_len,
+            module_inputs=module_inputs,
         ),
     );
 }
@@ -57,8 +59,10 @@ func extract_constant_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(inpu
     let (program_hash_high_first) = word_reverse_endian_64([input + 2]);
     let (program_hash_high_second) = word_reverse_endian_64([input + 3]);
     let program_hash_first = program_hash_low_first * 0x10000000000000000 + program_hash_low_second;
-    let program_hash_second = program_hash_high_first * 0x10000000000000000 + program_hash_high_second;
-    let program_hash = program_hash_first * 0x100000000000000000000000000000000 + program_hash_second;
+    let program_hash_second = program_hash_high_first * 0x10000000000000000 +
+        program_hash_high_second;
+    let program_hash = program_hash_first * 0x100000000000000000000000000000000 +
+        program_hash_second;
 
     // first 3 chunks of module_inputs_len should be 0
     assert [input + 8] = 0x0;

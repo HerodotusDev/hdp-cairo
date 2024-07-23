@@ -89,7 +89,7 @@ func compute_tasks_hash_v2{
 
     let (task_hash: Uint256) = keccak(encoded_task, task_bytes_len);
     let (task_hash) = uint256_reverse_endian(task_hash);
-    %{   
+    %{
         target_task_hash = hex(ids.task_hash.low + ids.task_hash.high*2**128)[2:]
         print(f"Task Hash: 0x{target_task_hash}")
     %}
