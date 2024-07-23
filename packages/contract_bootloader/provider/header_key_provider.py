@@ -30,7 +30,7 @@ class HeaderKeyEVMProvider(EVMProvider):
         return int(self.get_block(key=key)["transactionsRoot"].hex(), 16)
 
     def get_receipt_root(self, key: MemorizerKey) -> int:
-        return int(self.get_block(key=key)["receiptRoot"].hex(), 16)
+        return int(self.get_block(key=key)["receiptsRoot"].hex(), 16)
 
     def get_bloom(self, key: MemorizerKey) -> int:
         pass
