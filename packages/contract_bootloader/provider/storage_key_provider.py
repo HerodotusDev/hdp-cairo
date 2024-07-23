@@ -8,8 +8,8 @@ class StorageKeyEVMProvider(EVMProvider):
         super().__init__(provider_url=provider_url)
 
     def get_slot(self, key: MemorizerKey) -> int:
-        address = Web3.to_checksum_address(f"0x{key.address:040x}")
-        if not self.web3.is_address(address):
+        address = Web3.toChecksumAddress(f"0x{key.address:040x}")
+        if not self.web3.isAddress(address):
             raise ValueError(f"Invalid Ethereum address: {address}")
 
         try:

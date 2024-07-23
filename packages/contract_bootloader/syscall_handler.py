@@ -101,6 +101,7 @@ class SyscallHandler(SyscallHandlerBase):
                     f"Memorizer read must be initialized with a list of {total_size} integers"
                 )
 
+            function_id = AccountMemorizerFunctionId.from_int(request.selector)
             memorizer = Memorizer(
                 dict_raw_ptrs=calldata[0 : Memorizer.size()],
                 dict_manager=self.dict_manager,
@@ -115,7 +116,7 @@ class SyscallHandler(SyscallHandlerBase):
                 segments=self.segments,
                 memorizer=memorizer,
             )
-            retdata = handler.handle(function_id=functionId, key=key)
+            retdata = handler.handle(function_id=function_id, key=key)
 
         elif memorizerId == MemorizerId.Storage:
             total_size = Memorizer.size() + StorageMemorizerKey.size()
@@ -125,6 +126,7 @@ class SyscallHandler(SyscallHandlerBase):
                     f"Memorizer read must be initialized with a list of {total_size} integers"
                 )
 
+            function_id = StorageMemorizerFunctionId.from_int(request.selector)
             memorizer = Memorizer(
                 dict_raw_ptrs=calldata[0 : Memorizer.size()],
                 dict_manager=self.dict_manager,
@@ -139,7 +141,7 @@ class SyscallHandler(SyscallHandlerBase):
                 segments=self.segments,
                 memorizer=memorizer,
             )
-            retdata = handler.handle(function_id=functionId, key=key)
+            retdata = handler.handle(function_id=function_id, key=key)
 
         else:
             raise ValueError(f"MemorizerId {memorizerId} not matched")

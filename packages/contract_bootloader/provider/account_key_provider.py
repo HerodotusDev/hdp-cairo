@@ -8,8 +8,8 @@ class AccountKeyEVMProvider(EVMProvider):
         super().__init__(provider_url=provider_url)
 
     def get_nonce(self, key: MemorizerKey) -> int:
-        address = Web3.to_checksum_address(f"0x{key.address:040x}")
-        if not self.web3.is_address(address):
+        address = Web3.toChecksumAddress(f"0x{key.address:040x}")
+        if not self.web3.isAddress(address):
             raise ValueError(f"Invalid Ethereum address: {address}")
 
         try:
@@ -21,8 +21,8 @@ class AccountKeyEVMProvider(EVMProvider):
             raise Exception(f"An error occurred while fetching the nonce: {e}")
 
     def get_balance(self, key: MemorizerKey) -> int:
-        address = Web3.to_checksum_address(f"0x{key.address:040x}")
-        if not self.web3.is_address(address):
+        address = Web3.toChecksumAddress(f"0x{key.address:040x}")
+        if not self.web3.isAddress(address):
             raise ValueError(f"Invalid Ethereum address: {address}")
 
         try:
@@ -41,8 +41,8 @@ class AccountKeyEVMProvider(EVMProvider):
             raise Exception(f"An error occurred while fetching the state root: {e}")
 
     def get_code_hash(self, key: MemorizerKey) -> int:
-        address = Web3.to_checksum_address(f"0x{key.address:040x}")
-        if not self.web3.is_address(address):
+        address = Web3.toChecksumAddress(f"0x{key.address:040x}")
+        if not self.web3.isAddress(address):
             raise ValueError(f"Invalid Ethereum address: {address}")
 
         try:
