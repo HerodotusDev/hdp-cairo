@@ -230,6 +230,15 @@ func execute_call_contract{
             return ();
         }
         if (functionId == HeaderMemorizerFunctionId.GET_EXTRA_DATA) {
+            let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.EXTRA_DATA);
+            let (value) = uint256_reverse_endian(num=field);
+
+            assert call_contract_response.retdata_start[0] = value.low;
+            assert call_contract_response.retdata_start[1] = value.high;
+
+            return ();
+        }
+        if (functionId == HeaderMemorizerFunctionId.GET_MIX_HASH) {
             let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.MIX_HASH);
             let (value) = uint256_reverse_endian(num=field);
 

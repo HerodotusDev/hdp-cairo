@@ -68,7 +68,6 @@ class SyscallHandler(SyscallHandlerBase):
         retdata = []
 
         memorizerId = MemorizerId.from_int(request.contract_address)
-        functionId = AccountMemorizerFunctionId.from_int(request.selector)
         if memorizerId == MemorizerId.Header:
             total_size = Memorizer.size() + HeaderMemorizerKey.size()
 

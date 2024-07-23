@@ -21,7 +21,7 @@ class HeaderKeyEVMProvider(EVMProvider):
         return int(self.get_block(key=key)["sha3Uncles"].hex(), 16)
 
     def get_coinbase(self, key: MemorizerKey) -> int:
-        return int(self.get_block(key=key)["miner"])
+        return int(self.get_block(key=key)["miner"], 16)
 
     def get_state_root(self, key: MemorizerKey) -> int:
         return int(self.get_block(key=key)["stateRoot"].hex(), 16)
