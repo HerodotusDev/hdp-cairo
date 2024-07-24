@@ -34,7 +34,7 @@ def test_fetch_state_root():
         MemorizerKey(
             chain_id=11155111,
             block_number=5382820,
-            address=0x13cb6ae34a13a0977f4d7101ebc24b87bb23f0d5,
+            address=0x13CB6AE34A13A0977F4D7101EBC24B87BB23F0D5,
         )
     )
-    assert value == 0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421
+    assert value == 0x56E81F171BCC55A6FF8345E692C0F86E5B48E01B996CADC001622FB5E363B421

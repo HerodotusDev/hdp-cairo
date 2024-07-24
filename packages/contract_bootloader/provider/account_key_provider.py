@@ -37,7 +37,7 @@ class AccountKeyEVMProvider(EVMProvider):
         try:
             address = Web3.toChecksumAddress(f"0x{key.address:040x}")
             account_proof = self.web3.eth.get_proof(address, [], key.block_number)
-            state_root = account_proof['storageHash']
+            state_root = account_proof["storageHash"]
             return int(state_root.hex(), 16)
         except Exception as e:
             raise Exception(f"An error occurred while fetching the state root: {e}")
