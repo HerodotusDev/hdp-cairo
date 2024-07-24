@@ -9,7 +9,6 @@
   "type": "module",
   "keywords": [],
   "author": "",
-  "license": "ISC",
   "dependencies": {
     "@openzeppelin/merkle-tree": "^1.0.6"
   }
