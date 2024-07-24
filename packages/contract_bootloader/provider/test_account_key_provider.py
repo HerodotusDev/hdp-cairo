@@ -33,8 +33,8 @@ def test_fetch_state_root():
     value = provider.get_state_root(
         MemorizerKey(
             chain_id=11155111,
-            block_number=1450630,
-            address=0x2F14582947E292A2ECD20C430B46F2D27CFE213C,
+            block_number=5382820,
+            address=0x13cb6ae34a13a0977f4d7101ebc24b87bb23f0d5,
         )
     )
-    assert value == 0xFE6DE8AD0447064B4D98632F12623FB06BBF6F31FF4718A746E371276D5F96A6
+    assert value == 0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421
