@@ -39,7 +39,7 @@ func init_module{
 // Outputs:
 // program_hash, module_inputs_len
 func extract_constant_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(input: felt*) -> (
-    program_hash: Uint256, module_inputs_len: felt
+    program_hash: felt, module_inputs_len: felt
 ) {
     alloc_locals;
     // ModuleTask Layout:
@@ -48,11 +48,13 @@ func extract_constant_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(inpu
     // 8-11: module_inputs_len
 
     // Copy program_hash
-    let program_hash_le = Uint256(
-        low=[input] + [input + 1] * 0x10000000000000000,
-        high=[input + 2] + [input + 3] * 0x10000000000000000,
-    );
-    let (program_hash) = uint256_reverse_endian(program_hash_le);
+    let (program_hash_low_first) = word_reverse_endian_64([input]);
+    let (program_hash_low_second) = word_reverse_endian_64([input + 1]);
+    let (program_hash_high_first) = word_reverse_endian_64([input + 2]);
+    let (program_hash_high_second) = word_reverse_endian_64([input + 3]);
+    let program_hash = program_hash_low_first * 0x10000000000000000 + program_hash_low_second * 0x100000000000000000000000000000000 +
+        program_hash_high_first * 0x10000000000000000 +
+        program_hash_high_second;
 
     // first 3 chunks of module_inputs_len should be 0
     assert [input + 8] = 0x0;
