@@ -4,7 +4,6 @@ from starkware.cairo.common.alloc import alloc
 from src.utils import word_reverse_endian_64
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 
-
 // Creates a Module from the input bytes
 func init_module{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*
@@ -50,9 +49,9 @@ func extract_constant_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(inpu
 
     // Copy program_hash
     let program_hash_le = Uint256(
-            low=[input ] + [input + 1] * 0x10000000000000000,
-            high=[input + 2] + [input + 3] * 0x10000000000000000,
-        );
+        low=[input] + [input + 1] * 0x10000000000000000,
+        high=[input + 2] + [input + 3] * 0x10000000000000000,
+    );
     let (program_hash) = uint256_reverse_endian(program_hash_le);
 
     // first 3 chunks of module_inputs_len should be 0
@@ -87,13 +86,14 @@ func extract_dynamic_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
 
     // Copy target_input
     let target_input_le = Uint256(
-            low=[encoded_module + 12 + index * 4] + [encoded_module + 13 + index * 4] * 0x10000000000000000,
-            high=[encoded_module + 14 + index * 4] + [encoded_module + 15 + index * 4] * 0x10000000000000000,
-        );
+        low=[encoded_module + 12 + index * 4] + [encoded_module + 13 + index * 4] *
+        0x10000000000000000,
+        high=[encoded_module + 14 + index * 4] + [encoded_module + 15 + index * 4] *
+        0x10000000000000000,
+    );
     let (target_input) = uint256_reverse_endian(target_input_le);
     %{ print(f"input : {hex(ids.target_input.low + 2**128*ids.target_input.high)}") %}
     assert [extracted_inputs] = target_input;
-  
 
     return extract_dynamic_params(
         encoded_module=encoded_module,
