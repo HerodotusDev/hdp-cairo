@@ -1,30 +1,25 @@
 {
   "cairo_run_output_path": "cairo_run_output.json",
-  "task_root": "0x8097383b9c7188337a5705971bd0fde01944a1d3d71a5117a109c5fe4b364957",
-  "result_root": "0x22186d2b20a1eb397cfbf6afd9f7b1400bb57a270bb6e3910a335fbf0281efaa",
+  "task_root": "0xa1fe02798951073ee7d57c273387c02df51dfe541532d9180daac5c33b6a069b",
+  "result_root": "0x4635a83e4c920ccdd08740b76c62084b39d3de95417c24787b8abc2f42ed611f",
   "proofs": {
     "mmr_metas": [
       {
         "id": 26,
-        "root": "0x1ef5f15d72aeca1a9b972a5345075bc71dececcc2b80977795fe326b373409b",
-        "size": 12713774,
+        "root": "0x0b9c920d48a198b8a2c696343bee0f56ce40620ddd57d3f3b8b7921fd47b056",
+        "size": 12721637,
         "peaks": [
           "0x262c4c9b1cb2a036924aecf563dc9952e5f8b41004310adde86f22abb793eb1",
           "0x63e06c6dd962e6232140b8f20fc4972ee69ca29d1c6ca4455d80afd4be0f3de",
-          "0x5d9f3a811000d20c9f8d8a009c42c0e09d8851d7408cf51f895a4cc6c944fe2",
-          "0x7cfa034db84fe407a3716305cc6edc4f324fe6c58d8159c36ca5e98591a2f01",
-          "0x39d028c626a83c7959b8b13fee8900f6f1649f6a8d30af21f19a7feb2ae91f6",
-          "0x6090d83a827e322067762ce98e9f446963b67e6905ad77b73fd67e5cc3e0772",
-          "0x39ab5f2f251401f7fa51ad942785bd7d448a611c280a83cfa2f033d69536f75",
-          "0x2fb88bc05b349f7ee9bd5a0da6b13d2b424c2bc327da885d65764dc299737eb",
-          "0x6f66f43b00705e5183a4b2bae518f1efcd0c3d5bdbb3fbd94e85195836d0e5e",
-          "0x5453015740839bbbd6de557ade0785b90e3b19c1dd0844382e7705cdd1083a2",
-          "0x77407ac448a14e2746b0029bc01a860e6f9fae9d42a4343b8e04c020030347f",
-          "0x5e1e429f2a8973f3ca39c48297d5e1945d15308b13196241d66d75014cb4ba5",
-          "0x208d9c7280e2849e4f06643e33c9ec827662914bd6eed86415e429dcc0236b8",
-          "0x25f3138cc90bcf5cf0fe723ca4de019bbdb43c9982a10420304ac6b68715841",
-          "0x58f0411792e93f7cee724b26c3f1a1f15aaf42ba3cac1e171e9a28692213f34",
-          "0x37192494e7043e3cf055ae2948ac85515fa37dbcb699b309ccb5f1b069d0ddd"
+          "0x3d088c444fcc7a0083f3cb9d95d56975d22a8ac1171fcf5c0d8fa325fcff4db",
+          "0x1f297faba0cf7c895b45ef10ff35dbd402495cc24fba54f170a16e907998ee0",
+          "0x5c8062d5c24f6672d8cd92eb837dfdc3d7ee7e398ac35d9471ea286869c10b7",
+          "0x0851697f89e265f2e51e890e56841f5af5e9ec671d1c65d6b8441158ca8be58",
+          "0x2d9ace828120f65429e1055d614e2f5f786e78b726f6f0b74cbd2b7bda2940e",
+          "0x0c47c0dbba34883fbfeb0b15f181ef80376dfed21255c4310c455efd8226ecb",
+          "0x58178a512a59efefd2e39a5ac9809b083f8895e2c8ea7ad290cb6b40e491ae6",
+          "0x7252579c6db593316e636db1fed6cf3e31cbd3e45bf68cf78329d4116ca2334",
+          "0x09c8af73a1e68a49506421d70f899b7e2cbe581b9e317ff45d99b466bef1152"
         ],
         "chain_id": 11155111
       }
@@ -127,114 +122,732 @@
             "0x4b0b0e53aca136814dcaf2d79ebba75442c985bfbf1568d459c520c14ca8f50",
             "0x6c95b5af56d209bed9b9ce01489fa1507aa30cf4f44159c8e2097ffbeaa8481",
             "0x1db820709ce34edcc67ebc93ff5253ba014c377aec7e07170e477daedbdea0f",
-            "0x0f5eba795c267135dfce63ee39c570c69385cfe529b8f0bbf2cc3878e68b722"
-          ]
-        }
-      },
-      {
-        "rlp": [
-          "0x2a661c27a02302f9",
-          "0x55599ca3ef044c21",
-          "0x7f4f6425b632d127",
-          "0x3bd25b345f2626d7",
-          "0x4dcc1da00079af17",
-          "0xb585ab7a5dc7dee8",
-          "0x4512d31ad4ccb667",
-          "0x42a1f013748a941b",
-          "0x2638944793d440fd",
-          "0x19f1dc688dbd9c53",
-          "0x8c27b45745990be8",
-          "0x44ecee1ef0a09fec",
-          "0x31ef5fc8b35f9240",
-          "0x5cff3221a63c3ff9",
-          "0x3a1b50acab9f2849",
-          "0x7b399c9ea0c9300c",
-          "0x928ab55d3c647fd8",
-          "0x75a98e7503cfb543",
-          "0xad77b5f16bbe83fb",
-          "0x46332fa029c561eb",
-          "0x3235cf0e42cc5876",
-          "0xafa351e8b25fdefb",
-          "0xdc2a3effd032bc5d",
-          "0x1b9525359b820",
-          "0x894220490e02024e",
-          "0x4629522101940",
-          "0x4140010320402180",
-          "0x3002ba00680310c2",
-          "0x8907908001000040",
-          "0xd30004402c884faa",
-          "0x6003a010f3068880",
-          "0x800024a004983085",
-          "0x4052070801e408c0",
-          "0x30000080a004a40",
-          "0xf8420c0504184085",
-          "0x111008300004000",
-          "0x124240030a08a048",
-          "0x440b5006054201c4",
-          "0x30004086c1265900",
-          "0x140c3b0090c40401",
-          "0x441884101a202002",
-          "0xc078801820130030",
-          "0x4d2200922018904",
-          "0x4118404d80f01198",
-          "0x220444880500a96",
-          "0x284548340004038",
-          "0x40800020262003b",
-          "0x80b20005020490a4",
-          "0x200084302098083",
-          "0x140470b11212c00",
-          "0x110428032523000",
-          "0xc73002400ad1102",
-          "0x344921862c929198",
-          "0x400902102100820",
-          "0x8210b13046004",
-          "0x90a6080080302c0",
-          "0xc90184e7214f8380",
-          "0x84c2f66c018480c3",
-          "0x43e8a0802c4eb965",
-          "0xbe857c88f0776672",
-          "0xb0e4fb3cb43479f4",
-          "0xdf1c5b163586f8b7",
-          "0x88895e9a10b91e",
-          "0x8500000000000000",
-          "0x6d90a0275acc5501",
-          "0xa9a52bfadf2cd5ff",
-          "0xd313639d4cc9140b",
-          "0xece5fda22a1d5a16",
-          "0x39b6181c72ba"
-        ],
-        "rlp_bytes_len": 550,
-        "proof": {
-          "leaf_idx": 1521895,
-          "mmr_path": [
-            "0x598955397f4891983bce4886d22fa19c0d22255f94bb8aaa1faa7aec92cfc7f",
-            "0x2f91fb12566af84978eb5b8694abba5b6d23d0c57ca791fd3bfd01ecd3a0c8c",
-            "0x3b508668f7d92d379884c79d9031878cbaeb3fa28f053f48b57a7502e45611c",
-            "0x6ae0557449080a7745c6ad43b21c6f6f57d452817b23b77b5c2ff3d8ccb3760",
-            "0x593ac29a8b112e2bd247cad0b7b016786ad04217bee18f5e0ea41127ba23f75",
-            "0x787989b47e298c397a0a6123049fb85d5bd2f962ed9149ee6df656dbc605dda",
-            "0x6984af357d277724980ece2c11e93d6b6e14200715769b3fd9cbc9a0eaf29c7",
-            "0x61bc1b0b3467541328174831626b59bcebaec7ef9fda196df6895acfaca4ace",
-            "0x4fa6272ed7dae6104f103fdec5b82c09f8006abfc9e8e9bc44cff298749599c",
-            "0x4c9f22576f8d894fd2f992221402ee2d0a703c35c9e1d114f31411b13246bfc",
-            "0x5b620a5f345977ec7fd3bdeba082078594768bc2fac155ba33b1eab8885a069",
-            "0x572b3407be5793b54c558f5a7d9d4fb194aea5b14f2b2b7e2c8f526cefbde18",
-            "0x716621bd5c6f555cca5badd2849633fea9f506876642b58f985f6ab1de6340c",
-            "0x019df1b143b7076f7c8db2d84794c5bf29be24dbcd64d6a7482c7ff5490486f",
-            "0x145418fa00ec0102943417073ea3015c793e55e1a11f303aef71a154b2d418c",
-            "0x164770888e7afc464c2c3a956cf13d2aaf4b5786baec8424357e46f8e1968b2",
-            "0x46034840abeb358ce87e74d2963f6fb9c655841b31df46eab6e2b784b35d82c",
-            "0x4b2dfec0bb9b57c4e7ac16cedcd3ff50f381f7ab2df50bcfa3596308f79135a",
-            "0x7aab79afb3e980f9731d2c86c342c1d89533ed23d08912d0bf41e88103a5b79",
-            "0x27d5dc0fe31c9125f2ecd34018ab6f31d62b3838592881c96449e3369b001f8",
-            "0x546455f57f4ee848d3952148e3b94700f387ee2c36730bfeda09379ce8fa509",
-            "0x08808a106dc9e09c29afd24be7cee31edd9f0d27ce0a3469839ef3d09ddfb43"
+            "0x0f5eba795c267135dfce63ee39c570c69385cfe529b8f0bbf2cc3878e68b722",
+            "0x67f480c8680c743260bc19f8e214120a47f9b926efae3529eca3eea0dc4f612",
+            "0x5d9f3a811000d20c9f8d8a009c42c0e09d8851d7408cf51f895a4cc6c944fe2"
           ]
         }
       }
     ],
-    "accounts": [],
-    "storages": [],
+    "accounts": [
+      {
+        "address": [
+          "0xb03b023f8f622702",
+          "0xc97185527db680b9",
+          "0x1cac6d5c"
+        ],
+        "account_key": "0x50ee74d58b1680106e4f72f69255189c429b3b932377a0c02b1f24f58fac96e9",
+        "proofs": [
+          {
+            "block_number": 6338117,
+            "proof_bytes_len": [
+              532,
+              532,
+              532,
+              532,
+              532,
+              500,
+              83,
+              106
+            ],
+            "proof": [
+              [
+                "0x775ba442a01102f9",
+                "0xe0160490a8ea1104",
+                "0x105a9bdc2be00f63",
+                "0x44561c546a458aba",
+                "0x940953a061516b03",
+                "0x20237914f5c440e1",
+                "0x1c7dfced338e0e11",
+                "0xad169f0cfc5a98eb",
+                "0x3956a05932589c46",
+                "0xb6ac900d54826219",
+                "0x83f496e9f1b1834c",
+                "0x8984d89cc6129605",
+                "0x26a0d77d53cc03a8",
+                "0xc8621c18be1f77d2",
+                "0x4262ea69ac0e49b6",
+                "0xfd54cc4b5f0c7eee",
+                "0xa04aacf31dad9149",
+                "0xae60dd8d64b83212",
+                "0x4b47799ed84c1769",
+                "0xad4bb65bcfff658a",
+                "0x63a8a7229967bfd6",
+                "0x1cdb0c7fa56548a0",
+                "0x947a518df8da45d3",
+                "0x1d0d1f70b7591051",
+                "0xe6654b27e0ee37b4",
+                "0x58cb5fc046f0a0c1",
+                "0xf602a024090bae91",
+                "0x865f202b9ee9be7c",
+                "0x703d052209c7689f",
+                "0xdd99c9e1ea07de1",
+                "0x60ca7dbc1e574621",
+                "0xbb43323298cec7c8",
+                "0xfd6c52c2c1a71e7f",
+                "0x48651f24a083e543",
+                "0x677be111be8d4036",
+                "0x2bac8560b5be2b2c",
+                "0x5d8ddffc8accf35b",
+                "0x2c7007a07eb0439b",
+                "0xcf107f121c88d4b2",
+                "0xa8c3a7e46edf459a",
+                "0x3074ce8f9762f482",
+                "0x125aa06436da3172",
+                "0xbc3d781394f79b53",
+                "0xfe09e67c8e316740",
+                "0xb640bfea2fc6ce6f",
+                "0xe0a04fbfdf218696",
+                "0xdbbc759df98413d6",
+                "0xa2d306c9de3edab2",
+                "0x9641df32b4370ec7",
+                "0xa07bbbe43c384c0e",
+                "0xd15be1e6057a9b16",
+                "0xceedca89d383be62",
+                "0xe5263e0e01509e03",
+                "0xa304612ab2e14d7f",
+                "0xd1ef9edd3df373a0",
+                "0xeb5b63859d552d11",
+                "0x98d49c4be338f093",
+                "0x8f541e93b045a87c",
+                "0xdde20cd109ada013",
+                "0x270a31314e82ebcd",
+                "0x25c051a77d88d25",
+                "0x828207dcf8132193",
+                "0x759de46f21a07673",
+                "0x4d21fa98d4a88817",
+                "0x3ee4edf543c4905a",
+                "0x48544f7e42a0aeb3",
+                "0x803ed89a"
+              ],
+              [
+                "0x1313c0cca01102f9",
+                "0x69ae815bd9ff857",
+                "0x399c5a98a953bece",
+                "0x47d5557c86e5f58f",
+                "0x55c7ffa0462d10a3",
+                "0xccb6ff5609e94629",
+                "0x55ed45cc7bb6420",
+                "0xca140807b1577937",
+                "0x4a41a0b6d3996c77",
+                "0xea000f43a0238702",
+                "0xfe17c542ee075f2d",
+                "0x7ce4160d83660ff8",
+                "0x86a008c8ee791cfa",
+                "0xeb7d8ce7664124a3",
+                "0x3d5e43ab6922a876",
+                "0x7e9dd4a7e895c72a",
+                "0xa0812355bd0050f8",
+                "0xdb7772353c65c41e",
+                "0xdde7d57bfbbfdfcc",
+                "0xf07934321237cc10",
+                "0x4d138aeb7d89ef81",
+                "0x673514350858f8a0",
+                "0x944d165c53cefe44",
+                "0x919e11ef725b22e4",
+                "0x8b4bba7e08ef7dc8",
+                "0x7d59da49cb29a046",
+                "0xb2d0ead8340e1c3f",
+                "0x21a19ae3ef64fc5a",
+                "0xd848bd20ffc3126f",
+                "0xba3b91ac12a09d7d",
+                "0x418d802ab3d3de1c",
+                "0x866bb929955ec114",
+                "0x223a58308946b6a9",
+                "0xfd75ad61a0889f71",
+                "0x3a7aec07f6b2f3ca",
+                "0xc01f41d66a671e29",
+                "0x1ecec4da0aeacc2f",
+                "0xcf7b6da0e9417fc3",
+                "0xa39fe59aeead76e8",
+                "0x82a2e703ba504bee",
+                "0x4aec30e8fc9ffc6b",
+                "0xbeeea0f6355570cc",
+                "0xd48f6bacffbd5ece",
+                "0x7c2712fd795a4491",
+                "0x183d34a926384955",
+                "0x10a0815d88f70b0b",
+                "0x9c4d39d583c23e2d",
+                "0x319dae52a44877b9",
+                "0xf5f72f84ea591b37",
+                "0xa0879dc3bca23c8c",
+                "0xeb3755a658b7d72",
+                "0x1730c06b185bad31",
+                "0x9c72a6a53f097fb9",
+                "0xcd80da41dbd824a9",
+                "0x5c83c4f5b88bdba0",
+                "0xb5792da85baf4f01",
+                "0x1cfafdafde3dc2a9",
+                "0x577e94497b7212b5",
+                "0x438078a0933da08f",
+                "0x6a5eed91dd3853b9",
+                "0xb09cf00f93aac9ee",
+                "0x1cc06f84d2ecddb8",
+                "0x47dea469fda09d4c",
+                "0x2b37d888a6c65ec5",
+                "0x2d7e5408cbcdebdf",
+                "0x1609687258c71db",
+                "0x80d70cab"
+              ],
+              [
+                "0x1093517aa01102f9",
+                "0x458e76e15c2a20cb",
+                "0xaa294f272e9f666",
+                "0x988eda2d9ea7183e",
+                "0xb32616a0b360a04b",
+                "0x3c1a14de37987f65",
+                "0x86aa22f369833be5",
+                "0xe74365792fedbe84",
+                "0x1b56a08486ada4c5",
+                "0xb8fa25a9ba6deec",
+                "0xf480b0cdc580e26a",
+                "0xa2499c00471025d3",
+                "0x6ba06557c8310c19",
+                "0xd9541cb9f6d0ed6",
+                "0x8309c6e8cf56cb74",
+                "0x5fcb255422619e71",
+                "0xa02b27bb96c684fc",
+                "0xa07000e3961b58b1",
+                "0xccbb91b27bfa7b77",
+                "0x71fdf874fa0e04b2",
+                "0x799769f4b9be994c",
+                "0x31e2f652ecb09da0",
+                "0xdbafbcc5dfd094e7",
+                "0xea99afb244bf0d5b",
+                "0x982d57383e4d5d10",
+                "0x3eb78a503bc3a0a2",
+                "0x86e233aa9f8151b9",
+                "0xbae81716ca039bec",
+                "0xb572c81739ca30f3",
+                "0x8270dc2ed2a09386",
+                "0x4a36dd55468007fe",
+                "0x5da7df1cc8e1ad52",
+                "0xd40e3e1b6735f4c9",
+                "0x80038f06a0bf1b26",
+                "0x24d32a36ebbf8a1c",
+                "0x105a1f6394f85693",
+                "0x8fbe5a873fd349c4",
+                "0x7b3616a043cd9577",
+                "0xabd9cb1c1a2bf42d",
+                "0x2966bc02a631f4bd",
+                "0x263070144dcef14b",
+                "0xa564a06846db3c38",
+                "0x47613cff798155f3",
+                "0x6d879f02ce155954",
+                "0x32c3f53ed3c01c48",
+                "0xda0d336e71276e2",
+                "0xa1d56d16b22767d9",
+                "0xd0850abde400daff",
+                "0x143907c949930540",
+                "0xa06c0ff1510400a4",
+                "0x39ba272ad0174580",
+                "0x7c9f7eeb02daefc6",
+                "0xae50a56fa8ae8f64",
+                "0xa92e90acaa8fd45d",
+                "0x8a652103165c3a0",
+                "0xba33a45af753c767",
+                "0x341afed28697cc13",
+                "0x8cbdcd2849fa9068",
+                "0x548fafe513e3a095",
+                "0x6478823bf9481809",
+                "0xda9b54c12dace121",
+                "0xc15413c128aaa355",
+                "0x1b593954aa005b2",
+                "0x5bc6e1620c78daab",
+                "0xbe64fa51bfbb52c7",
+                "0x3f64057d3e48c143",
+                "0x802e5b70"
+              ],
+              [
+                "0x18a3dbaea01102f9",
+                "0x1573d84bffec200f",
+                "0xb37098e6333b95f9",
+                "0x61aada02923fc2db",
+                "0x9407f2a0c1788091",
+                "0xa724928966ae0480",
+                "0x5057beff9eec299a",
+                "0xfc30e98dbf5125d5",
+                "0xa001a0c5871f9e7c",
+                "0x917641adb1ea545d",
+                "0x22f160abf90a00a7",
+                "0x992b10cfc1e09e4b",
+                "0x6da058b0b57ae6ed",
+                "0x2d402ac5f6219153",
+                "0x2f0f8297aff7e90f",
+                "0x31f600dc849b05c5",
+                "0xa030ea05a37d3d83",
+                "0x291ba11d04554eb9",
+                "0xdbee93f4177a28ed",
+                "0x6a8dd31e9a9df29",
+                "0x7cc85a4fd2513500",
+                "0xf227aa261bbd7fa0",
+                "0x5c4ba6a3bd8faee5",
+                "0x781b80acc434490a",
+                "0x124aa60f9edd7707",
+                "0xc22e23bbd79a080",
+                "0x88cc2429f10c1c19",
+                "0x873e87e202df6f2b",
+                "0x64cb54b269b5d252",
+                "0x4833e53573a0c298",
+                "0xbf5516c43280fd0d",
+                "0x4aff09f8b32c1e60",
+                "0x5e5e35c39205e845",
+                "0xb1e5e6a0fc2e12",
+                "0x53d3eb00317f438d",
+                "0x3538b9504871b3e2",
+                "0x4f553215f337ba45",
+                "0x872c8a050f5e686",
+                "0xde236c4a4c50b220",
+                "0x4f661e1ec853c210",
+                "0x3a105206a6d3bcd0",
+                "0xd067a078d267820b",
+                "0x4746371aa9b2c02d",
+                "0x70ecc492f075624e",
+                "0x60d385a1e38abdbe",
+                "0x11a0bd79e9bcd422",
+                "0xacffab650f2552d9",
+                "0xdfbf84d80bc078b4",
+                "0x2ee7164fca1783b2",
+                "0xa0a091db7b21237e",
+                "0xb5df38cb1eeb47c0",
+                "0x15020eecd9d6ed3f",
+                "0x6ad5eca3e3441fd5",
+                "0x734a8d740885ee2",
+                "0xa2bc88d692c69da0",
+                "0x3e5566cab26f9f74",
+                "0x1ae75f42d0529457",
+                "0xc94511e912963ca1",
+                "0x29bcdd85c9f5a016",
+                "0x583ad5059774d416",
+                "0xfdf00902d47bb3ac",
+                "0x72ef8fb7abb86f09",
+                "0xfe1c73bbbca0a922",
+                "0xb430e6990105c58c",
+                "0x47967ea17cf34c95",
+                "0xcb71d2bc87b1207b",
+                "0x80f79851"
+              ],
+              [
+                "0x766d7664a01102f9",
+                "0x4bb578df5348a240",
+                "0x1496acc1829d2c79",
+                "0x991d29bb8852a31f",
+                "0x9f0e07a004c02e84",
+                "0x2595f20766e7f2ca",
+                "0x4ed6c6899bb85f6",
+                "0x6bf8cfdcc08579ac",
+                "0xc4aba045c6206e2e",
+                "0x8f1d2d469f0f7060",
+                "0xb89aab62ed8d97f0",
+                "0xe11d5463ad4d0dd9",
+                "0xe0a0e218411792d2",
+                "0x99af5d6abfc6e926",
+                "0x9096b6c801b954b0",
+                "0x1bb2fa25b202b43f",
+                "0xa06cf907ce6caa78",
+                "0xaf1bc7f1da22160c",
+                "0xe2bd67768cd09269",
+                "0xe9d628eebaa87ff6",
+                "0x1179f52222db3f1a",
+                "0x57f5195e27f5cba0",
+                "0xee37b00143af2011",
+                "0x6f7873c0eae655b2",
+                "0xba0a4565c9f53339",
+                "0x538be6018a9a05a",
+                "0xf4a37a13bf9c6736",
+                "0x9a754a3b842e6021",
+                "0x30d8bb952529baec",
+                "0x2529963f11a06f34",
+                "0xf840e969508c46f8",
+                "0x9f48bbc31f907926",
+                "0xc22aedb36d974907",
+                "0x2ddc0e91a0bed7f6",
+                "0x51446731f61d8736",
+                "0x97e08c5778bf670f",
+                "0xe4bd59000f2e9337",
+                "0xac16eba09ab8eed8",
+                "0x3187e2978ffca791",
+                "0xaff1848bb6093de7",
+                "0xdb7553cf13854a2b",
+                "0x69b9a0ec6e8b8ff9",
+                "0xe3b66ed44e6a5cbd",
+                "0xe48e026197b53244",
+                "0xc3bab213ab3e95f5",
+                "0x96a07fbc2206bc95",
+                "0x2e212363a99927c9",
+                "0xe11d2c546435c785",
+                "0x8cffad1da3610dd7",
+                "0xa07b6e94f33d36db",
+                "0xc40f2936267b28e6",
+                "0x66fdf54e150850f4",
+                "0x7189047ecceb9a13",
+                "0xb062d3c893308d8d",
+                "0xa747850a873d71a0",
+                "0xa12db24f076c7d29",
+                "0x5f22dd6def3cfaf5",
+                "0xf5746cc371f7eeb1",
+                "0xd8364d0074f8a03c",
+                "0x5a00914bd289d193",
+                "0x8ecb693da9d78dfa",
+                "0x8e5669988f5b579f",
+                "0xaea7a07cffa0a679",
+                "0x6d139309a91dd68c",
+                "0xc68975628c5aa7bd",
+                "0x8f65b58d938d9041",
+                "0x804def37"
+              ],
+              [
+                "0x38b6e9c9a0f101f9",
+                "0x1da861a0324b3ceb",
+                "0xaaa864d2fea69f3f",
+                "0x96122fcdd06064a6",
+                "0x31d825a020d1984b",
+                "0x3b3799d6becab808",
+                "0x1d4641115fd13e0d",
+                "0xd9ed8621e406a852",
+                "0x5a6aa06c4387641e",
+                "0xe86af7a5b31ec4f4",
+                "0x521e7d597300aabb",
+                "0x12c65ec4c26d12c4",
+                "0x9da061c35622ee1e",
+                "0xcf504eb3b252486c",
+                "0x325b221e976e2b0d",
+                "0xf1d318dd1b0c9d83",
+                "0xa05be77f4979091e",
+                "0x10ea5bccbbf278a8",
+                "0xf4e2985548d6c53b",
+                "0x4aeb06ca40499f82",
+                "0x8382d52d023a290d",
+                "0xd2ae0c6f68fccca0",
+                "0x9f27dbab0a08e5c2",
+                "0x8cba2a0859fb9304",
+                "0xd3b3f27b3bfe8017",
+                "0x6935cec01fefa0fc",
+                "0xd66c514b8498b72",
+                "0xe2aee099c0c0ef08",
+                "0xd677ff9d19549673",
+                "0xa6b7112084a0c4a5",
+                "0x1b92438d0cd09d1e",
+                "0xe0dcf69b84ce59c4",
+                "0x2fe26709ac8b9abb",
+                "0x43182bdaa0e6964a",
+                "0x74fdebc59202ade9",
+                "0x26812d9b8ed7485",
+                "0x4cf048069ca9b65d",
+                "0xa510f7a02c0c2530",
+                "0x765a5c2d2ee5d399",
+                "0x85b2c07f53660a07",
+                "0x6c4cb4912f3b4d3",
+                "0x40a08070ac94b76f",
+                "0x3449a2d6d027fa53",
+                "0x5ba9b66406408596",
+                "0x8fc11e5709175170",
+                "0xa002b4b4ea78d044",
+                "0x3c311795d74a66a6",
+                "0xce652385e77a6720",
+                "0x510e8301367bd611",
+                "0xd8302ba8f10714f9",
+                "0xd7cbc70db5963ca0",
+                "0x5fa462e35bcc9964",
+                "0x6881038e95c4d829",
+                "0xbc39c4f408a80c47",
+                "0x1de045c4cfa1a0ee",
+                "0x8f181ac5b205c349",
+                "0xce31916e336d8af2",
+                "0x7749885aa2341d6",
+                "0xf9f9e011ba0a6aa",
+                "0xb7fbfdddc8a28dde",
+                "0x50f8e26c63d95848",
+                "0x4b6a022c076c4dbb",
+                "0x8006370f"
+              ],
+              [
+                "0x80808080808051f8",
+                "0xffa0808080808080",
+                "0x73ccf6e45e051c18",
+                "0x4c1b679571493edc",
+                "0xee58ad9c69c9ed38",
+                "0xa0a3a9318d2e27ba",
+                "0x8d5e5872d6132e33",
+                "0x952b38bccde59661",
+                "0xf466e84d1d8cff3a",
+                "0x1ba179572285be63",
+                "0x808080"
+              ],
+              [
+                "0x1080168b359d68f8",
+                "0x9c185592f6724f6e",
+                "0xc0a07723933b9b42",
+                "0xe996ac8ff5241f2b",
+                "0x8086298246f848b8",
+                "0xda91a3a55a6700a0",
+                "0xbb873a54274cf45a",
+                "0x5e8794b83bac712c",
+                "0x302869fbb5ce5c5a",
+                "0x881feaafb5aca076",
+                "0xad5803d3ad9f2377",
+                "0x7501b84f9d2f3fd1",
+                "0x229522396d682c40",
+                "0xef4f"
+              ]
+            ]
+          }
+        ]
+      }
+    ],
+    "storages": [
+      {
+        "address": [
+          "0xb03b023f8f622702",
+          "0xc97185527db680b9",
+          "0x1cac6d5c"
+        ],
+        "slot": [
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0"
+        ],
+        "storage_key": "0x290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563",
+        "proofs": [
+          {
+            "block_number": 6338117,
+            "proof_bytes_len": [
+              532,
+              532,
+              500,
+              147
+            ],
+            "proof": [
+              [
+                "0x2060ea93a01102f9",
+                "0x3be7f67586917fc",
+                "0xf46797be33dd920",
+                "0x46f71327f4f7e93c",
+                "0xfee6da050dcb8e7",
+                "0xd1ebbf7239990d5a",
+                "0x16fd2bcfa0aac8ea",
+                "0xefa121ff692b42ee",
+                "0x69f5a0683eb612fd",
+                "0x4040958e09534fc7",
+                "0x7d002058b405dd8d",
+                "0x83b8e1f1ab919db9",
+                "0xc9a0d08159d00ffa",
+                "0x9b4c7ed0d9f6b06e",
+                "0xe362e70298fad1bf",
+                "0x73ce74d623dfa263",
+                "0xa0b2afe3f0566f50",
+                "0xf6f3feb54e7526e",
+                "0x135f45b8eda2acd0",
+                "0xce4f4504eda00b63",
+                "0x49d14ea9d1ff66b7",
+                "0xaa380ff695b2f1a0",
+                "0xf8b67484573ed5b8",
+                "0xba64afdd82bf5725",
+                "0x10bebe9ad6573e23",
+                "0xfa1ae3dcff94a0c3",
+                "0xca46061b183cdb3c",
+                "0xb01531b2f63f36fb",
+                "0xa7c1e905d477863b",
+                "0xb669f67101a08af5",
+                "0xffaa0b61469e111d",
+                "0x64f0bc5fa1af3e7",
+                "0xf69830a4517c9357",
+                "0x4e6c5298a0ffb73c",
+                "0x791de9ed5cefb79a",
+                "0xa8d00e27ec5d7b29",
+                "0xb3097a821c063163",
+                "0x36aefda0337906d7",
+                "0x450c66c3282299d0",
+                "0x86f58840cf5ceb5",
+                "0x891549c7e37ec336",
+                "0x6f83a0d44026c84e",
+                "0x1549bf2ec9508e57",
+                "0xb9f8d2b471a7f725",
+                "0xca5cc00b13f868e8",
+                "0xa5a0527b2261a914",
+                "0x43353fdc22a21458",
+                "0x72639263096b018",
+                "0xce38b9d316c63618",
+                "0xa0c55adafa1bf0b2",
+                "0x13f5409406502aa8",
+                "0x3547d43b6c7a18e7",
+                "0xa33e53c054b3c5be",
+                "0x954e511b735b7ad5",
+                "0x2f4b7afef2d6c5a0",
+                "0x7e235d766514824d",
+                "0xe42e83f68308d53f",
+                "0x5634980d762c797a",
+                "0x2a4406830df1a02e",
+                "0xbc13356e4bca5eb1",
+                "0x61aaf29b6de61e8a",
+                "0x8580333094a4fa7e",
+                "0x7440e98d25a040c9",
+                "0x5789e53a75b212ca",
+                "0xbe4651f69bb2c72",
+                "0x43c57bac6c6538b8",
+                "0x806495ce"
+              ],
+              [
+                "0xc7ee5240a01102f9",
+                "0xd2a6510b738fa8bb",
+                "0x31220ea6b6e73676",
+                "0xbd341fedd7b75e9b",
+                "0x7cf045a0a478a1b7",
+                "0x55d215a9f9b05f3a",
+                "0xf7cc9ed1d74128cc",
+                "0xf2d3b26b0f960913",
+                "0x1f82a01613a97459",
+                "0x8904a8b444b71538",
+                "0x9deaa08374c24f4",
+                "0x6b64cf3c64b72c9",
+                "0x51a01080276662f7",
+                "0x69bd43ad0e38ea8b",
+                "0xffa78de704dba38a",
+                "0x25f681dc3bc365b2",
+                "0xa0db077017b6b037",
+                "0x5e08eec8de4466cb",
+                "0xc474e25b50e48a59",
+                "0x4a953fa367f95177",
+                "0x1c0338f06faba066",
+                "0xa2aa344eb7b611a0",
+                "0x7f8143a54e918366",
+                "0xad9675a92b65ece7",
+                "0x82fa947396a7d94f",
+                "0x5fdfe0822589a0b3",
+                "0x6bd4848a25786ef2",
+                "0x6daf8aad0c4c82ab",
+                "0x822a8f2a7f9dbd48",
+                "0x24f97730f8a0b267",
+                "0xe272e46930191c60",
+                "0x6250609f00f55929",
+                "0x29a99af425fee750",
+                "0x33cbf00fa01c41c6",
+                "0x1bf464c4476be93d",
+                "0xb890def59ec6d823",
+                "0x9882b92e72299137",
+                "0x897d31a07b6f6aea",
+                "0x2a8193a611b72714",
+                "0xaee41fe93c950349",
+                "0x54a3b8ed8ec43569",
+                "0x580ba03f0b5099a4",
+                "0xdb10feb3640e5571",
+                "0xb5bcb2940c9a65d0",
+                "0x648105a2bc090fb8",
+                "0xe9a0a8a688d8ab79",
+                "0xf59ab08e86130e12",
+                "0x884b0b1e544df7d7",
+                "0x31eb1778ad3f8cda",
+                "0xa0bffce0abcb3a94",
+                "0xa79159181c75e5f4",
+                "0xf763687b003d988e",
+                "0xe517a2e76e3dec7",
+                "0x364e085fe5924aaf",
+                "0xe3caa2516efeeea0",
+                "0x75bac5dd883321f",
+                "0x33812188e83b0fe",
+                "0x5bf1daa8fca65c90",
+                "0xee7cd9183f71a00a",
+                "0x531f6e3590764cdf",
+                "0xa68a959a1398c556",
+                "0x626240f3c329a6",
+                "0x32c98156e5a06941",
+                "0x1cf8f402f91a051f",
+                "0xc96a1a7c5b7c6ba3",
+                "0xffd37d295bd06cf1",
+                "0x80d0f029"
+              ],
+              [
+                "0xb0090e14a0f101f9",
+                "0x8f4f3601c57db51d",
+                "0x2330a1b616e07fca",
+                "0x29e6276ddca8d93b",
+                "0xb1daa7a094a8303c",
+                "0xd335409df926410",
+                "0x94d08c3379d5f194",
+                "0x2e5af25e61ccb3f7",
+                "0xea080f014697278",
+                "0x848bdbb92fa70464",
+                "0xfc3f023463ef171d",
+                "0x6949fa841e60d373",
+                "0xa054ed12f34b0c0d",
+                "0x4c90601d8870f79e",
+                "0xb868cb6b268ee68c",
+                "0xb2214ca7d43cedbe",
+                "0xc8e3dd13cac9302a",
+                "0xe01e4a4a685dc9a0",
+                "0xecc9a83921e96a40",
+                "0x3ef7a16cfcf2465",
+                "0x9d0a845bda5f497f",
+                "0xde7146af1562a0ae",
+                "0x6bcc91f68d5ee908",
+                "0x29e37aee0c193add",
+                "0x81b8d263105dfee8",
+                "0x84ac93edbba0e1a5",
+                "0xb8d7905d10654ce0",
+                "0xed61dc06ff6e0045",
+                "0xe1d5148b24a7fd0",
+                "0x4eb6ddb3a042c112",
+                "0x4d29e48b191d4983",
+                "0xa516a035d2f9fc42",
+                "0x30b7b168334b9fc5",
+                "0x241baba0dd5dca13",
+                "0x5da1537d11d6d019",
+                "0x8c867cbf22aed0d2",
+                "0x978eb915d5333bbc",
+                "0x536ea066c26ffd90",
+                "0x9f6a47f4a1966d46",
+                "0x1cd65b45fbce8f95",
+                "0x63ac4d120aa8c020",
+                "0x97a0822d2ef59cfb",
+                "0x9ba50c3cfab23636",
+                "0xd3c4ec5917e0c128",
+                "0x3154a942345373ce",
+                "0xa06a45675079a0a2",
+                "0x3507decd13cf5aab",
+                "0xd01448b889dffa31",
+                "0xff0ac5775df90b22",
+                "0x3716a904d060adb7",
+                "0xa8cb93fb9ccc14a0",
+                "0xacf20453cf33071f",
+                "0x1baea1d6c59061f0",
+                "0xb454462fd379615d",
+                "0x951215dba51da057",
+                "0x25944b281dc11170",
+                "0x8d977364520f6260",
+                "0x41643220d7cbb5ff",
+                "0xb5a4cd2d60a0cfa8",
+                "0x31805288a5418e79",
+                "0xa00aaf997178a8",
+                "0xe538c6719fb34ba",
+                "0x80bc6ef9"
+              ],
+              [
+                "0x361ebb55a08091f8",
+                "0xaaab6bec037b239f",
+                "0x80ee6263fe78c3ef",
+                "0xb0696b0983aeda52",
+                "0x851deaa02192db5c",
+                "0xd1dd1396759271b1",
+                "0x6a7fa9ae22eedebd",
+                "0xf8e56a5e7651c2e6",
+                "0x93a080445ea7bf78",
+                "0x588359fe93e47421",
+                "0x1869284a4e20b7ab",
+                "0x378b7e860a6f2ff7",
+                "0x80ad15263cc3e4ed",
+                "0x8680f38aba08080",
+                "0xfb671b4ef6a097f7",
+                "0x2804679b48710bb5",
+                "0x42fb5001db6b4438",
+                "0x8080808080945d41",
+                "0x808080"
+              ]
+            ]
+          }
+        ]
+      }
+    ],
     "transactions": [],
     "transaction_receipts": []
   },
@@ -242,32 +855,59 @@
     {
       "type": "module",
       "context": {
-        "inputs": [
-          "0x60b645"
+        "encoded_task": [
+          "0xb3424e2f215f3e02",
+          "0xfb8dd84559b80524",
+          "0xbcbe5767b92e9c31",
+          "0x3450de4f93196035",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x4000000000000000",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x400000000000000",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x45b6600000000000",
+          "0x0",
+          "0x8f62270200000000",
+          "0x7db680b9b03b023f",
+          "0x1cac6d5cc9718552",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0",
+          "0x0"
         ],
-        "task_bytes_len": 192,
+        "task_bytes_len": 224,
         "module_class": {
           "prime": "0x800000000000011000000000000000000000000000000000000000000000001",
-          "compiler_version": "2.6.4",
+          "compiler_version": "2.6.3",
           "bytecode": [
             "0xa0680017fff8000",
             "0x7",
             "0x482680017ffa8000",
-            "0xfffffffffffffffffffffffffffff650",
+            "0xffffffffffffffffffffffffffffe214",
             "0x400280007ff97fff",
             "0x10780017fff7fff",
-            "0xb3",
+            "0x173",
             "0x4825800180007ffa",
-            "0x9b0",
+            "0x1dec",
             "0x400280007ff97fff",
             "0x480a7ffc7fff8000",
             "0x480a7ffd7fff8000",
             "0x1104800180018000",
-            "0xbb",
+            "0x17b",
             "0x482680017ff98000",
             "0x1",
             "0x20680017fff7ff8",
-            "0x9a",
+            "0x15a",
             "0x48307ff680007ff7",
             "0x20680017fff7fff",
             "0x4",
@@ -288,7 +928,7 @@
             "0x480680017fff8000",
             "0x0",
             "0x20680017fff7ffe",
-            "0x74",
+            "0x134",
             "0x480080007fff8000",
             "0xa0680017fff8000",
             "0x12",
@@ -305,7 +945,7 @@
             "0x402480017fff7ffb",
             "0xffffffffffffffffffffffffffffffff",
             "0x20680017fff7fff",
-            "0x5f",
+            "0x11f",
             "0x402780017fff7fff",
             "0x1",
             "0x400080007ff87ffe",
@@ -318,14 +958,175 @@
             "0x20680017fff7fff",
             "0x4",
             "0x10780017fff7fff",
+            "0xa",
+            "0x482480017ff78000",
+            "0x1",
+            "0x48127ff77fff8000",
+            "0x480680017fff8000",
+            "0x0",
+            "0x480080007ff48000",
+            "0x10780017fff7fff",
+            "0x8",
+            "0x48127ff77fff8000",
+            "0x48127ff77fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x480680017fff8000",
+            "0x0",
+            "0x20680017fff7ffe",
+            "0xf4",
+            "0x48307ffc80007ffd",
+            "0x20680017fff7fff",
+            "0x4",
+            "0x10780017fff7fff",
+            "0xa",
+            "0x482480017ffb8000",
+            "0x1",
+            "0x48127ffb7fff8000",
+            "0x480680017fff8000",
+            "0x0",
+            "0x48127ff87fff8000",
+            "0x10780017fff7fff",
+            "0x8",
+            "0x48127ffb7fff8000",
+            "0x48127ffb7fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x480680017fff8000",
+            "0x0",
+            "0x20680017fff7ffe",
+            "0x6c",
+            "0x480080007fff8000",
+            "0xa0680017fff8000",
+            "0x16",
+            "0x480080007ff38003",
+            "0x480080017ff28003",
+            "0x4844800180017ffe",
+            "0x100000000000000000000000000000000",
+            "0x483080017ffd7ffb",
+            "0x482480017fff7ffd",
+            "0x800000000000010fffffffffffffffff7ffffffffffffef0000000000000001",
+            "0x20680017fff7ffc",
+            "0x6",
+            "0x402480017fff7ffd",
+            "0xffffffffffffffffffffffffffffffff",
+            "0x10780017fff7fff",
+            "0x4",
+            "0x402480017ffe7ffd",
+            "0xf7ffffffffffffef0000000000000000",
+            "0x400080027fee7ffd",
+            "0x20680017fff7ffe",
+            "0x51",
+            "0x402780017fff7fff",
+            "0x1",
+            "0x400080007ff37ffe",
+            "0x482480017ff38000",
+            "0x1",
+            "0x48307ff980007ffa",
+            "0x20680017fff7fff",
+            "0x4",
+            "0x10780017fff7fff",
+            "0xa",
+            "0x482480017ff88000",
+            "0x1",
+            "0x48127ff87fff8000",
+            "0x480680017fff8000",
+            "0x0",
+            "0x48127ff57fff8000",
+            "0x10780017fff7fff",
+            "0x8",
+            "0x48127ff87fff8000",
+            "0x48127ff87fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x480680017fff8000",
+            "0x0",
+            "0x20680017fff7ffe",
+            "0x2a",
+            "0x480080007fff8000",
+            "0xa0680017fff8000",
+            "0x16",
+            "0x480080007ff88003",
+            "0x480080017ff78003",
+            "0x4844800180017ffe",
+            "0x100000000000000000000000000000000",
+            "0x483080017ffd7ffb",
+            "0x482480017fff7ffd",
+            "0x800000000000010fffffffffffffffff7ffffffffffffef0000000000000001",
+            "0x20680017fff7ffc",
+            "0x6",
+            "0x402480017fff7ffd",
+            "0xffffffffffffffffffffffffffffffff",
+            "0x10780017fff7fff",
+            "0x4",
+            "0x402480017ffe7ffd",
+            "0xf7ffffffffffffef0000000000000000",
+            "0x400080027ff37ffd",
+            "0x20680017fff7ffe",
+            "0x11",
+            "0x402780017fff7fff",
+            "0x1",
+            "0x400080007ff87ffe",
+            "0x40780017fff7fff",
+            "0x5",
+            "0x482480017ff38000",
+            "0x1",
+            "0x48127ff47fff8000",
+            "0x48127ff47fff8000",
+            "0x480680017fff8000",
+            "0x0",
+            "0x48127fed7fff8000",
+            "0x48127ff47fff8000",
+            "0x10780017fff7fff",
+            "0x24",
+            "0x482480017ff38000",
+            "0x3",
+            "0x10780017fff7fff",
+            "0x5",
+            "0x40780017fff7fff",
+            "0x7",
+            "0x48127ff37fff8000",
+            "0x48127ff47fff8000",
+            "0x48127ff47fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x480680017fff8000",
+            "0x0",
+            "0x480680017fff8000",
+            "0x0",
+            "0x10780017fff7fff",
+            "0x13",
+            "0x40780017fff7fff",
+            "0x8",
+            "0x482480017fe68000",
+            "0x3",
+            "0x10780017fff7fff",
+            "0x5",
+            "0x40780017fff7fff",
+            "0xf",
+            "0x48127fe67fff8000",
+            "0x48127fec7fff8000",
+            "0x48127fec7fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x480680017fff8000",
+            "0x0",
+            "0x480680017fff8000",
+            "0x0",
+            "0x20680017fff7ffd",
+            "0x5a",
+            "0x48307ffb80007ffc",
+            "0x20680017fff7fff",
+            "0x4",
+            "0x10780017fff7fff",
             "0x10",
             "0x40780017fff7fff",
             "0x1",
             "0x480680017fff8000",
             "0x496e70757420746f6f206c6f6e6720666f7220617267756d656e7473",
             "0x400080007ffe7fff",
-            "0x48127ffc7fff8000",
-            "0x48127fb77fff8000",
+            "0x48127ff77fff8000",
+            "0x48127f987fff8000",
             "0x480a7ffb7fff8000",
             "0x480680017fff8000",
             "0x1",
@@ -334,33 +1135,36 @@
             "0x1",
             "0x208b7fff7fff7ffe",
             "0x1104800180018000",
-            "0x27a",
+            "0x29c",
             "0x482480017fff8000",
-            "0x279",
+            "0x29b",
             "0x480080007fff8000",
             "0xa0680017fff8000",
             "0x9",
-            "0x4824800180007fb5",
-            "0x47fe",
+            "0x4824800180007f96",
+            "0x4a56",
             "0x482480017fff8000",
             "0x100000000000000000000000000000000",
-            "0x400080007ff77fff",
+            "0x400080007ff27fff",
             "0x10780017fff7fff",
-            "0x27",
-            "0x4824800180007fb5",
-            "0x47fe",
-            "0x400080007ff87fff",
-            "0x482480017ff88000",
+            "0x2a",
+            "0x4824800180007f96",
+            "0x4a56",
+            "0x400080007ff37fff",
+            "0x482480017ff38000",
             "0x1",
             "0x48127ffe7fff8000",
             "0x480a7ffb7fff8000",
-            "0x48127fe67fff8000",
-            "0x48127fe67fff8000",
+            "0x48127fcb7fff8000",
+            "0x48127fcb7fff8000",
             "0x480680017fff8000",
             "0xaa36a7",
+            "0x48127fd07fff8000",
+            "0x48127fd77fff8000",
+            "0x48127fef7fff8000",
             "0x48127fef7fff8000",
             "0x1104800180018000",
-            "0x174",
+            "0x190",
             "0x20680017fff7ffd",
             "0xf",
             "0x40780017fff7fff",
@@ -389,9 +1193,37 @@
             "0x480680017fff8000",
             "0x4f7574206f6620676173",
             "0x400080007ffe7fff",
-            "0x482480017ff58000",
+            "0x482480017ff08000",
             "0x1",
-            "0x48127fb07fff8000",
+            "0x48127f917fff8000",
+            "0x480a7ffb7fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x48127ffa7fff8000",
+            "0x482480017ff98000",
+            "0x1",
+            "0x208b7fff7fff7ffe",
+            "0x40780017fff7fff",
+            "0x1",
+            "0x480680017fff8000",
+            "0x4661696c656420746f20646573657269616c697a6520706172616d202334",
+            "0x400080007ffe7fff",
+            "0x48127ff87fff8000",
+            "0x48127f997fff8000",
+            "0x480a7ffb7fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x48127ffa7fff8000",
+            "0x482480017ff98000",
+            "0x1",
+            "0x208b7fff7fff7ffe",
+            "0x40780017fff7fff",
+            "0x1",
+            "0x480680017fff8000",
+            "0x4661696c656420746f20646573657269616c697a6520706172616d202333",
+            "0x400080007ffe7fff",
+            "0x48127ff87fff8000",
+            "0x48127fb37fff8000",
             "0x480a7ffb7fff8000",
             "0x480680017fff8000",
             "0x1",
@@ -732,7 +1564,7 @@
             "0x0",
             "0x208b7fff7fff7ffe",
             "0x480680017fff8000",
-            "0x0",
+            "0x2",
             "0xa0680017fff8004",
             "0xe",
             "0x4824800180047ffe",
@@ -740,54 +1572,57 @@
             "0x484480017ffe8000",
             "0x110000000000000000",
             "0x48307ffe7fff8002",
-            "0x480280007ff77ffc",
-            "0x480280017ff77ffc",
+            "0x480280007ff47ffc",
+            "0x480280017ff47ffc",
             "0x402480017ffb7ffd",
             "0xffffffffffffffeeffffffffffffffff",
-            "0x400280027ff77ffd",
+            "0x400280027ff47ffd",
             "0x10780017fff7fff",
-            "0xcd",
+            "0xd0",
             "0x484480017fff8001",
             "0x8000000000000000000000000000000",
             "0x48307fff80007ffd",
-            "0x480280007ff77ffd",
-            "0x480280017ff77ffd",
+            "0x480280007ff47ffd",
+            "0x480280017ff47ffd",
             "0x402480017ffc7ffe",
             "0xf8000000000000000000000000000000",
-            "0x400280027ff77ffe",
+            "0x400280027ff47ffe",
             "0x40780017fff7fff",
             "0x1",
-            "0x400180007fff7ffa",
-            "0x400180017fff7ffb",
-            "0x400180027fff7ffc",
-            "0x400180037fff7ffd",
+            "0x400180007fff7ff7",
+            "0x400180017fff7ff8",
+            "0x400180027fff7ff9",
+            "0x400180037fff7ffa",
+            "0x400180047fff7ffb",
+            "0x400180057fff7ffc",
+            "0x400180067fff7ffd",
             "0x480680017fff8000",
-            "0x5",
+            "0x0",
             "0x48127ffe7fff8000",
             "0x482480017ffd8000",
-            "0x4",
-            "0x482680017ff78000",
+            "0x7",
+            "0x482680017ff48000",
             "0x3",
             "0x480680017fff8000",
             "0x43616c6c436f6e7472616374",
-            "0x400280007ff97fff",
-            "0x400380017ff97ff8",
-            "0x400280027ff97ff4",
-            "0x400280037ff97ffb",
-            "0x400280047ff97ffc",
-            "0x400280057ff97ffd",
-            "0x480280077ff98000",
+            "0x400280007ff67fff",
+            "0x400380017ff67ff5",
+            "0x400280027ff67ff4",
+            "0x400280037ff67ffb",
+            "0x400280047ff67ffc",
+            "0x400280057ff67ffd",
+            "0x480280077ff68000",
             "0x20680017fff7fff",
             "0xa2",
-            "0x480280087ff98000",
-            "0x480280097ff98000",
+            "0x480280087ff68000",
+            "0x480280097ff68000",
             "0x480680017fff8000",
             "0x0",
-            "0x480280067ff98000",
-            "0x482680017ff98000",
+            "0x480280067ff68000",
+            "0x482680017ff68000",
             "0xa",
-            "0x480280087ff98000",
-            "0x480280097ff98000",
+            "0x480280087ff68000",
+            "0x480280097ff68000",
             "0x48307ff980007ffa",
             "0xa0680017fff8000",
             "0x6",
@@ -942,13 +1777,13 @@
             "0x40780017fff7fff",
             "0x1d",
             "0x48127fe07fff8000",
-            "0x480280067ff98000",
-            "0x482680017ff98000",
+            "0x480280067ff68000",
+            "0x482680017ff68000",
             "0xa",
             "0x480680017fff8000",
             "0x1",
-            "0x480280087ff98000",
-            "0x480280097ff98000",
+            "0x480280087ff68000",
+            "0x480280097ff68000",
             "0x208b7fff7fff7ffe",
             "0x40780017fff7fff",
             "0x21",
@@ -957,10 +1792,10 @@
             "0x480680017fff8000",
             "0x4f7074696f6e3a3a756e77726170206661696c65642e",
             "0x400080007ffe7fff",
-            "0x482680017ff78000",
+            "0x482680017ff48000",
             "0x3",
-            "0x480a7ff87fff8000",
-            "0x480a7ff97fff8000",
+            "0x480a7ff57fff8000",
+            "0x480a7ff67fff8000",
             "0x480680017fff8000",
             "0x1",
             "0x48127ffa7fff8000",
@@ -969,9 +1804,9 @@
             "0x208b7fff7fff7ffe"
           ],
           "bytecode_segment_lengths": [
-            199,
+            391,
             282,
-            236
+            239
           ],
           "hints": [
             [
@@ -980,7 +1815,7 @@
                 {
                   "TestLessThanOrEqual": {
                     "lhs": {
-                      "Immediate": "0x9b0"
+                      "Immediate": "0x1dec"
                     },
                     "rhs": {
                       "Deref": {
@@ -1054,31 +1889,18 @@
               ]
             ],
             [
-              69,
+              107,
               [
                 {
-                  "AllocSegment": {
-                    "dst": {
-                      "register": "AP",
-                      "offset": 0
-                    }
-                  }
-                }
-              ]
-            ],
-            [
-              88,
-              [
-                {
-                  "TestLessThanOrEqual": {
+                  "TestLessThan": {
                     "lhs": {
-                      "Immediate": "0x47fe"
-                    },
-                    "rhs": {
                       "Deref": {
                         "register": "AP",
-                        "offset": -74
+                        "offset": -1
                       }
+                    },
+                    "rhs": {
+                      "Immediate": "0x100000000000000000000000000000000"
                     },
                     "dst": {
                       "register": "AP",
@@ -1089,23 +1911,45 @@
               ]
             ],
             [
-              113,
+              109,
               [
                 {
-                  "AllocSegment": {
-                    "dst": {
+                  "DivMod": {
+                    "lhs": {
+                      "Deref": {
+                        "register": "AP",
+                        "offset": -2
+                      }
+                    },
+                    "rhs": {
+                      "Immediate": "0x100000000000000000000000000000000"
+                    },
+                    "quotient": {
                       "register": "AP",
-                      "offset": 0
+                      "offset": 3
+                    },
+                    "remainder": {
+                      "register": "AP",
+                      "offset": 4
                     }
                   }
                 }
               ]
             ],
             [
-              134,
+              154,
               [
                 {
-                  "AllocSegment": {
+                  "TestLessThan": {
+                    "lhs": {
+                      "Deref": {
+                        "register": "AP",
+                        "offset": -1
+                      }
+                    },
+                    "rhs": {
+                      "Immediate": "0x100000000000000000000000000000000"
+                    },
                     "dst": {
                       "register": "AP",
                       "offset": 0
@@ -1118,17 +1962,30 @@
               156,
               [
                 {
-                  "AllocSegment": {
-                    "dst": {
+                  "DivMod": {
+                    "lhs": {
+                      "Deref": {
+                        "register": "AP",
+                        "offset": -2
+                      }
+                    },
+                    "rhs": {
+                      "Immediate": "0x100000000000000000000000000000000"
+                    },
+                    "quotient": {
                       "register": "AP",
-                      "offset": 0
+                      "offset": 3
+                    },
+                    "remainder": {
+                      "register": "AP",
+                      "offset": 4
                     }
                   }
                 }
               ]
             ],
             [
-              170,
+              230,
               [
                 {
                   "AllocSegment": {
@@ -1141,7 +1998,29 @@
               ]
             ],
             [
-              184,
+              249,
+              [
+                {
+                  "TestLessThanOrEqual": {
+                    "lhs": {
+                      "Immediate": "0x4a56"
+                    },
+                    "rhs": {
+                      "Deref": {
+                        "register": "AP",
+                        "offset": -105
+                      }
+                    },
+                    "dst": {
+                      "register": "AP",
+                      "offset": 0
+                    }
+                  }
+                }
+              ]
+            ],
+            [
+              277,
               [
                 {
                   "AllocSegment": {
@@ -1154,7 +2033,85 @@
               ]
             ],
             [
-              483,
+              298,
+              [
+                {
+                  "AllocSegment": {
+                    "dst": {
+                      "register": "AP",
+                      "offset": 0
+                    }
+                  }
+                }
+              ]
+            ],
+            [
+              313,
+              [
+                {
+                  "AllocSegment": {
+                    "dst": {
+                      "register": "AP",
+                      "offset": 0
+                    }
+                  }
+                }
+              ]
+            ],
+            [
+              327,
+              [
+                {
+                  "AllocSegment": {
+                    "dst": {
+                      "register": "AP",
+                      "offset": 0
+                    }
+                  }
+                }
+              ]
+            ],
+            [
+              348,
+              [
+                {
+                  "AllocSegment": {
+                    "dst": {
+                      "register": "AP",
+                      "offset": 0
+                    }
+                  }
+                }
+              ]
+            ],
+            [
+              362,
+              [
+                {
+                  "AllocSegment": {
+                    "dst": {
+                      "register": "AP",
+                      "offset": 0
+                    }
+                  }
+                }
+              ]
+            ],
+            [
+              376,
+              [
+                {
+                  "AllocSegment": {
+                    "dst": {
+                      "register": "AP",
+                      "offset": 0
+                    }
+                  }
+                }
+              ]
+            ],
+            [
+              675,
               [
                 {
                   "TestLessThan": {
@@ -1176,7 +2133,7 @@
               ]
             ],
             [
-              487,
+              679,
               [
                 {
                   "LinearSplit": {
@@ -1205,7 +2162,7 @@
               ]
             ],
             [
-              497,
+              689,
               [
                 {
                   "LinearSplit": {
@@ -1234,7 +2191,7 @@
               ]
             ],
             [
-              505,
+              697,
               [
                 {
                   "AllocSegment": {
@@ -1247,14 +2204,14 @@
               ]
             ],
             [
-              526,
+              721,
               [
                 {
                   "SystemCall": {
                     "system": {
                       "Deref": {
                         "register": "FP",
-                        "offset": -7
+                        "offset": -10
                       }
                     }
                   }
@@ -1262,7 +2219,7 @@
               ]
             ],
             [
-              539,
+              734,
               [
                 {
                   "TestLessThan": {
@@ -1287,7 +2244,7 @@
               ]
             ],
             [
-              551,
+              746,
               [
                 {
                   "TestLessThan": {
@@ -1309,7 +2266,7 @@
               ]
             ],
             [
-              553,
+              748,
               [
                 {
                   "DivMod": {
@@ -1335,7 +2292,7 @@
               ]
             ],
             [
-              577,
+              772,
               [
                 {
                   "TestLessThan": {
@@ -1360,7 +2317,7 @@
               ]
             ],
             [
-              589,
+              784,
               [
                 {
                   "TestLessThan": {
@@ -1382,7 +2339,7 @@
               ]
             ],
             [
-              591,
+              786,
               [
                 {
                   "DivMod": {
@@ -1408,7 +2365,7 @@
               ]
             ],
             [
-              623,
+              818,
               [
                 {
                   "AllocSegment": {
@@ -1421,7 +2378,7 @@
               ]
             ],
             [
-              640,
+              835,
               [
                 {
                   "AllocSegment": {
@@ -1434,7 +2391,7 @@
               ]
             ],
             [
-              657,
+              852,
               [
                 {
                   "AllocSegment": {
@@ -1447,7 +2404,7 @@
               ]
             ],
             [
-              674,
+              869,
               [
                 {
                   "AllocSegment": {
@@ -1460,7 +2417,7 @@
               ]
             ],
             [
-              702,
+              897,
               [
                 {
                   "AllocSegment": {
@@ -1477,7 +2434,7 @@
             [
               0,
               [
-                "memory[ap + 0] = 2480 <= memory[fp + -6]"
+                "memory[ap + 0] = 7660 <= memory[fp + -6]"
               ]
             ],
             [
@@ -1493,139 +2450,175 @@
               ]
             ],
             [
-              69,
+              107,
               [
-                "memory[ap + 0] = segments.add()"
+                "memory[ap + 0] = memory[ap + -1] < 340282366920938463463374607431768211456"
               ]
             ],
             [
-              88,
+              109,
               [
-                "memory[ap + 0] = 18430 <= memory[ap + -74]"
+                "(memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], 340282366920938463463374607431768211456)"
               ]
             ],
             [
-              113,
+              154,
               [
-                "memory[ap + 0] = segments.add()"
-              ]
-            ],
-            [
-              134,
-              [
-                "memory[ap + 0] = segments.add()"
+                "memory[ap + 0] = memory[ap + -1] < 340282366920938463463374607431768211456"
               ]
             ],
             [
               156,
               [
-                "memory[ap + 0] = segments.add()"
+                "(memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], 340282366920938463463374607431768211456)"
               ]
             ],
             [
-              170,
+              230,
               [
                 "memory[ap + 0] = segments.add()"
               ]
             ],
             [
-              184,
+              249,
+              [
+                "memory[ap + 0] = 19030 <= memory[ap + -105]"
+              ]
+            ],
+            [
+              277,
               [
                 "memory[ap + 0] = segments.add()"
               ]
             ],
             [
-              483,
+              298,
+              [
+                "memory[ap + 0] = segments.add()"
+              ]
+            ],
+            [
+              313,
+              [
+                "memory[ap + 0] = segments.add()"
+              ]
+            ],
+            [
+              327,
+              [
+                "memory[ap + 0] = segments.add()"
+              ]
+            ],
+            [
+              348,
+              [
+                "memory[ap + 0] = segments.add()"
+              ]
+            ],
+            [
+              362,
+              [
+                "memory[ap + 0] = segments.add()"
+              ]
+            ],
+            [
+              376,
+              [
+                "memory[ap + 0] = segments.add()"
+              ]
+            ],
+            [
+              675,
               [
                 "memory[ap + 4] = memory[ap + -1] < 3618502788666131106986593281521497120414687020801267626233049500247285301248"
               ]
             ],
             [
-              487,
+              679,
               [
                 "\n(value, scalar) = (memory[ap + 3], 313594649253062377472)\nx = min(value // scalar, 340282366920938463463374607431768211455)\ny = value - x * scalar\nmemory[ap + -2] = x\nmemory[ap + -1] = y\n"
               ]
             ],
             [
-              497,
+              689,
               [
                 "\n(value, scalar) = (memory[ap + -2], 10633823966279326983230456482242756608)\nx = min(value // scalar, 340282366920938463463374607431768211455)\ny = value - x * scalar\nmemory[ap + -1] = x\nmemory[ap + 0] = y\n"
               ]
             ],
             [
-              505,
+              697,
               [
                 "memory[ap + 0] = segments.add()"
               ]
             ],
             [
-              526,
+              721,
               [
-                "syscall_handler.syscall(syscall_ptr=memory[fp + -7])"
+                "syscall_handler.syscall(syscall_ptr=memory[fp + -10])"
               ]
             ],
             [
-              539,
+              734,
               [
                 "memory[ap + 0] = memory[ap + -6] < memory[ap + -1]"
               ]
             ],
             [
-              551,
+              746,
               [
                 "memory[ap + 0] = memory[ap + -1] < 340282366920938463463374607431768211456"
               ]
             ],
             [
-              553,
+              748,
               [
                 "(memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], 340282366920938463463374607431768211456)"
               ]
             ],
             [
-              577,
+              772,
               [
                 "memory[ap + 0] = memory[ap + -2] < memory[ap + -1]"
               ]
             ],
             [
-              589,
+              784,
               [
                 "memory[ap + 0] = memory[ap + -1] < 340282366920938463463374607431768211456"
               ]
             ],
             [
-              591,
+              786,
               [
                 "(memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], 340282366920938463463374607431768211456)"
               ]
             ],
             [
-              623,
+              818,
               [
                 "memory[ap + 0] = segments.add()"
               ]
             ],
             [
-              640,
+              835,
               [
                 "memory[ap + 0] = segments.add()"
               ]
             ],
             [
-              657,
+              852,
               [
                 "memory[ap + 0] = segments.add()"
               ]
             ],
             [
-              674,
+              869,
               [
                 "memory[ap + 0] = segments.add()"
               ]
             ],
             [
-              702,
+              897,
               [
                 "memory[ap + 0] = segments.add()"
               ]

@@ -12,8 +12,6 @@ func init_module{
         range_check_ptr=range_check_ptr
     }(input=input);
 
-    %{ print(f"module_inputs_len = {ids.module_inputs_len}") %}
-
     let (module_inputs) = alloc();
 
     extract_dynamic_params{range_check_ptr=range_check_ptr}(
@@ -22,13 +20,6 @@ func init_module{
         index=0,
         extracted_inputs=module_inputs,
     );
-
-    %{
-        print(ids.module_inputs_len)
-
-        for i in range(ids.module_inputs_len):
-            print(memory[ids.module_inputs + i])
-    %}
 
     return (
         res=ModuleTask(

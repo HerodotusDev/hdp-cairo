@@ -34,7 +34,16 @@ class MemorizerKey:
             raise ValueError(
                 "MemorizerKey must be initialized with a list of five integers"
             )
-        return cls(values[0], values[1], values[2], (values[3], values[4]))
+        if (
+            values[3] >= 0x100000000000000000000000000000000
+            or values[4] >= 0x100000000000000000000000000000000
+        ):
+            raise ValueError("Storage slot value not u128")
+        storage_slot_low = values[3] % 0x100000000000000000000000000000000
+        storage_slot_high = values[4] % 0x100000000000000000000000000000000
+        return cls(
+            values[0], values[1], values[2], (storage_slot_low, storage_slot_high)
+        )
 
     def derive(self) -> int:
         return poseidon_hash_many(
@@ -47,11 +56,13 @@ class MemorizerKey:
         )
 
     def to_dict(self):
+        storage_slot_value = (self.storage_slot[1] << 128) + self.storage_slot[0]
+
         return {
             "chain_id": self.chain_id,
             "block_number": self.block_number,
             "address": Web3.toChecksumAddress(f"0x{self.address:040x}"),
-            "storage_slot": self.storage_slot,
+            "storage_slot": f"0x{storage_slot_value:064x}",
         }
 
     @classmethod
