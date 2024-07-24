@@ -75,7 +75,7 @@ namespace HeaderDecoder {
         }
         if (field == HeaderField.COINBASE) {
             let address = get_address_value(rlp, 8, 6);
-            return (Uint256(low=[address] + [address + 1] * pow2_array[64], high=[address + 2]));
+            return le_chunks_to_uint256(elements=address, elements_len=3, bytes_len=20);
         }
         if (field == HeaderField.STATE_ROOT) {
             return get_hash_value(rlp, 11, 3);
