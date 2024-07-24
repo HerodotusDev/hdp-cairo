@@ -52,11 +52,6 @@ namespace HeaderDecoder {
     func get_field_felt{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
         rlp: felt*, field: felt
     ) -> (value: felt*, value_len: felt, bytes_len: felt) {
-        if (field == HeaderField.COINBASE) {
-            let value = get_address_value(rlp, 8, 6);
-            return (value=value, value_len=3, bytes_len=20);
-        }
-
         if (field == HeaderField.BLOOM) {
             return get_bloom_filter(rlp);
         }
@@ -79,7 +74,8 @@ namespace HeaderDecoder {
             return get_hash_value(rlp, 4, 5);
         }
         if (field == HeaderField.COINBASE) {
-            assert 1 = 0;  // must use get_coinbase
+            let address = get_address_value(rlp, 8, 6);
+            return (Uint256(low=[address] + [address + 1] * pow2_array[64], high=[address + 2]));
         }
         if (field == HeaderField.STATE_ROOT) {
             return get_hash_value(rlp, 11, 3);

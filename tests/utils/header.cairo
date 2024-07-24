@@ -17,7 +17,7 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
     local header_type: felt;
     local expected_parent_hash: Uint256;
     local expected_uncles_hash: Uint256;
-    let (expected_coinbase) = alloc();
+    local expected_coinbase: Uint256;
     local expected_state_root: Uint256;
     local expected_tx_root: Uint256;
     local expected_receipts_root: Uint256;
@@ -51,7 +51,8 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
         ids.expected_parent_hash.high = header['parent_hash']["high"]
         ids.expected_uncles_hash.low = header['uncles_hash']["low"]
         ids.expected_uncles_hash.high = header['uncles_hash']["high"]
-        segments.write_arg(ids.expected_coinbase, header['coinbase'])
+        ids.expected_coinbase.low = header['coinbase']["low"]
+        ids.expected_coinbase.high = header['coinbase']["high"]
         ids.expected_state_root.low = header['state_root']["low"]
         ids.expected_state_root.high = header['state_root']["high"]
         ids.expected_tx_root.low = header['tx_root']["low"]
@@ -102,10 +103,9 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
     assert uncles_hash.low = expected_uncles_hash.low;
     assert uncles_hash.high = expected_uncles_hash.high;
 
-    let (coinbase, _, _) = HeaderDecoder.get_field_felt(rlp, HeaderField.COINBASE);
-    assert coinbase[0] = expected_coinbase[0];
-    assert coinbase[1] = expected_coinbase[1];
-    assert coinbase[2] = expected_coinbase[2];
+    let coinbase = HeaderDecoder.get_field(rlp, HeaderField.COINBASE);
+    assert coinbase.low = expected_coinbase.low;
+    assert coinbase.high = expected_coinbase.high;
 
     let state_root = HeaderDecoder.get_field(rlp, HeaderField.STATE_ROOT);
     assert state_root.low = expected_state_root.low;

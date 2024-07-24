@@ -13,5 +13,5 @@ func le_address_chunks_to_felt{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, po
     let (w1) = word_reverse_endian_64{bitwise_ptr=bitwise_ptr}([right_shifted + 1]);
     let (w2) = word_reverse_endian_64{bitwise_ptr=bitwise_ptr}([right_shifted + 2]);
 
-    return (address=w0 * 2 ** 128 + w1 * 2 ** 64 + w2);
+    return (address=w0 * pow2_array[128] + w1 * pow2_array[64] + w2);
 }
