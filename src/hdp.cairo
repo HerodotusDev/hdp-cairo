@@ -194,6 +194,8 @@ func run{
 
     // Post Verification Checks: Ensure the roots match the expected roots
     %{
+        if "result_root" in program_input:
+            assert ids.results_root.high * 2 ** 128 + ids.results_root.low  == hex_to_int(program_input["result_root"]), "Expected results root mismatch" 
         if "task_root" in program_input:
             assert ids.tasks_root.high * 2 ** 128 + ids.tasks_root.low  == hex_to_int(program_input["task_root"]), "Expected results root mismatch"
     %}
