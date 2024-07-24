@@ -8,7 +8,7 @@ from contract_bootloader.memorizer.storage_memorizer import (
 from starkware.cairo.lang.vm.memory_segments import MemorySegmentManager
 from tools.py.rlp import get_rlp_len
 from tools.py.utils import little_8_bytes_chunks_to_bytes
-from rlp.sedes import Binary
+from rlp.sedes import big_endian_int
 
 
 class StorageMemorizerHandler(AbstractStorageMemorizerBase):
@@ -28,10 +28,7 @@ class StorageMemorizerHandler(AbstractStorageMemorizerBase):
         )
 
         value = int(
-            decode(
-                little_8_bytes_chunks_to_bytes(rlp, rlp_len), Binary.fixed_length(32)
-            ).hex(),
-            16,
+            decode(little_8_bytes_chunks_to_bytes(rlp, rlp_len), big_endian_int)
         )
 
         return (

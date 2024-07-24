@@ -327,7 +327,8 @@ func execute_call_contract{
             block_number=call_contract_request.calldata_start[3],
             address=call_contract_request.calldata_start[4],
             storage_slot=Uint256(
-                call_contract_request.calldata_start[5], call_contract_request.calldata_start[6]
+                low=call_contract_request.calldata_start[6],
+                high=call_contract_request.calldata_start[5],
             ),
         );
         if (functionId == StorageMemorizerFunctionId.GET_SLOT) {
