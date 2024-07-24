@@ -52,8 +52,8 @@ func extract_constant_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(inpu
     let (program_hash_low_second) = word_reverse_endian_64([input + 1]);
     let (program_hash_high_first) = word_reverse_endian_64([input + 2]);
     let (program_hash_high_second) = word_reverse_endian_64([input + 3]);
-    let program_hash = program_hash_low_first * 0x10000000000000000 + program_hash_low_second * 0x100000000000000000000000000000000 +
-        program_hash_high_first * 0x10000000000000000 +
+    let program_hash = program_hash_low_first * 0x10000000000000000 + program_hash_low_second *
+        0x100000000000000000000000000000000 + program_hash_high_first * 0x10000000000000000 +
         program_hash_high_second;
 
     // first 3 chunks of module_inputs_len should be 0

@@ -30,10 +30,23 @@ func main{
     alloc_locals;
 
     local inputs_len: felt;
-    let (inputs) = alloc();
+    let (inputs: Uint256*) = alloc();
 
     %{
         from tools.py.schema import HDPDryRunInput
+        from tools.py.utils import (
+            split_128,
+            uint256_reverse_endian,
+        )
+
+        # converts values to little endian and writes them to memory.
+        def write_vals(ptr, values):
+            for (i, value) in enumerate(values):
+                reversed_value = uint256_reverse_endian(value)
+                (low, high) = split_128(reversed_value)
+                memory[ptr._reference_value + i * 2] = low
+                memory[ptr._reference_value + i * 2 + 1] = high
+
 
         # Load the dry run input
         dry_run_input = HDPDryRunInput.Schema().load(program_input)
@@ -47,7 +60,7 @@ func main{
         inputs = dry_run_input.modules[0].inputs
         compiled_class = dry_run_input.modules[0].module_class
         ids.inputs_len = len(inputs)
-        segments.write_arg(ids.inputs, inputs)
+        write_vals(ids.inputs, inputs)
     %}
 
     local compiled_class: CompiledClass*;
