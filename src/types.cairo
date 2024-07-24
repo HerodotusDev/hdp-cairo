@@ -46,7 +46,7 @@ struct ComputationalTask {
 }
 
 struct ModuleTask {
-    program_hash: felt,
+    program_hash: Uint256,
     module_inputs_len: felt,
-    module_inputs: felt*,
+    module_inputs: Uint256*,
 }

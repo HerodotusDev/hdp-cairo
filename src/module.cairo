@@ -2,6 +2,8 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
 from src.types import ModuleTask
 from starkware.cairo.common.alloc import alloc
 from src.utils import word_reverse_endian_64
+from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
+
 
 // Creates a Module from the input bytes
 func init_module{
@@ -14,7 +16,7 @@ func init_module{
 
     %{ print(f"module_inputs_len = {ids.module_inputs_len}") %}
 
-    let (module_inputs) = alloc();
+    let (module_inputs: Uint256*) = alloc();
 
     extract_dynamic_params{range_check_ptr=range_check_ptr}(
         encoded_module=input,
@@ -45,7 +47,7 @@ func init_module{
 // Outputs:
 // program_hash, module_inputs_len
 func extract_constant_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(input: felt*) -> (
-    program_hash: felt, module_inputs_len: felt
+    program_hash: Uint256, module_inputs_len: felt
 ) {
     alloc_locals;
     // ModuleTask Layout:
@@ -54,15 +56,11 @@ func extract_constant_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(inpu
     // 8-11: module_inputs_len
 
     // Copy program_hash
-    let (program_hash_low_first) = word_reverse_endian_64([input]);
-    let (program_hash_low_second) = word_reverse_endian_64([input + 1]);
-    let (program_hash_high_first) = word_reverse_endian_64([input + 2]);
-    let (program_hash_high_second) = word_reverse_endian_64([input + 3]);
-    let program_hash_first = program_hash_low_first * 0x10000000000000000 + program_hash_low_second;
-    let program_hash_second = program_hash_high_first * 0x10000000000000000 +
-        program_hash_high_second;
-    let program_hash = program_hash_first * 0x100000000000000000000000000000000 +
-        program_hash_second;
+    let program_hash_le = Uint256(
+            low=[input ] + [input + 1] * 0x10000000000000000,
+            high=[input + 2] + [input + 3] * 0x10000000000000000,
+        );
+    let (program_hash) = uint256_reverse_endian(program_hash_le);
 
     // first 3 chunks of module_inputs_len should be 0
     assert [input + 8] = 0x0;
@@ -79,7 +77,7 @@ func extract_constant_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(inpu
 // Outputs:
 // module_inputs
 func extract_dynamic_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
-    encoded_module: felt*, module_inputs_len: felt, index: felt, extracted_inputs: felt*
+    encoded_module: felt*, module_inputs_len: felt, index: felt, extracted_inputs: Uint256*
 ) -> () {
     alloc_locals;
     // ModuleTask Layout:
@@ -94,18 +92,15 @@ func extract_dynamic_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
         return ();
     }
 
-    let (target_input_low_first) = word_reverse_endian_64([encoded_module + 12 + index * 4]);
-    let (target_input_low_second) = word_reverse_endian_64([encoded_module + 13 + index * 4]);
-    let (target_input_high_first) = word_reverse_endian_64([encoded_module + 14 + index * 4]);
-    let (target_input_high_second) = word_reverse_endian_64([encoded_module + 15 + index * 4]);
+    // Copy target_input
+    let target_input_le = Uint256(
+            low=[encoded_module + 12 + index * 4] + [encoded_module + 13 + index * 4] * 0x10000000000000000,
+            high=[encoded_module + 14 + index * 4] + [encoded_module + 15 + index * 4] * 0x10000000000000000,
+        );
+    let (target_input) = uint256_reverse_endian(target_input_le);
 
-    let target_input_first = target_input_low_first * 0x10000000000000000 + target_input_low_second;
-    let target_input_second = target_input_high_first * 0x10000000000000000 +
-        target_input_high_second;
-    let target_input = target_input_first * 0x100000000000000000000000000000000 +
-        target_input_second;
-
-    assert extracted_inputs[0] = target_input;
+    assert extracted_inputs[0].low = target_input.low;
+    assert extracted_inputs[0].high = target_input.high;
 
     return extract_dynamic_params(
         encoded_module=encoded_module,
