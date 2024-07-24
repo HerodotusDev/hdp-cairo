@@ -25,13 +25,6 @@ func init_module{
         extracted_inputs=module_inputs,
     );
 
-    %{
-        print(ids.module_inputs_len)
-
-        for i in range(ids.module_inputs_len):
-            print(memory[ids.module_inputs + i])
-    %}
-
     return (
         res=ModuleTask(
             program_hash=program_hash,
@@ -98,14 +91,14 @@ func extract_dynamic_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
             high=[encoded_module + 14 + index * 4] + [encoded_module + 15 + index * 4] * 0x10000000000000000,
         );
     let (target_input) = uint256_reverse_endian(target_input_le);
-
-    assert extracted_inputs[0].low = target_input.low;
-    assert extracted_inputs[0].high = target_input.high;
+    %{ print(f"input : {hex(ids.target_input.low + 2**128*ids.target_input.high)}") %}
+    assert [extracted_inputs] = target_input;
+  
 
     return extract_dynamic_params(
         encoded_module=encoded_module,
         module_inputs_len=module_inputs_len,
         index=index + 1,
-        extracted_inputs=extracted_inputs + 1,
+        extracted_inputs=extracted_inputs + Uint256.SIZE,
     );
 }
