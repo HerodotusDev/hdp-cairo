@@ -39,10 +39,10 @@ class MemorizerKey:
             or values[4] >= 0x100000000000000000000000000000000
         ):
             raise ValueError("Storage slot value not u128")
-        storage_slot_low = values[3] % 0x100000000000000000000000000000000
-        storage_slot_high = values[4] % 0x100000000000000000000000000000000
+        storage_slot_high = values[3] % 0x100000000000000000000000000000000
+        storage_slot_low = values[4] % 0x100000000000000000000000000000000
         return cls(
-            values[0], values[1], values[2], (storage_slot_low, storage_slot_high)
+            values[0], values[1], values[2], (storage_slot_high, storage_slot_low)
         )
 
     def derive(self) -> int:
@@ -50,13 +50,14 @@ class MemorizerKey:
             [
                 self.chain_id,
                 self.block_number,
+                self.address,
                 self.storage_slot[0],
                 self.storage_slot[1],
             ]
         )
 
     def to_dict(self):
-        storage_slot_value = (self.storage_slot[1] << 128) + self.storage_slot[0]
+        storage_slot_value = (self.storage_slot[0] << 128) + self.storage_slot[1]
 
         return {
             "chain_id": self.chain_id,

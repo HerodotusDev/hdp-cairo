@@ -11,7 +11,7 @@ pub struct StorageKey {
     pub chain_id: felt252,
     pub block_number: felt252,
     pub address: felt252,
-    pub storage_slot: u256,
+    pub key: u256,
 }
 
 #[generate_trait]
@@ -26,8 +26,8 @@ pub impl StorageMemorizerImpl of StorageMemorizerTrait {
                 key.chain_id,
                 key.block_number,
                 key.address,
-                key.storage_slot.low.into(),
-                key.storage_slot.high.into(),
+                key.key.high.into(),
+                key.key.low.into(),
             ]
                 .span()
         )
