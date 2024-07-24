@@ -14,7 +14,7 @@ class StorageKeyEVMProvider(EVMProvider):
 
         try:
             # Combine the storage slot tuple into a single slot key
-            slot_key = key.storage_slot[1] << 128 | key.storage_slot[0]
+            slot_key = key.storage_slot[0] << 128 | key.storage_slot[1]
             # Fetch the storage slot data
             return int(
                 self.web3.eth.get_storage_at(
