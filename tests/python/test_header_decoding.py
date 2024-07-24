@@ -69,8 +69,8 @@ def fetch_header_dict(block_number):
     (low, high) = reverse_and_split_256_bytes(block.receiptsRoot)
     block_dict["receipts_root"] = {"low": low, "high": high}
 
-    coinbase = bytes_to_8_bytes_chunks_little(block.coinbase)
-    block_dict["coinbase"] = coinbase
+    (low, high) = reverse_and_split_256_bytes(block.coinbase)
+    block_dict["coinbase"] = {"low": low, "high": high}
 
     block_dict["difficulty"] = block.difficulty
     block_dict["number"] = block.number
