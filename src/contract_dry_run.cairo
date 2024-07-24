@@ -145,7 +145,7 @@ func main{
             "low": hex(ids.result.low),
             "high": hex(ids.result.high)
         }
-        dictionary["class_hash"] = hex(ids.program_hash)
+        dictionary["program_hash"] = hex(ids.program_hash)
 
         list.append(dictionary)
 

@@ -30,9 +30,9 @@ func init_block_sampled{
 }(input: felt*, input_bytes_len: felt) -> (res: BlockSampledDataLake) {
     alloc_locals;
 
-    let property_type = extract_byte_at_pos([input + 24], 0, pow2_array);
+    let property_type = extract_byte_at_pos([input + 28], 0, pow2_array);
 
-    let (block_range_start, block_range_end, increment) = extract_constant_params{
+    let (chain_id, block_range_start, block_range_end, increment) = extract_constant_params{
         range_check_ptr=range_check_ptr
     }(input=input);
 
@@ -40,7 +40,7 @@ func init_block_sampled{
     // Decode properties
     if (property_type == BlockSampledProperty.HEADER) {
         // Header Input Layout:
-        let chunk_one = word_reverse_endian_16_RC([input + 24]);
+        let chunk_one = word_reverse_endian_16_RC([input + 28]);
 
         assert [range_check_ptr] = 0x01ff - chunk_one;  // assert selected property_type matches input
         tempvar range_check_ptr = range_check_ptr + 1;
@@ -50,6 +50,7 @@ func init_block_sampled{
 
         return (
             res=BlockSampledDataLake(
+                chain_id=chain_id,
                 block_range_start=block_range_start,
                 block_range_end=block_range_end,
                 increment=increment,
@@ -63,11 +64,11 @@ func init_block_sampled{
         // Account Input Layout:
 
         // extract & write field_idx
-        let field_idx = extract_byte_at_pos([input + 26], 5, pow2_array);
+        let field_idx = extract_byte_at_pos([input + 30], 5, pow2_array);
         assert [properties] = field_idx;
 
         let (address) = extract_address{bitwise_ptr=bitwise_ptr}(
-            chunk_one=[input + 24], chunk_two=[input + 25], chunk_three=[input + 26]
+            chunk_one=[input + 28], chunk_two=[input + 29], chunk_three=[input + 30]
         );
 
         // write address to properties
@@ -76,6 +77,7 @@ func init_block_sampled{
 
         return (
             res=BlockSampledDataLake(
+                chain_id=chain_id,
                 block_range_start=block_range_start,
                 block_range_end=block_range_end,
                 increment=increment,
@@ -88,7 +90,7 @@ func init_block_sampled{
         // Account Slot Input Layout:
 
         let (address) = extract_address{bitwise_ptr=bitwise_ptr}(
-            chunk_one=[input + 24], chunk_two=[input + 25], chunk_three=[input + 26]
+            chunk_one=[input + 28], chunk_two=[input + 29], chunk_three=[input + 30]
         );
 
         // write address to properties
@@ -97,10 +99,11 @@ func init_block_sampled{
 
         extract_and_write_slot{
             range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, properties=properties
-        }(chunks=input + 26);
+        }(chunks=input + 30);
 
         return (
             res=BlockSampledDataLake(
+                chain_id=chain_id,
                 block_range_start=block_range_start,
                 block_range_end=block_range_end,
                 increment=increment,
@@ -112,7 +115,7 @@ func init_block_sampled{
 
     assert 0 = 1;  // Invalid property_type
     let (prop) = alloc();
-    return (res=BlockSampledDataLake(0, 0, 0, 0, prop));
+    return (res=BlockSampledDataLake(0, 0, 0, 0, 0, prop));
 }
 
 // Decodes slot from datalake definition and writes it to the properties array
@@ -306,30 +309,37 @@ func extract_address{bitwise_ptr: BitwiseBuiltin*}(
 // Outputs:
 // block_range_start, block_range_end, increment
 func extract_constant_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(input: felt*) -> (
-    block_range_start: felt, block_range_end: felt, increment: felt
+    chain_id: felt, block_range_start: felt, block_range_end: felt, increment: felt
 ) {
     alloc_locals;
     // HeaderProp Input Layout:
     // 0-3: DatalakeCode.BlockSampled
-    // 4-7: block_range_start
-    // 8-11: block_range_end
-    // 12-15: increment
-    // 16-19: dynamic data offset
-    // 20-23: dynamic data element count
-    // 24-25: 01 + headerPropId
+    // 4-7: chain_id
+    // 8-11: block_range_start
+    // 12-15: block_range_end
+    // 16-19: increment
+    // 20-23: dynamic data offset
+    // 24-27: dynamic data element count
+    // 28-29: 01 + headerPropId
     assert [input + 3] = 0;  // DatalakeCode.BlockSampled == 0
 
     assert [input + 6] = 0;  // first 3 chunks of block_range_start should be 0
-    let (block_range_start) = word_reverse_endian_64([input + 7]);
+    let (chain_id) = word_reverse_endian_64([input + 7]);
 
-    assert [input + 10] = 0;  // first 3 chunks of block_range_end should be 0
-    let (block_range_end) = word_reverse_endian_64([input + 11]);
+    assert [input + 10] = 0;  // first 3 chunks of block_range_start should be 0
+    let (block_range_start) = word_reverse_endian_64([input + 11]);
 
-    assert [input + 14] = 0;  // first 3 chunks of increment should be 0
-    let (increment) = word_reverse_endian_64([input + 15]);
+    assert [input + 14] = 0;  // first 3 chunks of block_range_end should be 0
+    let (block_range_end) = word_reverse_endian_64([input + 15]);
+
+    assert [input + 18] = 0;  // first 3 chunks of increment should be 0
+    let (increment) = word_reverse_endian_64([input + 19]);
 
     return (
-        block_range_start=block_range_start, block_range_end=block_range_end, increment=increment
+        chain_id=chain_id,
+        block_range_start=block_range_start,
+        block_range_end=block_range_end,
+        increment=increment,
     );
 }
 

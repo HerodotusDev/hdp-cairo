@@ -81,26 +81,18 @@ func compute_tasks_root_v1{
 }
 
 // Computes the tasks merkle root for v2 flow
+// TODO: it is single task for now
 func compute_tasks_hash_v2{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
-}(program_hash: felt, inputs: felt*, inputs_len: felt) -> Uint256 {
+}(encoded_task: felt*, task_bytes_len: felt) -> Uint256 {
     alloc_locals;
 
-    let (input_hash) = keccak_felts_bigend{
-        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
-    }(n_elements=inputs_len, elements=inputs);
-
-    %{ print("Inputs Hash:", hex(ids.input_hash.high * 2 ** 128 + ids.input_hash.low)) %}
-
-    let conv_program_hash = felt_to_uint256(program_hash);
-
-    let (pair: Uint256*) = alloc();
-    assert pair[0] = conv_program_hash;
-    assert pair[1] = input_hash;
-
-    let (task_hash) = keccak_uint256s_bigend{
-        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
-    }(n_elements=2, elements=pair);
+    let (task_hash: Uint256) = keccak(encoded_task, task_bytes_len);
+    let (task_hash) = uint256_reverse_endian(task_hash);
+    %{
+        target_task_hash = hex(ids.task_hash.low + ids.task_hash.high*2**128)[2:]
+        print(f"Task Hash: 0x{target_task_hash}")
+    %}
 
     return task_hash;
 }

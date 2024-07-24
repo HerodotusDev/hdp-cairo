@@ -16,6 +16,7 @@ struct MMRMeta {
 }
 
 struct BlockSampledDataLake {
+    chain_id: felt,
     block_range_start: felt,
     block_range_end: felt,
     increment: felt,
@@ -24,6 +25,7 @@ struct BlockSampledDataLake {
 }
 
 struct TransactionsInBlockDatalake {
+    chain_id: felt,
     target_block: felt,
     start_index: felt,
     end_index: felt,
@@ -41,4 +43,10 @@ struct ComputationalTask {
     aggregate_fn_id: felt,
     ctx_operator: felt,
     ctx_value: Uint256,
+}
+
+struct ModuleTask {
+    program_hash: felt,
+    module_inputs_len: felt,
+    module_inputs: felt*,
 }
