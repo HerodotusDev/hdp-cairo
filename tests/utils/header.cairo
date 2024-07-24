@@ -103,7 +103,14 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
     assert uncles_hash.low = expected_uncles_hash.low;
     assert uncles_hash.high = expected_uncles_hash.high;
 
-    let coinbase = HeaderDecoder.get_field(rlp, HeaderField.COINBASE);
+    let coinbase_le = HeaderDecoder.get_field(rlp, HeaderField.COINBASE);
+    let (coinbase) = uint256_reverse_endian(num=coinbase_le);
+    %{
+        print(hex(ids.coinbase.high))
+        print(hex(ids.coinbase.low))
+        print(hex(ids.expected_coinbase.high))
+        print(hex(ids.expected_coinbase.low))
+    %}
     assert coinbase.low = expected_coinbase.low;
     assert coinbase.high = expected_coinbase.high;
 
