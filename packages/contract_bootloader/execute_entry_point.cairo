@@ -53,6 +53,7 @@ func call_execute_syscalls{
     builtin_ptrs: BuiltinPointers*,
     header_dict: DictAccess*,
     account_dict: DictAccess*,
+    storage_dict: DictAccess*,
     pow2_array: felt*,
 }(execution_context: ExecutionContext*, syscall_ptr_end: felt*, dry_run: felt) {
     if (dry_run == 1) {
@@ -125,6 +126,7 @@ func execute_entry_point{
     builtin_params: BuiltinParams*,
     header_dict: DictAccess*,
     account_dict: DictAccess*,
+    storage_dict: DictAccess*,
     pow2_array: felt*,
 }(compiled_class: CompiledClass*, execution_context: ExecutionContext*, dry_run: felt) -> (
     retdata_size: felt, retdata: felt*
