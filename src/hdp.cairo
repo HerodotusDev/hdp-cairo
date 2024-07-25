@@ -204,8 +204,8 @@ func run{
         import json
 
         dictionary = dict()
-        dictionary["tasks_root"] = hex(ids.tasks_root.high * 2 ** 128 + ids.tasks_root.low )
-        dictionary["results_root"] = hex(ids.results_root.high * 2 ** 128 + ids.results_root.low)
+        dictionary["tasks_root"] = '0x' + (hex(ids.tasks_root.high * 2 ** 128 + ids.tasks_root.low)[2:].zfill(64))
+        dictionary["results_root"] = '0x' + (hex(ids.results_root.high * 2 ** 128 + ids.results_root.low)[2:].zfill(64))
         results = list()
         for i in range(ids.results_len):
             results.append(memory[ids.results.address_ + i])
