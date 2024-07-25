@@ -69,7 +69,7 @@ namespace MemorizerId {
     const STORAGE = 2;
 }
 
-func abstract_get_value_func_caller{
+func abstract_memorizer_handler{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
 }() -> Uint256 {
     jmp abs func_ptr;
@@ -111,7 +111,7 @@ func execute_call_contract{
 
         let func_ptr: felt* = get_value_trait.header_memorizer_handler_ptrs[function_id];
         with func_ptr, rlp {
-            let value = abstract_get_value_func_caller();
+            let value = abstract_memorizer_handler();
         }
 
         assert call_contract_response.retdata_start[0] = value.low;
@@ -127,7 +127,7 @@ func execute_call_contract{
 
         let func_ptr: felt* = get_value_trait.account_memorizer_handler_ptrs[function_id];
         with func_ptr, rlp {
-            let value = abstract_get_value_func_caller();
+            let value = abstract_memorizer_handler();
         }
 
         assert call_contract_response.retdata_start[0] = value.low;
@@ -147,7 +147,7 @@ func execute_call_contract{
 
         let func_ptr: felt* = get_value_trait.storage_memorizer_handler_ptrs[function_id];
         with func_ptr, rlp {
-            let value = abstract_get_value_func_caller();
+            let value = abstract_memorizer_handler();
         }
 
         assert call_contract_response.retdata_start[0] = value.low;
