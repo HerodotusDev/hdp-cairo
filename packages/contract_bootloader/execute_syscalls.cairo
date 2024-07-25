@@ -111,7 +111,7 @@ func execute_call_contract{
 
         with rlp {
             let value = abstract_get_value_func_caller(
-                get_value_trait.header_memorizer_get_value_ptrs[function_id]
+                get_value_trait.header_memorizer_handler_ptrs[function_id]
             );
         }
 
@@ -128,7 +128,7 @@ func execute_call_contract{
 
         with rlp {
             let value = abstract_get_value_func_caller(
-                get_value_trait.account_memorizer_get_value_ptrs[function_id]
+                get_value_trait.account_memorizer_handler_ptrs[function_id]
             );
         }
 
@@ -149,7 +149,7 @@ func execute_call_contract{
 
         with rlp {
             let value = abstract_get_value_func_caller(
-                get_value_trait.storage_memorizer_get_value_ptrs[function_id]
+                get_value_trait.storage_memorizer_handler_ptrs[function_id]
             );
         }
 

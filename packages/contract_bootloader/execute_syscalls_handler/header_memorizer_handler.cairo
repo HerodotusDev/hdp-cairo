@@ -1,6 +1,8 @@
+from starkware.cairo.common.alloc import alloc
 from src.decoders.header_decoder import HeaderDecoder, HeaderField
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
+from starkware.cairo.common.registers import get_label_location
 
 // This is not used but stays for reference
 namespace HeaderMemorizerFunctionId {
@@ -26,23 +28,80 @@ namespace HeaderMemorizerFunctionId {
     const GET_PARENT_BEACON_BLOCK_ROOT = 19;
 }
 
-func header_memorizer_get_parent_value{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
-}() -> Uint256 {
+func get_memorizer_handler_ptrs() -> felt** {
+    let (handler_list) = alloc();
+    let handler_ptrs = cast(handler_list, felt**);
+
+    let (label) = get_label_location(get_parent_value);
+    assert handler_ptrs[HeaderMemorizerFunctionId.GET_PARENT] = label;
+
+    let (label) = get_label_location(get_uncle_value);
+    assert handler_ptrs[HeaderMemorizerFunctionId.GET_UNCLE] = label;
+
+    let (label) = get_label_location(get_coinbase_value);
+    assert handler_ptrs[HeaderMemorizerFunctionId.GET_COINBASE] = label;
+
+    let (label) = get_label_location(get_state_root_value);
+    assert handler_ptrs[HeaderMemorizerFunctionId.GET_STATE_ROOT] = label;
+
+    let (label) = get_label_location(get_transaction_root_value);
+    assert handler_ptrs[HeaderMemorizerFunctionId.GET_TRANSACTION_ROOT] = label;
+
+    let (label) = get_label_location(get_receipt_root_value);
+    assert handler_ptrs[HeaderMemorizerFunctionId.GET_RECEIPT_ROOT] = label;
+
+    assert handler_ptrs[HeaderMemorizerFunctionId.GET_BLOOM] = cast(0, felt*);
+
+    let (label) = get_label_location(get_difficulty_value);
+    assert handler_ptrs[HeaderMemorizerFunctionId.GET_DIFFICULTY] = label;
+
+    let (label) = get_label_location(get_number_value);
+    assert handler_ptrs[HeaderMemorizerFunctionId.GET_NUMBER] = label;
+
+    let (label) = get_label_location(get_gas_limit_value);
+    assert handler_ptrs[HeaderMemorizerFunctionId.GET_GAS_LIMIT] = label;
+
+    let (label) = get_label_location(get_gas_used_value);
+    assert handler_ptrs[HeaderMemorizerFunctionId.GET_GAS_USED] = label;
+
+    let (label) = get_label_location(get_timestamp_value);
+    assert handler_ptrs[HeaderMemorizerFunctionId.GET_TIMESTAMP] = label;
+
+    let (label) = get_label_location(get_extra_data_value);
+    assert handler_ptrs[HeaderMemorizerFunctionId.GET_EXTRA_DATA] = label;
+
+    let (label) = get_label_location(get_mix_hash_value);
+    assert handler_ptrs[HeaderMemorizerFunctionId.GET_MIX_HASH] = label;
+
+    let (label) = get_label_location(get_nonce_value);
+    assert handler_ptrs[HeaderMemorizerFunctionId.GET_NONCE] = label;
+
+    let (label) = get_label_location(get_base_fee_per_gas_value);
+    assert handler_ptrs[HeaderMemorizerFunctionId.GET_BASE_FEE_PER_GAS] = label;
+
+    assert handler_ptrs[HeaderMemorizerFunctionId.GET_WITHDRAWALS_ROOT] = cast(0, felt*);
+    assert handler_ptrs[HeaderMemorizerFunctionId.GET_BLOB_GAS_USED] = cast(0, felt*);
+    assert handler_ptrs[HeaderMemorizerFunctionId.GET_EXCESS_BLOB_GAS] = cast(0, felt*);
+    assert handler_ptrs[HeaderMemorizerFunctionId.GET_PARENT_BEACON_BLOCK_ROOT] = cast(0, felt*);
+
+    return handler_ptrs;
+}
+
+func get_parent_value{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*}(
+    ) -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.PARENT);
     let (value) = uint256_reverse_endian(num=field);
     return value;
 }
 
-func header_memorizer_get_uncle_value{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
-}() -> Uint256 {
+func get_uncle_value{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*}(
+    ) -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.UNCLE);
     let (value) = uint256_reverse_endian(num=field);
     return value;
 }
 
-func header_memorizer_get_coinbase_value{
+func get_coinbase_value{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.COINBASE);
@@ -50,7 +109,7 @@ func header_memorizer_get_coinbase_value{
     return value;
 }
 
-func header_memorizer_get_state_root_value{
+func get_state_root_value{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.STATE_ROOT);
@@ -58,7 +117,7 @@ func header_memorizer_get_state_root_value{
     return value;
 }
 
-func header_memorizer_get_transaction_root_value{
+func get_transaction_root_value{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.TRANSACTION_ROOT);
@@ -66,14 +125,14 @@ func header_memorizer_get_transaction_root_value{
     return value;
 }
 
-func header_memorizer_get_receipt_root_value{
+func get_receipt_root_value{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.RECEIPT_ROOT);
     let (value) = uint256_reverse_endian(num=field);
     return value;
 }
-func header_memorizer_get_difficulty_value{
+func get_difficulty_value{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.DIFFICULTY);
@@ -81,15 +140,14 @@ func header_memorizer_get_difficulty_value{
     return value;
 }
 
-func header_memorizer_get_number_value{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
-}() -> Uint256 {
+func get_number_value{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*}(
+    ) -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.NUMBER);
     let (value) = uint256_reverse_endian(num=field);
     return value;
 }
 
-func header_memorizer_get_gas_limit_value{
+func get_gas_limit_value{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.GAS_LIMIT);
@@ -97,7 +155,7 @@ func header_memorizer_get_gas_limit_value{
     return value;
 }
 
-func header_memorizer_get_gas_used_value{
+func get_gas_used_value{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.GAS_USED);
@@ -105,7 +163,7 @@ func header_memorizer_get_gas_used_value{
     return value;
 }
 
-func header_memorizer_get_timestamp_value{
+func get_timestamp_value{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.TIMESTAMP);
@@ -113,7 +171,7 @@ func header_memorizer_get_timestamp_value{
     return value;
 }
 
-func header_memorizer_get_extra_data_value{
+func get_extra_data_value{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.EXTRA_DATA);
@@ -121,7 +179,7 @@ func header_memorizer_get_extra_data_value{
     return value;
 }
 
-func header_memorizer_get_mix_hash_value{
+func get_mix_hash_value{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.MIX_HASH);
@@ -129,15 +187,14 @@ func header_memorizer_get_mix_hash_value{
     return value;
 }
 
-func header_memorizer_get_nonce_value{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
-}() -> Uint256 {
+func get_nonce_value{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*}(
+    ) -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.NONCE);
     let (value) = uint256_reverse_endian(num=field);
     return value;
 }
 
-func header_memorizer_get_base_fee_per_gas_value{
+func get_base_fee_per_gas_value{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.BASE_FEE_PER_GAS);
