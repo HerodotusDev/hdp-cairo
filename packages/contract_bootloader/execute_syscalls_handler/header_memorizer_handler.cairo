@@ -87,22 +87,24 @@ func get_memorizer_handler_ptrs() -> felt** {
     return handler_ptrs;
 }
 
-func get_parent_value{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*}(
-    ) -> Uint256 {
+func get_parent_value{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
+}() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.PARENT);
     let (value) = uint256_reverse_endian(num=field);
     return value;
 }
 
-func get_uncle_value{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*}(
-    ) -> Uint256 {
+func get_uncle_value{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
+}() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.UNCLE);
     let (value) = uint256_reverse_endian(num=field);
     return value;
 }
 
 func get_coinbase_value{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.COINBASE);
     let (value) = uint256_reverse_endian(num=field);
@@ -110,7 +112,7 @@ func get_coinbase_value{
 }
 
 func get_state_root_value{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.STATE_ROOT);
     let (value) = uint256_reverse_endian(num=field);
@@ -118,7 +120,7 @@ func get_state_root_value{
 }
 
 func get_transaction_root_value{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.TRANSACTION_ROOT);
     let (value) = uint256_reverse_endian(num=field);
@@ -126,29 +128,30 @@ func get_transaction_root_value{
 }
 
 func get_receipt_root_value{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.RECEIPT_ROOT);
     let (value) = uint256_reverse_endian(num=field);
     return value;
 }
 func get_difficulty_value{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.DIFFICULTY);
     let (value) = uint256_reverse_endian(num=field);
     return value;
 }
 
-func get_number_value{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*}(
-    ) -> Uint256 {
+func get_number_value{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
+}() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.NUMBER);
     let (value) = uint256_reverse_endian(num=field);
     return value;
 }
 
 func get_gas_limit_value{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.GAS_LIMIT);
     let (value) = uint256_reverse_endian(num=field);
@@ -156,7 +159,7 @@ func get_gas_limit_value{
 }
 
 func get_gas_used_value{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.GAS_USED);
     let (value) = uint256_reverse_endian(num=field);
@@ -164,7 +167,7 @@ func get_gas_used_value{
 }
 
 func get_timestamp_value{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.TIMESTAMP);
     let (value) = uint256_reverse_endian(num=field);
@@ -172,7 +175,7 @@ func get_timestamp_value{
 }
 
 func get_extra_data_value{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.EXTRA_DATA);
     let (value) = uint256_reverse_endian(num=field);
@@ -180,22 +183,23 @@ func get_extra_data_value{
 }
 
 func get_mix_hash_value{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.MIX_HASH);
     let (value) = uint256_reverse_endian(num=field);
     return value;
 }
 
-func get_nonce_value{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*}(
-    ) -> Uint256 {
+func get_nonce_value{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
+}() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.NONCE);
     let (value) = uint256_reverse_endian(num=field);
     return value;
 }
 
 func get_base_fee_per_gas_value{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = HeaderDecoder.get_field(rlp=rlp, field=HeaderField.BASE_FEE_PER_GAS);
     let (value) = uint256_reverse_endian(num=field);

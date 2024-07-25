@@ -31,8 +31,9 @@ func get_memorizer_handler_ptrs() -> felt** {
     return handler_ptrs;
 }
 
-func get_nonce_value{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*}(
-    ) -> Uint256 {
+func get_nonce_value{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
+}() -> Uint256 {
     let field: Uint256 = AccountDecoder.get_field(rlp=rlp, field=AccountField.NONCE);
     let (value) = uint256_reverse_endian(num=field);
 
@@ -40,7 +41,7 @@ func get_nonce_value{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: 
 }
 
 func get_balance_value{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = AccountDecoder.get_field(rlp=rlp, field=AccountField.BALANCE);
     let (value) = uint256_reverse_endian(num=field);
@@ -49,7 +50,7 @@ func get_balance_value{
 }
 
 func get_state_root_value{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = AccountDecoder.get_field(rlp=rlp, field=AccountField.STATE_ROOT);
     let (value) = uint256_reverse_endian(num=field);
@@ -58,7 +59,7 @@ func get_state_root_value{
 }
 
 func get_code_hash_value{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
 }() -> Uint256 {
     let field: Uint256 = AccountDecoder.get_field(rlp=rlp, field=AccountField.CODE_HASH);
     let (value) = uint256_reverse_endian(num=field);

@@ -19,8 +19,9 @@ func get_memorizer_handler_ptrs() -> felt** {
     return handler_ptrs;
 }
 
-func get_slot_value{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*}(
-    ) -> Uint256 {
+func get_slot_value{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
+}() -> Uint256 {
     let field: Uint256 = StorageSlotDecoder.get_word(rlp=rlp);
     let (value) = uint256_reverse_endian(num=field);
 

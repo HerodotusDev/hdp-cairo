@@ -70,8 +70,8 @@ namespace MemorizerId {
 }
 
 func abstract_get_value_func_caller{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
-}(func_ptr: felt*) -> Uint256 {
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
+}() -> Uint256 {
     jmp abs func_ptr;
 }
 
@@ -109,10 +109,9 @@ func execute_call_contract{
             block_number=call_contract_request.calldata_start[3],
         );
 
-        with rlp {
-            let value = abstract_get_value_func_caller(
-                get_value_trait.header_memorizer_handler_ptrs[function_id]
-            );
+        let func_ptr: felt* = get_value_trait.header_memorizer_handler_ptrs[function_id];
+        with func_ptr, rlp {
+            let value = abstract_get_value_func_caller();
         }
 
         assert call_contract_response.retdata_start[0] = value.low;
@@ -126,10 +125,9 @@ func execute_call_contract{
             address=call_contract_request.calldata_start[4],
         );
 
-        with rlp {
-            let value = abstract_get_value_func_caller(
-                get_value_trait.account_memorizer_handler_ptrs[function_id]
-            );
+        let func_ptr: felt* = get_value_trait.account_memorizer_handler_ptrs[function_id];
+        with func_ptr, rlp {
+            let value = abstract_get_value_func_caller();
         }
 
         assert call_contract_response.retdata_start[0] = value.low;
@@ -147,10 +145,9 @@ func execute_call_contract{
             ),
         );
 
-        with rlp {
-            let value = abstract_get_value_func_caller(
-                get_value_trait.storage_memorizer_handler_ptrs[function_id]
-            );
+        let func_ptr: felt* = get_value_trait.storage_memorizer_handler_ptrs[function_id];
+        with func_ptr, rlp {
+            let value = abstract_get_value_func_caller();
         }
 
         assert call_contract_response.retdata_start[0] = value.low;
