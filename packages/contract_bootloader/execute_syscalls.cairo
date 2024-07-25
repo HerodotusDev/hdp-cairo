@@ -15,15 +15,7 @@ from src.decoders.storage_slot_decoder import StorageSlotDecoder
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.registers import get_label_location
-from contract_bootloader.execute_syscalls_handler.header_memorizer_handler import (
-    header_memorizer_get_value,
-)
-from contract_bootloader.execute_syscalls_handler.account_memorizer_handler import (
-    account_memorizer_get_value,
-)
-from contract_bootloader.execute_syscalls_handler.storage_memorizer_handler import (
-    storage_memorizer_get_value,
-)
+from contract_bootloader.execute_syscalls_handler.get_value_trait import GetValueTrait
 
 struct ExecutionInfo {
     selector: felt,
@@ -54,15 +46,21 @@ func execute_syscalls{
     account_dict: DictAccess*,
     storage_dict: DictAccess*,
     pow2_array: felt*,
-}(execution_context: ExecutionContext*, syscall_ptr_end: felt*) {
+}(execution_context: ExecutionContext*, syscall_ptr_end: felt*, get_value_trait: GetValueTrait*) {
     if (syscall_ptr == syscall_ptr_end) {
         return ();
     }
 
     assert [syscall_ptr] = CALL_CONTRACT_SELECTOR;
-    execute_call_contract(caller_execution_context=execution_context);
+    execute_call_contract(
+        caller_execution_context=execution_context, get_value_trait=get_value_trait
+    );
 
-    return execute_syscalls(execution_context=execution_context, syscall_ptr_end=syscall_ptr_end);
+    return execute_syscalls(
+        execution_context=execution_context,
+        syscall_ptr_end=syscall_ptr_end,
+        get_value_trait=get_value_trait,
+    );
 }
 
 namespace MemorizerId {
@@ -72,12 +70,8 @@ namespace MemorizerId {
 }
 
 func abstract_get_value_func_caller{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*,
-    rlp: felt,
-    return_value_ptr: Uint256*,
-}(func_ptr: felt*) -> () {
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
+}(func_ptr: felt*) -> Uint256 {
     jmp abs func_ptr;
 }
 
@@ -92,7 +86,7 @@ func execute_call_contract{
     account_dict: DictAccess*,
     storage_dict: DictAccess*,
     pow2_array: felt*,
-}(caller_execution_context: ExecutionContext*) {
+}(caller_execution_context: ExecutionContext*, get_value_trait: GetValueTrait*) {
     alloc_locals;
     let request_header = cast(syscall_ptr, RequestHeader*);
     let syscall_ptr = syscall_ptr + RequestHeader.SIZE;
@@ -109,42 +103,40 @@ func execute_call_contract{
     let memorizer_id = call_contract_request.contract_address;
     let function_id = call_contract_request.selector;
 
-    if (memorizerId == MemorizerId.HEADER) {
+    if (memorizer_id == MemorizerId.HEADER) {
         let (rlp) = HeaderMemorizer.get(
             chain_id=call_contract_request.calldata_start[2],
             block_number=call_contract_request.calldata_start[3],
         );
 
-        let (header_memorizer_get_value_funcs) = get_label_location(header_memorizer_get_value);
-        local return_value: Uint256;
-        let return_value_ptr: Uint256* = &return_value;
-        with rlp, return_value_ptr {
-            abstract_get_value_func_caller(header_memorizer_get_value_funcs[function_id]);
+        with rlp {
+            let value = abstract_get_value_func_caller(
+                get_value_trait.header_memorizer_get_value_ptrs[function_id]
+            );
         }
 
-        assert call_contract_response.retdata_start[0] = return_value.low;
-        assert call_contract_response.retdata_start[1] = return_value.high;
+        assert call_contract_response.retdata_start[0] = value.low;
+        assert call_contract_response.retdata_start[1] = value.high;
         return ();
     }
-    if (memorizerId == MemorizerId.ACCOUNT) {
+    if (memorizer_id == MemorizerId.ACCOUNT) {
         let (rlp) = AccountMemorizer.get(
             chain_id=call_contract_request.calldata_start[2],
             block_number=call_contract_request.calldata_start[3],
             address=call_contract_request.calldata_start[4],
         );
 
-        let (account_memorizer_get_value_funcs) = get_label_location(account_memorizer_get_value);
-        local return_value: Uint256;
-        let return_value_ptr: Uint256* = &return_value;
-        with rlp, return_value_ptr {
-            abstract_get_value_func_caller(account_memorizer_get_value_funcs[function_id]);
+        with rlp {
+            let value = abstract_get_value_func_caller(
+                get_value_trait.account_memorizer_get_value_ptrs[function_id]
+            );
         }
 
-        assert call_contract_response.retdata_start[0] = return_value.low;
-        assert call_contract_response.retdata_start[1] = return_value.high;
+        assert call_contract_response.retdata_start[0] = value.low;
+        assert call_contract_response.retdata_start[1] = value.high;
         return ();
     }
-    if (memorizerId == MemorizerId.STORAGE) {
+    if (memorizer_id == MemorizerId.STORAGE) {
         let (rlp) = StorageMemorizer.get(
             chain_id=call_contract_request.calldata_start[2],
             block_number=call_contract_request.calldata_start[3],
@@ -154,15 +146,15 @@ func execute_call_contract{
                 high=call_contract_request.calldata_start[5],
             ),
         );
-        let (storage_memorizer_get_value_funcs) = get_label_location(storage_memorizer_get_value);
-        local return_value: Uint256;
-        let return_value_ptr: Uint256* = &return_value;
-        with rlp, return_value_ptr {
-            abstract_get_value_func_caller(storage_memorizer_get_value_funcs[function_id]);
+
+        with rlp {
+            let value = abstract_get_value_func_caller(
+                get_value_trait.storage_memorizer_get_value_ptrs[function_id]
+            );
         }
 
-        assert call_contract_response.retdata_start[0] = return_value.low;
-        assert call_contract_response.retdata_start[1] = return_value.high;
+        assert call_contract_response.retdata_start[0] = value.low;
+        assert call_contract_response.retdata_start[1] = value.high;
         return ();
     }
 

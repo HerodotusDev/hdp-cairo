@@ -1,6 +1,5 @@
 from src.decoders.header_decoder import HeaderDecoder, HeaderField
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
-from starkware.cairo.common.registers import get_label_location
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 
 // This is not used but stays for reference
@@ -26,24 +25,6 @@ namespace HeaderMemorizerFunctionId {
     const GET_EXCESS_BLOB_GAS = 18;
     const GET_PARENT_BEACON_BLOCK_ROOT = 19;
 }
-
-header_memorizer_get_value:
-dw get_label_location(header_memorizer_get_parent_value);  // GET_PARENT = 0;
-dw get_label_location(header_memorizer_get_uncle_value);  // GET_UNCLE = 1;
-dw get_label_location(header_memorizer_get_coinbase_value);  // GET_COINBASE = 2;
-dw get_label_location(header_memorizer_get_state_root_value);  // GET_STATE_ROOT = 3;
-dw get_label_location(header_memorizer_get_transaction_root_value);  // GET_TRANSACTION_ROOT = 4;
-dw get_label_location(header_memorizer_get_receipt_root_value);  // GET_RECEIPT_ROOT = 5;
-dw get_label_location(header_memorizer_get_difficulty_value);  // GET_DIFFICULTY = 7;
-dw get_label_location(header_memorizer_get_number_value);  // GET_NUMBER = 8;
-dw get_label_location(header_memorizer_get_gas_limit_value);  // GET_GAS_LIMIT = 9;
-dw get_label_location(header_memorizer_get_gas_used_value);  // GET_GAS_USED = 10;
-dw get_label_location(header_memorizer_get_timestamp_value);  // GET_TIMESTAMP = 11;
-dw get_label_location(header_memorizer_get_extra_data_value);  // GET_EXTRA_DATA = 12;
-dw get_label_location(header_memorizer_get_mix_hash_value);  // GET_MIX_HASH = 13;
-dw get_label_location(header_memorizer_get_nonce_value);  // GET_NONCE = 14;
-dw get_label_location(header_memorizer_get_base_fee_per_gas_value);  // GET_BASE_FEE_PER_GAS = 15;
-dw 0;
 
 func header_memorizer_get_parent_value{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, rlp: felt*
