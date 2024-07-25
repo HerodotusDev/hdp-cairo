@@ -14,6 +14,16 @@ from src.decoders.account_decoder import AccountDecoder, AccountField
 from src.decoders.storage_slot_decoder import StorageSlotDecoder
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.dict_access import DictAccess
+from starkware.cairo.common.registers import get_label_location
+from contract_bootloader.execute_syscalls_handler.header_memorizer_handler import (
+    header_memorizer_get_value,
+)
+from contract_bootloader.execute_syscalls_handler.account_memorizer_handler import (
+    account_memorizer_get_value,
+)
+from contract_bootloader.execute_syscalls_handler.storage_memorizer_handler import (
+    storage_memorizer_get_value,
+)
 
 struct ExecutionInfo {
     selector: felt,
@@ -61,6 +71,16 @@ namespace MemorizerId {
     const STORAGE = 2;
 }
 
+func abstract_get_value_func_caller{
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    pow2_array: felt*,
+    rlp: felt,
+    return_value_ptr: Uint256*,
+}(func_ptr: felt*) -> () {
+    jmp abs func_ptr;
+}
+
 // Executes a syscall that calls another contract.
 func execute_call_contract{
     range_check_ptr,
@@ -96,11 +116,15 @@ func execute_call_contract{
         );
 
         let (header_memorizer_get_value_funcs) = get_label_location(header_memorizer_get_value);
-        let value = header_memorizer_get_value_funcs[function_id]();
+        local return_value: Uint256;
+        let return_value_ptr: Uint256* = &return_value;
+        with rlp, return_value_ptr {
+            abstract_get_value_func_caller(header_memorizer_get_value_funcs[function_id]);
+        }
 
-        assert call_contract_response.retdata_start[0] = value.low;
-        assert call_contract_response.retdata_start[1] = value.high;
-        return ()
+        assert call_contract_response.retdata_start[0] = return_value.low;
+        assert call_contract_response.retdata_start[1] = return_value.high;
+        return ();
     }
     if (memorizerId == MemorizerId.ACCOUNT) {
         let (rlp) = AccountMemorizer.get(
@@ -110,11 +134,15 @@ func execute_call_contract{
         );
 
         let (account_memorizer_get_value_funcs) = get_label_location(account_memorizer_get_value);
-        let value = account_memorizer_get_value_funcs[function_id]();
+        local return_value: Uint256;
+        let return_value_ptr: Uint256* = &return_value;
+        with rlp, return_value_ptr {
+            abstract_get_value_func_caller(account_memorizer_get_value_funcs[function_id]);
+        }
 
-        assert call_contract_response.retdata_start[0] = value.low;
-        assert call_contract_response.retdata_start[1] = value.high;
-        return ()
+        assert call_contract_response.retdata_start[0] = return_value.low;
+        assert call_contract_response.retdata_start[1] = return_value.high;
+        return ();
     }
     if (memorizerId == MemorizerId.STORAGE) {
         let (rlp) = StorageMemorizer.get(
@@ -127,11 +155,15 @@ func execute_call_contract{
             ),
         );
         let (storage_memorizer_get_value_funcs) = get_label_location(storage_memorizer_get_value);
-        let value = storage_memorizer_get_value_funcs[function_id]();
+        local return_value: Uint256;
+        let return_value_ptr: Uint256* = &return_value;
+        with rlp, return_value_ptr {
+            abstract_get_value_func_caller(storage_memorizer_get_value_funcs[function_id]);
+        }
 
-        assert call_contract_response.retdata_start[0] = value.low;
-        assert call_contract_response.retdata_start[1] = value.high;
-        return ()
+        assert call_contract_response.retdata_start[0] = return_value.low;
+        assert call_contract_response.retdata_start[1] = return_value.high;
+        return ();
     }
 
     // Unknown MemorizerId
