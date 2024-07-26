@@ -24,6 +24,17 @@ from starkware.starknet.core.os.constants import (
 )
 from contract_bootloader.contract_class.compiled_class import CompiledClass, CompiledClassEntryPoint
 from contract_bootloader.execute_syscalls import ExecutionContext, execute_syscalls
+from contract_bootloader.execute_syscalls_handler.get_value_trait import GetValueTrait
+from starkware.cairo.common.registers import get_fp_and_pc
+from contract_bootloader.execute_syscalls_handler.header_memorizer_handler import (
+    get_memorizer_handler_ptrs as get_header_memorizer_handler_ptrs,
+)
+from contract_bootloader.execute_syscalls_handler.account_memorizer_handler import (
+    get_memorizer_handler_ptrs as get_account_memorizer_handler_ptrs,
+)
+from contract_bootloader.execute_syscalls_handler.storage_memorizer_handler import (
+    get_memorizer_handler_ptrs as get_storage_memorizer_handler_ptrs,
+)
 
 // Represents the arguments pushed to the stack before calling an entry point.
 struct EntryPointCallArguments {
@@ -56,11 +67,25 @@ func call_execute_syscalls{
     storage_dict: DictAccess*,
     pow2_array: felt*,
 }(execution_context: ExecutionContext*, syscall_ptr_end: felt*, dry_run: felt) {
+    alloc_locals;
+    let (__fp__, _) = get_fp_and_pc();
+
     if (dry_run == 1) {
         return ();
     }
 
-    execute_syscalls(execution_context, syscall_ptr_end);
+    // TODO to be filled with fn ptrs
+    local get_value_trait: GetValueTrait = GetValueTrait(
+        header_memorizer_handler_ptrs=get_header_memorizer_handler_ptrs(),
+        account_memorizer_handler_ptrs=get_account_memorizer_handler_ptrs(),
+        storage_memorizer_handler_ptrs=get_storage_memorizer_handler_ptrs(),
+    );
+
+    execute_syscalls(
+        execution_context=execution_context,
+        syscall_ptr_end=syscall_ptr_end,
+        get_value_trait=&get_value_trait,
+    );
     return ();
 }
 

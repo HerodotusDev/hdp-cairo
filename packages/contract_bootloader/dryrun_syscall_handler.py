@@ -1,3 +1,4 @@
+import os
 from typing import (
     Dict,
     Iterable,
@@ -31,7 +32,17 @@ from contract_bootloader.dryrun_syscall_memorizer_handler.storage_memorizer_hand
     DryRunStorageMemorizerHandler,
 )
 
-EVM_PROVIDER_URL = "https://sepolia.ethereum.iosis.tech/"
+# Load environment variables from a .env file if present
+from dotenv import load_dotenv
+
+load_dotenv()
+
+RPC_URL = os.getenv("RPC_URL", "")
+
+if not RPC_URL:
+    raise ValueError(
+        "RPC_URL environment variable is not set. Please set it in your environment or in a .env file."
+    )
 
 
 class DryRunSyscallHandler(SyscallHandlerBase):
@@ -95,7 +106,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
 
             handler = DryRunHeaderMemorizerHandler(
                 memorizer=memorizer,
-                evm_provider_url=EVM_PROVIDER_URL,
+                evm_provider_url=RPC_URL,
             )
             retdata = handler.handle(function_id=function_id, key=key)
 
@@ -122,7 +133,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
 
             handler = DryRunAccountMemorizerHandler(
                 memorizer=memorizer,
-                evm_provider_url=EVM_PROVIDER_URL,
+                evm_provider_url=RPC_URL,
             )
             retdata = handler.handle(function_id=function_id, key=key)
 
@@ -149,7 +160,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
 
             handler = DryRunStorageMemorizerHandler(
                 memorizer=memorizer,
-                evm_provider_url=EVM_PROVIDER_URL,
+                evm_provider_url=RPC_URL,
             )
             retdata = handler.handle(function_id=function_id, key=key)
 
