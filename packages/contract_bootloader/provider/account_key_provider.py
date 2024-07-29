@@ -2,7 +2,6 @@ import os
 from web3 import Web3
 from contract_bootloader.memorizer.account_memorizer import MemorizerKey
 from contract_bootloader.provider.evm_provider import EVMProvider
-from functools import lru_cache
 
 
 class AccountKeyEVMProvider(EVMProvider):
