@@ -97,6 +97,15 @@ class Datalake:
 
 @marshmallow_dataclass.dataclass(frozen=True)
 class Module(ValidatedMarshmallowDataclass):
+    encoded_task: List[int] = field(
+        metadata=additional_metadata(marshmallow_field=mfields.List(IntAsHex()))
+    )
+    task_bytes_len: int
+    module_class: CompiledClass
+
+
+@marshmallow_dataclass.dataclass(frozen=True)
+class DryRunModule(ValidatedMarshmallowDataclass):
     inputs: List[int] = field(
         metadata=additional_metadata(
             marshmallow_field=mfields.List(IntAsHex(), required=True)
@@ -140,8 +149,8 @@ class HDPInput(ValidatedMarshmallowDataclass):
 @marshmallow_dataclass.dataclass(frozen=True)
 class HDPDryRunInput(ValidatedMarshmallowDataclass):
     dry_run_output_path: str
-    modules: List[Module] = field(
+    modules: List[DryRunModule] = field(
         metadata=additional_metadata(
-            marshmallow_field=mfields.List(mfields.Nested(Module.Schema))
+            marshmallow_field=mfields.List(mfields.Nested(DryRunModule.Schema))
         )
     )

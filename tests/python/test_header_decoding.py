@@ -13,6 +13,7 @@ from tools.py.fetch_tx import (
 from tools.py.utils import (
     bytes_to_8_bytes_chunks_little,
     reverse_and_split_256_bytes,
+    split_128,
 )
 from dotenv import load_dotenv
 import os
@@ -69,8 +70,8 @@ def fetch_header_dict(block_number):
     (low, high) = reverse_and_split_256_bytes(block.receiptsRoot)
     block_dict["receipts_root"] = {"low": low, "high": high}
 
-    coinbase = bytes_to_8_bytes_chunks_little(block.coinbase)
-    block_dict["coinbase"] = coinbase
+    (low, high) = split_128(int.from_bytes(block.coinbase, "big"))
+    block_dict["coinbase"] = {"low": low, "high": high}
 
     block_dict["difficulty"] = block.difficulty
     block_dict["number"] = block.number
