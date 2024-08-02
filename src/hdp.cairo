@@ -208,7 +208,7 @@ func run{
         dictionary["results_root"] = '0x' + (hex(ids.results_root.high * 2 ** 128 + ids.results_root.low)[2:].zfill(64))
         results = list()
         for i in range(ids.results_len):
-            results.append(memory[ids.results.address_ + i])
+            results.append('0x' + (hex(memory[ids.results.address_ + i])[2:].zfill(64)))
         dictionary["results"] = results
         with open(cairo_run_output_path, 'w') as json_file:
             json.dump(dictionary, json_file)
