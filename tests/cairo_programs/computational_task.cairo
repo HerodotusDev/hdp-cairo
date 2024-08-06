@@ -64,9 +64,9 @@ func test_computational_task_init{
             "type": "datalake_compute",
             "context": {
                 "task_bytes_len": 128,
-                "encoded_task": ["0x25ca8521ba63d557", "0xc9f9f40f48f31e27", "0x739b20c59ba605a5", "0x813cc91cdc15ae0e", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0"],
-                "datalake_bytes_len": 224,
-                "encoded_datalake": ["0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0xf826540000000000", "0x0", "0x0", "0x0", "0x1527540000000000", "0x0", "0x0", "0x0", "0x100000000000000", "0x0", "0x0", "0x0", "0xa000000000000000", "0x0", "0x0", "0x0", "0x200000000000000", "0x1101", "0x0", "0x0", "0x0"],
+                "encoded_task": ["0xAE1B44980CDF67EC", "0x45E6CCA5D27DED75", "0x438632DD6582D123", "0x3DD3EFC40A866EC9", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0", "0x0"],
+                "datalake_bytes_len": 256,
+                "encoded_datalake": ["0x0", "0x0", "0x0", "0x0", "0x0","0x0","0x0", "0xA736AA0000000000", "0x0", "0x0", "0x0", "0xf826540000000000", "0x0", "0x0", "0x0", "0x1527540000000000", "0x0", "0x0", "0x0", "0x100000000000000", "0x0", "0x0", "0x0", "0xa000000000000000", "0x0", "0x0", "0x0", "0x200000000000000", "0x1101", "0x0", "0x0", "0x0"],
                 "datalake_type": 0,
                 "property_type": 1
             }
@@ -81,6 +81,7 @@ func test_computational_task_init{
     local expected_datalake: BlockSampledDataLake;
 
     assert expected_datalake = BlockSampledDataLake(
+        chain_id=11155111,
         block_range_start=5515000,
         block_range_end=5515029,
         increment=1,
@@ -94,7 +95,7 @@ func test_computational_task_init{
 
     assert expected_task = ComputationalTask(
         chain_id=0x1,
-        hash=Uint256(0xB85414EBA86F94BAC1CA653D3D3CF014, 0x212F54CE9F4342F21C5D865F1641AABC),
+        hash=Uint256(0x38008646DD09E46B5D7C68B43B5C5DE2, 0xEA113874535324B3CEB180080880F599),
         datalake_ptr=datalake_ptr,
         datalake_type=DatalakeType.BLOCK_SAMPLED,
         aggregate_fn_id=AGGREGATE_FN.AVG,

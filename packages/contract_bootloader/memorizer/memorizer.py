@@ -7,6 +7,7 @@ from starkware.cairo.lang.vm.relocatable import RelocatableValue
 class MemorizerId(Enum):
     Header = 0
     Account = 1
+    Storage = 2
 
     @classmethod
     def from_int(cls, value: int):

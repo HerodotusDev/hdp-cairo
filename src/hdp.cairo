@@ -15,7 +15,7 @@ from starkware.cairo.common.default_dict import default_dict_new, default_dict_f
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
 
 from src.verifiers.verify import run_state_verification
-
+from src.module import init_module
 from src.types import MMRMeta, ComputationalTask, ChainInfo
 from src.utils import write_output_ptr
 
@@ -195,8 +195,7 @@ func run{
     // Post Verification Checks: Ensure the roots match the expected roots
     %{
         if "result_root" in program_input:
-            assert ids.results_root.high * 2 ** 128 + ids.results_root.low  == hex_to_int(program_input["result_root"]), "Expected results root mismatch"
-
+            assert ids.results_root.high * 2 ** 128 + ids.results_root.low  == hex_to_int(program_input["result_root"]), "Expected results root mismatch" 
         if "task_root" in program_input:
             assert ids.tasks_root.high * 2 ** 128 + ids.tasks_root.low  == hex_to_int(program_input["task_root"]), "Expected results root mismatch"
     %}
@@ -205,11 +204,11 @@ func run{
         import json
 
         dictionary = dict()
-        dictionary["tasks_root"] = hex(ids.tasks_root.high * 2 ** 128 + ids.tasks_root.low )
-        dictionary["results_root"] = hex(ids.results_root.high * 2 ** 128 + ids.results_root.low)
+        dictionary["tasks_root"] = '0x' + (hex(ids.tasks_root.high * 2 ** 128 + ids.tasks_root.low)[2:].zfill(64))
+        dictionary["results_root"] = '0x' + (hex(ids.results_root.high * 2 ** 128 + ids.results_root.low)[2:].zfill(64))
         results = list()
         for i in range(ids.results_len):
-            results.append(memory[ids.results.address_ + i])
+            results.append('0x' + (hex(memory[ids.results.address_ + i])[2:].zfill(64)))
         dictionary["results"] = results
         with open(cairo_run_output_path, 'w') as json_file:
             json.dump(dictionary, json_file)
@@ -275,8 +274,10 @@ func compute_tasks{
     }
 
     if (hdp_version == 2) {
-        local inputs_len: felt;
-        let (inputs) = alloc();
+        // Task Params
+        local encoded_task_len: felt;
+        local task_bytes_len: felt;
+        let (encoded_task) = alloc();
 
         %{
             from tools.py.schema import CompiledClass
@@ -284,11 +285,17 @@ func compute_tasks{
             task = program_input["tasks"][0]["context"]
             compiled_class = CompiledClass.Schema().load(task["module_class"])
 
-            ids.inputs_len = len(task["inputs"])
-            segments.write_arg(ids.inputs, hex_to_int_array(task["inputs"]))
+            ids.task_bytes_len = task["task_bytes_len"]
+            ids.encoded_task_len = len(task["encoded_task"])
+
+            segments.write_arg(ids.encoded_task, hex_to_int_array(task["encoded_task"]))
         %}
 
-        let (result, program_hash) = compute_contract(inputs, inputs_len);
+        let (local module_task) = init_module(encoded_task, encoded_task_len);
+
+        let (result, program_hash) = compute_contract(
+            module_task.module_inputs, module_task.module_inputs_len
+        );
         assert results[0] = result;
         %{
             target_result = hex(ids.result.high * 2 ** 128 + ids.result.low)
@@ -297,7 +304,7 @@ func compute_tasks{
 
         let task_hash = compute_tasks_hash_v2{
             range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
-        }(program_hash=program_hash, inputs=inputs, inputs_len=inputs_len);
+        }(encoded_task=encoded_task, task_bytes_len=task_bytes_len);
 
         // %{ print("Task;", hex(ids.task_hash.high * 2 ** 128 + ids.task_hash.low)) %}
 

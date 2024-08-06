@@ -93,9 +93,9 @@ func main{
         )
     %}
 
+    let (local header_dict) = default_dict_new(default_value=7);
     let (local account_dict) = default_dict_new(default_value=7);
     let (local storage_dict) = default_dict_new(default_value=7);
-    let (local header_dict) = default_dict_new(default_value=7);
     let (local block_tx_dict) = default_dict_new(default_value=7);
     let (local block_receipt_dict) = default_dict_new(default_value=7);
     local pow2_array: felt* = nondet %{ segments.add() %};
@@ -116,10 +116,12 @@ func main{
     assert calldata[1] = nondet %{ ids.header_dict.address_.offset %};
     assert calldata[2] = nondet %{ ids.account_dict.address_.segment_index %};
     assert calldata[3] = nondet %{ ids.account_dict.address_.offset %};
-    memcpy(dst=calldata + 4, src=inputs, len=inputs_len);
-    let calldata_size = inputs_len + 4;
+    assert calldata[4] = nondet %{ ids.storage_dict.address_.segment_index %};
+    assert calldata[5] = nondet %{ ids.storage_dict.address_.offset %};
+    memcpy(dst=calldata + 6, src=inputs, len=inputs_len);
+    let calldata_size = inputs_len + 6;
 
-    with account_dict, storage_dict, header_dict, block_tx_dict, block_receipt_dict, pow2_array {
+    with header_dict, account_dict, storage_dict, block_tx_dict, block_receipt_dict, pow2_array {
         let (retdata_size, retdata) = run_contract_bootloader(
             compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata, dry_run=1
         );
@@ -143,7 +145,7 @@ func main{
             "low": hex(ids.result.low),
             "high": hex(ids.result.high)
         }
-        dictionary["class_hash"] = hex(ids.program_hash)
+        dictionary["program_hash"] = hex(ids.program_hash)
 
         list.append(dictionary)
 
