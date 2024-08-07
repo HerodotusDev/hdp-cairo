@@ -29,25 +29,30 @@ func main{
 }() {
     alloc_locals;
 
-    local inputs_len: felt;
-    let (inputs) = alloc();
+    local private_inputs_len: felt;
+    let (private_inputs) = alloc();
+    local public_inputs_len: felt;
+    let (public_inputs) = alloc();
 
     %{
         from tools.py.schema import HDPDryRunInput
 
         # Load the dry run input
         dry_run_input = HDPDryRunInput.Schema().load(program_input)
-
+        dry_run_output_path = dry_run_input.dry_run_output_path
         # Check if the modules list contains more than one element
         if len(dry_run_input.modules) > 1:
             raise ValueError("The modules list contains more than one element, which is not supported.")
 
-        # Extract values
-        dry_run_output_path = dry_run_input.dry_run_output_path
-        inputs = dry_run_input.modules[0].inputs
-        compiled_class = dry_run_input.modules[0].module_class
-        ids.inputs_len = len(inputs)
-        segments.write_arg(ids.inputs, inputs)
+        module_input = dry_run_input.modules[0]
+
+        compiled_class = module_input.module_class
+
+        ids.private_inputs_len = len(module_input.private_inputs)
+        segments.write_arg(ids.private_inputs, module_input.private_inputs)
+
+        ids.public_inputs_len = len(module_input.public_inputs)
+        segments.write_arg(ids.public_inputs, module_input.public_inputs)
     %}
 
     local compiled_class: CompiledClass*;
@@ -118,8 +123,11 @@ func main{
     assert calldata[3] = nondet %{ ids.account_dict.address_.offset %};
     assert calldata[4] = nondet %{ ids.storage_dict.address_.segment_index %};
     assert calldata[5] = nondet %{ ids.storage_dict.address_.offset %};
-    memcpy(dst=calldata + 6, src=inputs, len=inputs_len);
-    let calldata_size = inputs_len + 6;
+
+    memcpy(dst=calldata + 6, src=private_inputs, len=private_inputs_len);
+    memcpy(dst=calldata + 6 + private_inputs_len, src=public_inputs, len=public_inputs_len);
+
+    let calldata_size = 6 + private_inputs_len + public_inputs_len;
 
     with header_dict, account_dict, storage_dict, block_tx_dict, block_receipt_dict, pow2_array {
         let (retdata_size, retdata) = run_contract_bootloader(

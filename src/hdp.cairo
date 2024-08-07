@@ -279,22 +279,33 @@ func compute_tasks{
         local task_bytes_len: felt;
         let (encoded_task) = alloc();
 
+        local private_inputs_len: felt;
+        let (private_inputs) = alloc();
+
         %{
-            from tools.py.schema import CompiledClass
+            from tools.py.schema import Module, CompiledClass
 
-            task = program_input["tasks"][0]["context"]
-            compiled_class = CompiledClass.Schema().load(task["module_class"])
+            # Load the module input
+            module_input = Module.Schema().load(program_input["tasks"][0]["context"])
 
-            ids.task_bytes_len = task["task_bytes_len"]
-            ids.encoded_task_len = len(task["encoded_task"])
+            compiled_class = module_input.module_class
 
-            segments.write_arg(ids.encoded_task, hex_to_int_array(task["encoded_task"]))
+            ids.task_bytes_len = module_input.task_bytes_len
+            ids.encoded_task_len = len(module_input.encoded_task)
+
+            segments.write_arg(ids.encoded_task, hex_to_int_array(module_input.encoded_task))
+
+            ids.private_inputs_len = len(module_input.private_inputs)
+            segments.write_arg(ids.private_inputs, module_input.private_inputs)
         %}
 
         let (local module_task) = init_module(encoded_task, encoded_task_len);
 
         let (result, program_hash) = compute_contract(
-            module_task.module_inputs, module_task.module_inputs_len
+            private_inputs,
+            private_inputs_len,
+            module_task.module_inputs,
+            module_task.module_inputs_len,
         );
         assert results[0] = result;
         %{

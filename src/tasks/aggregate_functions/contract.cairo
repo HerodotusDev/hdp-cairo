@@ -28,7 +28,9 @@ func compute_contract{
     block_tx_dict: DictAccess*,
     block_receipt_dict: DictAccess*,
     pow2_array: felt*,
-}(inputs: felt*, inputs_len: felt) -> (result: Uint256, program_hash: felt) {
+}(
+    private_inputs: felt*, private_inputs_len: felt, public_inputs: felt*, public_inputs_len: felt
+) -> (result: Uint256, program_hash: felt) {
     alloc_locals;
     local compiled_class: CompiledClass*;
 
@@ -81,8 +83,11 @@ func compute_contract{
     assert calldata[3] = nondet %{ ids.account_dict.address_.offset %};
     assert calldata[4] = nondet %{ ids.storage_dict.address_.segment_index %};
     assert calldata[5] = nondet %{ ids.storage_dict.address_.offset %};
-    memcpy(dst=calldata + 6, src=inputs, len=inputs_len);
-    let calldata_size = inputs_len + 6;
+
+    memcpy(dst=calldata + 6, src=private_inputs, len=private_inputs_len);
+    memcpy(dst=calldata + 6 + private_inputs_len, src=public_inputs, len=public_inputs_len);
+
+    let calldata_size = 6 + private_inputs_len + public_inputs_len;
 
     with header_dict, account_dict, storage_dict, block_tx_dict, block_receipt_dict, pow2_array {
         let (retdata_size, retdata) = run_contract_bootloader(
