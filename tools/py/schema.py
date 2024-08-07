@@ -97,6 +97,11 @@ class Datalake:
 
 @marshmallow_dataclass.dataclass(frozen=True)
 class Module(ValidatedMarshmallowDataclass):
+    private_inputs: List[int] = field(
+        metadata=additional_metadata(
+            marshmallow_field=mfields.List(IntAsHex(), required=True)
+        )
+    )
     encoded_task: List[int] = field(
         metadata=additional_metadata(marshmallow_field=mfields.List(IntAsHex()))
     )
@@ -106,7 +111,12 @@ class Module(ValidatedMarshmallowDataclass):
 
 @marshmallow_dataclass.dataclass(frozen=True)
 class DryRunModule(ValidatedMarshmallowDataclass):
-    inputs: List[int] = field(
+    private_inputs: List[int] = field(
+        metadata=additional_metadata(
+            marshmallow_field=mfields.List(IntAsHex(), required=True)
+        )
+    )
+    public_inputs: List[int] = field(
         metadata=additional_metadata(
             marshmallow_field=mfields.List(IntAsHex(), required=True)
         )
