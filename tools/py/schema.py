@@ -1,21 +1,14 @@
 from enum import Enum
-import json
 from typing import List, Optional, Union
-from marshmallow import Schema
 import marshmallow_dataclass
-from dataclasses import asdict, field
+from dataclasses import field
 import marshmallow.fields as mfields
 from contract_bootloader.contract_class.contract_class import CompiledClass
 from starkware.starkware_utils.validated_dataclass import ValidatedMarshmallowDataclass
 from starkware.starkware_utils.marshmallow_dataclass_fields import (
     IntAsHex,
+    Enum,
     additional_metadata,
-)
-from contract_bootloader.memorizer.account_memorizer import (
-    MemorizerKey as AccountMemorizerKey,
-)
-from contract_bootloader.memorizer.header_memorizer import (
-    MemorizerKey as HeaderMemorizerKey,
 )
 
 
@@ -95,11 +88,26 @@ class Datalake:
     property_type: int
 
 
+class Visibility(Enum):
+    PUBLIC = "public"
+    PRIVATE = "private"
+
+
 @marshmallow_dataclass.dataclass(frozen=True)
-class Module(ValidatedMarshmallowDataclass):
-    private_inputs: List[int] = field(
+class Input:
+    visibility: Visibility
+    value: int = field(
         metadata=additional_metadata(
             marshmallow_field=mfields.List(IntAsHex(), required=True)
+        )
+    )
+
+
+@marshmallow_dataclass.dataclass(frozen=True)
+class Module(ValidatedMarshmallowDataclass):
+    inputs: List[Input] = field(
+        metadata=additional_metadata(
+            marshmallow_field=mfields.List(mfields.Nested(Input.Schema))
         )
     )
     encoded_task: List[int] = field(
@@ -111,14 +119,9 @@ class Module(ValidatedMarshmallowDataclass):
 
 @marshmallow_dataclass.dataclass(frozen=True)
 class DryRunModule(ValidatedMarshmallowDataclass):
-    private_inputs: List[int] = field(
+    inputs: List[Input] = field(
         metadata=additional_metadata(
-            marshmallow_field=mfields.List(IntAsHex(), required=True)
-        )
-    )
-    public_inputs: List[int] = field(
-        metadata=additional_metadata(
-            marshmallow_field=mfields.List(IntAsHex(), required=True)
+            marshmallow_field=mfields.List(mfields.Nested(Input.Schema))
         )
     )
     module_class: CompiledClass

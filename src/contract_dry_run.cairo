@@ -29,10 +29,8 @@ func main{
 }() {
     alloc_locals;
 
-    local private_inputs_len: felt;
-    let (private_inputs) = alloc();
-    local public_inputs_len: felt;
-    let (public_inputs) = alloc();
+    local inputs_len: felt;
+    let (inputs) = alloc();
 
     %{
         from tools.py.schema import HDPDryRunInput
@@ -48,11 +46,9 @@ func main{
 
         compiled_class = module_input.module_class
 
-        ids.private_inputs_len = len(module_input.private_inputs)
-        segments.write_arg(ids.private_inputs, module_input.private_inputs)
-
-        ids.public_inputs_len = len(module_input.public_inputs)
-        segments.write_arg(ids.public_inputs, module_input.public_inputs)
+        inputs = [input.value for input in module_input.inputs]
+        ids.inputs_len = len(inputs)
+        segments.write_arg(ids.inputs, inputs)
     %}
 
     local compiled_class: CompiledClass*;
@@ -124,10 +120,8 @@ func main{
     assert calldata[4] = nondet %{ ids.storage_dict.address_.segment_index %};
     assert calldata[5] = nondet %{ ids.storage_dict.address_.offset %};
 
-    memcpy(dst=calldata + 6, src=private_inputs, len=private_inputs_len);
-    memcpy(dst=calldata + 6 + private_inputs_len, src=public_inputs, len=public_inputs_len);
-
-    let calldata_size = 6 + private_inputs_len + public_inputs_len;
+    memcpy(dst=calldata + 6, src=inputs, len=inputs_len);
+    let calldata_size = 6 + inputs_len;
 
     with header_dict, account_dict, storage_dict, block_tx_dict, block_receipt_dict, pow2_array {
         let (retdata_size, retdata) = run_contract_bootloader(

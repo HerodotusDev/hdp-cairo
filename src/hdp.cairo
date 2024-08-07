@@ -279,11 +279,11 @@ func compute_tasks{
         local task_bytes_len: felt;
         let (encoded_task) = alloc();
 
-        local private_inputs_len: felt;
-        let (private_inputs) = alloc();
+        local inputs_len: felt;
+        let (inputs) = alloc();
 
         %{
-            from tools.py.schema import Module, CompiledClass
+            from tools.py.schema import Module, CompiledClass, Visibility
 
             # Load the module input
             module_input = Module.Schema().load(program_input["tasks"][0]["context"])
@@ -295,19 +295,19 @@ func compute_tasks{
 
             segments.write_arg(ids.encoded_task, hex_to_int_array(module_input.encoded_task))
 
-            ids.private_inputs_len = len(module_input.private_inputs)
-            segments.write_arg(ids.private_inputs, module_input.private_inputs)
+            inputs = [input.value for input in module_input.inputs]
+            ids.inputs_len = len(inputs)
+            segments.write_arg(ids.inputs, inputs)
         %}
 
-        let (local module_task) = init_module(encoded_task, encoded_task_len);
+        let (local module_task) = init_module(encoded_task);
 
-        let (result, program_hash) = compute_contract(
-            private_inputs,
-            private_inputs_len,
-            module_task.module_inputs,
-            module_task.module_inputs_len,
-        );
+        %{ assert [int(input.value) for input in module_input.inputs if input.visibility == Visibility.PUBLIC] == [int(memory[ids.module_inputs + i]) for i in range(ids.module_inputs_len)] %}
+
+        let (result, program_hash) = compute_contract(inputs, inputs_len);
+
         assert results[0] = result;
+
         %{
             target_result = hex(ids.result.high * 2 ** 128 + ids.result.low)
             print(f"Task Result: {target_result}")
@@ -316,8 +316,6 @@ func compute_tasks{
         let task_hash = compute_tasks_hash_v2{
             range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
         }(encoded_task=encoded_task, task_bytes_len=task_bytes_len);
-
-        // %{ print("Task;", hex(ids.task_hash.high * 2 ** 128 + ids.task_hash.low)) %}
 
         let (flipped_task_hash) = uint256_reverse_endian(task_hash);
 
