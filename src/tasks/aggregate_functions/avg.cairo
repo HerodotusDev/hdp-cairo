@@ -15,7 +15,18 @@ func compute_avg{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     let sum = compute_sum(values, values_len);
     let divisor = felt_to_uint256(values_len);
 
+    %{
+        print("divisor", ids.divisor.high * 2 ** 128 + ids.divisor.low)
+        print("sum", ids.sum.high * 2 ** 128 + ids.sum.low)
+    %}
+
     let (result, remainder) = uint256_signed_div_rem(sum, divisor);
+
+    %{
+        print("result", ids.result.high * 2 ** 128 + ids.result.low)
+        print("remainder", ids.remainder.high * 2 ** 128 + ids.remainder.low)
+    %}
+
     local round_up: felt;
 
     // ToDo: Unsafe hint for now. Worst-case is incorrect rounding.
