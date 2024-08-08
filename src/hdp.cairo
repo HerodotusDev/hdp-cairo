@@ -293,7 +293,9 @@ func compute_tasks{
             ids.task_bytes_len = module_input.task_bytes_len
             ids.encoded_task_len = len(module_input.encoded_task)
 
-            segments.write_arg(ids.encoded_task, hex_to_int_array(module_input.encoded_task))
+            segments.write_arg(ids.encoded_task, module_input.encoded_task)
+
+            print(module_input.encoded_task)
 
             inputs = [input.value for input in module_input.inputs]
             ids.inputs_len = len(inputs)
