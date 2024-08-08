@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import List, Optional, Union
+from marshmallow import ValidationError
 import marshmallow_dataclass
 from dataclasses import field
 import marshmallow.fields as mfields
@@ -93,14 +94,23 @@ class Visibility(Enum):
     PRIVATE = "private"
 
 
+class VisibilityField(mfields.Field):
+    def _deserialize(self, value, attr, data, **kwargs):
+        if not isinstance(value, str):
+            raise ValidationError("Invalid type. Expected a string.")
+        value = value.lower()
+        try:
+            return Visibility(value)
+        except ValueError:
+            raise ValidationError(f"Invalid value for Visibility enum: {value}")
+
+
 @marshmallow_dataclass.dataclass(frozen=True)
 class Input:
-    visibility: Visibility
-    value: int = field(
-        metadata=additional_metadata(
-            marshmallow_field=mfields.List(IntAsHex(), required=True)
-        )
+    visibility: Visibility = field(
+        metadata={"marshmallow_field": VisibilityField(required=True)}
     )
+    value: int = field(metadata={"marshmallow_field": IntAsHex(required=True)})
 
 
 @marshmallow_dataclass.dataclass(frozen=True)
