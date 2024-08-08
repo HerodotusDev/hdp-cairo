@@ -295,8 +295,6 @@ func compute_tasks{
 
             segments.write_arg(ids.encoded_task, module_input.encoded_task)
 
-            print(module_input.encoded_task)
-
             inputs = [input.value for input in module_input.inputs]
             ids.inputs_len = len(inputs)
             segments.write_arg(ids.inputs, inputs)
@@ -304,7 +302,7 @@ func compute_tasks{
 
         let (local module_task) = init_module(encoded_task);
 
-        %{ assert [int(input.value) for input in module_input.inputs if input.visibility == Visibility.PUBLIC] == [int(memory[ids.module_inputs + i]) for i in range(ids.module_inputs_len)] %}
+        %{ assert [int(input.value) for input in module_input.inputs if input.visibility == Visibility.PUBLIC] == [int(memory[ids.module_task.module_inputs + i]) for i in range(ids.module_task.module_inputs_len)] %}
 
         let (result, program_hash) = compute_contract(inputs, inputs_len);
 
