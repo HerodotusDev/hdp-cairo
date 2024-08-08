@@ -6,7 +6,7 @@ from src.utils import word_reverse_endian_64
 // Creates a Module from the input bytes
 func init_module{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*
-}(input: felt*, input_bytes_len: felt) -> (res: ModuleTask) {
+}(input: felt*) -> (res: ModuleTask) {
     alloc_locals;
     let (program_hash, module_inputs_len) = extract_constant_params{
         range_check_ptr=range_check_ptr
