@@ -7,7 +7,6 @@ from starkware.cairo.common.uint256 import (
     felt_to_uint256,
     uint256_add,
     uint256_reverse_endian,
-    uint256_signed_div_rem,
     Uint256,
 )
 from starkware.cairo.common.registers import get_label_location

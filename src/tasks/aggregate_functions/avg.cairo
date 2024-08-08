@@ -2,7 +2,7 @@ from src.tasks.aggregate_functions.sum import compute_sum
 from starkware.cairo.common.uint256 import (
     Uint256,
     felt_to_uint256,
-    uint256_signed_div_rem,
+    uint256_unsigned_div_rem,
     uint256_add,
 )
 from starkware.cairo.common.alloc import alloc
@@ -15,7 +15,7 @@ func compute_avg{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     let sum = compute_sum(values, values_len);
     let divisor = felt_to_uint256(values_len);
 
-    let (result, remainder) = uint256_signed_div_rem(sum, divisor);
+    let (result, remainder) = uint256_unsigned_div_rem(sum, divisor);
     local round_up: felt;
 
     // ToDo: Unsafe hint for now. Worst-case is incorrect rounding.
