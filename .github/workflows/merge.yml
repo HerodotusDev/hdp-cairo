@@ -29,7 +29,7 @@ jobs:
             key=${{ github.workspace }}/client-key.pem
           cleanup: true
 
-      - name: Build and cache Docker image
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           file: environment.dockerfile
