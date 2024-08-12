@@ -5,6 +5,7 @@ from contract_bootloader.memorizer.account_memorizer import (
     MemorizerKey,
 )
 from contract_bootloader.provider.account_key_provider import AccountKeyEVMProvider
+from tools.py.utils import split_128
 
 
 class DryRunAccountMemorizerHandler(AbstractAccountMemorizerBase):
@@ -16,34 +17,22 @@ class DryRunAccountMemorizerHandler(AbstractAccountMemorizerBase):
     def get_nonce(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
         value = self.evm_provider.get_nonce(key=key)
-        return (
-            value % 0x100000000000000000000000000000000,
-            value // 0x100000000000000000000000000000000,
-        )
+        return split_128(value)
 
     def get_balance(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
         value = self.evm_provider.get_balance(key=key)
-        return (
-            value % 0x100000000000000000000000000000000,
-            value // 0x100000000000000000000000000000000,
-        )
+        return split_128(value)
 
     def get_state_root(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
         value = self.evm_provider.get_state_root(key=key)
-        return (
-            value % 0x100000000000000000000000000000000,
-            value // 0x100000000000000000000000000000000,
-        )
+        return split_128(value)
 
     def get_code_hash(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
         value = self.evm_provider.get_code_hash(key=key)
-        return (
-            value % 0x100000000000000000000000000000000,
-            value // 0x100000000000000000000000000000000,
-        )
+        return split_128(value)
 
     def fetch_keys_dict(self) -> set:
         def create_dict(key: MemorizerKey):
