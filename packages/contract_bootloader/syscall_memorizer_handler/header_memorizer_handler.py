@@ -1,6 +1,6 @@
 from rlp import decode
 from rlp.exceptions import ObjectDeserializationError
-from typing import Tuple, Union
+from typing import List, Tuple, Union
 from contract_bootloader.memorizer.memorizer import Memorizer
 from contract_bootloader.memorizer.header_memorizer import (
     AbstractHeaderMemorizerBase,
@@ -14,7 +14,7 @@ from tools.py.block_header import (
     BlockHeaderShangai,
 )
 from tools.py.rlp import get_rlp_len
-from tools.py.utils import little_8_bytes_chunks_to_bytes
+from tools.py.utils import little_8_bytes_chunks_to_bytes, split_128
 
 
 def decode_block_header(
@@ -60,9 +60,8 @@ class HeaderMemorizerHandler(AbstractHeaderMemorizerBase):
         super().__init__(memorizer=memorizer)
         self.segments = segments
 
-    def get_parent(self, key: MemorizerKey) -> Tuple[int, int]:
+    def extract_rlp(self, key: MemorizerKey) -> Tuple[int, List[int]]:
         memorizer_value_ptr = self.memorizer.read(key=key.derive())
-
         rlp_len = get_rlp_len(
             rlp=self.segments.memory[memorizer_value_ptr], item_start_offset=0
         )
@@ -70,313 +69,143 @@ class HeaderMemorizerHandler(AbstractHeaderMemorizerBase):
             start_addr=memorizer_value_ptr,
             end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
         )
+        return (rlp_len, rlp)
 
+    def get_parent(self, key: MemorizerKey) -> Tuple[int, int]:
+        rlp_len, rlp = self.extract_rlp(key=key)
         value = int(
             decode_block_header(little_8_bytes_chunks_to_bytes(rlp, rlp_len))[
                 "parentHash"
             ].hex(),
             16,
         )
-
-        return (
-            value % 0x100000000000000000000000000000000,
-            value // 0x100000000000000000000000000000000,
-        )
+        return split_128(value)
 
     def get_uncle(self, key: MemorizerKey) -> Tuple[int, int]:
-        memorizer_value_ptr = self.memorizer.read(key=key.derive())
-
-        rlp_len = get_rlp_len(
-            rlp=self.segments.memory[memorizer_value_ptr], item_start_offset=0
-        )
-        rlp = self._get_felt_range(
-            start_addr=memorizer_value_ptr,
-            end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
-        )
-
+        rlp_len, rlp = self.extract_rlp(key=key)
         value = int(
             decode_block_header(little_8_bytes_chunks_to_bytes(rlp, rlp_len))[
                 "unclesHash"
             ].hex(),
             16,
         )
-
-        return (
-            value % 0x100000000000000000000000000000000,
-            value // 0x100000000000000000000000000000000,
-        )
+        return split_128(value)
 
     def get_coinbase(self, key: MemorizerKey) -> Tuple[int, int]:
-        memorizer_value_ptr = self.memorizer.read(key=key.derive())
-
-        rlp_len = get_rlp_len(
-            rlp=self.segments.memory[memorizer_value_ptr], item_start_offset=0
-        )
-        rlp = self._get_felt_range(
-            start_addr=memorizer_value_ptr,
-            end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
-        )
-
+        rlp_len, rlp = self.extract_rlp(key=key)
         value = int(
             decode_block_header(little_8_bytes_chunks_to_bytes(rlp, rlp_len))[
                 "coinbase"
             ].hex(),
             16,
         )
-
-        return (
-            value % 0x100000000000000000000000000000000,
-            value // 0x100000000000000000000000000000000,
-        )
+        return split_128(value)
 
     def get_state_root(self, key: MemorizerKey) -> Tuple[int, int]:
-        memorizer_value_ptr = self.memorizer.read(key=key.derive())
-
-        rlp_len = get_rlp_len(
-            rlp=self.segments.memory[memorizer_value_ptr], item_start_offset=0
-        )
-        rlp = self._get_felt_range(
-            start_addr=memorizer_value_ptr,
-            end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
-        )
-
+        rlp_len, rlp = self.extract_rlp(key=key)
         value = int(
             decode_block_header(little_8_bytes_chunks_to_bytes(rlp, rlp_len))[
                 "stateRoot"
             ].hex(),
             16,
         )
-
-        return (
-            value % 0x100000000000000000000000000000000,
-            value // 0x100000000000000000000000000000000,
-        )
+        return split_128(value)
 
     def get_transaction_root(self, key: MemorizerKey) -> Tuple[int, int]:
-        memorizer_value_ptr = self.memorizer.read(key=key.derive())
-
-        rlp_len = get_rlp_len(
-            rlp=self.segments.memory[memorizer_value_ptr], item_start_offset=0
-        )
-        rlp = self._get_felt_range(
-            start_addr=memorizer_value_ptr,
-            end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
-        )
-
+        rlp_len, rlp = self.extract_rlp(key=key)
         value = int(
             decode_block_header(little_8_bytes_chunks_to_bytes(rlp, rlp_len))[
                 "transactionsRoot"
             ].hex(),
             16,
         )
-
-        return (
-            value % 0x100000000000000000000000000000000,
-            value // 0x100000000000000000000000000000000,
-        )
+        return split_128(value)
 
     def get_receipt_root(self, key: MemorizerKey) -> Tuple[int, int]:
-        memorizer_value_ptr = self.memorizer.read(key=key.derive())
-
-        rlp_len = get_rlp_len(
-            rlp=self.segments.memory[memorizer_value_ptr], item_start_offset=0
-        )
-        rlp = self._get_felt_range(
-            start_addr=memorizer_value_ptr,
-            end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
-        )
-
+        rlp_len, rlp = self.extract_rlp(key=key)
         value = int(
             decode_block_header(little_8_bytes_chunks_to_bytes(rlp, rlp_len))[
                 "receiptsRoot"
             ].hex(),
             16,
         )
-
-        return (
-            value % 0x100000000000000000000000000000000,
-            value // 0x100000000000000000000000000000000,
-        )
+        return split_128(value)
 
     def get_bloom(self, key: MemorizerKey) -> Tuple[int, int]:
         pass
 
     def get_difficulty(self, key: MemorizerKey) -> Tuple[int, int]:
-        memorizer_value_ptr = self.memorizer.read(key=key.derive())
-
-        rlp_len = get_rlp_len(
-            rlp=self.segments.memory[memorizer_value_ptr], item_start_offset=0
-        )
-        rlp = self._get_felt_range(
-            start_addr=memorizer_value_ptr,
-            end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
-        )
-
+        rlp_len, rlp = self.extract_rlp(key=key)
         value = int(
             decode_block_header(little_8_bytes_chunks_to_bytes(rlp, rlp_len))[
                 "difficulty"
             ]
         )
-
-        return (
-            value % 0x100000000000000000000000000000000,
-            value // 0x100000000000000000000000000000000,
-        )
+        return split_128(value)
 
     def get_number(self, key: MemorizerKey) -> Tuple[int, int]:
-        memorizer_value_ptr = self.memorizer.read(key=key.derive())
-
-        rlp_len = get_rlp_len(
-            rlp=self.segments.memory[memorizer_value_ptr], item_start_offset=0
-        )
-        rlp = self._get_felt_range(
-            start_addr=memorizer_value_ptr,
-            end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
-        )
-
+        rlp_len, rlp = self.extract_rlp(key=key)
         value = int(
             decode_block_header(little_8_bytes_chunks_to_bytes(rlp, rlp_len))["number"]
         )
-
-        return (
-            value % 0x100000000000000000000000000000000,
-            value // 0x100000000000000000000000000000000,
-        )
+        return split_128(value)
 
     def get_gas_limit(self, key: MemorizerKey) -> Tuple[int, int]:
-        memorizer_value_ptr = self.memorizer.read(key=key.derive())
-
-        rlp_len = get_rlp_len(
-            rlp=self.segments.memory[memorizer_value_ptr], item_start_offset=0
-        )
-        rlp = self._get_felt_range(
-            start_addr=memorizer_value_ptr,
-            end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
-        )
-
+        rlp_len, rlp = self.extract_rlp(key=key)
         value = int(
             decode_block_header(little_8_bytes_chunks_to_bytes(rlp, rlp_len))[
                 "gasLimit"
             ]
         )
-
-        return (
-            value % 0x100000000000000000000000000000000,
-            value // 0x100000000000000000000000000000000,
-        )
+        return split_128(value)
 
     def get_gas_used(self, key: MemorizerKey) -> Tuple[int, int]:
-        memorizer_value_ptr = self.memorizer.read(key=key.derive())
-
-        rlp_len = get_rlp_len(
-            rlp=self.segments.memory[memorizer_value_ptr], item_start_offset=0
-        )
-        rlp = self._get_felt_range(
-            start_addr=memorizer_value_ptr,
-            end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
-        )
-
+        rlp_len, rlp = self.extract_rlp(key=key)
         value = int(
             decode_block_header(little_8_bytes_chunks_to_bytes(rlp, rlp_len))["gasUsed"]
         )
-
-        return (
-            value % 0x100000000000000000000000000000000,
-            value // 0x100000000000000000000000000000000,
-        )
+        return split_128(value)
 
     def get_timestamp(self, key: MemorizerKey) -> Tuple[int, int]:
-        memorizer_value_ptr = self.memorizer.read(key=key.derive())
-
-        rlp_len = get_rlp_len(
-            rlp=self.segments.memory[memorizer_value_ptr], item_start_offset=0
-        )
-        rlp = self._get_felt_range(
-            start_addr=memorizer_value_ptr,
-            end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
-        )
-
+        rlp_len, rlp = self.extract_rlp(key=key)
         value = int(
             decode_block_header(little_8_bytes_chunks_to_bytes(rlp, rlp_len))[
                 "timestamp"
             ]
         )
-
-        return (
-            value % 0x100000000000000000000000000000000,
-            value // 0x100000000000000000000000000000000,
-        )
+        return split_128(value)
 
     def get_extra_data(self, key: MemorizerKey) -> Tuple[int, int]:
         pass
 
     def get_mix_hash(self, key: MemorizerKey) -> Tuple[int, int]:
-        memorizer_value_ptr = self.memorizer.read(key=key.derive())
-
-        rlp_len = get_rlp_len(
-            rlp=self.segments.memory[memorizer_value_ptr], item_start_offset=0
-        )
-        rlp = self._get_felt_range(
-            start_addr=memorizer_value_ptr,
-            end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
-        )
-
+        rlp_len, rlp = self.extract_rlp(key=key)
         value = int(
             decode_block_header(little_8_bytes_chunks_to_bytes(rlp, rlp_len))[
                 "mixHash"
             ].hex(),
             16,
         )
-
-        return (
-            value % 0x100000000000000000000000000000000,
-            value // 0x100000000000000000000000000000000,
-        )
+        return split_128(value)
 
     def get_nonce(self, key: MemorizerKey) -> Tuple[int, int]:
-        memorizer_value_ptr = self.memorizer.read(key=key.derive())
-
-        rlp_len = get_rlp_len(
-            rlp=self.segments.memory[memorizer_value_ptr], item_start_offset=0
-        )
-        rlp = self._get_felt_range(
-            start_addr=memorizer_value_ptr,
-            end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
-        )
-
+        rlp_len, rlp = self.extract_rlp(key=key)
         value = int(
             decode_block_header(little_8_bytes_chunks_to_bytes(rlp, rlp_len))[
                 "nonce"
             ].hex(),
             16,
         )
-
-        return (
-            value % 0x100000000000000000000000000000000,
-            value // 0x100000000000000000000000000000000,
-        )
+        return split_128(value)
 
     def get_base_fee_per_gas(self, key: MemorizerKey) -> Tuple[int, int]:
-        memorizer_value_ptr = self.memorizer.read(key=key.derive())
-
-        rlp_len = get_rlp_len(
-            rlp=self.segments.memory[memorizer_value_ptr], item_start_offset=0
-        )
-        rlp = self._get_felt_range(
-            start_addr=memorizer_value_ptr,
-            end_addr=memorizer_value_ptr + (rlp_len + 7) // 8,
-        )
-
+        rlp_len, rlp = self.extract_rlp(key=key)
         value = int(
             decode_block_header(little_8_bytes_chunks_to_bytes(rlp, rlp_len))[
                 "baseFeePerGas"
             ]
         )
-
-        return (
-            value % 0x100000000000000000000000000000000,
-            value // 0x100000000000000000000000000000000,
-        )
+        return split_128(value)
 
     def get_withdrawals_root(self, key: MemorizerKey) -> Tuple[int, int]:
         pass
