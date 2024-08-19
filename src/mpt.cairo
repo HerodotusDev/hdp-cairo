@@ -13,7 +13,6 @@ func verify_mpt_proof{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr:
     root: Uint256,
     pow2_array: felt*,
 ) -> (value: felt*, value_len: felt) {
-
     let (rlp: felt*, value_len: felt) = verify_mpt_proof_lib(
         mpt_proof=mpt_proof,
         mpt_proof_bytes_len=mpt_proof_bytes_len,
