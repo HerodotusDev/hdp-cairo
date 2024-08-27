@@ -1,9 +1,7 @@
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.dict import dict_new
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin
-from starkware.cairo.common.builtin_poseidon.poseidon import (
-    poseidon_hash_many,
-)
+from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash_many
 from starkware.cairo.common.dict import dict_write, dict_read
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.memcpy import memcpy
@@ -91,7 +89,9 @@ namespace EvmHeaderMemorizer {
     func add{header_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
         chain_id: felt, block_number: felt, rlp: felt*
     ) {
-        let (params, params_len) = EvmPackParams.header(chain_id=chain_id, block_number=block_number);
+        let (params, params_len) = EvmPackParams.header(
+            chain_id=chain_id, block_number=block_number
+        );
 
         let key = hash_memorizer_key(params, params_len);
         BareMemorizer.add{dict_ptr=header_dict}(key, rlp);
@@ -102,7 +102,9 @@ namespace EvmHeaderMemorizer {
     func get{header_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
         chain_id: felt, block_number: felt
     ) -> (rlp: felt*) {
-        let (params, params_len) = EvmPackParams.header(chain_id=chain_id, block_number=block_number);
+        let (params, params_len) = EvmPackParams.header(
+            chain_id=chain_id, block_number=block_number
+        );
 
         let key = hash_memorizer_key(params, params_len);
         let (rlp) = BareMemorizer.get{dict_ptr=header_dict}(key);

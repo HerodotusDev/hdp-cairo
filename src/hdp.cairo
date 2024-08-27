@@ -221,7 +221,9 @@ func run{
     default_dict_finalize(account_dict_start, account_dict, BareMemorizer.DEFAULT_VALUE);
     default_dict_finalize(storage_dict_start, storage_dict, BareMemorizer.DEFAULT_VALUE);
     default_dict_finalize(block_tx_dict_start, block_tx_dict, BareMemorizer.DEFAULT_VALUE);
-    default_dict_finalize(block_receipt_dict_start, block_receipt_dict, BareMemorizer.DEFAULT_VALUE);
+    default_dict_finalize(
+        block_receipt_dict_start, block_receipt_dict, BareMemorizer.DEFAULT_VALUE
+    );
 
     write_output_ptr{output_ptr=output_ptr}(
         mmr_metas=mmr_metas,
