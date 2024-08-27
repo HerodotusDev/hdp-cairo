@@ -2,7 +2,7 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin,
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.alloc import alloc
-from src.memorizer import BlockTxMemorizer, BlockReceiptMemorizer
+from src.memorizers.evm import EvmBlockTxMemorizer, EvmBlockReceiptMemorizer
 from starkware.cairo.common.dict_access import DictAccess
 from packages.eth_essentials.lib.utils import word_reverse_endian_64
 from packages.eth_essentials.lib.mpt import verify_mpt_proof
@@ -178,7 +178,7 @@ func fetch_tx_data_points{
         return result_counter;
     }
 
-    let (rlp) = BlockTxMemorizer.get(
+    let (rlp) = EvmBlockTxMemorizer.get(
         chain_id=chain_id, block_number=datalake.target_block, key_low=current_tx_index
     );
 
@@ -234,7 +234,7 @@ func fetch_receipt_data_points{
         return result_counter;
     }
 
-    let (rlp) = BlockReceiptMemorizer.get(
+    let (rlp) = EvmBlockReceiptMemorizer.get(
         chain_id=chain_id, block_number=datalake.target_block, key_low=current_receipt_index
     );
 

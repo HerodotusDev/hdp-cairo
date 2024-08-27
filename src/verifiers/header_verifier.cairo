@@ -13,7 +13,7 @@ from packages.eth_essentials.lib.block_header import (
     extract_block_number_big,
     reverse_block_header_chunks,
 )
-from src.memorizer import HeaderMemorizer
+from src.memorizers.evm import EvmHeaderMemorizer
 from src.decoders.header_decoder import HeaderDecoder
 
 func verify_headers_inclusion{
@@ -84,7 +84,7 @@ func verify_headers_inclusion_inner{
 
         // add to memorizer
         let block_number = HeaderDecoder.get_block_number(rlp);
-        HeaderMemorizer.add(chain_id=chain_info.id, block_number=block_number, rlp=rlp);
+        EvmHeaderMemorizer.add(chain_id=chain_info.id, block_number=block_number, rlp=rlp);
 
         return verify_headers_inclusion_inner(n_headers=n_headers, index=index + 1);
     }
@@ -112,7 +112,7 @@ func verify_headers_inclusion_inner{
 
     // add to memorizer
     let block_number = HeaderDecoder.get_block_number(rlp);
-    HeaderMemorizer.add(chain_id=chain_info.id, block_number=block_number, rlp=rlp);
+    EvmHeaderMemorizer.add(chain_id=chain_info.id, block_number=block_number, rlp=rlp);
 
     return verify_headers_inclusion_inner(n_headers=n_headers, index=index + 1);
 }

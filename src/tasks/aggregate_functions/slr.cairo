@@ -30,12 +30,12 @@ from src.decoders.storage_slot_decoder import StorageSlotDecoder
 
 from contract_bootloader.contract_class.compiled_class import CompiledClass, compiled_class_hash
 from contract_bootloader.contract_bootloader import run_contract_bootloader, compute_program_hash
-from src.memorizer import (
-    HeaderMemorizer,
-    AccountMemorizer,
-    StorageMemorizer,
-    BlockTxMemorizer,
-    BlockReceiptMemorizer,
+from src.memorizers.evm import (
+    EvmHeaderMemorizer,
+    EvmAccountMemorizer,
+    EvmStorageMemorizer,
+    EvmBlockTxMemorizer,
+    EvmBlockReceiptMemorizer,
 )
 from src.types import (
     BlockSampledDataLake,
@@ -200,7 +200,7 @@ func fetch_account_data_points{
         return index;
     }
 
-    let (rlp) = AccountMemorizer.get(
+    let (rlp) = EvmAccountMemorizer.get(
         chain_id=chain_id, block_number=current_block_number, address=[datalake.properties + 1]
     );
 
@@ -265,7 +265,7 @@ func fetch_storage_data_points_inner{
 
     local data_point0: Uint256 = Uint256(low=current_block_number, high=0x0);
 
-    let (rlp) = StorageMemorizer.get(
+    let (rlp) = EvmStorageMemorizer.get(
         chain_id=chain_id,
         block_number=current_block_number,
         address=[datalake.properties],
@@ -308,7 +308,7 @@ func fetch_header_data_points{
         return index;
     }
 
-    let (rlp) = HeaderMemorizer.get(chain_id=chain_id, block_number=current_block_number);
+    let (rlp) = EvmHeaderMemorizer.get(chain_id=chain_id, block_number=current_block_number);
 
     local data_point0: Uint256 = Uint256(low=current_block_number, high=0x0);
 
@@ -353,7 +353,7 @@ func fetch_tx_data_points{
         return result_counter;
     }
 
-    let (rlp) = BlockTxMemorizer.get(
+    let (rlp) = EvmBlockTxMemorizer.get(
         chain_id=chain_id, block_number=datalake.target_block, key_low=current_tx_index
     );
 
@@ -418,7 +418,7 @@ func fetch_receipt_data_points{
         return result_counter;
     }
 
-    let (rlp) = BlockReceiptMemorizer.get(
+    let (rlp) = EvmBlockReceiptMemorizer.get(
         chain_id=chain_id, block_number=datalake.target_block, key_low=current_receipt_index
     );
 

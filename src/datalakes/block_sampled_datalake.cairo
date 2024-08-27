@@ -10,7 +10,7 @@ from packages.eth_essentials.lib.utils import (
 )
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
 from src.types import BlockSampledDataLake, ComputationalTask
-from src.memorizer import HeaderMemorizer, AccountMemorizer, StorageMemorizer
+from src.memorizers.evm import EvmHeaderMemorizer, EvmAccountMemorizer, EvmStorageMemorizer
 from src.tasks.fetch_trait import FetchTrait
 from src.decoders.header_decoder import HeaderDecoder
 from src.decoders.account_decoder import AccountDecoder
@@ -370,7 +370,7 @@ func fetch_account_data_points{
         return index;
     }
 
-    let (rlp) = AccountMemorizer.get(
+    let (rlp) = EvmAccountMemorizer.get(
         chain_id=chain_id, block_number=current_block_number, address=[datalake.properties + 1]
     );
 
@@ -430,7 +430,7 @@ func fetch_storage_data_points_inner{
         return index;
     }
 
-    let (rlp) = StorageMemorizer.get(
+    let (rlp) = EvmStorageMemorizer.get(
         chain_id=chain_id,
         block_number=current_block_number,
         address=[datalake.properties],
@@ -471,7 +471,7 @@ func fetch_header_data_points{
         return index;
     }
 
-    let (rlp) = HeaderMemorizer.get(chain_id=chain_id, block_number=current_block_number);
+    let (rlp) = EvmHeaderMemorizer.get(chain_id=chain_id, block_number=current_block_number);
 
     let data_point = HeaderDecoder.get_field{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array

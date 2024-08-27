@@ -8,7 +8,7 @@ from starkware.starknet.common.new_syscalls import (
 )
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
 from starkware.starknet.core.os.builtins import BuiltinPointers
-from src.memorizer import HeaderMemorizer, AccountMemorizer, StorageMemorizer
+from src.memorizers.evm import EvmHeaderMemorizer, EvmAccountMemorizer, EvmStorageMemorizer
 from src.decoders.header_decoder import HeaderDecoder, HeaderField
 from src.decoders.account_decoder import AccountDecoder, AccountField
 from src.decoders.storage_slot_decoder import StorageSlotDecoder
@@ -104,7 +104,7 @@ func execute_call_contract{
     let function_id = call_contract_request.selector;
 
     if (memorizer_id == MemorizerId.HEADER) {
-        let (rlp) = HeaderMemorizer.get(
+        let (rlp) = EvmHeaderMemorizer.get(
             chain_id=call_contract_request.calldata_start[2],
             block_number=call_contract_request.calldata_start[3],
         );
@@ -119,7 +119,7 @@ func execute_call_contract{
         return ();
     }
     if (memorizer_id == MemorizerId.ACCOUNT) {
-        let (rlp) = AccountMemorizer.get(
+        let (rlp) = EvmAccountMemorizer.get(
             chain_id=call_contract_request.calldata_start[2],
             block_number=call_contract_request.calldata_start[3],
             address=call_contract_request.calldata_start[4],
@@ -135,7 +135,7 @@ func execute_call_contract{
         return ();
     }
     if (memorizer_id == MemorizerId.STORAGE) {
-        let (rlp) = StorageMemorizer.get(
+        let (rlp) = EvmStorageMemorizer.get(
             chain_id=call_contract_request.calldata_start[2],
             block_number=call_contract_request.calldata_start[3],
             address=call_contract_request.calldata_start[4],

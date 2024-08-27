@@ -6,7 +6,7 @@ from starkware.cairo.common.builtin_keccak.keccak import keccak_bigend
 from starkware.cairo.common.alloc import alloc
 from src.types import ChainInfo
 from packages.eth_essentials.lib.block_header import extract_state_root_little
-from src.memorizer import HeaderMemorizer, AccountMemorizer
+from src.memorizers.evm import EvmHeaderMemorizer, EvmAccountMemorizer
 from src.converter import le_address_chunks_to_felt
 
 from src.decoders.header_decoder import HeaderDecoder, HeaderField
@@ -100,7 +100,7 @@ func verify_account{
     %}
 
     // get state_root from verified headers
-    let (header_rlp) = HeaderMemorizer.get(chain_id=chain_info.id, block_number=block_number);
+    let (header_rlp) = EvmHeaderMemorizer.get(chain_id=chain_info.id, block_number=block_number);
     let state_root = HeaderDecoder.get_field(header_rlp, HeaderField.STATE_ROOT);
 
     let (rlp: felt*, value_len: felt) = verify_mpt_proof(
@@ -116,7 +116,7 @@ func verify_account{
     let (felt_address) = le_address_chunks_to_felt(address);
 
     // add account to memorizer
-    AccountMemorizer.add(
+    EvmAccountMemorizer.add(
         chain_id=chain_info.id, block_number=block_number, address=felt_address, rlp=rlp
     );
 

@@ -19,13 +19,14 @@ from src.module import init_module
 from src.types import MMRMeta, ComputationalTask, ChainInfo
 from src.utils import write_output_ptr
 
-from src.memorizer import (
-    HeaderMemorizer,
-    AccountMemorizer,
-    StorageMemorizer,
-    BlockTxMemorizer,
-    BlockReceiptMemorizer,
+from src.memorizers.evm import (
+    EvmHeaderMemorizer,
+    EvmAccountMemorizer,
+    EvmStorageMemorizer,
+    EvmBlockTxMemorizer,
+    EvmBlockReceiptMemorizer,
 )
+from src.memorizers.bare import BareMemorizer
 from packages.eth_essentials.lib.utils import pow2alloc128, write_felt_array_to_dict_keys
 
 from src.tasks.computational import Task
@@ -84,11 +85,11 @@ func run{
     tempvar peaks_dict_start = peaks_dict;
 
     // Memorizers
-    let (header_dict, header_dict_start) = HeaderMemorizer.init();
-    let (account_dict, account_dict_start) = AccountMemorizer.init();
-    let (storage_dict, storage_dict_start) = StorageMemorizer.init();
-    let (block_tx_dict, block_tx_dict_start) = BlockTxMemorizer.init();
-    let (block_receipt_dict, block_receipt_dict_start) = BlockReceiptMemorizer.init();
+    let (header_dict, header_dict_start) = EvmHeaderMemorizer.init();
+    let (account_dict, account_dict_start) = EvmAccountMemorizer.init();
+    let (storage_dict, storage_dict_start) = EvmStorageMemorizer.init();
+    let (block_tx_dict, block_tx_dict_start) = EvmBlockTxMemorizer.init();
+    let (block_receipt_dict, block_receipt_dict_start) = EvmBlockReceiptMemorizer.init();
 
     // Task Params
     let (tasks: ComputationalTask*) = alloc();
@@ -216,11 +217,11 @@ func run{
 
     // Post Verification Checks: Ensure dict consistency
     default_dict_finalize(peaks_dict_start, peaks_dict, 0);
-    default_dict_finalize(header_dict_start, header_dict, 7);
-    default_dict_finalize(account_dict_start, account_dict, 7);
-    default_dict_finalize(storage_dict_start, storage_dict, 7);
-    default_dict_finalize(block_tx_dict_start, block_tx_dict, 7);
-    default_dict_finalize(block_receipt_dict_start, block_receipt_dict, 7);
+    default_dict_finalize(header_dict_start, header_dict, BareMemorizer.DEFAULT_VALUE);
+    default_dict_finalize(account_dict_start, account_dict, BareMemorizer.DEFAULT_VALUE);
+    default_dict_finalize(storage_dict_start, storage_dict, BareMemorizer.DEFAULT_VALUE);
+    default_dict_finalize(block_tx_dict_start, block_tx_dict, BareMemorizer.DEFAULT_VALUE);
+    default_dict_finalize(block_receipt_dict_start, block_receipt_dict, BareMemorizer.DEFAULT_VALUE);
 
     write_output_ptr{output_ptr=output_ptr}(
         mmr_metas=mmr_metas,

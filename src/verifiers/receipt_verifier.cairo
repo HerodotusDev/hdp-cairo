@@ -12,7 +12,7 @@ from packages.eth_essentials.lib.rlp_little import (
 
 from src.rlp import chunk_to_felt_be
 from src.types import ChainInfo
-from src.memorizer import HeaderMemorizer, BlockReceiptMemorizer
+from src.memorizers.evm import EvmHeaderMemorizer, EvmBlockReceiptMemorizer
 from src.decoders.header_decoder import HeaderDecoder, HeaderField
 
 // Verfies an array of receipt proofs with the headers stored in the memorizer.
@@ -70,7 +70,7 @@ func verify_block_receipt_proofs_inner{
         ids.proof_len = len(transaction["proof"])
     %}
 
-    let (header_rlp) = HeaderMemorizer.get(chain_id=chain_info.id, block_number=block_number);
+    let (header_rlp) = EvmHeaderMemorizer.get(chain_id=chain_info.id, block_number=block_number);
     let receipt_root = HeaderDecoder.get_field(header_rlp, HeaderField.RECEIPT_ROOT);
 
     let (rlp, rlp_bytes_len) = verify_mpt_proof{
@@ -87,7 +87,7 @@ func verify_block_receipt_proofs_inner{
 
     let receipt_index = chunk_to_felt_be(key.low);
 
-    BlockReceiptMemorizer.add(
+    EvmBlockReceiptMemorizer.add(
         chain_id=chain_info.id, block_number=block_number, key_low=receipt_index, rlp=rlp
     );
 

@@ -11,7 +11,7 @@ from packages.eth_essentials.lib.rlp_little import (
     extract_n_bytes_from_le_64_chunks_array,
 )
 from src.converter import le_address_chunks_to_felt
-from src.memorizer import StorageMemorizer, AccountMemorizer
+from src.memorizers.evm import EvmStorageMemorizer, EvmAccountMemorizer
 from src.decoders.account_decoder import AccountDecoder, AccountField
 
 from packages.eth_essentials.lib.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64
@@ -126,7 +126,7 @@ func verify_storage_item{
         ids.proof_len = len(proof["proof"])
     %}
 
-    let (account_rlp) = AccountMemorizer.get(
+    let (account_rlp) = EvmAccountMemorizer.get(
         chain_id=chain_info.id, block_number=block_number, address=address
     );
     let state_root = AccountDecoder.get_field(account_rlp, AccountField.STATE_ROOT);
@@ -141,7 +141,7 @@ func verify_storage_item{
         pow2_array=pow2_array,
     );
 
-    StorageMemorizer.add(
+    EvmStorageMemorizer.add(
         chain_id=chain_info.id,
         block_number=block_number,
         address=address,
