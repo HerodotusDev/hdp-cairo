@@ -15,10 +15,10 @@ namespace EvmLayout {
     const Account2 = 3;
     const Storage = 4;
     const Storage2 = 5;
-    const BlockTxs = 6;
-    const BlockTxs2 = 7;
-    const BlockReceipts = 8;
-    const BlockReceipts2 = 9;    
+    const BlockTx = 6;
+    const BlockTx2 = 7;
+    const BlockReceipt = 8;
+    const BlockReceipt2 = 9;    
 }
 
 namespace StarknetLayout {
@@ -50,10 +50,10 @@ namespace MemorizerReader {
         assert evm_handlers[EvmLayout.Account2] = account2_label;
         assert evm_handlers[EvmLayout.Storage] = storage_label;
         assert evm_handlers[EvmLayout.Storage2] = storage2_label;
-        assert evm_handlers[EvmLayout.BlockTxs] = block_tx_label;
-        assert evm_handlers[EvmLayout.BlockTxs2] = block_tx2_label;
-        assert evm_handlers[EvmLayout.BlockReceipts] = block_receipt_label;
-        assert evm_handlers[EvmLayout.BlockReceipts2] = block_receipt2_label;
+        assert evm_handlers[EvmLayout.BlockTx] = block_tx_label;
+        assert evm_handlers[EvmLayout.BlockTx2] = block_tx2_label;
+        assert evm_handlers[EvmLayout.BlockReceipt] = block_receipt_label;
+        assert evm_handlers[EvmLayout.BlockReceipt2] = block_receipt2_label;
 
         let (sn_handlers: felt**) = alloc();
         let (header_label) = get_label_location(StarknetHeaderMemorizer.get);

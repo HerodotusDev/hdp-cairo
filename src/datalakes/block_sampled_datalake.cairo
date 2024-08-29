@@ -17,7 +17,6 @@ from src.decoders.account_decoder import AccountDecoder
 from src.decoders.storage_slot_decoder import StorageSlotDecoder
 from src.converter import le_address_chunks_to_felt
 from src.rlp import le_chunks_to_uint256
-from starkware.cairo.common.invoke import invoke
 from src.memorizers.reader import MemorizerReader, EvmLayout
 
 
