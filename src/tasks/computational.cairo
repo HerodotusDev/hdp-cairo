@@ -15,7 +15,6 @@ from src.tasks.aggregate_functions.sum import compute_sum
 from src.tasks.aggregate_functions.avg import compute_avg
 from src.tasks.aggregate_functions.min_max import uint256_min_le, uint256_max_le
 from src.tasks.aggregate_functions.count_if import count_if
-from src.tasks.aggregate_functions.slr import compute_slr, get_fetch_trait as get_slr_fetch_trait
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
 
 namespace AGGREGATE_FN {
@@ -102,6 +101,7 @@ namespace Task {
         pow2_array: felt*,
         tasks: ComputationalTask*,
         chain_info: ChainInfo,
+        memorizer_handler: felt***,
     }(results: Uint256*, tasks_len: felt, index: felt) {
         alloc_locals;
 
@@ -192,24 +192,6 @@ namespace Task {
             return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
         }
 
-        if (tasks[index].aggregate_fn_id == AGGREGATE_FN.SLR) {
-            let fetch_trait = get_slr_fetch_trait();
-            with fetch_trait {
-                let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
-            }
-            let (program_hash, result) = compute_slr(
-                values=data_points, values_len=data_points_len, predict=tasks[index].ctx_value
-            );
-            assert [results] = result;
-
-            %{
-                target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
-                print(f"Task Result({ids.index}): 0x{target_result}")
-            %}
-
-            return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
-        }
-
         assert 1 = 0;
         return ();
     }
@@ -266,25 +248,6 @@ func extract_params_and_construct_task{
                 datalake_type=datalake_type,
                 aggregate_fn_id=AGGREGATE_FN.COUNT,
                 ctx_operator=ctx_operator,
-                ctx_value=ctx_value,
-            ),
-        );
-    }
-    if (task == AGGREGATE_FN.SLR) {
-        let ctx_value_le = Uint256(
-            low=[input + 12] + [input + 13] * 0x10000000000000000,
-            high=[input + 14] + [input + 15] * 0x10000000000000000,
-        );
-        let (ctx_value) = uint256_reverse_endian(ctx_value_le);
-
-        return (
-            task=ComputationalTask(
-                chain_id=chain_id,
-                hash=hash,
-                datalake_ptr=datalake_ptr,
-                datalake_type=datalake_type,
-                aggregate_fn_id=AGGREGATE_FN.SLR,
-                ctx_operator=0,
                 ctx_value=ctx_value,
             ),
         );

@@ -73,14 +73,20 @@ namespace Datalake {
         pow2_array: felt*,
         fetch_trait: FetchTrait,
         chain_info: ChainInfo,
+        memorizer_handler: felt***,
     }(task: ComputationalTask) -> (res: Uint256*, res_len: felt) {
+        // Fetch the memorizer layout.
+        let memorizer_layout = chain_info.memorizer_layout;
+
         if (task.datalake_type == DatalakeType.BLOCK_SAMPLED) {
             let block_sampled_datalake: BlockSampledDataLake = [
                 cast(task.datalake_ptr, BlockSampledDataLake*)
             ];
-            let (res, res_len) = fetch_block_sampled_data_points(
-                task.chain_id, block_sampled_datalake
-            );
+            with memorizer_layout {
+                let (res, res_len) = fetch_block_sampled_data_points(
+                    task.chain_id, block_sampled_datalake
+                );
+            }
 
             return (res=res, res_len=res_len);
         }

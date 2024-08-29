@@ -13,6 +13,9 @@ from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
+from starkware.cairo.common.registers import get_label_location
+from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash_many, poseidon_hash
+
 
 from src.verifiers.verify import run_state_verification
 from src.module import init_module
@@ -27,6 +30,7 @@ from src.memorizers.evm import (
     EvmBlockReceiptMemorizer,
 )
 from src.memorizers.bare import BareMemorizer
+from src.memorizers.reader import MemorizerReader
 from packages.eth_essentials.lib.utils import pow2alloc128, write_felt_array_to_dict_keys
 
 from src.tasks.computational import Task
@@ -151,6 +155,7 @@ func run{
         cairo_run_output_path = program_input["cairo_run_output_path"]
     %}
 
+
     // Fetch matching chain info
     let (local chain_info) = fetch_chain_info(chain_id);
 
@@ -170,6 +175,8 @@ func run{
         chain_info=chain_info,
     }(mmr_metas_len=mmr_metas_len);
 
+    let memorizer_handler = MemorizerReader.init();
+
     let (tasks_root, results_root, results, results_len) = compute_tasks{
         pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
@@ -186,6 +193,7 @@ func run{
         pow2_array=pow2_array,
         tasks=tasks,
         chain_info=chain_info,
+        memorizer_handler=memorizer_handler
     }(hdp_version=hdp_version, tasks_len=tasks_len);
 
     %{
@@ -252,6 +260,7 @@ func compute_tasks{
     pow2_array: felt*,
     tasks: ComputationalTask*,
     chain_info: ChainInfo,
+    memorizer_handler: felt***,
 }(hdp_version: felt, tasks_len: felt) -> (
     tasks_root: Uint256, results_root: Uint256, results: Uint256*, results_len: felt
 ) {

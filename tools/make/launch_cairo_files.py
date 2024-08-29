@@ -149,7 +149,7 @@ class CairoRunner:
     def run_hdp(self):
         self.filename_dot_cairo_path = "src/hdp.cairo"
         compiled_path = self.compile_cairo_file()
-        cmd_base = f"cairo-run --program={compiled_path} --layout=starknet_with_keccak  --program_input=src/hdp_input.json --print_output"
+        cmd_base = f"cairo-run --program={compiled_path} --layout=starknet_with_keccak  --program_input=src/hdp_input.json --print_output --print_info"
         os.system(cmd_base)
 
     def contract_dry_run(self):
