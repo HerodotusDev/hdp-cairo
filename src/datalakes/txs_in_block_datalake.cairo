@@ -12,7 +12,7 @@ from src.decoders.transaction_decoder import TransactionDecoder, TransactionType
 from src.decoders.receipt_decoder import ReceiptDecoder
 from src.decoders.header_decoder import HeaderDecoder, HeaderField
 from src.tasks.fetch_trait import FetchTrait
-from src.memorizers.reader import MemorizerReader, EvmLayout
+from src.memorizers.reader import MemorizerReader, MemorizerId
 from src.rlp import get_rlp_list_meta
 
 namespace TX_IN_BLOCK_TYPES {
@@ -192,9 +192,9 @@ func fetch_tx_data_points{
     }
 
     tempvar params = new(chain_id, datalake.target_block, current_tx_index);
-    let (rlp, _) = MemorizerReader.read{
+    let (rlp) = MemorizerReader.read{
         dict_ptr=block_tx_dict, poseidon_ptr=poseidon_ptr
-    }(memorizer_layout=memorizer_layout, memorizer_id=EvmLayout.BlockTx2, params=params);
+    }(memorizer_layout=memorizer_layout, memorizer_id=MemorizerId.BLOCK_TX, params=params);
 
 
     // let (rlp) = EvmBlockTxMemorizer.get(
@@ -256,9 +256,9 @@ func fetch_receipt_data_points{
     }
 
     tempvar params = new(chain_id, datalake.target_block, current_receipt_index);
-    let (rlp, _) = MemorizerReader.read{
+    let (rlp) = MemorizerReader.read{
         dict_ptr=block_receipt_dict, poseidon_ptr=poseidon_ptr
-    }(memorizer_layout=memorizer_layout, memorizer_id=EvmLayout.BlockReceipt2, params=params);
+    }(memorizer_layout=memorizer_layout, memorizer_id=MemorizerId.BLOCK_RECEIPT, params=params);
 
     let (tx_type, rlp_start_offset) = ReceiptDecoder.open_receipt_envelope(rlp);
 

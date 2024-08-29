@@ -24,3 +24,8 @@ func fetch_chain_info(chain_id: felt) -> (info: ChainInfo) {
     assert 1 = 0;
     return (info=ChainInfo(id=0, id_bytes_len=0, byzantium=0, memorizer_layout=-1));
 }
+
+func chain_id_to_memorizer_layout(chain_id: felt) -> felt {
+    let (info) = fetch_chain_info(chain_id=chain_id);
+    return info.memorizer_layout;
+}

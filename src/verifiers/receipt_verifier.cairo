@@ -70,7 +70,7 @@ func verify_block_receipt_proofs_inner{
         ids.proof_len = len(transaction["proof"])
     %}
 
-    let (header_rlp) = EvmHeaderMemorizer.get(chain_id=chain_info.id, block_number=block_number);
+    let (header_rlp) = EvmHeaderMemorizer.get2(chain_id=chain_info.id, block_number=block_number);
     let receipt_root = HeaderDecoder.get_field(header_rlp, HeaderField.RECEIPT_ROOT);
 
     let (rlp, rlp_bytes_len) = verify_mpt_proof{

@@ -66,6 +66,7 @@ func call_execute_syscalls{
     account_dict: DictAccess*,
     storage_dict: DictAccess*,
     pow2_array: felt*,
+    memorizer_handler: felt***,
 }(execution_context: ExecutionContext*, syscall_ptr_end: felt*, dry_run: felt) {
     alloc_locals;
     let (__fp__, _) = get_fp_and_pc();
@@ -153,6 +154,7 @@ func execute_entry_point{
     account_dict: DictAccess*,
     storage_dict: DictAccess*,
     pow2_array: felt*,
+    memorizer_handler: felt***,
 }(compiled_class: CompiledClass*, execution_context: ExecutionContext*, dry_run: felt) -> (
     retdata_size: felt, retdata: felt*
 ) {

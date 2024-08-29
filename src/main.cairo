@@ -6,7 +6,7 @@ from starkware.cairo.common.cairo_builtins import PoseidonBuiltin
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.invoke import invoke
 
-from src.memorizers.reader import MemorizerReader, EvmLayout
+from src.memorizers.reader import MemorizerReader, MemorizerId
 from src.memorizers.evm import EvmAccountMemorizer
 
 
@@ -26,7 +26,7 @@ func main{
     tempvar params = new(0, 1, 2);
     local params_len = 3;
     with dict_ptr, memorizer_handler {
-        let (res, res_len) = MemorizerReader.read(0, EvmLayout.Account2, params);
+        let (res, res_len) = MemorizerReader.read(0, MemorizerId.Account2, params);
     }
 
     %{ print("RLP_LEN", ids.res_len)%}

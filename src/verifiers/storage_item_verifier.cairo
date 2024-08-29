@@ -126,7 +126,7 @@ func verify_storage_item{
         ids.proof_len = len(proof["proof"])
     %}
 
-    let (account_rlp) = EvmAccountMemorizer.get(
+    let (account_rlp) = EvmAccountMemorizer.get2(
         chain_id=chain_info.id, block_number=block_number, address=address
     );
     let state_root = AccountDecoder.get_field(account_rlp, AccountField.STATE_ROOT);

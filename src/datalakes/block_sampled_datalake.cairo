@@ -17,7 +17,7 @@ from src.decoders.account_decoder import AccountDecoder
 from src.decoders.storage_slot_decoder import StorageSlotDecoder
 from src.converter import le_address_chunks_to_felt
 from src.rlp import le_chunks_to_uint256
-from src.memorizers.reader import MemorizerReader, EvmLayout
+from src.memorizers.reader import MemorizerReader, MemorizerId
 
 
 namespace BlockSampledProperty {
@@ -382,9 +382,9 @@ func fetch_account_data_points{
     }
 
     tempvar params = new(chain_id, current_block_number, [datalake.properties + 1]);
-    let (rlp, _) = MemorizerReader.read{
+    let (rlp) = MemorizerReader.read{
         dict_ptr=account_dict, poseidon_ptr=poseidon_ptr
-    }(memorizer_layout=memorizer_layout, memorizer_id=EvmLayout.Account2, params=params);
+    }(memorizer_layout=memorizer_layout, memorizer_id=MemorizerId.ACCOUNT, params=params);
 
     let data_point = AccountDecoder.get_field{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
@@ -447,9 +447,9 @@ func fetch_storage_data_points_inner{
     }
 
     tempvar params = new(chain_id, current_block_number, [datalake.properties], storage_slot.high, storage_slot.low);
-    let (rlp, _) = MemorizerReader.read{
+    let (rlp) = MemorizerReader.read{
         dict_ptr=storage_dict, poseidon_ptr=poseidon_ptr
-    }(memorizer_layout=memorizer_layout, memorizer_id=EvmLayout.Storage2, params=params);
+    }(memorizer_layout=memorizer_layout, memorizer_id=MemorizerId.STORAGE, params=params);
 
     let data_point = StorageSlotDecoder.get_word(rlp=rlp);
 
@@ -488,11 +488,11 @@ func fetch_header_data_points{
     }
 
     tempvar params = new(chain_id, current_block_number);
-    let (rlp, _) = MemorizerReader.read{
+    let (rlp) = MemorizerReader.read{
         dict_ptr=header_dict, poseidon_ptr=poseidon_ptr
-    }(memorizer_layout=memorizer_layout, memorizer_id=EvmLayout.Header2, params=params);
+    }(memorizer_layout=memorizer_layout, memorizer_id=MemorizerId.HEADER, params=params);
 
-    let (rlp) = EvmHeaderMemorizer.get(chain_id=chain_id, block_number=current_block_number);
+    // let (rlp) = EvmHeaderMemorizer.get(chain_id=chain_id, block_number=current_block_number);
 
     let data_point = HeaderDecoder.get_field{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array

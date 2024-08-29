@@ -100,7 +100,7 @@ func verify_account{
     %}
 
     // get state_root from verified headers
-    let (header_rlp) = EvmHeaderMemorizer.get(chain_id=chain_info.id, block_number=block_number);
+    let (header_rlp) = EvmHeaderMemorizer.get2(chain_id=chain_info.id, block_number=block_number);
     let state_root = HeaderDecoder.get_field(header_rlp, HeaderField.STATE_ROOT);
 
     let (rlp: felt*, value_len: felt) = verify_mpt_proof(
