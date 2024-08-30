@@ -498,10 +498,6 @@ func fetch_header_data_points{
         dict_ptr=header_dict, poseidon_ptr=poseidon_ptr
     }(memorizer_layout=memorizer_layout, memorizer_id=MemorizerId.HEADER, params=params);
 
-    let data_point = HeaderDecoder.get_field{
-        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-    }(rlp=rlp, field=[datalake.properties]);
-
     let data_point = ValueDecoder.decode2(decoder_layout=memorizer_layout, decoder_id=MemorizerId.HEADER, value=rlp, field=[datalake.properties], to_be=0);
     assert [data_points + index * Uint256.SIZE] = data_point;
 
