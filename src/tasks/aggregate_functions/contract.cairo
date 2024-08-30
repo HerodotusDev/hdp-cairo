@@ -29,6 +29,7 @@ func compute_contract{
     block_receipt_dict: DictAccess*,
     pow2_array: felt*,
     memorizer_handler: felt***,
+    decoder_handler: felt***,
 }(inputs: felt*, inputs_len: felt) -> (result: Uint256, program_hash: felt) {
     alloc_locals;
     local compiled_class: CompiledClass*;

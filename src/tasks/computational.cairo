@@ -102,6 +102,7 @@ namespace Task {
         tasks: ComputationalTask*,
         chain_info: ChainInfo,
         memorizer_handler: felt***,
+        decoder_handler: felt***,
     }(results: Uint256*, tasks_len: felt, index: felt) {
         alloc_locals;
 

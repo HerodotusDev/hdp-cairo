@@ -7,7 +7,7 @@ from tests.cairo_programs.block_sampled_datalake import block_sampled_datalake_e
 from tests.cairo_programs.test_vectors import BlockSampledTaskMocker
 
 from src.tasks.computational import Task, extract_params_and_construct_task, AGGREGATE_FN
-from src.decoders.header_decoder import HeaderField
+from src.decoders.evm.header_decoder import HeaderField
 from src.datalakes.datalake import DatalakeType
 from src.datalakes.block_sampled_datalake import BlockSampledProperty
 from src.types import BlockSampledDataLake, ComputationalTask, ChainInfo

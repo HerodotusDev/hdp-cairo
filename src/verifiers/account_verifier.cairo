@@ -9,7 +9,7 @@ from packages.eth_essentials.lib.block_header import extract_state_root_little
 from src.memorizers.evm import EvmHeaderMemorizer, EvmAccountMemorizer
 from src.converter import le_address_chunks_to_felt
 
-from src.decoders.header_decoder import HeaderDecoder, HeaderField
+from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField
 
 // Verifies the validity of all of the available account proofs and writes them to the memorizer
 func verify_accounts{

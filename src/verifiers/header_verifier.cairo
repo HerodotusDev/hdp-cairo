@@ -14,7 +14,7 @@ from packages.eth_essentials.lib.block_header import (
     reverse_block_header_chunks,
 )
 from src.memorizers.evm import EvmHeaderMemorizer
-from src.decoders.header_decoder import HeaderDecoder
+from src.decoders.evm.header_decoder import HeaderDecoder
 
 func verify_headers_inclusion{
     range_check_ptr,

@@ -12,7 +12,7 @@ from packages.eth_essentials.lib.rlp_little import (
 )
 from src.converter import le_address_chunks_to_felt
 from src.memorizers.evm import EvmStorageMemorizer, EvmAccountMemorizer
-from src.decoders.account_decoder import AccountDecoder, AccountField
+from src.decoders.evm.account_decoder import AccountDecoder, AccountField
 
 from packages.eth_essentials.lib.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64
 

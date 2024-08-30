@@ -8,9 +8,9 @@ from packages.eth_essentials.lib.utils import word_reverse_endian_64
 from packages.eth_essentials.lib.mpt import verify_mpt_proof
 from src.types import TransactionsInBlockDatalake, ChainInfo
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
-from src.decoders.transaction_decoder import TransactionDecoder, TransactionType
-from src.decoders.receipt_decoder import ReceiptDecoder
-from src.decoders.header_decoder import HeaderDecoder, HeaderField
+from src.decoders.evm.transaction_decoder import TransactionDecoder, TransactionType
+from src.decoders.evm.receipt_decoder import ReceiptDecoder
+from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField
 from src.tasks.fetch_trait import FetchTrait
 from src.memorizers.reader import MemorizerReader, MemorizerId
 from src.rlp import get_rlp_list_meta
@@ -94,6 +94,7 @@ func fetch_data_points{
     fetch_trait: FetchTrait,
     chain_info: ChainInfo,
     memorizer_handler: felt***,
+    decoder_handler: felt***,
 }(chain_id: felt, datalake: TransactionsInBlockDatalake) -> (Uint256*, felt) {
     alloc_locals;
     let (data_points: Uint256*) = alloc();
@@ -130,6 +131,7 @@ func abstract_fetch_tx_data_points{
     pow2_array: felt*,
     fetch_trait: FetchTrait,
     memorizer_handler: felt***,
+    decoder_handler: felt***,
     memorizer_layout: felt,
 }(
     chain_id: felt,
@@ -150,6 +152,7 @@ func abstract_fetch_receipt_data_points{
     fetch_trait: FetchTrait,
     chain_info: ChainInfo,
     memorizer_handler: felt***,
+    decoder_handler: felt***,
     memorizer_layout: felt,
 }(
     chain_id: felt,
@@ -171,6 +174,7 @@ func fetch_tx_data_points{
     pow2_array: felt*,
     fetch_trait: FetchTrait,
     memorizer_handler: felt***,
+    decoder_handler: felt***,
     memorizer_layout: felt,
 }(
     chain_id: felt,
@@ -235,6 +239,7 @@ func fetch_receipt_data_points{
     fetch_trait: FetchTrait,
     chain_info: ChainInfo,
     memorizer_handler: felt***,
+    decoder_handler: felt***,
     memorizer_layout: felt,
 }(
     chain_id: felt,

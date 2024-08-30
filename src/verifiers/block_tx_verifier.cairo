@@ -14,7 +14,7 @@ from packages.eth_essentials.lib.rlp_little import (
 from src.rlp import chunk_to_felt_be
 from src.types import ChainInfo
 from src.memorizers.evm import EvmHeaderMemorizer, EvmBlockTxMemorizer
-from src.decoders.header_decoder import HeaderDecoder, HeaderField
+from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField
 
 // Verfies an array of transaction proofs with the headers stored in the memorizer.
 // The verified transactions are then added to the memorizer.

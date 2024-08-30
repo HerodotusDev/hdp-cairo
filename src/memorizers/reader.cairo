@@ -65,6 +65,7 @@ namespace MemorizerReader {
 
         return (res=res);
     }
+
 }
 
 // The reader maps this function to memorizers that are not available in a specific memorizer layout

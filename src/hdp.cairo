@@ -31,6 +31,7 @@ from src.memorizers.evm import (
 )
 from src.memorizers.bare import BareMemorizer
 from src.memorizers.reader import MemorizerReader
+from src.decoders.decoder import ValueDecoder
 from packages.eth_essentials.lib.utils import pow2alloc128, write_felt_array_to_dict_keys
 
 from src.tasks.computational import Task
@@ -176,6 +177,7 @@ func run{
     }(mmr_metas_len=mmr_metas_len);
 
     let memorizer_handler = MemorizerReader.init();
+    let decoder_handler = ValueDecoder.init();
 
     let (tasks_root, results_root, results, results_len) = compute_tasks{
         pedersen_ptr=pedersen_ptr,
@@ -193,7 +195,8 @@ func run{
         pow2_array=pow2_array,
         tasks=tasks,
         chain_info=chain_info,
-        memorizer_handler=memorizer_handler
+        memorizer_handler=memorizer_handler,
+        decoder_handler=decoder_handler,
     }(hdp_version=hdp_version, tasks_len=tasks_len);
 
     %{
@@ -261,6 +264,7 @@ func compute_tasks{
     tasks: ComputationalTask*,
     chain_info: ChainInfo,
     memorizer_handler: felt***,
+    decoder_handler: felt***,
 }(hdp_version: felt, tasks_len: felt) -> (
     tasks_root: Uint256, results_root: Uint256, results: Uint256*, results_len: felt
 ) {

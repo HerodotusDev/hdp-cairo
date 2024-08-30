@@ -45,6 +45,7 @@ func run_contract_bootloader{
     storage_dict: DictAccess*,
     pow2_array: felt*,
     memorizer_handler: felt***,
+    decoder_handler: felt***,
 }(compiled_class: CompiledClass*, calldata_size: felt, calldata: felt*, dry_run: felt) -> (
     retdata_size: felt, retdata: felt*
 ) {

@@ -74,6 +74,7 @@ namespace Datalake {
         fetch_trait: FetchTrait,
         chain_info: ChainInfo,
         memorizer_handler: felt***,
+        decoder_handler: felt***,
     }(task: ComputationalTask) -> (res: Uint256*, res_len: felt) {
         // Fetch the memorizer layout.
         let memorizer_layout = chain_info.memorizer_layout;
