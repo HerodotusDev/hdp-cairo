@@ -103,7 +103,11 @@ func fetch_data_points{
     if (datalake.type == TX_IN_BLOCK_TYPES.TX) {
         with memorizer_layout {
             let data_points_len = abstract_fetch_tx_data_points(
-                chain_id=chain_id, datalake=datalake, index=0, result_counter=0, data_points=data_points
+                chain_id=chain_id,
+                datalake=datalake,
+                index=0,
+                result_counter=0,
+                data_points=data_points,
             );
         }
 
@@ -113,7 +117,11 @@ func fetch_data_points{
     if (datalake.type == TX_IN_BLOCK_TYPES.RECEIPT) {
         with memorizer_layout {
             let data_points_len = abstract_fetch_receipt_data_points(
-                chain_id=chain_id, datalake=datalake, index=0, result_counter=0, data_points=data_points
+                chain_id=chain_id,
+                datalake=datalake,
+                index=0,
+                result_counter=0,
+                data_points=data_points,
             );
         }
         return (data_points, data_points_len);
@@ -195,11 +203,10 @@ func fetch_tx_data_points{
         return result_counter;
     }
 
-    tempvar params = new(chain_id, datalake.target_block, current_tx_index);
-    let (rlp) = MemorizerReader.read{
-        dict_ptr=block_tx_dict, poseidon_ptr=poseidon_ptr
-    }(memorizer_layout=memorizer_layout, memorizer_id=MemorizerId.BLOCK_TX, params=params);
-
+    tempvar params = new (chain_id, datalake.target_block, current_tx_index);
+    let (rlp) = MemorizerReader.read{dict_ptr=block_tx_dict, poseidon_ptr=poseidon_ptr}(
+        memorizer_layout=memorizer_layout, memorizer_id=MemorizerId.BLOCK_TX, params=params
+    );
 
     // let (rlp) = EvmBlockTxMemorizer.get(
     //     chain_id=chain_id, block_number=datalake.target_block, key_low=current_tx_index
@@ -260,10 +267,10 @@ func fetch_receipt_data_points{
         return result_counter;
     }
 
-    tempvar params = new(chain_id, datalake.target_block, current_receipt_index);
-    let (rlp) = MemorizerReader.read{
-        dict_ptr=block_receipt_dict, poseidon_ptr=poseidon_ptr
-    }(memorizer_layout=memorizer_layout, memorizer_id=MemorizerId.BLOCK_RECEIPT, params=params);
+    tempvar params = new (chain_id, datalake.target_block, current_receipt_index);
+    let (rlp) = MemorizerReader.read{dict_ptr=block_receipt_dict, poseidon_ptr=poseidon_ptr}(
+        memorizer_layout=memorizer_layout, memorizer_id=MemorizerId.BLOCK_RECEIPT, params=params
+    );
 
     let (tx_type, rlp_start_offset) = ReceiptDecoder.open_receipt_envelope(rlp);
 

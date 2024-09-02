@@ -123,7 +123,10 @@ func main{
     memcpy(dst=calldata + 6, src=inputs, len=inputs_len);
     let calldata_size = 6 + inputs_len;
 
-    with header_dict, account_dict, storage_dict, block_tx_dict, block_receipt_dict, pow2_array {
+    let (memorizer_handler: felt***) = alloc();
+    let (decoder_handler: felt***) = alloc();
+
+    with header_dict, account_dict, storage_dict, block_tx_dict, block_receipt_dict, pow2_array, memorizer_handler, decoder_handler {
         let (retdata_size, retdata) = run_contract_bootloader(
             compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata, dry_run=1
         );

@@ -6,7 +6,11 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin,
 from src.decoders.evm.header_decoder import HeaderDecoder
 from packages.eth_essentials.lib.utils import pow2alloc128
 from src.types import ChainInfo
-from src.decoders.evm.transaction_decoder import TransactionDecoder, TransactionSender, TransactionField
+from src.decoders.evm.transaction_decoder import (
+    TransactionDecoder,
+    TransactionSender,
+    TransactionField,
+)
 from src.chain_info import fetch_chain_info
 from tests.utils.tx import test_tx_decoding_inner
 func main{

@@ -20,7 +20,6 @@ from src.converter import le_address_chunks_to_felt
 from src.rlp import le_chunks_to_uint256
 from src.memorizers.reader import MemorizerReader, MemorizerId
 
-
 namespace BlockSampledProperty {
     const HEADER = 1;
     const ACCOUNT = 2;
@@ -387,12 +386,18 @@ func fetch_account_data_points{
         return index;
     }
 
-    tempvar params = new(chain_id, current_block_number, [datalake.properties + 1]);
-    let (rlp) = MemorizerReader.read{
-        dict_ptr=account_dict, poseidon_ptr=poseidon_ptr
-    }(memorizer_layout=memorizer_layout, memorizer_id=MemorizerId.ACCOUNT, params=params);
+    tempvar params = new (chain_id, current_block_number, [datalake.properties + 1]);
+    let (rlp) = MemorizerReader.read{dict_ptr=account_dict, poseidon_ptr=poseidon_ptr}(
+        memorizer_layout=memorizer_layout, memorizer_id=MemorizerId.ACCOUNT, params=params
+    );
 
-    let data_point = ValueDecoder.decode2(decoder_layout=memorizer_layout, decoder_id=MemorizerId.ACCOUNT, value=rlp, field=[datalake.properties], to_be=0);
+    let data_point = ValueDecoder.decode2(
+        decoder_layout=memorizer_layout,
+        decoder_id=MemorizerId.ACCOUNT,
+        value=rlp,
+        field=[datalake.properties],
+        to_be=0,
+    );
 
     assert [data_points + index * Uint256.SIZE] = data_point;
 
@@ -452,12 +457,16 @@ func fetch_storage_data_points_inner{
         return index;
     }
 
-    tempvar params = new(chain_id, current_block_number, [datalake.properties], storage_slot.high, storage_slot.low);
-    let (rlp) = MemorizerReader.read{
-        dict_ptr=storage_dict, poseidon_ptr=poseidon_ptr
-    }(memorizer_layout=memorizer_layout, memorizer_id=MemorizerId.STORAGE, params=params);
+    tempvar params = new (
+        chain_id, current_block_number, [datalake.properties], storage_slot.high, storage_slot.low
+    );
+    let (rlp) = MemorizerReader.read{dict_ptr=storage_dict, poseidon_ptr=poseidon_ptr}(
+        memorizer_layout=memorizer_layout, memorizer_id=MemorizerId.STORAGE, params=params
+    );
 
-    let data_point = ValueDecoder.decode2(decoder_layout=memorizer_layout, decoder_id=MemorizerId.STORAGE, value=rlp, field=0, to_be=0);
+    let data_point = ValueDecoder.decode2(
+        decoder_layout=memorizer_layout, decoder_id=MemorizerId.STORAGE, value=rlp, field=0, to_be=0
+    );
     assert [data_points + index * Uint256.SIZE] = data_point;
 
     return fetch_storage_data_points_inner(
@@ -493,12 +502,18 @@ func fetch_header_data_points{
         return index;
     }
 
-    tempvar params = new(chain_id, current_block_number);
-    let (rlp) = MemorizerReader.read{
-        dict_ptr=header_dict, poseidon_ptr=poseidon_ptr
-    }(memorizer_layout=memorizer_layout, memorizer_id=MemorizerId.HEADER, params=params);
+    tempvar params = new (chain_id, current_block_number);
+    let (rlp) = MemorizerReader.read{dict_ptr=header_dict, poseidon_ptr=poseidon_ptr}(
+        memorizer_layout=memorizer_layout, memorizer_id=MemorizerId.HEADER, params=params
+    );
 
-    let data_point = ValueDecoder.decode2(decoder_layout=memorizer_layout, decoder_id=MemorizerId.HEADER, value=rlp, field=[datalake.properties], to_be=0);
+    let data_point = ValueDecoder.decode2(
+        decoder_layout=memorizer_layout,
+        decoder_id=MemorizerId.HEADER,
+        value=rlp,
+        field=[datalake.properties],
+        to_be=0,
+    );
     assert [data_points + index * Uint256.SIZE] = data_point;
 
     return fetch_header_data_points(

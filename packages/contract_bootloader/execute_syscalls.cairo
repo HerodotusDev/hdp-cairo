@@ -56,14 +56,9 @@ func execute_syscalls{
     }
 
     assert [syscall_ptr] = CALL_CONTRACT_SELECTOR;
-    execute_call_contract(
-        caller_execution_context=execution_context
-    );
+    execute_call_contract(caller_execution_context=execution_context);
 
-    return execute_syscalls(
-        execution_context=execution_context,
-        syscall_ptr_end=syscall_ptr_end,
-    );
+    return execute_syscalls(execution_context=execution_context, syscall_ptr_end=syscall_ptr_end);
 }
 
 func abstract_memorizer_handler{
@@ -104,30 +99,56 @@ func execute_call_contract{
 
     let memorizer_layout = chain_id_to_memorizer_layout(call_contract_request.calldata_start[2]);
     if (memorizer_id == MemorizerId.HEADER) {
+        let (rlp) = MemorizerReader.read{dict_ptr=header_dict, poseidon_ptr=poseidon_ptr}(
+            memorizer_layout=memorizer_layout,
+            memorizer_id=memorizer_id,
+            params=call_contract_request.calldata_start + 2,
+        );
 
-        let (rlp) = MemorizerReader.read{
-            dict_ptr=header_dict, poseidon_ptr=poseidon_ptr
-        }(memorizer_layout=memorizer_layout, memorizer_id=memorizer_id, params=call_contract_request.calldata_start + 2);
-
-        ValueDecoder.decode(memorizer_layout, memorizer_id, rlp, function_id, 1, call_contract_response.retdata_start);
+        ValueDecoder.decode(
+            memorizer_layout,
+            memorizer_id,
+            rlp,
+            function_id,
+            1,
+            call_contract_response.retdata_start,
+        );
 
         return ();
     }
     if (memorizer_id == MemorizerId.ACCOUNT) {
-        let (rlp) = MemorizerReader.read{
-            dict_ptr=account_dict, poseidon_ptr=poseidon_ptr
-        }(memorizer_layout=memorizer_layout, memorizer_id=memorizer_id, params=call_contract_request.calldata_start + 2);
+        let (rlp) = MemorizerReader.read{dict_ptr=account_dict, poseidon_ptr=poseidon_ptr}(
+            memorizer_layout=memorizer_layout,
+            memorizer_id=memorizer_id,
+            params=call_contract_request.calldata_start + 2,
+        );
 
-        ValueDecoder.decode(memorizer_layout, memorizer_id, rlp, function_id, 1, call_contract_response.retdata_start);
+        ValueDecoder.decode(
+            memorizer_layout,
+            memorizer_id,
+            rlp,
+            function_id,
+            1,
+            call_contract_response.retdata_start,
+        );
 
         return ();
     }
     if (memorizer_id == MemorizerId.STORAGE) {
-        let (rlp) = MemorizerReader.read{
-            dict_ptr=storage_dict, poseidon_ptr=poseidon_ptr
-        }(memorizer_layout=memorizer_layout, memorizer_id=memorizer_id, params=call_contract_request.calldata_start + 2);
+        let (rlp) = MemorizerReader.read{dict_ptr=storage_dict, poseidon_ptr=poseidon_ptr}(
+            memorizer_layout=memorizer_layout,
+            memorizer_id=memorizer_id,
+            params=call_contract_request.calldata_start + 2,
+        );
 
-        ValueDecoder.decode(memorizer_layout, memorizer_id, rlp, function_id, 1, call_contract_response.retdata_start);
+        ValueDecoder.decode(
+            memorizer_layout,
+            memorizer_id,
+            rlp,
+            function_id,
+            1,
+            call_contract_response.retdata_start,
+        );
 
         return ();
     }

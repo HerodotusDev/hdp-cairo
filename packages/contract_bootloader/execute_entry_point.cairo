@@ -25,15 +25,6 @@ from starkware.starknet.core.os.constants import (
 from contract_bootloader.contract_class.compiled_class import CompiledClass, CompiledClassEntryPoint
 from contract_bootloader.execute_syscalls import ExecutionContext, execute_syscalls
 from starkware.cairo.common.registers import get_fp_and_pc
-from contract_bootloader.execute_syscalls_handler.header_memorizer_handler import (
-    get_memorizer_handler_ptrs as get_header_memorizer_handler_ptrs,
-)
-from contract_bootloader.execute_syscalls_handler.account_memorizer_handler import (
-    get_memorizer_handler_ptrs as get_account_memorizer_handler_ptrs,
-)
-from contract_bootloader.execute_syscalls_handler.storage_memorizer_handler import (
-    get_memorizer_handler_ptrs as get_storage_memorizer_handler_ptrs,
-)
 
 // Represents the arguments pushed to the stack before calling an entry point.
 struct EntryPointCallArguments {
@@ -75,10 +66,7 @@ func call_execute_syscalls{
         return ();
     }
 
-    execute_syscalls(
-        execution_context=execution_context,
-        syscall_ptr_end=syscall_ptr_end,
-    );
+    execute_syscalls(execution_context=execution_context, syscall_ptr_end=syscall_ptr_end);
     return ();
 }
 

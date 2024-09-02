@@ -16,7 +16,6 @@ from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
 from starkware.cairo.common.registers import get_label_location
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash_many, poseidon_hash
 
-
 from src.verifiers.verify import run_state_verification
 from src.module import init_module
 from src.types import MMRMeta, ComputationalTask, ChainInfo
@@ -155,7 +154,6 @@ func run{
 
         cairo_run_output_path = program_input["cairo_run_output_path"]
     %}
-
 
     // Fetch matching chain info
     let (local chain_info) = fetch_chain_info(chain_id);

@@ -9,7 +9,6 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.registers import get_label_location
 from starkware.cairo.common.invoke import invoke
 
-
 namespace DecoderId {
     const HEADER = 0;
     const ACCOUNT = 1;
@@ -45,17 +44,23 @@ namespace ValueDecoder {
     }
 
     func decode{
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-        pow2_array: felt*,
-        decoder_handler: felt***,
-    }(decoder_layout: felt, decoder_id: felt, value: felt*, field: felt, to_be: felt, output: felt*) {
+        range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, decoder_handler: felt***
+    }(
+        decoder_layout: felt,
+        decoder_id: felt,
+        value: felt*,
+        field: felt,
+        to_be: felt,
+        output: felt*,
+    ) {
         let func_ptr = decoder_handler[decoder_layout][decoder_id];
 
         // Invoke the decoder function
-        tempvar invoke_params = cast(new(range_check_ptr, bitwise_ptr, pow2_array, value, field), felt*);
+        tempvar invoke_params = cast(
+            new (range_check_ptr, bitwise_ptr, pow2_array, value, field), felt*
+        );
         invoke(func_ptr, 5, invoke_params);
-                
+
         // Retrieve the results from [ap]
         let res_low = [ap - 1];
         let res_high = [ap - 2];
@@ -72,7 +77,7 @@ namespace ValueDecoder {
                 assert output[1] = result.low;
 
                 return ();
-            }  else {
+            } else {
                 assert output[0] = res_high;
                 assert output[1] = res_low;
 
@@ -86,22 +91,21 @@ namespace ValueDecoder {
             }
         }
 
-        return();
+        return ();
     }
 
     func decode2{
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-        pow2_array: felt*,
-        decoder_handler: felt***,
+        range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, decoder_handler: felt***
     }(decoder_layout: felt, decoder_id: felt, value: felt*, field: felt, to_be: felt) -> Uint256 {
         let func_ptr = decoder_handler[decoder_layout][decoder_id];
 
         // Invoke the decoder function
-        tempvar invoke_params = cast(new(range_check_ptr, bitwise_ptr, pow2_array, value, field), felt*);
+        tempvar invoke_params = cast(
+            new (range_check_ptr, bitwise_ptr, pow2_array, value, field), felt*
+        );
         invoke(func_ptr, 5, invoke_params);
-                
-         // Retrieve the results from [ap]
+
+        // Retrieve the results from [ap]
         let res_high = [ap - 1];
         let res_low = [ap - 2];
 
@@ -115,7 +119,7 @@ namespace ValueDecoder {
             if (to_be == 1) {
                 let (be_result) = uint256_reverse_endian(num=result);
                 return be_result;
-            }  else {
+            } else {
                 return result;
             }
         } else {
