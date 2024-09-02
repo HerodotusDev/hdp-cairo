@@ -15,7 +15,6 @@ from src.tasks.aggregate_functions.sum import compute_sum
 from src.tasks.aggregate_functions.avg import compute_avg
 from src.tasks.aggregate_functions.min_max import uint256_min_le, uint256_max_le
 from src.tasks.aggregate_functions.count_if import count_if
-from src.tasks.aggregate_functions.slr import compute_slr, get_fetch_trait as get_slr_fetch_trait
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
 
 namespace AGGREGATE_FN {
@@ -182,24 +181,6 @@ namespace Task {
                 data_points, data_points_len, tasks[index].ctx_operator, tasks[index].ctx_value
             );
             let result = felt_to_uint256(res_felt);
-            assert [results] = result;
-
-            %{
-                target_result = hex(ids.result.low + ids.result.high*2**128)[2:]
-                print(f"Task Result({ids.index}): 0x{target_result}")
-            %}
-
-            return execute(results=results + Uint256.SIZE, tasks_len=tasks_len, index=index + 1);
-        }
-
-        if (tasks[index].aggregate_fn_id == AGGREGATE_FN.SLR) {
-            let fetch_trait = get_slr_fetch_trait();
-            with fetch_trait {
-                let (data_points, data_points_len) = Datalake.fetch_data_points(tasks[index]);
-            }
-            let (program_hash, result) = compute_slr(
-                values=data_points, values_len=data_points_len, predict=tasks[index].ctx_value
-            );
             assert [results] = result;
 
             %{

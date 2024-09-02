@@ -7,7 +7,6 @@ from starkware.cairo.common.cairo_builtins import (
     KeccakBuiltin,
 )
 from src.tasks.aggregate_functions.sum import compute_sum
-from src.tasks.aggregate_functions.slr import compute_slr
 from src.tasks.aggregate_functions.avg import compute_avg
 from src.tasks.aggregate_functions.min_max import (
     uint256_min_be,
@@ -31,7 +30,6 @@ func main{
     avg_sum();
     min_max();
     count_if_main();
-    slr_main();
     return ();
 }
 
@@ -223,28 +221,5 @@ func test_count_if_inner{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
     let (res) = count_if(arr, TEST_ARRAY_SIZE, op, value);
     // %{ print(f"{ids.res=}, {ids.expected=}") %}
     assert res = expected;
-    return ();
-}
-
-func slr_main{
-    pedersen_ptr: HashBuiltin*,
-    range_check_ptr,
-    ecdsa_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    ec_op_ptr,
-    keccak_ptr: KeccakBuiltin*,
-    poseidon_ptr: PoseidonBuiltin*,
-}() {
-    alloc_locals;
-
-    let (local array: felt*) = alloc();
-    %{ segments.write_arg(ids.array, [1, 0, 3, 0, 2, 0, 5, 0]) %}
-
-    let values: Uint256* = cast(array, Uint256*);
-    let (program_hash, result) = compute_slr(
-        values=values, values_len=2, predict=Uint256(low=10, high=0)
-    );
-
-    assert result.low = 21;
     return ();
 }

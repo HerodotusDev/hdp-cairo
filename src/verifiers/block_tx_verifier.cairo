@@ -4,7 +4,7 @@ from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.uint256 import Uint256
 
 from starkware.cairo.common.alloc import alloc
-from packages.eth_essentials.lib.mpt import verify_mpt_proof
+from src.mpt import verify_mpt_proof
 from packages.eth_essentials.lib.utils import felt_divmod
 from packages.eth_essentials.lib.rlp_little import (
     extract_byte_at_pos,
