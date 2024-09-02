@@ -12,7 +12,8 @@ from src.decoders.evm.transaction_decoder import TransactionDecoder, Transaction
 from src.decoders.evm.receipt_decoder import ReceiptDecoder
 from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField
 from src.tasks.fetch_trait import FetchTrait
-from src.memorizers.reader import MemorizerReader, MemorizerId
+from src.memorizer_access import InternalValueDecoder, InternalMemorizerReader, DictId
+
 from src.rlp import get_rlp_list_meta
 
 namespace TX_IN_BLOCK_TYPES {
@@ -98,10 +99,10 @@ func fetch_data_points{
 }(chain_id: felt, datalake: TransactionsInBlockDatalake) -> (Uint256*, felt) {
     alloc_locals;
     let (data_points: Uint256*) = alloc();
-    let memorizer_layout = chain_info.memorizer_layout;
+    let layout = chain_info.layout;
 
     if (datalake.type == TX_IN_BLOCK_TYPES.TX) {
-        with memorizer_layout {
+        with layout {
             let data_points_len = abstract_fetch_tx_data_points(
                 chain_id=chain_id,
                 datalake=datalake,
@@ -115,7 +116,7 @@ func fetch_data_points{
     }
 
     if (datalake.type == TX_IN_BLOCK_TYPES.RECEIPT) {
-        with memorizer_layout {
+        with layout {
             let data_points_len = abstract_fetch_receipt_data_points(
                 chain_id=chain_id,
                 datalake=datalake,
@@ -140,7 +141,7 @@ func abstract_fetch_tx_data_points{
     fetch_trait: FetchTrait,
     memorizer_handler: felt***,
     decoder_handler: felt***,
-    memorizer_layout: felt,
+    layout: felt,
 }(
     chain_id: felt,
     datalake: TransactionsInBlockDatalake,
@@ -161,7 +162,7 @@ func abstract_fetch_receipt_data_points{
     chain_info: ChainInfo,
     memorizer_handler: felt***,
     decoder_handler: felt***,
-    memorizer_layout: felt,
+    layout: felt,
 }(
     chain_id: felt,
     datalake: TransactionsInBlockDatalake,
@@ -183,7 +184,7 @@ func fetch_tx_data_points{
     fetch_trait: FetchTrait,
     memorizer_handler: felt***,
     decoder_handler: felt***,
-    memorizer_layout: felt,
+    layout: felt,
 }(
     chain_id: felt,
     datalake: TransactionsInBlockDatalake,
@@ -204,8 +205,8 @@ func fetch_tx_data_points{
     }
 
     tempvar params = new (chain_id, datalake.target_block, current_tx_index);
-    let (rlp) = MemorizerReader.read{dict_ptr=block_tx_dict, poseidon_ptr=poseidon_ptr}(
-        memorizer_layout=memorizer_layout, memorizer_id=MemorizerId.BLOCK_TX, params=params
+    let (rlp) = InternalMemorizerReader.read{dict_ptr=block_tx_dict, poseidon_ptr=poseidon_ptr}(
+        layout=layout, dict_id=DictId.BLOCK_TX, params=params
     );
 
     // let (rlp) = EvmBlockTxMemorizer.get(
@@ -247,7 +248,7 @@ func fetch_receipt_data_points{
     chain_info: ChainInfo,
     memorizer_handler: felt***,
     decoder_handler: felt***,
-    memorizer_layout: felt,
+    layout: felt,
 }(
     chain_id: felt,
     datalake: TransactionsInBlockDatalake,
@@ -268,9 +269,9 @@ func fetch_receipt_data_points{
     }
 
     tempvar params = new (chain_id, datalake.target_block, current_receipt_index);
-    let (rlp) = MemorizerReader.read{dict_ptr=block_receipt_dict, poseidon_ptr=poseidon_ptr}(
-        memorizer_layout=memorizer_layout, memorizer_id=MemorizerId.BLOCK_RECEIPT, params=params
-    );
+    let (rlp) = InternalMemorizerReader.read{
+        dict_ptr=block_receipt_dict, poseidon_ptr=poseidon_ptr
+    }(layout=layout, dict_id=DictId.BLOCK_RECEIPT, params=params);
 
     let (tx_type, rlp_start_offset) = ReceiptDecoder.open_receipt_envelope(rlp);
 

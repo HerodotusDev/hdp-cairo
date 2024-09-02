@@ -29,8 +29,9 @@ from src.memorizers.evm import (
     EvmBlockReceiptMemorizer,
 )
 from src.memorizers.bare import BareMemorizer
-from src.memorizers.reader import MemorizerReader
-from src.decoders.decoder import ValueDecoder
+from src.memorizer_access import InternalMemorizerReader, InternalValueDecoder, DictId
+from src.chain_info import Layout
+
 from packages.eth_essentials.lib.utils import pow2alloc128, write_felt_array_to_dict_keys
 
 from src.tasks.computational import Task
@@ -174,8 +175,8 @@ func run{
         chain_info=chain_info,
     }(mmr_metas_len=mmr_metas_len);
 
-    let memorizer_handler = MemorizerReader.init();
-    let decoder_handler = ValueDecoder.init();
+    let memorizer_handler = InternalMemorizerReader.init();
+    let decoder_handler = InternalValueDecoder.init();
 
     let (tasks_root, results_root, results, results_len) = compute_tasks{
         pedersen_ptr=pedersen_ptr,

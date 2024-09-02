@@ -4,7 +4,7 @@ struct ChainInfo {
     id: felt,
     id_bytes_len: felt,
     byzantium: felt,
-    memorizer_layout: felt,
+    layout: felt,
 }
 
 struct MMRMeta {

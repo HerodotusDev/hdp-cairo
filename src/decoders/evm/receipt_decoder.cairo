@@ -73,12 +73,9 @@ namespace ReceiptDecoder {
     // Outputs:
     // - tx_type: The type of the transaction
     // - rlp_start_offset: The index where the RLP-encoded payload starts
-    func open_receipt_envelope{
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-        poseidon_ptr: PoseidonBuiltin*,
-        pow2_array: felt*,
-    }(item: felt*) -> (tx_type: felt, rlp_start_offset: felt) {
+    func open_receipt_envelope{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+        item: felt*
+    ) -> (tx_type: felt, rlp_start_offset: felt) {
         alloc_locals;
 
         let first_byte = extract_byte_at_pos(item[0], 0, pow2_array);

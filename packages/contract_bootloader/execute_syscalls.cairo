@@ -12,12 +12,12 @@ from src.memorizers.evm import EvmHeaderMemorizer, EvmAccountMemorizer, EvmStora
 from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField
 from src.decoders.evm.account_decoder import AccountDecoder, AccountField
 from src.decoders.evm.storage_slot_decoder import StorageSlotDecoder
-from src.decoders.decoder import DecoderId, ValueDecoder
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.registers import get_label_location
-from src.chain_info import chain_id_to_memorizer_layout
-from src.memorizers.reader import MemorizerReader, MemorizerId
+from src.chain_info import chain_id_to_layout
+from src.memorizer_access import BootloaderMemorizerAccess, DictId
+from src.chain_info import Layout
 
 struct ExecutionInfo {
     selector: felt,
@@ -94,66 +94,99 @@ func execute_call_contract{
     let call_contract_response = cast(syscall_ptr, CallContractResponse*);
     let syscall_ptr = syscall_ptr + CallContractResponse.SIZE;
 
-    let memorizer_id = call_contract_request.contract_address;
-    let function_id = call_contract_request.selector;
+    let dict_id = call_contract_request.contract_address;
+    let field = call_contract_request.selector;
 
-    let memorizer_layout = chain_id_to_memorizer_layout(call_contract_request.calldata_start[2]);
-    if (memorizer_id == MemorizerId.HEADER) {
-        let (rlp) = MemorizerReader.read{dict_ptr=header_dict, poseidon_ptr=poseidon_ptr}(
-            memorizer_layout=memorizer_layout,
-            memorizer_id=memorizer_id,
+    let layout = chain_id_to_layout(call_contract_request.calldata_start[2]);
+    let output_ptr = call_contract_response.retdata_start;
+
+    %{ print("pre-call: output_ptr:", memory[ids.output_ptr]) %}
+
+    if (dict_id == DictId.HEADER) {
+        %{ print("fetching Header data") %}
+        let output_type = BootloaderMemorizerAccess.read_and_decode{dict_ptr=header_dict}(
             params=call_contract_request.calldata_start + 2,
+            layout=layout,
+            dict_id=dict_id,
+            field=field,
+            output_ptr=call_contract_response.retdata_start,
+            as_be=1,
         );
 
-        ValueDecoder.decode(
-            memorizer_layout,
-            memorizer_id,
-            rlp,
-            function_id,
-            1,
-            call_contract_response.retdata_start,
-        );
+        // let (rlp) = MemorizerReader.read{dict_ptr=header_dict, poseidon_ptr=poseidon_ptr}(
+        //     memorizer_layout=memorizer_layout,
+        //     dict_id=dict_id,
+        //     params=call_contract_request.calldata_start + 2,
+        // );
+
+        // ValueDecoder.decode(
+        //     memorizer_layout,
+        //     dict_id,
+        //     rlp,
+        //     dict_id,
+        //     1,
+        //     call_contract_response.retdata_start,
+        // );
 
         return ();
     }
-    if (memorizer_id == MemorizerId.ACCOUNT) {
-        let (rlp) = MemorizerReader.read{dict_ptr=account_dict, poseidon_ptr=poseidon_ptr}(
-            memorizer_layout=memorizer_layout,
-            memorizer_id=memorizer_id,
+    if (dict_id == DictId.ACCOUNT) {
+        %{ print("fetching Account data") %}
+        let output_type = BootloaderMemorizerAccess.read_and_decode{dict_ptr=account_dict}(
             params=call_contract_request.calldata_start + 2,
+            layout=layout,
+            dict_id=dict_id,
+            field=field,
+            output_ptr=call_contract_response.retdata_start,
+            as_be=1,
         );
 
-        ValueDecoder.decode(
-            memorizer_layout,
-            memorizer_id,
-            rlp,
-            function_id,
-            1,
-            call_contract_response.retdata_start,
-        );
+        // let (rlp) = MemorizerReader.read{dict_ptr=account_dict, poseidon_ptr=poseidon_ptr}(
+        //     memorizer_layout=memorizer_layout,
+        //     dict_id=dict_id,
+        //     params=call_contract_request.calldata_start + 2,
+        // );
+
+        // ValueDecoder.decode(
+        //     memorizer_layout,
+        //     dict_id,
+        //     rlp,
+        //     dict_id,
+        //     1,
+        //     call_contract_response.retdata_start,
+        // );
 
         return ();
     }
-    if (memorizer_id == MemorizerId.STORAGE) {
-        let (rlp) = MemorizerReader.read{dict_ptr=storage_dict, poseidon_ptr=poseidon_ptr}(
-            memorizer_layout=memorizer_layout,
-            memorizer_id=memorizer_id,
+    if (dict_id == DictId.STORAGE) {
+        %{ print("fetching storage data") %}
+        let output_type = BootloaderMemorizerAccess.read_and_decode{dict_ptr=storage_dict}(
             params=call_contract_request.calldata_start + 2,
+            layout=layout,
+            dict_id=dict_id,
+            field=field,
+            output_ptr=call_contract_response.retdata_start,
+            as_be=1,
         );
+        // let (rlp) = MemorizerReader.read{dict_ptr=storage_dict, poseidon_ptr=poseidon_ptr}(
+        //     memorizer_layout=memorizer_layout,
+        //     dict_id=dict_id,
+        //     params=call_contract_request.calldata_start + 2,
+        // );
 
-        ValueDecoder.decode(
-            memorizer_layout,
-            memorizer_id,
-            rlp,
-            function_id,
-            1,
-            call_contract_response.retdata_start,
-        );
+        // ValueDecoder.decode(
+        //     memorizer_layout,
+        //     dict_id,
+        //     rlp,
+        //     dict_id,
+        //     1,
+        //     call_contract_response.retdata_start,
+        // );
 
         return ();
     }
 
-    // Unknown MemorizerId
+    // Unknown DictId
     assert 1 = 0;
 
     return ();

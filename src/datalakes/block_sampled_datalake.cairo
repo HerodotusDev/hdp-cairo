@@ -15,10 +15,10 @@ from src.tasks.fetch_trait import FetchTrait
 from src.decoders.evm.header_decoder import HeaderDecoder
 from src.decoders.evm.account_decoder import AccountDecoder
 from src.decoders.evm.storage_slot_decoder import StorageSlotDecoder
-from src.decoders.decoder import ValueDecoder
+from src.memorizer_access import InternalValueDecoder, InternalMemorizerReader, DictId
+from src.chain_info import Layout
 from src.converter import le_address_chunks_to_felt
 from src.rlp import le_chunks_to_uint256
-from src.memorizers.reader import MemorizerReader, MemorizerId
 
 namespace BlockSampledProperty {
     const HEADER = 1;
@@ -175,7 +175,7 @@ func fetch_data_points{
     fetch_trait: FetchTrait,
     memorizer_handler: felt***,
     decoder_handler: felt***,
-    memorizer_layout: felt,
+    layout: felt,
 }(chain_id: felt, datalake: BlockSampledDataLake) -> (Uint256*, felt) {
     alloc_locals;
     let (data_points: Uint256*) = alloc();
@@ -223,7 +223,7 @@ func abstract_fetch_account_data_points{
     fetch_trait: FetchTrait,
     memorizer_handler: felt***,
     decoder_handler: felt***,
-    memorizer_layout: felt,
+    layout: felt,
 }(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     jmp abs fetch_trait.block_sampled_datalake.fetch_account_data_points_ptr;
 }
@@ -242,7 +242,7 @@ func abstract_fetch_storage_data_points{
     fetch_trait: FetchTrait,
     memorizer_handler: felt***,
     decoder_handler: felt***,
-    memorizer_layout: felt,
+    layout: felt,
 }(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     jmp abs fetch_trait.block_sampled_datalake.fetch_storage_data_points_ptr;
 }
@@ -258,7 +258,7 @@ func abstract_fetch_header_data_points{
     fetch_trait: FetchTrait,
     memorizer_handler: felt***,
     decoder_handler: felt***,
-    memorizer_layout: felt,
+    layout: felt,
 }(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     jmp abs fetch_trait.block_sampled_datalake.fetch_header_data_points_ptr;
 }
@@ -372,7 +372,7 @@ func fetch_account_data_points{
     fetch_trait: FetchTrait,
     memorizer_handler: felt***,
     decoder_handler: felt***,
-    memorizer_layout: felt,
+    layout: felt,
 }(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     alloc_locals;
 
@@ -387,14 +387,14 @@ func fetch_account_data_points{
     }
 
     tempvar params = new (chain_id, current_block_number, [datalake.properties + 1]);
-    let (rlp) = MemorizerReader.read{dict_ptr=account_dict, poseidon_ptr=poseidon_ptr}(
-        memorizer_layout=memorizer_layout, memorizer_id=MemorizerId.ACCOUNT, params=params
+    let (rlp) = InternalMemorizerReader.read{dict_ptr=account_dict, poseidon_ptr=poseidon_ptr}(
+        layout=layout, dict_id=DictId.ACCOUNT, params=params
     );
 
-    let data_point = ValueDecoder.decode2(
-        decoder_layout=memorizer_layout,
-        decoder_id=MemorizerId.ACCOUNT,
-        value=rlp,
+    let data_point = InternalValueDecoder.decode2(
+        layout=layout,
+        dict_id=DictId.ACCOUNT,
+        encoded_data=rlp,
         field=[datalake.properties],
         to_be=0,
     );
@@ -420,7 +420,7 @@ func fetch_storage_data_points{
     fetch_trait: FetchTrait,
     memorizer_handler: felt***,
     decoder_handler: felt***,
-    memorizer_layout: felt,
+    layout: felt,
 }(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     alloc_locals;
 
@@ -437,7 +437,7 @@ func fetch_storage_data_points_inner{
     fetch_trait: FetchTrait,
     memorizer_handler: felt***,
     decoder_handler: felt***,
-    memorizer_layout: felt,
+    layout: felt,
 }(
     chain_id: felt,
     datalake: BlockSampledDataLake,
@@ -460,12 +460,12 @@ func fetch_storage_data_points_inner{
     tempvar params = new (
         chain_id, current_block_number, [datalake.properties], storage_slot.high, storage_slot.low
     );
-    let (rlp) = MemorizerReader.read{dict_ptr=storage_dict, poseidon_ptr=poseidon_ptr}(
-        memorizer_layout=memorizer_layout, memorizer_id=MemorizerId.STORAGE, params=params
+    let (rlp) = InternalMemorizerReader.read{dict_ptr=storage_dict, poseidon_ptr=poseidon_ptr}(
+        layout=layout, dict_id=DictId.STORAGE, params=params
     );
 
-    let data_point = ValueDecoder.decode2(
-        decoder_layout=memorizer_layout, decoder_id=MemorizerId.STORAGE, value=rlp, field=0, to_be=0
+    let data_point = InternalValueDecoder.decode2(
+        layout=layout, dict_id=DictId.STORAGE, encoded_data=rlp, field=0, to_be=0
     );
     assert [data_points + index * Uint256.SIZE] = data_point;
 
@@ -489,7 +489,7 @@ func fetch_header_data_points{
     fetch_trait: FetchTrait,
     memorizer_handler: felt***,
     decoder_handler: felt***,
-    memorizer_layout: felt,
+    layout: felt,
 }(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     alloc_locals;
     let current_block_number = datalake.block_range_start + index * datalake.increment;
@@ -503,16 +503,12 @@ func fetch_header_data_points{
     }
 
     tempvar params = new (chain_id, current_block_number);
-    let (rlp) = MemorizerReader.read{dict_ptr=header_dict, poseidon_ptr=poseidon_ptr}(
-        memorizer_layout=memorizer_layout, memorizer_id=MemorizerId.HEADER, params=params
+    let (rlp) = InternalMemorizerReader.read{dict_ptr=header_dict, poseidon_ptr=poseidon_ptr}(
+        layout=layout, dict_id=DictId.HEADER, params=params
     );
 
-    let data_point = ValueDecoder.decode2(
-        decoder_layout=memorizer_layout,
-        decoder_id=MemorizerId.HEADER,
-        value=rlp,
-        field=[datalake.properties],
-        to_be=0,
+    let data_point = InternalValueDecoder.decode2(
+        layout=layout, dict_id=DictId.HEADER, encoded_data=rlp, field=[datalake.properties], to_be=0
     );
     assert [data_points + index * Uint256.SIZE] = data_point;
 
