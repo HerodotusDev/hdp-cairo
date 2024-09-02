@@ -100,10 +100,7 @@ func execute_call_contract{
     let layout = chain_id_to_layout(call_contract_request.calldata_start[2]);
     let output_ptr = call_contract_response.retdata_start;
 
-    %{ print("pre-call: output_ptr:", memory[ids.output_ptr]) %}
-
     if (dict_id == DictId.HEADER) {
-        %{ print("fetching Header data") %}
         let output_type = BootloaderMemorizerAccess.read_and_decode{dict_ptr=header_dict}(
             params=call_contract_request.calldata_start + 2,
             layout=layout,
@@ -113,25 +110,9 @@ func execute_call_contract{
             as_be=1,
         );
 
-        // let (rlp) = MemorizerReader.read{dict_ptr=header_dict, poseidon_ptr=poseidon_ptr}(
-        //     memorizer_layout=memorizer_layout,
-        //     dict_id=dict_id,
-        //     params=call_contract_request.calldata_start + 2,
-        // );
-
-        // ValueDecoder.decode(
-        //     memorizer_layout,
-        //     dict_id,
-        //     rlp,
-        //     dict_id,
-        //     1,
-        //     call_contract_response.retdata_start,
-        // );
-
         return ();
     }
     if (dict_id == DictId.ACCOUNT) {
-        %{ print("fetching Account data") %}
         let output_type = BootloaderMemorizerAccess.read_and_decode{dict_ptr=account_dict}(
             params=call_contract_request.calldata_start + 2,
             layout=layout,
@@ -141,25 +122,9 @@ func execute_call_contract{
             as_be=1,
         );
 
-        // let (rlp) = MemorizerReader.read{dict_ptr=account_dict, poseidon_ptr=poseidon_ptr}(
-        //     memorizer_layout=memorizer_layout,
-        //     dict_id=dict_id,
-        //     params=call_contract_request.calldata_start + 2,
-        // );
-
-        // ValueDecoder.decode(
-        //     memorizer_layout,
-        //     dict_id,
-        //     rlp,
-        //     dict_id,
-        //     1,
-        //     call_contract_response.retdata_start,
-        // );
-
         return ();
     }
     if (dict_id == DictId.STORAGE) {
-        %{ print("fetching storage data") %}
         let output_type = BootloaderMemorizerAccess.read_and_decode{dict_ptr=storage_dict}(
             params=call_contract_request.calldata_start + 2,
             layout=layout,
@@ -168,20 +133,6 @@ func execute_call_contract{
             output_ptr=call_contract_response.retdata_start,
             as_be=1,
         );
-        // let (rlp) = MemorizerReader.read{dict_ptr=storage_dict, poseidon_ptr=poseidon_ptr}(
-        //     memorizer_layout=memorizer_layout,
-        //     dict_id=dict_id,
-        //     params=call_contract_request.calldata_start + 2,
-        // );
-
-        // ValueDecoder.decode(
-        //     memorizer_layout,
-        //     dict_id,
-        //     rlp,
-        //     dict_id,
-        //     1,
-        //     call_contract_response.retdata_start,
-        // );
 
         return ();
     }
