@@ -93,8 +93,8 @@ namespace InternalValueDecoder {
         assert evm_handlers[DictId.HEADER] = header_label;
         assert evm_handlers[DictId.ACCOUNT] = account_label;
         assert evm_handlers[DictId.STORAGE] = storage_label;
-        // assert evm_handlers[DictId.BLOCK_TX] = tx_label;
-        // assert evm_handlers[DictId.RECEIPT] = receipt_label;
+        assert evm_handlers[DictId.BLOCK_TX] = tx_label;
+        assert evm_handlers[DictId.BLOCK_RECEIPT] = receipt_label;
 
         let (handlers: felt***) = alloc();
         assert handlers[Layout.EVM] = evm_handlers;

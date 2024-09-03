@@ -13,7 +13,6 @@ from src.decoders.evm.receipt_decoder import ReceiptDecoder
 from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField
 from src.tasks.fetch_trait import FetchTrait
 from src.memorizer_access import InternalValueDecoder, InternalMemorizerReader, DictId
-
 from src.rlp import get_rlp_list_meta
 
 namespace TX_IN_BLOCK_TYPES {
@@ -209,10 +208,6 @@ func fetch_tx_data_points{
         layout=layout, dict_id=DictId.BLOCK_TX, params=params
     );
 
-    // let (rlp) = EvmBlockTxMemorizer.get(
-    //     chain_id=chain_id, block_number=datalake.target_block, key_low=current_tx_index
-    // );
-
     let (tx_type, rlp_start_offset) = TransactionDecoder.open_tx_envelope(rlp);
 
     if (datalake.included_types[tx_type] == 0) {
@@ -225,9 +220,14 @@ func fetch_tx_data_points{
         );
     }
 
-    let datapoint = TransactionDecoder.get_field(
-        rlp, datalake.sampled_property, rlp_start_offset, tx_type
+    let datapoint = InternalValueDecoder.decode2(
+        layout=layout,
+        dict_id=DictId.BLOCK_TX,
+        encoded_data=rlp,
+        field=datalake.sampled_property,
+        to_be=0,
     );
+
     assert data_points[result_counter] = datapoint;
     return fetch_tx_data_points(
         chain_id=chain_id,
@@ -285,6 +285,7 @@ func fetch_receipt_data_points{
         );
     }
 
+    // ToDo: figure out how to make generic once SN is implemented.
     let datapoint = ReceiptDecoder.get_field(
         rlp, datalake.sampled_property, rlp_start_offset, tx_type, datalake.target_block
     );
