@@ -1,10 +1,7 @@
-name: Build, Push Docker Image, and Deploy Python Package
+name: Build Docker and Push Python Package
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
     branches:
       - main
 
@@ -12,11 +9,18 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       id-token: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # Fetch all history and tags
+
+      - name: Fetch all branches
+        run: |
+          git fetch --all
+          git fetch --tags
 
       - name: Log in to Docker Hub
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -61,19 +65,54 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install setuptools wheel twine
+          pip install setuptools wheel twine bumpversion
+
+      - name: Check for package changes
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            # Fetch base branch to compare with PR branch
+            git fetch origin ${{ github.base_ref }}:${{ github.base_ref }}
+            CHANGED_FILES=$(git diff --name-only ${{ github.base_ref }}...HEAD)
+          else
+            # Compare current commit with the previous commit
+            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+          fi
+          echo "Changed files: $CHANGED_FILES"
+          if echo "$CHANGED_FILES" | grep -qE '(tools/|contract_bootloader/|compiled_contracts/|setup.py)'; then
+            echo "CHANGES_DETECTED=true" >> $GITHUB_ENV
+          else
+            echo "CHANGES_DETECTED=false" >> $GITHUB_ENV
+          fi
+          echo "Changes detected: $CHANGES_DETECTED"
+
+      - name: Debug output
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "GitHub ref: ${{ github.ref }}"
+          echo "Changes detected: ${{ env.CHANGES_DETECTED }}"
+
+      - name: Bump version
+        if: env.CHANGES_DETECTED == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          bumpversion patch --allow-dirty
+          git push --tags
+          git push
 
       - name: Build Python package
+        if: steps.check_changes.outputs.changes_detected == 'true'
         run: |
           python setup.py sdist bdist_wheel
 
       - name: Check PyPI package (dry run)
+        if: steps.check_changes.outputs.changes_detected == 'true'
         run: |
           twine check dist/*
           echo "Package check completed. In a real publish, the package would be uploaded to PyPI."
 
       - name: Publish package to PyPI
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: steps.check_changes.outputs.changes_detected == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}

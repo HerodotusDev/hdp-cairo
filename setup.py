@@ -1,19 +1,19 @@
 from setuptools import setup
 from setuptools.command.install import install
-
 from pathlib import Path
+
+# Read version from version.py
+version = {}
+with open("version.py") as fp:
+    exec(fp.read(), version)
 
 this_directory = Path(__file__).parent
 long_description = (this_directory / "package.md").read_text()
 
-
 class PostInstallCommand(install):
     """Custom post-installation for installation mode."""
-
     def run(self):
-        # Run the standard install process first
         install.run(self)
-
 
 # Read the requirements from the requirements.txt file
 with open("tools/make/requirements.txt") as requirements_file:
@@ -23,7 +23,7 @@ setup(
     name="hdp-cairo-dev",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    version="0.0.7",
+    version=version['__version__'],
     packages=[
         "tools",
         "contract_bootloader",
