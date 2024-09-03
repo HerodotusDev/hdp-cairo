@@ -1,0 +1,125 @@
+name: Add compile program to registry
+on:
+  push:
+    branches:
+      - main
+      
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Scarb
+        uses: software-mansion/setup-scarb@v1
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          
+      - name: Cache Python environment
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pip
+            venv
+          key: ${{ runner.os }}-python-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('tools/make/setup.sh') }}
+          restore-keys: |
+              ${{ runner.os }}-python-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('tools/make/setup.sh') }}
+              ${{ runner.os }}-python-
+
+      - name: Install Dependencies
+        run: make setup
+      - name: Compile Cairo program
+        run: |
+          source venv/bin/activate
+          mkdir -p build
+
+          # Function to pad hash to 32 bytes
+          pad_hash() {
+            # Remove 0x prefix if present
+            hash=${1#0x}
+            # Pad to 64 characters (32 bytes)
+            printf "0x%064s" "$hash" | tr ' ' '0'
+          }
+
+          # First program (frequently updated)
+          cairo-compile --cairo_path="packages/eth_essentials" "src/hdp.cairo" --output build/hdp.json
+          HDP_HASH=$(cairo-hash-program --program build/hdp.json)
+          HDP_HASH=$(pad_hash $HDP_HASH)
+          echo "HDP_HASH=$HDP_HASH" >> $GITHUB_ENV
+          
+          # Second program (infrequently updated)
+          cairo-compile --cairo_path="packages/eth_essentials" "src/contract_dry_run.cairo" --output build/contract_dry_run.json
+          CONTRACT_DRY_RUN_HASH=$(cairo-hash-program --program build/contract_dry_run.json)
+          CONTRACT_DRY_RUN_HASH=$(pad_hash $CONTRACT_DRY_RUN_HASH)
+          echo "CONTRACT_DRY_RUN_HASH=$CONTRACT_DRY_RUN_HASH" >> $GITHUB_ENV
+
+      - name: Checkout compilation storage repo
+        uses: actions/checkout@v2
+        with:
+          repository: petscheit/cairo-program-registry-new
+          token: ${{ secrets.CAIRO_PROGRAM_REGISTRY_PAT }}
+          path: cairo-compilations
+
+      - name: Store compilations and update changelog
+        run: |
+          cd cairo-compilations
+          
+          # Check if first program (HDP) already exists
+          HDP_UPDATED=false
+          if [ ! -d "${{ env.HDP_HASH }}" ]; then
+            mkdir -p ${{ env.HDP_HASH }}
+            cp ../build/hdp.json ${{ env.HDP_HASH }}/
+            HDP_UPDATED=true
+          fi
+          
+          # Store second program (only if folder doesn't exist)
+          CONTRACT_DRY_RUN_UPDATED=false
+          if [ ! -d "${{ env.CONTRACT_DRY_RUN_HASH }}" ]; then
+            mkdir -p ${{ env.CONTRACT_DRY_RUN_HASH }}
+            cp ../build/contract_dry_run.json ${{ env.CONTRACT_DRY_RUN_HASH }}/
+            CONTRACT_DRY_RUN_UPDATED=true
+          fi
+          
+          # Update README with changelog only if there are updates
+          if [ "$HDP_UPDATED" = true ] || [ "$CONTRACT_DRY_RUN_UPDATED" = true ]; then
+            DATE=$(date +"%Y-%m-%d")
+            COMMIT_URL="https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
+            
+            if [ ! -f README.md ]; then
+              echo "# Changelog" > README.md
+              echo "" >> README.md
+            fi
+            
+            {
+              echo "## Updates on $DATE"
+              echo ""
+              if [ "$HDP_UPDATED" = true ]; then
+                echo "### HDP Program"
+                echo "- **Hash:** \`${{ env.HDP_HASH }}\`"
+                echo "- [View commit]($COMMIT_URL)"
+                echo ""
+              fi
+              if [ "$CONTRACT_DRY_RUN_UPDATED" = true ]; then
+                echo "### Contract Dry Run"
+                echo "- **Hash:** \`${{ env.CONTRACT_DRY_RUN_HASH }}\`"
+                echo "- [View commit]($COMMIT_URL)"
+                echo ""
+              fi
+              echo "$(cat README.md)"
+            } > README.md.tmp
+            mv README.md.tmp README.md
+            
+            # Commit and push if there are changes
+            git config user.name github-actions
+            git config user.email github-actions@github.com
+            git add .
+            git commit -m "Add compilation(s) for hash(es) ${{ env.HDP_HASH }} and/or ${{ env.CONTRACT_DRY_RUN_HASH }} and update changelog"
+            git push
+          else
+            echo "No new compilations to store or changelog updates."
+          fi
+
