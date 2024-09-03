@@ -10,10 +10,13 @@ with open("version.py") as fp:
 this_directory = Path(__file__).parent
 long_description = (this_directory / "package.md").read_text()
 
+
 class PostInstallCommand(install):
     """Custom post-installation for installation mode."""
+
     def run(self):
         install.run(self)
+
 
 # Read the requirements from the requirements.txt file
 with open("tools/make/requirements.txt") as requirements_file:
@@ -23,7 +26,7 @@ setup(
     name="hdp-cairo-dev",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    version=version['__version__'],
+    version=version["__version__"],
     packages=[
         "tools",
         "contract_bootloader",
