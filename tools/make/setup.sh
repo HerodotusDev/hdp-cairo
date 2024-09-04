@@ -62,5 +62,5 @@ pip install packages/cairo-lang-0.13.1.zip || { echo "Failed to install cairo-la
 pip install . || { echo "Failed to install the package."; exit 1; }
 
 # Update submodules
-echo "Updating git submodules..."
+echo "Updating git submodule..."
 git submodule update --init || { echo "Failed to update git submodules."; exit 1; }
