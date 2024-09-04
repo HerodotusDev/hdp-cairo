@@ -72,7 +72,7 @@ jobs:
           HDP_UPDATED=false
           if [ ! -d "${{ env.HDP_HASH }}" ]; then
             mkdir -p ${{ env.HDP_HASH }}
-            cp ../build/hdp.json ${{ env.HDP_HASH }}/
+            cp ../build/hdp.json ${{ env.HDP_HASH }}/program.json
             HDP_UPDATED=true
           fi
           
@@ -80,7 +80,7 @@ jobs:
           CONTRACT_DRY_RUN_UPDATED=false
           if [ ! -d "${{ env.CONTRACT_DRY_RUN_HASH }}" ]; then
             mkdir -p ${{ env.CONTRACT_DRY_RUN_HASH }}
-            cp ../build/contract_dry_run.json ${{ env.CONTRACT_DRY_RUN_HASH }}/
+            cp ../build/contract_dry_run.json ${{ env.CONTRACT_DRY_RUN_HASH }}/program.json
             CONTRACT_DRY_RUN_UPDATED=true
           fi
           
