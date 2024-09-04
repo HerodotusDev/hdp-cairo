@@ -22,41 +22,6 @@ jobs:
           git fetch --all
           git fetch --tags
 
-      - name: Log in to Docker Hub
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Create remote builder certificates
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          echo "${{ secrets.BUILDKIT_CA_PEM }}" > ${{ github.workspace }}/client-ca.pem
-          echo "${{ secrets.BUILDKIT_CERT_PEM }}" > ${{ github.workspace }}/client-cert.pem
-          echo "${{ secrets.BUILDKIT_KEY_PEM }}" > ${{ github.workspace }}/client-key.pem
-
-      - name: Set up Docker Buildx
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: remote
-          endpoint: "tcp://buildkit.herodotus.dev:5000"
-          driver-opts: |
-            cacert=${{ github.workspace }}/client-ca.pem
-            cert=${{ github.workspace }}/client-cert.pem
-            key=${{ github.workspace }}/client-key.pem
-          cleanup: true
-
-      - name: Build and push Docker image
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: docker/build-push-action@v5
-        with:
-          file: environment.dockerfile
-          tags: "dataprocessor/hdp-cairo:latest"
-          platforms: linux/amd64,linux/arm64
-          push: true
-
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -78,18 +43,38 @@ jobs:
             CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
           fi
           echo "Changed files: $CHANGED_FILES"
-          if echo "$CHANGED_FILES" | grep -qE '(tools/|contract_bootloader/|compiled_contracts/|setup.py)'; then
+          if echo "$CHANGED_FILES" | grep -qE '(tools/|contract_bootloader/|compiled_contracts/|setup.py|requirements.txt|setup.sh)'; then
             echo "CHANGES_DETECTED=true" >> $GITHUB_ENV
           else
             echo "CHANGES_DETECTED=false" >> $GITHUB_ENV
           fi
           echo "Changes detected: $CHANGES_DETECTED"
 
-      - name: Debug output
+      - name: Log in to Docker Hub
+        if: env.CHANGES_DETECTED == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Create remote builder certificates
+        if: env.CHANGES_DETECTED == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          echo "Event name: ${{ github.event_name }}"
-          echo "GitHub ref: ${{ github.ref }}"
-          echo "Changes detected: ${{ env.CHANGES_DETECTED }}"
+          echo "${{ secrets.BUILDKIT_CA_PEM }}" > ${{ github.workspace }}/client-ca.pem
+          echo "${{ secrets.BUILDKIT_CERT_PEM }}" > ${{ github.workspace }}/client-cert.pem
+          echo "${{ secrets.BUILDKIT_KEY_PEM }}" > ${{ github.workspace }}/client-key.pem
+
+      - name: Set up Docker Buildx
+        if: env.CHANGES_DETECTED == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: remote
+          endpoint: "tcp://buildkit.herodotus.dev:5000"
+          driver-opts: |
+            cacert=${{ github.workspace }}/client-ca.pem
+            cert=${{ github.workspace }}/client-cert.pem
+            key=${{ github.workspace }}/client-key.pem
+          cleanup: true
 
       - name: Bump version
         if: env.CHANGES_DETECTED == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -97,8 +82,27 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           bumpversion patch --allow-dirty
+          NEW_VERSION=$(python setup.py --version)
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
           git push --tags
           git push
+
+      - name: Build and push Docker image
+        if: env.CHANGES_DETECTED == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v5
+        with:
+          file: environment.dockerfile
+          tags: |
+            dataprocessor/hdp-cairo:latest
+            dataprocessor/hdp-cairo:${{ env.NEW_VERSION }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+
+      - name: Debug output
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "GitHub ref: ${{ github.ref }}"
+          echo "Changes detected: ${{ env.CHANGES_DETECTED }}"
 
       - name: Build Python package
         if: env.CHANGES_DETECTED == 'true'
