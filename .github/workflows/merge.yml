@@ -101,18 +101,18 @@ jobs:
           git push
 
       - name: Build Python package
-        if: steps.check_changes.outputs.changes_detected == 'true'
+        if: env.CHANGES_DETECTED == 'true'
         run: |
           python setup.py sdist bdist_wheel
 
       - name: Check PyPI package (dry run)
-        if: steps.check_changes.outputs.changes_detected == 'true'
+        if: env.CHANGES_DETECTED == 'true'
         run: |
           twine check dist/*
           echo "Package check completed. In a real publish, the package would be uploaded to PyPI."
 
       - name: Publish package to PyPI
-        if: steps.check_changes.outputs.changes_detected == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: env.CHANGES_DETECTED == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
