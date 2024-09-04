@@ -43,7 +43,7 @@ jobs:
             CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
           fi
           echo "Changed files: $CHANGED_FILES"
-          if echo "$CHANGED_FILES" | grep -qE '(tools/|contract_bootloader/|compiled_contracts/|setup.py|requirements.txt|setup.sh)'; then
+          if echo "$CHANGED_FILES" | grep -qE '(tools/|contract_bootloader/|compiled_contracts/|setup.py|requirements.txt|setup.sh|environment.dockerfile)'; then
             echo "CHANGES_DETECTED=true" >> $GITHUB_ENV
           else
             echo "CHANGES_DETECTED=false" >> $GITHUB_ENV
