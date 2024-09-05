@@ -49,12 +49,8 @@ cairo-compile --cairo_path="packages/eth_essentials" "$cairo_file" --output "bui
 # Export the function so it's accessible to subshells spawned by parallel
 export -f run_tests
 
-# Determine the number of available cores
-N=6
-echo "Using $N cores for parallel execution."
-
 # Run the same test file repeatedly, maintaining N parallel instances
-seq inf | parallel -j$N --halt soon,fail=1 run_tests $cairo_file
+seq inf | parallel --halt soon,fail=1 run_tests $cairo_file
 
 # Capture and return the exit status of parallel
 exit_status=$?

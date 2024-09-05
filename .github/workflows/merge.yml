@@ -13,7 +13,7 @@ jobs:
       id-token: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3  # Update to v3
         with:
           fetch-depth: 0  # Fetch all history and tags
 
@@ -84,7 +84,7 @@ jobs:
           bumpversion patch --allow-dirty
           NEW_VERSION=$(python setup.py --version)
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
-          git push --tags
+          git push origin "v${NEW_VERSION}"  # Push only the new tag
           git push
 
       - name: Build and push Docker image
@@ -97,6 +97,7 @@ jobs:
             dataprocessor/hdp-cairo:v${{ env.NEW_VERSION }}
           platforms: linux/amd64,linux/arm64
           push: true
+          context: https://github.com/HerodotusDev/hdp-cairo.git#main
 
       - name: Debug output
         run: |
