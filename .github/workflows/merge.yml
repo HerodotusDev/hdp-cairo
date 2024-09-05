@@ -94,7 +94,7 @@ jobs:
           file: environment.dockerfile
           tags: |
             dataprocessor/hdp-cairo:latest
-            dataprocessor/hdp-cairo:${{ env.NEW_VERSION }}
+            dataprocessor/hdp-cairo:v${{ env.NEW_VERSION }}
           platforms: linux/amd64,linux/arm64
           push: true
 
