@@ -22,7 +22,7 @@ func verify_headers_inclusion{
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
     peaks_dict: DictAccess*,
-    header_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
     mmr_metas: MMRMeta*,
     chain_info: ChainInfo,
 }() {
@@ -52,7 +52,7 @@ func verify_headers_inclusion_inner{
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
     peaks_dict: DictAccess*,
-    header_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
     mmr_metas: MMRMeta*,
     chain_info: ChainInfo,
 }(n_headers: felt, index: felt) {

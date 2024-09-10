@@ -17,8 +17,8 @@ func verify_accounts{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    header_dict: DictAccess*,
-    account_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }() {
@@ -36,8 +36,8 @@ func verify_accounts_inner{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    header_dict: DictAccess*,
-    account_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }(n_accounts: felt, index: felt) {
@@ -76,8 +76,8 @@ func verify_account{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    header_dict: DictAccess*,
-    account_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }(address: felt*, key: Uint256, key_leading_zeros: felt, n_proofs: felt, proof_idx: felt) {

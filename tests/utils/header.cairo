@@ -42,8 +42,8 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
     local expected_parent_beacon_root: Uint256;
 
     %{
-        from tests.python.test_header_decoding import fetch_header_dict
-        header = fetch_header_dict(block_numbers[ids.index])
+        from tests.python.test_header_decoding import fetch_evm_header_dict
+        header = fetch_evm_header_dict(block_numbers[ids.index])
         print("Running Block #", block_numbers[ids.index])
         segments.write_arg(ids.rlp, header['rlp'])
 

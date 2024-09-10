@@ -23,8 +23,8 @@ func verify_block_tx_proofs{
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     keccak_ptr: KeccakBuiltin*,
-    block_tx_dict: DictAccess*,
-    header_dict: DictAccess*,
+    evm_block_tx_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }() {
@@ -42,8 +42,8 @@ func verify_block_tx_proofs_inner{
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     keccak_ptr: KeccakBuiltin*,
-    block_tx_dict: DictAccess*,
-    header_dict: DictAccess*,
+    evm_block_tx_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }(n_tx_proofs: felt, index: felt) {

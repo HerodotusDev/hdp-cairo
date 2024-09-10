@@ -168,9 +168,9 @@ func fetch_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    account_dict: DictAccess*,
-    storage_dict: DictAccess*,
-    header_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
+    evm_storage_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
     memorizer_handler: felt***,
@@ -218,7 +218,7 @@ func abstract_fetch_account_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    account_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
     memorizer_handler: felt***,
@@ -237,7 +237,7 @@ func abstract_fetch_storage_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    storage_dict: DictAccess*,
+    evm_storage_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
     memorizer_handler: felt***,
@@ -253,7 +253,7 @@ func abstract_fetch_header_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    header_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
     memorizer_handler: felt***,
@@ -367,7 +367,7 @@ func fetch_account_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    account_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
     memorizer_handler: felt***,
@@ -387,7 +387,7 @@ func fetch_account_data_points{
     }
 
     tempvar params = new (chain_id, current_block_number, [datalake.properties + 1]);
-    let (rlp) = InternalMemorizerReader.read{dict_ptr=account_dict, poseidon_ptr=poseidon_ptr}(
+    let (rlp) = InternalMemorizerReader.read{dict_ptr=evm_account_dict, poseidon_ptr=poseidon_ptr}(
         layout=layout, dict_id=DictId.ACCOUNT, params=params
     );
 
@@ -415,7 +415,7 @@ func fetch_storage_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    storage_dict: DictAccess*,
+    evm_storage_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
     memorizer_handler: felt***,
@@ -432,7 +432,7 @@ func fetch_storage_data_points_inner{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    storage_dict: DictAccess*,
+    evm_storage_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
     memorizer_handler: felt***,
@@ -460,7 +460,7 @@ func fetch_storage_data_points_inner{
     tempvar params = new (
         chain_id, current_block_number, [datalake.properties], storage_slot.high, storage_slot.low
     );
-    let (rlp) = InternalMemorizerReader.read{dict_ptr=storage_dict, poseidon_ptr=poseidon_ptr}(
+    let (rlp) = InternalMemorizerReader.read{dict_ptr=evm_storage_dict, poseidon_ptr=poseidon_ptr}(
         layout=layout, dict_id=DictId.STORAGE, params=params
     );
 
@@ -484,7 +484,7 @@ func fetch_header_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    header_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
     memorizer_handler: felt***,
@@ -503,7 +503,7 @@ func fetch_header_data_points{
     }
 
     tempvar params = new (chain_id, current_block_number);
-    let (rlp) = InternalMemorizerReader.read{dict_ptr=header_dict, poseidon_ptr=poseidon_ptr}(
+    let (rlp) = InternalMemorizerReader.read{dict_ptr=evm_header_dict, poseidon_ptr=poseidon_ptr}(
         layout=layout, dict_id=DictId.HEADER, params=params
     );
 

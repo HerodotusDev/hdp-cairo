@@ -22,11 +22,11 @@ func compute_contract{
     ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    account_dict: DictAccess*,
-    storage_dict: DictAccess*,
-    header_dict: DictAccess*,
-    block_tx_dict: DictAccess*,
-    block_receipt_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
+    evm_storage_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
+    evm_block_tx_dict: DictAccess*,
+    evm_block_receipt_dict: DictAccess*,
     pow2_array: felt*,
     memorizer_handler: felt***,
     decoder_handler: felt***,
@@ -77,17 +77,17 @@ func compute_contract{
 
     local calldata: felt* = nondet %{ segments.add() %};
 
-    assert calldata[0] = nondet %{ ids.header_dict.address_.segment_index %};
-    assert calldata[1] = nondet %{ ids.header_dict.address_.offset %};
-    assert calldata[2] = nondet %{ ids.account_dict.address_.segment_index %};
-    assert calldata[3] = nondet %{ ids.account_dict.address_.offset %};
-    assert calldata[4] = nondet %{ ids.storage_dict.address_.segment_index %};
-    assert calldata[5] = nondet %{ ids.storage_dict.address_.offset %};
+    assert calldata[0] = nondet %{ ids.evm_header_dict.address_.segment_index %};
+    assert calldata[1] = nondet %{ ids.evm_header_dict.address_.offset %};
+    assert calldata[2] = nondet %{ ids.evm_account_dict.address_.segment_index %};
+    assert calldata[3] = nondet %{ ids.evm_account_dict.address_.offset %};
+    assert calldata[4] = nondet %{ ids.evm_storage_dict.address_.segment_index %};
+    assert calldata[5] = nondet %{ ids.evm_storage_dict.address_.offset %};
 
     memcpy(dst=calldata + 6, src=inputs, len=inputs_len);
     let calldata_size = 6 + inputs_len;
 
-    with header_dict, account_dict, storage_dict, block_tx_dict, block_receipt_dict, pow2_array {
+    with evm_header_dict, evm_account_dict, evm_storage_dict, evm_block_tx_dict, evm_block_receipt_dict, pow2_array {
         let (retdata_size, retdata) = run_contract_bootloader(
             compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata, dry_run=0
         );

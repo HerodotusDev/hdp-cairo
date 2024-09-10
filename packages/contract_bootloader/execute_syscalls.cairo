@@ -44,9 +44,9 @@ func execute_syscalls{
     poseidon_ptr: PoseidonBuiltin*,
     syscall_ptr: felt*,
     builtin_ptrs: BuiltinPointers*,
-    header_dict: DictAccess*,
-    account_dict: DictAccess*,
-    storage_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
+    evm_storage_dict: DictAccess*,
     pow2_array: felt*,
     memorizer_handler: felt***,
     decoder_handler: felt***,
@@ -74,9 +74,9 @@ func execute_call_contract{
     poseidon_ptr: PoseidonBuiltin*,
     syscall_ptr: felt*,
     builtin_ptrs: BuiltinPointers*,
-    header_dict: DictAccess*,
-    account_dict: DictAccess*,
-    storage_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
+    evm_storage_dict: DictAccess*,
     pow2_array: felt*,
     memorizer_handler: felt***,
     decoder_handler: felt***,
@@ -101,7 +101,7 @@ func execute_call_contract{
     let output_ptr = call_contract_response.retdata_start;
 
     if (dict_id == DictId.HEADER) {
-        let output_type = BootloaderMemorizerAccess.read_and_decode{dict_ptr=header_dict}(
+        let output_type = BootloaderMemorizerAccess.read_and_decode{dict_ptr=evm_header_dict}(
             params=call_contract_request.calldata_start + 2,
             layout=layout,
             dict_id=dict_id,
@@ -113,7 +113,7 @@ func execute_call_contract{
         return ();
     }
     if (dict_id == DictId.ACCOUNT) {
-        let output_type = BootloaderMemorizerAccess.read_and_decode{dict_ptr=account_dict}(
+        let output_type = BootloaderMemorizerAccess.read_and_decode{dict_ptr=evm_account_dict}(
             params=call_contract_request.calldata_start + 2,
             layout=layout,
             dict_id=dict_id,
@@ -125,7 +125,7 @@ func execute_call_contract{
         return ();
     }
     if (dict_id == DictId.STORAGE) {
-        let output_type = BootloaderMemorizerAccess.read_and_decode{dict_ptr=storage_dict}(
+        let output_type = BootloaderMemorizerAccess.read_and_decode{dict_ptr=evm_storage_dict}(
             params=call_contract_request.calldata_start + 2,
             layout=layout,
             dict_id=dict_id,

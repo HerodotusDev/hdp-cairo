@@ -91,7 +91,7 @@ namespace EvmHeaderMemorizer {
         return BareMemorizer.init();
     }
 
-    func add{header_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
+    func add{evm_header_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
         chain_id: felt, block_number: felt, rlp: felt*
     ) {
         let (params, params_len) = EvmPackParams.header(
@@ -99,21 +99,21 @@ namespace EvmHeaderMemorizer {
         );
 
         let key = hash_memorizer_key(params, params_len);
-        BareMemorizer.add{dict_ptr=header_dict}(key, rlp);
+        BareMemorizer.add{dict_ptr=evm_header_dict}(key, rlp);
 
         return ();
     }
 
-    func get{header_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> (
+    func get{evm_header_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> (
         rlp: felt*
     ) {
         let key = hash_memorizer_key(params, EvmPackParams.HEADER_PARAMS_LEN);
-        let (rlp) = BareMemorizer.get{dict_ptr=header_dict}(key);
+        let (rlp) = BareMemorizer.get{dict_ptr=evm_header_dict}(key);
 
         return (rlp=rlp);
     }
 
-    func get2{header_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
+    func get2{evm_header_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
         chain_id: felt, block_number: felt
     ) -> (rlp: felt*) {
         let (params, params_len) = EvmPackParams.header(
@@ -121,7 +121,7 @@ namespace EvmHeaderMemorizer {
         );
 
         let key = hash_memorizer_key(params, params_len);
-        let (rlp) = BareMemorizer.get{dict_ptr=header_dict}(key);
+        let (rlp) = BareMemorizer.get{dict_ptr=evm_header_dict}(key);
         return (rlp=rlp);
     }
 }
@@ -132,7 +132,7 @@ namespace EvmAccountMemorizer {
         return BareMemorizer.init();
     }
 
-    func add{account_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
+    func add{evm_account_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
         chain_id: felt, block_number: felt, address: felt, rlp: felt*
     ) {
         let (params, params_len) = EvmPackParams.account(
@@ -140,21 +140,21 @@ namespace EvmAccountMemorizer {
         );
 
         let key = hash_memorizer_key(params, params_len);
-        BareMemorizer.add{dict_ptr=account_dict}(key, rlp);
+        BareMemorizer.add{dict_ptr=evm_account_dict}(key, rlp);
 
         return ();
     }
 
-    func get{account_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> (
+    func get{evm_account_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> (
         rlp: felt*
     ) {
         let key = hash_memorizer_key(params, EvmPackParams.ACCOUNT_PARAMS_LEN);
-        let (rlp) = BareMemorizer.get{dict_ptr=account_dict}(key);
+        let (rlp) = BareMemorizer.get{dict_ptr=evm_account_dict}(key);
 
         return (rlp=rlp);
     }
 
-    func get2{account_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
+    func get2{evm_account_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
         chain_id: felt, block_number: felt, address: felt
     ) -> (rlp: felt*) {
         let (params, params_len) = EvmPackParams.account(
@@ -162,7 +162,7 @@ namespace EvmAccountMemorizer {
         );
 
         let key = hash_memorizer_key(params, params_len);
-        let (rlp) = BareMemorizer.get{dict_ptr=account_dict}(key);
+        let (rlp) = BareMemorizer.get{dict_ptr=evm_account_dict}(key);
 
         return (rlp=rlp);
     }
@@ -174,7 +174,7 @@ namespace EvmStorageMemorizer {
         return BareMemorizer.init();
     }
 
-    func add{storage_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
+    func add{evm_storage_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
         chain_id: felt, block_number: felt, address: felt, storage_slot: Uint256, rlp: felt*
     ) {
         let (params, params_len) = EvmPackParams.storage(
@@ -183,24 +183,24 @@ namespace EvmStorageMemorizer {
 
         let key = hash_memorizer_key(params, params_len);
         %{ print("Write storage:", hex(ids.key)) %}
-        BareMemorizer.add{dict_ptr=storage_dict}(key, rlp);
+        BareMemorizer.add{dict_ptr=evm_storage_dict}(key, rlp);
 
         return ();
     }
 
-    func get{storage_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> (
+    func get{evm_storage_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> (
         rlp: felt*
     ) {
         let key = hash_memorizer_key(params, EvmPackParams.STORAGE_PARAMS_LEN);
         %{ print("Get storage:", hex(ids.key)) %}
-        let (rlp) = BareMemorizer.get{dict_ptr=storage_dict}(key);
+        let (rlp) = BareMemorizer.get{dict_ptr=evm_storage_dict}(key);
         %{ print("rlp:", hex(memory[ids.rlp])) %}
         // %{ print("rlp:", memory[ids.rlp + 1]) %}
         // %{ print("rlp:", memory[ids.rlp + 2]) %}
         return (rlp=rlp);
     }
 
-    func get2{storage_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
+    func get2{evm_storage_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
         chain_id: felt, block_number: felt, address: felt, storage_slot: Uint256
     ) -> (rlp: felt*) {
         let (params, params_len) = EvmPackParams.storage(
@@ -209,7 +209,7 @@ namespace EvmStorageMemorizer {
 
         let key = hash_memorizer_key(params, params_len);
         %{ print("Get storage:", hex(ids.key.low)) %}
-        let (rlp) = BareMemorizer.get{dict_ptr=storage_dict}(key);
+        let (rlp) = BareMemorizer.get{dict_ptr=evm_storage_dict}(key);
         return (rlp=rlp);
     }
 }
@@ -220,7 +220,7 @@ namespace EvmBlockTxMemorizer {
         return BareMemorizer.init();
     }
 
-    func add{block_tx_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
+    func add{evm_block_tx_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
         chain_id: felt, block_number: felt, key_low: felt, rlp: felt*
     ) {
         let (params, params_len) = EvmPackParams.block_tx(
@@ -228,20 +228,20 @@ namespace EvmBlockTxMemorizer {
         );
 
         let key = hash_memorizer_key(params, params_len);
-        BareMemorizer.add{dict_ptr=block_tx_dict}(key, rlp);
+        BareMemorizer.add{dict_ptr=evm_block_tx_dict}(key, rlp);
 
         return ();
     }
 
-    func get{block_tx_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> (
+    func get{evm_block_tx_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> (
         rlp: felt*
     ) {
         let key = hash_memorizer_key(params, EvmPackParams.BLOCK_TX_PARAMS_LEN);
-        let (rlp) = BareMemorizer.get{dict_ptr=block_tx_dict}(key);
+        let (rlp) = BareMemorizer.get{dict_ptr=evm_block_tx_dict}(key);
         return (rlp=rlp);
     }
 
-    func get2{block_tx_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
+    func get2{evm_block_tx_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
         chain_id: felt, block_number: felt, key_low: felt
     ) -> (rlp: felt*) {
         let (params, params_len) = EvmPackParams.block_tx(
@@ -249,7 +249,7 @@ namespace EvmBlockTxMemorizer {
         );
 
         let key = hash_memorizer_key(params, params_len);
-        let (rlp) = BareMemorizer.get{dict_ptr=block_tx_dict}(key);
+        let (rlp) = BareMemorizer.get{dict_ptr=evm_block_tx_dict}(key);
         return (rlp=rlp);
     }
 }
@@ -260,7 +260,7 @@ namespace EvmBlockReceiptMemorizer {
         return BareMemorizer.init();
     }
 
-    func add{block_receipt_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
+    func add{evm_block_receipt_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
         chain_id: felt, block_number: felt, key_low: felt, rlp: felt*
     ) {
         let (params, params_len) = EvmPackParams.block_tx(
@@ -268,20 +268,20 @@ namespace EvmBlockReceiptMemorizer {
         );
 
         let key = hash_memorizer_key(params, params_len);
-        BareMemorizer.add{dict_ptr=block_receipt_dict}(key, rlp);
+        BareMemorizer.add{dict_ptr=evm_block_receipt_dict}(key, rlp);
 
         return ();
     }
 
-    func get{block_receipt_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> (
-        rlp: felt*
-    ) {
+    func get{evm_block_receipt_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
+        params: felt*
+    ) -> (rlp: felt*) {
         let key = hash_memorizer_key(params, EvmPackParams.BLOCK_RECEIPT_PARAMS_LEN);
-        let (rlp) = BareMemorizer.get{dict_ptr=block_receipt_dict}(key);
+        let (rlp) = BareMemorizer.get{dict_ptr=evm_block_receipt_dict}(key);
         return (rlp=rlp);
     }
 
-    func get2{block_receipt_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
+    func get2{evm_block_receipt_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
         chain_id: felt, block_number: felt, key_low: felt
     ) -> (rlp: felt*) {
         let (params, params_len) = EvmPackParams.block_tx(
@@ -289,7 +289,7 @@ namespace EvmBlockReceiptMemorizer {
         );
 
         let key = hash_memorizer_key(params, params_len);
-        let (rlp) = BareMemorizer.get{dict_ptr=block_receipt_dict}(key);
+        let (rlp) = BareMemorizer.get{dict_ptr=evm_block_receipt_dict}(key);
         return (rlp=rlp);
     }
 }

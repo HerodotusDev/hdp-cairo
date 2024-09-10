@@ -22,8 +22,8 @@ func verify_storage_items{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    account_dict: DictAccess*,
-    storage_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
+    evm_storage_dict: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }() {
@@ -41,8 +41,8 @@ func verify_storage_items_inner{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    account_dict: DictAccess*,
-    storage_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
+    evm_storage_dict: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }(n_storage_items: felt, index: felt) {
@@ -96,8 +96,8 @@ func verify_storage_item{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    account_dict: DictAccess*,
-    storage_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
+    evm_storage_dict: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }(

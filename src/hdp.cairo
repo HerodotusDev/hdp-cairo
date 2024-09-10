@@ -90,11 +90,11 @@ func run{
     tempvar peaks_dict_start = peaks_dict;
 
     // Memorizers
-    let (header_dict, header_dict_start) = EvmHeaderMemorizer.init();
-    let (account_dict, account_dict_start) = EvmAccountMemorizer.init();
-    let (storage_dict, storage_dict_start) = EvmStorageMemorizer.init();
-    let (block_tx_dict, block_tx_dict_start) = EvmBlockTxMemorizer.init();
-    let (block_receipt_dict, block_receipt_dict_start) = EvmBlockReceiptMemorizer.init();
+    let (evm_header_dict, evm_header_dict_start) = EvmHeaderMemorizer.init();
+    let (evm_account_dict, evm_account_dict_start) = EvmAccountMemorizer.init();
+    let (evm_storage_dict, evm_storage_dict_start) = EvmStorageMemorizer.init();
+    let (evm_block_tx_dict, evm_block_tx_dict_start) = EvmBlockTxMemorizer.init();
+    let (evm_block_receipt_dict, evm_block_receipt_dict_start) = EvmBlockReceiptMemorizer.init();
 
     // Task Params
     let (tasks: ComputationalTask*) = alloc();
@@ -166,11 +166,11 @@ func run{
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array,
         peaks_dict=peaks_dict,
-        header_dict=header_dict,
-        account_dict=account_dict,
-        storage_dict=storage_dict,
-        block_tx_dict=block_tx_dict,
-        block_receipt_dict=block_receipt_dict,
+        evm_header_dict=evm_header_dict,
+        evm_account_dict=evm_account_dict,
+        evm_storage_dict=evm_storage_dict,
+        evm_block_tx_dict=evm_block_tx_dict,
+        evm_block_receipt_dict=evm_block_receipt_dict,
         mmr_metas=mmr_metas,
         chain_info=chain_info,
     }(mmr_metas_len=mmr_metas_len);
@@ -186,11 +186,11 @@ func run{
         ec_op_ptr=ec_op_ptr,
         keccak_ptr=keccak_ptr,
         poseidon_ptr=poseidon_ptr,
-        account_dict=account_dict,
-        storage_dict=storage_dict,
-        header_dict=header_dict,
-        block_tx_dict=block_tx_dict,
-        block_receipt_dict=block_receipt_dict,
+        evm_account_dict=evm_account_dict,
+        evm_storage_dict=evm_storage_dict,
+        evm_header_dict=evm_header_dict,
+        evm_block_tx_dict=evm_block_tx_dict,
+        evm_block_receipt_dict=evm_block_receipt_dict,
         pow2_array=pow2_array,
         tasks=tasks,
         chain_info=chain_info,
@@ -227,12 +227,12 @@ func run{
 
     // Post Verification Checks: Ensure dict consistency
     default_dict_finalize(peaks_dict_start, peaks_dict, 0);
-    default_dict_finalize(header_dict_start, header_dict, BareMemorizer.DEFAULT_VALUE);
-    default_dict_finalize(account_dict_start, account_dict, BareMemorizer.DEFAULT_VALUE);
-    default_dict_finalize(storage_dict_start, storage_dict, BareMemorizer.DEFAULT_VALUE);
-    default_dict_finalize(block_tx_dict_start, block_tx_dict, BareMemorizer.DEFAULT_VALUE);
+    default_dict_finalize(evm_header_dict_start, evm_header_dict, BareMemorizer.DEFAULT_VALUE);
+    default_dict_finalize(evm_account_dict_start, evm_account_dict, BareMemorizer.DEFAULT_VALUE);
+    default_dict_finalize(evm_storage_dict_start, evm_storage_dict, BareMemorizer.DEFAULT_VALUE);
+    default_dict_finalize(evm_block_tx_dict_start, evm_block_tx_dict, BareMemorizer.DEFAULT_VALUE);
     default_dict_finalize(
-        block_receipt_dict_start, block_receipt_dict, BareMemorizer.DEFAULT_VALUE
+        evm_block_receipt_dict_start, evm_block_receipt_dict, BareMemorizer.DEFAULT_VALUE
     );
 
     write_output_ptr{output_ptr=output_ptr}(
@@ -254,11 +254,11 @@ func compute_tasks{
     ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    account_dict: DictAccess*,
-    storage_dict: DictAccess*,
-    header_dict: DictAccess*,
-    block_tx_dict: DictAccess*,
-    block_receipt_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
+    evm_storage_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
+    evm_block_tx_dict: DictAccess*,
+    evm_block_receipt_dict: DictAccess*,
     pow2_array: felt*,
     tasks: ComputationalTask*,
     chain_info: ChainInfo,

@@ -88,8 +88,8 @@ func fetch_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    block_tx_dict: DictAccess*,
-    block_receipt_dict: DictAccess*,
+    evm_block_tx_dict: DictAccess*,
+    evm_block_receipt_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
     chain_info: ChainInfo,
@@ -135,7 +135,7 @@ func abstract_fetch_tx_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    block_tx_dict: DictAccess*,
+    evm_block_tx_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
     memorizer_handler: felt***,
@@ -155,7 +155,7 @@ func abstract_fetch_receipt_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    block_receipt_dict: DictAccess*,
+    evm_block_receipt_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
     chain_info: ChainInfo,
@@ -178,7 +178,7 @@ func fetch_tx_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    block_tx_dict: DictAccess*,
+    evm_block_tx_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
     memorizer_handler: felt***,
@@ -204,7 +204,7 @@ func fetch_tx_data_points{
     }
 
     tempvar params = new (chain_id, datalake.target_block, current_tx_index);
-    let (rlp) = InternalMemorizerReader.read{dict_ptr=block_tx_dict, poseidon_ptr=poseidon_ptr}(
+    let (rlp) = InternalMemorizerReader.read{dict_ptr=evm_block_tx_dict, poseidon_ptr=poseidon_ptr}(
         layout=layout, dict_id=DictId.BLOCK_TX, params=params
     );
 
@@ -242,7 +242,7 @@ func fetch_receipt_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    block_receipt_dict: DictAccess*,
+    evm_block_receipt_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
     chain_info: ChainInfo,
@@ -270,7 +270,7 @@ func fetch_receipt_data_points{
 
     tempvar params = new (chain_id, datalake.target_block, current_receipt_index);
     let (rlp) = InternalMemorizerReader.read{
-        dict_ptr=block_receipt_dict, poseidon_ptr=poseidon_ptr
+        dict_ptr=evm_block_receipt_dict, poseidon_ptr=poseidon_ptr
     }(layout=layout, dict_id=DictId.BLOCK_RECEIPT, params=params);
 
     let (tx_type, rlp_start_offset) = ReceiptDecoder.open_receipt_envelope(rlp);

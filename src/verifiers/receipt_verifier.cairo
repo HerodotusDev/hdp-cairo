@@ -22,8 +22,8 @@ func verify_block_receipt_proofs{
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     keccak_ptr: KeccakBuiltin*,
-    block_receipt_dict: DictAccess*,
-    header_dict: DictAccess*,
+    evm_block_receipt_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }() {
@@ -41,8 +41,8 @@ func verify_block_receipt_proofs_inner{
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     keccak_ptr: KeccakBuiltin*,
-    block_receipt_dict: DictAccess*,
-    header_dict: DictAccess*,
+    evm_block_receipt_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }(n_receipts: felt, index: felt) {
