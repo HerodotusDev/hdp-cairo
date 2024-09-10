@@ -83,11 +83,6 @@ func run{
 
     // MMR Params
     let (mmr_metas: MMRMeta*) = alloc();
-    local mmr_metas_len: felt;
-
-    // Peaks Dict
-    let (local peaks_dict) = default_dict_new(default_value=0);
-    tempvar peaks_dict_start = peaks_dict;
 
     // Memorizers
     let (evm_header_dict, evm_header_dict_start) = EvmHeaderMemorizer.init();
@@ -104,7 +99,6 @@ func run{
 
     // Misc
     let pow2_array: felt* = pow2alloc128();
-    local chain_id: felt;
     local hdp_version: felt;
 
     %{
@@ -124,28 +118,9 @@ func run{
         def nested_hex_to_int_array(hex_array):
             return [[int(x, 16) for x in y] for y in hex_array]
 
-        def write_mmr_metas(ptr, mmr_metas):
-            offset = 0
-            ids.mmr_metas_len = len(mmr_metas)
-            ids.chain_id = mmr_metas[0]["chain_id"]
-
-            for mmr_meta in mmr_metas:
-                assert mmr_meta["chain_id"] == ids.chain_id, "Chain ID mismatch!"
-                memory[ptr._reference_value + offset] = mmr_meta["id"]
-                memory[ptr._reference_value + offset + 1] = hex_to_int(mmr_meta["root"])
-                memory[ptr._reference_value + offset + 2] = mmr_meta["size"]
-                memory[ptr._reference_value + offset + 3] = len(mmr_meta["peaks"])
-                memory[ptr._reference_value + offset + 4] = segments.gen_arg(hex_to_int_array(mmr_meta["peaks"]))
-                memory[ptr._reference_value + offset + 5] = mmr_meta["chain_id"]
-                offset += 6
-
-        # MMR Meta
-        write_mmr_metas(ids.mmr_metas, program_input["proofs"]['mmr_metas'])
-
         # Task and Datalake
         ids.tasks_len = len(program_input['tasks'])
 
-        ids.chain_id = 11155111
         if program_input["tasks"][0]["type"] == "datalake_compute":
             ids.hdp_version = 1
         elif program_input["tasks"][0]["type"] == "module":
@@ -156,25 +131,22 @@ func run{
         cairo_run_output_path = program_input["cairo_run_output_path"]
     %}
 
-    // Fetch matching chain info
-    let (local chain_info) = fetch_chain_info(chain_id);
+    // // Fetch matching chain info
+    let (local chain_info) = fetch_chain_info(11155111);
 
-    run_state_verification{
+    let (local mmr_metas_len) = run_state_verification{
         range_check_ptr=range_check_ptr,
         poseidon_ptr=poseidon_ptr,
         keccak_ptr=keccak_ptr,
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array,
-        peaks_dict=peaks_dict,
         evm_header_dict=evm_header_dict,
         evm_account_dict=evm_account_dict,
         evm_storage_dict=evm_storage_dict,
         evm_block_tx_dict=evm_block_tx_dict,
         evm_block_receipt_dict=evm_block_receipt_dict,
         mmr_metas=mmr_metas,
-        chain_info=chain_info,
-    }(mmr_metas_len=mmr_metas_len);
-
+    }();
     let memorizer_handler = InternalMemorizerReader.init();
     let decoder_handler = InternalValueDecoder.init();
 
@@ -226,7 +198,6 @@ func run{
     %}
 
     // Post Verification Checks: Ensure dict consistency
-    default_dict_finalize(peaks_dict_start, peaks_dict, 0);
     default_dict_finalize(evm_header_dict_start, evm_header_dict, BareMemorizer.DEFAULT_VALUE);
     default_dict_finalize(evm_account_dict_start, evm_account_dict, BareMemorizer.DEFAULT_VALUE);
     default_dict_finalize(evm_storage_dict_start, evm_storage_dict, BareMemorizer.DEFAULT_VALUE);

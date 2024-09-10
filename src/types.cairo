@@ -11,8 +11,6 @@ struct MMRMeta {
     id: felt,
     root: felt,
     size: felt,
-    peaks_len: felt,
-    peaks: felt*,
     chain_id: felt,
 }
 

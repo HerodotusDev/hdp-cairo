@@ -9,6 +9,7 @@ from starkware.cairo.common.alloc import alloc
 from src.memorizers.bare import BareMemorizer
 
 namespace StarknetPackParams {
+    const HEADER_PARAMS_LEN = 2;
     func header(chain_id: felt, block_number: felt) -> (params: felt*, params_len: felt) {
         alloc_locals;
 

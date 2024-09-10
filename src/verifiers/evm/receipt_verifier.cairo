@@ -30,7 +30,7 @@ func verify_block_receipt_proofs{
     alloc_locals;
 
     local n_receipts: felt;
-    %{ ids.n_receipts = len(program_input["proofs"]["transaction_receipts"]) %}
+    %{ ids.n_receipts = len(batch["transaction_receipts"]) %}
 
     verify_block_receipt_proofs_inner(n_receipts, 0);
     return ();
@@ -59,7 +59,7 @@ func verify_block_receipt_proofs_inner{
     local key: Uint256;
     local key_leading_zeros: felt;
     %{
-        transaction = program_input["proofs"]["transaction_receipts"][ids.index]
+        transaction = batch["transaction_receipts"][ids.index]
         ids.key_leading_zeros = count_leading_zero_nibbles_from_hex(transaction["key"])
         (key_low, key_high) = split_128(int(transaction["key"], 16))
         ids.key.low = key_low

@@ -1,6 +1,6 @@
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin
 from starkware.cairo.common.dict_access import DictAccess
-from starkware.cairo.common.dict import dict_read
+from starkware.cairo.common.dict import dict_read, dict_write
 
 from starkware.cairo.common.alloc import alloc
 
@@ -15,59 +15,90 @@ from packages.eth_essentials.lib.block_header import (
 )
 from src.memorizers.evm import EvmHeaderMemorizer
 from src.decoders.evm.header_decoder import HeaderDecoder
+from src.verifiers.evm.mmr_verifier import validate_mmr_meta
+from starkware.cairo.common.default_dict import default_dict_finalize
 
-func verify_headers_inclusion{
+
+
+func verify_mmr_batches{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
-    peaks_dict: DictAccess*,
     evm_header_dict: DictAccess*,
     mmr_metas: MMRMeta*,
-    chain_info: ChainInfo,
-}() {
+    chain_id: felt
+}(mmr_meta_idx: felt) -> (mmr_meta_idx: felt) {
     alloc_locals;
 
-    local n_headers: felt;
-    %{ ids.n_headers = len(program_input["proofs"]["headers"]) %}
-    verify_headers_inclusion_inner(n_headers, 0);
+    local mmr_batches_len: felt;
+    %{ ids.mmr_batches_len = len(batch["mmr_batches"]) %}
+    verify_mmr_batches_inner(mmr_batches_len, 0, mmr_meta_idx);
 
-    return ();
+    return (mmr_meta_idx=mmr_meta_idx + mmr_batches_len);
+}
+
+// Check if the passed MMR meta is valid and if the headers are included in the MMR.
+// Headers included in the MMR are memorized.
+func verify_mmr_batches_inner{
+    range_check_ptr,
+    poseidon_ptr: PoseidonBuiltin*,
+    bitwise_ptr: BitwiseBuiltin*,
+    pow2_array: felt*,
+    evm_header_dict: DictAccess*,
+    mmr_metas: MMRMeta*,
+    chain_id: felt
+}(mmr_batches_len: felt, idx: felt, mmr_meta_idx: felt) {
+    alloc_locals;
+    if (mmr_batches_len == idx) {
+        return ();
+    }
+
+    %{ vm_enter_scope({
+        'mmr_batch': batch["mmr_batches"][ids.idx],
+        '__dict_manager': __dict_manager
+    }) %}
+    let (mmr_meta, peaks_dict, peaks_dict_start) = validate_mmr_meta(chain_id);
+    assert mmr_metas[mmr_meta_idx + idx] = mmr_meta;
+
+    local n_header_proofs: felt;
+    %{ ids.n_header_proofs = len(mmr_batch["headers"]) %}
+    with mmr_meta, peaks_dict {
+        verify_headers_with_mmr_peaks(n_header_proofs);
+    }
+    %{ vm_exit_scope() %}
+
+    // Ensure the peaks dict for this batch is finalized
+    default_dict_finalize(peaks_dict_start, peaks_dict, -1);
+
+    return verify_mmr_batches_inner(mmr_batches_len=mmr_batches_len, idx=idx + 1, mmr_meta_idx=mmr_meta_idx);
 }
 
 // Guard function that verifies the inclusion of headers in the MMR.
 // It ensures:
 // 1. The header hash is included in one of the peaks of the MMR.
 // 2. The peaks dict contains the computed peak
-// Since the computed mmr_root is an output, the verifier can ensure all header are included in the MMR by comparing this with a known root.
-// Params:
-// - header_proofs: The header proofs to verify
-// - rlp_headers: The RLP encoded headers
-// - mmr_inclusion_proofs: The MMR inclusion proofs
-// - header_proofs_len: The length of the header proofs
-// - mmr_size: The size of the MMR
-func verify_headers_inclusion_inner{
+// The peak checks are performed in isolation, so each MMR batch separatly.
+// This ensures we dont create a bag of mmr peas from different chains, which are then used to check the header inclusion for every chain
+func verify_headers_with_mmr_peaks{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
-    peaks_dict: DictAccess*,
     evm_header_dict: DictAccess*,
-    mmr_metas: MMRMeta*,
-    chain_info: ChainInfo,
-}(n_headers: felt, index: felt) {
+    mmr_meta: MMRMeta,
+    peaks_dict: DictAccess*,
+}(idx: felt) {
     alloc_locals;
-    if (index == n_headers) {
+    if (0 == idx) {
         return ();
     }
 
     let (rlp) = alloc();
     local rlp_len: felt;
     local leaf_idx: felt;
-    local mmr_idx: felt;
     %{
-        header = program_input["proofs"]["headers"][ids.index]
-        ids.mmr_idx = 0 # ToDo: load from header input, once available
+        header = mmr_batch["headers"][ids.idx - 1]
         segments.write_arg(ids.rlp, hex_to_int_array(header["rlp"]))
         ids.rlp_len = len(header["rlp"])
         ids.leaf_idx = header["proof"]["leaf_idx"]
@@ -77,16 +108,16 @@ func verify_headers_inclusion_inner{
     let (poseidon_hash) = poseidon_hash_many(n=rlp_len, elements=rlp);
 
     // a header can be the right-most peak
-    if (leaf_idx == mmr_metas[mmr_idx].size) {
+    if (leaf_idx == mmr_meta.size) {
         // instead of running an inclusion proof, we ensure its a known peak
         let (contains_peak) = dict_read{dict_ptr=peaks_dict}(poseidon_hash);
         assert contains_peak = 1;
 
         // add to memorizer
         let block_number = HeaderDecoder.get_block_number(rlp);
-        EvmHeaderMemorizer.add(chain_id=chain_info.id, block_number=block_number, rlp=rlp);
+        EvmHeaderMemorizer.add(chain_id=mmr_meta.id, block_number=block_number, rlp=rlp);
 
-        return verify_headers_inclusion_inner(n_headers=n_headers, index=index + 1);
+        return verify_headers_with_mmr_peaks(idx=idx - 1);
     }
 
     let (mmr_path) = alloc();
@@ -112,7 +143,7 @@ func verify_headers_inclusion_inner{
 
     // add to memorizer
     let block_number = HeaderDecoder.get_block_number(rlp);
-    EvmHeaderMemorizer.add(chain_id=chain_info.id, block_number=block_number, rlp=rlp);
+    EvmHeaderMemorizer.add(chain_id=mmr_meta.chain_id, block_number=block_number, rlp=rlp);
 
-    return verify_headers_inclusion_inner(n_headers=n_headers, index=index + 1);
+    return verify_headers_with_mmr_peaks(idx=idx - 1);
 }
