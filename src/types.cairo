@@ -35,7 +35,6 @@ struct TransactionsInBlockDatalake {
 }
 
 struct ComputationalTask {
-    chain_id: felt,
     hash: Uint256,
     datalake_ptr: felt*,
     datalake_type: felt,

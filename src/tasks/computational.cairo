@@ -33,7 +33,6 @@ namespace Task {
         bitwise_ptr: BitwiseBuiltin*,
         keccak_ptr: KeccakBuiltin*,
         tasks: ComputationalTask*,
-        chain_info: ChainInfo,
         pow2_array: felt*,
     }(n_tasks: felt, index: felt) {
         alloc_locals;
@@ -70,7 +69,6 @@ namespace Task {
             let (local task) = extract_params_and_construct_task{
                 range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
             }(
-                chain_id=chain_info.id,
                 input=tasks_input,
                 input_bytes_len=tasks_input_bytes_len,
                 datalake_hash=datalake_hash,
@@ -100,7 +98,6 @@ namespace Task {
         evm_block_receipt_dict: DictAccess*,
         pow2_array: felt*,
         tasks: ComputationalTask*,
-        chain_info: ChainInfo,
         memorizer_handler: felt***,
         decoder_handler: felt***,
     }(results: Uint256*, tasks_len: felt, index: felt) {
@@ -202,7 +199,6 @@ namespace Task {
 func extract_params_and_construct_task{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*
 }(
-    chain_id: felt,
     input: felt*,
     input_bytes_len: felt,
     datalake_hash: Uint256,
@@ -243,7 +239,6 @@ func extract_params_and_construct_task{
 
         return (
             task=ComputationalTask(
-                chain_id=chain_id,
                 hash=hash,
                 datalake_ptr=datalake_ptr,
                 datalake_type=datalake_type,
@@ -255,7 +250,6 @@ func extract_params_and_construct_task{
     }
     return (
         task=ComputationalTask(
-            chain_id=chain_id,
             hash=hash,
             datalake_ptr=datalake_ptr,
             datalake_type=datalake_type,

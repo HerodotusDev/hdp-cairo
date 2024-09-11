@@ -27,6 +27,7 @@ func run_state_verification{
 }() -> (mmr_metas_len: felt) {
     alloc_locals;
     local batch_len: felt;
+    %{ ids.batch_len = len(program_input["proofs"]) %}
 
     let (mmr_meta_idx) = run_state_verification_inner(batch_len, 0);
     return (mmr_metas_len=mmr_meta_idx);

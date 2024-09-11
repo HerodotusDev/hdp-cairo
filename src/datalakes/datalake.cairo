@@ -29,6 +29,7 @@ from src.tasks.fetch_trait import (
     FetchTraitBlockSampledDatalake,
     FetchTraitTransactionDatalake,
 )
+from src.chain_info import fetch_chain_info, chain_id_to_layout
 
 namespace DatalakeType {
     const BLOCK_SAMPLED = 0;
@@ -72,20 +73,18 @@ namespace Datalake {
         evm_block_receipt_dict: DictAccess*,
         pow2_array: felt*,
         fetch_trait: FetchTrait,
-        chain_info: ChainInfo,
         memorizer_handler: felt***,
         decoder_handler: felt***,
     }(task: ComputationalTask) -> (res: Uint256*, res_len: felt) {
-        // Fetch the memorizer layout.
-        let layout = chain_info.layout;
 
         if (task.datalake_type == DatalakeType.BLOCK_SAMPLED) {
             let block_sampled_datalake: BlockSampledDataLake = [
                 cast(task.datalake_ptr, BlockSampledDataLake*)
             ];
+            let layout = chain_id_to_layout(block_sampled_datalake.chain_id);
             with layout {
                 let (res, res_len) = fetch_block_sampled_data_points(
-                    task.chain_id, block_sampled_datalake
+                    block_sampled_datalake.chain_id, block_sampled_datalake
                 );
             }
 
@@ -96,9 +95,12 @@ namespace Datalake {
             let tx_in_block_datalake: TransactionsInBlockDatalake = [
                 cast(task.datalake_ptr, TransactionsInBlockDatalake*)
             ];
-            let (res, res_len) = fetch_txs_in_block_data_points(
-                task.chain_id, tx_in_block_datalake
-            );
+            let (chain_info) = fetch_chain_info(tx_in_block_datalake.chain_id);
+            with chain_info {
+                let (res, res_len) = fetch_txs_in_block_data_points(
+                    chain_info.id, tx_in_block_datalake
+                );
+            }
 
             return (res=res, res_len=res_len);
         }

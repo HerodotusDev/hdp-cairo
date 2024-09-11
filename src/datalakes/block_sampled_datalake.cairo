@@ -175,7 +175,7 @@ func fetch_data_points{
     fetch_trait: FetchTrait,
     memorizer_handler: felt***,
     decoder_handler: felt***,
-    layout: felt,
+    layout: felt
 }(chain_id: felt, datalake: BlockSampledDataLake) -> (Uint256*, felt) {
     alloc_locals;
     let (data_points: Uint256*) = alloc();

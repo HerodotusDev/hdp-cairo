@@ -131,9 +131,6 @@ func run{
         cairo_run_output_path = program_input["cairo_run_output_path"]
     %}
 
-    // // Fetch matching chain info
-    let (local chain_info) = fetch_chain_info(11155111);
-
     let (local mmr_metas_len) = run_state_verification{
         range_check_ptr=range_check_ptr,
         poseidon_ptr=poseidon_ptr,
@@ -165,7 +162,6 @@ func run{
         evm_block_receipt_dict=evm_block_receipt_dict,
         pow2_array=pow2_array,
         tasks=tasks,
-        chain_info=chain_info,
         memorizer_handler=memorizer_handler,
         decoder_handler=decoder_handler,
     }(hdp_version=hdp_version, tasks_len=tasks_len);
@@ -232,7 +228,6 @@ func compute_tasks{
     evm_block_receipt_dict: DictAccess*,
     pow2_array: felt*,
     tasks: ComputationalTask*,
-    chain_info: ChainInfo,
     memorizer_handler: felt***,
     decoder_handler: felt***,
 }(hdp_version: felt, tasks_len: felt) -> (
