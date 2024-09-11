@@ -32,28 +32,37 @@ namespace StarknetHeaderMemorizer {
         return BareMemorizer.init();
     }
 
-    func add{header_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
-        chain_id: felt, block_number: felt, rlp: felt*
+    func add{starknet_header_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
+        chain_id: felt, block_number: felt, fields: felt*
     ) {
         let (params, params_len) = StarknetPackParams.header(
             chain_id=chain_id, block_number=block_number
         );
 
         let key = hash_memorizer_key(params, params_len);
-        BareMemorizer.add{dict_ptr=header_dict}(key, rlp);
+        BareMemorizer.add{dict_ptr=starknet_header_dict}(key, fields);
 
         return ();
     }
 
-    func get{header_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
+    func get{starknet_header_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> (
+        fields: felt*
+    ) {
+        let key = hash_memorizer_key(params, StarknetPackParams.HEADER_PARAMS_LEN);
+        let (fields) = BareMemorizer.get{dict_ptr=starknet_header_dict}(key);
+
+        return (fields=fields);
+    }
+
+    func get2{starknet_header_dict: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
         chain_id: felt, block_number: felt
-    ) -> (rlp: felt*) {
+    ) -> (fields: felt*) {
         let (params, params_len) = StarknetPackParams.header(
             chain_id=chain_id, block_number=block_number
         );
 
         let key = hash_memorizer_key(params, params_len);
-        let (rlp) = BareMemorizer.get{dict_ptr=header_dict}(key);
-        return (rlp=rlp);
+        let (fields) = BareMemorizer.get{dict_ptr=starknet_header_dict}(key);
+        return (fields=fields);
     }
 }

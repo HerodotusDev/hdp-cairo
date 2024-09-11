@@ -28,6 +28,7 @@ from src.memorizers.evm import (
     EvmBlockTxMemorizer,
     EvmBlockReceiptMemorizer,
 )
+from src.memorizers.starknet import StarknetHeaderMemorizer
 from src.memorizers.bare import BareMemorizer
 from src.memorizer_access import InternalMemorizerReader, InternalValueDecoder, DictId
 from src.chain_info import Layout
@@ -90,6 +91,7 @@ func run{
     let (evm_storage_dict, evm_storage_dict_start) = EvmStorageMemorizer.init();
     let (evm_block_tx_dict, evm_block_tx_dict_start) = EvmBlockTxMemorizer.init();
     let (evm_block_receipt_dict, evm_block_receipt_dict_start) = EvmBlockReceiptMemorizer.init();
+    let (starknet_header_dict, starknet_header_dict_start) = StarknetHeaderMemorizer.init();
 
     // Task Params
     let (tasks: ComputationalTask*) = alloc();
@@ -142,6 +144,7 @@ func run{
         evm_storage_dict=evm_storage_dict,
         evm_block_tx_dict=evm_block_tx_dict,
         evm_block_receipt_dict=evm_block_receipt_dict,
+        starknet_header_dict=starknet_header_dict,
         mmr_metas=mmr_metas,
     }();
     let memorizer_handler = InternalMemorizerReader.init();
@@ -202,6 +205,7 @@ func run{
         evm_block_receipt_dict_start, evm_block_receipt_dict, BareMemorizer.DEFAULT_VALUE
     );
 
+    %{ print("mmr_metas_len: ", ids.mmr_metas_len) %}
     write_output_ptr{output_ptr=output_ptr}(
         mmr_metas=mmr_metas,
         mmr_metas_len=mmr_metas_len,

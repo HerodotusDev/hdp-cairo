@@ -3,17 +3,12 @@ from src.verifiers.evm.storage_item_verifier import verify_storage_items
 from src.verifiers.evm.header_verifier import verify_mmr_batches
 from src.verifiers.evm.block_tx_verifier import verify_block_tx_proofs
 from src.verifiers.evm.receipt_verifier import verify_block_receipt_proofs
-from packages.eth_essentials.lib.utils import write_felt_array_to_dict_keys
-from starkware.cairo.common.dict import dict_write, dict_read
 
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.cairo_builtins import (
-    HashBuiltin,
     PoseidonBuiltin,
     BitwiseBuiltin,
     KeccakBuiltin,
-    SignatureBuiltin,
-    EcOpBuiltin,
 )
 
 from src.types import MMRMeta, ChainInfo
@@ -39,6 +34,7 @@ func run_state_verification{
     with chain_id {
         let (mmr_meta_idx) = verify_mmr_batches(mmr_meta_idx);
     }
+    %{ print("evm: mmr_meta_idx: ", ids.mmr_meta_idx) %}
 
     // Step 2: Verify the accounts
     verify_accounts();

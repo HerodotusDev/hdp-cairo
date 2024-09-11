@@ -7,16 +7,15 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.default_dict import default_dict_finalize
 from packages.eth_essentials.lib.mmr import hash_subtree_path
 from src.types import MMRMeta, ChainInfo
-from src.memorizers.evm import EvmHeaderMemorizer
+from src.memorizers.starknet import StarknetHeaderMemorizer
 from src.decoders.evm.header_decoder import HeaderDecoder
 from src.verifiers.mmr_verifier import validate_mmr_meta
 
 func verify_mmr_batches{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
-    bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
-    evm_header_dict: DictAccess*,
+    starknet_header_dict: DictAccess*,
     mmr_metas: MMRMeta*,
     chain_id: felt
 }(mmr_meta_idx: felt) -> (mmr_meta_idx: felt) {
@@ -34,10 +33,9 @@ func verify_mmr_batches{
 func verify_mmr_batches_inner{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
-    bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
-    evm_header_dict: DictAccess*,
     mmr_metas: MMRMeta*,
+    starknet_header_dict: DictAccess*,
     chain_id: felt
 }(mmr_batches_len: felt, idx: felt, mmr_meta_idx: felt) {
     alloc_locals;
@@ -74,10 +72,9 @@ func verify_mmr_batches_inner{
 func verify_headers_with_mmr_peaks{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
-    bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
-    evm_header_dict: DictAccess*,
     mmr_meta: MMRMeta,
+    starknet_header_dict: DictAccess*,
     peaks_dict: DictAccess*,
 }(idx: felt) {
     alloc_locals;
@@ -85,28 +82,28 @@ func verify_headers_with_mmr_peaks{
         return ();
     }
 
-    let (rlp) = alloc();
-    local rlp_len: felt;
+    let (fields) = alloc();
+    local fields_len: felt;
     local leaf_idx: felt;
     %{
         header = mmr_batch["headers"][ids.idx - 1]
-        segments.write_arg(ids.rlp, hex_to_int_array(header["rlp"]))
-        ids.rlp_len = len(header["rlp"])
+        segments.write_arg(ids.fields, hex_to_int_array(header["fields"]))
+        ids.fields_len = len(header["fields"])
         ids.leaf_idx = header["proof"]["leaf_idx"]
     %}
 
     // compute the hash of the header
-    let (poseidon_hash) = poseidon_hash_many(n=rlp_len, elements=rlp);
+    let (header_hash) = poseidon_hash_many(n=fields_len, elements=fields);
 
     // a header can be the right-most peak
     if (leaf_idx == mmr_meta.size) {
         // instead of running an inclusion proof, we ensure its a known peak
-        let (contains_peak) = dict_read{dict_ptr=peaks_dict}(poseidon_hash);
+        let (contains_peak) = dict_read{dict_ptr=peaks_dict}(header_hash);
         assert contains_peak = 1;
 
         // add to memorizer
-        let block_number = HeaderDecoder.get_block_number(rlp);
-        EvmHeaderMemorizer.add(chain_id=mmr_meta.id, block_number=block_number, rlp=rlp);
+        let block_number = [fields + 1];
+        StarknetHeaderMemorizer.add(chain_id=mmr_meta.id, block_number=block_number, fields=fields);
 
         return verify_headers_with_mmr_peaks(idx=idx - 1);
     }
@@ -121,7 +118,7 @@ func verify_headers_with_mmr_peaks{
 
     // compute the peak of the header
     let (computed_peak) = hash_subtree_path(
-        element=poseidon_hash,
+        element=header_hash,
         height=0,
         position=leaf_idx,
         inclusion_proof=mmr_path,
@@ -132,9 +129,8 @@ func verify_headers_with_mmr_peaks{
     let (contains_peak) = dict_read{dict_ptr=peaks_dict}(computed_peak);
     assert contains_peak = 1;
 
-    // add to memorizer
-    let block_number = HeaderDecoder.get_block_number(rlp);
-    EvmHeaderMemorizer.add(chain_id=mmr_meta.chain_id, block_number=block_number, rlp=rlp);
+    let block_number = [fields + 1];
+    StarknetHeaderMemorizer.add(chain_id=mmr_meta.id, block_number=block_number, fields=fields);
 
     return verify_headers_with_mmr_peaks(idx=idx - 1);
 }
