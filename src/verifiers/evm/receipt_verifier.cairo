@@ -59,6 +59,8 @@ func verify_block_receipt_proofs_inner{
     local key: Uint256;
     local key_leading_zeros: felt;
     %{
+        from tools.py.utils import split_128, count_leading_zero_nibbles_from_hex, hex_to_int_array, nested_hex_to_int_array
+
         transaction = batch["transaction_receipts"][ids.index]
         ids.key_leading_zeros = count_leading_zero_nibbles_from_hex(transaction["key"])
         (key_low, key_high) = split_128(int(transaction["key"], 16))

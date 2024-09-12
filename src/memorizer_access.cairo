@@ -18,6 +18,7 @@ from src.decoders.evm.account_decoder import AccountDecoder as EvmAccountDecoder
 from src.decoders.evm.storage_slot_decoder import StorageSlotDecoder as EvmStorageSlotDecoder
 from src.decoders.evm.transaction_decoder import TransactionDecoder as EvmTransactionDecoder
 from src.decoders.evm.receipt_decoder import ReceiptDecoder as EvmReceiptDecoder
+from src.decoders.starknet.header_decoder import StarknetHeaderDecoder
 from src.chain_info import Layout
 
 namespace DictId {
@@ -96,8 +97,13 @@ namespace InternalValueDecoder {
         assert evm_handlers[DictId.BLOCK_TX] = tx_label;
         assert evm_handlers[DictId.BLOCK_RECEIPT] = receipt_label;
 
+        let (sn_handlers: felt**) = alloc();
+        let (header_label) = get_label_location(StarknetHeaderDecoder.get_field_uint256);
+        assert sn_handlers[DictId.HEADER] = header_label;
+
         let (handlers: felt***) = alloc();
         assert handlers[Layout.EVM] = evm_handlers;
+        assert handlers[Layout.STARKNET] = sn_handlers;
 
         return handlers;
     }
@@ -120,19 +126,17 @@ namespace InternalValueDecoder {
         }
 
         let func_ptr = decoder_handler[layout][dict_id];
-        // Invoke the decoder function
-        let (invoke_params, param_len) = pack_decode_params(dict_id, encoded_data, field);
-        invoke(func_ptr, param_len, invoke_params);
+        if(layout == Layout.EVM) {
+            let (invoke_params, param_len) = pack_evm_decode_params(dict_id, encoded_data, field);
+            invoke(func_ptr, param_len, invoke_params);
 
-        // Retrieve the results from [ap]
-        let res_low = [ap - 1];
-        let res_high = [ap - 2];
-        let pow2_array = cast([ap - 3], felt*);
-        let bitwise_ptr = cast([ap - 4], BitwiseBuiltin*);
-        let range_check_ptr = [ap - 5];
+            // Retrieve the results from [ap]
+            let res_high = [ap - 1];
+            let res_low = [ap - 2];
+            let pow2_array = cast([ap - 3], felt*);
+            let bitwise_ptr = cast([ap - 4], BitwiseBuiltin*);
+            let range_check_ptr = [ap - 5];
 
-        // Process results and write to output_ptr
-        if (layout == Layout.EVM) {
             if (to_be == 1) {
                 let (result) = uint256_reverse_endian(Uint256(low=res_low, high=res_high));
                 assert output_ptr[0] = result.high;
@@ -146,12 +150,25 @@ namespace InternalValueDecoder {
                 return OutputType.UINT256;
             }
         } else {
-            // ToDo: We need to decide how to handle starknet words internally.
-            // This is a larger discussion, as it has many implications.
-            with_attr error_message("STARKNET DECODER NOT IMPLEMENTED") {
-                assert 1 = 0;
+            let (invoke_params, param_len) = pack_sn_decode_params(encoded_data, field);
+            invoke(func_ptr, param_len, invoke_params);
+
+            let res_high = [ap - 1];
+            let res_low = [ap - 2];
+            let range_check_ptr = [ap - 3];
+
+            if (to_be == 1) {
+                assert output_ptr[0] = res_high;
+                assert output_ptr[1] = res_low;
+
+                return OutputType.UINT256;
+            } else {
+                let (result) = uint256_reverse_endian(Uint256(low=res_low, high=res_high));
+                assert output_ptr[0] = result.high;
+                assert output_ptr[1] = result.low;
+
+                return OutputType.UINT256;
             }
-            return OutputType.UINT256;
         }
     }
 
@@ -168,19 +185,17 @@ namespace InternalValueDecoder {
             }
         }
 
-        // Invoke the decoder function
-        let (invoke_params, param_len) = pack_decode_params(dict_id, encoded_data, field);
-        invoke(func_ptr, param_len, invoke_params);
+        if(layout == Layout.EVM) {
+            let (invoke_params, param_len) = pack_evm_decode_params(dict_id, encoded_data, field);
+            invoke(func_ptr, param_len, invoke_params);
 
-        // Retrieve the results from [ap]
-        let res_high = [ap - 1];
-        let res_low = [ap - 2];
-        let pow2_array = cast([ap - 3], felt*);
-        let bitwise_ptr = cast([ap - 4], BitwiseBuiltin*);
-        let range_check_ptr = [ap - 5];
+            // Retrieve the results from [ap]
+            let res_high = [ap - 1];
+            let res_low = [ap - 2];
+            let pow2_array = cast([ap - 3], felt*);
+            let bitwise_ptr = cast([ap - 4], BitwiseBuiltin*);
+            let range_check_ptr = [ap - 5];
 
-        // Process results and return
-        if (layout == Layout.EVM) {
             let result = Uint256(low=res_low, high=res_high);
             if (to_be == 1) {
                 let (be_result) = uint256_reverse_endian(num=result);
@@ -189,11 +204,23 @@ namespace InternalValueDecoder {
                 return result;
             }
         } else {
-            with_attr error_message("STARKNET DECODER NOT IMPLEMENTED") {
-                assert 1 = 0;
+            let (invoke_params, param_len) = pack_sn_decode_params(encoded_data, field);
+            invoke(func_ptr, param_len, invoke_params);
+
+            let res_high = [ap - 1];
+            let res_low = [ap - 2];
+            let range_check_ptr = [ap - 3];
+
+            let result = Uint256(low=res_low, high=res_high);
+
+            if (to_be == 1) {
+                return result;
+            } else {
+                let (le_result) = uint256_reverse_endian(result);
+                
+                return le_result;
             }
         }
-        return (Uint256(low=0, high=0));
     }
 
     // Since we need to pass the block height, use dedicated function
@@ -241,8 +268,8 @@ namespace InternalValueDecoder {
         }
     }
 
-    // Packs the decode params, depending on the dict_id.
-    func pack_decode_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    // Packs the evm decode params, depending on the dict_id.
+    func pack_evm_decode_params{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
         dict_id: felt, encoded_data: felt*, field: felt
     ) -> (invoke_params: felt*, param_len: felt) {
         if (dict_id == DictId.BLOCK_TX) {
@@ -266,6 +293,15 @@ namespace InternalValueDecoder {
             new (range_check_ptr, bitwise_ptr, pow2_array, encoded_data, field), felt*
         );
         return (invoke_params=invoke_params, param_len=5);
+    }
+
+    func pack_sn_decode_params{range_check_ptr}(
+        fields: felt*, field: felt
+    ) -> (invoke_params: felt*, param_len: felt) {
+        tempvar invoke_params = cast(
+            new (range_check_ptr, fields, field), felt*
+        );
+        return (invoke_params=invoke_params, param_len=3);
     }
 }
 

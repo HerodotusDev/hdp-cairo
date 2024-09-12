@@ -58,6 +58,8 @@ func verify_storage_items_inner{
     local key: Uint256;
     local key_leading_zeros: felt;
     %{
+        from tools.py.utils import split_128, count_leading_zero_nibbles_from_hex, hex_to_int_array, nested_hex_to_int_array
+
         storage_item = batch["storages"][ids.index]
         ids.n_proofs = len(storage_item["proofs"])
         segments.write_arg(ids.address, hex_to_int_array(storage_item["address"]))

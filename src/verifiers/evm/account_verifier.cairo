@@ -50,6 +50,7 @@ func verify_accounts_inner{
     local key: Uint256;
     local key_leading_zeros: felt;
     %{
+        from tools.py.utils import split_128, count_leading_zero_nibbles_from_hex, hex_to_int_array, nested_hex_to_int_array
         account = batch["accounts"][ids.index]
         ids.key_leading_zeros = count_leading_zero_nibbles_from_hex(account["account_key"])
         segments.write_arg(ids.address, hex_to_int_array(account["address"]))

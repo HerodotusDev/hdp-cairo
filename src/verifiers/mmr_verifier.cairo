@@ -33,13 +33,13 @@ func validate_mmr_meta{
             return [int(x, 16) for x in hex_array]
 
         # Load data from inputs
-        memory[ids.mmr_meta._reference_value] = mmr_batch["id"]
-        memory[ids.mmr_meta._reference_value + 1] = int(mmr_batch["root"], 16)
-        memory[ids.mmr_meta._reference_value + 2] = mmr_batch["size"]
+        memory[ids.mmr_meta._reference_value] = mmr_batch["mmr_meta"]["id"]
+        memory[ids.mmr_meta._reference_value + 1] = int(mmr_batch["mmr_meta"]["root"], 16)
+        memory[ids.mmr_meta._reference_value + 2] = mmr_batch["mmr_meta"]["size"]
         memory[ids.mmr_meta._reference_value + 3] = ids.chain_id
 
-        ids.peaks_len = len(mmr_batch["peaks"])
-        segments.write_arg(ids.peaks, hex_to_int_array(mmr_batch["peaks"]))
+        ids.peaks_len = len(mmr_batch["mmr_meta"]["peaks"])
+        segments.write_arg(ids.peaks, hex_to_int_array(mmr_batch["mmr_meta"]["peaks"]))
     %}
 
     assert_mmr_size_is_valid(mmr_meta.size);

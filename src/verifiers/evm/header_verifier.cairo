@@ -89,6 +89,8 @@ func verify_headers_with_mmr_peaks{
     local rlp_len: felt;
     local leaf_idx: felt;
     %{
+        from tools.py.utils import hex_to_int_array
+
         header = mmr_batch["headers"][ids.idx - 1]
         segments.write_arg(ids.rlp, hex_to_int_array(header["rlp"]))
         ids.rlp_len = len(header["rlp"])

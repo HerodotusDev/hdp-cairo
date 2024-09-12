@@ -26,9 +26,14 @@ def from_uint256(a):
 def uint256_reverse_endian(x: int):
     return int.from_bytes(x.to_bytes(32, "big"), "little")
 
+def hex_to_int(x):
+            return int(x, 16)
 
 def hex_to_int_array(hex_array):
     return [int(x, 16) for x in hex_array]
+
+def nested_hex_to_int_array(hex_array):
+    return [[int(x, 16) for x in y] for y in hex_array]
 
 
 def reverse_endian(x: int):
