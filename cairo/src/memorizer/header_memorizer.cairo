@@ -1,6 +1,6 @@
-use hdp_cairo::Memorizer;
+use hdp_cairo::{Memorizer, utils::chain_id::ChainId};
 use starknet::syscalls::call_contract_syscall;
-use starknet::{SyscallResult, SyscallResultTrait};
+use starknet::SyscallResultTrait;
 
 const HEADER_MEMORIZER: felt252 = 0;
 
@@ -27,7 +27,7 @@ const HEADER_MEMORIZER_GET_PARENT_BEACON_BLOCK_ROOT: felt252 = 19;
 
 #[derive(Serde, Drop)]
 pub struct HeaderKey {
-    pub chain_id: felt252,
+    pub chain_id: ChainId,
     pub block_number: felt252,
 }
 
@@ -37,7 +37,9 @@ pub impl HeaderMemorizerImpl of HeaderMemorizerTrait {
         let value = call_contract_syscall(
             HEADER_MEMORIZER.try_into().unwrap(),
             HEADER_MEMORIZER_GET_PARENT,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+            array![
+                *self.dict.segment_index, *self.dict.offset, key.chain_id.into(), key.block_number,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -47,7 +49,9 @@ pub impl HeaderMemorizerImpl of HeaderMemorizerTrait {
         let value = call_contract_syscall(
             HEADER_MEMORIZER.try_into().unwrap(),
             HEADER_MEMORIZER_GET_UNCLE,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+            array![
+                *self.dict.segment_index, *self.dict.offset, key.chain_id.into(), key.block_number,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -57,7 +61,9 @@ pub impl HeaderMemorizerImpl of HeaderMemorizerTrait {
         let value = call_contract_syscall(
             HEADER_MEMORIZER.try_into().unwrap(),
             HEADER_MEMORIZER_GET_COINBASE,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+            array![
+                *self.dict.segment_index, *self.dict.offset, key.chain_id.into(), key.block_number,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -67,7 +73,9 @@ pub impl HeaderMemorizerImpl of HeaderMemorizerTrait {
         let value = call_contract_syscall(
             HEADER_MEMORIZER.try_into().unwrap(),
             HEADER_MEMORIZER_GET_STATE_ROOT,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+            array![
+                *self.dict.segment_index, *self.dict.offset, key.chain_id.into(), key.block_number,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -77,7 +85,9 @@ pub impl HeaderMemorizerImpl of HeaderMemorizerTrait {
         let value = call_contract_syscall(
             HEADER_MEMORIZER.try_into().unwrap(),
             HEADER_MEMORIZER_GET_TRANSACTION_ROOT,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+            array![
+                *self.dict.segment_index, *self.dict.offset, key.chain_id.into(), key.block_number,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -87,7 +97,9 @@ pub impl HeaderMemorizerImpl of HeaderMemorizerTrait {
         let value = call_contract_syscall(
             HEADER_MEMORIZER.try_into().unwrap(),
             HEADER_MEMORIZER_GET_RECEIPT_ROOT,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+            array![
+                *self.dict.segment_index, *self.dict.offset, key.chain_id.into(), key.block_number,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -97,7 +109,9 @@ pub impl HeaderMemorizerImpl of HeaderMemorizerTrait {
         let value = call_contract_syscall(
             HEADER_MEMORIZER.try_into().unwrap(),
             HEADER_MEMORIZER_GET_DIFFICULTY,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+            array![
+                *self.dict.segment_index, *self.dict.offset, key.chain_id.into(), key.block_number,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -107,7 +121,9 @@ pub impl HeaderMemorizerImpl of HeaderMemorizerTrait {
         let value = call_contract_syscall(
             HEADER_MEMORIZER.try_into().unwrap(),
             HEADER_MEMORIZER_GET_NUMBER,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+            array![
+                *self.dict.segment_index, *self.dict.offset, key.chain_id.into(), key.block_number,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -117,7 +133,9 @@ pub impl HeaderMemorizerImpl of HeaderMemorizerTrait {
         let value = call_contract_syscall(
             HEADER_MEMORIZER.try_into().unwrap(),
             HEADER_MEMORIZER_GET_GAS_LIMIT,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+            array![
+                *self.dict.segment_index, *self.dict.offset, key.chain_id.into(), key.block_number,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -127,7 +145,9 @@ pub impl HeaderMemorizerImpl of HeaderMemorizerTrait {
         let value = call_contract_syscall(
             HEADER_MEMORIZER.try_into().unwrap(),
             HEADER_MEMORIZER_GET_GAS_USED,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+            array![
+                *self.dict.segment_index, *self.dict.offset, key.chain_id.into(), key.block_number,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -137,7 +157,9 @@ pub impl HeaderMemorizerImpl of HeaderMemorizerTrait {
         let value = call_contract_syscall(
             HEADER_MEMORIZER.try_into().unwrap(),
             HEADER_MEMORIZER_GET_MIX_HASH,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+            array![
+                *self.dict.segment_index, *self.dict.offset, key.chain_id.into(), key.block_number,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -147,7 +169,9 @@ pub impl HeaderMemorizerImpl of HeaderMemorizerTrait {
         let value = call_contract_syscall(
             HEADER_MEMORIZER.try_into().unwrap(),
             HEADER_MEMORIZER_GET_NONCE,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+            array![
+                *self.dict.segment_index, *self.dict.offset, key.chain_id.into(), key.block_number,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -157,7 +181,9 @@ pub impl HeaderMemorizerImpl of HeaderMemorizerTrait {
         let value = call_contract_syscall(
             HEADER_MEMORIZER.try_into().unwrap(),
             HEADER_MEMORIZER_GET_BASE_FEE_PER_GAS,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+            array![
+                *self.dict.segment_index, *self.dict.offset, key.chain_id.into(), key.block_number,
+            ]
                 .span()
         )
             .unwrap_syscall();

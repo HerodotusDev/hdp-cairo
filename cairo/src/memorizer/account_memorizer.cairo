@@ -1,6 +1,6 @@
-use hdp_cairo::Memorizer;
+use hdp_cairo::{Memorizer, utils::chain_id::ChainId};
 use starknet::syscalls::call_contract_syscall;
-use starknet::{SyscallResult, SyscallResultTrait};
+use starknet::SyscallResultTrait;
 
 const ACCOUNT_MEMORIZER: felt252 = 1;
 
@@ -11,7 +11,7 @@ const ACCOUNT_MEMORIZER_GET_CODE_HASH: felt252 = 3;
 
 #[derive(Serde, Drop)]
 pub struct AccountKey {
-    pub chain_id: felt252,
+    pub chain_id: ChainId,
     pub block_number: felt252,
     pub address: felt252,
 }
@@ -25,7 +25,7 @@ pub impl AccountMemorizerImpl of AccountMemorizerTrait {
             array![
                 *self.dict.segment_index,
                 *self.dict.offset,
-                key.chain_id,
+                key.chain_id.into(),
                 key.block_number,
                 key.address,
             ]
@@ -41,7 +41,7 @@ pub impl AccountMemorizerImpl of AccountMemorizerTrait {
             array![
                 *self.dict.segment_index,
                 *self.dict.offset,
-                key.chain_id,
+                key.chain_id.into(),
                 key.block_number,
                 key.address,
             ]
@@ -57,7 +57,7 @@ pub impl AccountMemorizerImpl of AccountMemorizerTrait {
             array![
                 *self.dict.segment_index,
                 *self.dict.offset,
-                key.chain_id,
+                key.chain_id.into(),
                 key.block_number,
                 key.address,
             ]
@@ -73,7 +73,7 @@ pub impl AccountMemorizerImpl of AccountMemorizerTrait {
             array![
                 *self.dict.segment_index,
                 *self.dict.offset,
-                key.chain_id,
+                key.chain_id.into(),
                 key.block_number,
                 key.address,
             ]

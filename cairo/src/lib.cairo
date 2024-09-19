@@ -1,3 +1,4 @@
+pub mod utils;
 pub mod memorizer;
 
 #[derive(Serde, Drop)]
