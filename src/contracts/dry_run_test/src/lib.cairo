@@ -1,8 +1,6 @@
 #[starknet::contract]
 mod contract {
     use hdp_cairo::{HDP, memorizer::account_memorizer::{AccountKey, AccountMemorizerImpl}};
-    use starknet::syscalls::call_contract_syscall;
-    use starknet::{ContractAddress, SyscallResult, SyscallResultTrait};
 
     #[storage]
     struct Storage {}
@@ -22,7 +20,11 @@ mod contract {
                 sum += hdp
                     .account_memorizer
                     .get_balance(
-                        AccountKey { chain_id: 11155111, block_number: i.into(), address: address }
+                        AccountKey {
+                            chain_id: 'Ethereum_Sepolia'.try_into().unwrap(),
+                            block_number: i.into(),
+                            address: address
+                        }
                     )
             } else {
                 break;

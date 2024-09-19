@@ -1,6 +1,6 @@
-use hdp_cairo::Memorizer;
+use hdp_cairo::{Memorizer, utils::chain_id::ChainId};
 use starknet::syscalls::call_contract_syscall;
-use starknet::{SyscallResult, SyscallResultTrait};
+use starknet::SyscallResultTrait;
 
 const STORAGE_MEMORIZER: felt252 = 2;
 
@@ -8,7 +8,7 @@ const STORAGE_MEMORIZER_GET_SLOT: felt252 = 0;
 
 #[derive(Serde, Drop)]
 pub struct StorageKey {
-    pub chain_id: felt252,
+    pub chain_id: ChainId,
     pub block_number: felt252,
     pub address: felt252,
     pub storage_slot: u256,
@@ -23,7 +23,7 @@ pub impl StorageMemorizerImpl of StorageMemorizerTrait {
             array![
                 *self.dict.segment_index,
                 *self.dict.offset,
-                key.chain_id,
+                key.chain_id.into(),
                 key.block_number,
                 key.address,
                 key.storage_slot.high.into(),
