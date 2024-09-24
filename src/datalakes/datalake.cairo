@@ -29,6 +29,7 @@ from src.tasks.fetch_trait import (
     FetchTraitBlockSampledDatalake,
     FetchTraitTransactionDatalake,
 )
+from src.chain_info import fetch_chain_info, chain_id_to_layout
 
 namespace DatalakeType {
     const BLOCK_SAMPLED = 0;
@@ -65,22 +66,27 @@ namespace Datalake {
         range_check_ptr,
         poseidon_ptr: PoseidonBuiltin*,
         bitwise_ptr: BitwiseBuiltin*,
-        account_dict: DictAccess*,
-        storage_dict: DictAccess*,
-        header_dict: DictAccess*,
-        block_tx_dict: DictAccess*,
-        block_receipt_dict: DictAccess*,
+        evm_account_dict: DictAccess*,
+        evm_storage_dict: DictAccess*,
+        evm_header_dict: DictAccess*,
+        evm_block_tx_dict: DictAccess*,
+        evm_block_receipt_dict: DictAccess*,
         pow2_array: felt*,
         fetch_trait: FetchTrait,
-        chain_info: ChainInfo,
+        memorizer_handler: felt***,
+        decoder_handler: felt***,
     }(task: ComputationalTask) -> (res: Uint256*, res_len: felt) {
+
         if (task.datalake_type == DatalakeType.BLOCK_SAMPLED) {
             let block_sampled_datalake: BlockSampledDataLake = [
                 cast(task.datalake_ptr, BlockSampledDataLake*)
             ];
-            let (res, res_len) = fetch_block_sampled_data_points(
-                task.chain_id, block_sampled_datalake
-            );
+            let layout = chain_id_to_layout(block_sampled_datalake.chain_id);
+            with layout {
+                let (res, res_len) = fetch_block_sampled_data_points(
+                    block_sampled_datalake.chain_id, block_sampled_datalake
+                );
+            }
 
             return (res=res, res_len=res_len);
         }
@@ -89,9 +95,12 @@ namespace Datalake {
             let tx_in_block_datalake: TransactionsInBlockDatalake = [
                 cast(task.datalake_ptr, TransactionsInBlockDatalake*)
             ];
-            let (res, res_len) = fetch_txs_in_block_data_points(
-                task.chain_id, tx_in_block_datalake
-            );
+            let (chain_info) = fetch_chain_info(tx_in_block_datalake.chain_id);
+            with chain_info {
+                let (res, res_len) = fetch_txs_in_block_data_points(
+                    chain_info.id, tx_in_block_datalake
+                );
+            }
 
             return (res=res, res_len=res_len);
         }

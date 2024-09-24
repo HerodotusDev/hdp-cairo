@@ -40,10 +40,12 @@ func run_contract_bootloader{
     ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    header_dict: DictAccess*,
-    account_dict: DictAccess*,
-    storage_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
+    evm_storage_dict: DictAccess*,
     pow2_array: felt*,
+    memorizer_handler: felt***,
+    decoder_handler: felt***,
 }(compiled_class: CompiledClass*, calldata_size: felt, calldata: felt*, dry_run: felt) -> (
     retdata_size: felt, retdata: felt*
 ) {

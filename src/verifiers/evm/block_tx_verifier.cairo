@@ -1,8 +1,9 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.builtin_keccak.keccak import keccak
-from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256
+
+from starkware.cairo.common.alloc import alloc
 from src.mpt import verify_mpt_proof
 from packages.eth_essentials.lib.utils import felt_divmod
 from packages.eth_essentials.lib.rlp_little import (
@@ -12,43 +13,43 @@ from packages.eth_essentials.lib.rlp_little import (
 
 from src.rlp import chunk_to_felt_be
 from src.types import ChainInfo
-from src.memorizer import HeaderMemorizer, BlockReceiptMemorizer
-from src.decoders.header_decoder import HeaderDecoder, HeaderField
+from src.memorizers.evm import EvmHeaderMemorizer, EvmBlockTxMemorizer
+from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField
 
-// Verfies an array of receipt proofs with the headers stored in the memorizer.
-// The verified receipts are then added to the memorizer.
-func verify_block_receipt_proofs{
+// Verfies an array of transaction proofs with the headers stored in the memorizer.
+// The verified transactions are then added to the memorizer.
+func verify_block_tx_proofs{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     keccak_ptr: KeccakBuiltin*,
-    block_receipt_dict: DictAccess*,
-    header_dict: DictAccess*,
+    evm_block_tx_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }() {
     alloc_locals;
 
-    local n_receipts: felt;
-    %{ ids.n_receipts = len(program_input["proofs"]["transaction_receipts"]) %}
+    local n_tx_proofs: felt;
+    %{ ids.n_tx_proofs = len(batch["transactions"]) %}
 
-    verify_block_receipt_proofs_inner(n_receipts, 0);
+    verify_block_tx_proofs_inner(n_tx_proofs, 0);
     return ();
 }
 
-func verify_block_receipt_proofs_inner{
+func verify_block_tx_proofs_inner{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     keccak_ptr: KeccakBuiltin*,
-    block_receipt_dict: DictAccess*,
-    header_dict: DictAccess*,
+    evm_block_tx_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
-}(n_receipts: felt, index: felt) {
+}(n_tx_proofs: felt, index: felt) {
     alloc_locals;
 
-    if (n_receipts == index) {
+    if (n_tx_proofs == index) {
         return ();
     }
 
@@ -59,7 +60,8 @@ func verify_block_receipt_proofs_inner{
     local key: Uint256;
     local key_leading_zeros: felt;
     %{
-        transaction = program_input["proofs"]["transaction_receipts"][ids.index]
+        from tools.py.utils import split_128, count_leading_zero_nibbles_from_hex, hex_to_int_array, nested_hex_to_int_array
+        transaction = batch["transactions"][ids.index]
         ids.key_leading_zeros = count_leading_zero_nibbles_from_hex(transaction["key"])
         (key_low, key_high) = split_128(int(transaction["key"], 16))
         ids.key.low = key_low
@@ -70,10 +72,10 @@ func verify_block_receipt_proofs_inner{
         ids.proof_len = len(transaction["proof"])
     %}
 
-    let (header_rlp) = HeaderMemorizer.get(chain_id=chain_info.id, block_number=block_number);
-    let receipt_root = HeaderDecoder.get_field(header_rlp, HeaderField.RECEIPT_ROOT);
+    let (header_rlp) = EvmHeaderMemorizer.get2(chain_id=chain_info.id, block_number=block_number);
+    let tx_root = HeaderDecoder.get_field(header_rlp, HeaderField.TRANSACTION_ROOT);
 
-    let (rlp, rlp_bytes_len) = verify_mpt_proof{
+    let (rlp, _rlp_len) = verify_mpt_proof{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
     }(
         mpt_proof=mpt_proof,
@@ -81,15 +83,15 @@ func verify_block_receipt_proofs_inner{
         mpt_proof_len=proof_len,
         key_be=key,
         key_be_leading_zeroes_nibbles=key_leading_zeros,
-        root=receipt_root,
+        root=tx_root,
         pow2_array=pow2_array,
     );
 
-    let receipt_index = chunk_to_felt_be(key.low);
+    let tx_index = chunk_to_felt_be(key.low);
 
-    BlockReceiptMemorizer.add(
-        chain_id=chain_info.id, block_number=block_number, key_low=receipt_index, rlp=rlp
+    EvmBlockTxMemorizer.add(
+        chain_id=chain_info.id, block_number=block_number, key_low=tx_index, rlp=rlp
     );
 
-    return verify_block_receipt_proofs_inner(n_receipts=n_receipts, index=index + 1);
+    return verify_block_tx_proofs_inner(n_tx_proofs=n_tx_proofs, index=index + 1);
 }

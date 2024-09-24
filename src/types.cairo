@@ -4,14 +4,13 @@ struct ChainInfo {
     id: felt,
     id_bytes_len: felt,
     byzantium: felt,
+    layout: felt,
 }
 
 struct MMRMeta {
     id: felt,
     root: felt,
     size: felt,
-    peaks_len: felt,
-    peaks: felt*,
     chain_id: felt,
 }
 
@@ -36,7 +35,6 @@ struct TransactionsInBlockDatalake {
 }
 
 struct ComputationalTask {
-    chain_id: felt,
     hash: Uint256,
     datalake_ptr: felt*,
     datalake_type: felt,

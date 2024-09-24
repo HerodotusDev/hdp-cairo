@@ -3,7 +3,11 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
 
 from src.types import ChainInfo
-from src.decoders.transaction_decoder import TransactionDecoder, TransactionSender, TransactionField
+from src.decoders.evm.transaction_decoder import (
+    TransactionDecoder,
+    TransactionSender,
+    TransactionField,
+)
 
 func test_tx_decoding_inner{
     range_check_ptr,

@@ -8,14 +8,16 @@ from starkware.starknet.common.new_syscalls import (
 )
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
 from starkware.starknet.core.os.builtins import BuiltinPointers
-from src.memorizer import HeaderMemorizer, AccountMemorizer, StorageMemorizer
-from src.decoders.header_decoder import HeaderDecoder, HeaderField
-from src.decoders.account_decoder import AccountDecoder, AccountField
-from src.decoders.storage_slot_decoder import StorageSlotDecoder
+from src.memorizers.evm import EvmHeaderMemorizer, EvmAccountMemorizer, EvmStorageMemorizer
+from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField
+from src.decoders.evm.account_decoder import AccountDecoder, AccountField
+from src.decoders.evm.storage_slot_decoder import StorageSlotDecoder
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.registers import get_label_location
-from contract_bootloader.execute_syscalls_handler.get_value_trait import GetValueTrait
+from src.chain_info import chain_id_to_layout
+from src.memorizer_access import BootloaderMemorizerAccess, DictId
+from src.chain_info import Layout
 
 struct ExecutionInfo {
     selector: felt,
@@ -42,31 +44,21 @@ func execute_syscalls{
     poseidon_ptr: PoseidonBuiltin*,
     syscall_ptr: felt*,
     builtin_ptrs: BuiltinPointers*,
-    header_dict: DictAccess*,
-    account_dict: DictAccess*,
-    storage_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
+    evm_storage_dict: DictAccess*,
     pow2_array: felt*,
-}(execution_context: ExecutionContext*, syscall_ptr_end: felt*, get_value_trait: GetValueTrait*) {
+    memorizer_handler: felt***,
+    decoder_handler: felt***,
+}(execution_context: ExecutionContext*, syscall_ptr_end: felt*) {
     if (syscall_ptr == syscall_ptr_end) {
         return ();
     }
 
     assert [syscall_ptr] = CALL_CONTRACT_SELECTOR;
-    execute_call_contract(
-        caller_execution_context=execution_context, get_value_trait=get_value_trait
-    );
+    execute_call_contract(caller_execution_context=execution_context);
 
-    return execute_syscalls(
-        execution_context=execution_context,
-        syscall_ptr_end=syscall_ptr_end,
-        get_value_trait=get_value_trait,
-    );
-}
-
-namespace MemorizerId {
-    const HEADER = 0;
-    const ACCOUNT = 1;
-    const STORAGE = 2;
+    return execute_syscalls(execution_context=execution_context, syscall_ptr_end=syscall_ptr_end);
 }
 
 func abstract_memorizer_handler{
@@ -82,11 +74,13 @@ func execute_call_contract{
     poseidon_ptr: PoseidonBuiltin*,
     syscall_ptr: felt*,
     builtin_ptrs: BuiltinPointers*,
-    header_dict: DictAccess*,
-    account_dict: DictAccess*,
-    storage_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
+    evm_storage_dict: DictAccess*,
     pow2_array: felt*,
-}(caller_execution_context: ExecutionContext*, get_value_trait: GetValueTrait*) {
+    memorizer_handler: felt***,
+    decoder_handler: felt***,
+}(caller_execution_context: ExecutionContext*) {
     alloc_locals;
     let request_header = cast(syscall_ptr, RequestHeader*);
     let syscall_ptr = syscall_ptr + RequestHeader.SIZE;
@@ -100,62 +94,50 @@ func execute_call_contract{
     let call_contract_response = cast(syscall_ptr, CallContractResponse*);
     let syscall_ptr = syscall_ptr + CallContractResponse.SIZE;
 
-    let memorizer_id = call_contract_request.contract_address;
-    let function_id = call_contract_request.selector;
+    let dict_id = call_contract_request.contract_address;
+    let field = call_contract_request.selector;
 
-    if (memorizer_id == MemorizerId.HEADER) {
-        let (rlp) = HeaderMemorizer.get(
-            chain_id=call_contract_request.calldata_start[2],
-            block_number=call_contract_request.calldata_start[3],
+    let layout = chain_id_to_layout(call_contract_request.calldata_start[2]);
+    let output_ptr = call_contract_response.retdata_start;
+
+    if (dict_id == DictId.HEADER) {
+        let output_type = BootloaderMemorizerAccess.read_and_decode{dict_ptr=evm_header_dict}(
+            params=call_contract_request.calldata_start + 2,
+            layout=layout,
+            dict_id=dict_id,
+            field=field,
+            output_ptr=call_contract_response.retdata_start,
+            as_be=1,
         );
 
-        let func_ptr: felt* = get_value_trait.header_memorizer_handler_ptrs[function_id];
-        with func_ptr, rlp {
-            let value = abstract_memorizer_handler();
-        }
-
-        assert call_contract_response.retdata_start[0] = value.low;
-        assert call_contract_response.retdata_start[1] = value.high;
         return ();
     }
-    if (memorizer_id == MemorizerId.ACCOUNT) {
-        let (rlp) = AccountMemorizer.get(
-            chain_id=call_contract_request.calldata_start[2],
-            block_number=call_contract_request.calldata_start[3],
-            address=call_contract_request.calldata_start[4],
+    if (dict_id == DictId.ACCOUNT) {
+        let output_type = BootloaderMemorizerAccess.read_and_decode{dict_ptr=evm_account_dict}(
+            params=call_contract_request.calldata_start + 2,
+            layout=layout,
+            dict_id=dict_id,
+            field=field,
+            output_ptr=call_contract_response.retdata_start,
+            as_be=1,
         );
 
-        let func_ptr: felt* = get_value_trait.account_memorizer_handler_ptrs[function_id];
-        with func_ptr, rlp {
-            let value = abstract_memorizer_handler();
-        }
-
-        assert call_contract_response.retdata_start[0] = value.low;
-        assert call_contract_response.retdata_start[1] = value.high;
         return ();
     }
-    if (memorizer_id == MemorizerId.STORAGE) {
-        let (rlp) = StorageMemorizer.get(
-            chain_id=call_contract_request.calldata_start[2],
-            block_number=call_contract_request.calldata_start[3],
-            address=call_contract_request.calldata_start[4],
-            storage_slot=Uint256(
-                low=call_contract_request.calldata_start[6],
-                high=call_contract_request.calldata_start[5],
-            ),
+    if (dict_id == DictId.STORAGE) {
+        let output_type = BootloaderMemorizerAccess.read_and_decode{dict_ptr=evm_storage_dict}(
+            params=call_contract_request.calldata_start + 2,
+            layout=layout,
+            dict_id=dict_id,
+            field=field,
+            output_ptr=call_contract_response.retdata_start,
+            as_be=1,
         );
 
-        let func_ptr: felt* = get_value_trait.storage_memorizer_handler_ptrs[function_id];
-        with func_ptr, rlp {
-            let value = abstract_memorizer_handler();
-        }
-
-        assert call_contract_response.retdata_start[0] = value.low;
-        assert call_contract_response.retdata_start[1] = value.high;
         return ();
     }
 
-    // Unknown MemorizerId
+    // Unknown DictId
     assert 1 = 0;
 
     return ();

@@ -13,20 +13,27 @@ from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
+from starkware.cairo.common.registers import get_label_location
+from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash_many, poseidon_hash
 
 from src.verifiers.verify import run_state_verification
 from src.module import init_module
 from src.types import MMRMeta, ComputationalTask, ChainInfo
 from src.utils import write_output_ptr
 
-from src.memorizer import (
-    HeaderMemorizer,
-    AccountMemorizer,
-    StorageMemorizer,
-    BlockTxMemorizer,
-    BlockReceiptMemorizer,
+from src.memorizers.evm import (
+    EvmHeaderMemorizer,
+    EvmAccountMemorizer,
+    EvmStorageMemorizer,
+    EvmBlockTxMemorizer,
+    EvmBlockReceiptMemorizer,
 )
-from packages.eth_essentials.lib.utils import pow2alloc128, write_felt_array_to_dict_keys
+from src.memorizers.starknet import StarknetHeaderMemorizer, StarknetStorageSlotMemorizer
+from src.memorizers.bare import BareMemorizer, SingleBareMemorizer
+from src.memorizer_access import InternalMemorizerReader, InternalValueDecoder, DictId
+from src.chain_info import Layout
+
+from packages.eth_essentials.lib.utils import pow2alloc251, write_felt_array_to_dict_keys
 
 from src.tasks.computational import Task
 from src.merkle import (
@@ -77,18 +84,15 @@ func run{
 
     // MMR Params
     let (mmr_metas: MMRMeta*) = alloc();
-    local mmr_metas_len: felt;
-
-    // Peaks Dict
-    let (local peaks_dict) = default_dict_new(default_value=0);
-    tempvar peaks_dict_start = peaks_dict;
 
     // Memorizers
-    let (header_dict, header_dict_start) = HeaderMemorizer.init();
-    let (account_dict, account_dict_start) = AccountMemorizer.init();
-    let (storage_dict, storage_dict_start) = StorageMemorizer.init();
-    let (block_tx_dict, block_tx_dict_start) = BlockTxMemorizer.init();
-    let (block_receipt_dict, block_receipt_dict_start) = BlockReceiptMemorizer.init();
+    let (evm_header_dict, evm_header_dict_start) = EvmHeaderMemorizer.init();
+    let (evm_account_dict, evm_account_dict_start) = EvmAccountMemorizer.init();
+    let (evm_storage_dict, evm_storage_dict_start) = EvmStorageMemorizer.init();
+    let (evm_block_tx_dict, evm_block_tx_dict_start) = EvmBlockTxMemorizer.init();
+    let (evm_block_receipt_dict, evm_block_receipt_dict_start) = EvmBlockReceiptMemorizer.init();
+    let (starknet_header_dict, starknet_header_dict_start) = StarknetHeaderMemorizer.init();
+    let (starknet_storage_slot_dict, starknet_storage_slot_dict_start) = StarknetStorageSlotMemorizer.init();
 
     // Task Params
     let (tasks: ComputationalTask*) = alloc();
@@ -97,8 +101,7 @@ func run{
     let (results: Uint256*) = alloc();
 
     // Misc
-    let pow2_array: felt* = pow2alloc128();
-    local chain_id: felt;
+    let pow2_array: felt* = pow2alloc251();
     local hdp_version: felt;
 
     %{
@@ -118,28 +121,9 @@ func run{
         def nested_hex_to_int_array(hex_array):
             return [[int(x, 16) for x in y] for y in hex_array]
 
-        def write_mmr_metas(ptr, mmr_metas):
-            offset = 0
-            ids.mmr_metas_len = len(mmr_metas)
-            ids.chain_id = mmr_metas[0]["chain_id"]
-
-            for mmr_meta in mmr_metas:
-                assert mmr_meta["chain_id"] == ids.chain_id, "Chain ID mismatch!"
-                memory[ptr._reference_value + offset] = mmr_meta["id"]
-                memory[ptr._reference_value + offset + 1] = hex_to_int(mmr_meta["root"])
-                memory[ptr._reference_value + offset + 2] = mmr_meta["size"]
-                memory[ptr._reference_value + offset + 3] = len(mmr_meta["peaks"])
-                memory[ptr._reference_value + offset + 4] = segments.gen_arg(hex_to_int_array(mmr_meta["peaks"]))
-                memory[ptr._reference_value + offset + 5] = mmr_meta["chain_id"]
-                offset += 6
-
-        # MMR Meta
-        write_mmr_metas(ids.mmr_metas, program_input["proofs"]['mmr_metas'])
-
         # Task and Datalake
         ids.tasks_len = len(program_input['tasks'])
 
-        ids.chain_id = 11155111
         if program_input["tasks"][0]["type"] == "datalake_compute":
             ids.hdp_version = 1
         elif program_input["tasks"][0]["type"] == "module":
@@ -150,24 +134,23 @@ func run{
         cairo_run_output_path = program_input["cairo_run_output_path"]
     %}
 
-    // Fetch matching chain info
-    let (local chain_info) = fetch_chain_info(chain_id);
-
-    run_state_verification{
+    let (local mmr_metas_len) = run_state_verification{
         range_check_ptr=range_check_ptr,
         poseidon_ptr=poseidon_ptr,
         keccak_ptr=keccak_ptr,
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array,
-        peaks_dict=peaks_dict,
-        header_dict=header_dict,
-        account_dict=account_dict,
-        storage_dict=storage_dict,
-        block_tx_dict=block_tx_dict,
-        block_receipt_dict=block_receipt_dict,
+        evm_header_dict=evm_header_dict,
+        evm_account_dict=evm_account_dict,
+        evm_storage_dict=evm_storage_dict,
+        evm_block_tx_dict=evm_block_tx_dict,
+        evm_block_receipt_dict=evm_block_receipt_dict,
+        starknet_header_dict=starknet_header_dict,
+        starknet_storage_slot_dict=starknet_storage_slot_dict,
         mmr_metas=mmr_metas,
-        chain_info=chain_info,
-    }(mmr_metas_len=mmr_metas_len);
+    }();
+    let memorizer_handler = InternalMemorizerReader.init();
+    let decoder_handler = InternalValueDecoder.init();
 
     let (tasks_root, results_root, results, results_len) = compute_tasks{
         pedersen_ptr=pedersen_ptr,
@@ -177,14 +160,15 @@ func run{
         ec_op_ptr=ec_op_ptr,
         keccak_ptr=keccak_ptr,
         poseidon_ptr=poseidon_ptr,
-        account_dict=account_dict,
-        storage_dict=storage_dict,
-        header_dict=header_dict,
-        block_tx_dict=block_tx_dict,
-        block_receipt_dict=block_receipt_dict,
+        evm_account_dict=evm_account_dict,
+        evm_storage_dict=evm_storage_dict,
+        evm_header_dict=evm_header_dict,
+        evm_block_tx_dict=evm_block_tx_dict,
+        evm_block_receipt_dict=evm_block_receipt_dict,
         pow2_array=pow2_array,
         tasks=tasks,
-        chain_info=chain_info,
+        memorizer_handler=memorizer_handler,
+        decoder_handler=decoder_handler,
     }(hdp_version=hdp_version, tasks_len=tasks_len);
 
     %{
@@ -215,13 +199,16 @@ func run{
     %}
 
     // Post Verification Checks: Ensure dict consistency
-    default_dict_finalize(peaks_dict_start, peaks_dict, 0);
-    default_dict_finalize(header_dict_start, header_dict, 7);
-    default_dict_finalize(account_dict_start, account_dict, 7);
-    default_dict_finalize(storage_dict_start, storage_dict, 7);
-    default_dict_finalize(block_tx_dict_start, block_tx_dict, 7);
-    default_dict_finalize(block_receipt_dict_start, block_receipt_dict, 7);
-
+    default_dict_finalize(evm_header_dict_start, evm_header_dict, BareMemorizer.DEFAULT_VALUE);
+    default_dict_finalize(evm_account_dict_start, evm_account_dict, BareMemorizer.DEFAULT_VALUE);
+    default_dict_finalize(evm_storage_dict_start, evm_storage_dict, BareMemorizer.DEFAULT_VALUE);
+    default_dict_finalize(evm_block_tx_dict_start, evm_block_tx_dict, BareMemorizer.DEFAULT_VALUE);
+    default_dict_finalize(
+        evm_block_receipt_dict_start, evm_block_receipt_dict, BareMemorizer.DEFAULT_VALUE
+    );
+    default_dict_finalize(starknet_header_dict_start, starknet_header_dict, BareMemorizer.DEFAULT_VALUE);
+    default_dict_finalize(starknet_storage_slot_dict_start, starknet_storage_slot_dict, SingleBareMemorizer.DEFAULT_VALUE);
+    %{ print("mmr_metas_len: ", ids.mmr_metas_len) %}
     write_output_ptr{output_ptr=output_ptr}(
         mmr_metas=mmr_metas,
         mmr_metas_len=mmr_metas_len,
@@ -241,14 +228,15 @@ func compute_tasks{
     ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    account_dict: DictAccess*,
-    storage_dict: DictAccess*,
-    header_dict: DictAccess*,
-    block_tx_dict: DictAccess*,
-    block_receipt_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
+    evm_storage_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
+    evm_block_tx_dict: DictAccess*,
+    evm_block_receipt_dict: DictAccess*,
     pow2_array: felt*,
     tasks: ComputationalTask*,
-    chain_info: ChainInfo,
+    memorizer_handler: felt***,
+    decoder_handler: felt***,
 }(hdp_version: felt, tasks_len: felt) -> (
     tasks_root: Uint256, results_root: Uint256, results: Uint256*, results_len: felt
 ) {

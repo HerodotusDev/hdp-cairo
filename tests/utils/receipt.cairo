@@ -3,7 +3,7 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
 
 from src.types import ChainInfo
-from src.decoders.receipt_decoder import ReceiptDecoder, ReceiptField
+from src.decoders.evm.receipt_decoder import ReceiptDecoder, ReceiptField
 
 func test_receipt_decoding_inner{
     range_check_ptr,

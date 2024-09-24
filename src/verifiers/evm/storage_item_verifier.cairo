@@ -11,8 +11,8 @@ from packages.eth_essentials.lib.rlp_little import (
     extract_n_bytes_from_le_64_chunks_array,
 )
 from src.converter import le_address_chunks_to_felt
-from src.memorizer import StorageMemorizer, AccountMemorizer
-from src.decoders.account_decoder import AccountDecoder, AccountField
+from src.memorizers.evm import EvmStorageMemorizer, EvmAccountMemorizer
+from src.decoders.evm.account_decoder import AccountDecoder, AccountField
 
 from packages.eth_essentials.lib.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64
 
@@ -22,14 +22,14 @@ func verify_storage_items{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    account_dict: DictAccess*,
-    storage_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
+    evm_storage_dict: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }() {
     alloc_locals;
     local n_storage_items: felt;
-    %{ ids.n_storage_items = len(program_input["proofs"]["storages"]) %}
+    %{ ids.n_storage_items = len(batch["storages"]) %}
 
     verify_storage_items_inner(n_storage_items, 0);
 
@@ -41,8 +41,8 @@ func verify_storage_items_inner{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    account_dict: DictAccess*,
-    storage_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
+    evm_storage_dict: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }(n_storage_items: felt, index: felt) {
@@ -58,7 +58,9 @@ func verify_storage_items_inner{
     local key: Uint256;
     local key_leading_zeros: felt;
     %{
-        storage_item = program_input["proofs"]["storages"][ids.index]
+        from tools.py.utils import split_128, count_leading_zero_nibbles_from_hex, hex_to_int_array, nested_hex_to_int_array
+
+        storage_item = batch["storages"][ids.index]
         ids.n_proofs = len(storage_item["proofs"])
         segments.write_arg(ids.address, hex_to_int_array(storage_item["address"]))
         segments.write_arg(ids.slot, hex_to_int_array(storage_item["slot"]))
@@ -96,8 +98,8 @@ func verify_storage_item{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    account_dict: DictAccess*,
-    storage_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
+    evm_storage_dict: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }(
@@ -126,7 +128,7 @@ func verify_storage_item{
         ids.proof_len = len(proof["proof"])
     %}
 
-    let (account_rlp) = AccountMemorizer.get(
+    let (account_rlp) = EvmAccountMemorizer.get2(
         chain_id=chain_info.id, block_number=block_number, address=address
     );
     let state_root = AccountDecoder.get_field(account_rlp, AccountField.STATE_ROOT);
@@ -141,7 +143,7 @@ func verify_storage_item{
         pow2_array=pow2_array,
     );
 
-    StorageMemorizer.add(
+    EvmStorageMemorizer.add(
         chain_id=chain_info.id,
         block_number=block_number,
         address=address,
