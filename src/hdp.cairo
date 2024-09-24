@@ -28,12 +28,12 @@ from src.memorizers.evm import (
     EvmBlockTxMemorizer,
     EvmBlockReceiptMemorizer,
 )
-from src.memorizers.starknet import StarknetHeaderMemorizer
-from src.memorizers.bare import BareMemorizer
+from src.memorizers.starknet import StarknetHeaderMemorizer, StarknetStorageSlotMemorizer
+from src.memorizers.bare import BareMemorizer, SingleBareMemorizer
 from src.memorizer_access import InternalMemorizerReader, InternalValueDecoder, DictId
 from src.chain_info import Layout
 
-from packages.eth_essentials.lib.utils import pow2alloc128, write_felt_array_to_dict_keys
+from packages.eth_essentials.lib.utils import pow2alloc251, write_felt_array_to_dict_keys
 
 from src.tasks.computational import Task
 from src.merkle import (
@@ -92,6 +92,7 @@ func run{
     let (evm_block_tx_dict, evm_block_tx_dict_start) = EvmBlockTxMemorizer.init();
     let (evm_block_receipt_dict, evm_block_receipt_dict_start) = EvmBlockReceiptMemorizer.init();
     let (starknet_header_dict, starknet_header_dict_start) = StarknetHeaderMemorizer.init();
+    let (starknet_storage_slot_dict, starknet_storage_slot_dict_start) = StarknetStorageSlotMemorizer.init();
 
     // Task Params
     let (tasks: ComputationalTask*) = alloc();
@@ -100,7 +101,7 @@ func run{
     let (results: Uint256*) = alloc();
 
     // Misc
-    let pow2_array: felt* = pow2alloc128();
+    let pow2_array: felt* = pow2alloc251();
     local hdp_version: felt;
 
     %{
@@ -145,6 +146,7 @@ func run{
         evm_block_tx_dict=evm_block_tx_dict,
         evm_block_receipt_dict=evm_block_receipt_dict,
         starknet_header_dict=starknet_header_dict,
+        starknet_storage_slot_dict=starknet_storage_slot_dict,
         mmr_metas=mmr_metas,
     }();
     let memorizer_handler = InternalMemorizerReader.init();
@@ -204,7 +206,8 @@ func run{
     default_dict_finalize(
         evm_block_receipt_dict_start, evm_block_receipt_dict, BareMemorizer.DEFAULT_VALUE
     );
-
+    default_dict_finalize(starknet_header_dict_start, starknet_header_dict, BareMemorizer.DEFAULT_VALUE);
+    default_dict_finalize(starknet_storage_slot_dict_start, starknet_storage_slot_dict, SingleBareMemorizer.DEFAULT_VALUE);
     %{ print("mmr_metas_len: ", ids.mmr_metas_len) %}
     write_output_ptr{output_ptr=output_ptr}(
         mmr_metas=mmr_metas,

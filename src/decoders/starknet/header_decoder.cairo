@@ -43,17 +43,15 @@ namespace StarknetHeaderDecoder {
         let version = derive_header_version(fields);
         let index = get_header_field_index(version, field);
         // todo: handle len decoding for v2 headers
-        return fields[index];
+        return (value=fields[index]);
     }
 
     func get_field_uint256{
         range_check_ptr
-    }(fields: felt*, field: felt) -> (value: Uint256) {
-        let version = derive_header_version(fields);
-        let index = get_header_field_index(version, field);
-        // todo: handle len decoding for v2 headers
-        let value = felt_to_uint256(fields[index]);
-        return (value=value);
+    }(fields: felt*, field: felt) -> Uint256 {
+        let (felt_value) = get_field(fields, field);
+        let value = felt_to_uint256(felt_value);
+        return value;
     }
 
     func get_block_number{
@@ -98,7 +96,7 @@ namespace StarknetHeaderDecoder {
 // ]
 
 // Depending on the header version, the fields are located at different offsets in the data array.
-// This function calculates the correct offset based on the version and field index.
+// This function calculates the correct index of a field in the data array, depending on the version.
 func get_header_field_index{range_check_ptr}(version: felt, field: felt) -> felt {
     alloc_locals;
     assert [range_check_ptr] = 16 - field;

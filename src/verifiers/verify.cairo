@@ -15,6 +15,7 @@ from src.chain_info import fetch_chain_info
 
 func run_state_verification{
     range_check_ptr,
+    pedersen_ptr: HashBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
@@ -25,6 +26,7 @@ func run_state_verification{
     evm_block_tx_dict: DictAccess*,
     evm_block_receipt_dict: DictAccess*,
     starknet_header_dict: DictAccess*,
+    starknet_storage_slot_dict: DictAccess*,
     mmr_metas: MMRMeta*,
 }() -> (mmr_metas_len: felt) {
     alloc_locals;
@@ -37,6 +39,7 @@ func run_state_verification{
 
 func run_state_verification_inner{
     range_check_ptr,
+    pedersen_ptr: HashBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
@@ -47,6 +50,7 @@ func run_state_verification_inner{
     evm_block_tx_dict: DictAccess*,
     evm_block_receipt_dict: DictAccess*,
     starknet_header_dict: DictAccess*,
+    starknet_storage_slot_dict: DictAccess*,
     mmr_metas: MMRMeta*,
 }(batch_len: felt, mmr_meta_idx: felt) -> (mmr_meta_idx: felt) {
     alloc_locals;
