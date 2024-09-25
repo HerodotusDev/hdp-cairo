@@ -22,7 +22,6 @@ from src.types import ChainInfo
 //     bitwise_ptr: BitwiseBuiltin*,
 //     poseidon_ptr: PoseidonBuiltin*,
 // }() {
-
 //     alloc_locals;
 //     let pow2_array: felt* = pow2alloc251();
 
@@ -183,19 +182,32 @@ func traverse{
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
 }(nodes: felt**, n_nodes: felt, expected_path: felt) -> (root: felt, value: felt) {
+    alloc_locals;
 
     let leaf = nodes[n_nodes - 1];
-    let leaf_hash = hash_edge_node(leaf);
-
-    let path = leaf[1];
-    let path_length_pow2 = pow2_array[leaf[2]];
-
+    let (leaf_hash, path, path_length_pow2, value_idx) = init_leaf_nodes(expected_path, leaf, n_nodes);
+    
     with nodes {
-        let (root, path) = traverse_inner(n_nodes - 1, expected_path, leaf_hash, path, path_length_pow2);
+        let (root, traversed_path) = traverse_inner(n_nodes - 1, expected_path, leaf_hash, path, path_length_pow2);
     }
 
-    assert path = expected_path;
-    return (root=root, value=leaf[0]);
+    %{ print("traversed_path:", hex(ids.traversed_path)) %}
+    %{ print("expecteed_path:", hex(ids.expected_path)) %}
+    %{ memory[ap] = nodes_types[ids.n_nodes - 1] %}
+    jmp edge_node if [ap] != 0, ap++;
+    assert traversed_path = expected_path;
+    return (root=root, value=leaf[value_idx]);
+
+    edge_node:
+    let proof_mode = derive_proof_mode(leaf[1], leaf[2], expected_path);
+    %{ print("proof_mode:", ids.proof_mode) %}
+    if (proof_mode == 1) {
+        assert traversed_path = expected_path;
+        return (root=root, value=leaf[value_idx]);
+    } else {
+        assert_subpath(traversed_path, expected_path, leaf[2]);
+        return (root=root, value=0);
+    }
 }
 
 func traverse_inner{
@@ -203,10 +215,10 @@ func traverse_inner{
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
     nodes: felt**,
-}(n_nodes: felt, expected_path: felt, hash_value: felt, path: felt, path_length_pow2: felt) -> (root: felt, path: felt) {
+}(n_nodes: felt, expected_path: felt, hash_value: felt, traversed_path: felt, path_length_pow2: felt) -> (root: felt, traversed_path: felt) {
     alloc_locals;
     if(n_nodes == 0) {
-        return (root=hash_value, path=path);
+        return (root=hash_value, traversed_path=traversed_path);
     }
 
     let node = nodes[n_nodes - 1];
@@ -218,10 +230,10 @@ func traverse_inner{
     local new_path: felt;
     if(result == 0) {
         assert hash_value = node[0];
-        new_path = path;
+        new_path = traversed_path;
     } else {
         assert hash_value = node[1];
-        new_path = path + path_length_pow2;
+        new_path = traversed_path + path_length_pow2;
     }
     let next_path_length_pow2 = path_length_pow2 * 2;
     let next_hash = hash_binary_node(node);
@@ -230,7 +242,7 @@ func traverse_inner{
 
     edge_node:
     assert hash_value = node[0];
-    let next_path = node[1] * path_length_pow2;
+    let next_path = traversed_path + node[1] * path_length_pow2;
     let next_path_length_pow2 = path_length_pow2 * pow2_array[node[2]];
     let next_hash = hash_edge_node(node);
 
@@ -249,6 +261,64 @@ func hash_edge_node{
 }(node: felt*) -> felt {
     let (node_hash) = hash2{hash_ptr=pedersen_ptr}(node[0], node[1]);
     return node_hash + node[2];
+}
+
+func init_leaf_nodes{
+    pedersen_ptr: HashBuiltin*,
+    pow2_array: felt*,
+    bitwise_ptr: BitwiseBuiltin*,
+}(expected_path: felt, leaf: felt*, n_nodes: felt) -> (leaf_hash: felt, path: felt, path_length_pow2: felt, value_idx: felt) {
+
+    %{ memory[ap] = nodes_types[ids.n_nodes - 1] %}
+    jmp edge_node if [ap] != 0, ap++;
+    let leaf_hash = hash_binary_node(leaf);
+    let (value_idx) = bitwise_and(expected_path, 1);
+
+    return (leaf_hash=leaf_hash, path=value_idx, path_length_pow2=2, value_idx=value_idx);
+
+    edge_node:
+    let leaf_hash = hash_edge_node(leaf);
+    let path = leaf[1];
+    let path_length_pow2 = pow2_array[leaf[2]];
+    return (leaf_hash=leaf_hash, path=path, path_length_pow2=path_length_pow2, value_idx=0);
+}
+
+// TODO: Make sound!!!!
+func derive_proof_mode{
+    // bitwise_ptr: BitwiseBuiltin*,
+    // pow2_array: felt*,
+}(leaf_path: felt, path_len: felt, expected_path: felt) -> felt {
+    alloc_locals;
+
+    local r: felt;
+    %{
+        q, ids.r = divmod(ids.expected_path, 2**ids.path_len)
+    %}
+
+    if (r != leaf_path) {
+        return 0; // Non-Inclusion Proof
+    } else {
+        return 1; // Inclusion Proof
+    }
+}
+
+// TODO: Make sound!!!!
+func assert_subpath(path: felt, expected_path: felt, edge_path_len: felt) {
+    alloc_locals;
+    local q_path: felt;
+    local q_expected_path: felt;
+    %{
+        ids.q_expected_path, r = divmod(ids.expected_path, 2**(ids.edge_path_len))
+        ids.q_path, r = divmod(ids.path, 2**(ids.edge_path_len))
+        print("q_path:", ids.q_path)
+        print("q_expected_path:", ids.q_expected_path)
+    %}
+
+    with_attr error_message("Non-inclusion subpath Mismatch!") {
+        assert q_path = q_expected_path;
+    }
+
+    return ();
 }
 
 func load_nodes() -> (nodes: felt**, len: felt) {
