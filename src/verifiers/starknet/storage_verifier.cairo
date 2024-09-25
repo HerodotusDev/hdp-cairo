@@ -13,6 +13,7 @@ from starkware.cairo.common.builtin_poseidon.poseidon import (
     poseidon_hash_many,
 )
 
+from packages.eth_essentials.lib.utils import bitwise_divmod
 from src.memorizers.starknet import StarknetStorageSlotMemorizer
 from src.types import ChainInfo
 
@@ -91,7 +92,8 @@ func verify_proofs_inner{
         ids.contract_address = int(storage_proof["contract_address"], 16)
         ids.block_number = storage_proof["block_number"]
         # todo: get from header memorizer once ready
-        ids.state_commitment = 0x34e41ac48df28204189050de68200d53a035219260dec46824d009b225866d2
+        #ids.state_commitment = 0x34e41ac48df28204189050de68200d53a035219260dec46824d009b225866d2 # mainnet#726485
+        ids.state_commitment = 0x498c0ff7c9227ae510a350506688b3c5dbf9df6fafa789b6e9680ac23dedbe3 # sepl#202485
     %}
     
     // Compute contract_root and write values to memorizer
@@ -137,6 +139,9 @@ func verify_proofs_inner{
     
 }
 
+// This function iteratively validates contract storage proofs. It is ensures that each proof computes the same contract root.
+// The values of the storage slots are added to the memorizer.
+// The contract root is returned and used to compute the contract state hash.
 func validate_storage_proofs{
     pedersen_ptr: HashBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
@@ -158,6 +163,7 @@ func validate_storage_proofs{
     let (contract_state_nodes, contract_state_nodes_len) = load_nodes();
     let (new_contract_root, value) = traverse(contract_state_nodes, contract_state_nodes_len, storage_addresses[index]);
     %{ vm_exit_scope() %}
+    %{ print("value:", ids.value) %}
     
     // Assert that the contract root is consistent between storage slots
     if(index != 0) {
@@ -177,6 +183,9 @@ func validate_storage_proofs{
     return validate_storage_proofs(new_contract_root, storage_count, index + 1);
 }
 
+// Function used to traverse the passed nodes. The nodes are hashed from the leaf to the root.
+// This function can be used for inclusion or non-inclusion proofs. In case of non-inclusion,
+// the function will return the root and a zero value.
 func traverse{
     pedersen_ptr: HashBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
@@ -184,32 +193,69 @@ func traverse{
 }(nodes: felt**, n_nodes: felt, expected_path: felt) -> (root: felt, value: felt) {
     alloc_locals;
 
+    %{ memory[ap] = nodes_types[ids.n_nodes - 1] %}
+    jmp edge_leaf if [ap] != 0, ap++;
+    return traverse_binary_leaf(nodes, n_nodes, expected_path);
+
+    edge_leaf:
+    return traverse_edge_leaf(nodes, n_nodes, expected_path);
+}
+
+// Traverse function if the leaf node is an edge node.
+func traverse_edge_leaf{
+    pedersen_ptr: HashBuiltin*,
+    bitwise_ptr: BitwiseBuiltin*,
+    pow2_array: felt*,
+}(nodes: felt**, n_nodes: felt, expected_path: felt) -> (root: felt, value: felt) {
+    alloc_locals;
+
     let leaf = nodes[n_nodes - 1];
-    let (leaf_hash, path, path_length_pow2, value_idx) = init_leaf_nodes(expected_path, leaf, n_nodes);
-    
+    let leaf_hash = hash_edge_node(leaf);
+    let node_path = leaf[1];
+    let path_length_pow2 = pow2_array[leaf[2]];
+
     with nodes {
-        let (root, traversed_path) = traverse_inner(n_nodes - 1, expected_path, leaf_hash, path, path_length_pow2);
+        let (root, traversed_path) = traverse_inner(n_nodes - 1, expected_path, leaf_hash, node_path, path_length_pow2);
     }
 
-    %{ print("traversed_path:", hex(ids.traversed_path)) %}
-    %{ print("expecteed_path:", hex(ids.expected_path)) %}
-    %{ memory[ap] = nodes_types[ids.n_nodes - 1] %}
-    jmp edge_node if [ap] != 0, ap++;
-    assert traversed_path = expected_path;
-    return (root=root, value=leaf[value_idx]);
-
-    edge_node:
-    let proof_mode = derive_proof_mode(leaf[1], leaf[2], expected_path);
-    %{ print("proof_mode:", ids.proof_mode) %}
+    let (proof_mode, expected_path_to_leaf) = derive_proof_mode(leaf[1], leaf[2], expected_path);
     if (proof_mode == 1) {
         assert traversed_path = expected_path;
-        return (root=root, value=leaf[value_idx]);
+        return (root=root, value=leaf[0]);
     } else {
-        assert_subpath(traversed_path, expected_path, leaf[2]);
+        // If we have a valid non-inclusion proof, we retrun 0 as value.
+        assert_subpath(traversed_path, expected_path_to_leaf, leaf[2]);
         return (root=root, value=0);
     }
 }
 
+// Traverse function if the leaf node is a binary node.
+func traverse_binary_leaf{
+    pedersen_ptr: HashBuiltin*,
+    bitwise_ptr: BitwiseBuiltin*,
+    pow2_array: felt*,
+}(nodes: felt**, n_nodes: felt, expected_path: felt) -> (root: felt, value: felt) {
+    alloc_locals;
+
+    let leaf = nodes[n_nodes - 1];
+    let leaf_hash = hash_binary_node(leaf);
+
+    // In this case, the initial path is the least signficant bit of the expected path. 
+    // This value is also used for retrieving the value from the leaf.
+    let (node_path) = bitwise_and(expected_path, 1);
+    let path_length_pow2 = 2;
+
+    with nodes {
+        let (root, traversed_path) = traverse_inner(n_nodes - 1, expected_path, leaf_hash, node_path, path_length_pow2);
+    }
+
+    // If the leaf node is a binary node, we always have inclusion.
+    assert traversed_path = expected_path;
+    return (root=root, value=leaf[node_path]);
+}
+
+// Inner traverse function used to traverse the nodes.
+// This function will return the path is took through the tree, along with the computed root.
 func traverse_inner{
     pedersen_ptr: HashBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
@@ -249,6 +295,7 @@ func traverse_inner{
     return traverse_inner(n_nodes - 1, expected_path, next_hash, next_path, next_path_length_pow2);
 }
 
+// Hash function for binary nodes.
 func hash_binary_node{
     pedersen_ptr: HashBuiltin*,
 }(node: felt*) -> felt {
@@ -256,6 +303,7 @@ func hash_binary_node{
     return node_hash;
 }
 
+// Hash function for edge nodes.
 func hash_edge_node{
     pedersen_ptr: HashBuiltin*,
 }(node: felt*) -> felt {
@@ -263,64 +311,42 @@ func hash_edge_node{
     return node_hash + node[2];
 }
 
-func init_leaf_nodes{
-    pedersen_ptr: HashBuiltin*,
-    pow2_array: felt*,
-    bitwise_ptr: BitwiseBuiltin*,
-}(expected_path: felt, leaf: felt*, n_nodes: felt) -> (leaf_hash: felt, path: felt, path_length_pow2: felt, value_idx: felt) {
-
-    %{ memory[ap] = nodes_types[ids.n_nodes - 1] %}
-    jmp edge_node if [ap] != 0, ap++;
-    let leaf_hash = hash_binary_node(leaf);
-    let (value_idx) = bitwise_and(expected_path, 1);
-
-    return (leaf_hash=leaf_hash, path=value_idx, path_length_pow2=2, value_idx=value_idx);
-
-    edge_node:
-    let leaf_hash = hash_edge_node(leaf);
-    let path = leaf[1];
-    let path_length_pow2 = pow2_array[leaf[2]];
-    return (leaf_hash=leaf_hash, path=path, path_length_pow2=path_length_pow2, value_idx=0);
-}
-
-// TODO: Make sound!!!!
+// If the leaf node is an edge node, there are two cases:
+// 1. the last bytes of the expected_path match the leaf edge path -> Inclusion
+// 2. the last bytes of the expected_path do not match the leaf edge path -> Non-Inclusion
+// This function checks this by using divmod and comparing the remainder with the leaf edge path.
+// Additionally, we return the path to the edge node (q), which we can reuse in case of a non-inclusion proof.
 func derive_proof_mode{
-    // bitwise_ptr: BitwiseBuiltin*,
-    // pow2_array: felt*,
-}(leaf_path: felt, path_len: felt, expected_path: felt) -> felt {
-    alloc_locals;
-
-    local r: felt;
-    %{
-        q, ids.r = divmod(ids.expected_path, 2**ids.path_len)
-    %}
+    bitwise_ptr: BitwiseBuiltin*,
+    pow2_array: felt*,
+}(leaf_path: felt, path_len: felt, expected_path: felt) -> (proof_mode: felt, path_to_leaf: felt) {
+    
+    // Compute q and r from the expected path and the path length of the edge node.
+    let (q, r) = bitwise_divmod(expected_path, pow2_array[path_len]);
 
     if (r != leaf_path) {
-        return 0; // Non-Inclusion Proof
+        return (proof_mode=0, path_to_leaf=q); // Non-Inclusion Proof
     } else {
-        return 1; // Inclusion Proof
+        return (proof_mode=1, path_to_leaf=q); // Inclusion Proof
     }
 }
 
-// TODO: Make sound!!!!
-func assert_subpath(path: felt, expected_path: felt, edge_path_len: felt) {
-    alloc_locals;
-    local q_path: felt;
-    local q_expected_path: felt;
-    %{
-        ids.q_expected_path, r = divmod(ids.expected_path, 2**(ids.edge_path_len))
-        ids.q_path, r = divmod(ids.path, 2**(ids.edge_path_len))
-        print("q_path:", ids.q_path)
-        print("q_expected_path:", ids.q_expected_path)
-    %}
+// Checks that the traversed path is a subpath of the expected path, matching the edge node path length.
+// This ensures that we have a valid proof of non-inclusion.
+func assert_subpath{
+    bitwise_ptr: BitwiseBuiltin*,
+    pow2_array: felt*,
+}(traversed_path: felt, expected_path_to_leaf: felt, path_len: felt) {
+    let (traversed_path_to_leaf, _r) = bitwise_divmod(traversed_path, pow2_array[path_len]);
 
     with_attr error_message("Non-inclusion subpath Mismatch!") {
-        assert q_path = q_expected_path;
+        assert traversed_path_to_leaf = expected_path_to_leaf;
     }
 
     return ();
 }
 
+// Loads the proof nodes into memory.
 func load_nodes() -> (nodes: felt**, len: felt) {
     alloc_locals;
     let (nodes: felt**) = alloc();
@@ -336,4 +362,3 @@ func load_nodes() -> (nodes: felt**, len: felt) {
     %}
     return (nodes=nodes, len=len);
 }
-
