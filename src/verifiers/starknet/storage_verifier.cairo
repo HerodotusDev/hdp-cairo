@@ -168,7 +168,8 @@ func traverse{
     return traverse_edge_leaf(nodes, n_nodes, expected_path);
 }
 
-// Traverse function if the leaf node is an edge node.
+// Traverse a proof, where the last proof node is an edge node.
+// This could be an inclusion or non-inclusion proof.
 func traverse_edge_leaf{
     pedersen_ptr: HashBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
@@ -179,8 +180,9 @@ func traverse_edge_leaf{
     let leaf = nodes[n_nodes - 1];
     let leaf_hash = hash_edge_node(leaf);
     let node_path = leaf[1];
-    // The eval depth is how many bits we went down the binary tree from the root.
-    // Since we are traversing the tree upwards, we precompute this value via hint and validate it afterwards
+    // First we precompute the eval depth of the proof via hint.
+    // In case of non-inclusion, we dont nececcary need to traverse the entire depth of the tree.
+    // The eval depth is how many bits we went down the binary tree from the root for the proof.
     local eval_depth: felt;
     %{
         eval_depth = 0
@@ -191,32 +193,48 @@ func traverse_edge_leaf{
                 eval_depth += nodes[i][2]
         ids.eval_depth = eval_depth
     %}
-    // In case of non-inclusion, we might not have to evaluate the entire depth of the tree.
-    // If this happens, we need to left shift the edge node path, so the traversed path matches the length of the expected path.
-    // The padding we add is never evaluated.
-    // We do this by substracting the eval depth from the edge node offset.
-    local edge_node_offset = 251 - (eval_depth - leaf[2]);
-    let path_length_pow2 = pow2_array[edge_node_offset];
+
+    // If the eval_depth is not 251, we no we are dealing with a non-inclusion proof. (we can also have non-inclusion proofs with eval depth 251 though)
+    // To verify these proofs correctly, we need to shift the traversed path, so it matches the length of the expected path (251 bits).
+    // The eval depth, is the depth of the proof we need to evaluate.
+
+    // We want to end up with something like this:
+    // Last edge node: {value: 1337, path: 0x8835, path_len: 16}
+    // Expected path:  0x71303bca4a8f9507624f6cc042ec4cfb9b16a629ac39b533c92f64ff82d3a4a (always 251 bits long)
+    // Traversed path: 0x71303bca4a8f8835 (63 bits)
+    // Shifted path:   0x71303bca4a8f883500000000000000000000000000000000000000000000000 (251 bits)
+    //                               ^   ^ 
+    //                               |   |
+    //                          _____|   |_____
+    //                         |               |
+    //             eval_depth - leaf_len       eval_depth
+    local edge_node_shift = 251 - (eval_depth - leaf[2]);
+    // Since devisions are impractical in Cairo, we traverse the proof from the bottom up.
+    // To track where we are in the tree, we use this variable: path_length_pow2
+    // We initializer it with the shifted index we computed above (pow of 2)
+    // This results in us skipping all of the proof nodes that come before the edge node.
+    let edge_node_start_position = pow2_array[edge_node_shift];
 
     with nodes {
-        let (root, traversed_path, traversed_eval_depth) = traverse_inner(n_nodes - 1, expected_path, leaf_hash, node_path, path_length_pow2, leaf[2]);
+        let (root, traversed_path, traversed_eval_depth) = traverse_inner(n_nodes - 1, expected_path, leaf_hash, node_path, edge_node_start_position, leaf[2]);
     }
 
-    // Validate the eval depth hint
+    // As we precomputed the eval depth, we need to validate the hint here.
     assert traversed_eval_depth = eval_depth;
 
-    let (proof_mode) = derive_proof_mode(leaf[1], edge_node_offset, expected_path);
+    let (proof_mode) = derive_proof_mode(leaf[1], edge_node_start_position, expected_path);
     if (proof_mode == 1) {
         assert traversed_path = expected_path;
         return (root=root, value=leaf[0]);
     } else {
-        // If we have a valid non-inclusion proof, we retrun 0 as value.
-        assert_subpath(traversed_path, expected_path, edge_node_offset);
+        // If we have a valid non-inclusion proof, we return 0 as value.
+        assert_subpath(traversed_path, expected_path, edge_node_start_position);
         return (root=root, value=0);
     }
 }
 
-// Traverse function if the leaf node is a binary node.
+// Traverse a proof, where the last proof node is a binary node.
+// This is always an inclusion proof.
 func traverse_binary_leaf{
     pedersen_ptr: HashBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
@@ -305,9 +323,9 @@ func hash_edge_node{
 func derive_proof_mode{
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
-}(leaf_path: felt, path_len: felt, expected_path: felt) -> (proof_mode: felt) {
+}(leaf_path: felt, edge_node_start_position: felt, expected_path: felt) -> (proof_mode: felt) {
     // Compute q and r from the expected path and the path length of the edge node.
-    let (_q, r) = bitwise_divmod(expected_path, pow2_array[path_len]);
+    let (_q, r) = bitwise_divmod(expected_path, edge_node_start_position);
 
     if (r != leaf_path) {
         return (proof_mode=0); // Non-Inclusion Proof
@@ -321,28 +339,29 @@ func derive_proof_mode{
 // In case of a non-inclusion proof, we have proven the inclusion of the closest edge node to the expected path
 // To prove the non-inclusion path, is not part of the tree, we have to show, that the path up until the edge node, is part of the expected path.
 // E.g.
-// Closest edge node: {path: 0x123, path_len: 12} (path length in bits)
-//  Expected path: 0xabcdef234 (EP)
-// Traversed path: 0xabcdef123 (TP)
+// Last edge: {value: 1337, path: 0x8835, path_len: 16}
+// Expected path (EP):  0x71303bca4a8f9507624f6cc042ec4cfb9b16a629ac39b533c92f64ff82d3a4a (always 251 bits long)
+// Traversed path:      0x71303bca4a8f8835 (63 bits)
+// Shifted path (SP):   0x71303bca4a8f883500000000000000000000000000000000000000000000000 (251 bits)
 // We need to show, that: 
-// e_q, e_r = divmod(EP, 2^edge.path_len) | e_q = 0xabcdef
-// t_q, t_r = divmod(TP, 2^edge.path_len) | t_q = 0xabcdef
-// assert t_q == e_q
-// The shows, that until the edge node path (0x123) the traversed path is part of the expected path.
+// e_q, e_r = divmod(EP, edge_node_start_position) | e_q = 0x71303bca4a8f, e_r = 0x9507624f6cc042ec4cfb9b16a629ac39b533c92f64ff82d3a4a
+// s_q, s_r = divmod(SP, edge_node_start_position) | s_q = 0x71303bca4a8f, s_r = 0x883500000000000000000000000000000000000000000000000
+// assert s_q == e_q
+// The shows, that until the edge node path (0x8835) the traversed path is part of the expected path.
 // Since no further branching is possible once we have reached and edge node, we are now sure that the expected path is not part of the tree.
+// Note: Proving s_r != e_r is also required. We have done this in derive_proof_mode already.
 func assert_subpath{
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
-}(traversed_path: felt, expected_path: felt, edge_node_offset: felt) {
+}(shifted_path: felt, expected_path: felt, edge_node_start_position: felt) {
     alloc_locals;
 
     // Compute start of edge node for divmod
-    let start_of_edge_node = pow2_array[edge_node_offset];
-    let (traversed_path_to_edge, _r) = bitwise_divmod(traversed_path, start_of_edge_node);
-    let (expected_path_to_edge, _r) = bitwise_divmod(expected_path, start_of_edge_node);
+    let (shifted_traversed_path, _r) = bitwise_divmod(shifted_path, edge_node_start_position);
+    let (expected_path, _r) = bitwise_divmod(expected_path, edge_node_start_position);
 
     with_attr error_message("Non-inclusion subpath Mismatch!") {
-        assert traversed_path_to_edge = expected_path_to_edge;
+        assert shifted_traversed_path = expected_path;
     }
 
     return ();
