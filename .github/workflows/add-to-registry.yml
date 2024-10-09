@@ -70,13 +70,10 @@ jobs:
         run: |
           cd cairo-compilations
           
-          # Check if first program (HDP) already exists
-          HDP_UPDATED=false
-          if [ ! -d "${{ env.HDP_HASH }}" ]; then
-            mkdir -p ${{ env.HDP_HASH }}
-            cp ../build/hdp.json ${{ env.HDP_HASH }}/program.json
-            HDP_UPDATED=true
-          fi
+          # We always want to update the HDP program, as there can be changes in the hints, which are not reflected in the hash
+          HDP_UPDATED=true
+          mkdir -p ${{ env.HDP_HASH }}
+          cp ../build/hdp.json ${{ env.HDP_HASH }}/program.json
           
           # Store second program (only if folder doesn't exist)
           CONTRACT_DRY_RUN_UPDATED=false
