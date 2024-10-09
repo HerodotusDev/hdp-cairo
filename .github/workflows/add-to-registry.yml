@@ -73,7 +73,7 @@ jobs:
           # We always want to update the HDP program, as there can be changes in the hints, which are not reflected in the hash
           HDP_UPDATED=true
           mkdir -p ${{ env.HDP_HASH }}
-          cp ../build/hdp.json ${{ env.HDP_HASH }}/program.json
+          cp -f ../build/hdp.json ${{ env.HDP_HASH }}/program.json
           
           # Store second program (only if folder doesn't exist)
           CONTRACT_DRY_RUN_UPDATED=false
