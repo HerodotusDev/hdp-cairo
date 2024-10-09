@@ -133,6 +133,16 @@ pub impl HeaderMemorizerImpl of HeaderMemorizerTrait {
             .unwrap_syscall();
         u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }
     }
+    fn get_timestamp(self: @Memorizer, key: HeaderKey) -> u256 {
+        let value = call_contract_syscall(
+            HEADER_MEMORIZER.try_into().unwrap(),
+            HEADER_MEMORIZER_GET_TIMESTAMP,
+            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number,]
+                .span()
+        )
+            .unwrap_syscall();
+        u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }
+    }
     fn get_mix_hash(self: @Memorizer, key: HeaderKey) -> u256 {
         let value = call_contract_syscall(
             HEADER_MEMORIZER.try_into().unwrap(),
