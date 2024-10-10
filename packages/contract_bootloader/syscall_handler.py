@@ -138,7 +138,6 @@ class SyscallHandler(SyscallHandlerBase):
                 dict_raw_ptrs=calldata[0 : Memorizer.size()],
                 dict_manager=self.dict_manager,
             )
-            print(memorizer.dict_ptr)
 
             idx = Memorizer.size()
             key = StorageMemorizerKey.from_int(
@@ -164,7 +163,6 @@ class SyscallHandler(SyscallHandlerBase):
                 dict_raw_ptrs=calldata[0 : Memorizer.size()],
                 dict_manager=self.dict_manager,
             )
-            print(memorizer.dict_ptr)
 
             idx = Memorizer.size()
             key = BlockTxMemorizerKey.from_int(
