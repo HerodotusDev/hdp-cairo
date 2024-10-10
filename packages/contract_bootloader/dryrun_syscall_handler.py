@@ -22,6 +22,10 @@ from contract_bootloader.memorizer.storage_memorizer import (
     MemorizerFunctionId as StorageMemorizerFunctionId,
     MemorizerKey as StorageMemorizerKey,
 )
+from contract_bootloader.memorizer.block_tx_memorizer import (
+    MemorizerFunctionId as BlockTxMemorizerFunctionId,
+    MemorizerKey as BlockTxMemorizerKey,
+)
 from contract_bootloader.dryrun_syscall_memorizer_handler.header_memorizer_handler import (
     DryRunHeaderMemorizerHandler,
 )
@@ -30,6 +34,9 @@ from contract_bootloader.dryrun_syscall_memorizer_handler.account_memorizer_hand
 )
 from contract_bootloader.dryrun_syscall_memorizer_handler.storage_memorizer_handler import (
     DryRunStorageMemorizerHandler,
+)
+from contract_bootloader.dryrun_syscall_memorizer_handler.block_tx_memorizer_handler import (
+    DryRunBlockTxMemorizerHandler,
 )
 
 # Load environment variables from a .env file if present
@@ -159,6 +166,33 @@ class DryRunSyscallHandler(SyscallHandlerBase):
             )
 
             handler = DryRunStorageMemorizerHandler(
+                memorizer=memorizer,
+                evm_provider_url=RPC_URL,
+            )
+            retdata = handler.handle(function_id=function_id, key=key)
+
+            self.fetch_keys_registry.append(handler.fetch_keys_dict())
+
+        elif memorizerId == MemorizerId.BlockTx:
+            total_size = Memorizer.size() + BlockTxMemorizerKey.size()
+
+            if len(calldata) != total_size:
+                raise ValueError(
+                    f"Memorizer read must be initialized with a list of {total_size} integers"
+                )
+
+            function_id = StorageMemorizerFunctionId.from_int(request.selector)
+            memorizer = Memorizer(
+                dict_raw_ptrs=calldata[0 : Memorizer.size()],
+                dict_manager=self.dict_manager,
+            )
+
+            idx = Memorizer.size()
+            key = BlockTxMemorizerKey.from_int(
+                calldata[idx : idx + BlockTxMemorizerKey.size()]
+            )
+
+            handler = DryRunBlockTxMemorizerHandler(
                 memorizer=memorizer,
                 evm_provider_url=RPC_URL,
             )
