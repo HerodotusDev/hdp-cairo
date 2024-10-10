@@ -21,6 +21,7 @@ namespace TransactionMemorizerFunctionId {
     const GET_MAX_PRIORITY_FEE_PER_GAS = 12;
     const GET_BLOB_VERSIONED_HASHES = 13;
     const GET_MAX_FEE_PER_BLOB_GAS = 14;
+    const GET_TX_TYPE = 15;
 }
 
 func get_memorizer_handler_ptrs() -> felt** {
@@ -71,6 +72,9 @@ func get_memorizer_handler_ptrs() -> felt** {
 
     let (label) = get_label_location(get_max_fee_per_blob_gas_value);
     assert handler_ptrs[TransactionMemorizerFunctionId.GET_MAX_FEE_PER_BLOB_GAS] = label;
+
+    let (label) = get_label_location(get_tx_type_value);
+    assert handler_ptrs[TransactionMemorizerFunctionId.GET_TX_TYPE] = label;
 
     return handler_ptrs;
 }
@@ -274,4 +278,12 @@ func get_max_fee_per_blob_gas_value{
     );
 
     return value;
+}
+
+func get_tx_type_value{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
+}() -> Uint256 {
+    let (tx_type_felt, _rlp_start_offset) = TransactionDecoder.open_tx_envelope(item=rlp);
+    let tx_type = Uint256(low=tx_type_felt, high=0);
+    return tx_type;
 }
