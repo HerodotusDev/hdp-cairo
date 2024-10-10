@@ -35,6 +35,9 @@ from contract_bootloader.execute_syscalls_handler.account_memorizer_handler impo
 from contract_bootloader.execute_syscalls_handler.storage_memorizer_handler import (
     get_memorizer_handler_ptrs as get_storage_memorizer_handler_ptrs,
 )
+from contract_bootloader.execute_syscalls_handler.transaction_memorizer_handler import (
+    get_memorizer_handler_ptrs as get_transaction_memorizer_handler_ptrs,
+)
 
 // Represents the arguments pushed to the stack before calling an entry point.
 struct EntryPointCallArguments {
@@ -65,6 +68,7 @@ func call_execute_syscalls{
     header_dict: DictAccess*,
     account_dict: DictAccess*,
     storage_dict: DictAccess*,
+    block_tx_dict: DictAccess*,
     pow2_array: felt*,
 }(execution_context: ExecutionContext*, syscall_ptr_end: felt*, dry_run: felt) {
     alloc_locals;
@@ -79,6 +83,7 @@ func call_execute_syscalls{
         header_memorizer_handler_ptrs=get_header_memorizer_handler_ptrs(),
         account_memorizer_handler_ptrs=get_account_memorizer_handler_ptrs(),
         storage_memorizer_handler_ptrs=get_storage_memorizer_handler_ptrs(),
+        transaction_memorizer_handler_ptrs=get_transaction_memorizer_handler_ptrs(),
     );
 
     execute_syscalls(
@@ -152,6 +157,7 @@ func execute_entry_point{
     header_dict: DictAccess*,
     account_dict: DictAccess*,
     storage_dict: DictAccess*,
+    block_tx_dict: DictAccess*,
     pow2_array: felt*,
 }(compiled_class: CompiledClass*, execution_context: ExecutionContext*, dry_run: felt) -> (
     retdata_size: felt, retdata: felt*

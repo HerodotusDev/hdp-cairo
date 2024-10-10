@@ -14,34 +14,19 @@ format_file() {
     fi
 }
 
-format_scarb_project() {
-    local project_dir="$1"
-    
-    echo "Formatting Scarb project in: $project_dir"
-    
-    # Attempt to format the Scarb project
-    if (cd "$project_dir" && scarb fmt); then
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - Successfully formatted Scarb project in: $project_dir"
-    else
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - Failed to format Scarb project in: $project_dir"
-        return 1
-    fi
-}
-
 # Export the functions so they're available in subshells
 export -f format_file
-export -f format_scarb_project
 
 # Find all .cairo files under src/ and tests/ directories and format them in parallel
 echo "Formatting .cairo files..."
-find ./src ./tests ./packages/contract_bootloader/ -name '*.cairo' ! -path "./src/cairo1/*" ! -path "./src/contracts/*" | parallel --halt soon,fail=1 format_file {}
+find ./src ./tests ./packages/contract_bootloader/ -name '*.cairo' ! -path "cairo/*" ! -path "./src/contracts/*" | parallel --halt soon,fail=1 format_file {}
 
 # Capture the exit status of parallel for .cairo files
 exit_status_cairo_files=$?
 
 # Format Scarb workspace
 echo "Formatting Scarb workspace..."
-scarb fmt --check
+scarb fmt
 
 # Capture the exit status of parallel for Scarb projects
 exit_status_scarb_projects=$?

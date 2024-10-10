@@ -8,7 +8,7 @@ from starkware.starknet.common.new_syscalls import (
 )
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
 from starkware.starknet.core.os.builtins import BuiltinPointers
-from src.memorizer import HeaderMemorizer, AccountMemorizer, StorageMemorizer
+from src.memorizer import HeaderMemorizer, AccountMemorizer, StorageMemorizer, BlockTxMemorizer
 from src.decoders.header_decoder import HeaderDecoder, HeaderField
 from src.decoders.account_decoder import AccountDecoder, AccountField
 from src.decoders.storage_slot_decoder import StorageSlotDecoder
@@ -45,6 +45,7 @@ func execute_syscalls{
     header_dict: DictAccess*,
     account_dict: DictAccess*,
     storage_dict: DictAccess*,
+    block_tx_dict: DictAccess*,
     pow2_array: felt*,
 }(execution_context: ExecutionContext*, syscall_ptr_end: felt*, get_value_trait: GetValueTrait*) {
     if (syscall_ptr == syscall_ptr_end) {
@@ -67,6 +68,7 @@ namespace MemorizerId {
     const HEADER = 0;
     const ACCOUNT = 1;
     const STORAGE = 2;
+    const TRANSACTION = 3;
 }
 
 func abstract_memorizer_handler{
@@ -85,6 +87,7 @@ func execute_call_contract{
     header_dict: DictAccess*,
     account_dict: DictAccess*,
     storage_dict: DictAccess*,
+    block_tx_dict: DictAccess*,
     pow2_array: felt*,
 }(caller_execution_context: ExecutionContext*, get_value_trait: GetValueTrait*) {
     alloc_locals;
@@ -146,6 +149,24 @@ func execute_call_contract{
         );
 
         let func_ptr: felt* = get_value_trait.storage_memorizer_handler_ptrs[function_id];
+        with func_ptr, rlp {
+            let value = abstract_memorizer_handler();
+        }
+
+        assert call_contract_response.retdata_start[0] = value.low;
+        assert call_contract_response.retdata_start[1] = value.high;
+        return ();
+    }
+    if (memorizer_id == MemorizerId.TRANSACTION) {
+        let (rlp) = BlockTxMemorizer.get(
+            chain_id=call_contract_request.calldata_start[2],
+            block_number=call_contract_request.calldata_start[3],
+            key_low=call_contract_request.calldata_start[4],
+        );
+
+        let tx_type = call_contract_request.calldata_start[4];
+
+        let func_ptr: felt* = get_value_trait.transaction_memorizer_handler_ptrs[function_id];
         with func_ptr, rlp {
             let value = abstract_memorizer_handler();
         }
