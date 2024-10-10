@@ -39,6 +39,7 @@ class MemorizerFunctionId(Enum):
     def size(cls) -> int:
         return 1
 
+
 @dataclass(frozen=True)
 class MemorizerKey:
     chain_id: int
@@ -60,13 +61,14 @@ class MemorizerKey:
         return {
             "chain_id": self.chain_id,
             "block_number": self.block_number,
-            "index": self.index
+            "index": self.index,
         }
 
     @classmethod
     def size(cls) -> int:
         return 3
-    
+
+
 class AbstractBlockTxMemorizerBase(ABC):
     def __init__(self, memorizer: Memorizer):
         self.memorizer = memorizer
@@ -96,7 +98,7 @@ class AbstractBlockTxMemorizerBase(ABC):
             return self.function_map[function_id](key=key)
         else:
             raise ValueError(f"Function ID {function_id} is not recognized.")
-        
+
     @abstractmethod
     def get_nonce(self, key: MemorizerKey) -> Tuple[int, int]:
         pass
@@ -109,7 +111,7 @@ class AbstractBlockTxMemorizerBase(ABC):
     def get_gas_limit(self, key: MemorizerKey) -> Tuple[int, int]:
         pass
 
-    # @abstractmethod
+    @abstractmethod
     def get_receiver(self, key: MemorizerKey) -> Tuple[int, int]:
         pass
 
@@ -127,7 +129,7 @@ class AbstractBlockTxMemorizerBase(ABC):
 
     @abstractmethod
     def get_r(self, key: MemorizerKey) -> Tuple[int, int]:
-        pass    
+        pass
 
     @abstractmethod
     def get_s(self, key: MemorizerKey) -> Tuple[int, int]:
@@ -160,7 +162,6 @@ class AbstractBlockTxMemorizerBase(ABC):
     @abstractmethod
     def get_tx_type(self, key: MemorizerKey) -> Tuple[int, int]:
         pass
-    
 
     def _get_felt_range(self, start_addr: int, end_addr: int) -> List[int]:
         assert isinstance(start_addr, RelocatableValue)

@@ -5,7 +5,7 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.registers import get_label_location
 
 // This is not used but stays for reference
-namespace TransactionMemorizerFunctionId {
+namespace BlockTxMemorizerFunctionId {
     const GET_NONCE = 0;
     const GET_GAS_PRICE = 1;
     const GET_GAS_LIMIT = 2;
@@ -29,52 +29,52 @@ func get_memorizer_handler_ptrs() -> felt** {
     let handler_ptrs = cast(handler_list, felt**);
 
     let (label) = get_label_location(get_nonce_value);
-    assert handler_ptrs[TransactionMemorizerFunctionId.GET_NONCE] = label;
+    assert handler_ptrs[BlockTxMemorizerFunctionId.GET_NONCE] = label;
 
     let (label) = get_label_location(get_gas_price_value);
-    assert handler_ptrs[TransactionMemorizerFunctionId.GET_GAS_PRICE] = label;
+    assert handler_ptrs[BlockTxMemorizerFunctionId.GET_GAS_PRICE] = label;
 
     let (label) = get_label_location(get_gas_limit_value);
-    assert handler_ptrs[TransactionMemorizerFunctionId.GET_GAS_LIMIT] = label;
+    assert handler_ptrs[BlockTxMemorizerFunctionId.GET_GAS_LIMIT] = label;
 
     let (label) = get_label_location(get_receiver_value);
-    assert handler_ptrs[TransactionMemorizerFunctionId.GET_RECEIVER] = label;
+    assert handler_ptrs[BlockTxMemorizerFunctionId.GET_RECEIVER] = label;
 
     let (label) = get_label_location(get_value_value);
-    assert handler_ptrs[TransactionMemorizerFunctionId.GET_VALUE] = label;
+    assert handler_ptrs[BlockTxMemorizerFunctionId.GET_VALUE] = label;
 
     let (label) = get_label_location(get_input_value);
-    assert handler_ptrs[TransactionMemorizerFunctionId.GET_INPUT] = label;
+    assert handler_ptrs[BlockTxMemorizerFunctionId.GET_INPUT] = label;
 
     let (label) = get_label_location(get_v_value);
-    assert handler_ptrs[TransactionMemorizerFunctionId.GET_V] = label;
+    assert handler_ptrs[BlockTxMemorizerFunctionId.GET_V] = label;
 
     let (label) = get_label_location(get_r_value);
-    assert handler_ptrs[TransactionMemorizerFunctionId.GET_R] = label;
+    assert handler_ptrs[BlockTxMemorizerFunctionId.GET_R] = label;
 
     let (label) = get_label_location(get_s_value);
-    assert handler_ptrs[TransactionMemorizerFunctionId.GET_S] = label;
+    assert handler_ptrs[BlockTxMemorizerFunctionId.GET_S] = label;
 
     let (label) = get_label_location(get_chain_id_value);
-    assert handler_ptrs[TransactionMemorizerFunctionId.GET_CHAIN_ID] = label;
+    assert handler_ptrs[BlockTxMemorizerFunctionId.GET_CHAIN_ID] = label;
 
     let (label) = get_label_location(get_access_list_value);
-    assert handler_ptrs[TransactionMemorizerFunctionId.GET_ACCESS_LIST] = label;
+    assert handler_ptrs[BlockTxMemorizerFunctionId.GET_ACCESS_LIST] = label;
 
     let (label) = get_label_location(get_max_fee_per_gas_value);
-    assert handler_ptrs[TransactionMemorizerFunctionId.GET_MAX_FEE_PER_GAS] = label;
+    assert handler_ptrs[BlockTxMemorizerFunctionId.GET_MAX_FEE_PER_GAS] = label;
 
     let (label) = get_label_location(get_max_priority_fee_per_gas_value);
-    assert handler_ptrs[TransactionMemorizerFunctionId.GET_MAX_PRIORITY_FEE_PER_GAS] = label;
+    assert handler_ptrs[BlockTxMemorizerFunctionId.GET_MAX_PRIORITY_FEE_PER_GAS] = label;
 
     let (label) = get_label_location(get_blob_versioned_hashes_value);
-    assert handler_ptrs[TransactionMemorizerFunctionId.GET_BLOB_VERSIONED_HASHES] = label;
+    assert handler_ptrs[BlockTxMemorizerFunctionId.GET_BLOB_VERSIONED_HASHES] = label;
 
     let (label) = get_label_location(get_max_fee_per_blob_gas_value);
-    assert handler_ptrs[TransactionMemorizerFunctionId.GET_MAX_FEE_PER_BLOB_GAS] = label;
+    assert handler_ptrs[BlockTxMemorizerFunctionId.GET_MAX_FEE_PER_BLOB_GAS] = label;
 
     let (label) = get_label_location(get_tx_type_value);
-    assert handler_ptrs[TransactionMemorizerFunctionId.GET_TX_TYPE] = label;
+    assert handler_ptrs[BlockTxMemorizerFunctionId.GET_TX_TYPE] = label;
 
     return handler_ptrs;
 }
@@ -284,6 +284,8 @@ func get_tx_type_value{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
 }() -> Uint256 {
     let (tx_type_felt, _rlp_start_offset) = TransactionDecoder.open_tx_envelope(item=rlp);
+
     let tx_type = Uint256(low=tx_type_felt, high=0);
+
     return tx_type;
 }

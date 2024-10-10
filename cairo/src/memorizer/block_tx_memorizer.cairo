@@ -33,7 +33,13 @@ pub impl BlockTxMemorizerImpl of BlockTxMemorizerTrait {
         let value = call_contract_syscall(
             BLOCK_TX_MEMORIZER.try_into().unwrap(),
             BLOCK_TX_MEMORIZER_GET_NONCE,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number, key.index,]
+            array![
+                *self.dict.segment_index,
+                *self.dict.offset,
+                key.chain_id,
+                key.block_number,
+                key.index,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -44,7 +50,13 @@ pub impl BlockTxMemorizerImpl of BlockTxMemorizerTrait {
         let value = call_contract_syscall(
             BLOCK_TX_MEMORIZER.try_into().unwrap(),
             BLOCK_TX_MEMORIZER_GET_GAS_PRICE,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number, key.index,]
+            array![
+                *self.dict.segment_index,
+                *self.dict.offset,
+                key.chain_id,
+                key.block_number,
+                key.index,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -55,7 +67,13 @@ pub impl BlockTxMemorizerImpl of BlockTxMemorizerTrait {
         let value = call_contract_syscall(
             BLOCK_TX_MEMORIZER.try_into().unwrap(),
             BLOCK_TX_MEMORIZER_GET_GAS_LIMIT,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number, key.index,]
+            array![
+                *self.dict.segment_index,
+                *self.dict.offset,
+                key.chain_id,
+                key.block_number,
+                key.index,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -66,7 +84,13 @@ pub impl BlockTxMemorizerImpl of BlockTxMemorizerTrait {
         let value = call_contract_syscall(
             BLOCK_TX_MEMORIZER.try_into().unwrap(),
             BLOCK_TX_MEMORIZER_GET_RECEIVER,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number, key.index,]
+            array![
+                *self.dict.segment_index,
+                *self.dict.offset,
+                key.chain_id,
+                key.block_number,
+                key.index,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -77,7 +101,13 @@ pub impl BlockTxMemorizerImpl of BlockTxMemorizerTrait {
         let value = call_contract_syscall(
             BLOCK_TX_MEMORIZER.try_into().unwrap(),
             BLOCK_TX_MEMORIZER_GET_VALUE,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number, key.index,]
+            array![
+                *self.dict.segment_index,
+                *self.dict.offset,
+                key.chain_id,
+                key.block_number,
+                key.index,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -88,7 +118,13 @@ pub impl BlockTxMemorizerImpl of BlockTxMemorizerTrait {
         let value = call_contract_syscall(
             BLOCK_TX_MEMORIZER.try_into().unwrap(),
             BLOCK_TX_MEMORIZER_GET_INPUT,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number, key.index,]
+            array![
+                *self.dict.segment_index,
+                *self.dict.offset,
+                key.chain_id,
+                key.block_number,
+                key.index,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -99,19 +135,30 @@ pub impl BlockTxMemorizerImpl of BlockTxMemorizerTrait {
         let value = call_contract_syscall(
             BLOCK_TX_MEMORIZER.try_into().unwrap(),
             BLOCK_TX_MEMORIZER_GET_V,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number, key.index,]
-        
+            array![
+                *self.dict.segment_index,
+                *self.dict.offset,
+                key.chain_id,
+                key.block_number,
+                key.index,
+            ]
                 .span()
         )
             .unwrap_syscall();
-        u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap()}
+        u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }
     }
 
     fn get_r(self: @Memorizer, key: BlockTxKey) -> u256 {
         let value = call_contract_syscall(
             BLOCK_TX_MEMORIZER.try_into().unwrap(),
             BLOCK_TX_MEMORIZER_GET_R,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number, key.index,]
+            array![
+                *self.dict.segment_index,
+                *self.dict.offset,
+                key.chain_id,
+                key.block_number,
+                key.index,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -122,7 +169,13 @@ pub impl BlockTxMemorizerImpl of BlockTxMemorizerTrait {
         let value = call_contract_syscall(
             BLOCK_TX_MEMORIZER.try_into().unwrap(),
             BLOCK_TX_MEMORIZER_GET_S,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number, key.index,]
+            array![
+                *self.dict.segment_index,
+                *self.dict.offset,
+                key.chain_id,
+                key.block_number,
+                key.index,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -133,7 +186,13 @@ pub impl BlockTxMemorizerImpl of BlockTxMemorizerTrait {
         let value = call_contract_syscall(
             BLOCK_TX_MEMORIZER.try_into().unwrap(),
             BLOCK_TX_MEMORIZER_GET_CHAIN_ID,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number, key.index,]
+            array![
+                *self.dict.segment_index,
+                *self.dict.offset,
+                key.chain_id,
+                key.block_number,
+                key.index,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -144,7 +203,13 @@ pub impl BlockTxMemorizerImpl of BlockTxMemorizerTrait {
         let value = call_contract_syscall(
             BLOCK_TX_MEMORIZER.try_into().unwrap(),
             BLOCK_TX_MEMORIZER_GET_ACCESS_LIST,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number, key.index,]
+            array![
+                *self.dict.segment_index,
+                *self.dict.offset,
+                key.chain_id,
+                key.block_number,
+                key.index,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -155,7 +220,13 @@ pub impl BlockTxMemorizerImpl of BlockTxMemorizerTrait {
         let value = call_contract_syscall(
             BLOCK_TX_MEMORIZER.try_into().unwrap(),
             BLOCK_TX_MEMORIZER_GET_MAX_FEE_PER_GAS,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number, key.index,]
+            array![
+                *self.dict.segment_index,
+                *self.dict.offset,
+                key.chain_id,
+                key.block_number,
+                key.index,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -166,7 +237,13 @@ pub impl BlockTxMemorizerImpl of BlockTxMemorizerTrait {
         let value = call_contract_syscall(
             BLOCK_TX_MEMORIZER.try_into().unwrap(),
             BLOCK_TX_MEMORIZER_GET_MAX_PRIORITY_FEE_PER_GAS,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number, key.index,]
+            array![
+                *self.dict.segment_index,
+                *self.dict.offset,
+                key.chain_id,
+                key.block_number,
+                key.index,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -177,7 +254,13 @@ pub impl BlockTxMemorizerImpl of BlockTxMemorizerTrait {
         let value = call_contract_syscall(
             BLOCK_TX_MEMORIZER.try_into().unwrap(),
             BLOCK_TX_MEMORIZER_GET_BLOB_VERSIONED_HASHES,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number, key.index,]
+            array![
+                *self.dict.segment_index,
+                *self.dict.offset,
+                key.chain_id,
+                key.block_number,
+                key.index,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -188,7 +271,13 @@ pub impl BlockTxMemorizerImpl of BlockTxMemorizerTrait {
         let value = call_contract_syscall(
             BLOCK_TX_MEMORIZER.try_into().unwrap(),
             BLOCK_TX_MEMORIZER_GET_MAX_FEE_PER_BLOB_GAS,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number, key.index,]
+            array![
+                *self.dict.segment_index,
+                *self.dict.offset,
+                key.chain_id,
+                key.block_number,
+                key.index,
+            ]
                 .span()
         )
             .unwrap_syscall();
@@ -199,7 +288,13 @@ pub impl BlockTxMemorizerImpl of BlockTxMemorizerTrait {
         let value = call_contract_syscall(
             BLOCK_TX_MEMORIZER.try_into().unwrap(),
             BLOCK_TX_MEMORIZER_GET_TX_TYPE,
-            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number, key.index,]
+            array![
+                *self.dict.segment_index,
+                *self.dict.offset,
+                key.chain_id,
+                key.block_number,
+                key.index,
+            ]
                 .span()
         )
             .unwrap_syscall();

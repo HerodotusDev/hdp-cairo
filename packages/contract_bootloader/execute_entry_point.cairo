@@ -35,8 +35,8 @@ from contract_bootloader.execute_syscalls_handler.account_memorizer_handler impo
 from contract_bootloader.execute_syscalls_handler.storage_memorizer_handler import (
     get_memorizer_handler_ptrs as get_storage_memorizer_handler_ptrs,
 )
-from contract_bootloader.execute_syscalls_handler.transaction_memorizer_handler import (
-    get_memorizer_handler_ptrs as get_transaction_memorizer_handler_ptrs,
+from contract_bootloader.execute_syscalls_handler.block_tx_memorizer_handler import (
+    get_memorizer_handler_ptrs as get_block_tx_memorizer_handler_ptrs,
 )
 
 // Represents the arguments pushed to the stack before calling an entry point.
@@ -83,7 +83,7 @@ func call_execute_syscalls{
         header_memorizer_handler_ptrs=get_header_memorizer_handler_ptrs(),
         account_memorizer_handler_ptrs=get_account_memorizer_handler_ptrs(),
         storage_memorizer_handler_ptrs=get_storage_memorizer_handler_ptrs(),
-        transaction_memorizer_handler_ptrs=get_transaction_memorizer_handler_ptrs(),
+        block_tx_memorizer_handler_ptrs=get_block_tx_memorizer_handler_ptrs(),
     );
 
     execute_syscalls(

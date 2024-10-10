@@ -68,7 +68,7 @@ namespace MemorizerId {
     const HEADER = 0;
     const ACCOUNT = 1;
     const STORAGE = 2;
-    const TRANSACTION = 3;
+    const BLOCKTX = 3;
 }
 
 func abstract_memorizer_handler{
@@ -157,7 +157,7 @@ func execute_call_contract{
         assert call_contract_response.retdata_start[1] = value.high;
         return ();
     }
-    if (memorizer_id == MemorizerId.TRANSACTION) {
+    if (memorizer_id == MemorizerId.BLOCKTX) {
         let (rlp) = BlockTxMemorizer.get(
             chain_id=call_contract_request.calldata_start[2],
             block_number=call_contract_request.calldata_start[3],
@@ -166,7 +166,7 @@ func execute_call_contract{
 
         let tx_type = call_contract_request.calldata_start[4];
 
-        let func_ptr: felt* = get_value_trait.transaction_memorizer_handler_ptrs[function_id];
+        let func_ptr: felt* = get_value_trait.block_tx_memorizer_handler_ptrs[function_id];
         with func_ptr, rlp {
             let value = abstract_memorizer_handler();
         }

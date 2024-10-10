@@ -21,6 +21,10 @@ from contract_bootloader.memorizer.storage_memorizer import (
     MemorizerFunctionId as StorageMemorizerFunctionId,
     MemorizerKey as StorageMemorizerKey,
 )
+from contract_bootloader.memorizer.block_tx_memorizer import (
+    MemorizerFunctionId as BlockTxMemorizerFunctionId,
+    MemorizerKey as BlockTxMemorizerKey,
+)
 from contract_bootloader.syscall_memorizer_handler.account_memorizer_handler import (
     AccountMemorizerHandler,
 )
@@ -29,6 +33,9 @@ from contract_bootloader.syscall_memorizer_handler.header_memorizer_handler impo
 )
 from contract_bootloader.syscall_memorizer_handler.storage_memorizer_handler import (
     StorageMemorizerHandler,
+)
+from contract_bootloader.syscall_memorizer_handler.block_tx_memorizer_handler import (
+    BlockTxMemorizerHandler,
 )
 
 
@@ -139,6 +146,32 @@ class SyscallHandler(SyscallHandlerBase):
             )
 
             handler = StorageMemorizerHandler(
+                segments=self.segments,
+                memorizer=memorizer,
+            )
+            retdata = handler.handle(function_id=function_id, key=key)
+
+        elif memorizerId == MemorizerId.BlockTx:
+            total_size = Memorizer.size() + BlockTxMemorizerKey.size()
+
+            if len(calldata) != total_size:
+                raise ValueError(
+                    f"Memorizer read must be initialized with a list of {total_size} integers"
+                )
+
+            function_id = BlockTxMemorizerFunctionId.from_int(request.selector)
+            memorizer = Memorizer(
+                dict_raw_ptrs=calldata[0 : Memorizer.size()],
+                dict_manager=self.dict_manager,
+            )
+            print(memorizer.dict_ptr)
+
+            idx = Memorizer.size()
+            key = BlockTxMemorizerKey.from_int(
+                calldata[idx : idx + BlockTxMemorizerKey.size()]
+            )
+
+            handler = BlockTxMemorizerHandler(
                 segments=self.segments,
                 memorizer=memorizer,
             )
