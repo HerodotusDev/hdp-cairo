@@ -119,9 +119,11 @@ func main{
     assert calldata[3] = nondet %{ ids.account_dict.address_.offset %};
     assert calldata[4] = nondet %{ ids.storage_dict.address_.segment_index %};
     assert calldata[5] = nondet %{ ids.storage_dict.address_.offset %};
+    assert calldata[6] = nondet %{ ids.block_tx_dict.address_.segment_index %};
+    assert calldata[7] = nondet %{ ids.block_tx_dict.address_.offset %};
 
-    memcpy(dst=calldata + 6, src=inputs, len=inputs_len);
-    let calldata_size = 6 + inputs_len;
+    memcpy(dst=calldata + 8, src=inputs, len=inputs_len);
+    let calldata_size = 8 + inputs_len;
 
     with header_dict, account_dict, storage_dict, block_tx_dict, block_receipt_dict, pow2_array {
         let (retdata_size, retdata) = run_contract_bootloader(
