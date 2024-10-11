@@ -181,7 +181,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
                     f"Memorizer read must be initialized with a list of {total_size} integers"
                 )
 
-            function_id = StorageMemorizerFunctionId.from_int(request.selector)
+            function_id = BlockTxMemorizerFunctionId.from_int(request.selector)
             memorizer = Memorizer(
                 dict_raw_ptrs=calldata[0 : Memorizer.size()],
                 dict_manager=self.dict_manager,
