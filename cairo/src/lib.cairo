@@ -5,6 +5,7 @@ pub struct HDP {
     pub header_memorizer: Memorizer,
     pub account_memorizer: Memorizer,
     pub storage_memorizer: Memorizer,
+    pub block_tx_memorizer: Memorizer,
 }
 
 #[derive(Serde, Drop)]
