@@ -25,6 +25,7 @@ class MemorizerFunctionId(Enum):
     GET_BLOB_VERSIONED_HASHES = 13
     GET_MAX_FEE_PER_BLOB_GAS = 14
     GET_TX_TYPE = 15
+    GET_SENDER = 16
 
     @classmethod
     def from_int(cls, value: int):
@@ -89,6 +90,7 @@ class AbstractBlockTxMemorizerBase(ABC):
             MemorizerFunctionId.GET_BLOB_VERSIONED_HASHES: self.get_blob_versioned_hashes,
             MemorizerFunctionId.GET_MAX_FEE_PER_BLOB_GAS: self.get_max_fee_per_blob_gas,
             MemorizerFunctionId.GET_TX_TYPE: self.get_tx_type,
+            MemorizerFunctionId.GET_SENDER: self.get_sender,
         }
 
     def handle(
@@ -161,6 +163,10 @@ class AbstractBlockTxMemorizerBase(ABC):
 
     @abstractmethod
     def get_tx_type(self, key: MemorizerKey) -> Tuple[int, int]:
+        pass
+
+    @abstractmethod
+    def get_sender(self, key: MemorizerKey) -> Tuple[int, int]:
         pass
 
     def _get_felt_range(self, start_addr: int, end_addr: int) -> List[int]:

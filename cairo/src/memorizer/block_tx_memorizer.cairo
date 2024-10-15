@@ -19,6 +19,7 @@ const BLOCK_TX_MEMORIZER_GET_MAX_PRIORITY_FEE_PER_GAS: felt252 = 12;
 const BLOCK_TX_MEMORIZER_GET_BLOB_VERSIONED_HASHES: felt252 = 13;
 const BLOCK_TX_MEMORIZER_GET_MAX_FEE_PER_BLOB_GAS: felt252 = 14;
 const BLOCK_TX_MEMORIZER_GET_TX_TYPE: felt252 = 15;
+const BLOCK_TX_MEMORIZER_GET_SENDER: felt252 = 16;
 
 #[derive(Serde, Drop)]
 pub struct BlockTxKey {
@@ -300,4 +301,21 @@ pub impl BlockTxMemorizerImpl of BlockTxMemorizerTrait {
             .unwrap_syscall();
         u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }
     }
+
+    fn get_sender(self: @Memorizer, key: BlockTxKey) -> u256 {
+        let value = call_contract_syscall(
+            BLOCK_TX_MEMORIZER.try_into().unwrap(),
+            BLOCK_TX_MEMORIZER_GET_SENDER,
+            array![
+                *self.dict.segment_index,
+                *self.dict.offset,
+                key.chain_id,
+                key.block_number,
+                key.index,
+            ]
+                .span()
+        )
+            .unwrap_syscall();
+        u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }
+    }  
 }

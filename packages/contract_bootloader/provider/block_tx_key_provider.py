@@ -104,3 +104,7 @@ class BlockTxKeyEVMProvider(EVMProvider):
     def get_tx_type(self, key: MemorizerKey) -> int:
         tx = self.get_block_tx(key)
         return int(tx["type"], 16)
+    
+    def get_sender(self, key: MemorizerKey) -> int:
+        tx = self.get_block_tx(key)
+        return int(tx["from"], 16)

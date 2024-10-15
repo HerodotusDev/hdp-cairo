@@ -10,3 +10,8 @@ def test_fetch_slot():
         MemorizerKey(chain_id=11155111, block_number=6338117, index=3)
     )
     assert value == 18886516632
+
+    address = provider.get_sender(
+        MemorizerKey(chain_id=11155111, block_number=6338117, index=3)
+    )
+    assert address == 0xB7be526f87A2b43DF67fA4842257F7e15a6BC784

@@ -1,5 +1,5 @@
 from starkware.cairo.common.alloc import alloc
-from src.decoders.transaction_decoder import TransactionDecoder, TransactionField
+from src.decoders.transaction_decoder import TransactionDecoder, TransactionField, TransactionSender
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.registers import get_label_location
@@ -22,6 +22,7 @@ namespace BlockTxMemorizerFunctionId {
     const GET_BLOB_VERSIONED_HASHES = 13;
     const GET_MAX_FEE_PER_BLOB_GAS = 14;
     const GET_TX_TYPE = 15;
+    const GET_SENDER = 16;
 }
 
 func get_memorizer_handler_ptrs() -> felt** {
@@ -75,6 +76,9 @@ func get_memorizer_handler_ptrs() -> felt** {
 
     let (label) = get_label_location(get_tx_type_value);
     assert handler_ptrs[BlockTxMemorizerFunctionId.GET_TX_TYPE] = label;
+
+    let (label) = get_label_location(get_sender);
+    assert handler_ptrs[BlockTxMemorizerFunctionId.GET_SENDER] = label;
 
     return handler_ptrs;
 }
@@ -288,4 +292,19 @@ func get_tx_type_value{
     let tx_type = Uint256(low=tx_type_felt, high=0);
 
     return tx_type;
+}
+
+func get_sender{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, func_ptr: felt*, rlp: felt*
+}() -> Uint256 {
+    let (tx_type, rlp_start_offset) = TransactionDecoder.open_tx_envelope(item=rlp);
+
+    let value = TransactionSender.derive(
+        rlp=rlp, rlp_start_offset=rlp_start_offset, tx_type=tx_type
+    );
+
+    // ToDo: really not great, as I overload the low part (128bit) with the sender (160bit)
+    let sender = Uint256(low=value, high=0);
+
+    return sender;
 }
