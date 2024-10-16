@@ -33,7 +33,6 @@ namespace Task {
         bitwise_ptr: BitwiseBuiltin*,
         keccak_ptr: KeccakBuiltin*,
         tasks: ComputationalTask*,
-        chain_info: ChainInfo,
         pow2_array: felt*,
     }(n_tasks: felt, index: felt) {
         alloc_locals;
@@ -70,7 +69,6 @@ namespace Task {
             let (local task) = extract_params_and_construct_task{
                 range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
             }(
-                chain_id=chain_info.id,
                 input=tasks_input,
                 input_bytes_len=tasks_input_bytes_len,
                 datalake_hash=datalake_hash,
@@ -93,14 +91,15 @@ namespace Task {
         ec_op_ptr,
         keccak_ptr: KeccakBuiltin*,
         poseidon_ptr: PoseidonBuiltin*,
-        account_dict: DictAccess*,
-        storage_dict: DictAccess*,
-        header_dict: DictAccess*,
-        block_tx_dict: DictAccess*,
-        block_receipt_dict: DictAccess*,
+        evm_account_dict: DictAccess*,
+        evm_storage_dict: DictAccess*,
+        evm_header_dict: DictAccess*,
+        evm_block_tx_dict: DictAccess*,
+        evm_block_receipt_dict: DictAccess*,
         pow2_array: felt*,
         tasks: ComputationalTask*,
-        chain_info: ChainInfo,
+        memorizer_handler: felt***,
+        decoder_handler: felt***,
     }(results: Uint256*, tasks_len: felt, index: felt) {
         alloc_locals;
 
@@ -200,7 +199,6 @@ namespace Task {
 func extract_params_and_construct_task{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*
 }(
-    chain_id: felt,
     input: felt*,
     input_bytes_len: felt,
     datalake_hash: Uint256,
@@ -241,7 +239,6 @@ func extract_params_and_construct_task{
 
         return (
             task=ComputationalTask(
-                chain_id=chain_id,
                 hash=hash,
                 datalake_ptr=datalake_ptr,
                 datalake_type=datalake_type,
@@ -251,28 +248,8 @@ func extract_params_and_construct_task{
             ),
         );
     }
-    if (task == AGGREGATE_FN.SLR) {
-        let ctx_value_le = Uint256(
-            low=[input + 12] + [input + 13] * 0x10000000000000000,
-            high=[input + 14] + [input + 15] * 0x10000000000000000,
-        );
-        let (ctx_value) = uint256_reverse_endian(ctx_value_le);
-
-        return (
-            task=ComputationalTask(
-                chain_id=chain_id,
-                hash=hash,
-                datalake_ptr=datalake_ptr,
-                datalake_type=datalake_type,
-                aggregate_fn_id=AGGREGATE_FN.SLR,
-                ctx_operator=0,
-                ctx_value=ctx_value,
-            ),
-        );
-    }
     return (
         task=ComputationalTask(
-            chain_id=chain_id,
             hash=hash,
             datalake_ptr=datalake_ptr,
             datalake_type=datalake_type,

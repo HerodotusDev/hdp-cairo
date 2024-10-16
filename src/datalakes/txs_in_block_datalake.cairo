@@ -2,16 +2,17 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin,
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.alloc import alloc
-from src.memorizer import BlockTxMemorizer, BlockReceiptMemorizer
+from src.memorizers.evm import EvmBlockTxMemorizer, EvmBlockReceiptMemorizer
 from starkware.cairo.common.dict_access import DictAccess
 from packages.eth_essentials.lib.utils import word_reverse_endian_64
 from packages.eth_essentials.lib.mpt import verify_mpt_proof
 from src.types import TransactionsInBlockDatalake, ChainInfo
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
-from src.decoders.transaction_decoder import TransactionDecoder, TransactionType
-from src.decoders.receipt_decoder import ReceiptDecoder
-from src.decoders.header_decoder import HeaderDecoder, HeaderField
+from src.decoders.evm.transaction_decoder import TransactionDecoder, TransactionType
+from src.decoders.evm.receipt_decoder import ReceiptDecoder
+from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField
 from src.tasks.fetch_trait import FetchTrait
+from src.memorizer_access import InternalValueDecoder, InternalMemorizerReader, DictId
 from src.rlp import get_rlp_list_meta
 
 namespace TX_IN_BLOCK_TYPES {
@@ -87,27 +88,42 @@ func fetch_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    block_tx_dict: DictAccess*,
-    block_receipt_dict: DictAccess*,
+    evm_block_tx_dict: DictAccess*,
+    evm_block_receipt_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
     chain_info: ChainInfo,
+    memorizer_handler: felt***,
+    decoder_handler: felt***,
 }(chain_id: felt, datalake: TransactionsInBlockDatalake) -> (Uint256*, felt) {
     alloc_locals;
     let (data_points: Uint256*) = alloc();
+    let layout = chain_info.layout;
 
     if (datalake.type == TX_IN_BLOCK_TYPES.TX) {
-        let data_points_len = abstract_fetch_tx_data_points(
-            chain_id=chain_id, datalake=datalake, index=0, result_counter=0, data_points=data_points
-        );
+        with layout {
+            let data_points_len = abstract_fetch_tx_data_points(
+                chain_id=chain_id,
+                datalake=datalake,
+                index=0,
+                result_counter=0,
+                data_points=data_points,
+            );
+        }
 
         return (data_points, data_points_len);
     }
 
     if (datalake.type == TX_IN_BLOCK_TYPES.RECEIPT) {
-        let data_points_len = abstract_fetch_receipt_data_points(
-            chain_id=chain_id, datalake=datalake, index=0, result_counter=0, data_points=data_points
-        );
+        with layout {
+            let data_points_len = abstract_fetch_receipt_data_points(
+                chain_id=chain_id,
+                datalake=datalake,
+                index=0,
+                result_counter=0,
+                data_points=data_points,
+            );
+        }
         return (data_points, data_points_len);
     }
 
@@ -119,9 +135,12 @@ func abstract_fetch_tx_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    block_tx_dict: DictAccess*,
+    evm_block_tx_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
+    memorizer_handler: felt***,
+    decoder_handler: felt***,
+    layout: felt,
 }(
     chain_id: felt,
     datalake: TransactionsInBlockDatalake,
@@ -136,10 +155,13 @@ func abstract_fetch_receipt_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    block_receipt_dict: DictAccess*,
+    evm_block_receipt_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
     chain_info: ChainInfo,
+    memorizer_handler: felt***,
+    decoder_handler: felt***,
+    layout: felt,
 }(
     chain_id: felt,
     datalake: TransactionsInBlockDatalake,
@@ -156,9 +178,12 @@ func fetch_tx_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    block_tx_dict: DictAccess*,
+    evm_block_tx_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
+    memorizer_handler: felt***,
+    decoder_handler: felt***,
+    layout: felt,
 }(
     chain_id: felt,
     datalake: TransactionsInBlockDatalake,
@@ -178,8 +203,9 @@ func fetch_tx_data_points{
         return result_counter;
     }
 
-    let (rlp) = BlockTxMemorizer.get(
-        chain_id=chain_id, block_number=datalake.target_block, key_low=current_tx_index
+    tempvar params = new (chain_id, datalake.target_block, current_tx_index);
+    let (rlp) = InternalMemorizerReader.read{dict_ptr=evm_block_tx_dict, poseidon_ptr=poseidon_ptr}(
+        layout=layout, dict_id=DictId.BLOCK_TX, params=params
     );
 
     let (tx_type, rlp_start_offset) = TransactionDecoder.open_tx_envelope(rlp);
@@ -194,9 +220,14 @@ func fetch_tx_data_points{
         );
     }
 
-    let datapoint = TransactionDecoder.get_field(
-        rlp, datalake.sampled_property, rlp_start_offset, tx_type
+    let datapoint = InternalValueDecoder.decode2(
+        layout=layout,
+        dict_id=DictId.BLOCK_TX,
+        encoded_data=rlp,
+        field=datalake.sampled_property,
+        to_be=0,
     );
+
     assert data_points[result_counter] = datapoint;
     return fetch_tx_data_points(
         chain_id=chain_id,
@@ -211,10 +242,13 @@ func fetch_receipt_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    block_receipt_dict: DictAccess*,
+    evm_block_receipt_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
     chain_info: ChainInfo,
+    memorizer_handler: felt***,
+    decoder_handler: felt***,
+    layout: felt,
 }(
     chain_id: felt,
     datalake: TransactionsInBlockDatalake,
@@ -234,9 +268,10 @@ func fetch_receipt_data_points{
         return result_counter;
     }
 
-    let (rlp) = BlockReceiptMemorizer.get(
-        chain_id=chain_id, block_number=datalake.target_block, key_low=current_receipt_index
-    );
+    tempvar params = new (chain_id, datalake.target_block, current_receipt_index);
+    let (rlp) = InternalMemorizerReader.read{
+        dict_ptr=evm_block_receipt_dict, poseidon_ptr=poseidon_ptr
+    }(layout=layout, dict_id=DictId.BLOCK_RECEIPT, params=params);
 
     let (tx_type, rlp_start_offset) = ReceiptDecoder.open_receipt_envelope(rlp);
 
@@ -250,6 +285,7 @@ func fetch_receipt_data_points{
         );
     }
 
+    // ToDo: figure out how to make generic once SN is implemented.
     let datapoint = ReceiptDecoder.get_field(
         rlp, datalake.sampled_property, rlp_start_offset, tx_type, datalake.target_block
     );

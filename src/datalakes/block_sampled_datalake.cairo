@@ -10,11 +10,13 @@ from packages.eth_essentials.lib.utils import (
 )
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
 from src.types import BlockSampledDataLake, ComputationalTask
-from src.memorizer import HeaderMemorizer, AccountMemorizer, StorageMemorizer
+from src.memorizers.evm import EvmHeaderMemorizer, EvmAccountMemorizer, EvmStorageMemorizer
 from src.tasks.fetch_trait import FetchTrait
-from src.decoders.header_decoder import HeaderDecoder
-from src.decoders.account_decoder import AccountDecoder
-from src.decoders.storage_slot_decoder import StorageSlotDecoder
+from src.decoders.evm.header_decoder import HeaderDecoder
+from src.decoders.evm.account_decoder import AccountDecoder
+from src.decoders.evm.storage_slot_decoder import StorageSlotDecoder
+from src.memorizer_access import InternalValueDecoder, InternalMemorizerReader, DictId
+from src.chain_info import Layout
 from src.converter import le_address_chunks_to_felt
 from src.rlp import le_chunks_to_uint256
 
@@ -166,14 +168,16 @@ func fetch_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    account_dict: DictAccess*,
-    storage_dict: DictAccess*,
-    header_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
+    evm_storage_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
+    memorizer_handler: felt***,
+    decoder_handler: felt***,
+    layout: felt
 }(chain_id: felt, datalake: BlockSampledDataLake) -> (Uint256*, felt) {
     alloc_locals;
-
     let (data_points: Uint256*) = alloc();
 
     if (datalake.property_type == BlockSampledProperty.HEADER) {
@@ -214,9 +218,12 @@ func abstract_fetch_account_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    account_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
+    memorizer_handler: felt***,
+    decoder_handler: felt***,
+    layout: felt,
 }(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     jmp abs fetch_trait.block_sampled_datalake.fetch_account_data_points_ptr;
 }
@@ -230,9 +237,12 @@ func abstract_fetch_storage_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    storage_dict: DictAccess*,
+    evm_storage_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
+    memorizer_handler: felt***,
+    decoder_handler: felt***,
+    layout: felt,
 }(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     jmp abs fetch_trait.block_sampled_datalake.fetch_storage_data_points_ptr;
 }
@@ -243,9 +253,12 @@ func abstract_fetch_header_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    header_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
+    memorizer_handler: felt***,
+    decoder_handler: felt***,
+    layout: felt,
 }(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     jmp abs fetch_trait.block_sampled_datalake.fetch_header_data_points_ptr;
 }
@@ -354,9 +367,12 @@ func fetch_account_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    account_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
+    memorizer_handler: felt***,
+    decoder_handler: felt***,
+    layout: felt,
 }(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     alloc_locals;
 
@@ -370,13 +386,18 @@ func fetch_account_data_points{
         return index;
     }
 
-    let (rlp) = AccountMemorizer.get(
-        chain_id=chain_id, block_number=current_block_number, address=[datalake.properties + 1]
+    tempvar params = new (chain_id, current_block_number, [datalake.properties + 1]);
+    let (rlp) = InternalMemorizerReader.read{dict_ptr=evm_account_dict, poseidon_ptr=poseidon_ptr}(
+        layout=layout, dict_id=DictId.ACCOUNT, params=params
     );
 
-    let data_point = AccountDecoder.get_field{
-        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-    }(rlp=rlp, field=[datalake.properties]);  // field_idx ios always at 0
+    let data_point = InternalValueDecoder.decode2(
+        layout=layout,
+        dict_id=DictId.ACCOUNT,
+        encoded_data=rlp,
+        field=[datalake.properties],
+        to_be=0,
+    );
 
     assert [data_points + index * Uint256.SIZE] = data_point;
 
@@ -394,9 +415,12 @@ func fetch_storage_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    storage_dict: DictAccess*,
+    evm_storage_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
+    memorizer_handler: felt***,
+    decoder_handler: felt***,
+    layout: felt,
 }(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     alloc_locals;
 
@@ -408,9 +432,12 @@ func fetch_storage_data_points_inner{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    storage_dict: DictAccess*,
+    evm_storage_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
+    memorizer_handler: felt***,
+    decoder_handler: felt***,
+    layout: felt,
 }(
     chain_id: felt,
     datalake: BlockSampledDataLake,
@@ -430,15 +457,16 @@ func fetch_storage_data_points_inner{
         return index;
     }
 
-    let (rlp) = StorageMemorizer.get(
-        chain_id=chain_id,
-        block_number=current_block_number,
-        address=[datalake.properties],
-        storage_slot=storage_slot,
+    tempvar params = new (
+        chain_id, current_block_number, [datalake.properties], storage_slot.high, storage_slot.low
+    );
+    let (rlp) = InternalMemorizerReader.read{dict_ptr=evm_storage_dict, poseidon_ptr=poseidon_ptr}(
+        layout=layout, dict_id=DictId.STORAGE, params=params
     );
 
-    let data_point = StorageSlotDecoder.get_word(rlp=rlp);
-
+    let data_point = InternalValueDecoder.decode2(
+        layout=layout, dict_id=DictId.STORAGE, encoded_data=rlp, field=0, to_be=0
+    );
     assert [data_points + index * Uint256.SIZE] = data_point;
 
     return fetch_storage_data_points_inner(
@@ -456,9 +484,12 @@ func fetch_header_data_points{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    header_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
     pow2_array: felt*,
     fetch_trait: FetchTrait,
+    memorizer_handler: felt***,
+    decoder_handler: felt***,
+    layout: felt,
 }(chain_id: felt, datalake: BlockSampledDataLake, index: felt, data_points: Uint256*) -> felt {
     alloc_locals;
     let current_block_number = datalake.block_range_start + index * datalake.increment;
@@ -471,12 +502,14 @@ func fetch_header_data_points{
         return index;
     }
 
-    let (rlp) = HeaderMemorizer.get(chain_id=chain_id, block_number=current_block_number);
+    tempvar params = new (chain_id, current_block_number);
+    let (rlp) = InternalMemorizerReader.read{dict_ptr=evm_header_dict, poseidon_ptr=poseidon_ptr}(
+        layout=layout, dict_id=DictId.HEADER, params=params
+    );
 
-    let data_point = HeaderDecoder.get_field{
-        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-    }(rlp=rlp, field=[datalake.properties]);
-
+    let data_point = InternalValueDecoder.decode2(
+        layout=layout, dict_id=DictId.HEADER, encoded_data=rlp, field=[datalake.properties], to_be=0
+    );
     assert [data_points + index * Uint256.SIZE] = data_point;
 
     return fetch_header_data_points(

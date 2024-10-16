@@ -1,11 +1,5 @@
-from src.verifiers.account_verifier import verify_accounts
-from src.verifiers.storage_item_verifier import verify_storage_items
-from src.verifiers.header_verifier import verify_headers_inclusion
-from src.verifiers.mmr_verifier import verify_mmr_meta
-from src.verifiers.block_tx_verifier import verify_block_tx_proofs
-from src.verifiers.receipt_verifier import verify_block_receipt_proofs
-from packages.eth_essentials.lib.utils import write_felt_array_to_dict_keys
-
+from src.verifiers.evm.verify import run_state_verification as evm_run_state_verification
+from src.verifiers.starknet.verify import run_state_verification as starknet_run_state_verification
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.cairo_builtins import (
     HashBuiltin,
@@ -17,41 +11,86 @@ from starkware.cairo.common.cairo_builtins import (
 )
 
 from src.types import MMRMeta, ChainInfo
+from src.chain_info import fetch_chain_info
 
 func run_state_verification{
     range_check_ptr,
+    pedersen_ptr: HashBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
-    peaks_dict: DictAccess*,
-    header_dict: DictAccess*,
-    account_dict: DictAccess*,
-    storage_dict: DictAccess*,
-    block_tx_dict: DictAccess*,
-    block_receipt_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
+    evm_storage_dict: DictAccess*,
+    evm_block_tx_dict: DictAccess*,
+    evm_block_receipt_dict: DictAccess*,
+    starknet_header_dict: DictAccess*,
+    starknet_storage_slot_dict: DictAccess*,
     mmr_metas: MMRMeta*,
-    chain_info: ChainInfo,
-}(mmr_metas_len: felt) {
+}() -> (mmr_metas_len: felt) {
     alloc_locals;
+    local batch_len: felt;
+    %{ ids.batch_len = len(program_input["proofs"]) %}
 
-    // Step 1: Verify the MMR meta and store peaks
-    verify_mmr_meta(mmr_metas, mmr_metas_len);
+    let (mmr_meta_idx) = run_state_verification_inner(batch_len, 0);
+    return (mmr_metas_len=mmr_meta_idx);
+}
 
-    // Step 2: Verify the headers inclusion
-    verify_headers_inclusion();
+func run_state_verification_inner{
+    range_check_ptr,
+    pedersen_ptr: HashBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
+    bitwise_ptr: BitwiseBuiltin*,
+    pow2_array: felt*,
+    evm_header_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
+    evm_storage_dict: DictAccess*,
+    evm_block_tx_dict: DictAccess*,
+    evm_block_receipt_dict: DictAccess*,
+    starknet_header_dict: DictAccess*,
+    starknet_storage_slot_dict: DictAccess*,
+    mmr_metas: MMRMeta*,
+}(batch_len: felt, mmr_meta_idx: felt) -> (mmr_meta_idx: felt) {
+    alloc_locals;
+    if (batch_len == 0) {
+        return (mmr_meta_idx=mmr_meta_idx);
+    }
 
-    // Step 3: Verify the accounts
-    verify_accounts();
+    local chain_id: felt;
+    %{ 
+        ids.chain_id = program_input["proofs"][ids.batch_len - 1]["chain_id"]
+    %}
 
-    // Step 4: Verify the storage items
-    verify_storage_items();
+    let (chain_info) = fetch_chain_info(chain_id);
 
-    // Step 5: Verify the block tx proofs
-    verify_block_tx_proofs();
+    if (chain_info.layout == 0) {
+        // EVM
+        %{ print("EVM") %}
+        %{ vm_enter_scope({
+            'batch': program_input["proofs"][ids.batch_len - 1],
+            '__dict_manager': __dict_manager
+        }) %}
+        with chain_info {
+            let mmr_meta_idx = evm_run_state_verification(mmr_meta_idx);
+        }
+        %{ vm_exit_scope() %}
 
-    // Step 6: Verify the block receipt proofs
-    verify_block_receipt_proofs();
+        return run_state_verification_inner(batch_len=batch_len - 1, mmr_meta_idx=mmr_meta_idx);
+    } else {
+        // STARKNET
+        %{ print("STARKNET") %}
+        %{ vm_enter_scope({
+            'batch': program_input["proofs"][ids.batch_len - 1],
+            '__dict_manager': __dict_manager
+        }) %}
+        with chain_info {
+            let mmr_meta_idx = starknet_run_state_verification(mmr_meta_idx);
+        }
+        %{ vm_exit_scope() %}
 
-    return ();
+        return run_state_verification_inner(batch_len=batch_len - 1, mmr_meta_idx=mmr_meta_idx);
+    }
+
 }

@@ -292,9 +292,14 @@ func decode_rlp_word_to_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, p
 ) -> Uint256 {
     alloc_locals;
 
+    %{ print("decode_rlp_word_to_uint256") %}
+    %{ print(hex(memory[ids.rlp])) %}
+
     let (value, value_len, value_bytes_len) = rlp_list_retrieve(
         rlp=rlp, field=0, item_starts_at_byte=0, counter=0
     );
+
+    %{ print("value:", hex(memory[ids.value])) %}
 
     // convert to uint256
     let result = le_chunks_to_uint256(

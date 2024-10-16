@@ -6,10 +6,10 @@ from starkware.cairo.common.builtin_keccak.keccak import keccak_bigend
 from starkware.cairo.common.alloc import alloc
 from src.types import ChainInfo
 from packages.eth_essentials.lib.block_header import extract_state_root_little
-from src.memorizer import HeaderMemorizer, AccountMemorizer
+from src.memorizers.evm import EvmHeaderMemorizer, EvmAccountMemorizer
 from src.converter import le_address_chunks_to_felt
 
-from src.decoders.header_decoder import HeaderDecoder, HeaderField
+from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField
 
 // Verifies the validity of all of the available account proofs and writes them to the memorizer
 func verify_accounts{
@@ -17,14 +17,14 @@ func verify_accounts{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    header_dict: DictAccess*,
-    account_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }() {
     alloc_locals;
     local n_accounts: felt;
-    %{ ids.n_accounts = len(program_input["proofs"]["accounts"]) %}
+    %{ ids.n_accounts = len(batch["accounts"]) %}
 
     verify_accounts_inner(n_accounts, 0);
 
@@ -36,8 +36,8 @@ func verify_accounts_inner{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    header_dict: DictAccess*,
-    account_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }(n_accounts: felt, index: felt) {
@@ -50,7 +50,8 @@ func verify_accounts_inner{
     local key: Uint256;
     local key_leading_zeros: felt;
     %{
-        account = program_input["proofs"]["accounts"][ids.index]
+        from tools.py.utils import split_128, count_leading_zero_nibbles_from_hex, hex_to_int_array, nested_hex_to_int_array
+        account = batch["accounts"][ids.index]
         ids.key_leading_zeros = count_leading_zero_nibbles_from_hex(account["account_key"])
         segments.write_arg(ids.address, hex_to_int_array(account["address"]))
         (key_low, key_high) = split_128(int(account["account_key"], 16))
@@ -76,8 +77,8 @@ func verify_account{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    header_dict: DictAccess*,
-    account_dict: DictAccess*,
+    evm_header_dict: DictAccess*,
+    evm_account_dict: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }(address: felt*, key: Uint256, key_leading_zeros: felt, n_proofs: felt, proof_idx: felt) {
@@ -100,7 +101,7 @@ func verify_account{
     %}
 
     // get state_root from verified headers
-    let (header_rlp) = HeaderMemorizer.get(chain_id=chain_info.id, block_number=block_number);
+    let (header_rlp) = EvmHeaderMemorizer.get2(chain_id=chain_info.id, block_number=block_number);
     let state_root = HeaderDecoder.get_field(header_rlp, HeaderField.STATE_ROOT);
 
     let (rlp: felt*, value_len: felt) = verify_mpt_proof(
@@ -116,7 +117,7 @@ func verify_account{
     let (felt_address) = le_address_chunks_to_felt(address);
 
     // add account to memorizer
-    AccountMemorizer.add(
+    EvmAccountMemorizer.add(
         chain_id=chain_info.id, block_number=block_number, address=felt_address, rlp=rlp
     );
 

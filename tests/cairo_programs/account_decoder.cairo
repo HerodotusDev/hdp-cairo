@@ -3,7 +3,7 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
-from src.decoders.account_decoder import AccountDecoder, AccountField
+from src.decoders.evm.account_decoder import AccountDecoder, AccountField
 from packages.eth_essentials.lib.utils import pow2alloc128
 
 func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
