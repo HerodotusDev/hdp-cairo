@@ -12,7 +12,7 @@ from packages.eth_essentials.lib.rlp_little import (
 
 from src.rlp import chunk_to_felt_be
 from src.types import ChainInfo
-from src.memorizers.evm import EvmHeaderMemorizer, EvmBlockReceiptMemorizer
+from src.memorizers.evm.memorizer import EvmMemorizer, EvmHashParams
 from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField
 
 // Verfies an array of receipt proofs with the headers stored in the memorizer.
@@ -22,8 +22,7 @@ func verify_block_receipt_proofs{
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     keccak_ptr: KeccakBuiltin*,
-    evm_block_receipt_dict: DictAccess*,
-    evm_header_dict: DictAccess*,
+    evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }() {
@@ -41,8 +40,7 @@ func verify_block_receipt_proofs_inner{
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     keccak_ptr: KeccakBuiltin*,
-    evm_block_receipt_dict: DictAccess*,
-    evm_header_dict: DictAccess*,
+    evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }(n_receipts: felt, index: felt) {
@@ -72,7 +70,8 @@ func verify_block_receipt_proofs_inner{
         ids.proof_len = len(transaction["proof"])
     %}
 
-    let (header_rlp) = EvmHeaderMemorizer.get2(chain_id=chain_info.id, block_number=block_number);
+    let memorizer_key = EvmHashParams.header(chain_id=chain_info.id, block_number=block_number);
+    let (header_rlp) = EvmMemorizer.get(key=memorizer_key);
     let receipt_root = HeaderDecoder.get_field(header_rlp, HeaderField.RECEIPT_ROOT);
 
     let (rlp, rlp_bytes_len) = verify_mpt_proof{
@@ -89,9 +88,8 @@ func verify_block_receipt_proofs_inner{
 
     let receipt_index = chunk_to_felt_be(key.low);
 
-    EvmBlockReceiptMemorizer.add(
-        chain_id=chain_info.id, block_number=block_number, key_low=receipt_index, rlp=rlp
-    );
+    let memorizer_key = EvmHashParams.block_receipt(chain_id=chain_info.id, block_number=block_number, index=receipt_index);
+    EvmMemorizer.add(key=memorizer_key, data=rlp);
 
     return verify_block_receipt_proofs_inner(n_receipts=n_receipts, index=index + 1);
 }

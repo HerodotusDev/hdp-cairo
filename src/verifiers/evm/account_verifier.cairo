@@ -6,9 +6,8 @@ from starkware.cairo.common.builtin_keccak.keccak import keccak_bigend
 from starkware.cairo.common.alloc import alloc
 from src.types import ChainInfo
 from packages.eth_essentials.lib.block_header import extract_state_root_little
-from src.memorizers.evm import EvmHeaderMemorizer, EvmAccountMemorizer
+from src.memorizers.evm.memorizer import EvmMemorizer, EvmHashParams
 from src.converter import le_address_chunks_to_felt
-
 from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField
 
 // Verifies the validity of all of the available account proofs and writes them to the memorizer
@@ -17,8 +16,7 @@ func verify_accounts{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    evm_header_dict: DictAccess*,
-    evm_account_dict: DictAccess*,
+    evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }() {
@@ -36,8 +34,7 @@ func verify_accounts_inner{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    evm_header_dict: DictAccess*,
-    evm_account_dict: DictAccess*,
+    evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }(n_accounts: felt, index: felt) {
@@ -77,8 +74,7 @@ func verify_account{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    evm_header_dict: DictAccess*,
-    evm_account_dict: DictAccess*,
+    evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }(address: felt*, key: Uint256, key_leading_zeros: felt, n_proofs: felt, proof_idx: felt) {
@@ -101,7 +97,8 @@ func verify_account{
     %}
 
     // get state_root from verified headers
-    let (header_rlp) = EvmHeaderMemorizer.get2(chain_id=chain_info.id, block_number=block_number);
+    let memorizer_key = EvmHashParams.header(chain_id=chain_info.id, block_number=block_number);
+    let (header_rlp) = EvmMemorizer.get(key=memorizer_key);
     let state_root = HeaderDecoder.get_field(header_rlp, HeaderField.STATE_ROOT);
 
     let (rlp: felt*, value_len: felt) = verify_mpt_proof(
@@ -117,8 +114,9 @@ func verify_account{
     let (felt_address) = le_address_chunks_to_felt(address);
 
     // add account to memorizer
-    EvmAccountMemorizer.add(
-        chain_id=chain_info.id, block_number=block_number, address=felt_address, rlp=rlp
+    let memorizer_key = EvmHashParams.account(chain_id=chain_info.id, block_number=block_number, address=felt_address);
+    EvmMemorizer.add(
+        key=memorizer_key, data=rlp
     );
 
     return verify_account(

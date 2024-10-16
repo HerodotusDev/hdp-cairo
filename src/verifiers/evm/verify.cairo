@@ -19,11 +19,7 @@ func run_state_verification{
     keccak_ptr: KeccakBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
-    evm_header_dict: DictAccess*,
-    evm_account_dict: DictAccess*,
-    evm_storage_dict: DictAccess*,
-    evm_block_tx_dict: DictAccess*,
-    evm_block_receipt_dict: DictAccess*,
+    evm_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
     chain_info: ChainInfo
 }(mmr_meta_idx: felt) -> felt {

@@ -13,7 +13,7 @@ from packages.eth_essentials.lib.rlp_little import (
 
 from src.rlp import chunk_to_felt_be
 from src.types import ChainInfo
-from src.memorizers.evm import EvmHeaderMemorizer, EvmBlockTxMemorizer
+from src.memorizers.evm.memorizer import EvmMemorizer, EvmHashParams
 from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField
 
 // Verfies an array of transaction proofs with the headers stored in the memorizer.
@@ -23,8 +23,7 @@ func verify_block_tx_proofs{
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     keccak_ptr: KeccakBuiltin*,
-    evm_block_tx_dict: DictAccess*,
-    evm_header_dict: DictAccess*,
+    evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }() {
@@ -42,8 +41,7 @@ func verify_block_tx_proofs_inner{
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     keccak_ptr: KeccakBuiltin*,
-    evm_block_tx_dict: DictAccess*,
-    evm_header_dict: DictAccess*,
+    evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }(n_tx_proofs: felt, index: felt) {
@@ -72,7 +70,8 @@ func verify_block_tx_proofs_inner{
         ids.proof_len = len(transaction["proof"])
     %}
 
-    let (header_rlp) = EvmHeaderMemorizer.get2(chain_id=chain_info.id, block_number=block_number);
+    let memorizer_key = EvmHashParams.header(chain_id=chain_info.id, block_number=block_number);
+    let (header_rlp) = EvmMemorizer.get(key=memorizer_key);
     let tx_root = HeaderDecoder.get_field(header_rlp, HeaderField.TRANSACTION_ROOT);
 
     let (rlp, _rlp_len) = verify_mpt_proof{
@@ -87,10 +86,10 @@ func verify_block_tx_proofs_inner{
         pow2_array=pow2_array,
     );
 
-    let tx_index = chunk_to_felt_be(key.low);
-
-    EvmBlockTxMemorizer.add(
-        chain_id=chain_info.id, block_number=block_number, key_low=tx_index, rlp=rlp
+    let index = chunk_to_felt_be(key.low);
+    let memorizer_key = EvmHashParams.block_tx(chain_id=chain_info.id, block_number=block_number, index=index);
+    EvmMemorizer.add(
+        key=memorizer_key, data=rlp
     );
 
     return verify_block_tx_proofs_inner(n_tx_proofs=n_tx_proofs, index=index + 1);

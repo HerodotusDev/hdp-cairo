@@ -7,7 +7,7 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.default_dict import default_dict_finalize
 from packages.eth_essentials.lib.mmr import hash_subtree_path
 from src.types import MMRMeta, ChainInfo
-from src.memorizers.evm import EvmHeaderMemorizer
+from src.memorizers.evm.memorizer import EvmMemorizer, EvmHashParams
 from src.decoders.evm.header_decoder import HeaderDecoder
 from src.verifiers.mmr_verifier import validate_mmr_meta
 
@@ -16,7 +16,7 @@ func verify_mmr_batches{
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
-    evm_header_dict: DictAccess*,
+    evm_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
     chain_id: felt
 }(mmr_meta_idx: felt) -> (mmr_meta_idx: felt) {
@@ -36,7 +36,7 @@ func verify_mmr_batches_inner{
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
-    evm_header_dict: DictAccess*,
+    evm_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
     chain_id: felt
 }(mmr_batches_len: felt, idx: felt, mmr_meta_idx: felt) {
@@ -76,7 +76,7 @@ func verify_headers_with_mmr_peaks{
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
-    evm_header_dict: DictAccess*,
+    evm_memorizer: DictAccess*,
     mmr_meta: MMRMeta,
     peaks_dict: DictAccess*,
 }(idx: felt) {
@@ -108,7 +108,8 @@ func verify_headers_with_mmr_peaks{
 
         // add to memorizer
         let block_number = HeaderDecoder.get_block_number(rlp);
-        EvmHeaderMemorizer.add(chain_id=mmr_meta.id, block_number=block_number, rlp=rlp);
+        let memorizer_key = EvmHashParams.header(chain_id=mmr_meta.chain_id, block_number=block_number);
+        EvmMemorizer.add(key=memorizer_key, data=rlp);
 
         return verify_headers_with_mmr_peaks(idx=idx - 1);
     }
@@ -136,7 +137,8 @@ func verify_headers_with_mmr_peaks{
 
     // add to memorizer
     let block_number = HeaderDecoder.get_block_number(rlp);
-    EvmHeaderMemorizer.add(chain_id=mmr_meta.chain_id, block_number=block_number, rlp=rlp);
+    let memorizer_key = EvmHashParams.header(chain_id=mmr_meta.chain_id, block_number=block_number);
+    EvmMemorizer.add(key=memorizer_key, data=rlp);
 
     return verify_headers_with_mmr_peaks(idx=idx - 1);
 }

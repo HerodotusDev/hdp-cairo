@@ -11,7 +11,7 @@ from packages.eth_essentials.lib.rlp_little import (
     extract_n_bytes_from_le_64_chunks_array,
 )
 from src.converter import le_address_chunks_to_felt
-from src.memorizers.evm import EvmStorageMemorizer, EvmAccountMemorizer
+from src.memorizers.evm.memorizer import EvmMemorizer, EvmHashParams
 from src.decoders.evm.account_decoder import AccountDecoder, AccountField
 
 from packages.eth_essentials.lib.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64
@@ -22,8 +22,7 @@ func verify_storage_items{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    evm_account_dict: DictAccess*,
-    evm_storage_dict: DictAccess*,
+    evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }() {
@@ -41,8 +40,7 @@ func verify_storage_items_inner{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    evm_account_dict: DictAccess*,
-    evm_storage_dict: DictAccess*,
+    evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }(n_storage_items: felt, index: felt) {
@@ -98,8 +96,7 @@ func verify_storage_item{
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    evm_account_dict: DictAccess*,
-    evm_storage_dict: DictAccess*,
+    evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }(
@@ -128,9 +125,8 @@ func verify_storage_item{
         ids.proof_len = len(proof["proof"])
     %}
 
-    let (account_rlp) = EvmAccountMemorizer.get2(
-        chain_id=chain_info.id, block_number=block_number, address=address
-    );
+    let memorizer_key = EvmHashParams.account(chain_id=chain_info.id, block_number=block_number, address=address);
+    let (account_rlp) = EvmMemorizer.get(key=memorizer_key);
     let state_root = AccountDecoder.get_field(account_rlp, AccountField.STATE_ROOT);
 
     let (rlp: felt*, _value_bytes_len: felt) = verify_mpt_proof(
@@ -143,13 +139,14 @@ func verify_storage_item{
         pow2_array=pow2_array,
     );
 
-    EvmStorageMemorizer.add(
+
+    let memorizer_key = EvmHashParams.storage(
         chain_id=chain_info.id,
         block_number=block_number,
         address=address,
         storage_slot=slot,
-        rlp=rlp,
     );
+    EvmMemorizer.add(key=memorizer_key, data=rlp);
 
     return verify_storage_item(
         address=address,
