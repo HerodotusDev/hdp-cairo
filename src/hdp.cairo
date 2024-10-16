@@ -35,7 +35,6 @@ from src.chain_info import Layout
 
 from packages.eth_essentials.lib.utils import pow2alloc251, write_felt_array_to_dict_keys
 
-from src.tasks.computational import Task
 from src.merkle import (
     compute_tasks_root_v1,
     compute_results_root,
@@ -44,7 +43,7 @@ from src.merkle import (
     compute_results_root_v2,
 )
 from src.chain_info import fetch_chain_info
-from src.tasks.aggregate_functions.contract import compute_contract
+from src.contract import compute_contract
 
 func main{
     output_ptr: felt*,
@@ -95,14 +94,12 @@ func run{
     let (starknet_storage_slot_dict, starknet_storage_slot_dict_start) = StarknetStorageSlotMemorizer.init();
 
     // Task Params
-    let (tasks: ComputationalTask*) = alloc();
     local tasks_len: felt;
 
     let (results: Uint256*) = alloc();
 
     // Misc
     let pow2_array: felt* = pow2alloc251();
-    local hdp_version: felt;
 
     %{
         from tools.py.utils import split_128, count_leading_zero_nibbles_from_hex
@@ -120,17 +117,8 @@ func run{
 
         def nested_hex_to_int_array(hex_array):
             return [[int(x, 16) for x in y] for y in hex_array]
-
-        # Task and Datalake
-        ids.tasks_len = len(program_input['tasks'])
-
-        if program_input["tasks"][0]["type"] == "datalake_compute":
-            ids.hdp_version = 1
-        elif program_input["tasks"][0]["type"] == "module":
-            ids.hdp_version = 2
-        else:
-            raise ValueError("Invalid HDP version")
-
+        
+        ids.tasks_len = 1
         cairo_run_output_path = program_input["cairo_run_output_path"]
     %}
 
@@ -166,10 +154,9 @@ func run{
         evm_block_tx_dict=evm_block_tx_dict,
         evm_block_receipt_dict=evm_block_receipt_dict,
         pow2_array=pow2_array,
-        tasks=tasks,
         memorizer_handler=memorizer_handler,
         decoder_handler=decoder_handler,
-    }(hdp_version=hdp_version, tasks_len=tasks_len);
+    }();
 
     %{
         print(f"Tasks Root: {hex(ids.tasks_root.high * 2 ** 128 + ids.tasks_root.low)}")
@@ -234,90 +221,67 @@ func compute_tasks{
     evm_block_tx_dict: DictAccess*,
     evm_block_receipt_dict: DictAccess*,
     pow2_array: felt*,
-    tasks: ComputationalTask*,
     memorizer_handler: felt***,
     decoder_handler: felt***,
-}(hdp_version: felt, tasks_len: felt) -> (
+}() -> (
     tasks_root: Uint256, results_root: Uint256, results: Uint256*, results_len: felt
 ) {
     alloc_locals;
 
     let (results: Uint256*) = alloc();
 
-    if (hdp_version == 1) {
-        Task.init(tasks_len, 0);
-        Task.execute(results=results, tasks_len=tasks_len, index=0);
+    // Task Params
+    local encoded_task_len: felt;
+    local task_bytes_len: felt;
+    let (encoded_task) = alloc();
 
-        let tasks_root = compute_tasks_root_v1{
-            range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
-        }(tasks=tasks, tasks_len=tasks_len);
+    local inputs_len: felt;
+    let (inputs) = alloc();
 
-        let results_root = compute_results_root{
-            range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
-        }(tasks=tasks, results=results, tasks_len=tasks_len);
+    %{
+        from tools.py.schema import Module, CompiledClass, Visibility
 
-        return (
-            tasks_root=tasks_root, results_root=results_root, results=results, results_len=tasks_len
-        );
-    }
+        # Load the module input
+        module_input = Module.Schema().load(program_input["tasks"][0]["context"])
 
-    if (hdp_version == 2) {
-        // Task Params
-        local encoded_task_len: felt;
-        local task_bytes_len: felt;
-        let (encoded_task) = alloc();
+        compiled_class = module_input.module_class
 
-        local inputs_len: felt;
-        let (inputs) = alloc();
+        ids.task_bytes_len = module_input.task_bytes_len
+        ids.encoded_task_len = len(module_input.encoded_task)
 
-        %{
-            from tools.py.schema import Module, CompiledClass, Visibility
+        segments.write_arg(ids.encoded_task, module_input.encoded_task)
 
-            # Load the module input
-            module_input = Module.Schema().load(program_input["tasks"][0]["context"])
+        inputs = [input.value for input in module_input.inputs]
+        ids.inputs_len = len(inputs)
+        segments.write_arg(ids.inputs, inputs)
+    %}
 
-            compiled_class = module_input.module_class
+    let (local module_task) = init_module(encoded_task);
 
-            ids.task_bytes_len = module_input.task_bytes_len
-            ids.encoded_task_len = len(module_input.encoded_task)
+    %{ assert [int(input.value) for input in module_input.inputs if input.visibility == Visibility.PUBLIC] == [int(memory[ids.module_task.module_inputs + i]) for i in range(ids.module_task.module_inputs_len)] %}
 
-            segments.write_arg(ids.encoded_task, module_input.encoded_task)
+    let (result, program_hash) = compute_contract(inputs, inputs_len);
 
-            inputs = [input.value for input in module_input.inputs]
-            ids.inputs_len = len(inputs)
-            segments.write_arg(ids.inputs, inputs)
-        %}
+    assert results[0] = result;
 
-        let (local module_task) = init_module(encoded_task);
+    %{
+        target_result = hex(ids.result.high * 2 ** 128 + ids.result.low)
+        print(f"Task Result: {target_result}")
+    %}
 
-        %{ assert [int(input.value) for input in module_input.inputs if input.visibility == Visibility.PUBLIC] == [int(memory[ids.module_task.module_inputs + i]) for i in range(ids.module_task.module_inputs_len)] %}
+    let task_hash = compute_tasks_hash_v2{
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
+    }(encoded_task=encoded_task, task_bytes_len=task_bytes_len);
 
-        let (result, program_hash) = compute_contract(inputs, inputs_len);
+    let (flipped_task_hash) = uint256_reverse_endian(task_hash);
 
-        assert results[0] = result;
+    let tasks_root = compute_tasks_root_v2{
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
+    }(task_hash=flipped_task_hash);
 
-        %{
-            target_result = hex(ids.result.high * 2 ** 128 + ids.result.low)
-            print(f"Task Result: {target_result}")
-        %}
+    let results_root = compute_results_root_v2{
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
+    }(task_hash=flipped_task_hash, result=result);
 
-        let task_hash = compute_tasks_hash_v2{
-            range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
-        }(encoded_task=encoded_task, task_bytes_len=task_bytes_len);
-
-        let (flipped_task_hash) = uint256_reverse_endian(task_hash);
-
-        let tasks_root = compute_tasks_root_v2{
-            range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
-        }(task_hash=flipped_task_hash);
-
-        let results_root = compute_results_root_v2{
-            range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
-        }(task_hash=flipped_task_hash, result=result);
-
-        return (tasks_root=tasks_root, results_root=results_root, results=results, results_len=1);
-    }
-
-    assert 1 = 0;
-    return (tasks_root=Uint256(0, 0), results_root=Uint256(0, 0), results=results, results_len=0);
+    return (tasks_root=tasks_root, results_root=results_root, results=results, results_len=1);
 }

@@ -7,7 +7,6 @@ from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.alloc import alloc
 from src.rlp import get_rlp_len
 from src.memorizers.bare import BareMemorizer
-from src.tasks.fetch_trait import FetchTrait
 
 namespace EvmPackParams {
     const HEADER_PARAMS_LEN = 2;
