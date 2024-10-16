@@ -52,12 +52,10 @@ func call_execute_syscalls{
     poseidon_ptr: PoseidonBuiltin*,
     syscall_ptr: felt*,
     builtin_ptrs: BuiltinPointers*,
-    evm_header_dict: DictAccess*,
-    evm_account_dict: DictAccess*,
-    evm_storage_dict: DictAccess*,
     pow2_array: felt*,
-    memorizer_handler: felt***,
-    decoder_handler: felt***,
+    evm_memorizer: DictAccess*,
+    evm_decoder_ptr: felt***,
+    evm_key_hasher_ptr: felt**,
 }(execution_context: ExecutionContext*, syscall_ptr_end: felt*, dry_run: felt) {
     alloc_locals;
     let (__fp__, _) = get_fp_and_pc();
@@ -130,12 +128,10 @@ func execute_entry_point{
     poseidon_ptr: PoseidonBuiltin*,
     builtin_ptrs: BuiltinPointers*,
     builtin_params: BuiltinParams*,
-    evm_header_dict: DictAccess*,
-    evm_account_dict: DictAccess*,
-    evm_storage_dict: DictAccess*,
     pow2_array: felt*,
-    memorizer_handler: felt***,
-    decoder_handler: felt***,
+    evm_memorizer: DictAccess*,
+    evm_decoder_ptr: felt***,
+    evm_key_hasher_ptr: felt**,
 }(compiled_class: CompiledClass*, execution_context: ExecutionContext*, dry_run: felt) -> (
     retdata_size: felt, retdata: felt*
 ) {

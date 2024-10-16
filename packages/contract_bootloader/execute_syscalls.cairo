@@ -8,15 +8,11 @@ from starkware.starknet.common.new_syscalls import (
 )
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
 from starkware.starknet.core.os.builtins import BuiltinPointers
-from src.memorizers.evm import EvmHeaderMemorizer, EvmAccountMemorizer, EvmStorageMemorizer
-from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField
-from src.decoders.evm.account_decoder import AccountDecoder, AccountField
-from src.decoders.evm.storage_slot_decoder import StorageSlotDecoder
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.registers import get_label_location
 from src.chain_info import chain_id_to_layout
-from src.memorizer_access import BootloaderMemorizerAccess, DictId
+from src.memorizers.evm.state_access import EvmStateAccess, EvmStateAccessType, EvmDecoderTarget
 from src.chain_info import Layout
 
 struct ExecutionInfo {
@@ -44,12 +40,10 @@ func execute_syscalls{
     poseidon_ptr: PoseidonBuiltin*,
     syscall_ptr: felt*,
     builtin_ptrs: BuiltinPointers*,
-    evm_header_dict: DictAccess*,
-    evm_account_dict: DictAccess*,
-    evm_storage_dict: DictAccess*,
     pow2_array: felt*,
-    memorizer_handler: felt***,
-    decoder_handler: felt***,
+    evm_memorizer: DictAccess*,
+    evm_decoder_ptr: felt***,
+    evm_key_hasher_ptr: felt**,
 }(execution_context: ExecutionContext*, syscall_ptr_end: felt*) {
     if (syscall_ptr == syscall_ptr_end) {
         return ();
@@ -74,12 +68,10 @@ func execute_call_contract{
     poseidon_ptr: PoseidonBuiltin*,
     syscall_ptr: felt*,
     builtin_ptrs: BuiltinPointers*,
-    evm_header_dict: DictAccess*,
-    evm_account_dict: DictAccess*,
-    evm_storage_dict: DictAccess*,
     pow2_array: felt*,
-    memorizer_handler: felt***,
-    decoder_handler: felt***,
+    evm_memorizer: DictAccess*,
+    evm_decoder_ptr: felt***,
+    evm_key_hasher_ptr: felt**,
 }(caller_execution_context: ExecutionContext*) {
     alloc_locals;
     let request_header = cast(syscall_ptr, RequestHeader*);
@@ -94,47 +86,25 @@ func execute_call_contract{
     let call_contract_response = cast(syscall_ptr, CallContractResponse*);
     let syscall_ptr = syscall_ptr + CallContractResponse.SIZE;
 
-    let dict_id = call_contract_request.contract_address;
+    let state_access_type = call_contract_request.contract_address;
     let field = call_contract_request.selector;
 
     let layout = chain_id_to_layout(call_contract_request.calldata_start[2]);
     let output_ptr = call_contract_response.retdata_start;
 
-    if (dict_id == DictId.HEADER) {
-        let output_type = BootloaderMemorizerAccess.read_and_decode{dict_ptr=evm_header_dict}(
-            params=call_contract_request.calldata_start + 2,
-            layout=layout,
-            dict_id=dict_id,
-            field=field,
-            output_ptr=call_contract_response.retdata_start,
-            as_be=1,
-        );
+    if(layout == Layout.EVM) {
+        with output_ptr {
+            let output_len = EvmStateAccess.read_and_decode(
+                params=call_contract_request.calldata_start + 2,
+                state_access_type=state_access_type,
+                field=field,
+                decoder_target=EvmDecoderTarget.UINT256, // We could add this as a param, giving us a lot of flexibility
+                as_be=1, // same here
+            );
 
-        return ();
-    }
-    if (dict_id == DictId.ACCOUNT) {
-        let output_type = BootloaderMemorizerAccess.read_and_decode{dict_ptr=evm_account_dict}(
-            params=call_contract_request.calldata_start + 2,
-            layout=layout,
-            dict_id=dict_id,
-            field=field,
-            output_ptr=call_contract_response.retdata_start,
-            as_be=1,
-        );
-
-        return ();
-    }
-    if (dict_id == DictId.STORAGE) {
-        let output_type = BootloaderMemorizerAccess.read_and_decode{dict_ptr=evm_storage_dict}(
-            params=call_contract_request.calldata_start + 2,
-            layout=layout,
-            dict_id=dict_id,
-            field=field,
-            output_ptr=call_contract_response.retdata_start,
-            as_be=1,
-        );
-
-        return ();
+            return ();
+        
+        }
     }
 
     // Unknown DictId

@@ -22,14 +22,10 @@ func compute_contract{
     ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    evm_account_dict: DictAccess*,
-    evm_storage_dict: DictAccess*,
-    evm_header_dict: DictAccess*,
-    evm_block_tx_dict: DictAccess*,
-    evm_block_receipt_dict: DictAccess*,
     pow2_array: felt*,
-    memorizer_handler: felt***,
-    decoder_handler: felt***,
+    evm_memorizer: DictAccess*,
+    evm_decoder_ptr: felt***,
+    evm_key_hasher_ptr: felt**,
 }(inputs: felt*, inputs_len: felt) -> (result: Uint256, program_hash: felt) {
     alloc_locals;
     local compiled_class: CompiledClass*;
@@ -77,17 +73,13 @@ func compute_contract{
 
     local calldata: felt* = nondet %{ segments.add() %};
 
-    assert calldata[0] = nondet %{ ids.evm_header_dict.address_.segment_index %};
-    assert calldata[1] = nondet %{ ids.evm_header_dict.address_.offset %};
-    assert calldata[2] = nondet %{ ids.evm_account_dict.address_.segment_index %};
-    assert calldata[3] = nondet %{ ids.evm_account_dict.address_.offset %};
-    assert calldata[4] = nondet %{ ids.evm_storage_dict.address_.segment_index %};
-    assert calldata[5] = nondet %{ ids.evm_storage_dict.address_.offset %};
+    assert calldata[0] = nondet %{ ids.evm_memorizer.address_.segment_index %};
+    assert calldata[1] = nondet %{ ids.evm_memorizer.address_.offset %};
 
-    memcpy(dst=calldata + 6, src=inputs, len=inputs_len);
-    let calldata_size = 6 + inputs_len;
+    memcpy(dst=calldata + 2, src=inputs, len=inputs_len);
+    let calldata_size = 2 + inputs_len;
 
-    with evm_header_dict, evm_account_dict, evm_storage_dict, evm_block_tx_dict, evm_block_receipt_dict, pow2_array {
+    with evm_memorizer, pow2_array {
         let (retdata_size, retdata) = run_contract_bootloader(
             compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata, dry_run=0
         );
