@@ -2,83 +2,11 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
 from starkware.cairo.common.builtin_keccak.keccak import (
     keccak,
     keccak_uint256s,
-    keccak_uint256s_bigend,
-    keccak_felts_bigend,
 )
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
-from src.types import ComputationalTask
 from src.utils import compute_results_entry
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian, felt_to_uint256
-
-// Computes the results merkle root
-// Inputs:
-//  - tasks: The tasks that were sampled
-//  - results: The results of the tasks
-//  - tasks_len: The number of tasks & results. These are the same length always
-// Outputs:
-//  - The merkle root of the results
-func compute_results_root{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
-}(tasks: ComputationalTask*, results: Uint256*, tasks_len: felt) -> Uint256 {
-    alloc_locals;
-    let (local leafs: Uint256*) = alloc();
-
-    compute_results_entries{
-        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr, leafs=leafs
-    }(tasks=tasks, results=results, tasks_len=tasks_len, index=0);
-
-    return compute_merkle_root{
-        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
-    }(leafs=leafs, leafs_len=tasks_len);
-}
-
-// Computes the results entry the results.
-func compute_results_entries{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, leafs: Uint256*
-}(tasks: ComputationalTask*, results: Uint256*, tasks_len: felt, index: felt) {
-    if (index == tasks_len) {
-        return ();
-    }
-
-    let entry_hash = compute_results_entry(tasks[index].hash, results[index]);
-    assert leafs[index] = entry_hash;
-
-    return compute_results_entries(
-        tasks=tasks, results=results, tasks_len=tasks_len, index=index + 1
-    );
-}
-
-// Computes the tasks merkle root
-// Inputs:
-//  - tasks: The tasks that were sampled
-//  - tasks_len: The number of tasks
-// Outputs:
-//  - The merkle root of the tasks
-func compute_tasks_root_v1{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
-}(tasks: ComputationalTask*, tasks_len: felt) -> Uint256 {
-    alloc_locals;
-    let (local leafs: Uint256*) = alloc();
-
-    // copy the leafs to a new array.
-    tempvar i = 0;
-
-    copy_loop:
-    let i = [ap - 1];
-    if (i == tasks_len) {
-        jmp end_loop;
-    }
-
-    assert leafs[i] = tasks[i].hash;
-    [ap] = i + 1, ap++;
-    jmp copy_loop;
-
-    end_loop:
-    return compute_merkle_root{
-        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
-    }(leafs=leafs, leafs_len=tasks_len);
-}
+from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 
 // Computes the tasks merkle root for v2 flow
 // TODO: it is single task for now

@@ -24,7 +24,7 @@ func main{
     alloc_locals;
 
     let pow2_array: felt* = pow2alloc251();
-    let (starknet_storage_slot_dict, starknet_storage_slot_dict_start) = StarknetStorageSlotMemorizer.init();
+    let (starknet_memorizer, starknet_memorizer_start) = StarknetMemorizer.init();
     let (chain_info) = fetch_chain_info(393402133025997798000961);
 
     %{
@@ -12440,7 +12440,7 @@ func main{
         }
     %}
  
-    with starknet_storage_slot_dict, chain_info, pow2_array {
+    with starknet_memorizer, chain_info, pow2_array {
         run_tests();
     }
 
@@ -12451,7 +12451,7 @@ func run_tests{
     pedersen_ptr: HashBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    starknet_storage_slot_dict: DictAccess*,
+    starknet_memorizer: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }() {

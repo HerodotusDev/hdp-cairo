@@ -8,7 +8,7 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuilti
 from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField
 from packages.eth_essentials.lib.utils import pow2alloc128
 from tests.utils.header import test_header_decoding
-from src.memorizers.evm import EvmHeaderMemorizer, EvmAccountMemorizer, EvmStorageMemorizer, EvmBlockTxMemorizer, EvmBlockReceiptMemorizer
+from src.memorizers.evm.memorizer import EvmHeaderMemorizer, EvmAccountMemorizer, EvmStorageMemorizer, EvmBlockTxMemorizer, EvmBlockReceiptMemorizer
 from src.memorizer_access import BootloaderMemorizerAccess, InternalMemorizerReader, InternalValueDecoder, DictId
 from src.chain_info import Layout
 
