@@ -14,14 +14,14 @@ from starkware.cairo.common.builtin_poseidon.poseidon import (
 )
 
 from packages.eth_essentials.lib.utils import bitwise_divmod
-from src.memorizers.starknet import StarknetStorageSlotMemorizer
+from src.memorizers.starknet.memorizer import StarknetMemorizer, StarknetHashParams
 from src.types import ChainInfo
 
 func verify_proofs{
     pedersen_ptr: HashBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    starknet_storage_slot_dict: DictAccess*,
+    starknet_memorizer: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }() {
@@ -38,7 +38,7 @@ func verify_proofs_inner{
     pedersen_ptr: HashBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    starknet_storage_slot_dict: DictAccess*,
+    starknet_memorizer: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
 }(n_storage_items: felt, index: felt) {
@@ -49,7 +49,7 @@ func verify_proofs_inner{
     }
 
     let storage_addresses: felt* = alloc();
-    local state_commitment: felt;
+    local state_root: felt;
     local storage_count: felt;
     local contract_address: felt;
     local block_number: felt;
@@ -61,7 +61,7 @@ func verify_proofs_inner{
         ids.contract_address = int(storage_proof["contract_address"], 16)
         ids.block_number = storage_proof["block_number"]
         # todo: get from header memorizer once ready
-        ids.state_commitment = int(storage_proof["state_commitment"], 16)
+        ids.state_root = int(storage_proof["state_commitment"], 16)
     %}
     
     // Compute contract_root and write values to memorizer
@@ -100,11 +100,10 @@ func verify_proofs_inner{
     assert hash_chain[1] = contract_tree_root;
     assert hash_chain[2] = class_commitment;
     
-    let (state_root) = poseidon_hash_many(3, hash_chain);
-    assert state_root = state_commitment;
+    let (computed_state_root) = poseidon_hash_many(3, hash_chain);
+    assert state_root = computed_state_root; 
 
     return verify_proofs_inner(n_storage_items, index + 1);
-    
 }
 
 // This function iteratively validates contract storage proofs. It is ensures that each proof computes the same contract root.
@@ -115,7 +114,7 @@ func validate_storage_proofs{
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     pow2_array: felt*,
-    starknet_storage_slot_dict: DictAccess*,
+    starknet_memorizer: DictAccess*,
     chain_info: ChainInfo,
     contract_address: felt,
     storage_addresses: felt*,
@@ -138,14 +137,15 @@ func validate_storage_proofs{
             assert contract_root = new_contract_root;
          }
     }
-
-    StarknetStorageSlotMemorizer.add(
+    let memorizer_key = StarknetHashParams.storage(
         chain_id=chain_info.id,
         block_number=block_number,
         contract_address=contract_address,
         storage_address=storage_addresses[index],
-        value=value,
     );
+
+    // We need to cast the value to a felt* to match the expected input type.
+    StarknetMemorizer.add(key=memorizer_key, data=cast(value, felt*));
 
     return validate_storage_proofs(new_contract_root, storage_count, index + 1);
 }

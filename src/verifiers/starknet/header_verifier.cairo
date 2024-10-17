@@ -1,21 +1,19 @@
-from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin
+from starkware.cairo.common.cairo_builtins import PoseidonBuiltin
 from starkware.cairo.common.dict_access import DictAccess
-from starkware.cairo.common.dict import dict_read, dict_write
+from starkware.cairo.common.dict import dict_read
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash, poseidon_hash_many
-from starkware.cairo.common.uint256 import Uint256
+from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash_many
 from starkware.cairo.common.default_dict import default_dict_finalize
 from packages.eth_essentials.lib.mmr import hash_subtree_path
-from src.types import MMRMeta, ChainInfo
-from src.memorizers.starknet import StarknetHeaderMemorizer
-from src.decoders.evm.header_decoder import HeaderDecoder
+from src.types import MMRMeta
+from src.memorizers.starknet.memorizer import StarknetMemorizer, StarknetHashParams
 from src.verifiers.mmr_verifier import validate_mmr_meta
 
 func verify_mmr_batches{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     pow2_array: felt*,
-    starknet_header_dict: DictAccess*,
+    starknet_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
     chain_id: felt
 }(mmr_meta_idx: felt) -> (mmr_meta_idx: felt) {
@@ -35,7 +33,7 @@ func verify_mmr_batches_inner{
     poseidon_ptr: PoseidonBuiltin*,
     pow2_array: felt*,
     mmr_metas: MMRMeta*,
-    starknet_header_dict: DictAccess*,
+    starknet_memorizer: DictAccess*,
     chain_id: felt
 }(mmr_batches_len: felt, idx: felt, mmr_meta_idx: felt) {
     alloc_locals;
@@ -74,7 +72,7 @@ func verify_headers_with_mmr_peaks{
     poseidon_ptr: PoseidonBuiltin*,
     pow2_array: felt*,
     mmr_meta: MMRMeta,
-    starknet_header_dict: DictAccess*,
+    starknet_memorizer: DictAccess*,
     peaks_dict: DictAccess*,
 }(idx: felt) {
     alloc_locals;
@@ -103,7 +101,8 @@ func verify_headers_with_mmr_peaks{
 
         // add to memorizer
         let block_number = [fields + 1];
-        StarknetHeaderMemorizer.add(chain_id=mmr_meta.id, block_number=block_number, fields=fields);
+        let memorizer_key = StarknetHashParams.header(mmr_meta.id, block_number);
+        StarknetMemorizer.add(key=memorizer_key, data=fields);
 
         return verify_headers_with_mmr_peaks(idx=idx - 1);
     }
@@ -130,7 +129,8 @@ func verify_headers_with_mmr_peaks{
     assert contains_peak = 1;
 
     let block_number = [fields + 1];
-    StarknetHeaderMemorizer.add(chain_id=mmr_meta.id, block_number=block_number, fields=fields);
+    let memorizer_key = StarknetHashParams.header(mmr_meta.id, block_number);
+    StarknetMemorizer.add(key=memorizer_key, data=fields);
 
     return verify_headers_with_mmr_peaks(idx=idx - 1);
 }

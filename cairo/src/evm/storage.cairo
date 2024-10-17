@@ -16,7 +16,7 @@ pub struct StorageKey {
 
 #[generate_trait]
 pub impl StorageImpl of StorageTrait {
-    fn get_slot(self: @EvmMemorizer, key: StorageKey) -> u256 {
+    fn storage_get_slot(self: @EvmMemorizer, key: StorageKey) -> u256 {
         let value = call_contract_syscall(
             STORAGE_MEMORIZER.try_into().unwrap(),
             STORAGE_MEMORIZER_GET_SLOT,

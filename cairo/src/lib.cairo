@@ -3,7 +3,7 @@ pub mod evm;
 #[derive(Serde, Drop)]
 pub struct HDP {
     pub evm: EvmMemorizer,
-    // pub starknet: StarknetMemorizer,
+    pub starknet: StarknetMemorizer,
 }
 
 #[derive(Serde, Drop)]

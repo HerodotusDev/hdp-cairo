@@ -21,8 +21,7 @@ func run_state_verification{
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
-    starknet_header_dict: DictAccess*,
-    starknet_storage_slot_dict: DictAccess*,
+    starknet_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
 }() -> (mmr_metas_len: felt) {
     alloc_locals;
@@ -41,8 +40,7 @@ func run_state_verification_inner{
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
-    starknet_header_dict: DictAccess*,
-    starknet_storage_slot_dict: DictAccess*,
+    starknet_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
 }(batch_len: felt, mmr_meta_idx: felt) -> (mmr_meta_idx: felt) {
     alloc_locals;

@@ -56,6 +56,9 @@ func call_execute_syscalls{
     evm_memorizer: DictAccess*,
     evm_decoder_ptr: felt***,
     evm_key_hasher_ptr: felt**,
+    starknet_memorizer: DictAccess*,
+    starknet_decoder_ptr: felt***,
+    starknet_key_hasher_ptr: felt**,
 }(execution_context: ExecutionContext*, syscall_ptr_end: felt*, dry_run: felt) {
     alloc_locals;
     let (__fp__, _) = get_fp_and_pc();
@@ -132,6 +135,9 @@ func execute_entry_point{
     evm_memorizer: DictAccess*,
     evm_decoder_ptr: felt***,
     evm_key_hasher_ptr: felt**,
+    starknet_memorizer: DictAccess*,
+    starknet_decoder_ptr: felt***,
+    starknet_key_hasher_ptr: felt**,
 }(compiled_class: CompiledClass*, execution_context: ExecutionContext*, dry_run: felt) -> (
     retdata_size: felt, retdata: felt*
 ) {
@@ -205,9 +211,9 @@ func execute_entry_point{
     local entry_point_return_values: EntryPointReturnValues* = cast(
         return_values_ptr, EntryPointReturnValues*
     );
-
+    %{ print("pre_fail")%}
     assert entry_point_return_values.failure_flag = 0;
-
+    %{ print("post_fail")%}
     let remaining_gas = entry_point_return_values.gas_builtin;
     let retdata_start = entry_point_return_values.retdata_start;
     let retdata_end = entry_point_return_values.retdata_end;

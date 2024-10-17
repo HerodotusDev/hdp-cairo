@@ -17,8 +17,7 @@ func run_state_verification{
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
-    starknet_header_dict: DictAccess*,
-    starknet_storage_slot_dict: DictAccess*,
+    starknet_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
     chain_info: ChainInfo
 }(mmr_meta_idx: felt) -> felt {

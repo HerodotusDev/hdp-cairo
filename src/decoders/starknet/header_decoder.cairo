@@ -9,7 +9,7 @@ namespace StarknetHeaderVersion {
 
 namespace StarknetHeaderFields {
     const BLOCK_NUMBER = 0;
-    const GLOBAL_STATE_ROOT = 1;
+    const STATE_ROOT = 1;
     const SEQUENCER_ADDRESS = 2;
     const BLOCK_TIMESTAMP = 3;
     const TRANSACTION_COUNT = 4;
@@ -116,7 +116,7 @@ func get_header_field_index{range_check_ptr}(version: felt, field: felt) -> felt
     data:
     // VERSION_1 field indices
     dw 0;  // BLOCK_NUMBER
-    dw 1;  // GLOBAL_STATE_ROOT
+    dw 1;  // STATE_ROOT
     dw 2;  // SEQUENCER_ADDRESS
     dw 3;  // BLOCK_TIMESTAMP
     dw 4;  // TRANSACTION_COUNT
@@ -135,7 +135,7 @@ func get_header_field_index{range_check_ptr}(version: felt, field: felt) -> felt
 
     // VERSION_2 field indices
     dw 1;  // BLOCK_NUMBER
-    dw 2;  // GLOBAL_STATE_ROOT
+    dw 2;  // STATE_ROOT
     dw 3;  // SEQUENCER_ADDRESS
     dw 4;  // BLOCK_TIMESTAMP
     dw 5;  // TRANSACTION_COUNT

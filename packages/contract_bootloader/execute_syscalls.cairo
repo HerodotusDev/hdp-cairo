@@ -44,6 +44,9 @@ func execute_syscalls{
     evm_memorizer: DictAccess*,
     evm_decoder_ptr: felt***,
     evm_key_hasher_ptr: felt**,
+    starknet_memorizer: DictAccess*,
+    starknet_decoder_ptr: felt***,
+    starknet_key_hasher_ptr: felt**,
 }(execution_context: ExecutionContext*, syscall_ptr_end: felt*) {
     if (syscall_ptr == syscall_ptr_end) {
         return ();
@@ -72,6 +75,9 @@ func execute_call_contract{
     evm_memorizer: DictAccess*,
     evm_decoder_ptr: felt***,
     evm_key_hasher_ptr: felt**,
+    starknet_memorizer: DictAccess*,
+    starknet_decoder_ptr: felt***,
+    starknet_key_hasher_ptr: felt**,
 }(caller_execution_context: ExecutionContext*) {
     alloc_locals;
     let request_header = cast(syscall_ptr, RequestHeader*);
@@ -105,6 +111,13 @@ func execute_call_contract{
             return ();
         
         }
+    }
+
+    if (layout == Layout.STARKNET) {
+        %{ print("Caught Starknet syscall") %}
+        assert 1 = 0;
+        
+        return ();
     }
 
     // Unknown DictId
