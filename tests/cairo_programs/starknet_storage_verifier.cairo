@@ -12439,7 +12439,7 @@ func main{
             "storages": proof_batches
         }
     %}
- 
+
     with starknet_memorizer, chain_info, pow2_array {
         run_tests();
     }

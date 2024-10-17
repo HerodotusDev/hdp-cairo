@@ -1,9 +1,11 @@
 %builtins range_check
-from src.decoders.starknet.header_decoder import get_header_field_index, StarknetHeaderVersion, StarknetHeaderFields
+from src.decoders.starknet.header_decoder import (
+    get_header_field_index,
+    StarknetHeaderVersion,
+    StarknetHeaderFields,
+)
 
-func main{
-    range_check_ptr
-}() {
+func main{range_check_ptr}() {
     let version = StarknetHeaderVersion.VERSION_1;
 
     let index = get_header_field_index(version, StarknetHeaderFields.BLOCK_NUMBER);

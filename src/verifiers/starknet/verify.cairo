@@ -1,4 +1,3 @@
-
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.cairo_builtins import (
     PoseidonBuiltin,
@@ -19,7 +18,7 @@ func run_state_verification{
     pow2_array: felt*,
     starknet_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
-    chain_info: ChainInfo
+    chain_info: ChainInfo,
 }(mmr_meta_idx: felt) -> felt {
     alloc_locals;
 
@@ -27,7 +26,6 @@ func run_state_verification{
     let chain_id = chain_info.id;
     with chain_id {
         let (mmr_meta_idx) = verify_mmr_batches(mmr_meta_idx);
-
     }
 
     // Step 2: Storage Slots

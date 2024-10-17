@@ -21,7 +21,9 @@ namespace StarknetPackParams {
     }
 
     const STORAGE_SLOT_PARAMS_LEN = 4;
-    func storage(chain_id: felt, block_number: felt, contract_address: felt, storage_address: felt) -> (params: felt*, params_len: felt) {
+    func storage(
+        chain_id: felt, block_number: felt, contract_address: felt, storage_address: felt
+    ) -> (params: felt*, params_len: felt) {
         alloc_locals;
 
         local params: felt* = nondet %{ segments.add() %};
@@ -46,7 +48,10 @@ namespace StarknetHashParams {
         chain_id: felt, block_number: felt, contract_address: felt, storage_address: felt
     ) -> felt {
         let (params, params_len) = StarknetPackParams.storage(
-            chain_id=chain_id, block_number=block_number, contract_address=contract_address, storage_address=storage_address
+            chain_id=chain_id,
+            block_number=block_number,
+            contract_address=contract_address,
+            storage_address=storage_address,
         );
         return hash_memorizer_key(params, params_len);
     }

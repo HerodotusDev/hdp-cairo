@@ -15,7 +15,7 @@ func verify_mmr_batches{
     pow2_array: felt*,
     starknet_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
-    chain_id: felt
+    chain_id: felt,
 }(mmr_meta_idx: felt) -> (mmr_meta_idx: felt) {
     alloc_locals;
 
@@ -34,17 +34,19 @@ func verify_mmr_batches_inner{
     pow2_array: felt*,
     mmr_metas: MMRMeta*,
     starknet_memorizer: DictAccess*,
-    chain_id: felt
+    chain_id: felt,
 }(mmr_batches_len: felt, idx: felt, mmr_meta_idx: felt) {
     alloc_locals;
     if (mmr_batches_len == idx) {
         return ();
     }
 
-    %{ vm_enter_scope({
-        'mmr_batch': batch["mmr_with_headers"][ids.idx],
-        '__dict_manager': __dict_manager
-    }) %}
+    %{
+        vm_enter_scope({
+               'mmr_batch': batch["mmr_with_headers"][ids.idx],
+               '__dict_manager': __dict_manager
+           })
+    %}
     let (mmr_meta, peaks_dict, peaks_dict_start) = validate_mmr_meta(chain_id);
     assert mmr_metas[mmr_meta_idx + idx] = mmr_meta;
 
@@ -58,7 +60,9 @@ func verify_mmr_batches_inner{
     // Ensure the peaks dict for this batch is finalized
     default_dict_finalize(peaks_dict_start, peaks_dict, -1);
 
-    return verify_mmr_batches_inner(mmr_batches_len=mmr_batches_len, idx=idx + 1, mmr_meta_idx=mmr_meta_idx);
+    return verify_mmr_batches_inner(
+        mmr_batches_len=mmr_batches_len, idx=idx + 1, mmr_meta_idx=mmr_meta_idx
+    );
 }
 
 // Guard function that verifies the inclusion of headers in the MMR.

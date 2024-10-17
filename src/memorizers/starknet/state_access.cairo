@@ -5,15 +5,12 @@ from starkware.cairo.common.registers import get_label_location
 from starkware.cairo.common.invoke import invoke
 from starkware.cairo.common.dict_access import DictAccess
 
-from src.memorizers.starknet.memorizer import (
-    StarknetMemorizer,
-    StarknetHashParams2,
-)
+from src.memorizers.starknet.memorizer import StarknetMemorizer, StarknetHashParams2
 from src.decoders.starknet.header_decoder import StarknetHeaderDecoder
 from src.chain_info import Layout
 
 namespace StarknetDecoderTarget {
-    const FELT = 0; // returns a felt
+    const FELT = 0;  // returns a felt
 }
 
 namespace StarknetStateAccessType {
@@ -48,16 +45,21 @@ namespace StarknetDecoder {
     // - as_be: Whether to return the result as big endian
     // Returns:
     // - The length of the result in felts
-    func decode{
-        range_check_ptr, 
-        starknet_decoder_ptr: felt***,
-        output_ptr: felt*
-    }(rlp: felt*, state_access_type: felt, field: felt, block_number: felt, decoder_target: felt, as_be: felt) -> (result_len: felt) {
-        alloc_locals; // ToDo: solve output_ptr revoke and remove this
+    func decode{range_check_ptr, starknet_decoder_ptr: felt***, output_ptr: felt*}(
+        rlp: felt*,
+        state_access_type: felt,
+        field: felt,
+        block_number: felt,
+        decoder_target: felt,
+        as_be: felt,
+    ) -> (result_len: felt) {
+        alloc_locals;  // ToDo: solve output_ptr revoke and remove this
 
         let func_ptr = starknet_decoder_ptr[decoder_target][state_access_type];
-        if(decoder_target == StarknetDecoderTarget.FELT) {
-            let (invoke_params, param_len) = _pack_decode_call_header(state_access_type, field, block_number, rlp);
+        if (decoder_target == StarknetDecoderTarget.FELT) {
+            let (invoke_params, param_len) = _pack_decode_call_header(
+                state_access_type, field, block_number, rlp
+            );
             invoke(func_ptr, param_len, invoke_params);
 
             // Retrieve the results from [ap]
@@ -83,20 +85,16 @@ namespace StarknetDecoder {
     }
 
     // Prepares the call header for the call of the decoder function
-    func _pack_decode_call_header{
-        range_check_ptr,
-    }(state_access_type: felt, field: felt, data: felt*) -> (invoke_params: felt*, param_len: felt) {
+    func _pack_decode_call_header{range_check_ptr}(
+        state_access_type: felt, field: felt, data: felt*
+    ) -> (invoke_params: felt*, param_len: felt) {
         // Since we use the passthrough decoder for storage, we only need to pass the data
-        if(state_access_type == StarknetStateAccessType.STORAGE) {
-            tempvar invoke_params = cast(
-                new (range_check_ptr, data), felt*
-            );
+        if (state_access_type == StarknetStateAccessType.STORAGE) {
+            tempvar invoke_params = cast(new (range_check_ptr, data), felt*);
             return (invoke_params=invoke_params, param_len=2);
         }
 
-        tempvar invoke_params = cast(
-            new (range_check_ptr, data, field), felt*
-        );
+        tempvar invoke_params = cast(new (range_check_ptr, data, field), felt*);
         return (invoke_params=invoke_params, param_len=3);
     }
 }
@@ -131,31 +129,31 @@ namespace StarknetStateAccess {
         starknet_memorizer: DictAccess*,
         starknet_decoder_ptr: felt***,
         starknet_key_hasher_ptr: felt**,
-        output_ptr: felt*
-    }(params: felt*, state_access_type: felt, field: felt, decoder_target: felt, as_be: felt) -> (result_len: felt) {
-        alloc_locals; // ToDo: currently needed to retrieve the poseidon_ptr from the _compute_memorizer_key call. Find way to remove this
+        output_ptr: felt*,
+    }(params: felt*, state_access_type: felt, field: felt, decoder_target: felt, as_be: felt) -> (
+        result_len: felt
+    ) {
+        alloc_locals;  // ToDo: currently needed to retrieve the poseidon_ptr from the _compute_memorizer_key call. Find way to remove this
 
         let (memorizer_key) = _compute_memorizer_key(params, state_access_type);
         let (rlp) = StarknetMemorizer.get(memorizer_key);
 
         // In EVM, the block number is always the second param. Ensure this doesnt change in the future
         let block_number = params[1];
-        let (result_len) = StarknetDecoder.decode(rlp, state_access_type, field, block_number, decoder_target, as_be);
+        let (result_len) = StarknetDecoder.decode(
+            rlp, state_access_type, field, block_number, decoder_target, as_be
+        );
 
         return (result_len=result_len);
-    
     }
 
     // Computes the memorizer key by invoking the corresponding key hasher
     // Returns:
     // - The memorizer key
-    func _compute_memorizer_key{
-        poseidon_ptr: PoseidonBuiltin*,
-        starknet_key_hasher_ptr: felt**,
-    }(params: felt*, state_access_type: felt) -> (key: felt) {
-        tempvar invoke_params = cast(
-            new (poseidon_ptr, params), felt*
-        );
+    func _compute_memorizer_key{poseidon_ptr: PoseidonBuiltin*, starknet_key_hasher_ptr: felt**}(
+        params: felt*, state_access_type: felt
+    ) -> (key: felt) {
+        tempvar invoke_params = cast(new (poseidon_ptr, params), felt*);
         let func_ptr = starknet_key_hasher_ptr[state_access_type];
         invoke(func_ptr, 2, invoke_params);
 

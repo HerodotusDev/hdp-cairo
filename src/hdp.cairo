@@ -31,11 +31,7 @@ from src.chain_info import Layout
 
 from packages.eth_essentials.lib.utils import pow2alloc251, write_felt_array_to_dict_keys
 
-from src.merkle import (
-    compute_tasks_hash_v2,
-    compute_tasks_root_v2,
-    compute_results_root_v2,
-)
+from src.merkle import compute_tasks_hash_v2, compute_tasks_root_v2, compute_results_root_v2
 from src.chain_info import fetch_chain_info
 from src.contract import compute_contract
 
@@ -105,7 +101,7 @@ func run{
 
         def nested_hex_to_int_array(hex_array):
             return [[int(x, 16) for x in y] for y in hex_array]
-        
+
         ids.tasks_len = 1
         cairo_run_output_path = program_input["cairo_run_output_path"]
     %}
@@ -172,7 +168,9 @@ func run{
 
     // Post Verification Checks: Ensure dict consistency
     default_dict_finalize(evm_memorizer_start, evm_memorizer, BareMemorizer.DEFAULT_VALUE);
-    default_dict_finalize(starknet_memorizer_start, starknet_memorizer, BareMemorizer.DEFAULT_VALUE);
+    default_dict_finalize(
+        starknet_memorizer_start, starknet_memorizer, BareMemorizer.DEFAULT_VALUE
+    );
 
     write_output_ptr{output_ptr=output_ptr}(
         mmr_metas=mmr_metas,
@@ -199,9 +197,7 @@ func compute_tasks{
     starknet_memorizer: DictAccess*,
     starknet_decoder_ptr: felt***,
     starknet_key_hasher_ptr: felt**,
-}() -> (
-    tasks_root: Uint256, results_root: Uint256, results: Uint256*, results_len: felt
-) {
+}() -> (tasks_root: Uint256, results_root: Uint256, results: Uint256*, results_len: felt) {
     alloc_locals;
 
     let (results: Uint256*) = alloc();

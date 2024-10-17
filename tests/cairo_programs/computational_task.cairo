@@ -141,11 +141,7 @@ func test_computational_task_param_decoding{
     ) = BlockSampledTaskMocker.get_avg_task();
 
     let (avg_task) = extract_params_and_construct_task(
-        avg_input,
-        avg_bytes_len,
-        hash,
-        exp_avg_task.datalake_ptr,
-        exp_avg_task.datalake_type,
+        avg_input, avg_bytes_len, hash, exp_avg_task.datalake_ptr, exp_avg_task.datalake_type
     );
     task_eq(avg_task, exp_avg_task);
 
@@ -154,11 +150,7 @@ func test_computational_task_param_decoding{
         exp_sum_task, sum_input, sum_bytes_len, sum_datalake, hash
     ) = BlockSampledTaskMocker.get_sum_task();
     let (sum_task) = extract_params_and_construct_task(
-        sum_input,
-        sum_bytes_len,
-        hash,
-        exp_sum_task.datalake_ptr,
-        exp_sum_task.datalake_type,
+        sum_input, sum_bytes_len, hash, exp_sum_task.datalake_ptr, exp_sum_task.datalake_type
     );
     task_eq(sum_task, exp_sum_task);
 
@@ -167,11 +159,7 @@ func test_computational_task_param_decoding{
         exp_min_task, min_input, min_bytes_len, min_datalake, hash
     ) = BlockSampledTaskMocker.get_min_task();
     let (min_task) = extract_params_and_construct_task(
-        min_input,
-        min_bytes_len,
-        hash,
-        exp_min_task.datalake_ptr,
-        exp_min_task.datalake_type,
+        min_input, min_bytes_len, hash, exp_min_task.datalake_ptr, exp_min_task.datalake_type
     );
     task_eq(min_task, exp_min_task);
 
@@ -180,11 +168,7 @@ func test_computational_task_param_decoding{
         exp_max_task, max_input, max_bytes_len, max_datalake, hash
     ) = BlockSampledTaskMocker.get_max_task();
     let (max_task) = extract_params_and_construct_task(
-        max_input,
-        max_bytes_len,
-        hash,
-        exp_max_task.datalake_ptr,
-        exp_max_task.datalake_type,
+        max_input, max_bytes_len, hash, exp_max_task.datalake_ptr, exp_max_task.datalake_type
     );
     task_eq(max_task, exp_max_task);
 

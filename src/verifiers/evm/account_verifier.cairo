@@ -114,10 +114,10 @@ func verify_account{
     let (felt_address) = le_address_chunks_to_felt(address);
 
     // add account to memorizer
-    let memorizer_key = EvmHashParams.account(chain_id=chain_info.id, block_number=block_number, address=felt_address);
-    EvmMemorizer.add(
-        key=memorizer_key, data=rlp
+    let memorizer_key = EvmHashParams.account(
+        chain_id=chain_info.id, block_number=block_number, address=felt_address
     );
+    EvmMemorizer.add(key=memorizer_key, data=rlp);
 
     return verify_account(
         address=address,

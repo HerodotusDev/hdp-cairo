@@ -5,11 +5,7 @@ from src.verifiers.evm.block_tx_verifier import verify_block_tx_proofs
 from src.verifiers.evm.receipt_verifier import verify_block_receipt_proofs
 
 from starkware.cairo.common.dict_access import DictAccess
-from starkware.cairo.common.cairo_builtins import (
-    PoseidonBuiltin,
-    BitwiseBuiltin,
-    KeccakBuiltin,
-)
+from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, KeccakBuiltin
 
 from src.types import MMRMeta, ChainInfo
 
@@ -21,7 +17,7 @@ func run_state_verification{
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
-    chain_info: ChainInfo
+    chain_info: ChainInfo,
 }(mmr_meta_idx: felt) -> felt {
     alloc_locals;
 

@@ -125,7 +125,9 @@ func verify_storage_item{
         ids.proof_len = len(proof["proof"])
     %}
 
-    let memorizer_key = EvmHashParams.account(chain_id=chain_info.id, block_number=block_number, address=address);
+    let memorizer_key = EvmHashParams.account(
+        chain_id=chain_info.id, block_number=block_number, address=address
+    );
     let (account_rlp) = EvmMemorizer.get(key=memorizer_key);
     let state_root = AccountDecoder.get_field(account_rlp, AccountField.STATE_ROOT);
 
@@ -139,12 +141,8 @@ func verify_storage_item{
         pow2_array=pow2_array,
     );
 
-
     let memorizer_key = EvmHashParams.storage(
-        chain_id=chain_info.id,
-        block_number=block_number,
-        address=address,
-        storage_slot=slot,
+        chain_id=chain_info.id, block_number=block_number, address=address, storage_slot=slot
     );
     EvmMemorizer.add(key=memorizer_key, data=rlp);
 

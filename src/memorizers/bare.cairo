@@ -4,7 +4,7 @@ from starkware.cairo.common.cairo_builtins import PoseidonBuiltin
 from starkware.cairo.common.default_dict import default_dict_new
 
 namespace BareMemorizer {
-    const DEFAULT_VALUE = 0x81; // Invalid RLP value
+    const DEFAULT_VALUE = 0x81;  // Invalid RLP value
     func init() -> (dict_ptr: DictAccess*, dict_ptr_start: DictAccess*) {
         alloc_locals;
 
@@ -27,7 +27,7 @@ namespace BareMemorizer {
 }
 
 namespace SingleBareMemorizer {
-    const DEFAULT_VALUE = 0x0; // Invalid RLP value
+    const DEFAULT_VALUE = 0x0;  // Invalid RLP value
     func init() -> (dict_ptr: DictAccess*, dict_ptr_start: DictAccess*) {
         alloc_locals;
 
@@ -43,7 +43,7 @@ namespace SingleBareMemorizer {
         return ();
     }
 
-    func get{dict_ptr: DictAccess*}(key: felt) -> (felt) {
+    func get{dict_ptr: DictAccess*}(key: felt) -> (felt,) {
         let (item: felt) = dict_read(key=key);
         return (item=item);
     }

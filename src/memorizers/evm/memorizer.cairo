@@ -85,7 +85,9 @@ namespace EvmHashParams {
         return hash_memorizer_key(params, params_len);
     }
 
-    func account{poseidon_ptr: PoseidonBuiltin*}(chain_id: felt, block_number: felt, address: felt) -> felt {
+    func account{poseidon_ptr: PoseidonBuiltin*}(
+        chain_id: felt, block_number: felt, address: felt
+    ) -> felt {
         let (params, params_len) = EvmPackParams.account(
             chain_id=chain_id, block_number=block_number, address=address
         );
@@ -153,9 +155,7 @@ namespace EvmMemorizer {
         return BareMemorizer.init();
     }
 
-    func add{evm_memorizer: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(
-        key: felt, data: felt*
-    ) {
+    func add{evm_memorizer: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(key: felt, data: felt*) {
         BareMemorizer.add{dict_ptr=evm_memorizer}(key, data);
 
         return ();

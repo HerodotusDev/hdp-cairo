@@ -87,10 +87,10 @@ func verify_block_tx_proofs_inner{
     );
 
     let index = chunk_to_felt_be(key.low);
-    let memorizer_key = EvmHashParams.block_tx(chain_id=chain_info.id, block_number=block_number, index=index);
-    EvmMemorizer.add(
-        key=memorizer_key, data=rlp
+    let memorizer_key = EvmHashParams.block_tx(
+        chain_id=chain_info.id, block_number=block_number, index=index
     );
+    EvmMemorizer.add(key=memorizer_key, data=rlp);
 
     return verify_block_tx_proofs_inner(n_tx_proofs=n_tx_proofs, index=index + 1);
 }
