@@ -75,9 +75,14 @@ func compute_contract{
 
     assert calldata[0] = nondet %{ ids.evm_memorizer.address_.segment_index %};
     assert calldata[1] = nondet %{ ids.evm_memorizer.address_.offset %};
+    // ToDo: these are duplicates, to make everything run for now. Refactor cairo1 bindings to remove this
+    assert calldata[2] = nondet %{ ids.evm_memorizer.address_.segment_index %};
+    assert calldata[3] = nondet %{ ids.evm_memorizer.address_.offset %};
+    assert calldata[4] = nondet %{ ids.evm_memorizer.address_.segment_index %};
+    assert calldata[5] = nondet %{ ids.evm_memorizer.address_.offset %};
 
-    memcpy(dst=calldata + 2, src=inputs, len=inputs_len);
-    let calldata_size = 2 + inputs_len;
+    memcpy(dst=calldata + 6, src=inputs, len=inputs_len);
+    let calldata_size = 6 + inputs_len;
 
     with evm_memorizer, pow2_array {
         let (retdata_size, retdata) = run_contract_bootloader(
