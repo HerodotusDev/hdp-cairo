@@ -1,4 +1,4 @@
-use hdp_cairo::Memorizer;
+use hdp_cairo::EvmMemorizer;
 use starknet::syscalls::call_contract_syscall;
 use starknet::{SyscallResult, SyscallResultTrait};
 
@@ -15,8 +15,8 @@ pub struct StorageKey {
 }
 
 #[generate_trait]
-pub impl StorageMemorizerImpl of StorageMemorizerTrait {
-    fn get_slot(self: @Memorizer, key: StorageKey) -> u256 {
+pub impl StorageImpl of StorageTrait {
+    fn get_slot(self: @EvmMemorizer, key: StorageKey) -> u256 {
         let value = call_contract_syscall(
             STORAGE_MEMORIZER.try_into().unwrap(),
             STORAGE_MEMORIZER_GET_SLOT,

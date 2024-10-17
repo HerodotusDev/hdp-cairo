@@ -86,13 +86,13 @@ namespace EvmDecoder {
 
             if (as_be == 1) {
                 let (result) = uint256_reverse_endian(Uint256(low=res_low, high=res_high));
-                assert output_ptr[0] = result.high;
-                assert output_ptr[1] = result.low;
+                assert output_ptr[0] = result.low;
+                assert output_ptr[1] = result.high;
 
                 return (result_len=2);
             } else {
-                assert output_ptr[0] = res_high;
-                assert output_ptr[1] = res_low;
+                assert output_ptr[0] = res_low;
+                assert output_ptr[1] = res_high;
 
                 return (result_len=2);
             }
@@ -197,11 +197,9 @@ namespace EvmStateAccess {
         pow2_array: felt*,
         output_ptr: felt*
     }(params: felt*, state_access_type: felt, field: felt, decoder_target: felt, as_be: felt) -> (result_len: felt) {
-        alloc_locals; // ToDo: remove this
+        alloc_locals; // ToDo: currently needed to retrieve the poseidon_ptr from the _compute_memorizer_key call. Find way to remove this
 
-        %{ print("state_access_type", ids.state_access_type) %}
-
-        let memorizer_key = _compute_memorizer_key(params, state_access_type);
+        let (memorizer_key) = _compute_memorizer_key(params, state_access_type);
         let (rlp) = EvmMemorizer.get(memorizer_key);
 
         // In EVM, the block number is always the second param. Ensure this doesnt change in the future
@@ -218,8 +216,7 @@ namespace EvmStateAccess {
     func _compute_memorizer_key{
         poseidon_ptr: PoseidonBuiltin*,
         evm_key_hasher_ptr: felt**,
-    }(params: felt*, state_access_type: felt) -> felt {
-
+    }(params: felt*, state_access_type: felt) -> (key: felt) {
         tempvar invoke_params = cast(
             new (poseidon_ptr, params), felt*
         );
@@ -230,7 +227,7 @@ namespace EvmStateAccess {
         let key = [ap - 1];
         let poseidon_ptr = cast([ap - 2], PoseidonBuiltin*);
 
-        return key;
+        return (key=key);
     }
 }
 

@@ -1,10 +1,9 @@
-pub mod memorizer;
+pub mod evm;
 
 #[derive(Serde, Drop)]
 pub struct HDP {
-    pub header_memorizer: Memorizer,
-    pub account_memorizer: Memorizer,
-    pub storage_memorizer: Memorizer,
+    pub evm: EvmMemorizer,
+    // pub starknet: StarknetMemorizer,
 }
 
 #[derive(Serde, Drop)]
@@ -14,6 +13,11 @@ pub struct RelocatableValue {
 }
 
 #[derive(Serde, Drop)]
-struct Memorizer {
+struct EvmMemorizer {
+    pub dict: RelocatableValue,
+}
+
+#[derive(Serde, Drop)]
+struct StarknetMemorizer {
     pub dict: RelocatableValue,
 }
