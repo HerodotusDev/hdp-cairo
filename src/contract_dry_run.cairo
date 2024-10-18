@@ -94,11 +94,8 @@ func main{
         )
     %}
 
-    let (local evm_header_dict) = default_dict_new(default_value=7);
-    let (local evm_account_dict) = default_dict_new(default_value=7);
-    let (local evm_storage_dict) = default_dict_new(default_value=7);
-    let (local evm_block_tx_dict) = default_dict_new(default_value=7);
-    let (local evm_block_receipt_dict) = default_dict_new(default_value=7);
+    let (local evm_memorizer) = default_dict_new(default_value=7);
+    let (local starknet_memorizer) = default_dict_new(default_value=7);
     local pow2_array: felt* = nondet %{ segments.add() %};
 
     %{
@@ -113,20 +110,20 @@ func main{
 
     local calldata: felt* = nondet %{ segments.add() %};
 
-    assert calldata[0] = nondet %{ ids.evm_header_dict.address_.segment_index %};
-    assert calldata[1] = nondet %{ ids.evm_header_dict.address_.offset %};
-    assert calldata[2] = nondet %{ ids.evm_account_dict.address_.segment_index %};
-    assert calldata[3] = nondet %{ ids.evm_account_dict.address_.offset %};
-    assert calldata[4] = nondet %{ ids.evm_storage_dict.address_.segment_index %};
-    assert calldata[5] = nondet %{ ids.evm_storage_dict.address_.offset %};
+    assert calldata[0] = nondet %{ ids.evm_memorizer.address_.segment_index %};
+    assert calldata[1] = nondet %{ ids.evm_memorizer.address_.offset %};
+    assert calldata[2] = nondet %{ ids.starknet_memorizer.address_.segment_index %};
+    assert calldata[3] = nondet %{ ids.starknet_memorizer.address_.offset %};
 
-    memcpy(dst=calldata + 6, src=inputs, len=inputs_len);
-    let calldata_size = 6 + inputs_len;
+    memcpy(dst=calldata + 4, src=inputs, len=inputs_len);
+    let calldata_size = 4 + inputs_len;
 
-    let (memorizer_handler: felt***) = alloc();
-    let (decoder_handler: felt***) = alloc();
+    let (evm_decoder_ptr: felt***) = alloc();
+    let (starknet_decoder_ptr: felt***) = alloc();
+    let (evm_key_hasher_ptr: felt**) = alloc();
+    let (starknet_key_hasher_ptr: felt**) = alloc();
 
-    with evm_header_dict, evm_account_dict, evm_storage_dict, evm_block_tx_dict, evm_block_receipt_dict, pow2_array, memorizer_handler, decoder_handler {
+    with evm_memorizer, starknet_memorizer, pow2_array, evm_decoder_ptr, starknet_decoder_ptr, evm_key_hasher_ptr, starknet_key_hasher_ptr {
         let (retdata_size, retdata) = run_contract_bootloader(
             compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata, dry_run=1
         );
