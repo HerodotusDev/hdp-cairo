@@ -2,13 +2,13 @@ from web3 import Web3
 from enum import Enum
 from typing import List, Tuple
 from abc import ABC, abstractmethod
-from contract_bootloader.memorizer.memorizer import Memorizer
+from contract_bootloader.memorizer.evm.memorizer import EvmMemorizer
 from marshmallow_dataclass import dataclass
 from starkware.cairo.lang.vm.crypto import poseidon_hash_many
 from starkware.cairo.lang.vm.relocatable import RelocatableValue
 
 
-class MemorizerFunctionId(Enum):
+class EvmStateFunctionId(Enum):
     GET_NONCE = 0
     GET_BALANCE = 1
     GET_STATE_ROOT = 2
@@ -56,19 +56,18 @@ class MemorizerKey:
     def size(cls) -> int:
         return 3
 
-
-class AbstractAccountMemorizerBase(ABC):
-    def __init__(self, memorizer: Memorizer):
+class AbstractEvmAccountBase(ABC):
+    def __init__(self, memorizer: EvmMemorizer):
         self.memorizer = memorizer
         self.function_map = {
-            MemorizerFunctionId.GET_NONCE: self.get_nonce,
-            MemorizerFunctionId.GET_BALANCE: self.get_balance,
-            MemorizerFunctionId.GET_STATE_ROOT: self.get_state_root,
-            MemorizerFunctionId.GET_CODE_HASH: self.get_code_hash,
+            EvmStateFunctionId.GET_NONCE: self.get_nonce,
+            EvmStateFunctionId.GET_BALANCE: self.get_balance,
+            EvmStateFunctionId.GET_STATE_ROOT: self.get_state_root,
+            EvmStateFunctionId.GET_CODE_HASH: self.get_code_hash,
         }
 
     def handle(
-        self, function_id: MemorizerFunctionId, key: MemorizerKey
+        self, function_id: EvmStateFunctionId, key: MemorizerKey
     ) -> Tuple[int, int]:
         if function_id in self.function_map:
             return self.function_map[function_id](key=key)

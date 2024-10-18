@@ -4,7 +4,7 @@ from starkware.cairo.common.dict import DictManager
 from starkware.cairo.lang.vm.relocatable import RelocatableValue
 
 
-class MemorizerId(Enum):
+class EvmStateId(Enum):
     Header = 0
     Account = 1
     Storage = 2
@@ -23,11 +23,11 @@ class MemorizerId(Enum):
         return 1
 
 
-class Memorizer:
+class EvmMemorizer:
     def __init__(self, dict_raw_ptrs: List[int], dict_manager: DictManager):
         if len(dict_raw_ptrs) != self.size():
             raise ValueError(
-                "Memorizer must be initialized with a list of two integers"
+                "EvmMemorizer must be initialized with a list of two integers"
             )
         self.dict_ptr = RelocatableValue.from_tuple(dict_raw_ptrs)
         self.dict_manager = dict_manager

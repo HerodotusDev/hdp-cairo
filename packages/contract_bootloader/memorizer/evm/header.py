@@ -1,13 +1,13 @@
 from enum import Enum
 from typing import List, Tuple
 from abc import ABC, abstractmethod
-from contract_bootloader.memorizer.memorizer import Memorizer
+from contract_bootloader.memorizer.evm.memorizer import EvmMemorizer
 from marshmallow_dataclass import dataclass
 from starkware.cairo.lang.vm.crypto import poseidon_hash_many
 from starkware.cairo.lang.vm.relocatable import RelocatableValue
 
 
-class MemorizerFunctionId(Enum):
+class EvmStateFunctionId(Enum):
     GET_PARENT = 0
     GET_UNCLE = 1
     GET_COINBASE = 2
@@ -66,34 +66,34 @@ class MemorizerKey:
         return 2
 
 
-class AbstractHeaderMemorizerBase(ABC):
-    def __init__(self, memorizer: Memorizer):
+class AbstractEvmHeaderBase(ABC):
+    def __init__(self, memorizer: EvmMemorizer):
         self.memorizer = memorizer
         self.function_map = {
-            MemorizerFunctionId.GET_PARENT: self.get_parent,
-            MemorizerFunctionId.GET_UNCLE: self.get_uncle,
-            MemorizerFunctionId.GET_COINBASE: self.get_coinbase,
-            MemorizerFunctionId.GET_STATE_ROOT: self.get_state_root,
-            MemorizerFunctionId.GET_TRANSACTION_ROOT: self.get_transaction_root,
-            MemorizerFunctionId.GET_RECEIPT_ROOT: self.get_receipt_root,
-            MemorizerFunctionId.GET_BLOOM: self.get_bloom,
-            MemorizerFunctionId.GET_DIFFICULTY: self.get_difficulty,
-            MemorizerFunctionId.GET_NUMBER: self.get_number,
-            MemorizerFunctionId.GET_GAS_LIMIT: self.get_gas_limit,
-            MemorizerFunctionId.GET_GAS_USED: self.get_gas_used,
-            MemorizerFunctionId.GET_TIMESTAMP: self.get_timestamp,
-            MemorizerFunctionId.GET_EXTRA_DATA: self.get_extra_data,
-            MemorizerFunctionId.GET_MIX_HASH: self.get_mix_hash,
-            MemorizerFunctionId.GET_NONCE: self.get_nonce,
-            MemorizerFunctionId.GET_BASE_FEE_PER_GAS: self.get_base_fee_per_gas,
-            MemorizerFunctionId.GET_WITHDRAWALS_ROOT: self.get_withdrawals_root,
-            MemorizerFunctionId.GET_BLOB_GAS_USED: self.get_blob_gas_used,
-            MemorizerFunctionId.GET_EXCESS_BLOB_GAS: self.get_excess_blob_gas,
-            MemorizerFunctionId.GET_PARENT_BEACON_BLOCK_ROOT: self.get_parent_beacon_block_root,
+            EvmStateFunctionId.GET_PARENT: self.get_parent,
+            EvmStateFunctionId.GET_UNCLE: self.get_uncle,
+            EvmStateFunctionId.GET_COINBASE: self.get_coinbase,
+            EvmStateFunctionId.GET_STATE_ROOT: self.get_state_root,
+            EvmStateFunctionId.GET_TRANSACTION_ROOT: self.get_transaction_root,
+            EvmStateFunctionId.GET_RECEIPT_ROOT: self.get_receipt_root,
+            EvmStateFunctionId.GET_BLOOM: self.get_bloom,
+            EvmStateFunctionId.GET_DIFFICULTY: self.get_difficulty,
+            EvmStateFunctionId.GET_NUMBER: self.get_number,
+            EvmStateFunctionId.GET_GAS_LIMIT: self.get_gas_limit,
+            EvmStateFunctionId.GET_GAS_USED: self.get_gas_used,
+            EvmStateFunctionId.GET_TIMESTAMP: self.get_timestamp,
+            EvmStateFunctionId.GET_EXTRA_DATA: self.get_extra_data,
+            EvmStateFunctionId.GET_MIX_HASH: self.get_mix_hash,
+            EvmStateFunctionId.GET_NONCE: self.get_nonce,
+            EvmStateFunctionId.GET_BASE_FEE_PER_GAS: self.get_base_fee_per_gas,
+            EvmStateFunctionId.GET_WITHDRAWALS_ROOT: self.get_withdrawals_root,
+            EvmStateFunctionId.GET_BLOB_GAS_USED: self.get_blob_gas_used,
+            EvmStateFunctionId.GET_EXCESS_BLOB_GAS: self.get_excess_blob_gas,
+            EvmStateFunctionId.GET_PARENT_BEACON_BLOCK_ROOT: self.get_parent_beacon_block_root,
         }
 
     def handle(
-        self, function_id: MemorizerFunctionId, key: MemorizerKey
+        self, function_id: EvmStateFunctionId, key: MemorizerKey
     ) -> Tuple[int, int]:
         if function_id in self.function_map:
             return self.function_map[function_id](key=key)
