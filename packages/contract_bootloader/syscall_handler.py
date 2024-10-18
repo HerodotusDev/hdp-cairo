@@ -9,26 +9,26 @@ from starkware.cairo.common.dict import DictManager
 from starkware.cairo.common.structs import CairoStructProxy
 from starkware.starknet.business_logic.execution.objects import CallResult
 from contract_bootloader.memorizer.memorizer import MemorizerId, Memorizer
-from contract_bootloader.memorizer.header_memorizer import (
-    MemorizerFunctionId as HeaderMemorizerFunctionId,
+from packages.contract_bootloader.memorizer.evm.header import (
+    EvmStateFunctionId as EvmHeaderFunctionId,
     MemorizerKey as HeaderMemorizerKey,
 )
-from contract_bootloader.memorizer.account_memorizer import (
-    MemorizerFunctionId as AccountMemorizerFunctionId,
+from contract_bootloader.memorizer.evm.account import (
+    EvmStateFunctionId as EvmAccountFunctionId,
     MemorizerKey as AccountMemorizerKey,
 )
-from contract_bootloader.memorizer.storage_memorizer import (
-    MemorizerFunctionId as StorageMemorizerFunctionId,
+from contract_bootloader.memorizer.evm.storage import (
+    EvmStateFunctionId as EvmStorageFunctionId,
     MemorizerKey as StorageMemorizerKey,
 )
-from contract_bootloader.syscall_memorizer_handler.account_memorizer_handler import (
-    AccountMemorizerHandler,
+from contract_bootloader.syscall_memorizer_handler.evm.account_handler import (
+    EvmAccountHandler,
 )
-from contract_bootloader.syscall_memorizer_handler.header_memorizer_handler import (
-    HeaderMemorizerHandler,
+from contract_bootloader.syscall_memorizer_handler.evm.header_handler import (
+    EvmHeaderHandler,
 )
-from contract_bootloader.syscall_memorizer_handler.storage_memorizer_handler import (
-    StorageMemorizerHandler,
+from contract_bootloader.syscall_memorizer_handler.evm.storage_handler import (
+    EvmStorageHandler,
 )
 
 
@@ -76,7 +76,7 @@ class SyscallHandler(SyscallHandlerBase):
                     f"Memorizer read must be initialized with a list of {total_size} integers"
                 )
 
-            function_id = HeaderMemorizerFunctionId.from_int(request.selector)
+            function_id = EvmHeaderFunctionId.from_int(request.selector)
             memorizer = Memorizer(
                 dict_raw_ptrs=calldata[0 : Memorizer.size()],
                 dict_manager=self.dict_manager,
@@ -87,7 +87,7 @@ class SyscallHandler(SyscallHandlerBase):
                 calldata[idx : idx + HeaderMemorizerKey.size()]
             )
 
-            handler = HeaderMemorizerHandler(
+            handler = EvmHeaderHandler(
                 segments=self.segments,
                 memorizer=memorizer,
             )
@@ -101,7 +101,7 @@ class SyscallHandler(SyscallHandlerBase):
                     f"Memorizer read must be initialized with a list of {total_size} integers"
                 )
 
-            function_id = AccountMemorizerFunctionId.from_int(request.selector)
+            function_id = EvmAccountFunctionId.from_int(request.selector)
             memorizer = Memorizer(
                 dict_raw_ptrs=calldata[0 : Memorizer.size()],
                 dict_manager=self.dict_manager,
@@ -112,7 +112,7 @@ class SyscallHandler(SyscallHandlerBase):
                 calldata[idx : idx + AccountMemorizerKey.size()]
             )
 
-            handler = AccountMemorizerHandler(
+            handler = EvmAccountHandler(
                 segments=self.segments,
                 memorizer=memorizer,
             )
@@ -126,7 +126,7 @@ class SyscallHandler(SyscallHandlerBase):
                     f"Memorizer read must be initialized with a list of {total_size} integers"
                 )
 
-            function_id = StorageMemorizerFunctionId.from_int(request.selector)
+            function_id = EvmStorageFunctionId.from_int(request.selector)
             memorizer = Memorizer(
                 dict_raw_ptrs=calldata[0 : Memorizer.size()],
                 dict_manager=self.dict_manager,
@@ -138,7 +138,7 @@ class SyscallHandler(SyscallHandlerBase):
                 calldata[idx : idx + StorageMemorizerKey.size()]
             )
 
-            handler = StorageMemorizerHandler(
+            handler = EvmStorageHandler(
                 segments=self.segments,
                 memorizer=memorizer,
             )

@@ -8,7 +8,9 @@ from rlp.sedes import (
     binary,
 )
 from web3 import Web3
-from typing import Union, Tuple
+from typing import List, Union, Tuple
+
+from tools.py.utils import little_8_bytes_chunks_to_bytes
 
 
 address = Binary.fixed_length(20, allow_empty=True)
@@ -365,9 +367,9 @@ class BlockHeader:
         return instance
 
 # Automatically splits the fields into two 128 bit felt
-class FeltBlockHeader(BlockHeader):
-    def __init__(self):
-        super().__init__()
+class FeltBlockHeader:
+    def __init__(self, block_header: BlockHeader):
+        self.header = block_header
 
     def _split_to_felt(self, value: Union[int, bytes, HexBytes]) -> Tuple[int, int]:
         if isinstance(value, (bytes, HexBytes)):
@@ -460,4 +462,7 @@ class FeltBlockHeader(BlockHeader):
         return self._split_to_felt(super().parent_beacon_block_root)
     
     @classmethod
-    def from_rlp_chunks(cls, data: bytes) -> 'FeltBlockHeader':
+    def from_rlp_chunks(cls, rlp_chunks: List[int], rlp_len: int) -> 'FeltBlockHeader':
+        rlp = little_8_bytes_chunks_to_bytes(rlp_chunks, rlp_len)
+        return cls(BlockHeader.from_rlp(rlp))
+

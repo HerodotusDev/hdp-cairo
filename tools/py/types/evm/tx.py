@@ -5,6 +5,8 @@ from rlp.sedes import BigEndianInt, big_endian_int, Binary, binary, lists, Count
 from web3 import Web3
 from typing import Union, List, Tuple
 
+from tools.py.utils import little_8_bytes_chunks_to_bytes
+
 address = Binary.fixed_length(20, allow_empty=True)
 hash32 = Binary.fixed_length(32)
 int256 = BigEndianInt(256)
@@ -467,7 +469,10 @@ class Tx:
                 raise ValueError(f"Unknown transaction type: {tx_type}")
         return instance
 
-class FeltTx(Tx):
+class FeltTx:
+    def __init__(self, tx: Tx):
+        self.tx = tx
+
     def _split_to_felt(self, value: Union[int, bytes, HexBytes]) -> Tuple[int, int]:
         if isinstance(value, (bytes, HexBytes)):
             value = int.from_bytes(value, 'big')
@@ -497,9 +502,9 @@ class FeltTx(Tx):
     def value(self) -> Tuple[int, int]:
         return self._split_to_felt(self.tx.value)
 
-    @property
-    def data(self) -> Tuple[int, int]:
-        return self._split_to_felt(int.from_bytes(self.tx.data, 'big'))
+    # @property
+    # def data(self) -> Tuple[int, int]:
+    #     return self._split_to_felt(int.from_bytes(self.tx.data, 'big'))
 
     @property
     def v(self) -> Tuple[int, int]:
@@ -536,3 +541,8 @@ class FeltTx(Tx):
     # @property
     # def blob_versioned_hashes(self) -> Tuple[int, int]:
     #     return self._split_to_felt(len(self.tx.blob_versioned_hashes))
+
+    @classmethod
+    def from_rlp_chunks(cls, rlp_chunks: List[int], rlp_len: int) -> 'FeltTx':
+        rlp = little_8_bytes_chunks_to_bytes(rlp_chunks, rlp_len)
+        return cls(Tx.from_rlp(rlp))

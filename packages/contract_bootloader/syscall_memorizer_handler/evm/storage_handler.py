@@ -11,7 +11,7 @@ from tools.py.utils import little_8_bytes_chunks_to_bytes, split_128
 from rlp.sedes import big_endian_int
 
 
-class StorageMemorizerHandler(AbstractStorageMemorizerBase):
+class EvmStorageHandler(AbstractStorageMemorizerBase):
     def __init__(self, segments: MemorySegmentManager, memorizer: Memorizer):
         super().__init__(memorizer=memorizer)
         self.segments = segments

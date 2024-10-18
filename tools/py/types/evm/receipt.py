@@ -1,7 +1,6 @@
 from hexbytes.main import HexBytes
 from rlp import Serializable, encode, decode
 from rlp.sedes import (
-    BigEndianInt,
     big_endian_int,
     Binary,
     binary,
@@ -9,7 +8,9 @@ from rlp.sedes import (
     boolean,
 )
 from web3 import Web3
-from typing import Tuple, Union
+from typing import List, Tuple, Union
+
+from tools.py.utils import little_8_bytes_chunks_to_bytes
 
 int256 = Binary.fixed_length(256, allow_empty=True)
 address = Binary.fixed_length(20, allow_empty=True)
@@ -97,9 +98,9 @@ class Receipt(Serializable):
             decoded = decode(data, cls)
         return cls(*decoded, receipt_type=receipt_type)
 
-class FeltReceipt(Receipt):
-    def __init__(self, success, cumulative_gas_used, bloom, logs, receipt_type=0):
-        super().__init__(success, cumulative_gas_used, bloom, logs, receipt_type)
+class FeltReceipt:
+    def __init__(self, receipt: Receipt):
+        self.receipt = receipt
 
     def _split_to_felt(self, value: Union[int, bytes, HexBytes]) -> Tuple[int, int]:
         if isinstance(value, (bytes, HexBytes)):
@@ -129,4 +130,9 @@ class FeltReceipt(Receipt):
 
     def hash(self) -> Tuple[int, int]:
         return self._split_to_felt(int.from_bytes(super().hash(), 'big'))
+
+    @classmethod
+    def from_rlp_chunks(cls, rlp_chunks: List[int], rlp_len: int) -> 'FeltReceipt':
+        rlp = little_8_bytes_chunks_to_bytes(rlp_chunks, rlp_len)
+        return cls(Receipt.from_rlp(rlp))
 

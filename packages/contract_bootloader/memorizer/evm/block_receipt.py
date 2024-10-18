@@ -7,17 +7,12 @@ from marshmallow_dataclass import dataclass
 from starkware.cairo.lang.vm.crypto import poseidon_hash_many
 from starkware.cairo.lang.vm.relocatable import RelocatableValue
 
-# namespace ReceiptField {
-#     const SUCCESS = 0;
-#     const CUMULATIVE_GAS_USED = 1;
-#     const BLOOM = 2;
-#     const LOGS = 3;
-# }
-
 class EvmStateFunctionId(Enum):
     GET_SUCCESS = 0
     GET_CUMULATIVE_GAS_USED = 1
     GET_BLOOM = 2
+
+    
     GET_LOGS = 3
 
     @classmethod
