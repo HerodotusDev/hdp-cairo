@@ -30,19 +30,16 @@ setup(
     packages=[
         "tools",
         "contract_bootloader",
-        "compiled_contracts",
     ],
     install_requires=requirements,
     package_dir={
         "tools": "tools",
-        "contract_bootloader": "packages/contract_bootloader",
-        "compiled_contracts": "src/contracts/",
+        "contract_bootloader": "packages/contract_bootloader"
     },
     zip_safe=False,
     package_data={
         "tools": ["*/*.py"],
-        "contract_bootloader": ["*.cairo", "*/*.cairo", "*/*.py"],
-        "compiled_contracts": ["simple_linear_regression_contract.json"],
+        "contract_bootloader": ["*.cairo", "*/*.cairo", "*/*.py"]
     },
     cmdclass={"install": PostInstallCommand},
 )
