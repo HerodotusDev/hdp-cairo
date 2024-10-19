@@ -4,13 +4,9 @@ from contract_bootloader.memorizer.evm.storage import (
     AbstractEvmStorageBase,
     MemorizerKey,
 )
-from contract_bootloader.provider.storage_key_provider import StorageKeyEVMProvider
 from tools.py.providers.evm.provider import EvmKeyProvider
 
-from tools.py.utils import split_128
-
-
-class DryRunStorageMemorizerHandler(AbstractEvmStorageBase):
+class DryRunEvmStorageHandler(AbstractEvmStorageBase):
     def __init__(self, memorizer: Memorizer, provider: EvmKeyProvider):
         super().__init__(memorizer=memorizer)
         self.provider = provider

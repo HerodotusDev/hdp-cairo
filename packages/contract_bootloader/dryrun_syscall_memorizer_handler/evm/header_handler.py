@@ -7,7 +7,7 @@ from contract_bootloader.memorizer.evm.header import (
 from tools.py.providers.evm.provider import EvmKeyProvider
 
 
-class DryRunHeaderMemorizerHandler(AbstractEvmHeaderBase):
+class DryRunEvmHeaderHandler(AbstractEvmHeaderBase):
     def __init__(self, memorizer: Memorizer, provider: EvmKeyProvider):
         super().__init__(memorizer=memorizer)
         self.provider = provider

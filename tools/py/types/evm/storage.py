@@ -9,12 +9,12 @@ bytes32 = Binary.fixed_length(32)
 
 class Storage(Serializable):
     fields = (
-        ("value", bytes32)
+        ("value", bytes32),
     )
 
     @property
     def value(self) -> HexBytes:
-        return self.value
+        return HexBytes(self._value)
     
     @classmethod
     def from_rpc_data(cls, value: HexBytes) -> 'Storage':
