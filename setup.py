@@ -39,7 +39,7 @@ setup(
     zip_safe=False,
     package_data={
         "tools": ["*/*.py"],
-        "contract_bootloader": ["*.cairo", "*/*.cairo", "*/*.py"]
+        "contract_bootloader": ["*.cairo", "*/*.cairo", "*/*.py", "**/*.py"]
     },
     cmdclass={"install": PostInstallCommand},
 )

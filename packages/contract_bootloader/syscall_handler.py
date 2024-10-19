@@ -9,7 +9,7 @@ from starkware.cairo.common.dict import DictManager
 from starkware.cairo.common.structs import CairoStructProxy
 from starkware.starknet.business_logic.execution.objects import CallResult
 from contract_bootloader.memorizer.memorizer import MemorizerId, Memorizer
-from packages.contract_bootloader.memorizer.evm.header import (
+from contract_bootloader.memorizer.evm.header import (
     EvmStateFunctionId as EvmHeaderFunctionId,
     MemorizerKey as HeaderMemorizerKey,
 )
@@ -30,7 +30,6 @@ from contract_bootloader.syscall_memorizer_handler.evm.header_handler import (
 from contract_bootloader.syscall_memorizer_handler.evm.storage_handler import (
     EvmStorageHandler,
 )
-
 
 class SyscallHandler(SyscallHandlerBase):
     """

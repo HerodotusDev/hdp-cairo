@@ -374,95 +374,96 @@ class FeltBlockHeader:
     def _split_to_felt(self, value: Union[int, bytes, HexBytes]) -> Tuple[int, int]:
         if isinstance(value, (bytes, HexBytes)):
             value = int.from_bytes(value, 'big')
-        return (value >> 128, value & ((1 << 128) - 1))
+        return (value & ((1 << 128) - 1), value >> 128)
 
     @property
     def hash(self) -> Tuple[int, int]:
-        return self._split_to_felt(super().hash)
+        return self._split_to_felt(self.header.hash)
 
     @property
     def parent_hash(self) -> Tuple[int, int]:
-        return self._split_to_felt(super().parent_hash)
+        return self._split_to_felt(self.header.parent_hash)
 
     @property
     def uncles_hash(self) -> Tuple[int, int]:
-        return self._split_to_felt(super().uncles_hash)
+        return self._split_to_felt(self.header.uncles_hash)
 
     @property
     def coinbase(self) -> Tuple[int, int]:
-        return self._split_to_felt(super().coinbase)
+        return self._split_to_felt(self.header.coinbase)
 
     @property
     def state_root(self) -> Tuple[int, int]:
-        return self._split_to_felt(super().state_root)
+        return self._split_to_felt(self.header.state_root)
 
     @property
     def transactions_root(self) -> Tuple[int, int]:
-        return self._split_to_felt(super().transactions_root)
+        return self._split_to_felt(self.header.transactions_root)
 
     @property
     def receipts_root(self) -> Tuple[int, int]:
-        return self._split_to_felt(super().receipts_root)
+        return self._split_to_felt(self.header.receipts_root)
 
     # ToDo: figure out what to do here
     # @property
     # def logs_bloom(self) -> Tuple[int, int]:
-    #     return self._split_to_felt(super().logs_bloom)
+    #     return self._split_to_felt(self.header.logs_bloom)
 
     @property
     def difficulty(self) -> Tuple[int, int]:
-        return self._split_to_felt(super().difficulty)
+        return self._split_to_felt(self.header.difficulty)
 
     @property
     def number(self) -> Tuple[int, int]:
-        return self._split_to_felt(super().number)
+        return self._split_to_felt(self.header.number)
 
     @property
     def gas_limit(self) -> Tuple[int, int]:
-        return self._split_to_felt(super().gas_limit)
+        return self._split_to_felt(self.header.gas_limit)
 
     @property
     def gas_used(self) -> Tuple[int, int]:
-        return self._split_to_felt(super().gas_used)
+        return self._split_to_felt(self.header.gas_used)
 
     @property
     def timestamp(self) -> Tuple[int, int]:
-        return self._split_to_felt(super().timestamp)
+        return self._split_to_felt(self.header.timestamp)
 
     @property
     def extra_data(self) -> Tuple[int, int]:
-        return self._split_to_felt(super().extra_data)
+        return self._split_to_felt(self.header.extra_data)
 
     @property
     def mix_hash(self) -> Tuple[int, int]:
-        return self._split_to_felt(super().mix_hash)
+        return self._split_to_felt(self.header.mix_hash)
 
     @property
     def nonce(self) -> Tuple[int, int]:
-        return self._split_to_felt(super().nonce)
+        return self._split_to_felt(self.header.nonce)
 
     @property
     def base_fee_per_gas(self) -> Tuple[int, int]:
-        return self._split_to_felt(super().base_fee_per_gas)
+        return self._split_to_felt(self.header.base_fee_per_gas)
 
     @property
     def withdrawals_root(self) -> Tuple[int, int]:
-        return self._split_to_felt(super().withdrawals_root)
+        return self._split_to_felt(self.header.withdrawals_root)
 
     @property
     def blob_gas_used(self) -> Tuple[int, int]:
-        return self._split_to_felt(super().blob_gas_used)
+        return self._split_to_felt(self.header.blob_gas_used)
 
     @property
     def excess_blob_gas(self) -> Tuple[int, int]:
-        return self._split_to_felt(super().excess_blob_gas)
+        return self._split_to_felt(self.header.excess_blob_gas)
 
     @property
     def parent_beacon_block_root(self) -> Tuple[int, int]:
-        return self._split_to_felt(super().parent_beacon_block_root)
+        return self._split_to_felt(self.header.parent_beacon_block_root)
     
     @classmethod
     def from_rlp_chunks(cls, rlp_chunks: List[int], rlp_len: int) -> 'FeltBlockHeader':
         rlp = little_8_bytes_chunks_to_bytes(rlp_chunks, rlp_len)
         return cls(BlockHeader.from_rlp(rlp))
+
 

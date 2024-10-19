@@ -476,7 +476,7 @@ class FeltTx:
     def _split_to_felt(self, value: Union[int, bytes, HexBytes]) -> Tuple[int, int]:
         if isinstance(value, (bytes, HexBytes)):
             value = int.from_bytes(value, 'big')
-        return (value >> 128, value & ((1 << 128) - 1))
+        return (value & ((1 << 128) - 1), value >> 128)
 
     @property
     def hash(self) -> Tuple[int, int]:

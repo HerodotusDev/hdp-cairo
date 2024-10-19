@@ -1,18 +1,14 @@
-from web3 import Web3
 from enum import Enum
 from typing import List, Tuple
 from abc import ABC, abstractmethod
 from contract_bootloader.memorizer.evm.memorizer import EvmMemorizer
 from marshmallow_dataclass import dataclass
 from starkware.cairo.lang.vm.crypto import poseidon_hash_many
-from starkware.cairo.lang.vm.relocatable import RelocatableValue
 
 class EvmStateFunctionId(Enum):
     GET_SUCCESS = 0
     GET_CUMULATIVE_GAS_USED = 1
     GET_BLOOM = 2
-
-    
     GET_LOGS = 3
 
     @classmethod

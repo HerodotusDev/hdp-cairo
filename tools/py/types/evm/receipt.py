@@ -105,31 +105,31 @@ class FeltReceipt:
     def _split_to_felt(self, value: Union[int, bytes, HexBytes]) -> Tuple[int, int]:
         if isinstance(value, (bytes, HexBytes)):
             value = int.from_bytes(value, 'big')
-        return (value >> 128, value & ((1 << 128) - 1))
+        return (value & ((1 << 128) - 1), value >> 128)
 
     @property
     def success(self) -> Tuple[int, int]:
-        return self._split_to_felt(int(super().success))
+        return self._split_to_felt(int(self.receipt.success))
 
     @property
     def cumulative_gas_used(self) -> Tuple[int, int]:
-        return self._split_to_felt(super().cumulative_gas_used)
+        return self._split_to_felt(self.receipt.cumulative_gas_used)
 
     # @property
     # def bloom(self) -> Tuple[int, int]:
-    #     return self._split_to_felt(int.from_bytes(super().bloom, 'big'))
+    #     return self._split_to_felt(int.from_bytes(self.receipt.bloom, 'big'))
 
     # @property
     # def logs(self) -> Tuple[int, int]:
     #     # Since logs is a list, we'll return the length as a tuple
-    #     return self._split_to_felt(len(super().logs))
+    #     return self._split_to_felt(len(self.receipt.logs))
 
     # @property
     # def receipt_type(self) -> Tuple[int, int]:
-    #     return self._split_to_felt(super().receipt_type)
+    #     return self._split_to_felt(self.receipt.receipt_type)
 
     def hash(self) -> Tuple[int, int]:
-        return self._split_to_felt(int.from_bytes(super().hash(), 'big'))
+        return self._split_to_felt(int.from_bytes(self.receipt.hash(), 'big'))
 
     @classmethod
     def from_rlp_chunks(cls, rlp_chunks: List[int], rlp_len: int) -> 'FeltReceipt':
