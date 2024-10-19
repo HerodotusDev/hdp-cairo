@@ -1,29 +1,29 @@
 from typing import Tuple
 from contract_bootloader.memorizer.memorizer import Memorizer
-from contract_bootloader.memorizer.storage_memorizer import (
-    AbstractStorageMemorizerBase,
+from contract_bootloader.memorizer.evm.storage import (
+    AbstractEvmStorageBase,
     MemorizerKey,
 )
 from contract_bootloader.provider.storage_key_provider import StorageKeyEVMProvider
+from tools.py.providers.evm.provider import EvmKeyProvider
 
 from tools.py.utils import split_128
 
 
-class DryRunStorageMemorizerHandler(AbstractStorageMemorizerBase):
-    def __init__(self, memorizer: Memorizer, evm_provider_url: str):
+class DryRunStorageMemorizerHandler(AbstractEvmStorageBase):
+    def __init__(self, memorizer: Memorizer, provider: EvmKeyProvider):
         super().__init__(memorizer=memorizer)
-        self.evm_provider = StorageKeyEVMProvider(provider_url=evm_provider_url)
+        self.provider = provider
         self.fetch_keys_registry: set[MemorizerKey] = set()
 
     def get_slot(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        value = self.evm_provider.get_slot(key=key)
-        return split_128(value)
+        value = self.provider.get_slot(key=key).value
 
     def fetch_keys_dict(self) -> set:
         def create_dict(key: MemorizerKey):
             data = dict()
-            data["type"] = "StorageMemorizerKey"
+            data["type"] = "EvmStorageKey"
             data["key"] = key.to_dict()
             return data
 

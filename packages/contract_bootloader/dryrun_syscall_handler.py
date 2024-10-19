@@ -10,30 +10,45 @@ from starkware.cairo.common.dict import DictManager
 from starkware.cairo.common.structs import CairoStructProxy
 from starkware.starknet.business_logic.execution.objects import CallResult
 from contract_bootloader.memorizer.memorizer import MemorizerId, Memorizer
-from contract_bootloader.memorizer.account_memorizer import (
-    MemorizerFunctionId as AccountMemorizerFunctionId,
+from contract_bootloader.memorizer.evm.account import (
+    EvmStateFunctionId as EvmAccountFunctionId,
     MemorizerKey as AccountMemorizerKey,
 )
-from contract_bootloader.memorizer.header_memorizer import (
-    MemorizerFunctionId as HeaderMemorizerFunctionId,
+from contract_bootloader.memorizer.evm.header import (
+    EvmStateFunctionId as EvmHeaderFunctionId,
     MemorizerKey as HeaderMemorizerKey,
 )
-from contract_bootloader.memorizer.storage_memorizer import (
-    MemorizerFunctionId as StorageMemorizerFunctionId,
+from contract_bootloader.memorizer.evm.storage import (
+    EvmStateFunctionId as EvmStorageFunctionId,
     MemorizerKey as StorageMemorizerKey,
 )
-from contract_bootloader.dryrun_syscall_memorizer_handler.header_memorizer_handler import (
-    DryRunHeaderMemorizerHandler,
+from contract_bootloader.memorizer.evm.block_tx import (
+    EvmStateFunctionId as EvmBlockTxFunctionId,
+    MemorizerKey as BlockTxMemorizerKey,
 )
-from contract_bootloader.dryrun_syscall_memorizer_handler.account_memorizer_handler import (
-    DryRunAccountMemorizerHandler,
+from contract_bootloader.memorizer.evm.block_receipt import (
+    EvmStateFunctionId as EvmBlockReceiptFunctionId,
+    MemorizerKey as BlockReceiptMemorizerKey,
 )
-from contract_bootloader.dryrun_syscall_memorizer_handler.storage_memorizer_handler import (
-    DryRunStorageMemorizerHandler,
+from contract_bootloader.dryrun_syscall_memorizer_handler.evm.header_handler import (
+    DryRunEvmHeaderHandler,
+)
+from contract_bootloader.dryrun_syscall_memorizer_handler.evm.account_handler import (
+    DryRunEvmAccountHandler,
+)
+from contract_bootloader.dryrun_syscall_memorizer_handler.evm.storage_handler import (
+    DryRunEvmStorageHandler,
+)
+from contract_bootloader.dryrun_syscall_memorizer_handler.evm.block_tx_handler import (
+    DryRunEvmBlockTxHandler,
+)
+from contract_bootloader.dryrun_syscall_memorizer_handler.evm.block_receipt_handler import (
+    DryRunEvmBlockReceiptHandler,
 )
 
 # Load environment variables from a .env file if present
 from dotenv import load_dotenv
+from tools.py.providers.evm.provider import EvmKeyProvider
 
 load_dotenv()
 
@@ -83,6 +98,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
         )
 
         retdata = []
+        provider = EvmKeyProvider(RPC_URL)
 
         memorizerId = MemorizerId.from_int(request.contract_address)
         if memorizerId == MemorizerId.Header:
@@ -93,7 +109,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
                     f"Memorizer read must be initialized with a list of {total_size} integers"
                 )
 
-            function_id = HeaderMemorizerFunctionId.from_int(request.selector)
+            function_id = EvmHeaderFunctionId.from_int(request.selector)
             memorizer = Memorizer(
                 dict_raw_ptrs=calldata[0 : Memorizer.size()],
                 dict_manager=self.dict_manager,
@@ -104,9 +120,9 @@ class DryRunSyscallHandler(SyscallHandlerBase):
                 calldata[idx : idx + HeaderMemorizerKey.size()]
             )
 
-            handler = DryRunHeaderMemorizerHandler(
+            handler = DryRunEvmHeaderHandler(
                 memorizer=memorizer,
-                evm_provider_url=RPC_URL,
+                provider=provider,
             )
             retdata = handler.handle(function_id=function_id, key=key)
 
@@ -120,7 +136,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
                     f"Memorizer read must be initialized with a list of {total_size} integers"
                 )
 
-            function_id = AccountMemorizerFunctionId.from_int(request.selector)
+            function_id = EvmAccountFunctionId.from_int(request.selector)
             memorizer = Memorizer(
                 dict_raw_ptrs=calldata[0 : Memorizer.size()],
                 dict_manager=self.dict_manager,
@@ -131,9 +147,9 @@ class DryRunSyscallHandler(SyscallHandlerBase):
                 calldata[idx : idx + AccountMemorizerKey.size()]
             )
 
-            handler = DryRunAccountMemorizerHandler(
+            handler = DryRunEvmAccountHandler(
                 memorizer=memorizer,
-                evm_provider_url=RPC_URL,
+                provider=provider,
             )
             retdata = handler.handle(function_id=function_id, key=key)
 
@@ -147,7 +163,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
                     f"Memorizer read must be initialized with a list of {total_size} integers"
                 )
 
-            function_id = StorageMemorizerFunctionId.from_int(request.selector)
+            function_id = EvmStorageFunctionId.from_int(request.selector)
             memorizer = Memorizer(
                 dict_raw_ptrs=calldata[0 : Memorizer.size()],
                 dict_manager=self.dict_manager,
@@ -158,9 +174,63 @@ class DryRunSyscallHandler(SyscallHandlerBase):
                 calldata[idx : idx + StorageMemorizerKey.size()]
             )
 
-            handler = DryRunStorageMemorizerHandler(
+            handler = DryRunEvmStorageHandler(
                 memorizer=memorizer,
-                evm_provider_url=RPC_URL,
+                provider=provider,
+            )
+            retdata = handler.handle(function_id=function_id, key=key)
+
+            self.fetch_keys_registry.append(handler.fetch_keys_dict())
+
+        elif memorizerId == MemorizerId.BlockTx:
+            total_size = Memorizer.size() + BlockTxMemorizerKey.size()
+
+            if len(calldata) != total_size:
+                raise ValueError(
+                    f"Memorizer read must be initialized with a list of {total_size} integers"
+                )
+
+            function_id = EvmBlockTxFunctionId.from_int(request.selector)
+            memorizer = Memorizer(
+                dict_raw_ptrs=calldata[0 : Memorizer.size()],
+                dict_manager=self.dict_manager,
+            )
+
+            idx = Memorizer.size()
+            key = BlockTxMemorizerKey.from_int(
+                calldata[idx : idx + BlockTxMemorizerKey.size()]
+            )
+
+            handler = DryRunEvmBlockTxHandler(
+                memorizer=memorizer,
+                provider=provider,
+            )
+            retdata = handler.handle(function_id=function_id, key=key)
+
+            self.fetch_keys_registry.append(handler.fetch_keys_dict())
+
+        elif memorizerId == MemorizerId.BlockReceipt:
+            total_size = Memorizer.size() + BlockReceiptMemorizerKey.size()
+
+            if len(calldata) != total_size:
+                raise ValueError(
+                    f"Memorizer read must be initialized with a list of {total_size} integers"
+                )
+
+            function_id = EvmBlockReceiptFunctionId.from_int(request.selector)
+            memorizer = Memorizer(
+                dict_raw_ptrs=calldata[0 : Memorizer.size()],
+                dict_manager=self.dict_manager,
+            )
+
+            idx = Memorizer.size()
+            key = BlockReceiptMemorizerKey.from_int(
+                calldata[idx : idx + BlockReceiptMemorizerKey.size()]
+            )
+
+            handler = DryRunEvmBlockReceiptHandler(
+                memorizer=memorizer,
+                provider=provider,
             )
             retdata = handler.handle(function_id=function_id, key=key)
 

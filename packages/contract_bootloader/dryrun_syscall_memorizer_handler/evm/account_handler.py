@@ -1,43 +1,39 @@
 from typing import Tuple
 from contract_bootloader.memorizer.memorizer import Memorizer
-from contract_bootloader.memorizer.account_memorizer import (
-    AbstractAccountMemorizerBase,
+from contract_bootloader.memorizer.evm.account import (
+    AbstractEvmAccountBase,
     MemorizerKey,
 )
-from contract_bootloader.provider.account_key_provider import AccountKeyEVMProvider
 from tools.py.utils import split_128
+from tools.py.providers.evm.provider import EvmKeyProvider
 
 
-class DryRunAccountMemorizerHandler(AbstractAccountMemorizerBase):
-    def __init__(self, memorizer: Memorizer, evm_provider_url: str):
+class DryRunEvmAccountHandler(AbstractEvmAccountBase):
+    def __init__(self, memorizer: Memorizer, provider: EvmKeyProvider):
         super().__init__(memorizer=memorizer)
-        self.evm_provider = AccountKeyEVMProvider(provider_url=evm_provider_url)
+        self.provider = provider
         self.fetch_keys_registry: set[MemorizerKey] = set()
 
     def get_nonce(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        value = self.evm_provider.get_nonce(key=key)
-        return split_128(value)
+        return self.provider.get_account(key=key).nonce
 
     def get_balance(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        value = self.evm_provider.get_balance(key=key)
-        return split_128(value)
+        return self.provider.get_account(key=key).balance
 
     def get_state_root(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        value = self.evm_provider.get_state_root(key=key)
-        return split_128(value)
+        return self.provider.get_account(key=key).storage_hash
 
     def get_code_hash(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        value = self.evm_provider.get_code_hash(key=key)
-        return split_128(value)
+        return self.provider.get_account(key=key).code_hash
 
     def fetch_keys_dict(self) -> set:
         def create_dict(key: MemorizerKey):
             data = dict()
-            data["type"] = "AccountMemorizerKey"
+            data["type"] = "EvmAccountKey"
             data["key"] = key.to_dict()
             return data
 

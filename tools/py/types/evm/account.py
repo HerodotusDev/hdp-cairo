@@ -68,3 +68,7 @@ class FeltAccount:
     def from_rlp_chunks(cls, rlp_chunks: List[int], rlp_len: int) -> 'FeltAccount':
         rlp = little_8_bytes_chunks_to_bytes(rlp_chunks, rlp_len)
         return cls(Account.from_rlp(rlp))
+
+    @classmethod
+    def from_rpc_data(cls, data) -> 'FeltAccount':
+        return cls(Account.from_rpc_data(data))

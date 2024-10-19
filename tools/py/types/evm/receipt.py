@@ -135,4 +135,8 @@ class FeltReceipt:
     def from_rlp_chunks(cls, rlp_chunks: List[int], rlp_len: int) -> 'FeltReceipt':
         rlp = little_8_bytes_chunks_to_bytes(rlp_chunks, rlp_len)
         return cls(Receipt.from_rlp(rlp))
+    
+    @classmethod
+    def from_rpc_data(cls, receipt: dict) -> 'FeltReceipt':
+        return cls(Receipt.from_rpc_data(receipt))
 
