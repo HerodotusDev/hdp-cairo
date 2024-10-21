@@ -247,27 +247,27 @@ class BlockHeader:
 
     @property
     def parent_hash(self) -> HexBytes:
-        return self.header.parentHash
+        return HexBytes(self.header.parentHash)
 
     @property
     def uncles_hash(self) -> HexBytes:
-        return self.header.unclesHash
+        return HexBytes(self.header.unclesHash)
 
     @property
-    def coinbase(self) -> bytes:
-        return self.header.coinbase
+    def coinbase(self) -> HexBytes:
+        return HexBytes(self.header.coinbase)
 
     @property
     def state_root(self) -> HexBytes:
-        return self.header.stateRoot
+        return HexBytes(self.header.stateRoot)
 
     @property
     def transactions_root(self) -> HexBytes:
-        return self.header.transactionsRoot
+        return HexBytes(self.header.transactionsRoot)
 
     @property
     def receipts_root(self) -> HexBytes:
-        return self.header.receiptsRoot
+        return HexBytes(self.header.receiptsRoot)
 
     @property
     def logs_bloom(self) -> int:
@@ -299,7 +299,7 @@ class BlockHeader:
 
     @property
     def mix_hash(self) -> HexBytes:
-        return self.header.mixHash
+        return HexBytes(self.header.mixHash)
 
     @property
     def nonce(self) -> bytes:
@@ -314,7 +314,7 @@ class BlockHeader:
     @property
     def withdrawals_root(self) -> HexBytes:
         if isinstance(self.header, (BlockHeaderShangai, BlockHeaderDencun)):
-            return self.header.withdrawalsRoot
+            return HexBytes(self.header.withdrawalsRoot)
         raise AttributeError("withdrawals_root is not available for this block header type")
 
     @property
@@ -332,7 +332,7 @@ class BlockHeader:
     @property
     def parent_beacon_block_root(self) -> HexBytes:
         if isinstance(self.header, BlockHeaderDencun):
-            return self.header.parentBeaconBlockRoot
+            return HexBytes(self.header.parentBeaconBlockRoot)
         raise AttributeError("parent_beacon_block_root is not available for this block header type")
 
     @classmethod
@@ -371,8 +371,8 @@ class FeltBlockHeader:
     def __init__(self, block_header: BlockHeader):
         self.header = block_header
 
-    def _split_to_felt(self, value: Union[int, bytes, HexBytes]) -> Tuple[int, int]:
-        if isinstance(value, (bytes, HexBytes)):
+    def _split_to_felt(self, value: Union[int, bytes, HexBytes, bytearray]) -> Tuple[int, int]:
+        if isinstance(value, (bytes, HexBytes, bytearray)):
             value = int.from_bytes(value, 'big')
         return (value & ((1 << 128) - 1), value >> 128)
 
@@ -390,6 +390,7 @@ class FeltBlockHeader:
 
     @property
     def coinbase(self) -> Tuple[int, int]:
+        print("coinbase:", self.header.coinbase)
         return self._split_to_felt(self.header.coinbase)
 
     @property
@@ -469,5 +470,6 @@ class FeltBlockHeader:
     @classmethod
     def from_rpc_data(cls, block: BlockData) -> 'FeltBlockHeader':
         return cls(BlockHeader.from_rpc_data(block))
+
 
 

@@ -157,7 +157,7 @@ class EvmKeyProvider(EvmProviderBase):
             {
                 "jsonrpc":"2.0",
                 "method":"eth_getProof",
-                "params":[key.address, [], hex(key.block_number)],
+                "params":[hex(key.address), [], hex(key.block_number)],
                 "id":1
             }
         )
@@ -193,7 +193,7 @@ class EvmKeyProvider(EvmProviderBase):
             {
                 "jsonrpc":"2.0",
                 "method":"eth_getStorageAt",
-                "params":[key.address, hex(slot_key), hex(key.block_number)],
+                "params":[hex(key.address), hex(slot_key), hex(key.block_number)],
                 "id":1
             }
         )

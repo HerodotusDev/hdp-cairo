@@ -14,7 +14,7 @@ class DryRunEvmStorageHandler(AbstractEvmStorageBase):
 
     def get_slot(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        value = self.provider.get_slot(key=key).value
+        return self.provider.get_storage(key=key).value
 
     def fetch_keys_dict(self) -> set:
         def create_dict(key: MemorizerKey):

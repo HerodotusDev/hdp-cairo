@@ -1,17 +1,14 @@
-from rlp import decode
 from typing import List, Tuple
 from contract_bootloader.memorizer.memorizer import Memorizer
-from contract_bootloader.memorizer.storage_memorizer import (
-    AbstractStorageMemorizerBase,
+from contract_bootloader.memorizer.evm.storage import (
+    AbstractEvmStorageBase,
     MemorizerKey,
 )
 from starkware.cairo.lang.vm.memory_segments import MemorySegmentManager
 from tools.py.rlp import get_rlp_len
-from tools.py.utils import little_8_bytes_chunks_to_bytes, split_128
-from rlp.sedes import big_endian_int
+from tools.py.types.evm.storage import FeltStorage
 
-
-class EvmStorageHandler(AbstractStorageMemorizerBase):
+class EvmStorageHandler(AbstractEvmStorageBase):
     def __init__(self, segments: MemorySegmentManager, memorizer: Memorizer):
         super().__init__(memorizer=memorizer)
         self.segments = segments
@@ -29,7 +26,4 @@ class EvmStorageHandler(AbstractStorageMemorizerBase):
 
     def get_slot(self, key: MemorizerKey) -> Tuple[int, int]:
         rlp_len, rlp = self.extract_rlp(key=key)
-        value = int(
-            decode(little_8_bytes_chunks_to_bytes(rlp, rlp_len), big_endian_int)
-        )
-        return split_128(value)
+        return FeltStorage.from_rlp_chunks(rlp, rlp_len).value

@@ -62,7 +62,7 @@ class MemorizerKey:
         return {
             "chain_id": self.chain_id,
             "block_number": self.block_number,
-            "address": Web3.toChecksumAddress(f"0x{self.address:040x}"),
+            "address": f"0x{self.address:040x}",
             "key": f"0x{storage_slot_value:064x}",
         }
 

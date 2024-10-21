@@ -1,7 +1,7 @@
 from hexbytes.main import HexBytes
 from rlp import Serializable, decode
 from rlp.sedes import Binary
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 from tools.py.utils import little_8_bytes_chunks_to_bytes
 
@@ -27,6 +27,12 @@ class Storage(Serializable):
 class FeltStorage:
     def __init__(self, storage: Storage):
         self.storage = storage
+
+    def _split_to_felt(self, value: Union[int, bytes, HexBytes]) -> Tuple[int, int]:
+        if isinstance(value, (bytes, HexBytes)):
+            value = int.from_bytes(value, 'big')
+        return (value & ((1 << 128) - 1), value >> 128)
+
 
     @property
     def value(self) -> Tuple[int, int]:
