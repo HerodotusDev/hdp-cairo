@@ -1,16 +1,13 @@
-from hexbytes.main import HexBytes
-from rlp import Serializable, decode
-from rlp.sedes import Binary
+from hexbytes import HexBytes
+from rlp import decode
+from rlp.sedes import Binary, binary
 from typing import List, Tuple, Union
 
 from tools.py.utils import little_8_bytes_chunks_to_bytes
 
-bytes32 = Binary.fixed_length(32)
-
-class Storage(Serializable):
-    fields = (
-        ("value", bytes32),
-    )
+class Storage:
+    def __init__(self, value: bytes):
+        self._value = value
 
     @property
     def value(self) -> HexBytes:
@@ -22,8 +19,9 @@ class Storage(Serializable):
     
     @classmethod
     def from_rlp(cls, data: bytes) -> 'Storage':
-        return decode(data, cls)
-    
+        decoded = decode(data, binary)
+        return cls(decoded)
+
 class FeltStorage:
     def __init__(self, storage: Storage):
         self.storage = storage
