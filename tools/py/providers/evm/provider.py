@@ -112,6 +112,7 @@ class EvmProvider(EvmProviderBase):
         return Receipt.from_rpc_data(result["result"])
     
     def get_rpc_receipt_by_hash(self, transaction_hash: str) -> dict:
+        print(f"Getting receipt for {transaction_hash}")
         result = self.rpc_request(
             {
                 "jsonrpc":"2.0",
@@ -120,6 +121,8 @@ class EvmProvider(EvmProviderBase):
                 "id":1
             }
         )
+
+        print(f"result: {result}")
 
         return result["result"]
         

@@ -31,7 +31,7 @@ from src.chain_info import Layout
 
 from packages.eth_essentials.lib.utils import pow2alloc251, write_felt_array_to_dict_keys
 
-from src.merkle import compute_tasks_hash_v2, compute_tasks_root_v2, compute_results_root_v2
+from src.merkle import compute_tasks_hash, compute_tasks_root, compute_results_root
 from src.chain_info import fetch_chain_info
 from src.contract import compute_contract
 
@@ -241,17 +241,17 @@ func compute_tasks{
         print(f"Task Result: {target_result}")
     %}
 
-    let task_hash = compute_tasks_hash_v2{
+    let task_hash = compute_tasks_hash{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
     }(encoded_task=encoded_task, task_bytes_len=task_bytes_len);
 
     let (flipped_task_hash) = uint256_reverse_endian(task_hash);
 
-    let tasks_root = compute_tasks_root_v2{
+    let tasks_root = compute_tasks_root{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
     }(task_hash=flipped_task_hash);
 
-    let results_root = compute_results_root_v2{
+    let results_root = compute_results_root{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
     }(task_hash=flipped_task_hash, result=result);
 

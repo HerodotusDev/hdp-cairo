@@ -10,7 +10,7 @@ from starkware.cairo.common.builtin_poseidon.poseidon import (
 )
 
 from packages.eth_essentials.lib.utils import bitwise_divmod
-from src.memorizers.starknet import StarknetStorageSlotMemorizer
+from src.memorizers.starknet.memorizer import StarknetMemorizer
 from src.chain_info import fetch_chain_info
 from src.types import ChainInfo
 from src.verifiers.starknet.storage_verifier import verify_proofs
@@ -3848,7 +3848,7 @@ func main{
             },
             # Inclusion proofs mainnet STRK balance
             {
-                "state_commitment": "0x498c0ff7c9227ae510a350506688b3c5dbf9df6fafa789b6e9680ac23dedbe3",
+                "state_commitment": "0x34e41ac48df28204189050de68200d53a035219260dec46824d009b225866d2",
                 "contract_address": "0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
                 "block_number": 726485,
                 "storage_addresses": [

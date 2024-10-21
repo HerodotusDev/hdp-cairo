@@ -5,9 +5,8 @@ from src.utils import compute_results_entry
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 
-// Computes the tasks merkle root for v2 flow
 // TODO: it is single task for now
-func compute_tasks_hash_v2{
+func compute_tasks_hash{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
 }(encoded_task: felt*, task_bytes_len: felt) -> Uint256 {
     alloc_locals;
@@ -22,7 +21,7 @@ func compute_tasks_hash_v2{
     return task_hash;
 }
 
-func compute_tasks_root_v2{
+func compute_tasks_root{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
 }(task_hash: Uint256) -> Uint256 {
     let (leafs: Uint256*) = alloc();
@@ -33,7 +32,7 @@ func compute_tasks_root_v2{
     }(leafs=leafs, leafs_len=1);
 }
 
-func compute_results_root_v2{
+func compute_results_root{
     range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
 }(task_hash: Uint256, result: Uint256) -> Uint256 {
     alloc_locals;

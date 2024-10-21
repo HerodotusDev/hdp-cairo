@@ -10,7 +10,7 @@ func main{range_check_ptr}() {
 
     let index = get_header_field_index(version, StarknetHeaderFields.BLOCK_NUMBER);
     assert index = 0;
-    let index = get_header_field_index(version, StarknetHeaderFields.GLOBAL_STATE_ROOT);
+    let index = get_header_field_index(version, StarknetHeaderFields.STATE_ROOT);
     assert index = 1;
 
     let index = get_header_field_index(version, StarknetHeaderFields.SEQUENCER_ADDRESS);
@@ -39,7 +39,7 @@ func main{range_check_ptr}() {
     let index = get_header_field_index(version, StarknetHeaderFields.BLOCK_NUMBER);
     assert index = 1;
 
-    let index = get_header_field_index(version, StarknetHeaderFields.GLOBAL_STATE_ROOT);
+    let index = get_header_field_index(version, StarknetHeaderFields.STATE_ROOT);
     assert index = 2;
 
     let index = get_header_field_index(version, StarknetHeaderFields.SEQUENCER_ADDRESS);

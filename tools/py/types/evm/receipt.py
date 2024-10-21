@@ -24,30 +24,52 @@ logs_type = CountableList(LogEntry)
 
 class Receipt(Serializable):
     fields = (
-        ("success", boolean),
+        ("status", boolean),
         ("cumulative_gas_used", big_endian_int),
         ("bloom", Binary.fixed_length(256)),  # Change this line
         ("logs", logs_type)
     )
 
-    def __init__(self, success, cumulative_gas_used, bloom, logs, receipt_type=0):
+    def __init__(self, status, cumulative_gas_used, bloom, logs, receipt_type=0):
         # Ensure bloom is always a 256-byte value
         if isinstance(bloom, int):
             bloom = bloom.to_bytes(256, "big")
         elif isinstance(bloom, bytes) and len(bloom) != 256:
             bloom = bloom.rjust(256, b'\x00')
-        super().__init__(success, cumulative_gas_used, bloom, logs)
+        super().__init__(status, cumulative_gas_used, bloom, logs)
         self.receipt_type = receipt_type
+        print(f"receipt_type: {self.receipt_type}")
 
     def hash(self) -> HexBytes:
         return Web3.keccak(self.raw_rlp())
+    
+    # @property
+    # def status(self) -> int:
+    #     return int(self.status)
+    
+    # @property
+    # def cumulative_gas_used(self) -> int:
+    #     return int(self.cumulative_gas_used)
+    
+    # @property
+    # def bloom(self) -> bytes:
+    #     return self.bloom
+    
+    # @property
+    # def logs(self) -> List[LogEntry]:
+    #     return self.logs
+
+    @property
+    def type(self) -> int:
+        return self.receipt_type
+    
 
     def raw_rlp(self) -> bytes:
         # Remove the bloom conversion here, as it's now always bytes
         if self.receipt_type == 0:
             return encode(
                 [
-                    self.success,
+                    self.status,
                     self.cumulative_gas_used,
                     self.bloom,
                     self.logs,
@@ -56,7 +78,7 @@ class Receipt(Serializable):
         else:
             return self.receipt_type.to_bytes(1, "big") + encode(
                 [
-                    self.success,
+                    self.status,
                     self.cumulative_gas_used,
                     self.bloom,
                     self.logs,
@@ -108,8 +130,8 @@ class FeltReceipt:
         return (value & ((1 << 128) - 1), value >> 128)
 
     @property
-    def success(self) -> Tuple[int, int]:
-        return self._split_to_felt(int(self.receipt.success))
+    def status(self) -> Tuple[int, int]:
+        return self._split_to_felt(int(self.receipt.status))
 
     @property
     def cumulative_gas_used(self) -> Tuple[int, int]:
