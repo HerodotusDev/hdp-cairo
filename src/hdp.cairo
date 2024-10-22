@@ -33,7 +33,7 @@ from packages.eth_essentials.lib.utils import pow2alloc251, write_felt_array_to_
 
 from src.merkle import compute_tasks_hash, compute_tasks_root, compute_results_root
 from src.chain_info import fetch_chain_info
-from src.contract import compute_contract
+from src.contract_bootloader.contract import compute_contract
 
 func main{
     output_ptr: felt*,
