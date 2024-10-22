@@ -105,7 +105,6 @@ func execute_call_contract{
                 state_access_type=state_access_type,
                 field=field,
                 decoder_target=EvmDecoderTarget.UINT256,
-                as_be=1,
             );
 
             return ();

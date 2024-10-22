@@ -1,5 +1,5 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
-from starkware.cairo.common.uint256 import Uint256
+from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.alloc import alloc
 from packages.eth_essentials.lib.mpt import verify_mpt_proof as verify_mpt_proof_lib
 
@@ -13,13 +13,14 @@ func verify_mpt_proof{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr:
     root: Uint256,
     pow2_array: felt*,
 ) -> (value: felt*, value_len: felt) {
+    let (root_le) = uint256_reverse_endian(root);
     let (rlp: felt*, value_len: felt) = verify_mpt_proof_lib(
         mpt_proof=mpt_proof,
         mpt_proof_bytes_len=mpt_proof_bytes_len,
         mpt_proof_len=mpt_proof_len,
         key_be=key_be,
         key_be_leading_zeroes_nibbles=key_be_leading_zeroes_nibbles,
-        root=root,
+        root=root_le,
         pow2_array=pow2_array,
     );
 

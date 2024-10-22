@@ -67,12 +67,7 @@ namespace EvmDecoder {
         evm_decoder_ptr: felt***,
         output_ptr: felt*,
     }(
-        rlp: felt*,
-        state_access_type: felt,
-        field: felt,
-        block_number: felt,
-        decoder_target: felt,
-        as_be: felt,
+        rlp: felt*, state_access_type: felt, field: felt, block_number: felt, decoder_target: felt
     ) -> (result_len: felt) {
         alloc_locals;  // ToDo: solve output_ptr revoke and remove this
 
@@ -90,18 +85,10 @@ namespace EvmDecoder {
             let bitwise_ptr = cast([ap - 4], BitwiseBuiltin*);
             let range_check_ptr = [ap - 5];
 
-            if (as_be == 1) {
-                let (result) = uint256_reverse_endian(Uint256(low=res_low, high=res_high));
-                assert output_ptr[0] = result.low;
-                assert output_ptr[1] = result.high;
+            assert output_ptr[0] = res_low;
+            assert output_ptr[1] = res_high;
 
-                return (result_len=2);
-            } else {
-                assert output_ptr[0] = res_low;
-                assert output_ptr[1] = res_high;
-
-                return (result_len=2);
-            }
+            return (result_len=2);
         } else {
             with_attr error_message("Selected EvmDecoderTarget not implemented") {
                 assert 1 = 0;
@@ -198,7 +185,7 @@ namespace EvmStateAccess {
         evm_key_hasher_ptr: felt**,
         pow2_array: felt*,
         output_ptr: felt*,
-    }(params: felt*, state_access_type: felt, field: felt, decoder_target: felt, as_be: felt) -> (
+    }(params: felt*, state_access_type: felt, field: felt, decoder_target: felt) -> (
         result_len: felt
     ) {
         alloc_locals;  // ToDo: currently needed to retrieve the poseidon_ptr from the _compute_memorizer_key call. Find way to remove this
@@ -209,7 +196,7 @@ namespace EvmStateAccess {
         // In EVM, the block number is always the second param. Ensure this doesnt change in the future
         let block_number = params[1];
         let (result_len) = EvmDecoder.decode(
-            rlp, state_access_type, field, block_number, decoder_target, as_be
+            rlp, state_access_type, field, block_number, decoder_target
         );
 
         return (result_len=result_len);

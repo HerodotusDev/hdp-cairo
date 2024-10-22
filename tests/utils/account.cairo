@@ -5,11 +5,9 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin,
 from src.types import ChainInfo
 from src.decoders.evm.account_decoder import AccountDecoder, AccountField
 
-func test_account_decoding{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*,
-}(accounts: felt, index: felt) {
+func test_account_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    accounts: felt, index: felt
+) {
     alloc_locals;
 
     if (accounts == index) {

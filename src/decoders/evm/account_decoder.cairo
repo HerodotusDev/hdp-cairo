@@ -20,7 +20,9 @@ namespace AccountDecoder {
             rlp=rlp, field=field, item_starts_at_byte=2, counter=0
         );
 
-        let result = le_chunks_to_be_uint256(elements=res, elements_len=res_len, bytes_len=bytes_len);
+        let result = le_chunks_to_be_uint256(
+            elements=res, elements_len=res_len, bytes_len=bytes_len
+        );
 
         return (result);
     }

@@ -43,8 +43,7 @@ namespace HeaderDecoder {
     func get_block_number{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
         rlp: felt*
     ) -> felt {
-        let value_le = get_dynamic_field(rlp, 8);
-        let (value) = uint256_reverse_endian(value_le);
+        let value = get_dynamic_field(rlp, 8);
         assert value.high = 0x0;  // u128 is sufficient for the time being
         return value.low;
     }

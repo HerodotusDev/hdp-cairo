@@ -135,7 +135,7 @@ def test_legacy_tx(evm_provider):
     assert tx.nonce == int(rpc_tx["nonce"], 16)
     assert tx.gas_price == int(rpc_tx["gasPrice"], 16)
     assert tx.gas_limit == int(rpc_tx["gas"], 16)
-    assert tx.to == HexBytes(rpc_tx["to"])
+    assert tx.receiver == HexBytes(rpc_tx["to"])
     assert tx.value == int(rpc_tx["value"], 16)
     assert tx.data == HexBytes(rpc_tx["input"])
     assert tx.v == int(rpc_tx["v"], 16)
@@ -153,7 +153,7 @@ def test_eip155_tx(evm_provider):
     assert tx.nonce == int(rpc_tx["nonce"], 16)
     assert tx.gas_price == int(rpc_tx["gasPrice"], 16)
     assert tx.gas_limit == int(rpc_tx["gas"], 16)
-    assert tx.to == HexBytes(rpc_tx["to"])
+    assert tx.receiver == HexBytes(rpc_tx["to"])
     assert tx.value == int(rpc_tx["value"], 16)
     assert tx.data == HexBytes(rpc_tx["input"])
     assert tx.v == int(rpc_tx["v"], 16)
@@ -166,7 +166,6 @@ def test_eip2930_tx(evm_provider):
         "0x423d6dfdeae9967847fb226e138ea5fad6279c12bf3343eae4d32c2477be3021"  # Type 1
     )
     rpc_tx = evm_provider.get_rpc_transaction_by_hash(tx_hash)
-    print(rpc_tx)
     tx = evm_provider.get_transaction_by_hash(tx_hash)
 
     assert isinstance(tx.tx, Eip2930)
@@ -175,7 +174,7 @@ def test_eip2930_tx(evm_provider):
     assert tx.nonce == int(rpc_tx["nonce"], 16)
     assert tx.gas_price == int(rpc_tx["gasPrice"], 16)
     assert tx.gas_limit == int(rpc_tx["gas"], 16)
-    assert tx.to == HexBytes(rpc_tx["to"])
+    assert tx.receiver == HexBytes(rpc_tx["to"])
     assert tx.value == int(rpc_tx["value"], 16)
     assert tx.data == HexBytes(rpc_tx["input"])
     assert [element for element in tx.access_list] == [
@@ -200,7 +199,7 @@ def test_eip1559_tx(evm_provider):
     assert tx.max_priority_fee_per_gas == int(rpc_tx["maxPriorityFeePerGas"], 16)
     assert tx.max_fee_per_gas == int(rpc_tx["maxFeePerGas"], 16)
     assert tx.gas_limit == int(rpc_tx["gas"], 16)
-    assert tx.to == HexBytes(rpc_tx["to"])
+    assert tx.receiver == HexBytes(rpc_tx["to"])
     assert tx.value == int(rpc_tx["value"], 16)
     assert tx.data == HexBytes(rpc_tx["input"])
     assert [element for element in tx.access_list] == [
@@ -225,7 +224,7 @@ def test_eip4844_tx(evm_provider):
     assert tx.max_priority_fee_per_gas == int(rpc_tx["maxPriorityFeePerGas"], 16)
     assert tx.max_fee_per_gas == int(rpc_tx["maxFeePerGas"], 16)
     assert tx.gas_limit == int(rpc_tx["gas"], 16)
-    assert tx.to == HexBytes(rpc_tx["to"])
+    assert tx.receiver == HexBytes(rpc_tx["to"])
     assert tx.value == int(rpc_tx["value"], 16)
     assert tx.data == HexBytes(rpc_tx["input"])
     assert [element for element in tx.access_list] == [
@@ -269,7 +268,7 @@ def test_receipt(evm_provider, tx_hash):
     receipt = evm_provider.get_receipt_by_hash(tx_hash)
 
     assert isinstance(receipt, Receipt)
-    assert receipt.success == (int(rpc_receipt["status"], 16) == 1)
+    assert receipt.status == (int(rpc_receipt["status"], 16) == 1)
     assert receipt.cumulative_gas_used == int(rpc_receipt["cumulativeGasUsed"], 16)
     assert receipt.bloom == HexBytes(rpc_receipt["logsBloom"])
 
@@ -286,7 +285,7 @@ def test_receipt(evm_provider, tx_hash):
     # Test raw_rlp and from_rlp
     rlp_data = receipt.raw_rlp()
     decoded_receipt = Receipt.from_rlp(rlp_data)
-    assert receipt.success == decoded_receipt.success
+    assert receipt.status == decoded_receipt.status
     assert receipt.cumulative_gas_used == decoded_receipt.cumulative_gas_used
     assert receipt.bloom == decoded_receipt.bloom
     assert len(receipt.logs) == len(decoded_receipt.logs)
@@ -352,7 +351,7 @@ def test_transaction_rlp_roundtrip(evm_provider):
         assert original_tx.hash == decoded_tx.hash
         assert original_tx.nonce == decoded_tx.nonce
         assert original_tx.gas_limit == decoded_tx.gas_limit
-        assert original_tx.to == decoded_tx.to
+        assert original_tx.receiver == decoded_tx.receiver
         assert original_tx.value == decoded_tx.value
         assert original_tx.data == decoded_tx.data
         assert original_tx.v == decoded_tx.v
@@ -390,7 +389,7 @@ def test_receipt_rlp_roundtrip(evm_provider):
         rlp_encoded = original_receipt.raw_rlp()
         decoded_receipt = Receipt.from_rlp(rlp_encoded)
 
-        assert original_receipt.success == decoded_receipt.success
+        assert original_receipt.status == decoded_receipt.status
         assert (
             original_receipt.cumulative_gas_used == decoded_receipt.cumulative_gas_used
         )

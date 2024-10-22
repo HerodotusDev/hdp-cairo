@@ -54,11 +54,14 @@ namespace TransactionType {
 }
 
 namespace TransactionDecoder {
-
     // Returns the TX field as BE uint256
-    func get_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, keccak_ptr: KeccakBuiltin*, chain_info: ChainInfo}(
-        rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt
-    ) -> Uint256 {
+    func get_field{
+        range_check_ptr,
+        bitwise_ptr: BitwiseBuiltin*,
+        pow2_array: felt*,
+        keccak_ptr: KeccakBuiltin*,
+        chain_info: ChainInfo,
+    }(rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt) -> Uint256 {
         alloc_locals;
 
         if (field == TransactionField.TX_TYPE) {
