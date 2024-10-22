@@ -26,9 +26,9 @@ class DryRunEvmBlockTxHandler(AbstractEvmBlockTxBase):
         self.fetch_keys_registry.add(key)
         return self.provider.get_block_tx(key=key).gas_limit()
 
-    def get_to(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_receiver(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_tx(key=key).to()
+        return self.provider.get_block_tx(key=key).receiver()
 
     def get_value(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)

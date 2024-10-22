@@ -52,7 +52,7 @@ func test_receipt_decoding_inner{
     );
 
     %{
-        low, high = felt_receipt.status(True)
+        low, high = felt_receipt.status()
         assert ids.status.low == low
         assert ids.status.high == high
     %}
@@ -61,7 +61,7 @@ func test_receipt_decoding_inner{
         rlp, ReceiptField.CUMULATIVE_GAS_USED, rlp_start_offset, tx_type, block_number
     );
     %{
-        low, high = felt_receipt.cumulative_gas_used(True)
+        low, high = felt_receipt.cumulative_gas_used()
         assert ids.cumulative_gas_used.low == low
         assert ids.cumulative_gas_used.high == high
     %}

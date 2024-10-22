@@ -1,6 +1,6 @@
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, KeccakBuiltin
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
+from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian, felt_to_uint256
 from starkware.cairo.common.builtin_keccak.keccak import keccak_bigend
 from starkware.cairo.common.cairo_secp.bigint import uint256_to_bigint
 from starkware.cairo.common.cairo_keccak.keccak import finalize_keccak
@@ -21,6 +21,7 @@ from src.utils.rlp import (
     append_be_chunk,
     get_rlp_list_meta,
     get_rlp_list_bytes_len,
+    le_chunks_to_be_uint256,
 )
 from src.types import ChainInfo
 from src.utils.utils import get_felt_bytes_len, reverse_chunk_endianess
@@ -41,6 +42,8 @@ namespace TransactionField {
     const MAX_PRIORITY_FEE_PER_GAS = 12;
     const BLOB_VERSIONED_HASHES = 13;
     const MAX_FEE_PER_BLOB_GAS = 14;
+    const TX_TYPE = 15;
+    const SENDER = 16;
 }
 
 namespace TransactionType {
@@ -51,12 +54,21 @@ namespace TransactionType {
 }
 
 namespace TransactionDecoder {
-    func get_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+
+    // Returns the TX field as BE uint256
+    func get_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, keccak_ptr: KeccakBuiltin*, chain_info: ChainInfo}(
         rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt
     ) -> Uint256 {
         alloc_locals;
-        if (field == TransactionField.RECEIVER) {
-            assert 1 = 0;  // returns as felt
+
+        if (field == TransactionField.TX_TYPE) {
+            return (Uint256(low=tx_type, high=0));
+        }
+
+        if (field == TransactionField.SENDER) {
+            let sender_felt = TransactionSender.derive(rlp, rlp_start_offset, tx_type);
+            let result = felt_to_uint256(sender_felt);
+            return result;
         }
 
         if (field == TransactionField.INPUT) {
@@ -75,8 +87,8 @@ namespace TransactionDecoder {
         let field_index = TxTypeFieldMap.get_field_index(tx_type, field);
 
         let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, field_index, value_start_offset, 0);
-
-        return le_chunks_to_uint256(res, res_len, bytes_len);
+        let result = le_chunks_to_be_uint256(res, res_len, bytes_len);
+        return result;
     }
 
     func get_field_and_bytes_len{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
@@ -181,8 +193,7 @@ namespace TransactionSender {
     }(rlp: felt*, rlp_start_offset: felt, tx_type: felt) -> felt {
         alloc_locals;
 
-        let v_le = TransactionDecoder.get_field(rlp, TransactionField.V, rlp_start_offset, tx_type);
-        let (v) = uint256_reverse_endian(v_le);
+        let v = TransactionDecoder.get_field(rlp, TransactionField.V, rlp_start_offset, tx_type);
         let (v_norm, is_eip155) = normalize_v{
             range_check_ptr=range_check_ptr, chain_info=chain_info
         }(tx_type, v);

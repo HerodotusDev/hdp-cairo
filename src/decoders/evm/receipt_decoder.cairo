@@ -1,5 +1,5 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
-from src.utils.rlp import rlp_list_retrieve, le_chunks_to_uint256, get_rlp_list_meta
+from src.utils.rlp import rlp_list_retrieve, le_chunks_to_be_uint256, get_rlp_list_meta
 from src.utils.chain_info import ChainInfo
 from starkware.cairo.common.uint256 import Uint256
 
@@ -48,7 +48,7 @@ namespace ReceiptDecoder {
 
         let (local value_start_offset) = get_rlp_list_meta(rlp, rlp_start_offset);
         let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, field, value_start_offset, 0);
-        let uint_res = le_chunks_to_uint256(res, res_len, bytes_len);
+        let uint_res = le_chunks_to_be_uint256(res, res_len, bytes_len);
         return uint_res;
     }
 

@@ -10,7 +10,7 @@ from src.utils.utils import (
     reverse_chunk_endianess,
 )
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.uint256 import Uint256, word_reverse_endian
+from starkware.cairo.common.uint256 import Uint256, word_reverse_endian, uint256_reverse_endian
 from packages.eth_essentials.lib.rlp_little import array_copy
 
 // Returns the index of the first list element. This index is used to retrieve elements from an RLP list.
@@ -310,6 +310,22 @@ func decode_rlp_word_to_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, p
         elements=value, elements_len=value_len, bytes_len=value_bytes_len
     );
 
+    return result;
+}
+
+// Converts a LE 8-bytes chunks to BE uint256. Converts between [1-4] chunks
+// This function should be used for decoding RLP values, as it can deal with arbitrary length values.
+// Inputs:
+// - elements: the LE 8-bytes chunks
+// - elements_len: the number of chunks
+// - bytes_len: the number of bytes of the elements
+// Outputs:
+// - the decoded uint256 in LE
+func le_chunks_to_be_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    elements: felt*, elements_len: felt, bytes_len: felt
+) -> Uint256 {
+    let le_val = le_chunks_to_uint256(elements, elements_len, bytes_len);
+    let (result) = uint256_reverse_endian(le_val);
     return result;
 }
 

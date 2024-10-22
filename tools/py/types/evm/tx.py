@@ -19,7 +19,7 @@ class LegacyTx(Serializable):
         ("nonce", big_endian_int),
         ("gas_price", big_endian_int),
         ("gas_limit", big_endian_int),
-        ("to", address),
+        ("receiver", address),
         ("value", big_endian_int),
         ("data", binary),
         ("v", big_endian_int),
@@ -36,7 +36,7 @@ class LegacyTx(Serializable):
                 self.nonce,
                 self.gas_price,
                 self.gas_limit,
-                self.to,
+                self.receiver,
                 self.value,
                 self.data,
                 self.v,
@@ -70,7 +70,7 @@ class Eip155(Serializable):
         ("nonce", big_endian_int),
         ("gas_price", big_endian_int),
         ("gas_limit", big_endian_int),
-        ("to", address),
+        ("receiver", address),
         ("value", big_endian_int),
         ("data", binary),
         ("v", big_endian_int),
@@ -79,7 +79,7 @@ class Eip155(Serializable):
     )
 
     def hash(self) -> HexBytes:
-        return Web3.keccak(self.tx_rlp())
+        return Web3.keccak(self.raw_rlp())
 
     def raw_rlp(self) -> bytes:
         return encode(
@@ -87,7 +87,7 @@ class Eip155(Serializable):
                 self.nonce,
                 self.gas_price,
                 self.gas_limit,
-                self.to,
+                self.receiver,
                 self.value,
                 self.data,
                 self.v,
@@ -131,7 +131,7 @@ class Eip2930(Serializable):
         ("nonce", big_endian_int),
         ("gas_price", big_endian_int),
         ("gas_limit", big_endian_int),
-        ("to", address),
+        ("receiver", address),
         ("value", big_endian_int),
         ("data", binary),
         ("access_list", access_list_type),
@@ -150,7 +150,7 @@ class Eip2930(Serializable):
                 self.nonce,
                 self.gas_price,
                 self.gas_limit,
-                self.to,
+                self.receiver,
                 self.value,
                 self.data,
                 self.access_list,
@@ -197,7 +197,7 @@ class Eip1559(Serializable):
         ("max_priority_fee_per_gas", big_endian_int),
         ("max_fee_per_gas", big_endian_int),
         ("gas_limit", big_endian_int),
-        ("to", address),
+        ("receiver", address),
         ("value", big_endian_int),
         ("data", binary),
         ("access_list", access_list_type),
@@ -217,7 +217,7 @@ class Eip1559(Serializable):
                 self.max_priority_fee_per_gas,
                 self.max_fee_per_gas,
                 self.gas_limit,
-                self.to,
+                self.receiver,
                 self.value,
                 self.data,
                 self.access_list,
@@ -265,7 +265,7 @@ class Eip4844(Serializable):
         ("max_priority_fee_per_gas", big_endian_int),
         ("max_fee_per_gas", big_endian_int),
         ("gas_limit", big_endian_int),
-        ("to", address),
+        ("receiver", address),
         ("value", big_endian_int),
         ("data", binary),
         ("access_list", access_list_type),
@@ -287,7 +287,7 @@ class Eip4844(Serializable):
                 self.max_priority_fee_per_gas,
                 self.max_fee_per_gas,
                 self.gas_limit,
-                self.to,
+                self.receiver,
                 self.value,
                 self.data,
                 self.access_list,
@@ -367,8 +367,8 @@ class Tx:
         return self.tx.gas_limit
 
     @property
-    def to(self) -> Union[bytes, str]:
-        return self.tx.to
+    def receiver(self) -> Union[bytes, str]:
+        return self.tx.receiver
 
     @property
     def value(self) -> int:
@@ -498,10 +498,8 @@ class FeltTx(BaseFelt):
     def gas_limit(self, as_le: bool = False) -> Tuple[int, int]:
         return self._split_word_to_felt(self.tx.gas_limit, as_le)
 
-    def to(self, as_le: bool = False) -> Tuple[int, int]:
-        return self._split_word_to_felt(
-            int.from_bytes(self.tx.to, "big") if self.tx.to else 0, as_le
-        )
+    def receiver(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(int.from_bytes(self.tx.receiver, "big"))
 
     def value(self, as_le: bool = False) -> Tuple[int, int]:
         return self._split_word_to_felt(self.tx.value, as_le)

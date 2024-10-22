@@ -53,7 +53,7 @@ func test_tx_decoding_inner{
     );
 
     %{
-        low, high = felt_tx.nonce(True)
+        low, high = felt_tx.nonce()
         assert ids.nonce.low == low
         assert ids.nonce.high == high
     %}
@@ -63,7 +63,7 @@ func test_tx_decoding_inner{
     );
 
     %{
-        low, high = felt_tx.gas_limit(True)
+        low, high = felt_tx.gas_limit()
         assert ids.gas_limit.low == low
         assert ids.gas_limit.high == high
     %}
@@ -73,28 +73,28 @@ func test_tx_decoding_inner{
     );
 
     %{
-        low, high = felt_tx.value(True)
+        low, high = felt_tx.value()
         assert ids.value.low == low
         assert ids.value.high == high
     %}
 
     let v = TransactionDecoder.get_field(rlp, TransactionField.V, rlp_start_offset, tx_type);
     %{
-        low, high = felt_tx.v(True)
+        low, high = felt_tx.v()
         assert ids.v.low == low
         assert ids.v.high == high
     %}
 
     let r = TransactionDecoder.get_field(rlp, TransactionField.R, rlp_start_offset, tx_type);
     %{
-        low, high = felt_tx.r(True)
+        low, high = felt_tx.r()
         assert ids.r.low == low
         assert ids.r.high == high
     %}
 
     let s = TransactionDecoder.get_field(rlp, TransactionField.S, rlp_start_offset, tx_type);
     %{
-        low, high = felt_tx.s(True)
+        low, high = felt_tx.s()
         assert ids.s.low == low
         assert ids.s.high == high
     %}
@@ -106,15 +106,18 @@ func test_tx_decoding_inner{
             rlp, TransactionField.GAS_PRICE, rlp_start_offset, tx_type
         );
         %{
-            low, high = felt_tx.gas_price(True)
+            low, high = felt_tx.gas_price()
             assert ids.gas_price.low == low
             assert ids.gas_price.high == high
         %}
-
+        tempvar chain_info = chain_info;
+        tempvar keccak_ptr = keccak_ptr;
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
         tempvar pow2_array = pow2_array;
     } else {
+        tempvar chain_info = chain_info;
+        tempvar keccak_ptr = keccak_ptr;
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
         tempvar pow2_array = pow2_array;
@@ -127,7 +130,7 @@ func test_tx_decoding_inner{
             rlp, TransactionField.MAX_PRIORITY_FEE_PER_GAS, rlp_start_offset, tx_type
         );
         %{
-            low, high = felt_tx.max_priority_fee_per_gas(True)
+            low, high = felt_tx.max_priority_fee_per_gas()
             assert ids.max_prio_fee_per_gas.low == low
             assert ids.max_prio_fee_per_gas.high == high
         %}
@@ -136,15 +139,18 @@ func test_tx_decoding_inner{
             rlp, TransactionField.MAX_FEE_PER_GAS, rlp_start_offset, tx_type
         );
         %{
-            low, high = felt_tx.max_fee_per_gas(True)
+            low, high = felt_tx.max_fee_per_gas()
             assert ids.max_fee_per_gas.low == low
             assert ids.max_fee_per_gas.high == high
         %}
-
+        tempvar chain_info = chain_info;
+        tempvar keccak_ptr = keccak_ptr;
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
         tempvar pow2_array = pow2_array;
     } else {
+        tempvar chain_info = chain_info;
+        tempvar keccak_ptr = keccak_ptr;
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
         tempvar pow2_array = pow2_array;
@@ -157,15 +163,19 @@ func test_tx_decoding_inner{
             rlp, TransactionField.MAX_FEE_PER_BLOB_GAS, rlp_start_offset, tx_type
         );
         %{
-            low, high = felt_tx.max_fee_per_blob_gas(True)
+            low, high = felt_tx.max_fee_per_blob_gas()
             assert ids.max_fee_per_blob_gas.low == low
             assert ids.max_fee_per_blob_gas.high == high
         %}
 
+        tempvar chain_info = chain_info;
+        tempvar keccak_ptr = keccak_ptr;
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
         tempvar pow2_array = pow2_array;
     } else {
+        tempvar chain_info = chain_info;
+        tempvar keccak_ptr = keccak_ptr;
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
         tempvar pow2_array = pow2_array;

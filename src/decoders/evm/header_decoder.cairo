@@ -6,7 +6,7 @@ from starkware.cairo.common.alloc import alloc
 
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash, poseidon_hash_many
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
-from src.utils.rlp import rlp_list_retrieve, le_chunks_to_uint256
+from src.utils.rlp import rlp_list_retrieve, le_chunks_to_be_uint256
 from packages.eth_essentials.lib.utils import felt_divmod
 
 from packages.eth_essentials.lib.mmr import hash_subtree_path
@@ -75,7 +75,7 @@ namespace HeaderDecoder {
         }
         if (field == HeaderField.COINBASE) {
             let address = get_address_value(rlp, 8, 6);
-            return le_chunks_to_uint256(elements=address, elements_len=3, bytes_len=20);
+            return le_chunks_to_be_uint256(elements=address, elements_len=3, bytes_len=20);
         }
         if (field == HeaderField.STATE_ROOT) {
             return get_hash_value(rlp, 11, 3);
@@ -102,7 +102,7 @@ namespace HeaderDecoder {
         rlp: felt*, field: felt
     ) -> Uint256 {
         let (value, value_len, bytes_len) = get_dynamic_field_bytes(rlp, field);
-        return le_chunks_to_uint256(value, value_len, bytes_len);
+        return le_chunks_to_be_uint256(value, value_len, bytes_len);
     }
 
     func get_dynamic_field_bytes{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
@@ -137,7 +137,8 @@ func get_hash_value{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: f
     let res_low = rlp_2_right * pow2_array[shifter + 64] + rlp_1 * pow2_array[shifter] + rlp_0;
     let res_high = rlp_4 * pow2_array[shifter + 64] + rlp_3 * pow2_array[shifter] + rlp_2_left;
 
-    return (Uint256(low=res_low, high=res_high));
+    let (be_value) = uint256_reverse_endian(Uint256(low=res_low, high=res_high));
+    return be_value;
 }
 
 func get_address_value{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
