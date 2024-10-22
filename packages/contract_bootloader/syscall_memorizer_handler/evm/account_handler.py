@@ -27,16 +27,16 @@ class EvmAccountHandler(AbstractEvmAccountBase):
 
     def get_nonce(self, key: MemorizerKey) -> Tuple[int, int]:
         rlp_len, rlp = self.extract_rlp(key=key)
-        return FeltAccount.from_rlp_chunks(rlp, rlp_len).nonce
+        return FeltAccount.from_rlp_chunks(rlp, rlp_len).nonce()
 
     def get_balance(self, key: MemorizerKey) -> Tuple[int, int]:
         rlp_len, rlp = self.extract_rlp(key=key)
-        return FeltAccount.from_rlp_chunks(rlp, rlp_len).balance
+        return FeltAccount.from_rlp_chunks(rlp, rlp_len).balance()
 
     def get_state_root(self, key: MemorizerKey) -> Tuple[int, int]:
         rlp_len, rlp = self.extract_rlp(key=key)
-        return FeltAccount.from_rlp_chunks(rlp, rlp_len).storage_hash
+        return FeltAccount.from_rlp_chunks(rlp, rlp_len).storage_hash()
 
     def get_code_hash(self, key: MemorizerKey) -> Tuple[int, int]:
         rlp_len, rlp = self.extract_rlp(key=key)
-        return FeltAccount.from_rlp_chunks(rlp, rlp_len).code_hash
+        return FeltAccount.from_rlp_chunks(rlp, rlp_len).code_hash()

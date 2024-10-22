@@ -16,19 +16,19 @@ class DryRunEvmAccountHandler(AbstractEvmAccountBase):
 
     def get_nonce(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_account(key=key).nonce
+        return self.provider.get_account(key=key).nonce()
 
     def get_balance(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_account(key=key).balance
+        return self.provider.get_account(key=key).balance()
 
     def get_state_root(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_account(key=key).storage_hash
+        return self.provider.get_account(key=key).storage_hash()
 
     def get_code_hash(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_account(key=key).code_hash
+        return self.provider.get_account(key=key).code_hash()
 
     def fetch_keys_dict(self) -> set:
         def create_dict(key: MemorizerKey):

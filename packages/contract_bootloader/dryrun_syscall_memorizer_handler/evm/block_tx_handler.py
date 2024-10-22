@@ -16,23 +16,23 @@ class DryRunEvmBlockTxHandler(AbstractEvmBlockTxBase):
 
     def get_nonce(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_tx(key=key).nonce
+        return self.provider.get_block_tx(key=key).nonce()
 
     def get_gas_price(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_tx(key=key).gas_price
+        return self.provider.get_block_tx(key=key).gas_price()
 
     def get_gas_limit(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_tx(key=key).gas_limit
+        return self.provider.get_block_tx(key=key).gas_limit()
 
     def get_to(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_tx(key=key).to
+        return self.provider.get_block_tx(key=key).to()
 
     def get_value(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_tx(key=key).value
+        return self.provider.get_block_tx(key=key).value()
 
     # def get_data(self, key: MemorizerKey) -> Tuple[int, int]:
     #     self.fetch_keys_registry.add(key)
@@ -40,31 +40,31 @@ class DryRunEvmBlockTxHandler(AbstractEvmBlockTxBase):
 
     def get_v(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_tx(key=key).v
+        return self.provider.get_block_tx(key=key).v()
 
     def get_r(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_tx(key=key).r
+        return self.provider.get_block_tx(key=key).r()
 
     def get_s(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_tx(key=key).s
+        return self.provider.get_block_tx(key=key).s()
 
     def get_chain_id(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_tx(key=key).chain_id
+        return self.provider.get_block_tx(key=key).chain_id()
 
     def get_max_priority_fee_per_gas(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_tx(key=key).max_priority_fee_per_gas
+        return self.provider.get_block_tx(key=key).max_priority_fee_per_gas()
 
     def get_max_fee_per_gas(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_tx(key=key).max_fee_per_gas
+        return self.provider.get_block_tx(key=key).max_fee_per_gas()
 
     def get_max_fee_per_blob_gas(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_tx(key=key).max_fee_per_blob_gas
+        return self.provider.get_block_tx(key=key).max_fee_per_blob_gas()
 
     def fetch_keys_dict(self) -> set:
         def create_dict(key: MemorizerKey):

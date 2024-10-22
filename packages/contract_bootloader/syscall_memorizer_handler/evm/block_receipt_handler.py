@@ -27,11 +27,11 @@ class EvmBlockReceiptHandler(AbstractEvmBlockReceiptBase):
 
     def get_success(self, key: MemorizerKey) -> Tuple[int, int]:
         rlp_len, rlp = self.extract_rlp(key=key)
-        return FeltReceipt.from_rlp_chunks(rlp, rlp_len).success
+        return FeltReceipt.from_rlp_chunks(rlp, rlp_len).success()
 
     def get_cumulative_gas_used(self, key: MemorizerKey) -> Tuple[int, int]:
         rlp_len, rlp = self.extract_rlp(key=key)
-        return FeltReceipt.from_rlp_chunks(rlp, rlp_len).cumulative_gas_used
+        return FeltReceipt.from_rlp_chunks(rlp, rlp_len).cumulative_gas_used()
 
     def get_bloom(self, key: MemorizerKey) -> Tuple[int, int]:
         pass

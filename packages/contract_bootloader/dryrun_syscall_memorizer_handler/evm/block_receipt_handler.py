@@ -15,11 +15,11 @@ class DryRunEvmBlockReceiptHandler(AbstractEvmBlockReceiptBase):
 
     def get_success(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_receipt(key=key).success
+        return self.provider.get_block_receipt(key=key).success()
 
     def get_cumulative_gas_used(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_receipt(key=key).cumulative_gas_used
+        return self.provider.get_block_receipt(key=key).cumulative_gas_used()
 
     # def get_bloom(self, key: MemorizerKey) -> Tuple[int, int]:
     #     self.fetch_keys_registry.add(key)

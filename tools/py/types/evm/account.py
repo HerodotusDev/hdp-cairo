@@ -4,6 +4,7 @@ from rlp import Serializable, encode, decode
 from rlp.sedes import big_endian_int, Binary
 from typing import List, Tuple, Union
 
+from tools.py.types.evm.base_felt import BaseFelt
 from tools.py.utils import little_8_bytes_chunks_to_bytes
 
 hash32 = Binary.fixed_length(32)
@@ -38,33 +39,30 @@ class Account(Serializable):
         )
 
 
-class FeltAccount:
+class FeltAccount(BaseFelt):
     def __init__(self, account: Account):
         self.account = account
 
-    def _split_to_felt(self, value: Union[int, bytes, HexBytes]) -> Tuple[int, int]:
-        if isinstance(value, (bytes, HexBytes)):
-            value = int.from_bytes(value, "big")
-        return (value & ((1 << 128) - 1), value >> 128)
+    def nonce(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.account.nonce, as_le)
 
-    @property
-    def nonce(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.account.nonce)
+    def balance(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.account.balance, as_le)
 
-    @property
-    def balance(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.account.balance)
+    def storage_hash(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(
+            int.from_bytes(self.account.storageHash, "big"), as_le
+        )
 
-    @property
-    def storage_hash(self) -> Tuple[int, int]:
-        return self._split_to_felt(int.from_bytes(self.account.storageHash, "big"))
+    def code_hash(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(
+            int.from_bytes(self.account.codeHash, "big"), as_le
+        )
 
-    @property
-    def code_hash(self) -> Tuple[int, int]:
-        return self._split_to_felt(int.from_bytes(self.account.codeHash, "big"))
-
-    def hash(self) -> Tuple[int, int]:
-        return self._split_to_felt(int.from_bytes(self.account.hash(), "big"))
+    def hash(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(
+            int.from_bytes(self.account.hash(), "big"), as_le
+        )
 
     @classmethod
     def from_rlp_chunks(cls, rlp_chunks: List[int], rlp_len: int) -> "FeltAccount":
