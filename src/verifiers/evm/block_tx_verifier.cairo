@@ -4,14 +4,14 @@ from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.uint256 import Uint256
 
 from starkware.cairo.common.alloc import alloc
-from src.mpt import verify_mpt_proof
+from src.utils.mpt import verify_mpt_proof
 from packages.eth_essentials.lib.utils import felt_divmod
 from packages.eth_essentials.lib.rlp_little import (
     extract_byte_at_pos,
     extract_n_bytes_from_le_64_chunks_array,
 )
 
-from src.rlp import chunk_to_felt_be
+from src.utils.rlp import chunk_to_felt_be
 from src.types import ChainInfo
 from src.memorizers.evm.memorizer import EvmMemorizer, EvmHashParams
 from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField

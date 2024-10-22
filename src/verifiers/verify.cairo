@@ -11,7 +11,7 @@ from starkware.cairo.common.cairo_builtins import (
 )
 
 from src.types import MMRMeta, ChainInfo
-from src.chain_info import fetch_chain_info
+from src.utils.chain_info import fetch_chain_info
 
 func run_state_verification{
     range_check_ptr,

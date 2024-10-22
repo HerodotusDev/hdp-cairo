@@ -1,6 +1,6 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
-from src.rlp import rlp_list_retrieve, le_chunks_to_uint256, get_rlp_list_meta
-from src.chain_info import ChainInfo
+from src.utils.rlp import rlp_list_retrieve, le_chunks_to_uint256, get_rlp_list_meta
+from src.utils.chain_info import ChainInfo
 from starkware.cairo.common.uint256 import Uint256
 
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos

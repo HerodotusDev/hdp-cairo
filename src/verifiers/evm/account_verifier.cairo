@@ -1,13 +1,13 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
 from starkware.cairo.common.dict_access import DictAccess
-from src.mpt import verify_mpt_proof
+from src.utils.mpt import verify_mpt_proof
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.builtin_keccak.keccak import keccak_bigend
 from starkware.cairo.common.alloc import alloc
 from src.types import ChainInfo
 from packages.eth_essentials.lib.block_header import extract_state_root_little
 from src.memorizers.evm.memorizer import EvmMemorizer, EvmHashParams
-from src.converter import le_address_chunks_to_felt
+from src.utils.converter import le_address_chunks_to_felt
 from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField
 
 // Verifies the validity of all of the available account proofs and writes them to the memorizer

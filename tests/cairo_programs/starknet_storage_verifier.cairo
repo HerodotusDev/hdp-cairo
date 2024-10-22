@@ -11,7 +11,7 @@ from starkware.cairo.common.builtin_poseidon.poseidon import (
 
 from packages.eth_essentials.lib.utils import bitwise_divmod
 from src.memorizers.starknet.memorizer import StarknetMemorizer
-from src.chain_info import fetch_chain_info
+from src.utils.chain_info import fetch_chain_info
 from src.types import ChainInfo
 from src.verifiers.starknet.storage_verifier import verify_proofs
 

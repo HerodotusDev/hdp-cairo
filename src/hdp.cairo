@@ -19,7 +19,7 @@ from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash_many,
 from src.verifiers.verify import run_state_verification
 from src.module import init_module
 from src.types import MMRMeta
-from src.utils import write_output_ptr
+from src.utils.utils import write_output_ptr
 
 from src.memorizers.evm.memorizer import EvmMemorizer
 from src.memorizers.starknet.memorizer import StarknetMemorizer
@@ -27,12 +27,12 @@ from src.memorizers.bare import BareMemorizer, SingleBareMemorizer
 from src.memorizers.evm.state_access import EvmStateAccess, EvmDecoder
 from src.memorizers.starknet.state_access import StarknetStateAccess, StarknetDecoder
 
-from src.chain_info import Layout
+from src.utils.chain_info import Layout
 
 from packages.eth_essentials.lib.utils import pow2alloc251, write_felt_array_to_dict_keys
 
-from src.merkle import compute_tasks_hash, compute_tasks_root, compute_results_root
-from src.chain_info import fetch_chain_info
+from src.utils.merkle import compute_tasks_hash, compute_tasks_root, compute_results_root
+from src.utils.chain_info import fetch_chain_info
 from src.contract_bootloader.contract import compute_contract
 
 func main{

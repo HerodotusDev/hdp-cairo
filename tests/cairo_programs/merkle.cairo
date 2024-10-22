@@ -2,8 +2,8 @@
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, KeccakBuiltin
 from starkware.cairo.common.alloc import alloc
-from src.merkle import compute_results_root, hash_pair, compute_merkle_root
-from src.utils import compute_results_entry
+from src.utils.merkle import compute_results_root, hash_pair, compute_merkle_root
+from src.utils.utils import compute_results_entry
 
 func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}() {
     computes_output_roots{

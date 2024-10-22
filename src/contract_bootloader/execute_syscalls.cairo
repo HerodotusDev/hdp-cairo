@@ -11,9 +11,9 @@ from starkware.starknet.core.os.builtins import BuiltinPointers
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.registers import get_label_location
-from src.chain_info import chain_id_to_layout
+from src.utils.chain_info import chain_id_to_layout
 from src.memorizers.evm.state_access import EvmStateAccess, EvmStateAccessType, EvmDecoderTarget
-from src.chain_info import Layout
+from src.utils.chain_info import Layout
 
 struct ExecutionInfo {
     selector: felt,

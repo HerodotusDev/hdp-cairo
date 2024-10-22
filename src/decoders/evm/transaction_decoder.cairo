@@ -14,7 +14,7 @@ from packages.eth_essentials.lib.rlp_little import (
     extract_n_bytes_from_le_64_chunks_array,
 )
 
-from src.rlp import (
+from src.utils.rlp import (
     rlp_list_retrieve,
     le_chunks_to_uint256,
     prepend_le_chunks,
@@ -23,7 +23,7 @@ from src.rlp import (
     get_rlp_list_bytes_len,
 )
 from src.types import ChainInfo
-from src.utils import get_felt_bytes_len, reverse_chunk_endianess
+from src.utils.utils import get_felt_bytes_len, reverse_chunk_endianess
 
 namespace TransactionField {
     const NONCE = 0;

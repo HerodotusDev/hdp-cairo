@@ -1,6 +1,6 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 
-from src.rlp import right_shift_le_chunks
+from src.utils.rlp import right_shift_le_chunks
 from packages.eth_essentials.lib.utils import word_reverse_endian_64
 
 func le_address_chunks_to_felt{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(

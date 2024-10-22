@@ -11,7 +11,7 @@ from src.decoders.evm.transaction_decoder import (
     TransactionSender,
     TransactionField,
 )
-from src.chain_info import fetch_chain_info
+from src.utils.chain_info import fetch_chain_info
 from tests.utils.tx import test_tx_decoding_inner
 func main{
     range_check_ptr,

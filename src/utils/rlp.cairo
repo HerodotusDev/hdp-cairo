@@ -4,7 +4,11 @@ from packages.eth_essentials.lib.rlp_little import (
     extract_byte_at_pos,
     extract_n_bytes_from_le_64_chunks_array,
 )
-from src.utils import reverse_small_chunk_endianess, get_felt_bytes_len, reverse_chunk_endianess
+from src.utils.utils import (
+    reverse_small_chunk_endianess,
+    get_felt_bytes_len,
+    reverse_chunk_endianess,
+)
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, word_reverse_endian
 from packages.eth_essentials.lib.rlp_little import array_copy

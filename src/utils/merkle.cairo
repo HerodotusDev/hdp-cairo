@@ -1,7 +1,7 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_uint256s
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
-from src.utils import compute_results_entry
+from src.utils.utils import compute_results_entry
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 

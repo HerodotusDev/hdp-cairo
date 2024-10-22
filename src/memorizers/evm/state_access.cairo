@@ -12,7 +12,7 @@ from src.decoders.evm.storage_slot_decoder import StorageSlotDecoder as EvmStora
 from src.decoders.evm.transaction_decoder import TransactionDecoder as EvmTransactionDecoder
 from src.decoders.evm.receipt_decoder import ReceiptDecoder as EvmReceiptDecoder
 
-from src.chain_info import Layout
+from src.utils.chain_info import Layout
 
 namespace EvmDecoderTarget {
     const UINT256 = 0;  // returns a Uint256

@@ -7,7 +7,7 @@ from starkware.cairo.common.dict_access import DictAccess
 
 from src.memorizers.starknet.memorizer import StarknetMemorizer, StarknetHashParams2
 from src.decoders.starknet.header_decoder import StarknetHeaderDecoder
-from src.chain_info import Layout
+from src.utils.chain_info import Layout
 
 namespace StarknetDecoderTarget {
     const FELT = 0;  // returns a felt
