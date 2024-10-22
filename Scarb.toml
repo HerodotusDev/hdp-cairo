@@ -4,9 +4,7 @@ version = "0.1.0"
 edition = "2023_11"
 
 members = [
-    "cairo",
-    "src/contracts/simple_linear_regression",
-    "src/contracts/dry_run_test"
+    "cairo1_syscall_binding"
 ]
 
 [workspace.dependencies]
