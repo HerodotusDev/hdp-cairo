@@ -1,5 +1,6 @@
 from hexbytes.main import HexBytes
 from rlp import Serializable, encode, decode
+from tools.py.types.evm.base_felt import BaseFelt
 from web3.types import TxParams
 from rlp.sedes import BigEndianInt, big_endian_int, Binary, binary, lists, CountableList
 from web3 import Web3
@@ -73,28 +74,11 @@ class Eip155(Serializable):
         ("v", big_endian_int),
         ("r", hash32),
         ("s", hash32),
-        ("chain_id", big_endian_int),
     )
 
     def hash(self) -> HexBytes:
         return Web3.keccak(self.tx_rlp())
     
-    # this is a special case in eip155. 
-    def tx_rlp(self) -> bytes:
-        return encode(
-            [
-                self.nonce,
-                self.gas_price,
-                self.gas_limit,
-                self.to,
-                self.value,
-                self.data,
-                self.v,
-                self.r,
-                self.s,
-            ]
-        )
-
     def raw_rlp(self) -> bytes:
         return encode(
             [
@@ -107,7 +91,6 @@ class Eip155(Serializable):
                 self.v,
                 self.r,
                 self.s,
-                self.chain_id,
             ]
         )
 
@@ -128,7 +111,6 @@ class Eip155(Serializable):
             int(tx["v"], 16),
             HexBytes(tx["r"]),
             HexBytes(tx["s"]),
-            int(tx["chainId"], 16)
         )
 
 # Define a Serializable class for an Access List entry
@@ -346,6 +328,19 @@ class Tx:
         self.tx: Union[LegacyTx, Eip155, Eip2930, Eip1559, Eip4844] = None
 
     @property
+    def type(self) -> int:
+        if isinstance(self.tx, LegacyTx):
+            return 0
+        elif isinstance(self.tx, Eip155):
+            return 0
+        elif isinstance(self.tx, Eip2930):
+            return 1
+        elif isinstance(self.tx, Eip1559):
+            return 2
+        elif isinstance(self.tx, Eip4844):
+            return 3
+        
+    @property
     def hash(self) -> HexBytes:
         return self.tx.hash()
 
@@ -467,80 +462,63 @@ class Tx:
                 instance.tx = Eip4844.from_rlp(tx_payload)
             else:
                 raise ValueError(f"Unknown transaction type: {tx_type}")
+        
         return instance
 
-class FeltTx:
+class FeltTx(BaseFelt):
     def __init__(self, tx: Tx):
         self.tx = tx
 
-    def _split_to_felt(self, value: Union[int, bytes, HexBytes]) -> Tuple[int, int]:
-        if isinstance(value, (bytes, HexBytes)):
-            value = int.from_bytes(value, 'big')
-        return (value & ((1 << 128) - 1), value >> 128)
+    def hash(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.tx.hash, as_le)
 
-    @property
-    def hash(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.tx.hash)
+    def nonce(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.tx.nonce, as_le)
 
-    @property
-    def nonce(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.tx.nonce)
+    def gas_price(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.tx.gas_price, as_le)
 
-    @property
-    def gas_price(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.tx.gas_price)
+    def gas_limit(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.tx.gas_limit, as_le)
 
-    @property
-    def gas_limit(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.tx.gas_limit)
+    def to(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(int.from_bytes(self.tx.to, 'big') if self.tx.to else 0, as_le)
 
-    @property
-    def to(self) -> Tuple[int, int]:
-        return self._split_to_felt(int.from_bytes(self.tx.to, 'big') if self.tx.to else 0)
+    def value(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.tx.value, as_le)
 
-    @property
-    def value(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.tx.value)
+    
+    # def data(self, as_le: bool = False) -> Tuple[int, int]:
+    #     return self._split_word_to_felt(int.from_bytes(self.tx.data, 'big'), as_le)
 
-    # @property
-    # def data(self) -> Tuple[int, int]:
-    #     return self._split_to_felt(int.from_bytes(self.tx.data, 'big'))
+    def v(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.tx.v, as_le)
 
-    @property
-    def v(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.tx.v)
+    def r(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(int.from_bytes(self.tx.r, 'big'), as_le)
 
-    @property
-    def r(self) -> Tuple[int, int]:
-        return self._split_to_felt(int.from_bytes(self.tx.r, 'big'))
+    def s(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(int.from_bytes(self.tx.s, 'big'), as_le)
 
-    @property
-    def s(self) -> Tuple[int, int]:
-        return self._split_to_felt(int.from_bytes(self.tx.s, 'big'))
+    def chain_id(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.tx.chain_id, as_le)
 
-    @property
-    def chain_id(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.tx.chain_id)
+    
+    # def access_list(self, as_le: bool = False) -> Tuple[int, int]:
+    #     return self._split_word_to_felt(len(self.tx.access_list), as_le)
 
-    # @property
-    # def access_list(self) -> Tuple[int, int]:
-    #     return self._split_to_felt(len(self.tx.access_list))
+    def max_priority_fee_per_gas(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.tx.max_priority_fee_per_gas, as_le)
 
-    @property
-    def max_priority_fee_per_gas(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.tx.max_priority_fee_per_gas)
+    def max_fee_per_gas(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.tx.max_fee_per_gas, as_le)
 
-    @property
-    def max_fee_per_gas(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.tx.max_fee_per_gas)
+    def max_fee_per_blob_gas(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.tx.max_fee_per_blob_gas, as_le)
 
-    @property
-    def max_fee_per_blob_gas(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.tx.max_fee_per_blob_gas)
-
-    # @property
-    # def blob_versioned_hashes(self) -> Tuple[int, int]:
-    #     return self._split_to_felt(len(self.tx.blob_versioned_hashes))
+    
+    # def blob_versioned_hashes(self, as_le: bool = False) -> Tuple[int, int]:
+    #     return self._split_word_to_felt(len(self.tx.blob_versioned_hashes), as_le)
 
     @classmethod
     def from_rlp_chunks(cls, rlp_chunks: List[int], rlp_len: int) -> 'FeltTx':

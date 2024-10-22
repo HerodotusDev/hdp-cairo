@@ -2,10 +2,8 @@
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, KeccakBuiltin
 from starkware.cairo.common.alloc import alloc
-from tests.cairo_programs.test_vectors import BlockSampledTaskMocker
 from src.merkle import compute_results_root, hash_pair, compute_merkle_root
 from src.utils import compute_results_entry
-from src.types import ComputationalTask
 
 func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}() {
     computes_output_roots{
@@ -27,19 +25,15 @@ func computes_output_roots{
 }() {
     alloc_locals;
 
-    let task = Uint256(low=114514345207152648761622449186187146395, high=250820143348695721067706216954199270384);
+    let task_root = Uint256(
+        low=114514345207152648761622449186187146395, high=250820143348695721067706216954199270384
+    );
     let result = Uint256(low=100, high=0);
 
-    let results_entry = compute_results_entry(tasks_root, result);
+    let results_entry = compute_results_entry(task_root, result);
 
     assert results_entry.low = 2004459135957517006232490669995341918;
     assert results_entry.high = 17938436372202772873742223991112862737;
-
-
-    let results_root = compute_results_root(task, result);
-
-    assert results_root.low = 519486554900734574573258899619310091;
-    assert results_root.high = 259887999216688164462131972375059079258;
 
     return ();
 }

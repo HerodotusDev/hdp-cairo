@@ -21,7 +21,6 @@ func test_receipt_decoding_inner{
 
     let (rlp) = alloc();
 
-
     local block_number: felt;
     %{
         import os
@@ -40,40 +39,32 @@ func test_receipt_decoding_inner{
         rpc_receipt = provider.get_rpc_receipt_by_hash(receipt_array[ids.index])
         ids.block_number = int(rpc_receipt["blockNumber"], 16)
         receipt = Receipt.from_rpc_data(rpc_receipt)
-        print(f"receipt: {receipt}")
         felt_receipt = FeltReceipt(receipt)
-        print(f"felt_receipt: {felt_receipt}")
-        
+
         segments.write_arg(ids.rlp, bytes_to_8_bytes_chunks_little(receipt.raw_rlp()))
     %}
 
     let (tx_type, local rlp_start_offset) = ReceiptDecoder.open_receipt_envelope(item=rlp);
-    %{
-        assert ids.tx_type == receipt.type, "type test failed"
-    %}
+    %{ assert ids.tx_type == receipt.type, "type test failed" %}
 
     let status = ReceiptDecoder.get_field(
         rlp, ReceiptField.SUCCESS, rlp_start_offset, tx_type, block_number
     );
 
     %{
-        low, high = felt_receipt.status
-        print(f"low: {low}, high: {high}")
-        print(f"ids.status.low: {ids.status.low}, ids.status.high: {ids.status.high}")
+        low, high = felt_receipt.status(True)
         assert ids.status.low == low
         assert ids.status.high == high
     %}
-
 
     let cumulative_gas_used = ReceiptDecoder.get_field(
         rlp, ReceiptField.CUMULATIVE_GAS_USED, rlp_start_offset, tx_type, block_number
     );
     %{
-        low, high = felt_receipt.cumulative_gas_used
+        low, high = felt_receipt.cumulative_gas_used(True)
         assert ids.cumulative_gas_used.low == low
         assert ids.cumulative_gas_used.high == high
     %}
 
     return test_receipt_decoding_inner(receipts, index + 1);
 }
-

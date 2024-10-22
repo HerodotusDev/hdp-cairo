@@ -6,9 +6,9 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 
 // TODO: it is single task for now
-func compute_tasks_hash{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
-}(encoded_task: felt*, task_bytes_len: felt) -> Uint256 {
+func compute_tasks_hash{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(
+    encoded_task: felt*, task_bytes_len: felt
+) -> Uint256 {
     alloc_locals;
 
     let (task_hash: Uint256) = keccak(encoded_task, task_bytes_len);
@@ -21,9 +21,9 @@ func compute_tasks_hash{
     return task_hash;
 }
 
-func compute_tasks_root{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
-}(task_hash: Uint256) -> Uint256 {
+func compute_tasks_root{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(
+    task_hash: Uint256
+) -> Uint256 {
     let (leafs: Uint256*) = alloc();
     assert leafs[0] = task_hash;
 

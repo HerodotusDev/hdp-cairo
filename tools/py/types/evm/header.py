@@ -1,5 +1,6 @@
 from hexbytes.main import HexBytes
 from rlp import Serializable, encode, decode
+from tools.py.types.evm.base_felt import BaseFelt
 from web3.types import BlockData
 from rlp.sedes import (
     BigEndianInt,
@@ -9,15 +10,12 @@ from rlp.sedes import (
 )
 from web3 import Web3
 from typing import List, Union, Tuple
-
 from tools.py.utils import little_8_bytes_chunks_to_bytes
-
 
 address = Binary.fixed_length(20, allow_empty=True)
 hash32 = Binary.fixed_length(32)
 int256 = BigEndianInt(256)
 trie_root = Binary.fixed_length(32, allow_empty=True)
-
 
 class LegacyBlockHeader(Serializable):
     fields = (
@@ -334,6 +332,20 @@ class BlockHeader:
         if isinstance(self.header, BlockHeaderDencun):
             return HexBytes(self.header.parentBeaconBlockRoot)
         raise AttributeError("parent_beacon_block_root is not available for this block header type")
+    
+    @property
+    def type(self) -> int:
+        if isinstance(self.header, LegacyBlockHeader):
+            return 0
+        elif isinstance(self.header, BlockHeaderEIP1559):
+            return 1
+        elif isinstance(self.header, BlockHeaderShangai):   
+            return 2
+        elif isinstance(self.header, BlockHeaderDencun):
+            return 3
+        
+    def raw_rlp(self) -> bytes:
+        return self.header.raw_rlp()
 
     @classmethod
     def from_rpc_data(cls, block: BlockData) -> 'BlockHeader':
@@ -367,100 +379,74 @@ class BlockHeader:
         return instance
 
 # Automatically splits the fields into two 128 bit felt
-class FeltBlockHeader:
+class FeltBlockHeader(BaseFelt):
     def __init__(self, block_header: BlockHeader):
         self.header = block_header
 
-    def _split_to_felt(self, value: Union[int, bytes, HexBytes, bytearray]) -> Tuple[int, int]:
-        if isinstance(value, (bytes, HexBytes, bytearray)):
-            value = int.from_bytes(value, 'big')
-        return (value & ((1 << 128) - 1), value >> 128)
+    def hash(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.header.hash, as_le)
 
-    @property
-    def hash(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.header.hash)
+    def parent_hash(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.header.parent_hash, as_le)
 
-    @property
-    def parent_hash(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.header.parent_hash)
+    def uncles_hash(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.header.uncles_hash, as_le)
 
-    @property
-    def uncles_hash(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.header.uncles_hash)
+    def coinbase(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.header.coinbase, as_le)
 
-    @property
-    def coinbase(self) -> Tuple[int, int]:
-        print("coinbase:", self.header.coinbase)
-        return self._split_to_felt(self.header.coinbase)
+    def state_root(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.header.state_root, as_le)
 
-    @property
-    def state_root(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.header.state_root)
+    def transactions_root(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.header.transactions_root, as_le)
 
-    @property
-    def transactions_root(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.header.transactions_root)
-
-    @property
-    def receipts_root(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.header.receipts_root)
+    def receipts_root(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.header.receipts_root, as_le)
 
     # ToDo: figure out what to do here
     # @property
     # def logs_bloom(self) -> Tuple[int, int]:
-    #     return self._split_to_felt(self.header.logs_bloom)
+    #     return self._split_word_to_felt(self.header.logs_bloom, as_le)
 
-    @property
-    def difficulty(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.header.difficulty)
+    def difficulty(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.header.difficulty, as_le)
 
-    @property
-    def number(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.header.number)
+    def number(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.header.number, as_le)
 
-    @property
-    def gas_limit(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.header.gas_limit)
+    def gas_limit(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.header.gas_limit, as_le)
 
-    @property
-    def gas_used(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.header.gas_used)
+    def gas_used(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.header.gas_used, as_le)
 
-    @property
-    def timestamp(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.header.timestamp)
+    def timestamp(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.header.timestamp, as_le)
 
-    @property
-    def extra_data(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.header.extra_data)
+    def extra_data(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.header.extra_data, as_le)
 
-    @property
-    def mix_hash(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.header.mix_hash)
+    def mix_hash(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.header.mix_hash, as_le)
 
-    @property
-    def nonce(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.header.nonce)
+    def nonce(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.header.nonce, as_le)
 
-    @property
-    def base_fee_per_gas(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.header.base_fee_per_gas)
+    def base_fee_per_gas(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.header.base_fee_per_gas, as_le)
 
-    @property
-    def withdrawals_root(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.header.withdrawals_root)
+    def withdrawals_root(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.header.withdrawals_root, as_le)
 
-    @property
-    def blob_gas_used(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.header.blob_gas_used)
+    def blob_gas_used(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.header.blob_gas_used, as_le)
 
-    @property
-    def excess_blob_gas(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.header.excess_blob_gas)
+    def excess_blob_gas(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.header.excess_blob_gas, as_le)
 
-    @property
-    def parent_beacon_block_root(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.header.parent_beacon_block_root)
+    def parent_beacon_block_root(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.header.parent_beacon_block_root, as_le)
     
     @classmethod
     def from_rlp_chunks(cls, rlp_chunks: List[int], rlp_len: int) -> 'FeltBlockHeader':

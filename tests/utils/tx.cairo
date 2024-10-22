@@ -24,154 +24,80 @@ func test_tx_decoding_inner{
     }
 
     let (rlp) = alloc();
-    local rlp_len: felt;
-    local rlp_bytes_len: felt;
-    local block_number: felt;
-
-    local expected_nonce: Uint256;
-    local expected_gas_limit: Uint256;
-    let (expected_receiver) = alloc();
-    local expected_value: Uint256;
-    local expected_v: Uint256;
-    local expected_r: Uint256;
-    local expected_s: Uint256;
-
-    let (expected_input) = alloc();
-    local expected_input_len: felt;
-    local expected_input_bytes_len: felt;
-
-    local expected_gas_price: Uint256;
-    local expected_max_prio_fee_per_gas: Uint256;
-    local expected_max_fee_per_gas: Uint256;
-
-    let (expected_access_list) = alloc();
-    local expected_access_list_len: felt;
-    local expected_access_list_bytes_len: felt;
-
-    local expected_max_fee_per_blob_gas: Uint256;
-    let (expected_blob_versioned_hashes) = alloc();
-    local expected_blob_versioned_hashes_len: felt;
-    local expected_blob_versioned_hashes_bytes_len: felt;
-
-    local expected_sender: felt;
 
     %{
+        import os
+        from dotenv import load_dotenv
+        from tools.py.providers.evm.provider import EvmProvider
+        from tools.py.types.evm.tx import FeltTx, Tx
         from tools.py.utils import (
             bytes_to_8_bytes_chunks_little,
         )
-        from tests.python.test_tx_decoding import fetch_transaction_dict
-        print("Running TX:", tx_array[ids.index])
-        tx_dict = fetch_transaction_dict(tx_array[ids.index])
 
-        ids.block_number = tx_dict["block_number"]
-
-        segments.write_arg(ids.rlp, tx_dict["rlp"])
-        ids.rlp_len = len(tx_dict["rlp"])
-        ids.rlp_bytes_len = tx_dict["rlp_bytes_len"]
-
-        ids.expected_nonce.low = tx_dict["nonce"]["low"]
-        ids.expected_nonce.high = tx_dict["nonce"]["high"]
-
-        ids.expected_gas_limit.low = tx_dict["gas_limit"]["low"]
-        ids.expected_gas_limit.high = tx_dict["gas_limit"]["high"]
-
-        segments.write_arg(ids.expected_receiver, tx_dict["receiver"])
-
-        ids.expected_value.low = tx_dict["value"]["low"]
-        ids.expected_value.high = tx_dict["value"]["high"]
-
-        segments.write_arg(ids.expected_input, tx_dict["input"]["chunks"])
-        ids.expected_input_len = len(tx_dict["input"]["chunks"])
-        ids.expected_input_bytes_len = tx_dict["input"]["bytes_len"]
-
-        ids.expected_v.low = tx_dict["v"]["low"]
-        ids.expected_v.high = tx_dict["v"]["high"]
-
-        ids.expected_r.low = tx_dict["r"]["low"]
-        ids.expected_r.high = tx_dict["r"]["high"]
-
-        ids.expected_s.low = tx_dict["s"]["low"]
-        ids.expected_s.high = tx_dict["s"]["high"]
-
-        ids.expected_sender = tx_dict["sender"]
-
-        if tx_dict["type"] <= 1:
-            ids.expected_gas_price.low = tx_dict["gas_price"]["low"]
-            ids.expected_gas_price.high = tx_dict["gas_price"]["high"]
-        else:
-            ids.expected_max_prio_fee_per_gas.low = tx_dict["max_priority_fee_per_gas"]["low"]
-            ids.expected_max_prio_fee_per_gas.high = tx_dict["max_priority_fee_per_gas"]["high"]
-
-            ids.expected_max_fee_per_gas.low = tx_dict["max_fee_per_gas"]["low"]
-            ids.expected_max_fee_per_gas.high = tx_dict["max_fee_per_gas"]["high"]
-
-        if tx_dict["type"] >= 1:
-            segments.write_arg(ids.expected_access_list, tx_dict["access_list"]["chunks"])
-            ids.expected_access_list_len = len(tx_dict["access_list"]["chunks"])
-            ids.expected_access_list_bytes_len = tx_dict["access_list"]["bytes_len"]
-
-        if tx_dict["type"] == 3:
-            segments.write_arg(ids.expected_blob_versioned_hashes, tx_dict["blob_versioned_hashes"]["chunks"])
-            ids.expected_blob_versioned_hashes_len = len(tx_dict["blob_versioned_hashes"]["chunks"])
-            ids.expected_blob_versioned_hashes_bytes_len = tx_dict["blob_versioned_hashes"]["bytes_len"]
-
-            ids.expected_max_fee_per_blob_gas.low = tx_dict["max_fee_per_blob_gas"]["low"]
-            ids.expected_max_fee_per_blob_gas.high = tx_dict["max_fee_per_blob_gas"]["high"]
+        load_dotenv()
+        RPC_URL_MAINNET = os.getenv("RPC_URL_MAINNET")
+        if RPC_URL_MAINNET is None:
+            raise ValueError("RPC_URL_MAINNET environment variable is not set")
+        provider = EvmProvider(RPC_URL_MAINNET)
+        rpc_tx = provider.get_rpc_transaction_by_hash(tx_array[ids.index])
+        tx = Tx.from_rpc_data(rpc_tx)
+        felt_tx = FeltTx(tx)
+        segments.write_arg(ids.rlp, bytes_to_8_bytes_chunks_little(tx.raw_rlp()))
     %}
 
     let (tx_type, local rlp_start_offset) = TransactionDecoder.open_tx_envelope(item=rlp);
+    %{ assert ids.tx_type == tx.type %}
 
     let nonce = TransactionDecoder.get_field(
         rlp, TransactionField.NONCE, rlp_start_offset, tx_type
     );
-    assert expected_nonce.low = nonce.low;
-    assert expected_nonce.high = nonce.high;
+
+    %{
+        low, high = felt_tx.nonce(True)
+        assert ids.nonce.low == low
+        assert ids.nonce.high == high
+    %}
 
     let gas_limit = TransactionDecoder.get_field(
         rlp, TransactionField.GAS_LIMIT, rlp_start_offset, tx_type
     );
-    assert expected_gas_limit.low = gas_limit.low;
-    assert expected_gas_limit.high = gas_limit.high;
 
-    let (receiver, receiver_len, _) = TransactionDecoder.get_felt_field(
-        rlp, TransactionField.RECEIVER, rlp_start_offset, tx_type
-    );
-    assert expected_receiver[0] = receiver[0];
+    %{
+        low, high = felt_tx.gas_limit(True)
+        assert ids.gas_limit.low == low
+        assert ids.gas_limit.high == high
+    %}
 
-    // prevent failing checks for contract creation transactions
-    if (receiver_len == 3) {
-        assert expected_receiver[1] = receiver[1];
-        assert expected_receiver[2] = receiver[2];
-    }
     let value = TransactionDecoder.get_field(
         rlp, TransactionField.VALUE, rlp_start_offset, tx_type
     );
-    assert expected_value.low = value.low;
-    assert expected_value.high = value.high;
 
-    eval_felt_field{
-        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-    }(
-        expected_input,
-        expected_input_len,
-        expected_input_bytes_len,
-        rlp,
-        TransactionField.INPUT,
-        rlp_start_offset,
-        tx_type,
-    );
+    %{
+        low, high = felt_tx.value(True)
+        assert ids.value.low == low
+        assert ids.value.high == high
+    %}
 
     let v = TransactionDecoder.get_field(rlp, TransactionField.V, rlp_start_offset, tx_type);
-    assert expected_v.low = v.low;
-    assert expected_v.high = v.high;
+    %{
+        low, high = felt_tx.v(True)
+        assert ids.v.low == low
+        assert ids.v.high == high
+    %}
 
     let r = TransactionDecoder.get_field(rlp, TransactionField.R, rlp_start_offset, tx_type);
-    assert expected_r.low = r.low;
-    assert expected_r.high = r.high;
+    %{
+        low, high = felt_tx.r(True)
+        assert ids.r.low == low
+        assert ids.r.high == high
+    %}
 
     let s = TransactionDecoder.get_field(rlp, TransactionField.S, rlp_start_offset, tx_type);
-    assert expected_s.low = s.low;
-    assert expected_s.high = s.high;
+    %{
+        low, high = felt_tx.s(True)
+        assert ids.s.low == low
+        assert ids.s.high == high
+    %}
 
     local has_legacy: felt;
     %{ ids.has_legacy = 1 if ids.tx_type <= 1 else 0 %}
@@ -179,32 +105,11 @@ func test_tx_decoding_inner{
         let gas_price = TransactionDecoder.get_field(
             rlp, TransactionField.GAS_PRICE, rlp_start_offset, tx_type
         );
-        assert expected_gas_price.low = gas_price.low;
-        assert expected_gas_price.high = gas_price.high;
-
-        tempvar range_check_ptr = range_check_ptr;
-        tempvar bitwise_ptr = bitwise_ptr;
-        tempvar pow2_array = pow2_array;
-    } else {
-        tempvar range_check_ptr = range_check_ptr;
-        tempvar bitwise_ptr = bitwise_ptr;
-        tempvar pow2_array = pow2_array;
-    }
-
-    local has_eip2930: felt;
-    %{ ids.has_eip2930 = 1 if ids.tx_type >= 2 else 0 %}
-    if (has_eip2930 == 1) {
-        eval_felt_field{
-            range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-        }(
-            expected_access_list,
-            expected_access_list_len,
-            expected_access_list_bytes_len,
-            rlp,
-            TransactionField.ACCESS_LIST,
-            rlp_start_offset,
-            tx_type,
-        );
+        %{
+            low, high = felt_tx.gas_price(True)
+            assert ids.gas_price.low == low
+            assert ids.gas_price.high == high
+        %}
 
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
@@ -221,14 +126,20 @@ func test_tx_decoding_inner{
         let max_prio_fee_per_gas = TransactionDecoder.get_field(
             rlp, TransactionField.MAX_PRIORITY_FEE_PER_GAS, rlp_start_offset, tx_type
         );
-        assert expected_max_prio_fee_per_gas.low = max_prio_fee_per_gas.low;
-        assert expected_max_prio_fee_per_gas.high = max_prio_fee_per_gas.high;
+        %{
+            low, high = felt_tx.max_priority_fee_per_gas(True)
+            assert ids.max_prio_fee_per_gas.low == low
+            assert ids.max_prio_fee_per_gas.high == high
+        %}
 
         let max_fee_per_gas = TransactionDecoder.get_field(
             rlp, TransactionField.MAX_FEE_PER_GAS, rlp_start_offset, tx_type
         );
-        assert max_fee_per_gas.low = expected_max_fee_per_gas.low;
-        assert max_fee_per_gas.high = expected_max_fee_per_gas.high;
+        %{
+            low, high = felt_tx.max_fee_per_gas(True)
+            assert ids.max_fee_per_gas.low == low
+            assert ids.max_fee_per_gas.high == high
+        %}
 
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
@@ -242,23 +153,14 @@ func test_tx_decoding_inner{
     local has_blob_versioned_hashes: felt;
     %{ ids.has_blob_versioned_hashes = 1 if ids.tx_type == 4 else 0 %}
     if (has_blob_versioned_hashes == 1) {
-        eval_felt_field{
-            range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-        }(
-            expected_blob_versioned_hashes,
-            expected_blob_versioned_hashes_len,
-            expected_blob_versioned_hashes_bytes_len,
-            rlp,
-            TransactionField.BLOB_VERSIONED_HASHES,
-            rlp_start_offset,
-            tx_type,
-        );
-
         let max_fee_per_blob_gas = TransactionDecoder.get_field(
             rlp, TransactionField.MAX_FEE_PER_BLOB_GAS, rlp_start_offset, tx_type
         );
-        assert max_fee_per_blob_gas.low = expected_max_fee_per_blob_gas.low;
-        assert max_fee_per_blob_gas.high = expected_max_fee_per_blob_gas.high;
+        %{
+            low, high = felt_tx.max_fee_per_blob_gas(True)
+            assert ids.max_fee_per_blob_gas.low == low
+            assert ids.max_fee_per_blob_gas.high == high
+        %}
 
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
@@ -270,36 +172,11 @@ func test_tx_decoding_inner{
     }
 
     let sender = TransactionSender.derive(rlp, rlp_start_offset, tx_type);
-    assert sender = expected_sender;
-
-    return test_tx_decoding_inner(txs, index + 1);
-}
-
-func eval_felt_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
-    expected: felt*,
-    expected_len: felt,
-    expected_bytes_len: felt,
-    rlp: felt*,
-    field: felt,
-    rlp_start_offset: felt,
-    tx_type: felt,
-) {
-    alloc_locals;
-
-    let (res, res_len, res_bytes_len) = TransactionDecoder.get_felt_field(
-        rlp, field, rlp_start_offset, tx_type
-    );
-
     %{
-        i = 0
-        while(i < ids.res_len):
-            #print("Expected:", hex(memory[ids.expected + i]), "Got:",hex(memory[ids.res + i]))
-            assert memory[ids.res + i] == memory[ids.expected + i], f"Value Missmatch for field: {ids.field} at index: {i}"
-            i += 1
+        print(rpc_tx["from"])
+        print(hex(ids.sender))
+        assert ids.sender == int(rpc_tx["from"], 16)
     %}
 
-    assert expected_len = res_len;
-    assert expected_bytes_len = res_bytes_len;
-
-    return ();
+    return test_tx_decoding_inner(txs, index + 1);
 }

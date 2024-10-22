@@ -50,6 +50,18 @@ class EvmProvider(EvmProviderBase):
         )
 
         return result["result"]
+    
+    def get_rpc_block_header_by_hash(self, block_hash: str) -> BlockData:
+        result = self.rpc_request(
+            {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "eth_getBlockByHash",
+                "params": [block_hash, False],
+            },
+        )
+
+        return result["result"]
 
     def get_transaction_by_hash(self, transaction_hash: str) -> Tx:
         result = self.rpc_request(

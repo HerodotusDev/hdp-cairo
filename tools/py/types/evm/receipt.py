@@ -7,6 +7,7 @@ from rlp.sedes import (
     CountableList,
     boolean,
 )
+from tools.py.types.evm.base_felt import BaseFelt
 from web3 import Web3
 from typing import List, Tuple, Union
 
@@ -38,27 +39,10 @@ class Receipt(Serializable):
             bloom = bloom.rjust(256, b'\x00')
         super().__init__(status, cumulative_gas_used, bloom, logs)
         self.receipt_type = receipt_type
-        print(f"receipt_type: {self.receipt_type}")
 
     def hash(self) -> HexBytes:
         return Web3.keccak(self.raw_rlp())
     
-    # @property
-    # def status(self) -> int:
-    #     return int(self.status)
-    
-    # @property
-    # def cumulative_gas_used(self) -> int:
-    #     return int(self.cumulative_gas_used)
-    
-    # @property
-    # def bloom(self) -> bytes:
-    #     return self.bloom
-    
-    # @property
-    # def logs(self) -> List[LogEntry]:
-    #     return self.logs
-
     @property
     def type(self) -> int:
         return self.receipt_type
@@ -120,38 +104,31 @@ class Receipt(Serializable):
             decoded = decode(data, cls)
         return cls(*decoded, receipt_type=receipt_type)
 
-class FeltReceipt:
+class FeltReceipt(BaseFelt):
     def __init__(self, receipt: Receipt):
         self.receipt = receipt
 
-    def _split_to_felt(self, value: Union[int, bytes, HexBytes]) -> Tuple[int, int]:
-        if isinstance(value, (bytes, HexBytes)):
-            value = int.from_bytes(value, 'big')
-        return (value & ((1 << 128) - 1), value >> 128)
+    def status(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(int(self.receipt.status), as_le)
 
-    @property
-    def status(self) -> Tuple[int, int]:
-        return self._split_to_felt(int(self.receipt.status))
-
-    @property
-    def cumulative_gas_used(self) -> Tuple[int, int]:
-        return self._split_to_felt(self.receipt.cumulative_gas_used)
+    def cumulative_gas_used(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.receipt.cumulative_gas_used, as_le)
 
     # @property
     # def bloom(self) -> Tuple[int, int]:
-    #     return self._split_to_felt(int.from_bytes(self.receipt.bloom, 'big'))
+    #     return self._split_word_to_felt(int.from_bytes(self.receipt.bloom, 'big'))
 
     # @property
     # def logs(self) -> Tuple[int, int]:
     #     # Since logs is a list, we'll return the length as a tuple
-    #     return self._split_to_felt(len(self.receipt.logs))
+    #     return self._split_word_to_felt(len(self.receipt.logs))
 
     # @property
     # def receipt_type(self) -> Tuple[int, int]:
-    #     return self._split_to_felt(self.receipt.receipt_type)
+    #     return self._split_word_to_felt(self.receipt.receipt_type)
 
     def hash(self) -> Tuple[int, int]:
-        return self._split_to_felt(int.from_bytes(self.receipt.hash(), 'big'))
+        return self._split_word_to_felt(int.from_bytes(self.receipt.hash(), 'big'))
 
     @classmethod
     def from_rlp_chunks(cls, rlp_chunks: List[int], rlp_len: int) -> 'FeltReceipt':
