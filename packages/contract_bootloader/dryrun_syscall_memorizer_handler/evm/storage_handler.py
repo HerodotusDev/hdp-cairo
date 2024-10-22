@@ -6,6 +6,7 @@ from contract_bootloader.memorizer.evm.storage import (
 )
 from tools.py.providers.evm.provider import EvmKeyProvider
 
+
 class DryRunEvmStorageHandler(AbstractEvmStorageBase):
     def __init__(self, memorizer: Memorizer, provider: EvmKeyProvider):
         super().__init__(memorizer=memorizer)

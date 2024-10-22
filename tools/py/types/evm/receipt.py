@@ -21,14 +21,16 @@ hash32 = Binary.fixed_length(32)
 class LogEntry(Serializable):
     fields = [("address", address), ("topics", CountableList(hash32)), ("data", binary)]
 
+
 logs_type = CountableList(LogEntry)
+
 
 class Receipt(Serializable):
     fields = (
         ("status", boolean),
         ("cumulative_gas_used", big_endian_int),
         ("bloom", Binary.fixed_length(256)),  # Change this line
-        ("logs", logs_type)
+        ("logs", logs_type),
     )
 
     def __init__(self, status, cumulative_gas_used, bloom, logs, receipt_type=0):
@@ -36,17 +38,16 @@ class Receipt(Serializable):
         if isinstance(bloom, int):
             bloom = bloom.to_bytes(256, "big")
         elif isinstance(bloom, bytes) and len(bloom) != 256:
-            bloom = bloom.rjust(256, b'\x00')
+            bloom = bloom.rjust(256, b"\x00")
         super().__init__(status, cumulative_gas_used, bloom, logs)
         self.receipt_type = receipt_type
 
     def hash(self) -> HexBytes:
         return Web3.keccak(self.raw_rlp())
-    
+
     @property
     def type(self) -> int:
         return self.receipt_type
-    
 
     def raw_rlp(self) -> bytes:
         # Remove the bloom conversion here, as it's now always bytes
@@ -68,9 +69,9 @@ class Receipt(Serializable):
                     self.logs,
                 ]
             )
-        
+
     @classmethod
-    def from_rpc_data(cls, receipt: dict) -> 'Receipt':
+    def from_rpc_data(cls, receipt: dict) -> "Receipt":
         logs_list = [
             LogEntry(
                 address=HexBytes(entry["address"]),
@@ -84,25 +85,26 @@ class Receipt(Serializable):
         status = int(receipt.get("status", "0x0"), 16)
 
         # Ensure logsBloom is always a 256-byte value
-        logs_bloom = HexBytes(receipt["logsBloom"]).rjust(256, b'\x00')
+        logs_bloom = HexBytes(receipt["logsBloom"]).rjust(256, b"\x00")
 
         return cls(
             status,
             int(receipt["cumulativeGasUsed"], 16),
             logs_bloom,
             logs_list,
-            receipt_type=tx_type
+            receipt_type=tx_type,
         )
-    
+
     @classmethod
-    def from_rlp(cls, data: bytes) -> 'Receipt':
-        if data and data[0] <= 0x7f:
+    def from_rlp(cls, data: bytes) -> "Receipt":
+        if data and data[0] <= 0x7F:
             receipt_type = data[0]
             decoded = decode(data[1:], cls)
         else:
             receipt_type = 0
             decoded = decode(data, cls)
         return cls(*decoded, receipt_type=receipt_type)
+
 
 class FeltReceipt(BaseFelt):
     def __init__(self, receipt: Receipt):
@@ -128,14 +130,13 @@ class FeltReceipt(BaseFelt):
     #     return self._split_word_to_felt(self.receipt.receipt_type)
 
     def hash(self) -> Tuple[int, int]:
-        return self._split_word_to_felt(int.from_bytes(self.receipt.hash(), 'big'))
+        return self._split_word_to_felt(int.from_bytes(self.receipt.hash(), "big"))
 
     @classmethod
-    def from_rlp_chunks(cls, rlp_chunks: List[int], rlp_len: int) -> 'FeltReceipt':
+    def from_rlp_chunks(cls, rlp_chunks: List[int], rlp_len: int) -> "FeltReceipt":
         rlp = little_8_bytes_chunks_to_bytes(rlp_chunks, rlp_len)
         return cls(Receipt.from_rlp(rlp))
-    
-    @classmethod
-    def from_rpc_data(cls, receipt: dict) -> 'FeltReceipt':
-        return cls(Receipt.from_rpc_data(receipt))
 
+    @classmethod
+    def from_rpc_data(cls, receipt: dict) -> "FeltReceipt":
+        return cls(Receipt.from_rpc_data(receipt))

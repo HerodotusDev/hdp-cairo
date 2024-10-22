@@ -7,6 +7,7 @@ from marshmallow_dataclass import dataclass
 from starkware.cairo.lang.vm.crypto import poseidon_hash_many
 from starkware.cairo.lang.vm.relocatable import RelocatableValue
 
+
 class EvmStateFunctionId(Enum):
     GET_NONCE = 0
     GET_BALANCE = 1
@@ -54,6 +55,7 @@ class MemorizerKey:
     @classmethod
     def size(cls) -> int:
         return 3
+
 
 class AbstractEvmAccountBase(ABC):
     def __init__(self, memorizer: EvmMemorizer):

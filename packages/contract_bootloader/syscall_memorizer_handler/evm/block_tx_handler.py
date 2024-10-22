@@ -8,6 +8,7 @@ from starkware.cairo.lang.vm.memory_segments import MemorySegmentManager
 from tools.py.types.evm.tx import FeltTx
 from tools.py.rlp import get_rlp_len
 
+
 class EvmBlockTxHandler(AbstractEvmBlockTxBase):
     def __init__(self, segments: MemorySegmentManager, memorizer: Memorizer):
         super().__init__(memorizer=memorizer)
@@ -50,7 +51,7 @@ class EvmBlockTxHandler(AbstractEvmBlockTxBase):
     def get_v(self, key: MemorizerKey) -> Tuple[int, int]:
         rlp_len, rlp = self.extract_rlp(key=key)
         return FeltTx.from_rlp_chunks(rlp, rlp_len).v
-    
+
     def get_r(self, key: MemorizerKey) -> Tuple[int, int]:
         rlp_len, rlp = self.extract_rlp(key=key)
         return FeltTx.from_rlp_chunks(rlp, rlp_len).r
@@ -58,14 +59,14 @@ class EvmBlockTxHandler(AbstractEvmBlockTxBase):
     def get_s(self, key: MemorizerKey) -> Tuple[int, int]:
         rlp_len, rlp = self.extract_rlp(key=key)
         return FeltTx.from_rlp_chunks(rlp, rlp_len).s
-    
+
     def get_chain_id(self, key: MemorizerKey) -> Tuple[int, int]:
         rlp_len, rlp = self.extract_rlp(key=key)
         return FeltTx.from_rlp_chunks(rlp, rlp_len).chain_id
-    
+
     def get_access_list(self, key: MemorizerKey) -> Tuple[int, int]:
         pass
-        
+
     def get_max_priority_fee_per_gas(self, key: MemorizerKey) -> Tuple[int, int]:
         rlp_len, rlp = self.extract_rlp(key=key)
         return FeltTx.from_rlp_chunks(rlp, rlp_len).max_priority_fee_per_gas
@@ -77,6 +78,6 @@ class EvmBlockTxHandler(AbstractEvmBlockTxBase):
     def get_max_fee_per_blob_gas(self, key: MemorizerKey) -> Tuple[int, int]:
         rlp_len, rlp = self.extract_rlp(key=key)
         return FeltTx.from_rlp_chunks(rlp, rlp_len).max_fee_per_blob_gas
-    
+
     def get_blob_versioned_hashes(self, key: MemorizerKey) -> Tuple[int, int]:
         pass

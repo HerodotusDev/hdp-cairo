@@ -92,9 +92,7 @@ pub impl HeaderImpl of HeaderTrait {
         let value = call_contract_syscall(
             HEADER_MEMORIZER.try_into().unwrap(),
             selector,
-            array![
-                *self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number
-            ]
+            array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number]
                 .span()
         )
             .unwrap_syscall();

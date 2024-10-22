@@ -17,6 +17,7 @@ hash32 = Binary.fixed_length(32)
 int256 = BigEndianInt(256)
 trie_root = Binary.fixed_length(32, allow_empty=True)
 
+
 class LegacyBlockHeader(Serializable):
     fields = (
         ("parentHash", hash32),
@@ -45,11 +46,11 @@ class LegacyBlockHeader(Serializable):
         return encode(self)
 
     @classmethod
-    def from_rlp(cls, data: bytes) -> 'LegacyBlockHeader':
+    def from_rlp(cls, data: bytes) -> "LegacyBlockHeader":
         return decode(data, cls)
 
     @classmethod
-    def from_rpc_data(cls, block: BlockData) -> 'LegacyBlockHeader':
+    def from_rpc_data(cls, block: BlockData) -> "LegacyBlockHeader":
         return cls(
             HexBytes(block["parentHash"]),
             HexBytes(block["sha3Uncles"]),
@@ -67,7 +68,6 @@ class LegacyBlockHeader(Serializable):
             HexBytes(block["mixHash"]),
             HexBytes(block["nonce"]),
         )
-
 
 
 class BlockHeaderEIP1559(Serializable):
@@ -97,11 +97,11 @@ class BlockHeaderEIP1559(Serializable):
         return encode(self)
 
     @classmethod
-    def from_rlp(cls, data: bytes) -> 'BlockHeaderEIP1559':
+    def from_rlp(cls, data: bytes) -> "BlockHeaderEIP1559":
         return decode(data, cls)
 
     @classmethod
-    def from_rpc_data(cls, block: BlockData) -> 'BlockHeaderEIP1559':
+    def from_rpc_data(cls, block: BlockData) -> "BlockHeaderEIP1559":
         return cls(
             HexBytes(block["parentHash"]),
             HexBytes(block["sha3Uncles"]),
@@ -150,11 +150,11 @@ class BlockHeaderShangai(Serializable):
         return encode(self)
 
     @classmethod
-    def from_rlp(cls, data: bytes) -> 'BlockHeaderShangai':
+    def from_rlp(cls, data: bytes) -> "BlockHeaderShangai":
         return decode(data, cls)
 
     @classmethod
-    def from_rpc_data(cls, block: BlockData) -> 'BlockHeaderShangai':
+    def from_rpc_data(cls, block: BlockData) -> "BlockHeaderShangai":
         return cls(
             HexBytes(block["parentHash"]),
             HexBytes(block["sha3Uncles"]),
@@ -174,6 +174,7 @@ class BlockHeaderShangai(Serializable):
             int(block["baseFeePerGas"], 16),
             HexBytes(block["withdrawalsRoot"]),
         )
+
 
 class BlockHeaderDencun(Serializable):
     fields = (
@@ -206,11 +207,11 @@ class BlockHeaderDencun(Serializable):
         return encode(self)
 
     @classmethod
-    def from_rlp(cls, data: bytes) -> 'BlockHeaderDencun':
+    def from_rlp(cls, data: bytes) -> "BlockHeaderDencun":
         return decode(data, cls)
 
     @classmethod
-    def from_rpc_data(cls, block: BlockData) -> 'BlockHeaderDencun':
+    def from_rpc_data(cls, block: BlockData) -> "BlockHeaderDencun":
         return cls(
             HexBytes(block["parentHash"]),
             HexBytes(block["sha3Uncles"]),
@@ -237,7 +238,9 @@ class BlockHeaderDencun(Serializable):
 
 class BlockHeader:
     def __init__(self):
-        self.header: Union[LegacyBlockHeader, BlockHeaderEIP1559, BlockHeaderShangai, BlockHeaderDencun] = None
+        self.header: Union[
+            LegacyBlockHeader, BlockHeaderEIP1559, BlockHeaderShangai, BlockHeaderDencun
+        ] = None
 
     @property
     def hash(self) -> HexBytes:
@@ -305,50 +308,62 @@ class BlockHeader:
 
     @property
     def base_fee_per_gas(self) -> int:
-        if isinstance(self.header, (BlockHeaderEIP1559, BlockHeaderShangai, BlockHeaderDencun)):
+        if isinstance(
+            self.header, (BlockHeaderEIP1559, BlockHeaderShangai, BlockHeaderDencun)
+        ):
             return self.header.baseFeePerGas
-        raise AttributeError("base_fee_per_gas is not available for this block header type")
+        raise AttributeError(
+            "base_fee_per_gas is not available for this block header type"
+        )
 
     @property
     def withdrawals_root(self) -> HexBytes:
         if isinstance(self.header, (BlockHeaderShangai, BlockHeaderDencun)):
             return HexBytes(self.header.withdrawalsRoot)
-        raise AttributeError("withdrawals_root is not available for this block header type")
+        raise AttributeError(
+            "withdrawals_root is not available for this block header type"
+        )
 
     @property
     def blob_gas_used(self) -> int:
         if isinstance(self.header, BlockHeaderDencun):
             return self.header.blobGasUsed
-        raise AttributeError("blob_gas_used is not available for this block header type")
+        raise AttributeError(
+            "blob_gas_used is not available for this block header type"
+        )
 
     @property
     def excess_blob_gas(self) -> int:
         if isinstance(self.header, BlockHeaderDencun):
             return self.header.excessBlobGas
-        raise AttributeError("excess_blob_gas is not available for this block header type")
+        raise AttributeError(
+            "excess_blob_gas is not available for this block header type"
+        )
 
     @property
     def parent_beacon_block_root(self) -> HexBytes:
         if isinstance(self.header, BlockHeaderDencun):
             return HexBytes(self.header.parentBeaconBlockRoot)
-        raise AttributeError("parent_beacon_block_root is not available for this block header type")
-    
+        raise AttributeError(
+            "parent_beacon_block_root is not available for this block header type"
+        )
+
     @property
     def type(self) -> int:
         if isinstance(self.header, LegacyBlockHeader):
             return 0
         elif isinstance(self.header, BlockHeaderEIP1559):
             return 1
-        elif isinstance(self.header, BlockHeaderShangai):   
+        elif isinstance(self.header, BlockHeaderShangai):
             return 2
         elif isinstance(self.header, BlockHeaderDencun):
             return 3
-        
+
     def raw_rlp(self) -> bytes:
         return self.header.raw_rlp()
 
     @classmethod
-    def from_rpc_data(cls, block: BlockData) -> 'BlockHeader':
+    def from_rpc_data(cls, block: BlockData) -> "BlockHeader":
         instance = cls()
         if "excessBlobGas" in block:
             instance.header = BlockHeaderDencun.from_rpc_data(block)
@@ -361,7 +376,7 @@ class BlockHeader:
         return instance
 
     @classmethod
-    def from_rlp(cls, data: bytes) -> 'BlockHeader':
+    def from_rlp(cls, data: bytes) -> "BlockHeader":
         decoded = decode(data)
         num_fields = len(decoded)
         instance = cls()
@@ -377,6 +392,7 @@ class BlockHeader:
         else:
             raise ValueError(f"Unknown block header type with {num_fields} fields")
         return instance
+
 
 # Automatically splits the fields into two 128 bit felt
 class FeltBlockHeader(BaseFelt):
@@ -447,15 +463,12 @@ class FeltBlockHeader(BaseFelt):
 
     def parent_beacon_block_root(self, as_le: bool = False) -> Tuple[int, int]:
         return self._split_word_to_felt(self.header.parent_beacon_block_root, as_le)
-    
+
     @classmethod
-    def from_rlp_chunks(cls, rlp_chunks: List[int], rlp_len: int) -> 'FeltBlockHeader':
+    def from_rlp_chunks(cls, rlp_chunks: List[int], rlp_len: int) -> "FeltBlockHeader":
         rlp = little_8_bytes_chunks_to_bytes(rlp_chunks, rlp_len)
         return cls(BlockHeader.from_rlp(rlp))
-    
+
     @classmethod
-    def from_rpc_data(cls, block: BlockData) -> 'FeltBlockHeader':
+    def from_rpc_data(cls, block: BlockData) -> "FeltBlockHeader":
         return cls(BlockHeader.from_rpc_data(block))
-
-
-

@@ -31,6 +31,7 @@ from contract_bootloader.syscall_memorizer_handler.evm.storage_handler import (
     EvmStorageHandler,
 )
 
+
 class SyscallHandler(SyscallHandlerBase):
     """
     A handler for system calls; used by the BusinessLogic entry point execution.

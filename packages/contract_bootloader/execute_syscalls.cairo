@@ -98,25 +98,24 @@ func execute_call_contract{
     let layout = chain_id_to_layout(call_contract_request.calldata_start[2]);
     let output_ptr = call_contract_response.retdata_start;
 
-    if(layout == Layout.EVM) {
+    if (layout == Layout.EVM) {
         with output_ptr {
             let output_len = EvmStateAccess.read_and_decode(
                 params=call_contract_request.calldata_start + 2,
                 state_access_type=state_access_type,
                 field=field,
-                decoder_target=EvmDecoderTarget.UINT256, // We could add this as a param, giving us a lot of flexibility
-                as_be=1, // same here
+                decoder_target=EvmDecoderTarget.UINT256,
+                as_be=1,
             );
 
             return ();
-        
         }
     }
 
     if (layout == Layout.STARKNET) {
         %{ print("Caught Starknet syscall") %}
         assert 1 = 0;
-        
+
         return ();
     }
 

@@ -65,7 +65,6 @@ class DryRunEvmBlockTxHandler(AbstractEvmBlockTxBase):
     def get_max_fee_per_blob_gas(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
         return self.provider.get_block_tx(key=key).max_fee_per_blob_gas
-    
 
     def fetch_keys_dict(self) -> set:
         def create_dict(key: MemorizerKey):

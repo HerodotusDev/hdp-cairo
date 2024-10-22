@@ -34,12 +34,12 @@ setup(
     install_requires=requirements,
     package_dir={
         "tools": "tools",
-        "contract_bootloader": "packages/contract_bootloader"
+        "contract_bootloader": "packages/contract_bootloader",
     },
     zip_safe=False,
     package_data={
         "tools": ["*/*.py"],
-        "contract_bootloader": ["*.cairo", "*/*.cairo", "*/*.py", "**/*.py"]
+        "contract_bootloader": ["*.cairo", "*/*.cairo", "*/*.py", "**/*.py"],
     },
     cmdclass={"install": PostInstallCommand},
 )

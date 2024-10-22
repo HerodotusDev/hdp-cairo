@@ -8,6 +8,7 @@ from starkware.cairo.lang.vm.memory_segments import MemorySegmentManager
 from tools.py.rlp import get_rlp_len
 from tools.py.types.evm.storage import FeltStorage
 
+
 class EvmStorageHandler(AbstractEvmStorageBase):
     def __init__(self, segments: MemorySegmentManager, memorizer: Memorizer):
         super().__init__(memorizer=memorizer)

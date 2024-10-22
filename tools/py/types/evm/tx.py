@@ -13,6 +13,7 @@ hash32 = Binary.fixed_length(32)
 int256 = BigEndianInt(256)
 trie_root = Binary.fixed_length(32, allow_empty=True)
 
+
 class LegacyTx(Serializable):
     fields = (
         ("nonce", big_endian_int),
@@ -43,13 +44,13 @@ class LegacyTx(Serializable):
                 self.s,
             ]
         )
-    
+
     @classmethod
-    def from_rlp(cls, data: bytes) -> 'LegacyTx':
+    def from_rlp(cls, data: bytes) -> "LegacyTx":
         return decode(data, cls)
-    
+
     @classmethod
-    def from_rpc_data(cls, tx: TxParams) -> 'LegacyTx':
+    def from_rpc_data(cls, tx: TxParams) -> "LegacyTx":
         receiver = "" if tx["to"] is None else tx["to"]
         return cls(
             int(tx["nonce"], 16),
@@ -60,8 +61,9 @@ class LegacyTx(Serializable):
             HexBytes(tx["input"]),
             int(tx["v"], 16),
             HexBytes(tx["r"]),
-            HexBytes(tx["s"])
+            HexBytes(tx["s"]),
         )
+
 
 class Eip155(Serializable):
     fields = (
@@ -78,7 +80,7 @@ class Eip155(Serializable):
 
     def hash(self) -> HexBytes:
         return Web3.keccak(self.tx_rlp())
-    
+
     def raw_rlp(self) -> bytes:
         return encode(
             [
@@ -95,11 +97,11 @@ class Eip155(Serializable):
         )
 
     @classmethod
-    def from_rlp(cls, data: bytes) -> 'Eip155':
+    def from_rlp(cls, data: bytes) -> "Eip155":
         return decode(data, cls)
 
     @classmethod
-    def from_rpc_data(cls, tx: TxParams) -> 'Eip155':
+    def from_rpc_data(cls, tx: TxParams) -> "Eip155":
         receiver = "" if tx["to"] is None else tx["to"]
         return cls(
             int(tx["nonce"], 16),
@@ -113,11 +115,15 @@ class Eip155(Serializable):
             HexBytes(tx["s"]),
         )
 
+
 # Define a Serializable class for an Access List entry
 class AccessListEntry(Serializable):
     fields = [("address", address), ("storage_keys", CountableList(hash32))]
+
+
 # Define the access list using CountableList of AccessListEntry
 access_list_type = CountableList(AccessListEntry)
+
 
 class Eip2930(Serializable):
     fields = (
@@ -153,13 +159,13 @@ class Eip2930(Serializable):
                 self.s,
             ]
         )
-    
-    @classmethod # The RLP passed here should be the unpacked TX envelope
-    def from_rlp(cls, data: bytes) -> 'Eip2930':
+
+    @classmethod  # The RLP passed here should be the unpacked TX envelope
+    def from_rlp(cls, data: bytes) -> "Eip2930":
         return decode(data, cls)
-    
+
     @classmethod
-    def from_rpc_data(cls, tx: TxParams) -> 'Eip2930':
+    def from_rpc_data(cls, tx: TxParams) -> "Eip2930":
         receiver = "" if tx["to"] is None else tx["to"]
         access_list = [
             AccessListEntry(
@@ -222,11 +228,11 @@ class Eip1559(Serializable):
         )
 
     @classmethod
-    def from_rlp(cls, data: bytes) -> 'Eip1559':
+    def from_rlp(cls, data: bytes) -> "Eip1559":
         return decode(data, cls)
-    
+
     @classmethod
-    def from_rpc_data(cls, tx: TxParams) -> 'Eip1559':
+    def from_rpc_data(cls, tx: TxParams) -> "Eip1559":
         receiver = "" if tx["to"] is None else tx["to"]
         access_list = [
             AccessListEntry(
@@ -250,6 +256,7 @@ class Eip1559(Serializable):
             HexBytes(tx["r"]),
             HexBytes(tx["s"]),
         )
+
 
 class Eip4844(Serializable):
     fields = (
@@ -291,13 +298,13 @@ class Eip4844(Serializable):
                 self.s,
             ]
         )
-    
+
     @classmethod
-    def from_rlp(cls, data: bytes) -> 'Eip4844':
+    def from_rlp(cls, data: bytes) -> "Eip4844":
         return decode(data, cls)
-    
+
     @classmethod
-    def from_rpc_data(cls, tx: TxParams) -> 'Eip4844':
+    def from_rpc_data(cls, tx: TxParams) -> "Eip4844":
         receiver = "" if tx["to"] is None else tx["to"]
         access_list = [
             AccessListEntry(
@@ -322,7 +329,8 @@ class Eip4844(Serializable):
             HexBytes(tx["r"]),
             HexBytes(tx["s"]),
         )
-    
+
+
 class Tx:
     def __init__(self):
         self.tx: Union[LegacyTx, Eip155, Eip2930, Eip1559, Eip4844] = None
@@ -339,7 +347,7 @@ class Tx:
             return 2
         elif isinstance(self.tx, Eip4844):
             return 3
-        
+
     @property
     def hash(self) -> HexBytes:
         return self.tx.hash()
@@ -398,31 +406,39 @@ class Tx:
     def max_priority_fee_per_gas(self) -> int:
         if isinstance(self.tx, (Eip1559, Eip4844)):
             return self.tx.max_priority_fee_per_gas
-        raise AttributeError("max_priority_fee_per_gas is not available for this transaction type")
+        raise AttributeError(
+            "max_priority_fee_per_gas is not available for this transaction type"
+        )
 
     @property
     def max_fee_per_gas(self) -> int:
         if isinstance(self.tx, (Eip1559, Eip4844)):
             return self.tx.max_fee_per_gas
-        raise AttributeError("max_fee_per_gas is not available for this transaction type")
+        raise AttributeError(
+            "max_fee_per_gas is not available for this transaction type"
+        )
 
     @property
     def max_fee_per_blob_gas(self) -> int:
         if isinstance(self.tx, Eip4844):
             return self.tx.max_fee_per_blob_gas
-        raise AttributeError("max_fee_per_blob_gas is not available for this transaction type")
+        raise AttributeError(
+            "max_fee_per_blob_gas is not available for this transaction type"
+        )
 
     @property
     def blob_versioned_hashes(self) -> List[HexBytes]:
         if isinstance(self.tx, Eip4844):
             return self.tx.blob_versioned_hashes
-        raise AttributeError("blob_versioned_hashes is not available for this transaction type")
+        raise AttributeError(
+            "blob_versioned_hashes is not available for this transaction type"
+        )
 
     def raw_rlp(self) -> bytes:
         return self.tx.raw_rlp()
 
     @classmethod
-    def from_rpc_data(cls, tx: TxParams) -> 'Tx':
+    def from_rpc_data(cls, tx: TxParams) -> "Tx":
         instance = cls()
         tx_type = "0x0" if "type" not in tx else tx["type"]
         if tx_type == "0x0":
@@ -441,9 +457,9 @@ class Tx:
         return instance
 
     @classmethod
-    def from_rlp(cls, data: bytes) -> 'Tx':
+    def from_rlp(cls, data: bytes) -> "Tx":
         instance = cls()
-        if data[0] > 0x7f:
+        if data[0] > 0x7F:
             # Legacy transaction (no envelope)
             if len(decode(data)) == 9:
                 instance.tx = LegacyTx.from_rlp(data)
@@ -453,7 +469,7 @@ class Tx:
             # EIP-2718 transaction envelope
             tx_type = data[0]
             tx_payload = data[1:]
-            
+
             if tx_type == 0x01:
                 instance.tx = Eip2930.from_rlp(tx_payload)
             elif tx_type == 0x02:
@@ -462,8 +478,9 @@ class Tx:
                 instance.tx = Eip4844.from_rlp(tx_payload)
             else:
                 raise ValueError(f"Unknown transaction type: {tx_type}")
-        
+
         return instance
+
 
 class FeltTx(BaseFelt):
     def __init__(self, tx: Tx):
@@ -482,12 +499,13 @@ class FeltTx(BaseFelt):
         return self._split_word_to_felt(self.tx.gas_limit, as_le)
 
     def to(self, as_le: bool = False) -> Tuple[int, int]:
-        return self._split_word_to_felt(int.from_bytes(self.tx.to, 'big') if self.tx.to else 0, as_le)
+        return self._split_word_to_felt(
+            int.from_bytes(self.tx.to, "big") if self.tx.to else 0, as_le
+        )
 
     def value(self, as_le: bool = False) -> Tuple[int, int]:
         return self._split_word_to_felt(self.tx.value, as_le)
 
-    
     # def data(self, as_le: bool = False) -> Tuple[int, int]:
     #     return self._split_word_to_felt(int.from_bytes(self.tx.data, 'big'), as_le)
 
@@ -495,15 +513,14 @@ class FeltTx(BaseFelt):
         return self._split_word_to_felt(self.tx.v, as_le)
 
     def r(self, as_le: bool = False) -> Tuple[int, int]:
-        return self._split_word_to_felt(int.from_bytes(self.tx.r, 'big'), as_le)
+        return self._split_word_to_felt(int.from_bytes(self.tx.r, "big"), as_le)
 
     def s(self, as_le: bool = False) -> Tuple[int, int]:
-        return self._split_word_to_felt(int.from_bytes(self.tx.s, 'big'), as_le)
+        return self._split_word_to_felt(int.from_bytes(self.tx.s, "big"), as_le)
 
     def chain_id(self, as_le: bool = False) -> Tuple[int, int]:
         return self._split_word_to_felt(self.tx.chain_id, as_le)
 
-    
     # def access_list(self, as_le: bool = False) -> Tuple[int, int]:
     #     return self._split_word_to_felt(len(self.tx.access_list), as_le)
 
@@ -516,11 +533,10 @@ class FeltTx(BaseFelt):
     def max_fee_per_blob_gas(self, as_le: bool = False) -> Tuple[int, int]:
         return self._split_word_to_felt(self.tx.max_fee_per_blob_gas, as_le)
 
-    
     # def blob_versioned_hashes(self, as_le: bool = False) -> Tuple[int, int]:
     #     return self._split_word_to_felt(len(self.tx.blob_versioned_hashes), as_le)
 
     @classmethod
-    def from_rlp_chunks(cls, rlp_chunks: List[int], rlp_len: int) -> 'FeltTx':
+    def from_rlp_chunks(cls, rlp_chunks: List[int], rlp_len: int) -> "FeltTx":
         rlp = little_8_bytes_chunks_to_bytes(rlp_chunks, rlp_len)
         return cls(Tx.from_rlp(rlp))

@@ -8,6 +8,7 @@ from starkware.cairo.lang.vm.memory_segments import MemorySegmentManager
 from tools.py.types.evm.account import FeltAccount
 from tools.py.rlp import get_rlp_len
 
+
 class EvmAccountHandler(AbstractEvmAccountBase):
     def __init__(self, segments: MemorySegmentManager, memorizer: Memorizer):
         super().__init__(memorizer=memorizer)
@@ -35,7 +36,6 @@ class EvmAccountHandler(AbstractEvmAccountBase):
     def get_state_root(self, key: MemorizerKey) -> Tuple[int, int]:
         rlp_len, rlp = self.extract_rlp(key=key)
         return FeltAccount.from_rlp_chunks(rlp, rlp_len).storage_hash
-
 
     def get_code_hash(self, key: MemorizerKey) -> Tuple[int, int]:
         rlp_len, rlp = self.extract_rlp(key=key)

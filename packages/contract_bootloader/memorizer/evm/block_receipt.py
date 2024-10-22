@@ -5,6 +5,7 @@ from contract_bootloader.memorizer.evm.memorizer import EvmMemorizer
 from marshmallow_dataclass import dataclass
 from starkware.cairo.lang.vm.crypto import poseidon_hash_many
 
+
 class EvmStateFunctionId(Enum):
     GET_SUCCESS = 0
     GET_CUMULATIVE_GAS_USED = 1
@@ -20,7 +21,6 @@ class EvmStateFunctionId(Enum):
                 return member
         raise ValueError(f"{value} is not a valid {cls.__name__}")
 
-
     @classmethod
     def from_int(cls, value: int):
         if not isinstance(value, int):
@@ -33,6 +33,7 @@ class EvmStateFunctionId(Enum):
     @classmethod
     def size(cls) -> int:
         return 1
+
 
 @dataclass(frozen=True)
 class MemorizerKey:
@@ -61,7 +62,8 @@ class MemorizerKey:
     @classmethod
     def size(cls) -> int:
         return 3
-    
+
+
 class AbstractEvmBlockReceiptBase(ABC):
     def __init__(self, memorizer: EvmMemorizer):
         self.memorizer = memorizer
@@ -95,4 +97,3 @@ class AbstractEvmBlockReceiptBase(ABC):
     @abstractmethod
     def get_logs(self, key: MemorizerKey) -> Tuple[int, int]:
         pass
-
