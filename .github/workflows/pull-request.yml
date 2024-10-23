@@ -38,6 +38,11 @@ jobs:
           source venv/bin/activate
           ./tools/make/python_format_check.sh
 
+      - name: Check Python tests
+        run: |
+          source venv/bin/activate
+          pytest tools/*
+
       - name: Check Cairo formatting
         run: |
           source venv/bin/activate

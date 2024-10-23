@@ -2,9 +2,9 @@ use hdp_cairo::EvmMemorizer;
 use starknet::syscalls::call_contract_syscall;
 use starknet::{SyscallResult, SyscallResultTrait};
 
-const STORAGE_MEMORIZER: felt252 = 2;
+const STORAGE: felt252 = 2;
 
-const STORAGE_MEMORIZER_GET_SLOT: felt252 = 0;
+const STORAGE_GET_SLOT: felt252 = 0;
 
 #[derive(Serde, Drop)]
 pub struct StorageKey {
@@ -18,8 +18,8 @@ pub struct StorageKey {
 pub impl StorageImpl of StorageTrait {
     fn storage_get_slot(self: @EvmMemorizer, key: StorageKey) -> u256 {
         let value = call_contract_syscall(
-            STORAGE_MEMORIZER.try_into().unwrap(),
-            STORAGE_MEMORIZER_GET_SLOT,
+            STORAGE.try_into().unwrap(),
+            STORAGE_GET_SLOT,
             array![
                 *self.dict.segment_index,
                 *self.dict.offset,
