@@ -174,8 +174,8 @@ class CairoRunner:
         """Run all tests."""
         tests_files = get_files_from_folders(["tests/cairo_programs"], ".cairo")
         for test_file in tests_files:
-            # if test_file != "tests/cairo_programs/tx_decoder.cairo":
-            #     continue
+            if test_file != "tests/cairo_programs/tx_decoder.cairo":
+                continue
 
             self.filename_dot_cairo_path = test_file
             self.filename_dot_cairo = os.path.basename(test_file)

@@ -174,7 +174,7 @@ class SyscallHandler(SyscallHandlerBase):
                 memorizer=memorizer,
             )
             retdata = handler.handle(function_id=function_id, key=key)
-            
+
         else:
             raise ValueError(f"EvmStateId {memorizerId} not matched")
 

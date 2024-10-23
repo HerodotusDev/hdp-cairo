@@ -231,6 +231,10 @@ class EvmKeyProvider(EvmProviderBase):
 
 
 if __name__ == "__main__":
-    provider = EvmProvider("https://mainnet.infura.io/v3/66dda5ed7d56432a82c8da4ac54fde8e", 1)
-    tx = provider.get_transaction_by_hash("0x4b0070defa33cbc85f558323bf60132f600212cec3f4ab9e57260d40ff8949d9")
+    provider = EvmProvider(
+        "https://mainnet.infura.io/v3/66dda5ed7d56432a82c8da4ac54fde8e", 1
+    )
+    tx = provider.get_transaction_by_hash(
+        "0x4b0070defa33cbc85f558323bf60132f600212cec3f4ab9e57260d40ff8949d9"
+    )
     print(tx.tx.derive_sender())

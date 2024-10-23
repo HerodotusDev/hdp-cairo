@@ -46,7 +46,9 @@ func test_tx_decoding_inner{
     %}
     let (tx_type, local rlp_start_offset) = TransactionDecoder.open_tx_envelope(item=rlp);
 
-    let type = TransactionDecoder.get_field(rlp, TransactionField.TX_TYPE, rlp_start_offset, tx_type, chain_info.id);
+    let type = TransactionDecoder.get_field(
+        rlp, TransactionField.TX_TYPE, rlp_start_offset, tx_type, chain_info.id
+    );
     %{
         low = tx.type
         assert ids.type.low == low
@@ -82,35 +84,45 @@ func test_tx_decoding_inner{
         assert ids.value.high == high
     %}
 
-    let v = TransactionDecoder.get_field(rlp, TransactionField.V, rlp_start_offset, tx_type, chain_info.id);
+    let v = TransactionDecoder.get_field(
+        rlp, TransactionField.V, rlp_start_offset, tx_type, chain_info.id
+    );
     %{
         low, high = felt_tx.v()
         assert ids.v.low == low
         assert ids.v.high == high
     %}
 
-    let r = TransactionDecoder.get_field(rlp, TransactionField.R, rlp_start_offset, tx_type, chain_info.id);
+    let r = TransactionDecoder.get_field(
+        rlp, TransactionField.R, rlp_start_offset, tx_type, chain_info.id
+    );
     %{
         low, high = felt_tx.r()
         assert ids.r.low == low
         assert ids.r.high == high
     %}
 
-    let s = TransactionDecoder.get_field(rlp, TransactionField.S, rlp_start_offset, tx_type, chain_info.id);
+    let s = TransactionDecoder.get_field(
+        rlp, TransactionField.S, rlp_start_offset, tx_type, chain_info.id
+    );
     %{
         low, high = felt_tx.s()
         assert ids.s.low == low
         assert ids.s.high == high
     %}
 
-    let receiver = TransactionDecoder.get_field(rlp, TransactionField.RECEIVER, rlp_start_offset, tx_type, chain_info.id);
+    let receiver = TransactionDecoder.get_field(
+        rlp, TransactionField.RECEIVER, rlp_start_offset, tx_type, chain_info.id
+    );
     %{
         low, high = felt_tx.receiver()
         assert ids.receiver.low == low
         assert ids.receiver.high == high
     %}
 
-    let sender = TransactionDecoder.get_field(rlp, TransactionField.SENDER, rlp_start_offset, tx_type, chain_info.id);
+    let sender = TransactionDecoder.get_field(
+        rlp, TransactionField.SENDER, rlp_start_offset, tx_type, chain_info.id
+    );
     %{
         sender = rpc_tx["from"]
         assert ids.sender.high * 2**128 + ids.sender.low == int(sender, 16)

@@ -6,6 +6,7 @@ from contract_bootloader.memorizer.evm.block_tx import (
 )
 from tools.py.providers.evm.provider import EvmKeyProvider
 
+
 class DryRunEvmBlockTxHandler(AbstractEvmBlockTxBase):
     def __init__(self, memorizer: EvmMemorizer, provider: EvmKeyProvider):
         super().__init__(memorizer=memorizer)
@@ -50,7 +51,7 @@ class DryRunEvmBlockTxHandler(AbstractEvmBlockTxBase):
     def get_chain_id(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
         return self.provider.get_block_tx(key=key).chain_id()
-    
+
     def get_access_list(self, key: MemorizerKey) -> Tuple[int, int]:
         pass
 
@@ -61,18 +62,18 @@ class DryRunEvmBlockTxHandler(AbstractEvmBlockTxBase):
     def get_max_fee_per_gas(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
         return self.provider.get_block_tx(key=key).max_fee_per_gas()
-    
+
     def get_blob_versioned_hashes(self, key: MemorizerKey) -> Tuple[int, int]:
         pass
 
     def get_max_fee_per_blob_gas(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
         return self.provider.get_block_tx(key=key).max_fee_per_blob_gas()
-    
+
     def get_tx_type(self, key: MemorizerKey) -> Tuple[int]:
         self.fetch_keys_registry.add(key)
         return self.provider.get_block_tx(key=key).type()
-    
+
     def get_sender(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
         return self.provider.get_block_tx(key=key).sender()

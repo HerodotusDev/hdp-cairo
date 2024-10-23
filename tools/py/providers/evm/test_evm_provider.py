@@ -15,7 +15,9 @@ import rlp
 
 @pytest.fixture
 def evm_provider():
-    return EvmProvider("https://mainnet.infura.io/v3/66dda5ed7d56432a82c8da4ac54fde8e", 1)
+    return EvmProvider(
+        "https://mainnet.infura.io/v3/66dda5ed7d56432a82c8da4ac54fde8e", 1
+    )
 
 
 def test_legacy_header(evm_provider):
@@ -242,6 +244,7 @@ def test_eip4844_tx(evm_provider):
     assert tx.v == int(rpc_tx["v"], 16)
     assert tx.r == HexBytes(rpc_tx["r"])
     assert tx.s == HexBytes(rpc_tx["s"])
+
 
 def test_account(evm_provider):
     address = "0xF585A4aE338bC165D96E8126e8BBcAcAE725d79E"  # Example address

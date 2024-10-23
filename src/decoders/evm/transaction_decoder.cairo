@@ -57,10 +57,7 @@ namespace TransactionType {
 namespace TransactionDecoder {
     // Returns the TX field as BE uint256
     func get_field{
-        keccak_ptr: KeccakBuiltin*,
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-        pow2_array: felt*,
+        keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
     }(rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt, chain_id: felt) -> Uint256 {
         alloc_locals;
 
@@ -188,15 +185,14 @@ namespace TransactionSender {
     // Output:
     //     felt - The address of the sender, in BE
     func derive{
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-        pow2_array: felt*,
-        keccak_ptr: KeccakBuiltin*,
+        range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, keccak_ptr: KeccakBuiltin*
     }(rlp: felt*, rlp_start_offset: felt, tx_type: felt, chain_id: felt) -> felt {
         alloc_locals;
         let (chain_info) = fetch_chain_info(chain_id);
 
-        let v = TransactionDecoder.get_field(rlp, TransactionField.V, rlp_start_offset, tx_type, chain_id);
+        let v = TransactionDecoder.get_field(
+            rlp, TransactionField.V, rlp_start_offset, tx_type, chain_id
+        );
         let (v_norm, is_eip155) = normalize_v{
             range_check_ptr=range_check_ptr, chain_info=chain_info
         }(tx_type, v);
@@ -212,7 +208,10 @@ namespace TransactionSender {
 
         // Step 1: Unpack the RLP list and omit signature parameters
         let (tx_payload, tx_payload_len, tx_payload_bytes_len) = extract_tx_payload{
-            range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array, chain_info=chain_info
+            range_check_ptr=range_check_ptr,
+            bitwise_ptr=bitwise_ptr,
+            pow2_array=pow2_array,
+            chain_info=chain_info,
         }(rlp, rlp_start_offset, r_bytes_len + s_bytes_len + 3, is_eip155);  // + 2 for s + r prefix, +1 for v
 
         // Step 2: RLP encode the TX params to create the signing payload and add TX type prefix

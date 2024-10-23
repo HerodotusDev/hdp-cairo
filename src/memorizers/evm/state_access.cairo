@@ -68,7 +68,12 @@ namespace EvmDecoder {
         output_ptr: felt*,
         keccak_ptr: KeccakBuiltin*,
     }(
-        rlp: felt*, state_access_type: felt, field: felt, block_number: felt, chain_id: felt, decoder_target: felt
+        rlp: felt*,
+        state_access_type: felt,
+        field: felt,
+        block_number: felt,
+        chain_id: felt,
+        decoder_target: felt,
     ) -> (result_len: felt) {
         alloc_locals;  // ToDo: solve output_ptr revoke and remove this
 
@@ -92,18 +97,28 @@ namespace EvmDecoder {
     }
 
     func _invoke_and_retrieve_uint256{
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-        keccak_ptr: KeccakBuiltin*,
-        pow2_array: felt*,
-    }(func_ptr: felt*, state_access_type: felt, field: felt, block_number: felt, chain_id: felt, rlp: felt*) -> (
-        low: felt, high: felt
-    ) {
+        range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*
+    }(
+        func_ptr: felt*,
+        state_access_type: felt,
+        field: felt,
+        block_number: felt,
+        chain_id: felt,
+        rlp: felt*,
+    ) -> (low: felt, high: felt) {
         if (state_access_type == EvmStateAccessType.BLOCK_TX) {
             let (tx_type, rlp_start_offset) = EvmTransactionDecoder.open_tx_envelope(rlp);
             tempvar invoke_params = cast(
                 new (
-                    keccak_ptr, range_check_ptr, bitwise_ptr, pow2_array, rlp, field, rlp_start_offset, tx_type, chain_id
+                    keccak_ptr,
+                    range_check_ptr,
+                    bitwise_ptr,
+                    pow2_array,
+                    rlp,
+                    field,
+                    rlp_start_offset,
+                    tx_type,
+                    chain_id,
                 ),
                 felt*,
             );

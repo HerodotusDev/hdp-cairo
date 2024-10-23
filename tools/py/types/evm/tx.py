@@ -33,7 +33,7 @@ class LegacyTx(Serializable):
 
     def hash(self) -> HexBytes:
         return Web3.keccak(self.raw_rlp())
-    
+
     def get_signing_hash(self) -> bytes:
         rlp = encode(
             [
@@ -46,10 +46,12 @@ class LegacyTx(Serializable):
             ]
         )
         return Web3.keccak(rlp)
-    
+
     def derive_sender(self) -> bytes:
         sig = keys.Signature(signature_bytes=self.r + self.s + bytes([self.v - 27]))
-        address_str = sig.recover_public_key_from_msg_hash(self.get_signing_hash()).to_address()
+        address_str = sig.recover_public_key_from_msg_hash(
+            self.get_signing_hash()
+        ).to_address()
         return bytes.fromhex(address_str[2:])  # Remove '0x' prefix and convert to bytes
 
     def raw_rlp(self) -> bytes:
@@ -121,7 +123,7 @@ class Eip155(Serializable):
                 self.s,
             ]
         )
-    
+
     def get_signing_hash(self) -> bytes:
         rlp = encode(
             [
@@ -140,14 +142,16 @@ class Eip155(Serializable):
 
     def derive_sender(self) -> bytes:
         v = self.v
-        r = int.from_bytes(self.r, 'big')
-        s = int.from_bytes(self.s, 'big')
-        
+        r = int.from_bytes(self.r, "big")
+        s = int.from_bytes(self.s, "big")
+
         if self.chain_id is not None:
             v = v - self.chain_id * 2 - 35
-        
+
         sig = keys.Signature(vrs=(v, r, s))
-        address_str = sig.recover_public_key_from_msg_hash(self.get_signing_hash()).to_address()
+        address_str = sig.recover_public_key_from_msg_hash(
+            self.get_signing_hash()
+        ).to_address()
         return bytes.fromhex(address_str[2:])  # Remove '0x' prefix and convert to bytes
 
     @classmethod
@@ -178,8 +182,10 @@ class Eip155(Serializable):
 class AccessListEntry(Serializable):
     fields = [("address", address), ("storage_keys", CountableList(hash32))]
 
+
 # Define the access list using CountableList of AccessListEntry
 access_list_type = CountableList(AccessListEntry)
+
 
 class Eip2930(Serializable):
     fields = (
@@ -262,11 +268,13 @@ class Eip2930(Serializable):
 
     def derive_sender(self) -> bytes:
         v = self.v
-        r = int.from_bytes(self.r, 'big')
-        s = int.from_bytes(self.s, 'big')
-        
+        r = int.from_bytes(self.r, "big")
+        s = int.from_bytes(self.s, "big")
+
         sig = keys.Signature(vrs=(v, r, s))
-        address_str = sig.recover_public_key_from_msg_hash(self.get_signing_hash()).to_address()
+        address_str = sig.recover_public_key_from_msg_hash(
+            self.get_signing_hash()
+        ).to_address()
         return bytes.fromhex(address_str[2:])  # Remove '0x' prefix and convert to bytes
 
 
@@ -355,12 +363,15 @@ class Eip1559(Serializable):
 
     def derive_sender(self) -> bytes:
         v = self.v
-        r = int.from_bytes(self.r, 'big')
-        s = int.from_bytes(self.s, 'big')
-        
+        r = int.from_bytes(self.r, "big")
+        s = int.from_bytes(self.s, "big")
+
         sig = keys.Signature(vrs=(v, r, s))
-        address_str = sig.recover_public_key_from_msg_hash(self.get_signing_hash()).to_address()
+        address_str = sig.recover_public_key_from_msg_hash(
+            self.get_signing_hash()
+        ).to_address()
         return bytes.fromhex(address_str[2:])
+
 
 class Eip4844(Serializable):
     fields = (
@@ -454,11 +465,13 @@ class Eip4844(Serializable):
 
     def derive_sender(self) -> bytes:
         v = self.v
-        r = int.from_bytes(self.r, 'big')
-        s = int.from_bytes(self.s, 'big')
-        
+        r = int.from_bytes(self.r, "big")
+        s = int.from_bytes(self.s, "big")
+
         sig = keys.Signature(vrs=(v, r, s))
-        address_str = sig.recover_public_key_from_msg_hash(self.get_signing_hash()).to_address()
+        address_str = sig.recover_public_key_from_msg_hash(
+            self.get_signing_hash()
+        ).to_address()
         return bytes.fromhex(address_str[2:])
 
 
@@ -551,7 +564,7 @@ class Tx:
         raise AttributeError(
             "blob_versioned_hashes is not available for this transaction type"
         )
-    
+
     @property
     def type(self) -> int:
         if isinstance(self.tx, LegacyTx):
@@ -564,7 +577,7 @@ class Tx:
             return 2
         elif isinstance(self.tx, Eip4844):
             return 3
-        
+
     @property
     def sender(self) -> bytes:
         return self.tx.derive_sender()
@@ -597,7 +610,7 @@ class Tx:
         if data[0] > 0x7F:
             # Legacy transaction (no envelope)
             if len(decode(data)) == 9:
-                instance.tx = LegacyTx.from_rlp(chain_id,data)
+                instance.tx = LegacyTx.from_rlp(chain_id, data)
             else:
                 instance.tx = Eip155.from_rlp(chain_id, data)
         else:
@@ -671,15 +684,17 @@ class FeltTx(BaseFelt):
 
     def type(self, as_le: bool = False) -> Tuple[int, int]:
         return self._split_word_to_felt(self.tx.type, as_le)
-    
+
     def sender(self, as_le: bool = False) -> Tuple[int, int]:
         return self._split_word_to_felt(self.tx.sender, as_le)
 
     @classmethod
-    def from_rlp_chunks(cls, key: BlockTxMemorizerKey, rlp_chunks: List[int], rlp_len: int) -> "FeltTx":
+    def from_rlp_chunks(
+        cls, key: BlockTxMemorizerKey, rlp_chunks: List[int], rlp_len: int
+    ) -> "FeltTx":
         rlp = little_8_bytes_chunks_to_bytes(rlp_chunks, rlp_len)
         return cls(Tx.from_rlp(key.chain_id, rlp))
-    
+
     @classmethod
     def from_rpc_data(cls, key: BlockTxMemorizerKey, data) -> "FeltTx":
         return cls(Tx.from_rpc_data(key.chain_id, data))

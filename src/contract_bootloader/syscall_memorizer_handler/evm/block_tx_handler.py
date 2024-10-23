@@ -85,7 +85,7 @@ class EvmBlockTxHandler(AbstractEvmBlockTxBase):
     def get_tx_type(self, key: MemorizerKey) -> Tuple[int, int]:
         rlp_len, rlp = self.extract_rlp(key=key)
         return FeltTx.from_rlp_chunks(key, rlp, rlp_len).type()
-    
+
     def get_sender(self, key: MemorizerKey) -> Tuple[int, int]:
         rlp_len, rlp = self.extract_rlp(key=key)
         return FeltTx.from_rlp_chunks(key, rlp, rlp_len).sender()
