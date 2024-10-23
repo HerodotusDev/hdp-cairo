@@ -6,7 +6,7 @@ from starkware.starknet.common.new_syscalls import (
     ResponseHeader,
     FailureReason,
 )
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin, KeccakBuiltin
 from starkware.starknet.core.os.builtins import BuiltinPointers
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.dict_access import DictAccess
@@ -38,6 +38,7 @@ func execute_syscalls{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
     syscall_ptr: felt*,
     builtin_ptrs: BuiltinPointers*,
     pow2_array: felt*,
@@ -69,6 +70,7 @@ func execute_call_contract{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
     syscall_ptr: felt*,
     builtin_ptrs: BuiltinPointers*,
     pow2_array: felt*,

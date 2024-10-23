@@ -8,6 +8,7 @@ class EvmStateId(Enum):
     Header = 0
     Account = 1
     Storage = 2
+    BlockTx = 3
 
     @classmethod
     def from_int(cls, value: int):

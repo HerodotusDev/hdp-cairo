@@ -1,5 +1,5 @@
 from typing import Tuple
-from contract_bootloader.memorizer.memorizer import Memorizer
+from contract_bootloader.memorizer.evm.memorizer import EvmMemorizer
 from contract_bootloader.memorizer.evm.header import (
     AbstractEvmHeaderBase,
     MemorizerKey,
@@ -8,7 +8,7 @@ from tools.py.providers.evm.provider import EvmKeyProvider
 
 
 class DryRunEvmHeaderHandler(AbstractEvmHeaderBase):
-    def __init__(self, memorizer: Memorizer, provider: EvmKeyProvider):
+    def __init__(self, memorizer: EvmMemorizer, provider: EvmKeyProvider):
         super().__init__(memorizer=memorizer)
         self.provider = provider
         self.fetch_keys_registry: set[MemorizerKey] = set()

@@ -46,14 +46,14 @@ func test_tx_decoding_inner{
     %}
     let (tx_type, local rlp_start_offset) = TransactionDecoder.open_tx_envelope(item=rlp);
 
-    let type = TransactionDecoder.get_field(rlp, TransactionField.TX_TYPE, rlp_start_offset, tx_type);
+    let type = TransactionDecoder.get_field(rlp, TransactionField.TX_TYPE, rlp_start_offset, tx_type, chain_info.id);
     %{
         low = tx.type
         assert ids.type.low == low
         assert ids.type.high == 0
     %}
     let nonce = TransactionDecoder.get_field(
-        rlp, TransactionField.NONCE, rlp_start_offset, tx_type
+        rlp, TransactionField.NONCE, rlp_start_offset, tx_type, chain_info.id
     );
 
     %{
@@ -63,7 +63,7 @@ func test_tx_decoding_inner{
     %}
 
     let gas_limit = TransactionDecoder.get_field(
-        rlp, TransactionField.GAS_LIMIT, rlp_start_offset, tx_type
+        rlp, TransactionField.GAS_LIMIT, rlp_start_offset, tx_type, chain_info.id
     );
 
     %{
@@ -73,7 +73,7 @@ func test_tx_decoding_inner{
     %}
 
     let value = TransactionDecoder.get_field(
-        rlp, TransactionField.VALUE, rlp_start_offset, tx_type
+        rlp, TransactionField.VALUE, rlp_start_offset, tx_type, chain_info.id
     );
 
     %{
@@ -82,35 +82,35 @@ func test_tx_decoding_inner{
         assert ids.value.high == high
     %}
 
-    let v = TransactionDecoder.get_field(rlp, TransactionField.V, rlp_start_offset, tx_type);
+    let v = TransactionDecoder.get_field(rlp, TransactionField.V, rlp_start_offset, tx_type, chain_info.id);
     %{
         low, high = felt_tx.v()
         assert ids.v.low == low
         assert ids.v.high == high
     %}
 
-    let r = TransactionDecoder.get_field(rlp, TransactionField.R, rlp_start_offset, tx_type);
+    let r = TransactionDecoder.get_field(rlp, TransactionField.R, rlp_start_offset, tx_type, chain_info.id);
     %{
         low, high = felt_tx.r()
         assert ids.r.low == low
         assert ids.r.high == high
     %}
 
-    let s = TransactionDecoder.get_field(rlp, TransactionField.S, rlp_start_offset, tx_type);
+    let s = TransactionDecoder.get_field(rlp, TransactionField.S, rlp_start_offset, tx_type, chain_info.id);
     %{
         low, high = felt_tx.s()
         assert ids.s.low == low
         assert ids.s.high == high
     %}
 
-    let receiver = TransactionDecoder.get_field(rlp, TransactionField.RECEIVER, rlp_start_offset, tx_type);
+    let receiver = TransactionDecoder.get_field(rlp, TransactionField.RECEIVER, rlp_start_offset, tx_type, chain_info.id);
     %{
         low, high = felt_tx.receiver()
         assert ids.receiver.low == low
         assert ids.receiver.high == high
     %}
 
-    let sender = TransactionDecoder.get_field(rlp, TransactionField.SENDER, rlp_start_offset, tx_type);
+    let sender = TransactionDecoder.get_field(rlp, TransactionField.SENDER, rlp_start_offset, tx_type, chain_info.id);
     %{
         sender = rpc_tx["from"]
         assert ids.sender.high * 2**128 + ids.sender.low == int(sender, 16)
@@ -120,7 +120,7 @@ func test_tx_decoding_inner{
     %{ ids.has_legacy = 1 if ids.tx_type <= 1 else 0 %}
     if (has_legacy == 1) {
         let gas_price = TransactionDecoder.get_field(
-            rlp, TransactionField.GAS_PRICE, rlp_start_offset, tx_type
+            rlp, TransactionField.GAS_PRICE, rlp_start_offset, tx_type, chain_info.id
         );
         %{
             low, high = felt_tx.gas_price()
@@ -144,7 +144,7 @@ func test_tx_decoding_inner{
     %{ ids.has_eip1559 = 1 if ids.tx_type >= 3 else 0 %}
     if (has_eip1559 == 1) {
         let max_prio_fee_per_gas = TransactionDecoder.get_field(
-            rlp, TransactionField.MAX_PRIORITY_FEE_PER_GAS, rlp_start_offset, tx_type
+            rlp, TransactionField.MAX_PRIORITY_FEE_PER_GAS, rlp_start_offset, tx_type, chain_info.id
         );
         %{
             low, high = felt_tx.max_priority_fee_per_gas()
@@ -153,7 +153,7 @@ func test_tx_decoding_inner{
         %}
 
         let max_fee_per_gas = TransactionDecoder.get_field(
-            rlp, TransactionField.MAX_FEE_PER_GAS, rlp_start_offset, tx_type
+            rlp, TransactionField.MAX_FEE_PER_GAS, rlp_start_offset, tx_type, chain_info.id
         );
         %{
             low, high = felt_tx.max_fee_per_gas()
@@ -177,7 +177,7 @@ func test_tx_decoding_inner{
     %{ ids.has_blob_versioned_hashes = 1 if ids.tx_type == 4 else 0 %}
     if (has_blob_versioned_hashes == 1) {
         let max_fee_per_blob_gas = TransactionDecoder.get_field(
-            rlp, TransactionField.MAX_FEE_PER_BLOB_GAS, rlp_start_offset, tx_type
+            rlp, TransactionField.MAX_FEE_PER_BLOB_GAS, rlp_start_offset, tx_type, chain_info.id
         );
         %{
             low, high = felt_tx.max_fee_per_blob_gas()

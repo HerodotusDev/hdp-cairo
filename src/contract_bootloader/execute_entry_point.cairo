@@ -1,4 +1,4 @@
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin, HashBuiltin
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin, HashBuiltin, KeccakBuiltin
 from starkware.cairo.builtin_selection.select_input_builtins import select_input_builtins
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.find_element import find_element, search_sorted
@@ -50,6 +50,7 @@ func call_execute_syscalls{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
     syscall_ptr: felt*,
     builtin_ptrs: BuiltinPointers*,
     pow2_array: felt*,
@@ -129,6 +130,7 @@ func execute_entry_point{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
     builtin_ptrs: BuiltinPointers*,
     builtin_params: BuiltinParams*,
     pow2_array: felt*,

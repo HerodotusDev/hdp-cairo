@@ -1,4 +1,4 @@
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin, KeccakBuiltin
 from starkware.cairo.common.uint256 import uint256_reverse_endian, Uint256
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.registers import get_label_location
@@ -66,24 +66,17 @@ namespace EvmDecoder {
         pow2_array: felt*,
         evm_decoder_ptr: felt***,
         output_ptr: felt*,
+        keccak_ptr: KeccakBuiltin*,
     }(
-        rlp: felt*, state_access_type: felt, field: felt, block_number: felt, decoder_target: felt
+        rlp: felt*, state_access_type: felt, field: felt, block_number: felt, chain_id: felt, decoder_target: felt
     ) -> (result_len: felt) {
         alloc_locals;  // ToDo: solve output_ptr revoke and remove this
 
         let func_ptr = evm_decoder_ptr[decoder_target][state_access_type];
         if (decoder_target == EvmDecoderTarget.UINT256) {
-            let (invoke_params, param_len) = _pack_decode_call_header(
-                state_access_type, field, block_number, rlp
+            let (res_low, res_high) = _invoke_and_retrieve_uint256(
+                func_ptr, state_access_type, field, block_number, chain_id, rlp
             );
-            invoke(func_ptr, param_len, invoke_params);
-
-            // Retrieve the results from [ap]
-            let res_high = [ap - 1];
-            let res_low = [ap - 2];
-            let pow2_array = cast([ap - 3], felt*);
-            let bitwise_ptr = cast([ap - 4], BitwiseBuiltin*);
-            let range_check_ptr = [ap - 5];
 
             assert output_ptr[0] = res_low;
             assert output_ptr[1] = res_high;
@@ -98,28 +91,35 @@ namespace EvmDecoder {
         }
     }
 
-    // Prepares the call header for the call of the decoder function
-    // Block number is only needed for receipts, but to keep the interface uniform, we pass it also for other states
-    func _pack_decode_call_header{
+    func _invoke_and_retrieve_uint256{
         range_check_ptr,
         bitwise_ptr: BitwiseBuiltin*,
+        keccak_ptr: KeccakBuiltin*,
         pow2_array: felt*,
-        evm_decoder_ptr: felt***,
-        output_ptr: felt*,
-    }(state_access_type: felt, field: felt, block_number: felt, rlp: felt*) -> (
-        invoke_params: felt*, param_len: felt
+    }(func_ptr: felt*, state_access_type: felt, field: felt, block_number: felt, chain_id: felt, rlp: felt*) -> (
+        low: felt, high: felt
     ) {
         if (state_access_type == EvmStateAccessType.BLOCK_TX) {
             let (tx_type, rlp_start_offset) = EvmTransactionDecoder.open_tx_envelope(rlp);
             tempvar invoke_params = cast(
                 new (
-                    range_check_ptr, bitwise_ptr, pow2_array, rlp, field, rlp_start_offset, tx_type
+                    keccak_ptr, range_check_ptr, bitwise_ptr, pow2_array, rlp, field, rlp_start_offset, tx_type, chain_id
                 ),
                 felt*,
             );
-            return (invoke_params=invoke_params, param_len=7);
+            invoke(func_ptr, 9, invoke_params);
+
+            let res_high = [ap - 1];
+            let res_low = [ap - 2];
+            let pow2_array = cast([ap - 3], felt*);
+            let bitwise_ptr = cast([ap - 4], BitwiseBuiltin*);
+            let range_check_ptr = [ap - 5];
+            let keccak_ptr = cast([ap - 6], KeccakBuiltin*);
+
+            return (low=res_low, high=res_high);
         }
 
+        // ToDo: this (probably) is broken
         if (state_access_type == EvmStateAccessType.BLOCK_RECEIPT) {
             let (tx_type, rlp_start_offset) = EvmReceiptDecoder.open_receipt_envelope(rlp);
             tempvar invoke_params = cast(
@@ -135,14 +135,42 @@ namespace EvmDecoder {
                 ),
                 felt*,
             );
-            return (invoke_params=invoke_params, param_len=8);
+            invoke(func_ptr, 8, invoke_params);
+            let res_high = [ap - 1];
+            let res_low = [ap - 2];
+            let pow2_array = cast([ap - 3], felt*);
+            let bitwise_ptr = cast([ap - 4], BitwiseBuiltin*);
+            let range_check_ptr = [ap - 5];
+
+            return (low=res_low, high=res_high);
         }
 
         tempvar invoke_params = cast(
             new (range_check_ptr, bitwise_ptr, pow2_array, rlp, field), felt*
         );
-        return (invoke_params=invoke_params, param_len=5);
+
+        invoke(func_ptr, 5, invoke_params);
+        let res_high = [ap - 1];
+        let res_low = [ap - 2];
+        let pow2_array = cast([ap - 3], felt*);
+        let bitwise_ptr = cast([ap - 4], BitwiseBuiltin*);
+        let range_check_ptr = [ap - 5];
+
+        return (low=res_low, high=res_high);
     }
+
+    // func _unpack_decode_call_header{
+    //     range_check_ptr,
+    //     bitwise_ptr: BitwiseBuiltin*,
+    //     pow2_array: felt*,
+    //     keccak_ptr: KeccakBuiltin*,
+    // }(state_access_type: felt) -> (res_low: felt, res_high: felt) {
+    //     if (state_access_type == EvmStateAccessType.BLOCK_TX) {
+    //         let res_high = [ap - 1];
+    //         let res_low = [ap - 2];
+    //         return (res_low=res_low, res_high=res_high);
+    //     }
+    // }
 }
 
 // This namespace contains all the functions required for reading and decoding
@@ -180,6 +208,7 @@ namespace EvmStateAccess {
         range_check_ptr,
         poseidon_ptr: PoseidonBuiltin*,
         bitwise_ptr: BitwiseBuiltin*,
+        keccak_ptr: KeccakBuiltin*,
         evm_memorizer: DictAccess*,
         evm_decoder_ptr: felt***,
         evm_key_hasher_ptr: felt**,
@@ -194,9 +223,10 @@ namespace EvmStateAccess {
         let (rlp) = EvmMemorizer.get(memorizer_key);
 
         // In EVM, the block number is always the second param. Ensure this doesnt change in the future
+        let chain_id = params[0];
         let block_number = params[1];
         let (result_len) = EvmDecoder.decode(
-            rlp, state_access_type, field, block_number, decoder_target
+            rlp, state_access_type, field, block_number, chain_id, decoder_target
         );
 
         return (result_len=result_len);

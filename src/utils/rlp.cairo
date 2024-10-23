@@ -274,6 +274,7 @@ func chunk_to_felt_be{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array:
     }
 
     let (q, r) = felt_divmod(value, 0x100);  // remove trailing byte
+    %{ print("q:", hex(ids.q), "r:", hex(ids.r)) %}
 
     // ensure we have a short string
     assert [range_check_ptr] = 8 - bytes_len;
@@ -283,6 +284,38 @@ func chunk_to_felt_be{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array:
 
     let result = reverse_chunk_endianess(q, bytes_len - 1);
     return (result);
+}
+
+// Decodes a BE RLP string (<= 8 bytes) to a felt
+// Inputs:
+// - value: the BE RLP value
+// Outputs:
+// - the decoded felt in BE
+func be_chunk_to_felt_be{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    value: felt
+) -> felt {
+    alloc_locals;
+
+    let bytes_len = get_felt_bytes_len(value);
+
+    if (bytes_len == 1) {
+        if (value == 0x80) {
+            return 0;
+        } else {
+            return value;
+        }
+    }
+
+    let (q, r) = felt_divmod(value, pow2_array[bytes_len * 8 - 8]);  // Short string prefix
+    %{ print("q:", hex(ids.q), "r:", hex(ids.r)) %}
+
+    // ensure we have a short string
+    assert [range_check_ptr] = 8 - bytes_len;
+    assert [range_check_ptr + 1] = q - 0x80;
+    assert [range_check_ptr + 2] = 0xb6 - q;
+    tempvar range_check_ptr = range_check_ptr + 3;
+
+    return (r);
 }
 
 // decodes an rlp word to a uint256

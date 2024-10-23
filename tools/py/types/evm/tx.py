@@ -510,7 +510,7 @@ class Tx:
 
     @property
     def chain_id(self) -> int:
-        if isinstance(self.tx, (Eip155, Eip2930, Eip1559, Eip4844)):
+        if isinstance(self.tx, (Eip2930, Eip1559, Eip4844)):
             return self.tx.chain_id
         raise AttributeError("chain_id is not available for this transaction type")
 
@@ -669,10 +669,10 @@ class FeltTx(BaseFelt):
     # def blob_versioned_hashes(self, as_le: bool = False) -> Tuple[int, int]:
     #     return self._split_word_to_felt(len(self.tx.blob_versioned_hashes), as_le)
 
-    def tx_type(self, as_le: bool = False) -> Tuple[int, int]:
+    def type(self, as_le: bool = False) -> Tuple[int, int]:
         return self._split_word_to_felt(self.tx.type, as_le)
     
-    def get_sender(self, as_le: bool = False) -> Tuple[int, int]:
+    def sender(self, as_le: bool = False) -> Tuple[int, int]:
         return self._split_word_to_felt(self.tx.sender, as_le)
 
     @classmethod
