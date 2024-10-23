@@ -5,6 +5,10 @@ from web3.types import TxParams
 from rlp.sedes import BigEndianInt, big_endian_int, Binary, binary, lists, CountableList
 from web3 import Web3
 from typing import Union, List, Tuple
+from eth_keys import keys
+from contract_bootloader.memorizer.evm.block_tx import (
+    MemorizerKey as BlockTxMemorizerKey,
+)
 
 from tools.py.utils import little_8_bytes_chunks_to_bytes
 
@@ -29,6 +33,24 @@ class LegacyTx(Serializable):
 
     def hash(self) -> HexBytes:
         return Web3.keccak(self.raw_rlp())
+    
+    def get_signing_hash(self) -> bytes:
+        rlp = encode(
+            [
+                self.nonce,
+                self.gas_price,
+                self.gas_limit,
+                self.receiver,
+                self.value,
+                self.data,
+            ]
+        )
+        return Web3.keccak(rlp)
+    
+    def derive_sender(self) -> bytes:
+        sig = keys.Signature(signature_bytes=self.r + self.s + bytes([self.v - 27]))
+        address_str = sig.recover_public_key_from_msg_hash(self.get_signing_hash()).to_address()
+        return bytes.fromhex(address_str[2:])  # Remove '0x' prefix and convert to bytes
 
     def raw_rlp(self) -> bytes:
         return encode(
@@ -46,11 +68,11 @@ class LegacyTx(Serializable):
         )
 
     @classmethod
-    def from_rlp(cls, data: bytes) -> "LegacyTx":
+    def from_rlp(cls, _chain_id: int, data: bytes) -> "LegacyTx":
         return decode(data, cls)
 
     @classmethod
-    def from_rpc_data(cls, tx: TxParams) -> "LegacyTx":
+    def from_rpc_data(cls, _chain_id: int, tx: TxParams) -> "LegacyTx":
         receiver = "" if tx["to"] is None else tx["to"]
         return cls(
             int(tx["nonce"], 16),
@@ -78,6 +100,10 @@ class Eip155(Serializable):
         ("s", hash32),
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.chain_id = None
+
     def hash(self) -> HexBytes:
         return Web3.keccak(self.raw_rlp())
 
@@ -95,15 +121,45 @@ class Eip155(Serializable):
                 self.s,
             ]
         )
+    
+    def get_signing_hash(self) -> bytes:
+        rlp = encode(
+            [
+                self.nonce,
+                self.gas_price,
+                self.gas_limit,
+                self.receiver,
+                self.value,
+                self.data,
+                self.chain_id,
+                0,
+                0,
+            ]
+        )
+        return Web3.keccak(rlp)
+
+    def derive_sender(self) -> bytes:
+        v = self.v
+        r = int.from_bytes(self.r, 'big')
+        s = int.from_bytes(self.s, 'big')
+        
+        if self.chain_id is not None:
+            v = v - self.chain_id * 2 - 35
+        
+        sig = keys.Signature(vrs=(v, r, s))
+        address_str = sig.recover_public_key_from_msg_hash(self.get_signing_hash()).to_address()
+        return bytes.fromhex(address_str[2:])  # Remove '0x' prefix and convert to bytes
 
     @classmethod
-    def from_rlp(cls, data: bytes) -> "Eip155":
-        return decode(data, cls)
+    def from_rlp(cls, chain_id: int, data: bytes) -> "Eip155":
+        instance = decode(data, cls)
+        instance.chain_id = chain_id
+        return instance
 
     @classmethod
-    def from_rpc_data(cls, tx: TxParams) -> "Eip155":
+    def from_rpc_data(cls, chain_id: int, tx: TxParams) -> "Eip155":
         receiver = "" if tx["to"] is None else tx["to"]
-        return cls(
+        instance = cls(
             int(tx["nonce"], 16),
             int(tx["gasPrice"], 16),
             int(tx["gas"], 16),
@@ -114,16 +170,16 @@ class Eip155(Serializable):
             HexBytes(tx["r"]),
             HexBytes(tx["s"]),
         )
+        instance.chain_id = chain_id
+        return instance
 
 
 # Define a Serializable class for an Access List entry
 class AccessListEntry(Serializable):
     fields = [("address", address), ("storage_keys", CountableList(hash32))]
 
-
 # Define the access list using CountableList of AccessListEntry
 access_list_type = CountableList(AccessListEntry)
-
 
 class Eip2930(Serializable):
     fields = (
@@ -161,11 +217,11 @@ class Eip2930(Serializable):
         )
 
     @classmethod  # The RLP passed here should be the unpacked TX envelope
-    def from_rlp(cls, data: bytes) -> "Eip2930":
+    def from_rlp(cls, _chain_id: int, data: bytes) -> "Eip2930":
         return decode(data, cls)
 
     @classmethod
-    def from_rpc_data(cls, tx: TxParams) -> "Eip2930":
+    def from_rpc_data(cls, _chain_id: int, tx: TxParams) -> "Eip2930":
         receiver = "" if tx["to"] is None else tx["to"]
         access_list = [
             AccessListEntry(
@@ -188,6 +244,30 @@ class Eip2930(Serializable):
             HexBytes(tx["r"]),
             HexBytes(tx["s"]),
         )
+
+    def get_signing_hash(self) -> bytes:
+        rlp = encode(
+            [
+                self.chain_id,
+                self.nonce,
+                self.gas_price,
+                self.gas_limit,
+                self.receiver,
+                self.value,
+                self.data,
+                self.access_list,
+            ]
+        )
+        return Web3.keccak(bytes.fromhex("01") + rlp)
+
+    def derive_sender(self) -> bytes:
+        v = self.v
+        r = int.from_bytes(self.r, 'big')
+        s = int.from_bytes(self.s, 'big')
+        
+        sig = keys.Signature(vrs=(v, r, s))
+        address_str = sig.recover_public_key_from_msg_hash(self.get_signing_hash()).to_address()
+        return bytes.fromhex(address_str[2:])  # Remove '0x' prefix and convert to bytes
 
 
 class Eip1559(Serializable):
@@ -228,11 +308,11 @@ class Eip1559(Serializable):
         )
 
     @classmethod
-    def from_rlp(cls, data: bytes) -> "Eip1559":
+    def from_rlp(cls, _chain_id: int, data: bytes) -> "Eip1559":
         return decode(data, cls)
 
     @classmethod
-    def from_rpc_data(cls, tx: TxParams) -> "Eip1559":
+    def from_rpc_data(cls, _chain_id: int, tx: TxParams) -> "Eip1559":
         receiver = "" if tx["to"] is None else tx["to"]
         access_list = [
             AccessListEntry(
@@ -257,6 +337,30 @@ class Eip1559(Serializable):
             HexBytes(tx["s"]),
         )
 
+    def get_signing_hash(self) -> bytes:
+        rlp = encode(
+            [
+                self.chain_id,
+                self.nonce,
+                self.max_priority_fee_per_gas,
+                self.max_fee_per_gas,
+                self.gas_limit,
+                self.receiver,
+                self.value,
+                self.data,
+                self.access_list,
+            ]
+        )
+        return Web3.keccak(bytes.fromhex("02") + rlp)
+
+    def derive_sender(self) -> bytes:
+        v = self.v
+        r = int.from_bytes(self.r, 'big')
+        s = int.from_bytes(self.s, 'big')
+        
+        sig = keys.Signature(vrs=(v, r, s))
+        address_str = sig.recover_public_key_from_msg_hash(self.get_signing_hash()).to_address()
+        return bytes.fromhex(address_str[2:])
 
 class Eip4844(Serializable):
     fields = (
@@ -300,11 +404,11 @@ class Eip4844(Serializable):
         )
 
     @classmethod
-    def from_rlp(cls, data: bytes) -> "Eip4844":
+    def from_rlp(cls, _chain_id: int, data: bytes) -> "Eip4844":
         return decode(data, cls)
 
     @classmethod
-    def from_rpc_data(cls, tx: TxParams) -> "Eip4844":
+    def from_rpc_data(cls, _chain_id: int, tx: TxParams) -> "Eip4844":
         receiver = "" if tx["to"] is None else tx["to"]
         access_list = [
             AccessListEntry(
@@ -330,23 +434,37 @@ class Eip4844(Serializable):
             HexBytes(tx["s"]),
         )
 
+    def get_signing_hash(self) -> bytes:
+        rlp = encode(
+            [
+                self.chain_id,
+                self.nonce,
+                self.max_priority_fee_per_gas,
+                self.max_fee_per_gas,
+                self.gas_limit,
+                self.receiver,
+                self.value,
+                self.data,
+                self.access_list,
+                self.max_fee_per_blob_gas,
+                self.blob_versioned_hashes,
+            ]
+        )
+        return Web3.keccak(bytes.fromhex("03") + rlp)
+
+    def derive_sender(self) -> bytes:
+        v = self.v
+        r = int.from_bytes(self.r, 'big')
+        s = int.from_bytes(self.s, 'big')
+        
+        sig = keys.Signature(vrs=(v, r, s))
+        address_str = sig.recover_public_key_from_msg_hash(self.get_signing_hash()).to_address()
+        return bytes.fromhex(address_str[2:])
+
 
 class Tx:
     def __init__(self):
         self.tx: Union[LegacyTx, Eip155, Eip2930, Eip1559, Eip4844] = None
-
-    @property
-    def type(self) -> int:
-        if isinstance(self.tx, LegacyTx):
-            return 0
-        elif isinstance(self.tx, Eip155):
-            return 0
-        elif isinstance(self.tx, Eip2930):
-            return 1
-        elif isinstance(self.tx, Eip1559):
-            return 2
-        elif isinstance(self.tx, Eip4844):
-            return 3
 
     @property
     def hash(self) -> HexBytes:
@@ -433,49 +551,66 @@ class Tx:
         raise AttributeError(
             "blob_versioned_hashes is not available for this transaction type"
         )
+    
+    @property
+    def type(self) -> int:
+        if isinstance(self.tx, LegacyTx):
+            return 0
+        elif isinstance(self.tx, Eip155):
+            return 0
+        elif isinstance(self.tx, Eip2930):
+            return 1
+        elif isinstance(self.tx, Eip1559):
+            return 2
+        elif isinstance(self.tx, Eip4844):
+            return 3
+        
+    @property
+    def sender(self) -> bytes:
+        return self.tx.derive_sender()
 
     def raw_rlp(self) -> bytes:
         return self.tx.raw_rlp()
 
     @classmethod
-    def from_rpc_data(cls, tx: TxParams) -> "Tx":
+    def from_rpc_data(cls, chain_id: int, tx: TxParams) -> "Tx":
         instance = cls()
         tx_type = "0x0" if "type" not in tx else tx["type"]
         if tx_type == "0x0":
             if int(tx["v"], 16) >= 35:  # EIP-155 can be detected by v >= 35
-                instance.tx = Eip155.from_rpc_data(tx)
+                instance.tx = Eip155.from_rpc_data(chain_id, tx)
             else:
-                instance.tx = LegacyTx.from_rpc_data(tx)
+                instance.tx = LegacyTx.from_rpc_data(chain_id, tx)
         elif tx_type == "0x1":
-            instance.tx = Eip2930.from_rpc_data(tx)
+            instance.tx = Eip2930.from_rpc_data(chain_id, tx)
         elif tx_type == "0x2":
-            instance.tx = Eip1559.from_rpc_data(tx)
+            instance.tx = Eip1559.from_rpc_data(chain_id, tx)
         elif tx_type == "0x3":
-            instance.tx = Eip4844.from_rpc_data(tx)
+            instance.tx = Eip4844.from_rpc_data(chain_id, tx)
         else:
             raise ValueError(f"Unknown transaction type: {tx_type}")
         return instance
 
     @classmethod
-    def from_rlp(cls, data: bytes) -> "Tx":
+    def from_rlp(cls, chain_id: int, data: bytes) -> "Tx":
         instance = cls()
         if data[0] > 0x7F:
             # Legacy transaction (no envelope)
             if len(decode(data)) == 9:
-                instance.tx = LegacyTx.from_rlp(data)
+                instance.tx = LegacyTx.from_rlp(chain_id,data)
             else:
-                instance.tx = Eip155.from_rlp(data)
+                instance.tx = Eip155.from_rlp(chain_id, data)
         else:
             # EIP-2718 transaction envelope
             tx_type = data[0]
             tx_payload = data[1:]
 
             if tx_type == 0x01:
-                instance.tx = Eip2930.from_rlp(tx_payload)
+                instance.tx = Eip2930.from_rlp(chain_id, tx_payload)
             elif tx_type == 0x02:
-                instance.tx = Eip1559.from_rlp(tx_payload)
+                instance.tx = Eip1559.from_rlp(chain_id, tx_payload)
             elif tx_type == 0x03:
-                instance.tx = Eip4844.from_rlp(tx_payload)
+                instance.tx = Eip4844.from_rlp(chain_id, tx_payload)
             else:
                 raise ValueError(f"Unknown transaction type: {tx_type}")
 
@@ -534,7 +669,17 @@ class FeltTx(BaseFelt):
     # def blob_versioned_hashes(self, as_le: bool = False) -> Tuple[int, int]:
     #     return self._split_word_to_felt(len(self.tx.blob_versioned_hashes), as_le)
 
+    def tx_type(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.tx.type, as_le)
+    
+    def get_sender(self, as_le: bool = False) -> Tuple[int, int]:
+        return self._split_word_to_felt(self.tx.sender, as_le)
+
     @classmethod
-    def from_rlp_chunks(cls, rlp_chunks: List[int], rlp_len: int) -> "FeltTx":
+    def from_rlp_chunks(cls, key: BlockTxMemorizerKey, rlp_chunks: List[int], rlp_len: int) -> "FeltTx":
         rlp = little_8_bytes_chunks_to_bytes(rlp_chunks, rlp_len)
-        return cls(Tx.from_rlp(rlp))
+        return cls(Tx.from_rlp(key.chain_id, rlp))
+    
+    @classmethod
+    def from_rpc_data(cls, key: BlockTxMemorizerKey, data) -> "FeltTx":
+        return cls(Tx.from_rpc_data(key.chain_id, data))

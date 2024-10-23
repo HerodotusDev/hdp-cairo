@@ -44,10 +44,14 @@ func test_tx_decoding_inner{
         felt_tx = FeltTx(tx)
         segments.write_arg(ids.rlp, bytes_to_8_bytes_chunks_little(tx.raw_rlp()))
     %}
-
     let (tx_type, local rlp_start_offset) = TransactionDecoder.open_tx_envelope(item=rlp);
-    %{ assert ids.tx_type == tx.type %}
 
+    let type = TransactionDecoder.get_field(rlp, TransactionField.TX_TYPE, rlp_start_offset, tx_type);
+    %{
+        low = tx.type
+        assert ids.type.low == low
+        assert ids.type.high == 0
+    %}
     let nonce = TransactionDecoder.get_field(
         rlp, TransactionField.NONCE, rlp_start_offset, tx_type
     );
@@ -97,6 +101,19 @@ func test_tx_decoding_inner{
         low, high = felt_tx.s()
         assert ids.s.low == low
         assert ids.s.high == high
+    %}
+
+    let receiver = TransactionDecoder.get_field(rlp, TransactionField.RECEIVER, rlp_start_offset, tx_type);
+    %{
+        low, high = felt_tx.receiver()
+        assert ids.receiver.low == low
+        assert ids.receiver.high == high
+    %}
+
+    let sender = TransactionDecoder.get_field(rlp, TransactionField.SENDER, rlp_start_offset, tx_type);
+    %{
+        sender = rpc_tx["from"]
+        assert ids.sender.high * 2**128 + ids.sender.low == int(sender, 16)
     %}
 
     local has_legacy: felt;
@@ -180,13 +197,6 @@ func test_tx_decoding_inner{
         tempvar bitwise_ptr = bitwise_ptr;
         tempvar pow2_array = pow2_array;
     }
-
-    let sender = TransactionSender.derive(rlp, rlp_start_offset, tx_type);
-    %{
-        print(rpc_tx["from"])
-        print(hex(ids.sender))
-        assert ids.sender == int(rpc_tx["from"], 16)
-    %}
 
     return test_tx_decoding_inner(txs, index + 1);
 }

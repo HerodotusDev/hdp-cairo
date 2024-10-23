@@ -15,7 +15,7 @@ import rlp
 
 @pytest.fixture
 def evm_provider():
-    return EvmProvider("https://mainnet.infura.io/v3/66dda5ed7d56432a82c8da4ac54fde8e")
+    return EvmProvider("https://mainnet.infura.io/v3/66dda5ed7d56432a82c8da4ac54fde8e", 1)
 
 
 def test_legacy_header(evm_provider):
@@ -125,12 +125,13 @@ def test_dencun_header(evm_provider):
 
 def test_legacy_tx(evm_provider):
     tx_hash = (
-        "0x2e923a6f09ba38f63ff9b722afd14b9e850432860b77df9011e92c1bf0eecf6b"  # Type 0
+        "0x14c7b60b95719fe081cca298e0975d16d7c741c0dc2402a6af1ae7bb70c88bd9"  # Type 0
     )
     rpc_tx = evm_provider.get_rpc_transaction_by_hash(tx_hash)
     tx = evm_provider.get_transaction_by_hash(tx_hash)
 
     assert isinstance(tx.tx, LegacyTx)
+    assert tx.sender.hex() == "7c5080988c6d91d090c23d54740f856c69450b29"
     assert tx.hash.hex() == tx_hash[2:]
     assert tx.nonce == int(rpc_tx["nonce"], 16)
     assert tx.gas_price == int(rpc_tx["gasPrice"], 16)
@@ -149,6 +150,7 @@ def test_eip155_tx(evm_provider):
     tx = evm_provider.get_transaction_by_hash(tx_hash)
 
     assert isinstance(tx.tx, Eip155)
+    assert tx.sender.hex() == "cff5c79a7d95a83b47a0fdc2d6a9c2a3f48bca29"
     assert tx.hash.hex() == tx_hash[2:]
     assert tx.nonce == int(rpc_tx["nonce"], 16)
     assert tx.gas_price == int(rpc_tx["gasPrice"], 16)
@@ -169,6 +171,7 @@ def test_eip2930_tx(evm_provider):
     tx = evm_provider.get_transaction_by_hash(tx_hash)
 
     assert isinstance(tx.tx, Eip2930)
+    assert tx.sender.hex() == "2bcb6bc69991802124f04a1114ee487ff3fad197"
     assert tx.hash.hex() == tx_hash[2:]
     assert tx.chain_id == int(rpc_tx["chainId"], 16)
     assert tx.nonce == int(rpc_tx["nonce"], 16)
@@ -193,6 +196,7 @@ def test_eip1559_tx(evm_provider):
     tx = evm_provider.get_transaction_by_hash(tx_hash)
 
     assert isinstance(tx.tx, Eip1559)
+    assert tx.sender.hex() == "95222290dd7278aa3ddd389cc1e1d165cc4bafe5"
     assert tx.hash.hex() == tx_hash[2:]
     assert tx.chain_id == int(rpc_tx["chainId"], 16)
     assert tx.nonce == int(rpc_tx["nonce"], 16)
@@ -218,6 +222,7 @@ def test_eip4844_tx(evm_provider):
     tx = evm_provider.get_transaction_by_hash(tx_hash)
 
     assert isinstance(tx.tx, Eip4844)
+    assert tx.sender.hex() == "2c169dfe5fbba12957bdd0ba47d9cedbfe260ca7"
     assert tx.hash.hex() == tx_hash[2:]
     assert tx.chain_id == int(rpc_tx["chainId"], 16)
     assert tx.nonce == int(rpc_tx["nonce"], 16)
@@ -238,10 +243,7 @@ def test_eip4844_tx(evm_provider):
     assert tx.r == HexBytes(rpc_tx["r"])
     assert tx.s == HexBytes(rpc_tx["s"])
 
-
 def test_account(evm_provider):
-    # Assuming evm_provider has a method to get account data
-    # If not, you might need to create a mock or use a different provider
     address = "0xF585A4aE338bC165D96E8126e8BBcAcAE725d79E"  # Example address
     account_data = evm_provider.get_rpc_account_by_address(address, 20992954)
 
@@ -346,7 +348,7 @@ def test_transaction_rlp_roundtrip(evm_provider):
     for tx_hash in tx_hashes:
         original_tx = evm_provider.get_transaction_by_hash(tx_hash)
         rlp_encoded = original_tx.raw_rlp()
-        decoded_tx = type(original_tx).from_rlp(rlp_encoded)
+        decoded_tx = type(original_tx).from_rlp(evm_provider.chain_id, rlp_encoded)
 
         assert original_tx.hash == decoded_tx.hash
         assert original_tx.nonce == decoded_tx.nonce
@@ -361,8 +363,6 @@ def test_transaction_rlp_roundtrip(evm_provider):
         # Check type-specific fields
         if hasattr(original_tx, "gas_price"):
             assert original_tx.gas_price == decoded_tx.gas_price
-        if hasattr(original_tx, "chain_id"):
-            assert original_tx.chain_id == decoded_tx.chain_id
         if hasattr(original_tx, "access_list"):
             assert original_tx.access_list == decoded_tx.access_list
         if hasattr(original_tx, "max_priority_fee_per_gas"):

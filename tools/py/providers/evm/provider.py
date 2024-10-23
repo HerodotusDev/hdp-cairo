@@ -25,8 +25,9 @@ from contract_bootloader.memorizer.evm.storage import (
 
 
 class EvmProviderBase:
-    def __init__(self, rpc_url: str):
+    def __init__(self, rpc_url: str, chain_id: int):
         self.rpc_url = rpc_url
+        self.chain_id = chain_id
 
     def rpc_request(self, rpc_request):
         headers = {"Content-Type": "application/json"}
@@ -37,8 +38,8 @@ class EvmProviderBase:
 
 
 class EvmProvider(EvmProviderBase):
-    def __init__(self, rpc_url: str):
-        super().__init__(rpc_url)
+    def __init__(self, rpc_url: str, chain_id: int):
+        super().__init__(rpc_url, chain_id)
 
     def get_block_header_by_number(self, block_number: int) -> BlockHeader:
         result = self.rpc_request(
@@ -86,7 +87,7 @@ class EvmProvider(EvmProviderBase):
             },
         )
 
-        return Tx.from_rpc_data(result["result"])
+        return Tx.from_rpc_data(self.chain_id, result["result"])
 
     def get_rpc_transaction_by_hash(self, transaction_hash: str) -> TxParams:
         result = self.rpc_request(
@@ -153,8 +154,8 @@ class EvmProvider(EvmProviderBase):
 
 
 class EvmKeyProvider(EvmProviderBase):
-    def __init__(self, rpc_url: str):
-        super().__init__(rpc_url)
+    def __init__(self, rpc_url: str, chain_id: int):
+        super().__init__(rpc_url, chain_id)
 
     def get_block_header(self, key: BlockHeaderMemorizerKey) -> FeltBlockHeader:
         result = self.rpc_request(
@@ -168,7 +169,7 @@ class EvmKeyProvider(EvmProviderBase):
 
         return FeltBlockHeader.from_rpc_data(result["result"])
 
-    def get_transaction(self, key: BlockTxMemorizerKey) -> FeltTx:
+    def get_block_tx(self, key: BlockTxMemorizerKey) -> FeltTx:
         result = self.rpc_request(
             {
                 "jsonrpc": "2.0",
@@ -178,7 +179,7 @@ class EvmKeyProvider(EvmProviderBase):
             },
         )
 
-        return FeltTx.from_rpc_data(result["result"]["transactions"][key.index])
+        return FeltTx.from_rpc_data(key, result["result"]["transactions"][key.index])
 
     def get_account(self, key: AccountMemorizerKey) -> FeltAccount:
         result = self.rpc_request(
@@ -192,7 +193,7 @@ class EvmKeyProvider(EvmProviderBase):
 
         return FeltAccount.from_rpc_data(result["result"])
 
-    def get_receipt(self, key: BlockReceiptMemorizerKey) -> FeltReceipt:
+    def get_block_receipt(self, key: BlockReceiptMemorizerKey) -> FeltReceipt:
         block_result = self.rpc_request(
             {
                 "jsonrpc": "2.0",
@@ -227,3 +228,9 @@ class EvmKeyProvider(EvmProviderBase):
         )
 
         return FeltStorage.from_rpc_data(result["result"])
+
+
+if __name__ == "__main__":
+    provider = EvmProvider("https://mainnet.infura.io/v3/66dda5ed7d56432a82c8da4ac54fde8e", 1)
+    tx = provider.get_transaction_by_hash("0x4b0070defa33cbc85f558323bf60132f600212cec3f4ab9e57260d40ff8949d9")
+    print(tx.tx.derive_sender())
