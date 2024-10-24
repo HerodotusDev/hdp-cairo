@@ -33,30 +33,33 @@ jobs:
       - name: Install Dependencies
         run: make setup
 
-      # - name: Check Python formatting
-      #   run: |
-      #     source venv/bin/activate
-      #     ./tools/make/python_format_check.sh
+      - name: Check Python formatting
+        run: |
+          source venv/bin/activate
+          ./tools/make/python_format_check.sh
 
-      # - name: Check Python tests
-      #   run: |
-      #     source venv/bin/activate
-      #     pytest tools/*
+      - name: Check Python tests
+        run: |
+          source venv/bin/activate
+          pytest tools/*
 
-      # - name: Check Cairo formatting
-      #   run: |
-      #     source venv/bin/activate
-      #     ./tools/make/cairo_format_check.sh
+      - name: Check Cairo formatting
+        run: |
+          source venv/bin/activate
+          ./tools/make/cairo_format_check.sh
+
       - name: Compile Cairo files
         run: |
           source venv/bin/activate
           make build
-      # - name: Run Unit Cairo tests
-      #   env:
-      #     RPC_URL_MAINNET: ${{ secrets.RPC_URL_MAINNET }}
-      #   run: |
-      #     source venv/bin/activate
-      #     ./tools/make/cairo_tests.sh
+          
+      - name: Run Unit Cairo tests
+        env:
+          RPC_URL_MAINNET: ${{ secrets.RPC_URL_MAINNET }}
+        run: |
+          source venv/bin/activate
+          ./tools/make/cairo_tests.sh
+
       - name: Run Full Flow tests
         run: |
           source venv/bin/activate
