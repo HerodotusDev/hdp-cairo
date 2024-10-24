@@ -32,8 +32,9 @@ echo "Running CI Locally..."
 
 # Run each check
 run_check "Build Check" "./tools/make/build.sh"
-run_check "Cairo Format Check" "./tools/make/cairo_format_check.sh"
 run_check "Python Format Check" "./tools/make/python_format_check.sh"
+run_check "Pytest" "./tools/make/run_pytest.sh"
+run_check "Cairo Format Check" "./tools/make/cairo_format_check.sh"
 run_check "Cairo Unit Tests" "./tools/make/cairo_tests.sh"
 run_check "Full Flow Test" "./tools/make/full_flow_test.sh"
 

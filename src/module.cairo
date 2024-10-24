@@ -1,7 +1,7 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
 from src.types import ModuleTask
 from starkware.cairo.common.alloc import alloc
-from src.utils import word_reverse_endian_64
+from src.utils.utils import word_reverse_endian_64
 
 // Creates a Module from the input bytes
 func init_module{

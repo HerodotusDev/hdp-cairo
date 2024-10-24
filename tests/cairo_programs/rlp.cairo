@@ -4,7 +4,7 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
 from starkware.cairo.common.uint256 import Uint256, uint256_eq, uint256_reverse_endian
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
-from src.rlp import (
+from src.utils.rlp import (
     le_chunks_to_uint256,
     decode_rlp_word_to_uint256,
     rlp_list_retrieve,

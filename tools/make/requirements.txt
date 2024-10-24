@@ -4,6 +4,6 @@ protobuf==3.20.3
 inquirer
 python-dotenv
 pysha3
-web3==5.28.0
+web3==7.4.0
 trie
 black

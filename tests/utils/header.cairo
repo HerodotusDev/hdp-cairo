@@ -2,7 +2,7 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
-from src.decoders.header_decoder import HeaderDecoder, HeaderField
+from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField
 
 func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
     header_len: felt, index: felt
@@ -15,178 +15,138 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
 
     let (rlp) = alloc();
     local header_type: felt;
-    local expected_parent_hash: Uint256;
-    local expected_uncles_hash: Uint256;
-    local expected_coinbase: Uint256;
-    local expected_state_root: Uint256;
-    local expected_tx_root: Uint256;
-    local expected_receipts_root: Uint256;
-    let (expected_bloom_filter) = alloc();
-    local expected_difficulty: Uint256;
-    local expected_number: Uint256;
-    local expected_gas_limit: Uint256;
-    local expected_gas_used: Uint256;
-    local expected_timestamp: Uint256;
-
-    let (expected_extra_data) = alloc();
-    local expected_extra_data_len: felt;
-    local expected_extra_data_bytes_len: felt;
-    local expected_mix_hash: Uint256;
-
-    local expected_nonce: Uint256;
-    local expected_base_fee_per_gas: Uint256;
-    local expected_withdrawls_root: Uint256;
-
-    local expected_blob_gas_used: Uint256;
-    local expected_excess_blob_gas: Uint256;
-    local expected_parent_beacon_root: Uint256;
 
     %{
-        from tests.python.test_header_decoding import fetch_header_dict
-        header = fetch_header_dict(block_numbers[ids.index])
-        print("Running Block #", block_numbers[ids.index])
-        segments.write_arg(ids.rlp, header['rlp'])
+        import os
+        from dotenv import load_dotenv
+        from tools.py.providers.evm.provider import EvmProvider
+        from tools.py.types.evm.header import FeltBlockHeader, BlockHeader
+        from tools.py.utils import (
+            bytes_to_8_bytes_chunks_little,
+        )
 
-        ids.expected_parent_hash.low = header['parent_hash']["low"]
-        ids.expected_parent_hash.high = header['parent_hash']["high"]
-        ids.expected_uncles_hash.low = header['uncles_hash']["low"]
-        ids.expected_uncles_hash.high = header['uncles_hash']["high"]
-        ids.expected_coinbase.low = header['coinbase']["low"]
-        ids.expected_coinbase.high = header['coinbase']["high"]
-        ids.expected_state_root.low = header['state_root']["low"]
-        ids.expected_state_root.high = header['state_root']["high"]
-        ids.expected_tx_root.low = header['tx_root']["low"]
-        ids.expected_tx_root.high = header['tx_root']["high"]
-        ids.expected_receipts_root.low = header['receipts_root']["low"]
-        ids.expected_receipts_root.high = header['receipts_root']["high"]
-        segments.write_arg(ids.expected_bloom_filter, header['bloom'])
-        ids.expected_difficulty.low = header['difficulty']
-        ids.expected_number.low = header['number']
-        ids.expected_number.high = 0
-        ids.expected_gas_limit.low = header['gas_limit']
-        ids.expected_gas_limit.high = 0
-        ids.expected_gas_used.low = header['gas_used']
-        ids.expected_gas_used.high = 0
-        ids.expected_timestamp.low = header['timestamp']
-        ids.expected_timestamp.high = 0
-        segments.write_arg(ids.expected_extra_data, header['extra_data']['bytes'])
-        ids.expected_extra_data_len = header['extra_data']['len']
-        ids.expected_extra_data_bytes_len = header['extra_data']['bytes_len']
-
-        ids.expected_mix_hash.low = header['mix_hash']["low"]
-        ids.expected_mix_hash.high = header['mix_hash']["high"]
-
-        ids.expected_nonce.low = header['nonce']
-        ids.expected_nonce.high = 0
-        ids.header_type = header["type"]
-
-        if ids.header_type >=1 :
-            ids.expected_base_fee_per_gas.low = header['base_fee_per_gas']
-
-        if ids.header_type >= 2:
-            ids.expected_withdrawls_root.low = header['withdrawls_root']["low"]
-            ids.expected_withdrawls_root.high = header['withdrawls_root']["high"]
-
-        if ids.header_type >= 3:
-            ids.expected_blob_gas_used.low = header['blob_gas_used']
-            ids.expected_excess_blob_gas.low = header['excess_blob_gas']
-            ids.expected_parent_beacon_root.low = header['parent_beacon_block_root']["low"]
-            ids.expected_parent_beacon_root.high = header['parent_beacon_block_root']["high"]
+        load_dotenv()
+        RPC_URL_MAINNET = os.getenv("RPC_URL_MAINNET")
+        if RPC_URL_MAINNET is None:
+            raise ValueError("RPC_URL_MAINNET environment variable is not set")
+        provider = EvmProvider(RPC_URL_MAINNET, 1)
+        rpc_header = provider.get_rpc_block_header_by_number(block_numbers[ids.index])
+        header = BlockHeader.from_rpc_data(rpc_header)
+        felt_header = FeltBlockHeader(header)
+        ids.header_type = header.type
+        segments.write_arg(ids.rlp, bytes_to_8_bytes_chunks_little(header.raw_rlp()))
     %}
 
     let parent_hash = HeaderDecoder.get_field(rlp, HeaderField.PARENT);
-
-    assert parent_hash.low = expected_parent_hash.low;
-    assert parent_hash.high = expected_parent_hash.high;
+    %{
+        print(hex(ids.parent_hash.low))
+        print(hex(ids.parent_hash.high))
+        low, high = felt_header.parent_hash()
+        assert ids.parent_hash.low == low
+        assert ids.parent_hash.high == high
+    %}
 
     let uncles_hash = HeaderDecoder.get_field(rlp, HeaderField.UNCLE);
-    assert uncles_hash.low = expected_uncles_hash.low;
-    assert uncles_hash.high = expected_uncles_hash.high;
+    %{
+        low, high = felt_header.uncles_hash()
+        assert ids.uncles_hash.low == low
+        assert ids.uncles_hash.high == high
+    %}
 
-    let coinbase_le = HeaderDecoder.get_field(rlp, HeaderField.COINBASE);
-    let (coinbase) = uint256_reverse_endian(num=coinbase_le);
-    assert coinbase.low = expected_coinbase.low;
-    assert coinbase.high = expected_coinbase.high;
+    let coinbase = HeaderDecoder.get_field(rlp, HeaderField.COINBASE);
+    %{
+        print(hex(ids.coinbase.low))
+        print(hex(ids.coinbase.high))
+        low, high = felt_header.coinbase()
+        assert ids.coinbase.low == low
+        assert ids.coinbase.high == high
+    %}
 
     let state_root = HeaderDecoder.get_field(rlp, HeaderField.STATE_ROOT);
-    assert state_root.low = expected_state_root.low;
-    assert state_root.high = expected_state_root.high;
+    %{
+        low, high = felt_header.state_root()
+        assert ids.state_root.low == low
+        assert ids.state_root.high == high
+    %}
 
     let tx_root = HeaderDecoder.get_field(rlp, HeaderField.TRANSACTION_ROOT);
-    assert tx_root.low = expected_tx_root.low;
-    assert tx_root.high = expected_tx_root.high;
+    %{
+        low, high = felt_header.transactions_root()
+        assert ids.tx_root.low == low
+        assert ids.tx_root.high == high
+    %}
 
     let receipts_root = HeaderDecoder.get_field(rlp, HeaderField.RECEIPT_ROOT);
-    assert receipts_root.low = expected_receipts_root.low;
-    assert receipts_root.high = expected_receipts_root.high;
+    %{
+        low, high = felt_header.receipts_root()
+        assert ids.receipts_root.low == low
+        assert ids.receipts_root.high == high
+    %}
 
-    let (bloom_filter, value_len, bytes_len) = HeaderDecoder.get_field_felt(rlp, HeaderField.BLOOM);
-    compare_bloom_filter(
-        expected_bloom_filter=expected_bloom_filter,
-        bloom_filter=bloom_filter,
-        value_len=value_len,
-        bytes_len=bytes_len,
-    );
+    let difficulty = HeaderDecoder.get_field(rlp, HeaderField.DIFFICULTY);
+    %{
+        low, high = felt_header.difficulty()
+        assert ids.difficulty.low == low
+        assert ids.difficulty.high == high
+    %}
 
-    let difficulty_le = HeaderDecoder.get_field(rlp, HeaderField.DIFFICULTY);
-    let (local difficulty) = uint256_reverse_endian(difficulty_le);
-    assert difficulty.low = expected_difficulty.low;
-    assert difficulty.high = expected_difficulty.high;
+    let number = HeaderDecoder.get_field(rlp, HeaderField.NUMBER);
+    %{
+        print(hex(ids.number.low))
+        print(hex(ids.number.high))
+        low, high = felt_header.number()
+        assert ids.number.low == low
+        assert ids.number.high == high
+    %}
 
-    let number_le = HeaderDecoder.get_field(rlp, HeaderField.NUMBER);
-    let (local number) = uint256_reverse_endian(number_le);
+    let gas_limit = HeaderDecoder.get_field(rlp, HeaderField.GAS_LIMIT);
+    %{
+        low, high = felt_header.gas_limit()
+        assert ids.gas_limit.low == low
+        assert ids.gas_limit.high == high
+    %}
 
-    assert number.low = expected_number.low;
-    assert number.high = expected_number.high;
+    let gas_used = HeaderDecoder.get_field(rlp, HeaderField.GAS_USED);
+    %{
+        low, high = felt_header.gas_used()
+        assert ids.gas_used.low == low
+        assert ids.gas_used.high == high
+    %}
 
-    let gas_limit_le = HeaderDecoder.get_field(rlp, HeaderField.GAS_LIMIT);
-    let (local gas_limit) = uint256_reverse_endian(gas_limit_le);
-    assert gas_limit.low = expected_gas_limit.low;
-    assert gas_limit.high = expected_gas_limit.high;
-
-    let gas_used_le = HeaderDecoder.get_field(rlp, HeaderField.GAS_USED);
-    let (local gas_used) = uint256_reverse_endian(gas_used_le);
-    assert gas_used.low = expected_gas_used.low;
-    assert gas_used.high = expected_gas_used.high;
-
-    let timestamp_le = HeaderDecoder.get_field(rlp, HeaderField.TIMESTAMP);
-    let (local timestamp) = uint256_reverse_endian(timestamp_le);
-    assert timestamp.low = expected_timestamp.low;
-    assert timestamp.high = expected_timestamp.high;
-
-    let (extra_data, extra_data_len, extra_data_bytes_len) = HeaderDecoder.get_field_felt(
-        rlp, HeaderField.EXTRA_DATA
-    );
-
-    compare_extra_data(
-        expected_extra_data=expected_extra_data,
-        expected_extra_data_len=expected_extra_data_len,
-        expected_extra_data_bytes_len=expected_extra_data_bytes_len,
-        extra_data=extra_data,
-        extra_data_len=extra_data_len,
-        extra_data_bytes_len=extra_data_bytes_len,
-    );
+    let timestamp = HeaderDecoder.get_field(rlp, HeaderField.TIMESTAMP);
+    %{
+        low, high = felt_header.timestamp()
+        assert ids.timestamp.low == low
+        assert ids.timestamp.high == high
+    %}
 
     let mix_hash = HeaderDecoder.get_field(rlp, HeaderField.MIX_HASH);
-    assert mix_hash.low = expected_mix_hash.low;
-    assert mix_hash.high = expected_mix_hash.high;
+    %{
+        low, high = felt_header.mix_hash()
+        assert ids.mix_hash.low == low
+        assert ids.mix_hash.high == high
+    %}
 
-    let nonce_le = HeaderDecoder.get_field(rlp, HeaderField.NONCE);
-    let (local nonce) = uint256_reverse_endian(nonce_le);
-    assert nonce.low = expected_nonce.low;
-    assert nonce.high = expected_nonce.high;
+    let nonce = HeaderDecoder.get_field(rlp, HeaderField.NONCE);
+    %{
+        low, high = felt_header.nonce()
+        assert ids.nonce.low == low
+        assert ids.nonce.high == high
+    %}
 
     local impl_london: felt;
     %{ ids.impl_london = 1 if ids.header_type >= 1 else 0 %}
 
     if (impl_london == 1) {
-        let base_fee_per_gas_le = HeaderDecoder.get_field(rlp, HeaderField.BASE_FEE_PER_GAS);
-        let (local base_fee_per_gas) = uint256_reverse_endian(base_fee_per_gas_le);
+        let base_fee_per_gas = HeaderDecoder.get_field(rlp, HeaderField.BASE_FEE_PER_GAS);
+        %{
+            low, high = felt_header.base_fee_per_gas()
+            assert ids.base_fee_per_gas.low == low
+            assert ids.base_fee_per_gas.high == high
+        %}
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
         tempvar pow2_array = pow2_array;
-        assert base_fee_per_gas.low = expected_base_fee_per_gas.low;
-        assert base_fee_per_gas.high = expected_base_fee_per_gas.high;
     } else {
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
@@ -197,11 +157,14 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
     %{ ids.impl_shanghai = 1 if ids.header_type >= 2 else 0 %}
     if (impl_shanghai == 1) {
         let withdrawls_root = HeaderDecoder.get_field(rlp, HeaderField.WITHDRAWALS_ROOT);
+        %{
+            low, high = felt_header.withdrawals_root()
+            assert ids.withdrawls_root.low == low
+            assert ids.withdrawls_root.high == high
+        %}
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
         tempvar pow2_array = pow2_array;
-        assert withdrawls_root.low = expected_withdrawls_root.low;
-        assert withdrawls_root.high = expected_withdrawls_root.high;
     } else {
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
@@ -212,22 +175,29 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
     %{ ids.impl_dencun = 1 if ids.header_type >= 3 else 0 %}
 
     if (impl_dencun == 1) {
-        let blob_gas_used_le = HeaderDecoder.get_field(rlp, HeaderField.BLOB_GAS_USED);
-        let (local blob_gas_used) = uint256_reverse_endian(blob_gas_used_le);
-        assert blob_gas_used.low = expected_blob_gas_used.low;
-        assert blob_gas_used.high = expected_blob_gas_used.high;
+        let blob_gas_used = HeaderDecoder.get_field(rlp, HeaderField.BLOB_GAS_USED);
+        %{
+            low, high = felt_header.blob_gas_used()
+            assert ids.blob_gas_used.low == low
+            assert ids.blob_gas_used.high == high
+        %}
 
-        let excess_blob_gas_le = HeaderDecoder.get_field(rlp, HeaderField.EXCESS_BLOB_GAS);
-        let (local excess_blob_gas) = uint256_reverse_endian(excess_blob_gas_le);
-        assert excess_blob_gas.low = expected_excess_blob_gas.low;
-        assert excess_blob_gas.high = expected_excess_blob_gas.high;
+        let excess_blob_gas = HeaderDecoder.get_field(rlp, HeaderField.EXCESS_BLOB_GAS);
+        %{
+            low, high = felt_header.excess_blob_gas()
+            assert ids.excess_blob_gas.low == low
+            assert ids.excess_blob_gas.high == high
+        %}
 
         let parent_beacon_root = HeaderDecoder.get_field(rlp, HeaderField.PARENT_BEACON_BLOCK_ROOT);
+        %{
+            low, high = felt_header.parent_beacon_block_root()
+            assert ids.parent_beacon_root.low == low
+            assert ids.parent_beacon_root.high == high
+        %}
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
         tempvar pow2_array = pow2_array;
-        assert parent_beacon_root.low = expected_parent_beacon_root.low;
-        assert parent_beacon_root.high = expected_parent_beacon_root.high;
     } else {
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
@@ -235,57 +205,4 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
     }
 
     return test_header_decoding(header_len=header_len, index=index + 1);
-}
-
-func compare_bloom_filter(
-    expected_bloom_filter: felt*, bloom_filter: felt*, value_len: felt, bytes_len: felt
-) {
-    alloc_locals;
-
-    assert value_len = 32;
-    assert bytes_len = 256;
-
-    tempvar i = 0;
-
-    assert_loop:
-    let i = [ap - 1];
-    if (i == 32) {
-        jmp end_loop;
-    }
-
-    assert expected_bloom_filter[i] = bloom_filter[i];
-    [ap] = i + 1, ap++;
-    jmp assert_loop;
-
-    end_loop:
-    return ();
-}
-
-func compare_extra_data(
-    expected_extra_data: felt*,
-    expected_extra_data_len: felt,
-    expected_extra_data_bytes_len: felt,
-    extra_data: felt*,
-    extra_data_len: felt,
-    extra_data_bytes_len: felt,
-) {
-    alloc_locals;
-
-    assert expected_extra_data_len = extra_data_len;
-    assert expected_extra_data_bytes_len = extra_data_bytes_len;
-
-    tempvar i = 0;
-
-    assert_loop:
-    let i = [ap - 1];
-    if (i == expected_extra_data_len) {
-        jmp end_loop;
-    }
-
-    assert expected_extra_data[i] = extra_data[i];
-    [ap] = i + 1, ap++;
-    jmp assert_loop;
-
-    end_loop:
-    return ();
 }
