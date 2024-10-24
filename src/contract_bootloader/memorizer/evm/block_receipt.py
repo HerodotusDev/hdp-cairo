@@ -4,10 +4,11 @@ from abc import ABC, abstractmethod
 from contract_bootloader.memorizer.evm.memorizer import EvmMemorizer
 from marshmallow_dataclass import dataclass
 from starkware.cairo.lang.vm.crypto import poseidon_hash_many
+from starkware.cairo.lang.vm.relocatable import RelocatableValue
 
 
 class EvmStateFunctionId(Enum):
-    GET_SUCCESS = 0
+    GET_STATUS = 0
     GET_CUMULATIVE_GAS_USED = 1
     GET_BLOOM = 2
     GET_LOGS = 3
@@ -68,7 +69,7 @@ class AbstractEvmBlockReceiptBase(ABC):
     def __init__(self, memorizer: EvmMemorizer):
         self.memorizer = memorizer
         self.function_map = {
-            EvmStateFunctionId.GET_SUCCESS: self.get_success,
+            EvmStateFunctionId.GET_STATUS: self.get_status,
             EvmStateFunctionId.GET_CUMULATIVE_GAS_USED: self.get_cumulative_gas_used,
             EvmStateFunctionId.GET_BLOOM: self.get_bloom,
             EvmStateFunctionId.GET_LOGS: self.get_logs,
@@ -83,7 +84,7 @@ class AbstractEvmBlockReceiptBase(ABC):
             raise ValueError(f"Function ID {function_id} is not recognized.")
 
     @abstractmethod
-    def get_success(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_status(self, key: MemorizerKey) -> Tuple[int, int]:
         pass
 
     @abstractmethod
@@ -97,3 +98,19 @@ class AbstractEvmBlockReceiptBase(ABC):
     @abstractmethod
     def get_logs(self, key: MemorizerKey) -> Tuple[int, int]:
         pass
+
+    def _get_felt_range(self, start_addr: int, end_addr: int) -> List[int]:
+        assert isinstance(start_addr, RelocatableValue)
+        assert isinstance(end_addr, RelocatableValue)
+        assert start_addr.segment_index == end_addr.segment_index, (
+            "Inconsistent start and end segment indices "
+            f"({start_addr.segment_index} != {end_addr.segment_index})."
+        )
+
+        assert start_addr.offset <= end_addr.offset, (
+            "The start offset cannot be greater than the end offset"
+            f"({start_addr.offset} > {end_addr.offset})."
+        )
+
+        size = end_addr.offset - start_addr.offset
+        return self.segments.memory.get_range_as_ints(addr=start_addr, size=size)

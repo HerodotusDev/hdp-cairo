@@ -147,10 +147,11 @@ namespace EvmDecoder {
                     rlp_start_offset,
                     tx_type,
                     block_number,
+                    chain_id,
                 ),
                 felt*,
             );
-            invoke(func_ptr, 8, invoke_params);
+            invoke(func_ptr, 9, invoke_params);
             let res_high = [ap - 1];
             let res_low = [ap - 2];
             let pow2_array = cast([ap - 3], felt*);

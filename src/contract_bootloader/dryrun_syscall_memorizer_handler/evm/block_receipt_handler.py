@@ -13,21 +13,19 @@ class DryRunEvmBlockReceiptHandler(AbstractEvmBlockReceiptBase):
         self.provider = provider
         self.fetch_keys_registry: set[MemorizerKey] = set()
 
-    def get_success(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_status(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_receipt(key=key).success()
+        return self.provider.get_block_receipt(key=key).status()
 
     def get_cumulative_gas_used(self, key: MemorizerKey) -> Tuple[int, int]:
         self.fetch_keys_registry.add(key)
         return self.provider.get_block_receipt(key=key).cumulative_gas_used()
 
-    # def get_bloom(self, key: MemorizerKey) -> Tuple[int, int]:
-    #     self.fetch_keys_registry.add(key)
-    #     return self.provider.get_block_receipt(key=key).bloom
+    def get_bloom(self, key: MemorizerKey) -> Tuple[int, int]:
+        pass
 
-    # def get_logs(self, key: MemorizerKey) -> Tuple[int, int]:
-    #     self.fetch_keys_registry.add(key)
-    #     return self.provider.get_block_receipt(key=key).logs
+    def get_logs(self, key: MemorizerKey) -> Tuple[int, int]:
+        pass
 
     def fetch_keys_dict(self) -> set:
         def create_dict(key: MemorizerKey):

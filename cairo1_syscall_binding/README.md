@@ -92,3 +92,45 @@ mod get_slot {
     }
 }
 ```
+
+### Fetching a Block Transaction
+```
+#[starknet::contract]
+mod get_gas_price {
+    use hdp_cairo::evm::block_tx::BlockTxTrait;
+    use hdp_cairo::{HDP, evm::block_tx::{BlockTxKey, BlockTxImpl}};
+    use starknet::syscalls::call_contract_syscall;
+    use starknet::{ContractAddress, SyscallResult, SyscallResultTrait};
+
+    #[storage]
+    struct Storage {}
+
+    #[external(v0)]
+    pub fn main(ref self: ContractState, hdp: HDP, block_number: u32, index: u32) -> u256 {
+        hdp
+            .evm
+            .block_tx_get_gas_price(BlockTxKey { chain_id: 11155111, block_number: block_number.into(), index: index.into() })
+    }
+}
+```
+
+### Fetching a Block Receipt
+```
+#[starknet::contract]
+mod get_cumulative_gas_used {
+    use hdp_cairo::evm::block_receipt::BlockReceiptTrait;
+    use hdp_cairo::{HDP, evm::block_receipt::{BlockReceiptKey, BlockReceiptImpl}};
+    use starknet::syscalls::call_contract_syscall;
+    use starknet::{ContractAddress, SyscallResult, SyscallResultTrait};
+
+    #[storage]
+    struct Storage {}
+
+    #[external(v0)]
+    pub fn main(ref self: ContractState, hdp: HDP, block_number: u32, index: u32) -> u256 {
+        hdp
+            .evm
+            .block_receipt_get_cumulative_gas_used(BlockReceiptKey { chain_id: 11155111, block_number: block_number.into(), index: index.into() })
+    }
+}
+```

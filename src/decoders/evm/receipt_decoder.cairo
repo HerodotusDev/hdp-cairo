@@ -2,7 +2,7 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuilti
 from src.utils.rlp import rlp_list_retrieve, le_chunks_to_be_uint256, get_rlp_list_meta
 from src.utils.chain_info import ChainInfo
 from starkware.cairo.common.uint256 import Uint256
-
+from src.utils.chain_info import fetch_chain_info
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
 
 namespace ReceiptField {
@@ -13,10 +13,13 @@ namespace ReceiptField {
 }
 
 namespace ReceiptDecoder {
-    func get_field{
-        range_check_ptr, bitwise_ptr: BitwiseBuiltin*, chain_info: ChainInfo, pow2_array: felt*
-    }(
-        rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt, block_number: felt
+    func get_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+        rlp: felt*,
+        field: felt,
+        rlp_start_offset: felt,
+        tx_type: felt,
+        block_number: felt,
+        chain_id: felt,
     ) -> Uint256 {
         alloc_locals;
         if (field == ReceiptField.LOGS) {
@@ -26,6 +29,7 @@ namespace ReceiptDecoder {
         if (field == ReceiptField.BLOOM) {
             assert 1 = 0;  // returns as felt
         }
+        let (chain_info) = fetch_chain_info(chain_id);
 
         local is_byzantium: felt;
         %{

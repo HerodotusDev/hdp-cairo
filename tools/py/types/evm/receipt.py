@@ -9,7 +9,7 @@ from rlp.sedes import (
 )
 from tools.py.types.evm.base_felt import BaseFelt
 from web3 import Web3
-from typing import List, Tuple, Union
+from typing import List, Tuple
 
 from tools.py.utils import little_8_bytes_chunks_to_bytes
 

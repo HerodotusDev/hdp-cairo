@@ -48,7 +48,7 @@ func test_receipt_decoding_inner{
     %{ assert ids.tx_type == receipt.type, "type test failed" %}
 
     let status = ReceiptDecoder.get_field(
-        rlp, ReceiptField.SUCCESS, rlp_start_offset, tx_type, block_number
+        rlp, ReceiptField.SUCCESS, rlp_start_offset, tx_type, block_number, chain_info.id
     );
 
     %{
@@ -58,7 +58,12 @@ func test_receipt_decoding_inner{
     %}
 
     let cumulative_gas_used = ReceiptDecoder.get_field(
-        rlp, ReceiptField.CUMULATIVE_GAS_USED, rlp_start_offset, tx_type, block_number
+        rlp,
+        ReceiptField.CUMULATIVE_GAS_USED,
+        rlp_start_offset,
+        tx_type,
+        block_number,
+        chain_info.id,
     );
     %{
         low, high = felt_receipt.cumulative_gas_used()

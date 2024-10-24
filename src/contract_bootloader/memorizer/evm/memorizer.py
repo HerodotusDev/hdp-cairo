@@ -9,6 +9,7 @@ class EvmStateId(Enum):
     Account = 1
     Storage = 2
     BlockTx = 3
+    BlockReceipt = 4
 
     @classmethod
     def from_int(cls, value: int):

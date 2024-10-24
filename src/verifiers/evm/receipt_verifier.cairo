@@ -10,7 +10,7 @@ from packages.eth_essentials.lib.rlp_little import (
     extract_n_bytes_from_le_64_chunks_array,
 )
 
-from src.utils.rlp import chunk_to_felt_be
+from src.utils.rlp import be_chunk_to_felt_be
 from src.types import ChainInfo
 from src.memorizers.evm.memorizer import EvmMemorizer, EvmHashParams
 from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField
@@ -86,7 +86,7 @@ func verify_block_receipt_proofs_inner{
         pow2_array=pow2_array,
     );
 
-    let receipt_index = chunk_to_felt_be(key.low);
+    let receipt_index = be_chunk_to_felt_be(key.low);
 
     let memorizer_key = EvmHashParams.block_receipt(
         chain_id=chain_info.id, block_number=block_number, index=receipt_index

@@ -12,23 +12,23 @@ from starkware.starknet.business_logic.execution.objects import CallResult
 from contract_bootloader.memorizer.evm.memorizer import EvmStateId, EvmMemorizer
 from contract_bootloader.memorizer.evm.account import (
     EvmStateFunctionId as EvmAccountFunctionId,
-    MemorizerKey as AccountMemorizerKey,
+    MemorizerKey as EvmAccountKey,
 )
 from contract_bootloader.memorizer.evm.header import (
     EvmStateFunctionId as EvmHeaderFunctionId,
-    MemorizerKey as HeaderMemorizerKey,
+    MemorizerKey as EvmHeaderKey,
 )
 from contract_bootloader.memorizer.evm.storage import (
     EvmStateFunctionId as EvmStorageFunctionId,
-    MemorizerKey as StorageMemorizerKey,
+    MemorizerKey as EvmStorageKey,
 )
 from contract_bootloader.memorizer.evm.block_tx import (
     EvmStateFunctionId as EvmBlockTxFunctionId,
-    MemorizerKey as BlockTxMemorizerKey,
+    MemorizerKey as EvmBlockTxKey,
 )
 from contract_bootloader.memorizer.evm.block_receipt import (
     EvmStateFunctionId as EvmBlockReceiptFunctionId,
-    MemorizerKey as BlockReceiptMemorizerKey,
+    MemorizerKey as EvmBlockReceiptKey,
 )
 from contract_bootloader.dryrun_syscall_memorizer_handler.evm.header_handler import (
     DryRunEvmHeaderHandler,
@@ -102,7 +102,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
 
         memorizerId = EvmStateId.from_int(request.contract_address)
         if memorizerId == EvmStateId.Header:
-            total_size = EvmMemorizer.size() + HeaderMemorizerKey.size()
+            total_size = EvmMemorizer.size() + EvmHeaderKey.size()
 
             if len(calldata) != total_size:
                 raise ValueError(
@@ -116,9 +116,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
             )
 
             idx = EvmMemorizer.size()
-            key = HeaderMemorizerKey.from_int(
-                calldata[idx : idx + HeaderMemorizerKey.size()]
-            )
+            key = EvmHeaderKey.from_int(calldata[idx : idx + EvmHeaderKey.size()])
 
             handler = DryRunEvmHeaderHandler(
                 memorizer=memorizer,
@@ -129,7 +127,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
             self.fetch_keys_registry.append(handler.fetch_keys_dict())
 
         elif memorizerId == EvmStateId.Account:
-            total_size = EvmMemorizer.size() + AccountMemorizerKey.size()
+            total_size = EvmMemorizer.size() + EvmAccountKey.size()
 
             if len(calldata) != total_size:
                 raise ValueError(
@@ -143,9 +141,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
             )
 
             idx = EvmMemorizer.size()
-            key = AccountMemorizerKey.from_int(
-                calldata[idx : idx + AccountMemorizerKey.size()]
-            )
+            key = EvmAccountKey.from_int(calldata[idx : idx + EvmAccountKey.size()])
 
             handler = DryRunEvmAccountHandler(
                 memorizer=memorizer,
@@ -156,7 +152,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
             self.fetch_keys_registry.append(handler.fetch_keys_dict())
 
         elif memorizerId == EvmStateId.Storage:
-            total_size = EvmMemorizer.size() + StorageMemorizerKey.size()
+            total_size = EvmMemorizer.size() + EvmStorageKey.size()
 
             if len(calldata) != total_size:
                 raise ValueError(
@@ -170,9 +166,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
             )
 
             idx = EvmMemorizer.size()
-            key = StorageMemorizerKey.from_int(
-                calldata[idx : idx + StorageMemorizerKey.size()]
-            )
+            key = EvmStorageKey.from_int(calldata[idx : idx + EvmStorageKey.size()])
 
             handler = DryRunEvmStorageHandler(
                 memorizer=memorizer,
@@ -183,7 +177,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
             self.fetch_keys_registry.append(handler.fetch_keys_dict())
 
         elif memorizerId == EvmStateId.BlockTx:
-            total_size = EvmMemorizer.size() + BlockTxMemorizerKey.size()
+            total_size = EvmMemorizer.size() + EvmBlockTxKey.size()
 
             if len(calldata) != total_size:
                 raise ValueError(
@@ -197,9 +191,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
             )
 
             idx = EvmMemorizer.size()
-            key = BlockTxMemorizerKey.from_int(
-                calldata[idx : idx + BlockTxMemorizerKey.size()]
-            )
+            key = EvmBlockTxKey.from_int(calldata[idx : idx + EvmBlockTxKey.size()])
 
             handler = DryRunEvmBlockTxHandler(
                 memorizer=memorizer,
@@ -210,7 +202,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
             self.fetch_keys_registry.append(handler.fetch_keys_dict())
 
         elif memorizerId == EvmStateId.BlockReceipt:
-            total_size = EvmMemorizer.size() + BlockReceiptMemorizerKey.size()
+            total_size = EvmMemorizer.size() + EvmBlockReceiptKey.size()
 
             if len(calldata) != total_size:
                 raise ValueError(
@@ -224,8 +216,8 @@ class DryRunSyscallHandler(SyscallHandlerBase):
             )
 
             idx = EvmMemorizer.size()
-            key = BlockReceiptMemorizerKey.from_int(
-                calldata[idx : idx + BlockReceiptMemorizerKey.size()]
+            key = EvmBlockReceiptKey.from_int(
+                calldata[idx : idx + EvmBlockReceiptKey.size()]
             )
 
             handler = DryRunEvmBlockReceiptHandler(

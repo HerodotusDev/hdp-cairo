@@ -6,7 +6,7 @@ from contract_bootloader.memorizer.evm.block_receipt import (
 )
 from starkware.cairo.lang.vm.memory_segments import MemorySegmentManager
 from tools.py.types.evm.receipt import FeltReceipt
-from tools.py.rlp import get_rlp_len
+from tools.py.rlp import get_enveloped_rlp_len, get_rlp_len
 
 
 class EvmBlockReceiptHandler(AbstractEvmBlockReceiptBase):
@@ -16,7 +16,7 @@ class EvmBlockReceiptHandler(AbstractEvmBlockReceiptBase):
 
     def extract_rlp(self, key: MemorizerKey) -> Tuple[int, List[int]]:
         memorizer_value_ptr = self.memorizer.read(key=key.derive())
-        rlp_len = get_rlp_len(
+        rlp_len = get_enveloped_rlp_len(
             rlp=self.segments.memory[memorizer_value_ptr], item_start_offset=0
         )
         rlp = self._get_felt_range(
@@ -25,9 +25,9 @@ class EvmBlockReceiptHandler(AbstractEvmBlockReceiptBase):
         )
         return (rlp_len, rlp)
 
-    def get_success(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_status(self, key: MemorizerKey) -> Tuple[int, int]:
         rlp_len, rlp = self.extract_rlp(key=key)
-        return FeltReceipt.from_rlp_chunks(rlp, rlp_len).success()
+        return FeltReceipt.from_rlp_chunks(rlp, rlp_len).status()
 
     def get_cumulative_gas_used(self, key: MemorizerKey) -> Tuple[int, int]:
         rlp_len, rlp = self.extract_rlp(key=key)
