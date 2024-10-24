@@ -41,7 +41,6 @@ cairo-compile --cairo_path="packages/eth_essentials" "src/hdp.cairo" --output "b
 if [ ! -d "hdp-test" ]; then
     git clone https://github.com/HerodotusDev/hdp-test && cd hdp-test && git checkout starknet_neo && cd ..
 fi
-
 echo "Starting tests..."
 # Use find to locate all input.json files in hdp-test/fixtures directory and run them in parallel
 find ./hdp-test/fixtures -name "input.json" | parallel --halt soon,fail=1 run_tests {}
@@ -49,9 +48,11 @@ find ./hdp-test/fixtures -name "input.json" | parallel --halt soon,fail=1 run_te
 # Capture the exit status of parallel
 exit_status=$?
 
-# Exit with the captured status
+# Print logs if tests failed
 if [ $exit_status -ne 0 ]; then
     echo "Parallel execution exited with status: $exit_status. Some tests failed."
+    echo "Printing logs for debugging:"
+    cat "$LOG_FILE"
 else
     echo "Parallel execution exited successfully. All tests passed."
 fi

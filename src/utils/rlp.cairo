@@ -307,7 +307,6 @@ func be_chunk_to_felt_be{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_arr
     }
 
     let (q, r) = felt_divmod(value, pow2_array[bytes_len * 8 - 8]);  // Short string prefix
-    %{ print("q:", hex(ids.q), "r:", hex(ids.r)) %}
 
     // ensure we have a short string
     assert [range_check_ptr] = 8 - bytes_len;

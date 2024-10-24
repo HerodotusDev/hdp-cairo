@@ -174,19 +174,6 @@ namespace EvmDecoder {
 
         return (low=res_low, high=res_high);
     }
-
-    // func _unpack_decode_call_header{
-    //     range_check_ptr,
-    //     bitwise_ptr: BitwiseBuiltin*,
-    //     pow2_array: felt*,
-    //     keccak_ptr: KeccakBuiltin*,
-    // }(state_access_type: felt) -> (res_low: felt, res_high: felt) {
-    //     if (state_access_type == EvmStateAccessType.BLOCK_TX) {
-    //         let res_high = [ap - 1];
-    //         let res_low = [ap - 2];
-    //         return (res_low=res_low, res_high=res_high);
-    //     }
-    // }
 }
 
 // This namespace contains all the functions required for reading and decoding
