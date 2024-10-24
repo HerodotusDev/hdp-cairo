@@ -1,5 +1,5 @@
 from typing import List, Tuple
-from contract_bootloader.memorizer.memorizer import Memorizer
+from contract_bootloader.memorizer.evm.memorizer import EvmMemorizer
 from contract_bootloader.memorizer.evm.block_tx import (
     AbstractEvmBlockTxBase,
     MemorizerKey,
@@ -10,7 +10,7 @@ from tools.py.rlp import get_enveloped_rlp_len, get_rlp_len
 
 
 class EvmBlockTxHandler(AbstractEvmBlockTxBase):
-    def __init__(self, segments: MemorySegmentManager, memorizer: Memorizer):
+    def __init__(self, segments: MemorySegmentManager, memorizer: EvmMemorizer):
         super().__init__(memorizer=memorizer)
         self.segments = segments
 
