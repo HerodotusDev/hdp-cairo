@@ -22,8 +22,8 @@ class EvmStateFunctionId(Enum):
     GET_ACCESS_LIST = 10
     GET_MAX_FEE_PER_GAS = 11
     GET_MAX_PRIORITY_FEE_PER_GAS = 12
-    GET_BLOB_VERSIONED_HASHES = 13
-    GET_MAX_FEE_PER_BLOB_GAS = 14
+    GET_MAX_FEE_PER_BLOB_GAS = 13
+    GET_BLOB_VERSIONED_HASHES = 14
     GET_TX_TYPE = 15
     GET_SENDER = 16
 
@@ -87,8 +87,8 @@ class AbstractEvmBlockTxBase(ABC):
             EvmStateFunctionId.GET_ACCESS_LIST: self.get_access_list,
             EvmStateFunctionId.GET_MAX_FEE_PER_GAS: self.get_max_fee_per_gas,
             EvmStateFunctionId.GET_MAX_PRIORITY_FEE_PER_GAS: self.get_max_priority_fee_per_gas,
-            EvmStateFunctionId.GET_BLOB_VERSIONED_HASHES: self.get_blob_versioned_hashes,
             EvmStateFunctionId.GET_MAX_FEE_PER_BLOB_GAS: self.get_max_fee_per_blob_gas,
+            EvmStateFunctionId.GET_BLOB_VERSIONED_HASHES: self.get_blob_versioned_hashes,
             EvmStateFunctionId.GET_TX_TYPE: self.get_tx_type,
             EvmStateFunctionId.GET_SENDER: self.get_sender,
         }
@@ -154,11 +154,11 @@ class AbstractEvmBlockTxBase(ABC):
         pass
 
     @abstractmethod
-    def get_blob_versioned_hashes(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_max_fee_per_blob_gas(self, key: MemorizerKey) -> Tuple[int, int]:
         pass
 
     @abstractmethod
-    def get_max_fee_per_blob_gas(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_blob_versioned_hashes(self, key: MemorizerKey) -> Tuple[int, int]:
         pass
 
     @abstractmethod

@@ -152,7 +152,7 @@ func test_tx_decoding_inner{
     }
 
     local has_eip1559: felt;
-    %{ ids.has_eip1559 = 1 if ids.tx_type >= 3 else 0 %}
+    %{ ids.has_eip1559 = 1 if ids.tx_type >= 2 else 0 %}
     if (has_eip1559 == 1) {
         let max_prio_fee_per_gas = TransactionDecoder.get_field(
             rlp, TransactionField.MAX_PRIORITY_FEE_PER_GAS, rlp_start_offset, tx_type, chain_id
@@ -183,7 +183,7 @@ func test_tx_decoding_inner{
     }
 
     local has_blob_versioned_hashes: felt;
-    %{ ids.has_blob_versioned_hashes = 1 if ids.tx_type == 4 else 0 %}
+    %{ ids.has_blob_versioned_hashes = 1 if ids.tx_type == 3 else 0 %}
     if (has_blob_versioned_hashes == 1) {
         let max_fee_per_blob_gas = TransactionDecoder.get_field(
             rlp, TransactionField.MAX_FEE_PER_BLOB_GAS, rlp_start_offset, tx_type, chain_id

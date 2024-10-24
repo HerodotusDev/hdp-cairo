@@ -26,6 +26,7 @@ from src.utils.rlp import (
 from src.types import ChainInfo
 from src.utils.utils import get_felt_bytes_len, reverse_chunk_endianess
 from src.utils.chain_info import fetch_chain_info
+from starkware.cairo.common.registers import get_label_location
 
 namespace TransactionField {
     const NONCE = 0;
@@ -41,8 +42,8 @@ namespace TransactionField {
     const ACCESS_LIST = 10;
     const MAX_FEE_PER_GAS = 11;
     const MAX_PRIORITY_FEE_PER_GAS = 12;
-    const BLOB_VERSIONED_HASHES = 13;
-    const MAX_FEE_PER_BLOB_GAS = 14;
+    const MAX_FEE_PER_BLOB_GAS = 13;
+    const BLOB_VERSIONED_HASHES = 14;
     const TX_TYPE = 15;
     const SENDER = 16;
 }
@@ -119,19 +120,6 @@ namespace TransactionDecoder {
         );
         let value = le_chunks_to_uint256(res, res_len, bytes_len);
         return (value=value, bytes_len=bytes_len);
-    }
-
-    func get_felt_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
-        rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt
-    ) -> (value: felt*, value_len: felt, bytes_len: felt) {
-        alloc_locals;
-
-        let (local value_start_offset) = get_rlp_list_meta(rlp, rlp_start_offset);
-        let field_index = TxTypeFieldMap.get_field_index(tx_type, field);
-
-        let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, field_index, value_start_offset, 0);
-
-        return (res, res_len, bytes_len);
     }
 
     // Opens the EIP-2718 transaction envelope. It returns the transaction type and the index where the RLP-encoded payload starts.
@@ -393,244 +381,135 @@ namespace TransactionSender {
 // The layout of the different transaction types depends on the type of transaction. Some fields are only available in certain types of transactions.
 // For this reason we must map all available fields to the corresponding index in the transaction object.
 namespace TxTypeFieldMap {
-    func get_field_index(tx_type: felt, field: felt) -> felt {
-        if (tx_type == TransactionType.LEGACY) {
-            return get_legacy_tx_field_index(field);
-        }
+    func get_field_index{range_check_ptr}(tx_type: felt, field: felt) -> felt {
+        alloc_locals;
+        assert [range_check_ptr] = 14 - field;  // type & sender are not native fields, so we catch them before we get here
+        assert [range_check_ptr + 1] = 3 - tx_type;
+        tempvar range_check_ptr = range_check_ptr + 2;
 
-        if (tx_type == TransactionType.EIP2930) {
-            return get_eip2930_tx_field_index(field);
-        }
+        let (data_address) = get_label_location(data);
+        local index = [data_address + field + (15 * tx_type)];
 
-        if (tx_type == TransactionType.EIP1559) {
-            return get_eip1559_tx_field_index(field);
-        }
-
-        if (tx_type == TransactionType.EIP4844) {
-            return get_eip4844_tx_field_index(field);
-        }
-
-        assert 1 = 0;
-        return 0;
-    }
-
-    // Legacy/EIP155:
-    //     0: Nonce
-    //     1: Gas Price
-    //     2: Gas Limit
-    //     3: To
-    //     4: Value
-    //     5: Inputs
-    //     6: V
-    //     7: R
-    //     8: S
-    // ToDo: Consider implementing with dw. Not how how to handle the assert statements though
-    func get_legacy_tx_field_index(field: felt) -> felt {
-        if (field == TransactionField.NONCE) {
-            return 0;
-        }
-        if (field == TransactionField.GAS_PRICE) {
-            return 1;
-        }
-        if (field == TransactionField.GAS_LIMIT) {
-            return 2;
-        }
-        if (field == TransactionField.RECEIVER) {
-            return 3;
-        }
-        if (field == TransactionField.VALUE) {
-            return 4;
-        }
-        if (field == TransactionField.INPUT) {
-            return 5;
-        }
-        if (field == TransactionField.V) {
-            return 6;
-        }
-        if (field == TransactionField.R) {
-            return 7;
-        }
-        if (field == TransactionField.S) {
-            return 8;
-        }
-
-        assert 1 = 0;
-        return 0;
-    }
-
-    // Eip2930:
-    //     0: Chain Id
-    //     1: Nonce
-    //     2: Gas Price
-    //     3: Gas Limit
-    //     4: To
-    //     5: Value
-    //     6: Inputs
-    //     7: Access List
-    //     8: V
-    //     9: R
-    //     10: S
-
-    func get_eip2930_tx_field_index(field: felt) -> felt {
-        if (field == TransactionField.NONCE) {
-            return 1;
-        }
-        if (field == TransactionField.GAS_PRICE) {
-            return 2;
-        }
-        if (field == TransactionField.GAS_LIMIT) {
-            return 3;
-        }
-        if (field == TransactionField.RECEIVER) {
-            return 4;
-        }
-        if (field == TransactionField.VALUE) {
-            return 5;
-        }
-        if (field == TransactionField.INPUT) {
-            return 6;
-        }
-        if (field == TransactionField.V) {
-            return 8;
-        }
-        if (field == TransactionField.R) {
-            return 9;
-        }
-        if (field == TransactionField.S) {
-            return 10;
-        }
-        if (field == TransactionField.CHAIN_ID) {
-            return 0;
-        }
-        if (field == TransactionField.ACCESS_LIST) {
-            return 7;
-        }
-
-        assert 1 = 0;
-        return 0;
-    }
-
-    // Eip1559:
-    //     0: Chain Id
-    //     1: Nonce
-    //     2: Max Priority Fee Per Gas
-    //     3: Max Fee Per Gas
-    //     4: Gas Limit
-    //     5: To
-    //     6: Value
-    //     7: Inputs
-    //     8: Access List
-    //     9: V
-    //     10: R
-    //     11: S
-    func get_eip1559_tx_field_index(field: felt) -> felt {
-        if (field == TransactionField.NONCE) {
-            return 1;
-        }
-        if (field == TransactionField.GAS_PRICE) {
-            assert 1 = 0;  // not available in eip1559
-        }
-        if (field == TransactionField.GAS_LIMIT) {
-            return 4;
-        }
-        if (field == TransactionField.RECEIVER) {
-            return 5;
-        }
-        if (field == TransactionField.VALUE) {
-            return 6;
-        }
-        if (field == TransactionField.INPUT) {
-            return 7;
-        }
-        if (field == TransactionField.V) {
-            return 9;
-        }
-        if (field == TransactionField.R) {
-            return 10;
-        }
-        if (field == TransactionField.S) {
-            return 11;
-        }
-        if (field == TransactionField.CHAIN_ID) {
-            return 0;
-        }
-        if (field == TransactionField.ACCESS_LIST) {
-            return 8;
-        }
-        if (field == TransactionField.MAX_FEE_PER_GAS) {
-            return 3;
-        }
-        if (field == TransactionField.MAX_PRIORITY_FEE_PER_GAS) {
-            return 2;
-        }
-
-        assert 1 = 0;
-        return 0;
-    }
-
-    // Eip4844:
-    //     0: Chain Id
-    //     1: Nonce
-    //     2: Max Priority Fee Per Gas
-    //     3: Max Fee Per Gas
-    //     4: Gas Limit
-    //     5: To
-    //     6: Value
-    //     7: Inputs
-    //     8: Access List
-    //     9: Max Fee Per Blob Gas
-    //     10: Blob Versioned Hashes
-    //     11: V
-    //     12: R
-    //     13: S
-    func get_eip4844_tx_field_index(field: felt) -> felt {
-        if (field == TransactionField.NONCE) {
-            return 1;
-        }
-        if (field == TransactionField.GAS_PRICE) {
+        if (index == 0xFFFFFFFF) {
+            // Field not available in this transaction type
             assert 1 = 0;
         }
-        if (field == TransactionField.GAS_LIMIT) {
-            return 4;
-        }
-        if (field == TransactionField.RECEIVER) {
-            return 5;
-        }
-        if (field == TransactionField.VALUE) {
-            return 6;
-        }
-        if (field == TransactionField.INPUT) {
-            return 7;
-        }
-        if (field == TransactionField.V) {
-            return 11;
-        }
-        if (field == TransactionField.R) {
-            return 12;
-        }
-        if (field == TransactionField.S) {
-            return 13;
-        }
-        if (field == TransactionField.CHAIN_ID) {
-            return 0;
-        }
-        if (field == TransactionField.ACCESS_LIST) {
-            return 8;
-        }
-        if (field == TransactionField.MAX_FEE_PER_GAS) {
-            return 3;
-        }
-        if (field == TransactionField.MAX_PRIORITY_FEE_PER_GAS) {
-            return 2;
-        }
-        if (field == TransactionField.MAX_FEE_PER_BLOB_GAS) {
-            return 9;
-        }
-        if (field == TransactionField.BLOB_VERSIONED_HASHES) {
-            return 10;
-        }
 
-        assert 1 = 0;
-        return 0;
+        return index;
+
+        data:
+        // Legacy/EIP155 field indices
+        //     0: Nonce
+        //     1: Gas Price
+        //     2: Gas Limit
+        //     3: To
+        //     4: Value
+        //     5: Inputs
+        //     6: V
+        //     7: R
+        //     8: S
+        dw 0;  // NONCE
+        dw 1;  // GAS_PRICE
+        dw 2;  // GAS_LIMIT
+        dw 3;  // RECEIVER
+        dw 4;  // VALUE
+        dw 5;  // INPUT
+        dw 6;  // V
+        dw 7;  // R
+        dw 8;  // S
+        dw 0xFFFFFFFF;  // CHAIN_ID (not available in legacy)
+        dw 0xFFFFFFFF;  // ACCESS_LIST (not available in legacy)
+        dw 0xFFFFFFFF;  // MAX_FEE_PER_GAS (not available in legacy)
+        dw 0xFFFFFFFF;  // MAX_PRIORITY_FEE_PER_GAS (not available in legacy)
+        dw 0xFFFFFFFF;  // MAX_FEE_PER_BLOB_GAS (not available in legacy)
+        dw 0xFFFFFFFF;  // BLOB_VERSIONED_HASHES (not available in legacy)
+
+        // EIP2930 field indices
+        //     0: Chain Id
+        //     1: Nonce
+        //     2: Gas Price
+        //     3: Gas Limit
+        //     4: To
+        //     5: Value
+        //     6: Inputs
+        //     7: Access List
+        //     8: V
+        //     9: R
+        //     10: S
+        dw 1;  // NONCE
+        dw 2;  // GAS_PRICE
+        dw 3;  // GAS_LIMIT
+        dw 4;  // RECEIVER
+        dw 5;  // VALUE
+        dw 6;  // INPUT
+        dw 8;  // V
+        dw 9;  // R
+        dw 10;  // S
+        dw 0;  // CHAIN_ID
+        dw 7;  // ACCESS_LIST
+        dw 0xFFFFFFFF;  // MAX_FEE_PER_GAS (not available in EIP2930)
+        dw 0xFFFFFFFF;  // MAX_PRIORITY_FEE_PER_GAS (not available in EIP2930)
+        dw 0xFFFFFFFF;  // MAX_FEE_PER_BLOB_GAS (not available in EIP2930)
+        dw 0xFFFFFFFF;  // BLOB_VERSIONED_HASHES (not available in EIP2930)
+
+        // EIP1559 field indices
+        //     0: Chain Id
+        //     1: Nonce
+        //     2: Max Priority Fee Per Gas
+        //     3: Max Fee Per Gas
+        //     4: Gas Limit
+        //     5: To
+        //     6: Value
+        //     7: Inputs
+        //     8: Access List
+        //     9: V
+        //     10: R
+        //     11: S
+        dw 1;  // NONCE
+        dw 0xFFFFFFFF;  // GAS_PRICE (not available in EIP1559)
+        dw 4;  // GAS_LIMIT
+        dw 5;  // RECEIVER
+        dw 6;  // VALUE
+        dw 7;  // INPUT
+        dw 9;  // V
+        dw 10;  // R
+        dw 11;  // S
+        dw 0;  // CHAIN_ID
+        dw 8;  // ACCESS_LIST
+        dw 3;  // MAX_FEE_PER_GAS
+        dw 2;  // MAX_PRIORITY_FEE_PER_GAS
+        dw 0xFFFFFFFF;  // MAX_FEE_PER_BLOB_GAS (not available in EIP1559)
+        dw 0xFFFFFFFF;  // BLOB_VERSIONED_HASHES (not available in EIP1559)
+
+        // EIP4844 field indices
+        //     0: Chain Id
+        //     1: Nonce
+        //     2: Max Priority Fee Per Gas
+        //     3: Max Fee Per Gas
+        //     4: Gas Limit
+        //     5: To
+        //     6: Value
+        //     7: Inputs
+        //     8: Access List
+        //     9: Max Fee Per Blob Gas
+        //     10: Blob Versioned Hashes
+        //     11: V
+        //     12: R
+        //     13: S
+        dw 1;  // NONCE
+        dw 0xFFFFFFFF;  // GAS_PRICE (not available in EIP4844)
+        dw 4;  // GAS_LIMIT
+        dw 5;  // RECEIVER
+        dw 6;  // VALUE
+        dw 7;  // INPUT
+        dw 11;  // V
+        dw 12;  // R
+        dw 13;  // S
+        dw 0;  // CHAIN_ID
+        dw 8;  // ACCESS_LIST
+        dw 3;  // MAX_FEE_PER_GAS
+        dw 2;  // MAX_PRIORITY_FEE_PER_GAS
+        dw 9;  // MAX_FEE_PER_BLOB_GAS
+        dw 10;  // BLOB_VERSIONED_HASHES
     }
 }
