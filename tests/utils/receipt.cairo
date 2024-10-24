@@ -35,7 +35,7 @@ func test_receipt_decoding_inner{
         RPC_URL_MAINNET = os.getenv("RPC_URL_MAINNET")
         if RPC_URL_MAINNET is None:
             raise ValueError("RPC_URL_MAINNET environment variable is not set")
-        provider = EvmProvider(RPC_URL_MAINNET)
+        provider = EvmProvider(RPC_URL_MAINNET, 1)
         rpc_receipt = provider.get_rpc_receipt_by_hash(receipt_array[ids.index])
         ids.block_number = int(rpc_receipt["blockNumber"], 16)
         receipt = Receipt.from_rpc_data(rpc_receipt)

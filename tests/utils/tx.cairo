@@ -38,9 +38,9 @@ func test_tx_decoding_inner{
         RPC_URL_MAINNET = os.getenv("RPC_URL_MAINNET")
         if RPC_URL_MAINNET is None:
             raise ValueError("RPC_URL_MAINNET environment variable is not set")
-        provider = EvmProvider(RPC_URL_MAINNET)
+        provider = EvmProvider(RPC_URL_MAINNET, 1)
         rpc_tx = provider.get_rpc_transaction_by_hash(tx_array[ids.index])
-        tx = Tx.from_rpc_data(rpc_tx)
+        tx = Tx.from_rpc_data(1, rpc_tx)
         felt_tx = FeltTx(tx)
         segments.write_arg(ids.rlp, bytes_to_8_bytes_chunks_little(tx.raw_rlp()))
     %}
@@ -127,25 +127,24 @@ func test_tx_decoding_inner{
         sender = rpc_tx["from"]
         assert ids.sender.high * 2**128 + ids.sender.low == int(sender, 16)
     %}
+    local chain_id = chain_info.id;
 
     local has_legacy: felt;
     %{ ids.has_legacy = 1 if ids.tx_type <= 1 else 0 %}
     if (has_legacy == 1) {
         let gas_price = TransactionDecoder.get_field(
-            rlp, TransactionField.GAS_PRICE, rlp_start_offset, tx_type, chain_info.id
+            rlp, TransactionField.GAS_PRICE, rlp_start_offset, tx_type, chain_id
         );
         %{
             low, high = felt_tx.gas_price()
             assert ids.gas_price.low == low
             assert ids.gas_price.high == high
         %}
-        tempvar chain_info = chain_info;
         tempvar keccak_ptr = keccak_ptr;
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
         tempvar pow2_array = pow2_array;
     } else {
-        tempvar chain_info = chain_info;
         tempvar keccak_ptr = keccak_ptr;
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
@@ -156,7 +155,7 @@ func test_tx_decoding_inner{
     %{ ids.has_eip1559 = 1 if ids.tx_type >= 3 else 0 %}
     if (has_eip1559 == 1) {
         let max_prio_fee_per_gas = TransactionDecoder.get_field(
-            rlp, TransactionField.MAX_PRIORITY_FEE_PER_GAS, rlp_start_offset, tx_type, chain_info.id
+            rlp, TransactionField.MAX_PRIORITY_FEE_PER_GAS, rlp_start_offset, tx_type, chain_id
         );
         %{
             low, high = felt_tx.max_priority_fee_per_gas()
@@ -165,20 +164,18 @@ func test_tx_decoding_inner{
         %}
 
         let max_fee_per_gas = TransactionDecoder.get_field(
-            rlp, TransactionField.MAX_FEE_PER_GAS, rlp_start_offset, tx_type, chain_info.id
+            rlp, TransactionField.MAX_FEE_PER_GAS, rlp_start_offset, tx_type, chain_id
         );
         %{
             low, high = felt_tx.max_fee_per_gas()
             assert ids.max_fee_per_gas.low == low
             assert ids.max_fee_per_gas.high == high
         %}
-        tempvar chain_info = chain_info;
         tempvar keccak_ptr = keccak_ptr;
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
         tempvar pow2_array = pow2_array;
     } else {
-        tempvar chain_info = chain_info;
         tempvar keccak_ptr = keccak_ptr;
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
@@ -189,7 +186,7 @@ func test_tx_decoding_inner{
     %{ ids.has_blob_versioned_hashes = 1 if ids.tx_type == 4 else 0 %}
     if (has_blob_versioned_hashes == 1) {
         let max_fee_per_blob_gas = TransactionDecoder.get_field(
-            rlp, TransactionField.MAX_FEE_PER_BLOB_GAS, rlp_start_offset, tx_type, chain_info.id
+            rlp, TransactionField.MAX_FEE_PER_BLOB_GAS, rlp_start_offset, tx_type, chain_id
         );
         %{
             low, high = felt_tx.max_fee_per_blob_gas()
@@ -197,13 +194,11 @@ func test_tx_decoding_inner{
             assert ids.max_fee_per_blob_gas.high == high
         %}
 
-        tempvar chain_info = chain_info;
         tempvar keccak_ptr = keccak_ptr;
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;
         tempvar pow2_array = pow2_array;
     } else {
-        tempvar chain_info = chain_info;
         tempvar keccak_ptr = keccak_ptr;
         tempvar range_check_ptr = range_check_ptr;
         tempvar bitwise_ptr = bitwise_ptr;

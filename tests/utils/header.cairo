@@ -29,7 +29,7 @@ func test_header_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
         RPC_URL_MAINNET = os.getenv("RPC_URL_MAINNET")
         if RPC_URL_MAINNET is None:
             raise ValueError("RPC_URL_MAINNET environment variable is not set")
-        provider = EvmProvider(RPC_URL_MAINNET)
+        provider = EvmProvider(RPC_URL_MAINNET, 1)
         rpc_header = provider.get_rpc_block_header_by_number(block_numbers[ids.index])
         header = BlockHeader.from_rpc_data(rpc_header)
         felt_header = FeltBlockHeader(header)

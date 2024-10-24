@@ -30,7 +30,7 @@ func test_account_decoding{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_a
         RPC_URL_MAINNET = os.getenv("RPC_URL_MAINNET")
         if RPC_URL_MAINNET is None:
             raise ValueError("RPC_URL_MAINNET environment variable is not set")
-        provider = EvmProvider(RPC_URL_MAINNET)
+        provider = EvmProvider(RPC_URL_MAINNET, 1)
         rpc_account = provider.get_rpc_account_by_address(account_array[ids.index]["address"], account_array[ids.index]["block_number"])
         account = Account.from_rpc_data(rpc_account)
         felt_account = FeltAccount(account)
