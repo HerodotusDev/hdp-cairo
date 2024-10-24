@@ -3,8 +3,8 @@
 # Define the log file path
 LOG_FILE="full_flow.log"
 
-# Ensure the log file exists, otherwise create it
-touch "$LOG_FILE"
+# Empty the log file at the beginning of each run
+> "$LOG_FILE"
 
 # Export the log file path so it is available in subshells
 export LOG_FILE
@@ -24,9 +24,9 @@ run_tests() {
         echo "$(date '+%Y-%m-%d %H:%M:%S') - Successful test for $input_file: Duration ${duration} seconds"
     else
         echo "$(date '+%Y-%m-%d %H:%M:%S') - Failed test for $input_file"
+        cat "$temp_output" >> "$LOG_FILE"
     fi
 
-    cat "$temp_output" >> "$LOG_FILE"
     return $status
 }
 

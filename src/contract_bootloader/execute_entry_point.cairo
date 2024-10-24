@@ -218,9 +218,7 @@ func execute_entry_point{
     local entry_point_return_values: EntryPointReturnValues* = cast(
         return_values_ptr, EntryPointReturnValues*
     );
-    %{ print("pre_fail") %}
     assert entry_point_return_values.failure_flag = 0;
-    %{ print("post_fail") %}
     let remaining_gas = entry_point_return_values.gas_builtin;
     let retdata_start = entry_point_return_values.retdata_start;
     let retdata_end = entry_point_return_values.retdata_end;

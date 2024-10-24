@@ -48,21 +48,6 @@ namespace HeaderDecoder {
         return value.low;
     }
 
-    func get_field_felt{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
-        rlp: felt*, field: felt
-    ) -> (value: felt*, value_len: felt, bytes_len: felt) {
-        if (field == HeaderField.BLOOM) {
-            return get_bloom_filter(rlp);
-        }
-
-        if (field == HeaderField.EXTRA_DATA) {
-            return get_dynamic_field_bytes(rlp, 12);
-        }
-
-        assert 1 = 0;
-        return (value=rlp, value_len=0, bytes_len=0);
-    }
-
     func get_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
         rlp: felt*, field: felt
     ) -> Uint256 {

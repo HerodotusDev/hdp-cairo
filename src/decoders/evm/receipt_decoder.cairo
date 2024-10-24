@@ -56,21 +56,6 @@ namespace ReceiptDecoder {
         return uint_res;
     }
 
-    func get_felt_field{
-        range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, chain_info: ChainInfo
-    }(rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt) -> (
-        value: felt*, value_len: felt, bytes_len: felt
-    ) {
-        alloc_locals;
-        if (field == ReceiptField.SUCCESS) {
-            assert 1 = 0;  // use dedicated function
-        }
-        let (local value_start_offset) = get_rlp_list_meta(rlp, rlp_start_offset);
-        let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, field, value_start_offset, 0);
-
-        return (res, res_len, bytes_len);
-    }
-
     // Opens the EIP-2718 transaction envelope for receipts. It returns the transaction type and the index where the RLP-encoded payload starts.
     // Inputs:
     // - item: The eveloped receipt

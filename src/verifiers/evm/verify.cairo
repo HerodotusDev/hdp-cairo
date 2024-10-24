@@ -26,7 +26,6 @@ func run_state_verification{
     with chain_id {
         let (mmr_meta_idx) = verify_mmr_batches(mmr_meta_idx);
     }
-    %{ print("evm: mmr_meta_idx: ", ids.mmr_meta_idx) %}
 
     // Step 2: Verify the accounts
     verify_accounts();
