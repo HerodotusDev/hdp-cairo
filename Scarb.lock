@@ -2,6 +2,14 @@
 version = 1
 
 [[package]]
+name = "dry_run_private_inputs"
+version = "0.1.0"
+dependencies = [
+ "hdp_cairo",
+ "snforge_std",
+]
+
+[[package]]
 name = "dry_run_test"
 version = "0.1.0"
 dependencies = [
@@ -14,6 +22,14 @@ name = "hdp_cairo"
 version = "0.1.0"
 
 [[package]]
+name = "not_continues_blocks"
+version = "0.1.0"
+dependencies = [
+ "hdp_cairo",
+ "snforge_std",
+]
+
+[[package]]
 name = "snforge_std"
-version = "0.24.0"
-source = "git+https://github.com/foundry-rs/starknet-foundry?tag=v0.24.0#95e9fb09cb91b3c05295915179ee1b55bf923653"
+version = "0.27.0"
+source = "git+https://github.com/foundry-rs/starknet-foundry?tag=v0.27.0#2d99b7c00678ef0363881ee0273550c44a9263de"
