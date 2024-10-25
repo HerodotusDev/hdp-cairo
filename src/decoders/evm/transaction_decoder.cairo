@@ -194,13 +194,41 @@ namespace TransactionSender {
         );
         let (s) = uint256_reverse_endian(s_le);
 
+        // We need to compute the v bytes length to know where to cut the tx payload
+        local v_is_encoded: felt;
+        %{
+            if ids.v.low <= 0x7f:
+                ids.v_is_encoded = 0
+            else:
+                ids.v_is_encoded = 1
+        %}
+
+        // Get the bytes length of the v field
+        let bytes_len = get_felt_bytes_len(v.low);
+        local v_bytes_len: felt;
+        if (v_is_encoded == 1) {
+            assert [range_check_ptr] = v.low - 0x80;
+            // add 1 for the short word prefix
+            assert v_bytes_len = bytes_len + 1;
+            tempvar range_check_ptr = range_check_ptr + 1;
+        } else {
+            assert [range_check_ptr] = 0x7f - v.low;
+            tempvar range_check_ptr = range_check_ptr + 1;
+            if (bytes_len == 0) {
+                // in case we have v = 0
+                assert v_bytes_len = 1;
+            } else {
+                assert v_bytes_len = bytes_len;
+            }
+        }
+
         // Step 1: Unpack the RLP list and omit signature parameters
         let (tx_payload, tx_payload_len, tx_payload_bytes_len) = extract_tx_payload{
             range_check_ptr=range_check_ptr,
             bitwise_ptr=bitwise_ptr,
             pow2_array=pow2_array,
             chain_info=chain_info,
-        }(rlp, rlp_start_offset, r_bytes_len + s_bytes_len + 3, is_eip155);  // + 2 for s + r prefix, +1 for v
+        }(rlp, rlp_start_offset, r_bytes_len + s_bytes_len + v_bytes_len + 2, is_eip155);  // + 2 for s + r prefix
 
         // Step 2: RLP encode the TX params to create the signing payload and add TX type prefix
         let (
@@ -262,8 +290,8 @@ namespace TransactionSender {
 
         // deal with EIP155
         if (is_eip155 == 1) {
-            let eip155_append = chain_info.id * pow2_array[16] + 0x8080;
-            let eip155_bytes_len = chain_info.id_bytes_len + 2;
+            let eip155_append = chain_info.encoded_id * pow2_array[16] + 0x8080;
+            let eip155_bytes_len = chain_info.encoded_id_bytes_len + 2;
 
             let (tx_payload, tx_payload_len, tx_payload_bytes_len) = append_be_chunk{
                 range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, pow2_array=pow2_array

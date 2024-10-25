@@ -125,6 +125,8 @@ func test_tx_decoding_inner{
     );
     %{
         sender = rpc_tx["from"]
+        computed_sender = tx.sender
+        assert computed_sender == bytes.fromhex(sender[2:])
         assert ids.sender.high * 2**128 + ids.sender.low == int(sender, 16)
     %}
     local chain_id = chain_info.id;

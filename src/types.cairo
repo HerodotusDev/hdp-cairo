@@ -1,6 +1,8 @@
 struct ChainInfo {
     id: felt,
     id_bytes_len: felt,
+    encoded_id: felt,
+    encoded_id_bytes_len: felt,
     byzantium: felt,
     layout: felt,
 }

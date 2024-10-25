@@ -608,7 +608,9 @@ class Tx:
         if data[0] > 0x7F:
             # Legacy transaction (no envelope)
             decoded_tx = decode(data)
-            if decoded_tx[6] >= 35:  # EIP-155 can be detected by v >= 35
+            if (
+                int.from_bytes(decoded_tx[6], "big") >= 35
+            ):  # EIP-155 can be detected by v >= 35
                 instance.tx = Eip155.from_rlp(chain_id, data)
             else:
                 instance.tx = LegacyTx.from_rlp(chain_id, data)
@@ -697,4 +699,3 @@ class FeltTx(BaseFelt):
     @classmethod
     def from_rpc_data(cls, key: BlockTxMemorizerKey, data) -> "FeltTx":
         return cls(Tx.from_rpc_data(key.chain_id, data))
-
