@@ -141,12 +141,10 @@ class Eip155(Serializable):
         return Web3.keccak(rlp)
 
     def derive_sender(self) -> bytes:
-        v = self.v
+        v = self.v - self.chain_id * 2 - 35
+
         r = int.from_bytes(self.r, "big")
         s = int.from_bytes(self.s, "big")
-
-        if self.chain_id is not None:
-            v = v - self.chain_id * 2 - 35
 
         sig = keys.Signature(vrs=(v, r, s))
         address_str = sig.recover_public_key_from_msg_hash(
@@ -609,10 +607,11 @@ class Tx:
         instance = cls()
         if data[0] > 0x7F:
             # Legacy transaction (no envelope)
-            if len(decode(data)) == 9:
-                instance.tx = LegacyTx.from_rlp(chain_id, data)
-            else:
+            decoded_tx = decode(data)
+            if decoded_tx[6] >= 35:  # EIP-155 can be detected by v >= 35
                 instance.tx = Eip155.from_rlp(chain_id, data)
+            else:
+                instance.tx = LegacyTx.from_rlp(chain_id, data)
         else:
             # EIP-2718 transaction envelope
             tx_type = data[0]
@@ -698,3 +697,4 @@ class FeltTx(BaseFelt):
     @classmethod
     def from_rpc_data(cls, key: BlockTxMemorizerKey, data) -> "FeltTx":
         return cls(Tx.from_rpc_data(key.chain_id, data))
+
