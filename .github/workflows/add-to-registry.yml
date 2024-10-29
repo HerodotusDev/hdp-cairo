@@ -54,7 +54,7 @@ jobs:
           echo "HDP_HASH=$HDP_HASH" >> $GITHUB_ENV
           
           # Second program (infrequently updated)
-          cairo-compile --cairo_path="packages/eth_essentials" "src/contract_dry_run.cairo" --output build/contract_dry_run.json
+          cairo-compile --cairo_path="packages/eth_essentials" "src/contract_bootloader/contract_dry_run.cairo" --output build/contract_dry_run.json
           CONTRACT_DRY_RUN_HASH=$(cairo-hash-program --program build/contract_dry_run.json)
           CONTRACT_DRY_RUN_HASH=$(pad_hash $CONTRACT_DRY_RUN_HASH)
           echo "CONTRACT_DRY_RUN_HASH=$CONTRACT_DRY_RUN_HASH" >> $GITHUB_ENV
