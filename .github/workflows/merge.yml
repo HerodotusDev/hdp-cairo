@@ -77,6 +77,7 @@ jobs:
       #     cleanup: true
 
       - name: Set up Docker Buildx
+        if: env.CHANGES_DETECTED == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/setup-buildx-action@v3
         with:
           version: "lab:latest"
