@@ -2,6 +2,7 @@ from setuptools import setup, find_packages
 from setuptools.command.install import install
 from pathlib import Path
 
+
 # Read version from version.py
 version = {}
 with open("version.py") as fp:
