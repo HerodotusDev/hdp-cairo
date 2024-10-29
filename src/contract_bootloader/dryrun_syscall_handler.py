@@ -53,6 +53,7 @@ from tools.py.providers.evm.provider import EvmKeyProvider
 load_dotenv()
 
 RPC_URL = os.getenv("RPC_URL", "")
+EVM_CHAIN_ID = os.getenv("EVM_CHAIN_ID", 1)
 
 if not RPC_URL:
     raise ValueError(
@@ -98,7 +99,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
         )
 
         retdata = []
-        provider = EvmKeyProvider(RPC_URL, 1)
+        provider = EvmKeyProvider(RPC_URL, EVM_CHAIN_ID)
 
         memorizerId = EvmStateId.from_int(request.contract_address)
         if memorizerId == EvmStateId.Header:
