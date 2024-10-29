@@ -3,11 +3,15 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256
 
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
-from src.decoders.header_decoder import HeaderDecoder
+from src.decoders.evm.header_decoder import HeaderDecoder
 from packages.eth_essentials.lib.utils import pow2alloc128
 from src.types import ChainInfo
-from src.decoders.transaction_decoder import TransactionDecoder, TransactionSender, TransactionField
-from src.chain_info import fetch_chain_info
+from src.decoders.evm.transaction_decoder import (
+    TransactionDecoder,
+    TransactionSender,
+    TransactionField,
+)
+from src.utils.chain_info import fetch_chain_info
 from tests.utils.tx import test_tx_decoding_inner
 from tests.utils.receipt import test_receipt_decoding_inner
 func main{

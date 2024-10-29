@@ -57,3 +57,12 @@ def get_rlp_len(rlp: int, item_start_offset: int):
         len_len = current_item - 0xF7
         item_len = decode_long_value_len(rlp, item_start_offset + 1, len_len)
         return item_len + len_len + 1
+
+
+# used for enveloped txs or receipts
+def get_enveloped_rlp_len(rlp: int, item_start_offset: int):
+    first_bytes = extract_byte_at_pos(rlp, item_start_offset)
+    if 0 < first_bytes < 4:
+        return 1 + get_rlp_len(rlp, item_start_offset + 1)
+    else:
+        return get_rlp_len(rlp, item_start_offset)

@@ -6,7 +6,7 @@ import inquirer
 from tools.py.utils import create_directory, get_files_from_folders
 
 # Constants
-CAIRO_PROGRAMS_FOLDERS = ["tests/cairo_programs/", "src/"]
+CAIRO_PROGRAMS_FOLDERS = ["tests/cairo_programs/", "src/", "src/decoders/starknet/"]
 
 BUILD_DIR = "build"
 PROFILING_DIR = os.path.join(BUILD_DIR, "profiling")
@@ -149,7 +149,7 @@ class CairoRunner:
     def run_hdp(self):
         self.filename_dot_cairo_path = "src/hdp.cairo"
         compiled_path = self.compile_cairo_file()
-        cmd_base = f"cairo-run --program={compiled_path} --layout=starknet_with_keccak  --program_input=src/hdp_input.json --print_output"
+        cmd_base = f"cairo-run --program={compiled_path} --layout=starknet_with_keccak  --program_input=src/hdp_input.json --print_output --print_info --proof_mode"
         os.system(cmd_base)
 
     def contract_dry_run(self):
@@ -174,11 +174,8 @@ class CairoRunner:
         """Run all tests."""
         tests_files = get_files_from_folders(["tests/cairo_programs"], ".cairo")
         for test_file in tests_files:
-            if test_file == "tests/cairo_programs/test_vectors.cairo":
+            if test_file != "tests/cairo_programs/tx_decoder.cairo":
                 continue
-
-            # if test_file != "tests/cairo_programs/computational_task.cairo":
-            #     continue
 
             self.filename_dot_cairo_path = test_file
             self.filename_dot_cairo = os.path.basename(test_file)
