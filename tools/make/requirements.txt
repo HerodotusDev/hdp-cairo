@@ -7,3 +7,4 @@ pysha3
 web3==7.4.0
 trie
 black
+
