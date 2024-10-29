@@ -30,6 +30,8 @@ setup(
     packages=[
         "tools.py",
         "tools.py.providers",
+        "tools.py.types",
+        "tools.py.types.evm",
         "tools.py.providers.evm",
         "contract_bootloader",
         "contract_bootloader.contract_class",
