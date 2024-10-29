@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 from setuptools.command.install import install
 from pathlib import Path
 
@@ -27,19 +27,34 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     version=version["__version__"],
-    packages=(
-        find_packages(where="src") +
-        find_packages(where="tools")
-    ),
+    packages=[
+        "tools.py",
+        "tools.py.providers",
+        "tools.py.providers.evm",
+        "contract_bootloader",
+        "contract_bootloader.contract_class",
+        "contract_bootloader.dryrun_syscall_memorizer_handler",
+        "contract_bootloader.dryrun_syscall_memorizer_handler.evm",
+        "contract_bootloader.memorizer",
+        "contract_bootloader.memorizer.evm",
+        "contract_bootloader.syscall_memorizer_handler",
+        "contract_bootloader.syscall_memorizer_handler.evm",
+    ],
     install_requires=requirements,
     package_dir={
-        "tools": "tools",
+        "tools.py": "tools/py",
         "contract_bootloader": "src/contract_bootloader",
     },
     zip_safe=False,
     package_data={
-        "tools": ["**/*.py"],
-        "contract_bootloader": ["*.cairo", "*/*.cairo", "*/*.py", "**/*.py", "memorizer/**/*.py"],
+        "tools.py": ["**/*.py"],
+        "contract_bootloader": [
+            "*.cairo",
+            "*/*.cairo",
+            "*/*.py",
+            "**/*.py",
+            "**/*.cairo",
+        ],
     },
     cmdclass={"install": PostInstallCommand},
 )
