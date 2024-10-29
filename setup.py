@@ -30,6 +30,8 @@ setup(
     packages=[
         "tools",
         "contract_bootloader",
+        "contract_bootloader.memorizer",
+        "contract_bootloader.memorizer.evm",
     ],
     install_requires=requirements,
     package_dir={
@@ -39,7 +41,7 @@ setup(
     zip_safe=False,
     package_data={
         "tools": ["**/*.py"],
-        "contract_bootloader": ["*.cairo", "*/*.cairo", "*/*.py", "**/*.py"],
+        "contract_bootloader": ["*.cairo", "*/*.cairo", "*/*.py", "**/*.py", "memorizer/**/*.py"],
     },
     cmdclass={"install": PostInstallCommand},
 )
