@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 from setuptools.command.install import install
 from pathlib import Path
 
@@ -27,12 +27,10 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     version=version["__version__"],
-    packages=[
-        "tools",
-        "contract_bootloader",
-        "contract_bootloader.memorizer",
-        "contract_bootloader.memorizer.evm",
-    ],
+    packages=(
+        find_packages(where="src") +
+        find_packages(where="tools")
+    ),
     install_requires=requirements,
     package_dir={
         "tools": "tools",
