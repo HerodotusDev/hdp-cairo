@@ -16,7 +16,7 @@ To use this package in your Scarb project, add the following to your `Scarb.toml
 
 ```toml
 [dependencies]
-hdp_cairo = { git = "https://github.com/your-repo/cairo1_syscall_binding.git" }
+hdp_cairo = { git = "https://github.com/HerodotusDev/hdp-cairo.git" }
 ```
 
 ## Usage
