@@ -7,3 +7,6 @@ edition = "2023_11"
 
 [dependencies]
 starknet = "2.6.3"
+
+[lib]
+name = "hdp_cairo"

@@ -1,11 +1,8 @@
 [workspace]
-name = "hdp_cairo"
+name = "hdp_cairo_workspace"
 version = "0.1.0"
 edition = "2023_11"
 
 members = [
     "cairo1_syscall_binding"
 ]
-
-[workspace.dependencies]
-hdp_cairo = { path = "cairo" }
