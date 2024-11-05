@@ -23,7 +23,7 @@ hdp_cairo = { git = "https://github.com/your-repo/cairo1_syscall_binding.git" }
 To fetch verified state from HDP, consider the following examples:
 
 ### Fetching Account State
-```
+```cairo
 #[starknet::contract]
 mod get_nonce {
     use hdp_cairo::evm::account::AccountTrait;
@@ -67,7 +67,7 @@ mod get_gas_limit {
 ```
 
 ### Fetching a Storage Slot
-```
+```cairo
 #[starknet::contract]
 mod get_slot {
     use hdp_cairo::evm::storage::StorageTrait;
@@ -94,7 +94,7 @@ mod get_slot {
 ```
 
 ### Fetching a Block Transaction
-```
+```cairo
 #[starknet::contract]
 mod get_gas_price {
     use hdp_cairo::evm::block_tx::BlockTxTrait;
@@ -115,7 +115,7 @@ mod get_gas_price {
 ```
 
 ### Fetching a Block Receipt
-```
+```cairo
 #[starknet::contract]
 mod get_cumulative_gas_used {
     use hdp_cairo::evm::block_receipt::BlockReceiptTrait;
