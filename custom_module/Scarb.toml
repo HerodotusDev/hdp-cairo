@@ -1,0 +1,13 @@
+[package]
+name = "custom_module"
+version = "0.1.0"
+edition = "2023_11"
+
+[dependencies]
+starknet = "2.6.3"
+hdp_cairo = { path = "../" }
+
+[[target.starknet-contract]]
+sierra = true
+casm = true
+casm-add-pythonic-hints = true

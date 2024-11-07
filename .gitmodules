@@ -1,3 +1,0 @@
-[submodule "packages/eth_essentials"]
-	path = packages/eth_essentials
-	url = https://github.com/HerodotusDev/eth_essentials.git
