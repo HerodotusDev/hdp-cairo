@@ -50,9 +50,16 @@ from contract_bootloader.dryrun_syscall_memorizer_handler.evm.block_receipt_hand
 from contract_bootloader.dryrun_syscall_memorizer_handler.starknet.header_handler import (
     DryRunStarknetHeaderHandler,
 )
+from contract_bootloader.dryrun_syscall_memorizer_handler.starknet.storage_handler import (
+    DryRunStarknetStorageHandler,
+)
 from contract_bootloader.memorizer.starknet.header import (
     MemorizerKey as StarknetHeaderKey,
     StarknetStateFunctionId as StarknetHeaderFunctionId,
+)
+from contract_bootloader.memorizer.starknet.storage import (
+    MemorizerKey as StarknetStorageKey,
+    StarknetStateFunctionId as StarknetStorageFunctionId,
 )
 from enum import Enum
 
@@ -63,7 +70,7 @@ from tools.py.providers.starknet.provider import StarknetKeyProvider
 load_dotenv()
 
 RPC_URL = os.getenv("RPC_URL", "")
-RPC_URL_STARKNET = os.getenv("RPC_URL_STARKNET", "")
+RPC_URL_STARKNET = os.getenv("RPC_URL_STARKNET", "https://pathfinder.sepolia.iosis.tech/")
 
 if not RPC_URL:
     raise ValueError(
@@ -168,6 +175,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
         memorizerId = StarknetStateId.from_int(request.contract_address)
         handlers = {
             StarknetStateId.Header: (DryRunStarknetHeaderHandler, StarknetHeaderKey, StarknetHeaderFunctionId),
+            StarknetStateId.Storage: (DryRunStarknetStorageHandler, StarknetStorageKey, StarknetStorageFunctionId),
         }
 
         if memorizerId not in handlers:

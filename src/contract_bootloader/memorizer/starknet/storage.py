@@ -1,12 +1,10 @@
 from enum import Enum
 from typing import List, Tuple
 from abc import ABC, abstractmethod
-from contract_bootloader.memorizer.evm.memorizer import StarknetMemorizer
+from contract_bootloader.memorizer.starknet.memorizer import StarknetMemorizer
 from marshmallow_dataclass import dataclass
 from starkware.cairo.lang.vm.crypto import poseidon_hash_many
 from starkware.cairo.lang.vm.relocatable import RelocatableValue
-from web3 import Web3
-
 
 class StarknetStateFunctionId(Enum):
     GET_SLOT = 0
