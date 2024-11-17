@@ -25,6 +25,7 @@ class StarknetStateFunctionId(Enum):
     GET_L1_DATA_GAS_PRICE_IN_FRI = 14
     GET_RECEIPTS_COMMITMENT = 15
     GET_L1_DATA_MODE = 16
+    GET_PROTOCOL_VERSION = 17
 
     @classmethod
     def from_int(cls, value: int):
@@ -84,6 +85,7 @@ class AbstractStarknetHeaderBase(ABC):
             StarknetStateFunctionId.GET_L1_DATA_GAS_PRICE_IN_FRI: self.get_l1_data_gas_price_in_fri,
             StarknetStateFunctionId.GET_RECEIPTS_COMMITMENT: self.get_receipts_commitment,
             StarknetStateFunctionId.GET_L1_DATA_MODE: self.get_l1_data_mode,
+            StarknetStateFunctionId.GET_PROTOCOL_VERSION: self.get_protocol_version,
         }
 
     def handle(
@@ -95,71 +97,75 @@ class AbstractStarknetHeaderBase(ABC):
             raise ValueError(f"Function ID {function_id} is not recognized.")
         
     @abstractmethod
-    def get_block_number(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_block_number(self, key: MemorizerKey) -> int:
         pass
 
     @abstractmethod
-    def get_state_root(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_state_root(self, key: MemorizerKey) -> int:
         pass
 
     @abstractmethod
-    def get_sequencer_address(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_sequencer_address(self, key: MemorizerKey) -> int:
         pass
 
     @abstractmethod
-    def get_block_timestamp(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_block_timestamp(self, key: MemorizerKey) -> int:
         pass
 
     @abstractmethod
-    def get_transaction_count(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_transaction_count(self, key: MemorizerKey) -> int:
         pass
 
     @abstractmethod
-    def get_transaction_commitment(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_transaction_commitment(self, key: MemorizerKey) -> int:
         pass
 
     @abstractmethod
-    def get_event_count(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_event_count(self, key: MemorizerKey) -> int:
         pass
 
     @abstractmethod
-    def get_event_commitment(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_event_commitment(self, key: MemorizerKey) -> int:
         pass
 
     @abstractmethod
-    def get_parent_block_hash(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_parent_block_hash(self, key: MemorizerKey) -> int:
         pass
 
     @abstractmethod
-    def get_state_diff_commitment(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_state_diff_commitment(self, key: MemorizerKey) -> int:
         pass
 
     @abstractmethod
-    def get_state_diff_length(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_state_diff_length(self, key: MemorizerKey) -> int:
         pass
 
     @abstractmethod
-    def get_l1_gas_price_in_wei(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_l1_gas_price_in_wei(self, key: MemorizerKey) -> int:
         pass
 
     @abstractmethod
-    def get_l1_gas_price_in_fri(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_l1_gas_price_in_fri(self, key: MemorizerKey) -> int:
         pass
 
     @abstractmethod
-    def get_l1_data_gas_price_in_wei(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_l1_data_gas_price_in_wei(self, key: MemorizerKey) -> int:
         pass
 
     @abstractmethod
-    def get_l1_data_gas_price_in_fri(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_l1_data_gas_price_in_fri(self, key: MemorizerKey) -> int:
         pass
 
     @abstractmethod
-    def get_receipts_commitment(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_receipts_commitment(self, key: MemorizerKey) -> int:
         pass
 
     @abstractmethod
-    def get_l1_data_mode(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_l1_data_mode(self, key: MemorizerKey) -> int:
+        pass
+
+    @abstractmethod
+    def get_protocol_version(self, key: MemorizerKey) -> int:
         pass
 
     def _get_felt_range(self, start_addr: int, end_addr: int) -> List[int]:
