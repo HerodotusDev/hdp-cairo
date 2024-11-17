@@ -27,8 +27,8 @@ from starkware.starknet.core.os.constants import (
     ENTRY_POINT_TYPE_EXTERNAL,
     ENTRY_POINT_TYPE_L1_HANDLER,
 )
-from contract_bootloader.contract_class.compiled_class import CompiledClass, CompiledClassEntryPoint
-from contract_bootloader.execute_syscalls import ExecutionContext, execute_syscalls
+from src.contract_bootloader.contract_class.compiled_class import CompiledClass, CompiledClassEntryPoint
+from src.contract_bootloader.execute_syscalls import ExecutionContext, execute_syscalls
 from starkware.cairo.common.registers import get_fp_and_pc
 
 // Represents the arguments pushed to the stack before calling an entry point.
@@ -169,7 +169,7 @@ func execute_entry_point{
 
     %{
         if 'syscall_handler' not in globals():
-            from contract_bootloader.syscall_handler import SyscallHandler
+            from src.contract_bootloader.syscall_handler import SyscallHandler
             if '__dict_manager' not in globals():
                 from starkware.cairo.common.dict import DictManager
                 __dict_manager = DictManager()

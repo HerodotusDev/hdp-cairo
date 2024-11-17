@@ -79,7 +79,7 @@ class AbstractStarknetStorageBase(ABC):
             raise ValueError(f"Function ID {function_id} is not recognized.")
 
     @abstractmethod
-    def get_slot(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_slot(self, key: MemorizerKey) -> int:
         pass
 
     def _get_felt_range(self, start_addr: int, end_addr: int) -> List[int]:

@@ -117,6 +117,8 @@ class SyscallHandlerBase(ABC):
     def call_contract_helper(
         self, remaining_gas: int, request: CairoStructProxy, syscall_name: str
     ) -> SyscallFullResponse:
+        print("call contract helper")
+        print(request)
         result = self._call_contract_helper(request=request, syscall_name=syscall_name)
 
         response_header = self.structs.ResponseHeader(

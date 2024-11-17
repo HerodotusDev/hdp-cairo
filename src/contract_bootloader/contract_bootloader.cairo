@@ -7,7 +7,7 @@ from starkware.cairo.common.cairo_builtins import (
     EcOpBuiltin,
 )
 from starkware.cairo.common.registers import get_fp_and_pc
-from contract_bootloader.contract_class.compiled_class import CompiledClass
+from src.contract_bootloader.contract_class.compiled_class import CompiledClass
 from starkware.starknet.builtins.segment_arena.segment_arena import new_arena, SegmentArenaBuiltin
 from starkware.starknet.core.os.builtins import (
     BuiltinEncodings,
@@ -18,9 +18,9 @@ from starkware.starknet.core.os.builtins import (
     SelectableBuiltins,
 )
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash_many
-from contract_bootloader.execute_entry_point import execute_entry_point
 from starkware.starknet.core.os.constants import ENTRY_POINT_TYPE_EXTERNAL
-from contract_bootloader.execute_syscalls import ExecutionContext, ExecutionInfo
+from src.contract_bootloader.execute_entry_point import execute_entry_point
+from src.contract_bootloader.execute_syscalls import ExecutionContext, ExecutionInfo
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.alloc import alloc
 
@@ -54,6 +54,8 @@ func run_contract_bootloader{
 
     // Prepare builtin pointers.
     let segment_arena_ptr = new_arena();
+
+    %{ print("run_contract_bootloader") %}
 
     let (__fp__, _) = get_fp_and_pc();
     local local_builtin_ptrs: BuiltinPointers = BuiltinPointers(
