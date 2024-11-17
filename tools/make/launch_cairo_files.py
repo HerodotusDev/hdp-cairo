@@ -153,7 +153,7 @@ class CairoRunner:
         os.system(cmd_base)
 
     def contract_dry_run(self):
-        self.filename_dot_cairo_path = "src/contract_dry_run.cairo"
+        self.filename_dot_cairo_path = "src/contract_bootloader/contract_dry_run.cairo"
         compiled_path = self.compile_cairo_file()
         cmd_base = f"cairo-run --program={compiled_path} --layout=starknet_with_keccak  --program_input=src/dry_run_input.json --print_output"
         os.system(cmd_base)

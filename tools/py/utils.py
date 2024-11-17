@@ -353,10 +353,6 @@ def compute_hash_on_elements(
     processed_data = [to_int(x) if not isinstance(x, int) else x for x in data]
     return functools.reduce(func, [*processed_data, len(data)], 0)
 
-def poseidon_hash_many(data: list[int]) -> int:
-    print(data)
-    return poseidon_hash_many(data)
-
 def to_int(value: str | int):
     if isinstance(value, str):
         value = value.strip()  # Trim whitespaces

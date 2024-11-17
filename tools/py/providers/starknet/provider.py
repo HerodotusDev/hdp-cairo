@@ -34,9 +34,7 @@ class StarknetProviderBase:
         response = requests.get(
             self.feeder_url + method, params=params, headers=headers
         )
-
-        print(response)
-
+        
         return response.json()
 
     

@@ -55,8 +55,6 @@ func run_contract_bootloader{
     // Prepare builtin pointers.
     let segment_arena_ptr = new_arena();
 
-    %{ print("run_contract_bootloader") %}
-
     let (__fp__, _) = get_fp_and_pc();
     local local_builtin_ptrs: BuiltinPointers = BuiltinPointers(
         selectable=SelectableBuiltins(

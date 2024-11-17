@@ -89,7 +89,6 @@ func main{
 
     %{ print("program_hash", hex(ids.program_hash)) %}
 
-    %{ print("heree") %}
     %{
         vm_load_program(
             compiled_class.get_runnable_program(entrypoint_builtins=[]),
@@ -101,7 +100,6 @@ func main{
     let (local starknet_memorizer) = default_dict_new(default_value=7);
     local pow2_array: felt* = nondet %{ segments.add() %};
 
-    %{ print("heree") %}
     %{
         from src.contract_bootloader.dryrun_syscall_handler import DryRunSyscallHandler
 
@@ -112,7 +110,6 @@ func main{
         syscall_handler = DryRunSyscallHandler(segments=segments, dict_manager=__dict_manager)
     %}
 
-    %{ print("heree") %}
     local calldata: felt* = nondet %{ segments.add() %};
 
     assert calldata[0] = nondet %{ ids.evm_memorizer.address_.segment_index %};
@@ -123,12 +120,10 @@ func main{
     memcpy(dst=calldata + 4, src=inputs, len=inputs_len);
     let calldata_size = 4 + inputs_len;
 
-    %{ print("heree") %}
     let (evm_decoder_ptr: felt***) = alloc();
     let (starknet_decoder_ptr: felt***) = alloc();
     let (evm_key_hasher_ptr: felt**) = alloc();
     let (starknet_key_hasher_ptr: felt**) = alloc();
-    %{ print("heree") %}
 
     with evm_memorizer, starknet_memorizer, pow2_array, evm_decoder_ptr, starknet_decoder_ptr, evm_key_hasher_ptr, starknet_key_hasher_ptr {
         let (retdata_size, retdata) = run_contract_bootloader(
@@ -153,7 +148,7 @@ func main{
 
         dictionary["program_hash"] = hex(ids.program_hash)
 
-        print("Dry Run Output", dictionary)
+        print("Dry Run Result", dictionary["result"])
 
         list.append(dictionary)
 

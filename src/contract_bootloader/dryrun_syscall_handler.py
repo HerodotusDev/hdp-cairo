@@ -89,7 +89,6 @@ class DryRunSyscallHandler(SyscallHandlerBase):
         dict_manager: DictManager,
         segments: MemorySegmentManager,
     ):
-        print("dry run syscall handler")
         super().__init__(
             segments=segments,
             initial_syscall_ptr=None,
@@ -126,7 +125,6 @@ class DryRunSyscallHandler(SyscallHandlerBase):
             return self._handle_starknet_call(request, calldata, chain_id)
 
     def _handle_evm_call(self, request: CairoStructProxy, calldata: list, chain_id: int) -> CallResult:
-        print("handle evm call")
         provider = EvmKeyProvider(RPC_URL, chain_id)
         retdata = []
 
@@ -172,8 +170,6 @@ class DryRunSyscallHandler(SyscallHandlerBase):
             StarknetStateId.Header: (DryRunStarknetHeaderHandler, StarknetHeaderKey, StarknetHeaderFunctionId),
         }
 
-        print("memorizerId", memorizerId)
-
         if memorizerId not in handlers:
             raise ValueError(f"StarknetStateId {memorizerId} not matched")
 
@@ -195,8 +191,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
         handler = HandlerClass(memorizer=memorizer, provider=provider)
         retdata = handler.handle(function_id=function_id, key=key)
         self.fetch_keys_registry.append(handler.fetch_keys_dict())
-        retdata = [retdata]
-        print("retdata", retdata)
+        retdata = [retdata] # since we return a single felt for now
 
         return CallResult(gas_consumed=0, failure_flag=0, retdata=retdata)
 

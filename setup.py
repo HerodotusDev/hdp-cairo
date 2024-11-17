@@ -45,7 +45,7 @@ setup(
         "contract_bootloader.memorizer.starknet",
         "contract_bootloader.syscall_memorizer_handler",
         "contract_bootloader.syscall_memorizer_handler.evm",
-        "contract_bootloader.syscall_memorizer_handler.starknet",
+        # "contract_bootloader.syscall_memorizer_handler.starknet",
     ],
     install_requires=requirements,
     package_dir={
@@ -64,4 +64,10 @@ setup(
         ],
     },
     cmdclass={"install": PostInstallCommand},
+    develop=True,
+    options={
+        'develop': {
+            'build_dir': 'build',
+        }
+    }
 )
