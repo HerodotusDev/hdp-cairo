@@ -1,7 +1,7 @@
 import json
 import requests
 from tools.py.types.starknet.header import StarknetHeader
-from contract_bootloader.memorizer.starknet.header import BlockHeaderMemorizerKey
+from contract_bootloader.memorizer.starknet.header import MemorizerKey
 
 class StarknetProviderBase:
     def __init__(self, rpc_url: str, feeder_url: str, chain_id: int):
@@ -49,16 +49,16 @@ class StarknetProvider(StarknetProviderBase):
         feeder_header = self.send_feeder_request("get_block", {"blockNumber": block_number})
         return StarknetHeader.from_feeder_data(feeder_header)
     
-class StarknetKeyProvider(StarknetProviderBase):
+class StarknetKeyProvider(StarknetProvider):
     def __init__(self, rpc_url: str, feeder_url: str, chain_id: int):
         super().__init__(rpc_url, feeder_url, chain_id)
 
-    def get_block_header(self, key: BlockHeaderMemorizerKey) -> StarknetHeader:
+    def get_block_header(self, key: MemorizerKey) -> StarknetHeader:
         return self.get_block_header_by_number(key.block_number)
 
-if __name__ == "__main__":
-    provider = StarknetProvider("https://pathfinder.sepolia.iosis.tech/", "https://alpha-sepolia.starknet.io/feeder_gateway/", 1)
-    block = provider.get_block_header_by_number(55555)
-    print(f"Block: {block}")
-    print(hex(block.hash))
+# if __name__ == "__main__":
+#     provider = StarknetProvider("https://pathfinder.sepolia.iosis.tech/", "https://alpha-sepolia.starknet.io/feeder_gateway/", 1)
+#     block = provider.get_block_header_by_number(55555)
+#     print(f"Block: {block}")
+#     print(hex(block.hash))
 

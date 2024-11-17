@@ -26,12 +26,10 @@ class LegacyStarknetBlock:
     transaction_commitment: int  # A commitment to the transactions included in the block. The root of a height-64 binary Merkle Patricia trie. The leaf at index i corresponds to h(transaction_hash, signature)
     event_count: int  # The number of events in the block.
     event_commitment: int  # A commitment to the events produced in the block. The root of a height-64 binary Merkle Patricia trie. The leaf at index i corresponds to the hash of the i-th event.
-    l1_gas_price: tuple[
-        int, int
-    ]  # The price of L1 gas that was used while constructing the block. The first Integer value is the price in wei. The second is the price in fri.
-    l1_data_gas_price: tuple[
-        int, int
-    ]  # The price of L1 blob gas that was used while constructing the block. If the l1_DA_MODE of the block is set to BLOB, L1 blob gas prices determines the storage update cost. The first Integer value is the price in wei. The second is the price in fri.
+    l1_gas_price_wei: int  # The price of L1 gas that was used while constructing the block. The first Integer value is the price in wei. The second is the price in fri.
+    l1_gas_price_fri: int
+    l1_data_gas_price_wei: int  # The price of L1 blob gas that was used while constructing the block. If the l1_DA_MODE of the block is set to BLOB, L1 blob gas prices determines the storage update cost. The first Integer value is the price in wei. The second is the price in fri.
+    l1_data_gas_price_fri: int
     l1_da_mode: (
         str  # CALLDATA or BLOB, depending on how Starknet state diffs are sent to L1.
     )
@@ -111,10 +109,10 @@ class StarknetBlockV0_13_2(LegacyStarknetBlock):
             self.transaction_commitment,
             self.event_commitment,
             self.receipt_commitment,
-            self.l1_gas_price[0],
-            self.l1_gas_price[1],
-            self.l1_data_gas_price[0],
-            self.l1_data_gas_price[1],
+            self.l1_gas_price_wei,
+            self.l1_gas_price_fri,
+            self.l1_data_gas_price_wei,
+            self.l1_data_gas_price_fri,
             int.from_bytes(self.protocol_version.encode("ascii"), byteorder="big"),
             0,
             self.parent_block_hash,
