@@ -60,7 +60,7 @@ class MemorizerKey:
         storage_slot_value = (self.storage_slot[0] << 128) + self.storage_slot[1]
 
         return {
-            "chain_id": self.chain_id,
+            "chain_id": hex(self.chain_id),
             "block_number": self.block_number,
             "address": f"0x{self.address:040x}",
             "key": f"0x{storage_slot_value:064x}",
