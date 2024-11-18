@@ -36,7 +36,7 @@ func validate_mmr_meta{range_check_ptr, poseidon_ptr: PoseidonBuiltin*, pow2_arr
         memory[ids.mmr_meta._reference_value] = mmr_batch["mmr_meta"]["id"]
         memory[ids.mmr_meta._reference_value + 1] = int(mmr_batch["mmr_meta"]["root"], 16)
         memory[ids.mmr_meta._reference_value + 2] = mmr_batch["mmr_meta"]["size"]
-        memory[ids.mmr_meta._reference_value + 3] = ids.chain_id
+        memory[ids.mmr_meta._reference_value + 3] = int(ids.chain_id, 16)
 
         ids.peaks_len = len(mmr_batch["mmr_meta"]["peaks"])
         segments.write_arg(ids.peaks, hex_to_int_array(mmr_batch["mmr_meta"]["peaks"]))
