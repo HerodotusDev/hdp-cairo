@@ -144,7 +144,11 @@ func main{
                 "high": hex(memory[ids.retdata + 1])
             }
         else:
-            dictionary["result"] = hex(memory[ids.retdata])
+            high, low = divmod(memory[ids.retdata], 2**128)
+            dictionary["result"] = {
+                "low": hex(low),
+                "high": hex(high)
+            }
 
         dictionary["program_hash"] = hex(ids.program_hash)
 
