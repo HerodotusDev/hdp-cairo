@@ -2,6 +2,7 @@ from starkware.cairo.common.cairo_builtins import PoseidonBuiltin
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.dict import dict_read
 from starkware.cairo.common.alloc import alloc
+from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash_many
 from starkware.cairo.common.default_dict import default_dict_finalize
 from packages.eth_essentials.lib.mmr import hash_subtree_path
@@ -132,9 +133,14 @@ func verify_headers_with_mmr_peaks{
     let (contains_peak) = dict_read{dict_ptr=peaks_dict}(computed_peak);
     assert contains_peak = 1;
 
-    let block_number = [fields + 1];
+    // we prefix the fields with its length to make it retrievable from the memorizer
+    let (length_and_fields: felt*) = alloc();
+    assert length_and_fields[0] = fields_len;
+    memcpy(length_and_fields + 1, fields, fields_len);
+
+    let block_number = [length_and_fields + 2];
     let memorizer_key = StarknetHashParams.header(mmr_meta.id, block_number);
-    StarknetMemorizer.add(key=memorizer_key, data=fields);
+    StarknetMemorizer.add(key=memorizer_key, data=length_and_fields);
 
     return verify_headers_with_mmr_peaks(idx=idx - 1);
 }
