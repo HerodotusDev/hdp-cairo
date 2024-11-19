@@ -15,9 +15,8 @@ class LegacyStarknetBlock:
     Compatible with 0.12 <= Starknet version <= 0.13.1.
     """
 
-    parent_block_hash: int  # The hash of the block’s parent.
     block_number: int  # The number, that is, the height, of this block.
-    global_state_root: int  # The state commitment after the block.
+    state_root: int  # The state commitment after the block.
     sequencer_address: (
         int  # The Starknet address of the sequencer that created the block
     )
@@ -26,16 +25,7 @@ class LegacyStarknetBlock:
     transaction_commitment: int  # A commitment to the transactions included in the block. The root of a height-64 binary Merkle Patricia trie. The leaf at index i corresponds to h(transaction_hash, signature)
     event_count: int  # The number of events in the block.
     event_commitment: int  # A commitment to the events produced in the block. The root of a height-64 binary Merkle Patricia trie. The leaf at index i corresponds to the hash of the i-th event.
-    l1_gas_price_wei: int  # The price of L1 gas that was used while constructing the block. The first Integer value is the price in wei. The second is the price in fri.
-    l1_gas_price_fri: int
-    l1_data_gas_price_wei: int  # The price of L1 blob gas that was used while constructing the block. If the l1_DA_MODE of the block is set to BLOB, L1 blob gas prices determines the storage update cost. The first Integer value is the price in wei. The second is the price in fri.
-    l1_data_gas_price_fri: int
-    l1_da_mode: (
-        str  # CALLDATA or BLOB, depending on how Starknet state diffs are sent to L1.
-    )
-    protocol_version: (
-        str  # The version of the Starknet protocol used when creating the block.
-    )
+    parent_block_hash: int  # The hash of the block’s parent.
 
     def hash(self):
         """
@@ -49,7 +39,7 @@ class LegacyStarknetBlock:
     def to_fields(self) -> list[int]:
         return [
             self.block_number,
-            self.global_state_root,
+            self.state_root,
             self.sequencer_address,
             self.block_timestamp,
             self.transaction_count,
@@ -71,6 +61,12 @@ class StarknetBlockV0_13_2(LegacyStarknetBlock):
     state_diff_commitment: int
     state_diff_length: int
     receipt_commitment: int
+    protocol_version: str
+    l1_gas_price_wei: int  # The price of L1 gas that was used while constructing the block. The first Integer value is the price in wei. The second is the price in fri.
+    l1_gas_price_fri: int
+    l1_data_gas_price_wei: int  # The price of L1 blob gas that was used while constructing the block. If the l1_DA_MODE of the block is set to BLOB, L1 blob gas prices determines the storage update cost. The first Integer value is the price in wei. The second is the price in fri.
+    l1_data_gas_price_fri: int
+    l1_da_mode: str
 
     def concat_counts(self) -> int:
         concat_counts = bytearray(32)
@@ -101,7 +97,7 @@ class StarknetBlockV0_13_2(LegacyStarknetBlock):
         fields = [
             int.from_bytes(b"STARKNET_BLOCK_HASH0", "big"),
             self.block_number,
-            self.global_state_root,
+            self.state_root,
             self.sequencer_address,
             self.block_timestamp,
             self.concat_counts(),
@@ -136,8 +132,8 @@ class StarknetHeader:
         return self.header.block_number
 
     @property
-    def global_state_root(self) -> int:
-        return self.header.global_state_root
+    def state_root(self) -> int:
+        return self.header.state_root
 
     @property
     def sequencer_address(self) -> int:
@@ -164,20 +160,40 @@ class StarknetHeader:
         return self.header.event_commitment
 
     @property
-    def l1_gas_price(self) -> tuple[int, int]:
-        return self.header.l1_gas_price
+    def l1_gas_price_wei(self) -> int:
+        if isinstance(self.header, StarknetBlockV0_13_2):
+            return self.header.l1_gas_price_wei
+        raise AttributeError("l1_gas_price_wei is not available for this block version")
+    
+    @property
+    def l1_gas_price_fri(self) -> int:
+        if isinstance(self.header, StarknetBlockV0_13_2):
+            return self.header.l1_gas_price_fri
+        raise AttributeError("l1_gas_price_fri is not available for this block version")
 
     @property
-    def l1_data_gas_price(self) -> tuple[int, int]:
-        return self.header.l1_data_gas_price
+    def l1_data_gas_price_wei(self) -> int:
+        if isinstance(self.header, StarknetBlockV0_13_2):
+            return self.header.l1_data_gas_price_wei
+        raise AttributeError("l1_data_gas_price_wei is not available for this block version")
+    
+    @property
+    def l1_data_gas_price_fri(self) -> int:
+        if isinstance(self.header, StarknetBlockV0_13_2):
+            return self.header.l1_data_gas_price_fri
+        raise AttributeError("l1_data_gas_price_fri is not available for this block version")
 
     @property
     def l1_da_mode(self) -> str:
-        return self.header.l1_da_mode
+        if isinstance(self.header, StarknetBlockV0_13_2):
+            return self.header.l1_da_mode
+        raise AttributeError("l1_da_mode is not available for this block version")
 
     @property
     def protocol_version(self) -> str:
-        return self.header.protocol_version
+        if isinstance(self.header, StarknetBlockV0_13_2):
+            return self.header.protocol_version
+        raise AttributeError("protocol_version is not available for this block version")
 
     @property
     def state_diff_commitment(self) -> int:
@@ -211,29 +227,80 @@ class StarknetHeader:
         block_fields = {
             "parent_block_hash": int(feeder_header["parent_block_hash"], 16),
             "block_number": feeder_header["block_number"],
-            "global_state_root": int(feeder_header["state_root"], 16),
+            "state_root": int(feeder_header["state_root"], 16),
             "sequencer_address": int(feeder_header["sequencer_address"], 16),
             "block_timestamp": feeder_header["timestamp"],
             "transaction_count": len(feeder_header["transactions"]),
             "transaction_commitment": int(feeder_header["transaction_commitment"], 16),
             "event_commitment": int(feeder_header["event_commitment"], 16),
-            "l1_gas_price_wei": int(feeder_header["l1_gas_price"]["price_in_wei"], 16), 
-            "l1_gas_price_fri": int(feeder_header["l1_gas_price"]["price_in_fri"], 16),
-            "l1_data_gas_price_wei": int(feeder_header["l1_data_gas_price"]["price_in_wei"], 16), 
-            "l1_data_gas_price_fri": int(feeder_header["l1_data_gas_price"]["price_in_fri"], 16),
-            "l1_da_mode": feeder_header["l1_da_mode"],
             "event_count": sum(len(receipt["events"]) for receipt in feeder_header["transaction_receipts"]),
-            "protocol_version": feeder_header["starknet_version"],
         }
 
         if feeder_header["starknet_version"] == "0.13.2":
             block_fields.update({
+                "l1_gas_price_wei": int(feeder_header["l1_gas_price"]["price_in_wei"], 16), 
+                "l1_gas_price_fri": int(feeder_header["l1_gas_price"]["price_in_fri"], 16),
+                "l1_data_gas_price_wei": int(feeder_header["l1_data_gas_price"]["price_in_wei"], 16), 
+                "l1_data_gas_price_fri": int(feeder_header["l1_data_gas_price"]["price_in_fri"], 16),
+                "l1_da_mode": feeder_header["l1_da_mode"],
                 "state_diff_commitment": int(feeder_header["state_diff_commitment"], 16),
                 "state_diff_length": feeder_header["state_diff_length"],
                 "receipt_commitment": int(feeder_header["receipt_commitment"], 16),
+                "protocol_version": feeder_header["starknet_version"],
             })
             instance.header = StarknetBlockV0_13_2(**block_fields)
         else:
             instance.header = LegacyStarknetBlock(**block_fields)
         
         return instance
+
+    @classmethod
+    def from_memorizer_fields(cls, memorizer_fields: list[int]) -> "StarknetHeader":
+        if memorizer_fields[1] == int.from_bytes(b"STARKNET_BLOCK_HASH0", "big"):
+            # v2
+            # Extract counts from concatenated value
+            concat_counts = memorizer_fields[6]
+            concat_bytes = concat_counts.to_bytes(32, byteorder="big")
+            
+            transaction_count = int.from_bytes(concat_bytes[0:8], byteorder="big")
+            event_count = int.from_bytes(concat_bytes[8:16], byteorder="big") 
+            state_diff_length = int.from_bytes(concat_bytes[16:24], byteorder="big")
+            l1_da_mode = "BLOB" if concat_bytes[24] & 0b10000000 else "CALLDATA"
+
+            instance = cls()
+            instance.header = StarknetBlockV0_13_2(
+                block_number=memorizer_fields[2],
+                state_root=memorizer_fields[3],
+                sequencer_address=memorizer_fields[4],
+                block_timestamp=memorizer_fields[5],
+                transaction_count=transaction_count,
+                event_count=event_count,
+                state_diff_length=state_diff_length,
+                l1_da_mode=l1_da_mode,
+                state_diff_commitment=memorizer_fields[7],
+                transaction_commitment=memorizer_fields[8],
+                event_commitment=memorizer_fields[9],
+                receipt_commitment=memorizer_fields[10],
+                l1_gas_price_wei=memorizer_fields[11],
+                l1_gas_price_fri=memorizer_fields[12],
+                l1_data_gas_price_wei=memorizer_fields[13],
+                l1_data_gas_price_fri=memorizer_fields[14],
+                protocol_version=memorizer_fields[15].to_bytes(32, byteorder="big").decode("ascii").rstrip('\x00'),
+                parent_block_hash=memorizer_fields[17]
+            )
+            return instance
+        else:
+            # Legacy header
+            instance = cls()
+            instance.header = LegacyStarknetBlock(
+                block_number=memorizer_fields[1],
+                state_root=memorizer_fields[2], 
+                sequencer_address=memorizer_fields[3],
+                block_timestamp=memorizer_fields[4],
+                transaction_count=memorizer_fields[5],
+                transaction_commitment=memorizer_fields[6],
+                event_count=memorizer_fields[7],
+                event_commitment=memorizer_fields[8],
+                parent_block_hash=memorizer_fields[11]
+            )
+            return instance

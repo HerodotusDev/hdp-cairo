@@ -46,10 +46,9 @@ namespace StarknetDecoder {
     // Returns:
     // - The length of the result in felts
     func decode{range_check_ptr, starknet_decoder_ptr: felt***, output_ptr: felt*}(
-        rlp: felt*,
+        data: felt*,
         state_access_type: felt,
         field: felt,
-        block_number: felt,
         decoder_target: felt,
         as_be: felt,
     ) -> (result_len: felt) {
@@ -58,7 +57,7 @@ namespace StarknetDecoder {
         let func_ptr = starknet_decoder_ptr[decoder_target][state_access_type];
         if (decoder_target == StarknetDecoderTarget.FELT) {
             let (invoke_params, param_len) = _pack_decode_call_header(
-                state_access_type, field, block_number, rlp
+                state_access_type, field, data
             );
             invoke(func_ptr, param_len, invoke_params);
 
@@ -74,6 +73,7 @@ namespace StarknetDecoder {
                 with_attr error_message("LE decoding currently not supported for Starknet") {
                     assert 1 = 0;
                 }
+                return (result_len=0);
             }
         } else {
             with_attr error_message("Selected StarknetDecoderTarget not implemented") {
@@ -126,6 +126,7 @@ namespace StarknetStateAccess {
     // - The length of the result in felts
     func read_and_decode{
         range_check_ptr,
+        poseidon_ptr: PoseidonBuiltin*,
         starknet_memorizer: DictAccess*,
         starknet_decoder_ptr: felt***,
         starknet_key_hasher_ptr: felt**,
@@ -136,12 +137,10 @@ namespace StarknetStateAccess {
         alloc_locals;  // ToDo: currently needed to retrieve the poseidon_ptr from the _compute_memorizer_key call. Find way to remove this
 
         let (memorizer_key) = _compute_memorizer_key(params, state_access_type);
-        let (rlp) = StarknetMemorizer.get(memorizer_key);
+        let (data) = StarknetMemorizer.get(memorizer_key);
 
-        // In EVM, the block number is always the second param. Ensure this doesnt change in the future
-        let block_number = params[1];
         let (result_len) = StarknetDecoder.decode(
-            rlp, state_access_type, field, block_number, decoder_target, as_be
+            data, state_access_type, field, decoder_target, as_be
         );
 
         return (result_len=result_len);

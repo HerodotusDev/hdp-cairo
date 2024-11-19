@@ -29,7 +29,7 @@ namespace StarknetHeaderFields {
 namespace StarknetHeaderDecoder {
     func derive_header_version(fields: felt*) -> felt {
         // 0x535441524b4e45545f424c4f434b5f4841534830 = to_hex("STARKNET_BLOCK_HASH0")
-        if (fields[0] == 0x535441524b4e45545f424c4f434b5f4841534830) {
+        if (fields[1] == 0x535441524b4e45545f424c4f434b5f4841534830) {
             return StarknetHeaderVersion.VERSION_2;
         }
 
@@ -56,7 +56,7 @@ namespace StarknetHeaderDecoder {
 
 // V1_HEADER = [
 // block_number,
-// global_state_root,
+// state_root,
 // sequencer_address,
 // block_timestamp,
 // transaction_count,
@@ -71,7 +71,7 @@ namespace StarknetHeaderDecoder {
 // V2_HEADER = [
 // "STARKNET_BLOCK_HASH0",
 // block_number,
-// global_state_root,
+// state_root,
 // sequencer_address,
 // block_timestamp,
 // transaction_count || event_count || state_diff_length || l1_da_mode,

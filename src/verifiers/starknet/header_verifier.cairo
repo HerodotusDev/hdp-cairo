@@ -8,6 +8,7 @@ from starkware.cairo.common.default_dict import default_dict_finalize
 from packages.eth_essentials.lib.mmr import hash_subtree_path
 from src.types import MMRMeta
 from src.memorizers.starknet.memorizer import StarknetMemorizer, StarknetHashParams
+from src.decoders.starknet.header_decoder import StarknetHeaderDecoder, StarknetHeaderFields
 from src.verifiers.mmr_verifier import validate_mmr_meta
 
 func verify_mmr_batches{
@@ -106,7 +107,7 @@ func verify_headers_with_mmr_peaks{
 
         // add to memorizer
         let block_number = [fields + 1];
-        let memorizer_key = StarknetHashParams.header(mmr_meta.id, block_number);
+        let memorizer_key = StarknetHashParams.header(mmr_meta.chain_id, block_number);
         StarknetMemorizer.add(key=memorizer_key, data=fields);
 
         return verify_headers_with_mmr_peaks(idx=idx - 1);
@@ -138,8 +139,8 @@ func verify_headers_with_mmr_peaks{
     assert length_and_fields[0] = fields_len;
     memcpy(length_and_fields + 1, fields, fields_len);
 
-    let block_number = [length_and_fields + 2];
-    let memorizer_key = StarknetHashParams.header(mmr_meta.id, block_number);
+    let (block_number) = StarknetHeaderDecoder.get_field(length_and_fields, StarknetHeaderFields.BLOCK_NUMBER);
+    let memorizer_key = StarknetHashParams.header(mmr_meta.chain_id, block_number);
     StarknetMemorizer.add(key=memorizer_key, data=length_and_fields);
 
     return verify_headers_with_mmr_peaks(idx=idx - 1);

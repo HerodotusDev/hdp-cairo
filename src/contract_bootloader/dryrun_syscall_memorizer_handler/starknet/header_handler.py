@@ -5,7 +5,6 @@ from contract_bootloader.memorizer.starknet.header import (
 )
 from tools.py.providers.starknet.provider import StarknetKeyProvider
 
-
 class DryRunStarknetHeaderHandler(AbstractStarknetHeaderBase):
     def __init__(self, memorizer: StarknetMemorizer, provider: StarknetKeyProvider):
         super().__init__(memorizer=memorizer)
@@ -26,7 +25,7 @@ class DryRunStarknetHeaderHandler(AbstractStarknetHeaderBase):
 
     def get_state_root(self, key: MemorizerKey) -> int:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_header(key=key).global_state_root
+        return self.provider.get_block_header(key=key).state_root
 
     def get_sequencer_address(self, key: MemorizerKey) -> int:
         self.fetch_keys_registry.add(key)
