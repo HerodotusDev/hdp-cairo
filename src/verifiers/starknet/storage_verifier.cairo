@@ -31,12 +31,13 @@ func verify_proofs{
     local n_storage_items: felt;
     %{ ids.n_storage_items = len(batch["storages"]) %}
 
-    verify_proofs_inner(n_storage_items, 0);
+    verify_proofs_loop(n_storage_items, 0);
 
     return ();
 }
 
-func verify_proofs_inner{
+// ToDo: this should be refactored, as we use to many call stack headers. We need an entrypoint for testing though
+func verify_proofs_loop{
     range_check_ptr,
     pedersen_ptr: HashBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
@@ -50,20 +51,9 @@ func verify_proofs_inner{
     if (n_storage_items == index) {
         return ();
     }
-
-    let storage_addresses: felt* = alloc();
-    local state_root: felt;
-    local storage_count: felt;
-    local contract_address: felt;
     local block_number: felt;
-    %{
-        print("RUNNING PROOF VERIFICATION FOR STORAGE INDEX:", ids.index)
-        storage_proof = batch["storages"][ids.index]
-        segments.write_arg(ids.storage_addresses, [int(key, 16) for key in storage_proof["storage_addresses"]])
-        ids.storage_count = len(storage_proof["storage_addresses"])
-        ids.contract_address = int(storage_proof["contract_address"], 16)
-        ids.block_number = storage_proof["block_number"]
-    %}
+    %{ ids.block_number = batch["storages"][ids.index]["block_number"] %}
+
     let memorizer_key = StarknetHashParams.header(
         chain_id=chain_info.id, block_number=block_number
     );
@@ -71,6 +61,33 @@ func verify_proofs_inner{
     let (state_root) = StarknetHeaderDecoder.get_field(
         header_data, StarknetHeaderFields.STATE_ROOT
     );
+
+    verify_proofs_inner(state_root, block_number, index);
+
+    return verify_proofs_loop(n_storage_items, index + 1);
+}
+
+func verify_proofs_inner{
+    range_check_ptr,
+    pedersen_ptr: HashBuiltin*,
+    bitwise_ptr: BitwiseBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
+    starknet_memorizer: DictAccess*,
+    chain_info: ChainInfo,
+    pow2_array: felt*,
+}(state_root: felt, block_number: felt, index: felt) {
+    alloc_locals;
+
+    let storage_addresses: felt* = alloc();
+    local state_root: felt;
+    local storage_count: felt;
+    local contract_address: felt;
+    %{
+        storage_proof = batch["storages"][ids.index]
+        segments.write_arg(ids.storage_addresses, [int(key, 16) for key in storage_proof["storage_addresses"]])
+        ids.storage_count = len(storage_proof["storage_addresses"])
+        ids.contract_address = int(storage_proof["contract_address"], 16)
+    %}
 
     // Compute contract_root and write values to memorizer
     with contract_address, storage_addresses, block_number {
@@ -115,7 +132,7 @@ func verify_proofs_inner{
     let (computed_state_root) = poseidon_hash_many(3, hash_chain);
     assert state_root = computed_state_root;
 
-    return verify_proofs_inner(n_storage_items, index + 1);
+    return ();
 }
 
 // This function iteratively validates contract storage proofs. It is ensures that each proof computes the same contract root.

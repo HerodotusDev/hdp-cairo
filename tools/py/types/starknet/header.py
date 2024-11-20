@@ -234,7 +234,6 @@ class StarknetHeader:
     @classmethod
     def from_feeder_data(cls, feeder_header: list[dict]) -> "StarknetHeader":
         instance = cls()
-
         # Map RPC response fields to block class fields
         block_fields = {
             "parent_block_hash": int(feeder_header["parent_block_hash"], 16),
