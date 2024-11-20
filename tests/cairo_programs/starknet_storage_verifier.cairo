@@ -12448,6 +12448,7 @@ func main{
 }
 
 func run_tests{
+    range_check_ptr,
     pedersen_ptr: HashBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,

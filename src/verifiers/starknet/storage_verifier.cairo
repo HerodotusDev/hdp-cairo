@@ -15,9 +15,11 @@ from starkware.cairo.common.builtin_poseidon.poseidon import (
 
 from packages.eth_essentials.lib.utils import bitwise_divmod
 from src.memorizers.starknet.memorizer import StarknetMemorizer, StarknetHashParams
+from src.decoders.starknet.header_decoder import StarknetHeaderDecoder, StarknetHeaderFields
 from src.types import ChainInfo
 
 func verify_proofs{
+    range_check_ptr,
     pedersen_ptr: HashBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
@@ -35,6 +37,7 @@ func verify_proofs{
 }
 
 func verify_proofs_inner{
+    range_check_ptr,
     pedersen_ptr: HashBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
@@ -60,9 +63,10 @@ func verify_proofs_inner{
         ids.storage_count = len(storage_proof["storage_addresses"])
         ids.contract_address = int(storage_proof["contract_address"], 16)
         ids.block_number = storage_proof["block_number"]
-        # todo: get from header memorizer once ready
-        ids.state_root = int(storage_proof["state_commitment"], 16)
     %}
+    let memorizer_key = StarknetHashParams.header(chain_id=chain_info.id, block_number=block_number);
+    let (header_data) = StarknetMemorizer.get(key=memorizer_key);
+    let (state_root) = StarknetHeaderDecoder.get_field(header_data, StarknetHeaderFields.STATE_ROOT);
 
     // Compute contract_root and write values to memorizer
     with contract_address, storage_addresses, block_number {
@@ -130,7 +134,11 @@ func validate_storage_proofs{
     }
 
     // Compute contract_root
-    %{ vm_enter_scope(dict(nodes=storage_proof["proof"]["contract_data"]["storage_proof"][ids.index])) %}
+    %{ 
+        vm_enter_scope({
+            'nodes': storage_proof["proof"]["contract_data"]["storage_proofs"][ids.index],
+        })
+    %}
     let (contract_state_nodes, contract_state_nodes_len) = load_nodes();
     let (new_contract_root, value) = traverse(
         contract_state_nodes, contract_state_nodes_len, storage_addresses[index]
@@ -150,9 +158,12 @@ func validate_storage_proofs{
         storage_address=storage_addresses[index],
     );
 
-    // We need to cast the value to a felt* to match the expected input type.
-    StarknetMemorizer.add(key=memorizer_key, data=cast(value, felt*));
+    // ideally we could cast this somehow, but this is a quick fix
+    let (data) = alloc();
+    assert [data] = value;
 
+    // We need to cast the value to a felt* to match the expected input type.
+    StarknetMemorizer.add(key=memorizer_key, data=data);
     return validate_storage_proofs(new_contract_root, storage_count, index + 1);
 }
 
@@ -394,12 +405,17 @@ func load_nodes() -> (nodes: felt**, len: felt) {
     local len: felt;
     %{
         nodes_types = []
-        ids.len = len(nodes)
-        for i in range(len(nodes)):
-            nodes_types.append(len(nodes[i]) % 2) # 0 for binary, 1 for edge
-            for j in range(len(nodes[i])):
-                nodes[i][j] = int(nodes[i][j],16)
-        segments.write_arg(ids.nodes, nodes)
+        parsed_nodes = []
+        for node in nodes:
+            if "binary" in node:
+                nodes_types.append(0)
+                parsed_nodes.append([int(node["binary"]["left"], 16), int(node["binary"]["right"], 16)])
+            else:
+                nodes_types.append(1)
+                parsed_nodes.append([int(node["edge"]["child"], 16), int(node["edge"]["path"]["value"], 16), node["edge"]["path"]["len"]])
+        ids.len = len(parsed_nodes)
+        nodes = parsed_nodes
+        segments.write_arg(ids.nodes, parsed_nodes)
     %}
     return (nodes=nodes, len=len);
 }
