@@ -39,6 +39,10 @@ jobs:
           ./tools/make/python_format_check.sh
 
       - name: Check Python tests
+        env:
+          RPC_URL_MAINNET: ${{ secrets.RPC_URL_MAINNET }}
+          RPC_URL_STARKNET: ${{ secrets.RPC_URL_STARKNET }}
+          RPC_URL: ${{ secrets.RPC_URL }}
         run: |
           source venv/bin/activate
           pytest tools/*
@@ -56,6 +60,8 @@ jobs:
       - name: Run Unit Cairo tests
         env:
           RPC_URL_MAINNET: ${{ secrets.RPC_URL_MAINNET }}
+          RPC_URL_STARKNET: ${{ secrets.RPC_URL_STARKNET_TESTNET }}
+          RPC_URL: ${{ secrets.RPC_URL }}
         run: |
           source venv/bin/activate
           ./tools/make/cairo_tests.sh
