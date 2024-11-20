@@ -69,27 +69,27 @@ class StarknetHeaderHandler(AbstractStarknetHeaderBase):
 
     def get_l1_gas_price_in_wei(self, key: MemorizerKey) -> int:
         fields = self.extract_fields(key)
-        return StarknetHeader.from_memorizer_fields(fields).l1_gas_price.price_in_wei
+        return StarknetHeader.from_memorizer_fields(fields).l1_gas_price_wei
 
     def get_l1_gas_price_in_fri(self, key: MemorizerKey) -> int:
         fields = self.extract_fields(key)
-        return StarknetHeader.from_memorizer_fields(fields).l1_gas_price.price_in_fri
+        return StarknetHeader.from_memorizer_fields(fields).l1_gas_price_fri
 
     def get_l1_data_gas_price_in_wei(self, key: MemorizerKey) -> int:
         fields = self.extract_fields(key)
-        return StarknetHeader.from_memorizer_fields(fields).l1_data_gas_price.price_in_wei
+        return StarknetHeader.from_memorizer_fields(fields).l1_data_gas_price_wei
 
     def get_l1_data_gas_price_in_fri(self, key: MemorizerKey) -> int:
         fields = self.extract_fields(key)
-        return StarknetHeader.from_memorizer_fields(fields).l1_data_gas_price.price_in_fri
+        return StarknetHeader.from_memorizer_fields(fields).l1_data_gas_price_fri
 
     def get_receipts_commitment(self, key: MemorizerKey) -> int:
         fields = self.extract_fields(key)
-        return StarknetHeader.from_memorizer_fields(fields).receipts_commitment
+        return StarknetHeader.from_memorizer_fields(fields).receipt_commitment
 
     def get_l1_data_mode(self, key: MemorizerKey) -> int:
         fields = self.extract_fields(key)
-        return StarknetHeader.from_memorizer_fields(fields).l1_data_mode
+        return StarknetHeader.from_memorizer_fields(fields).l1_da_mode
 
     def get_protocol_version(self, key: MemorizerKey) -> int:
         fields = self.extract_fields(key)

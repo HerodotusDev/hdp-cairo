@@ -45,7 +45,9 @@ class StarknetProvider(StarknetProviderBase):
     def get_block_header_by_number(self, block_number: int):
         params = {"block_number": block_number}
         feeder_header = self.send_feeder_request("get_block", {"blockNumber": block_number})
-        return StarknetHeader.from_feeder_data(feeder_header)
+        block_header = StarknetHeader.from_feeder_data(feeder_header)
+        assert block_header.hash == int(feeder_header["block_hash"], 16), f"Block header hash mismatch: {hex(block_header.hash)} != {feeder_header['block_hash']}"
+        return block_header
     
     def get_storage_rpc(self, address: int, slot: int, block_number: int) -> int:
         params = [
@@ -66,8 +68,9 @@ class StarknetKeyProvider(StarknetProvider):
     def get_storage(self, key: StorageMemorizerKey) -> int:
         return self.get_storage_rpc(key.address, key.storage_slot, key.block_number)
 
-# if __name__ == "__main__":
-#     provider = StarknetProvider("https://pathfinder.sepolia.iosis.tech/", "https://alpha-sepolia.starknet.io/feeder_gateway/", 1)
-#     block = provider.get_storage_rpc("0x6b8838af5d2a023b24ec8a69720b152d72ae2e4528139c32e05d8a3b9d7d4e7", "0x308cfbb7d2d38db3a215f9728501ac69445a6afbee328cdeae4e23db54b850a", 202485)
-#     print(f"Block: {block}")
+if __name__ == "__main__":
+    provider = StarknetProvider("https://pathfinder.sepolia.iosis.tech/", "https://alpha-sepolia.starknet.io/feeder_gateway/", 1)
+    block = provider.get_block_header_by_number(160359)
+    print(f"Block: {hex(block.hash)}")
+
 

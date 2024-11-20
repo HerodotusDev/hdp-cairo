@@ -236,7 +236,7 @@ class StarknetHeader:
             "event_count": sum(len(receipt["events"]) for receipt in feeder_header["transaction_receipts"]),
         }
 
-        if feeder_header["starknet_version"] == "0.13.2":
+        if feeder_header["starknet_version"] == "0.13.2" or feeder_header["starknet_version"] == "0.13.2.1":
             block_fields.update({
                 "l1_gas_price_wei": int(feeder_header["l1_gas_price"]["price_in_wei"], 16), 
                 "l1_gas_price_fri": int(feeder_header["l1_gas_price"]["price_in_fri"], 16),

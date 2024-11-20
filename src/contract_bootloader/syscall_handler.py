@@ -49,8 +49,15 @@ from contract_bootloader.memorizer.starknet.header import (
     MemorizerKey as StarknetHeaderKey,
     StarknetStateFunctionId as StarknetHeaderFunctionId,
 )
+from contract_bootloader.memorizer.starknet.storage import (
+    MemorizerKey as StarknetStorageKey,
+    StarknetStateFunctionId as StarknetStorageFunctionId,
+)
 from contract_bootloader.syscall_memorizer_handler.starknet.header_handler import (
     StarknetHeaderHandler,
+)
+from contract_bootloader.syscall_memorizer_handler.starknet.storage_handler import (
+    StarknetStorageHandler,
 )
 
 from enum import Enum
@@ -147,7 +154,7 @@ class SyscallHandler(SyscallHandlerBase):
         memorizerId = StarknetStateId.from_int(request.contract_address)
         handlers = {
             StarknetStateId.Header: (StarknetHeaderHandler, StarknetHeaderKey, StarknetHeaderFunctionId),
-            # StarknetStateId.Storage: (StarknetStorageHandler, StarknetStorageKey, StarknetStorageFunctionId),
+            StarknetStateId.Storage: (StarknetStorageHandler, StarknetStorageKey, StarknetStorageFunctionId),
         }
 
         if memorizerId not in handlers:

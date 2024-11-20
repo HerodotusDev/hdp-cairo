@@ -13,11 +13,11 @@ class DryRunStarknetHeaderHandler(AbstractStarknetHeaderBase):
 
     def get_block_hash(self, key: MemorizerKey) -> int:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_header(key=key).block_hash
+        return self.provider.get_block_header(key=key).hash
 
     def get_parent_block_hash(self, key: MemorizerKey) -> int:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_header(key=key).parent_hash
+        return self.provider.get_block_header(key=key).parent_block_hash
 
     def get_block_number(self, key: MemorizerKey) -> int:
         self.fetch_keys_registry.add(key)
@@ -33,7 +33,7 @@ class DryRunStarknetHeaderHandler(AbstractStarknetHeaderBase):
 
     def get_block_timestamp(self, key: MemorizerKey) -> int:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_header(key=key).timestamp
+        return self.provider.get_block_header(key=key).block_timestamp
 
     def get_transaction_count(self, key: MemorizerKey) -> int:
         self.fetch_keys_registry.add(key)
@@ -61,23 +61,23 @@ class DryRunStarknetHeaderHandler(AbstractStarknetHeaderBase):
 
     def get_receipts_commitment(self, key: MemorizerKey) -> int:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_header(key=key).receipts_commitment
+        return self.provider.get_block_header(key=key).receipt_commitment
 
     def get_l1_gas_price_in_wei(self, key: MemorizerKey) -> int:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_header(key=key).l1_gas_price
+        return self.provider.get_block_header(key=key).l1_gas_price_wei
 
     def get_l1_gas_price_in_fri(self, key: MemorizerKey) -> int:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_header(key=key).l1_gas_price
+        return self.provider.get_block_header(key=key).l1_gas_price_fri
 
     def get_l1_data_gas_price_in_wei(self, key: MemorizerKey) -> int:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_header(key=key).l1_data_gas_price
+        return self.provider.get_block_header(key=key).l1_data_gas_price_wei
 
     def get_l1_data_gas_price_in_fri(self, key: MemorizerKey) -> int:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_header(key=key).l1_data_gas_price
+        return self.provider.get_block_header(key=key).l1_data_gas_price_fri
 
     def get_l1_data_mode(self, key: MemorizerKey) -> int:
         self.fetch_keys_registry.add(key)
@@ -85,7 +85,7 @@ class DryRunStarknetHeaderHandler(AbstractStarknetHeaderBase):
 
     def get_protocol_version(self, key: MemorizerKey) -> int:
         self.fetch_keys_registry.add(key)
-        return self.provider.get_block_header(key=key).protocol_version
+        return int(self.provider.get_block_header(key=key).protocol_version)
     
     def fetch_keys_dict(self) -> set:
         def create_dict(key: MemorizerKey):
