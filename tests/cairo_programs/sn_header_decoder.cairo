@@ -10,7 +10,7 @@ from src.decoders.starknet.header_decoder import (
 from tests.utils.starknet_header import test_starknet_header_decoding
 
 func main{range_check_ptr}() {
-    // check_version_field_indexes();
+    check_version_field_indexes();
     test_decoding();
 
     return ();

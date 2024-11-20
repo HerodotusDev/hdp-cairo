@@ -5,14 +5,20 @@ from tools.py.types.starknet.header import (
     LegacyStarknetBlock,
     StarknetBlockV0_13_2,
 )
+import os
+from dotenv import load_dotenv
 
 
 @pytest.fixture
 def starknet_provider():
+    load_dotenv()
+    RPC_URL_STARKNET = os.getenv("RPC_URL_STARKNET")
+    FEEDER_URL = os.getenv(
+        "FEEDER_URL", "https://alpha-sepolia.starknet.io/feeder_gateway/"
+    )
     return StarknetProvider(
-        "https://pathfinder.sepolia.iosis.tech/",
-        "https://alpha-sepolia.starknet.io/feeder_gateway/",
-        1,
+        RPC_URL_STARKNET,
+        FEEDER_URL,
     )
 
 

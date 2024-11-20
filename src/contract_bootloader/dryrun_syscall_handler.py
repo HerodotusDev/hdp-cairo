@@ -75,9 +75,10 @@ from tools.py.providers.starknet.provider import StarknetKeyProvider
 
 load_dotenv()
 
-RPC_URL = os.getenv("RPC_URL", "")
-RPC_URL_STARKNET = os.getenv(
-    "RPC_URL_STARKNET", "https://pathfinder.sepolia.iosis.tech/"
+RPC_URL = os.getenv("RPC_URL")
+RPC_URL_STARKNET = os.getenv("RPC_URL_STARKNET")
+FEEDER_URL = os.getenv(
+    "STARKNET_FEEDER_URL", "https://alpha-sepolia.starknet.io/feeder_gateway/"
 )
 
 if not RPC_URL:
@@ -140,7 +141,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
         if chain_type == ChainType.EVM:
             return self._handle_evm_call(request, calldata, chain_id)
         else:
-            return self._handle_starknet_call(request, calldata, chain_id)
+            return self._handle_starknet_call(request, calldata)
 
     def _handle_evm_call(
         self, request: CairoStructProxy, calldata: list, chain_id: int
@@ -204,12 +205,11 @@ class DryRunSyscallHandler(SyscallHandlerBase):
         return CallResult(gas_consumed=0, failure_flag=0, retdata=list(retdata))
 
     def _handle_starknet_call(
-        self, request: CairoStructProxy, calldata: list, chain_id: int
+        self, request: CairoStructProxy, calldata: list
     ) -> CallResult:
         provider = StarknetKeyProvider(
             RPC_URL_STARKNET,
-            "https://alpha-sepolia.starknet.io/feeder_gateway/",
-            chain_id,
+            FEEDER_URL,
         )
         retdata = []
 

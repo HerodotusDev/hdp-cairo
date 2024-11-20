@@ -10,10 +10,9 @@ from contract_bootloader.memorizer.starknet.storage import (
 
 
 class StarknetProviderBase:
-    def __init__(self, rpc_url: str, feeder_url: str, chain_id: int):
+    def __init__(self, rpc_url: str, feeder_url: str):
         self.rpc_url = rpc_url
         self.feeder_url = feeder_url
-        self.chain_id = chain_id
 
     def rpc_request(self, rpc_request):
         headers = {"Content-Type": "application/json"}
@@ -45,8 +44,8 @@ class StarknetProviderBase:
 
 
 class StarknetProvider(StarknetProviderBase):
-    def __init__(self, rpc_url: str, feeder_url: str, chain_id: int):
-        super().__init__(rpc_url, feeder_url, chain_id)
+    def __init__(self, rpc_url: str, feeder_url: str):
+        super().__init__(rpc_url, feeder_url)
 
     def get_block_header_by_number(self, block_number: int):
         params = {"block_number": block_number}
@@ -66,21 +65,11 @@ class StarknetProvider(StarknetProviderBase):
 
 
 class StarknetKeyProvider(StarknetProvider):
-    def __init__(self, rpc_url: str, feeder_url: str, chain_id: int):
-        super().__init__(rpc_url, feeder_url, chain_id)
+    def __init__(self, rpc_url: str, feeder_url: str):
+        super().__init__(rpc_url, feeder_url)
 
     def get_block_header(self, key: HeaderMemorizerKey) -> StarknetHeader:
         return self.get_block_header_by_number(key.block_number)
 
     def get_storage(self, key: StorageMemorizerKey) -> int:
         return self.get_storage_rpc(key.address, key.storage_slot, key.block_number)
-
-
-if __name__ == "__main__":
-    provider = StarknetProvider(
-        "https://pathfinder.sepolia.iosis.tech/",
-        "https://alpha-sepolia.starknet.io/feeder_gateway/",
-        1,
-    )
-    block = provider.get_block_header_by_number(160359)
-    print(f"Block: {hex(block.hash)}")
