@@ -229,7 +229,7 @@ class StarknetHeader:
     def version(self) -> str:
         if isinstance(self.header, StarknetBlockV0_13_2):
             return "0.13.2"
-        return "pre-0.13.2"
+        raise AttributeError("version is not available for this block version")
 
     @classmethod
     def from_feeder_data(cls, feeder_header: list[dict]) -> "StarknetHeader":

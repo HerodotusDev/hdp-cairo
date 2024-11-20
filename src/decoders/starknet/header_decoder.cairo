@@ -68,12 +68,8 @@ namespace StarknetHeaderDecoder {
             return (value=0);
         }
 
-        %{ print("Requested field: ", ids.field); %}
-
         let version = derive_header_version(fields);
         let index = get_header_field_index(version, field);
-
-        %{ print("Index: ", ids.index); %}
 
         // todo: handle len decoding for v2 headers
         return (value=fields[index]);

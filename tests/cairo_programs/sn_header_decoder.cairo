@@ -1,13 +1,44 @@
 %builtins range_check
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
+
 from src.decoders.starknet.header_decoder import (
     get_header_field_index,
     StarknetHeaderVersion,
     StarknetHeaderFields,
 )
 
-func main{range_check_ptr}() {
-    let version = StarknetHeaderVersion.VERSION_1;
+from tests.utils.starknet_header import test_starknet_header_decoding
 
+func main{range_check_ptr}() {
+    // check_version_field_indexes();
+    test_decoding();
+
+    return ();
+}
+
+func test_decoding{range_check_ptr}() {
+    alloc_locals;
+    local block_numbers_len: felt;
+
+    %{
+        block_numbers = [
+            86305,
+            86310,
+            86311,
+            86312,
+            155555
+        ]
+
+        ids.block_numbers_len = len(block_numbers)
+    %}
+
+    test_starknet_header_decoding(block_numbers_len, 0);
+
+    return ();
+}
+
+func check_version_field_indexes{range_check_ptr}() {
+    let version = StarknetHeaderVersion.VERSION_1;
     let index = get_header_field_index(version, StarknetHeaderFields.BLOCK_NUMBER);
     assert index = 1;
     let index = get_header_field_index(version, StarknetHeaderFields.STATE_ROOT);
