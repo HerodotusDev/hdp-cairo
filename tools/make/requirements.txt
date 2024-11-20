@@ -9,3 +9,4 @@ black
 poseidon-py
 trie==3.0.1
 sympy==1.12.1
+# crypto-cpp-py==1.4.4

@@ -8,7 +8,8 @@ import sysconfig
 import functools
 from typing import Callable
 
-from crypto_cpp_py.cpp_bindings import cpp_hash
+# from crypto_cpp_py.cpp_bindings import cpp_hash
+from starkware.crypto.signature.signature import pedersen_hash
 
 from poseidon_py.poseidon_hash import (
     poseidon_hash_func,
@@ -319,11 +320,11 @@ def validate_initial_params(initial_params: dict):
     ), f"Invalid MMR size: {initial_params['mmr_size']}"
 
 
-def pedersen_hash(left: int, right: int) -> int:
-    """
-    One of two hash functions (along with starknet_keccak) used throughout Starknet.
-    """
-    return cpp_hash(left, right)
+# def pedersen_hash(left: int, right: int) -> int:
+#     """
+#     One of two hash functions (along with starknet_keccak) used throughout Starknet.
+#     """
+#     return cpp_hash(left, right)
 
 
 def bytes_hash_pedersen_function(x: bytes, y: bytes) -> bytes:
