@@ -13,7 +13,11 @@ from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.registers import get_label_location
 from src.utils.chain_info import chain_id_to_layout
 from src.memorizers.evm.state_access import EvmStateAccess, EvmStateAccessType, EvmDecoderTarget
-from src.memorizers.starknet.state_access import StarknetStateAccess, StarknetStateAccessType, StarknetDecoderTarget
+from src.memorizers.starknet.state_access import (
+    StarknetStateAccess,
+    StarknetStateAccessType,
+    StarknetDecoderTarget,
+)
 from src.utils.chain_info import Layout
 
 struct ExecutionInfo {

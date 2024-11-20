@@ -95,7 +95,7 @@ class AbstractStarknetHeaderBase(ABC):
             return self.function_map[function_id](key=key)
         else:
             raise ValueError(f"Function ID {function_id} is not recognized.")
-        
+
     @abstractmethod
     def get_block_number(self, key: MemorizerKey) -> int:
         pass

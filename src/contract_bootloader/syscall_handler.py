@@ -44,7 +44,10 @@ from contract_bootloader.syscall_memorizer_handler.evm.block_tx_handler import (
 from contract_bootloader.syscall_memorizer_handler.evm.block_receipt_handler import (
     EvmBlockReceiptHandler,
 )
-from contract_bootloader.memorizer.starknet.memorizer import StarknetStateId, StarknetMemorizer
+from contract_bootloader.memorizer.starknet.memorizer import (
+    StarknetStateId,
+    StarknetMemorizer,
+)
 from contract_bootloader.memorizer.starknet.header import (
     MemorizerKey as StarknetHeaderKey,
     StarknetStateFunctionId as StarknetHeaderFunctionId,
@@ -62,9 +65,11 @@ from contract_bootloader.syscall_memorizer_handler.starknet.storage_handler impo
 
 from enum import Enum
 
+
 class ChainType(Enum):
     EVM = "evm"
     STARKNET = "starknet"
+
 
 def get_chain_type(chain_id: int) -> ChainType:
     if chain_id == 393402133025997798000961 or chain_id == 23448594291968334:
@@ -97,7 +102,7 @@ class SyscallHandler(SyscallHandlerBase):
 
     def _allocate_segment_for_retdata(self, retdata: Iterable[int]) -> RelocatableValue:
         return self.allocate_segment(data=retdata)
-    
+
     def _call_contract_helper(
         self, request: CairoStructProxy, syscall_name: str
     ) -> CallResult:
@@ -106,7 +111,7 @@ class SyscallHandler(SyscallHandlerBase):
         )
         chain_id = calldata[2]
         chain_type = get_chain_type(chain_id)
-        
+
         if chain_type == ChainType.EVM:
             return self._handle_evm_call(request, calldata)
         else:
@@ -117,10 +122,26 @@ class SyscallHandler(SyscallHandlerBase):
         memorizerId = EvmStateId.from_int(request.contract_address)
         handlers = {
             EvmStateId.Header: (EvmHeaderHandler, EvmHeaderKey, EvmHeaderFunctionId),
-            EvmStateId.Account: (EvmAccountHandler, EvmAccountKey, EvmAccountFunctionId),
-            EvmStateId.Storage: (EvmStorageHandler, EvmStorageKey, EvmStorageFunctionId),
-            EvmStateId.BlockTx: (EvmBlockTxHandler, EvmBlockTxKey, EvmBlockTxFunctionId),
-            EvmStateId.BlockReceipt: (EvmBlockReceiptHandler, EvmBlockReceiptKey, EvmBlockReceiptFunctionId),
+            EvmStateId.Account: (
+                EvmAccountHandler,
+                EvmAccountKey,
+                EvmAccountFunctionId,
+            ),
+            EvmStateId.Storage: (
+                EvmStorageHandler,
+                EvmStorageKey,
+                EvmStorageFunctionId,
+            ),
+            EvmStateId.BlockTx: (
+                EvmBlockTxHandler,
+                EvmBlockTxKey,
+                EvmBlockTxFunctionId,
+            ),
+            EvmStateId.BlockReceipt: (
+                EvmBlockReceiptHandler,
+                EvmBlockReceiptKey,
+                EvmBlockReceiptFunctionId,
+            ),
         }
 
         if memorizerId not in handlers:
@@ -130,7 +151,9 @@ class SyscallHandler(SyscallHandlerBase):
         total_size = EvmMemorizer.size() + KeyClass.size()
 
         if len(calldata) != total_size:
-            raise ValueError(f"Memorizer read must be initialized with a list of {total_size} integers")
+            raise ValueError(
+                f"Memorizer read must be initialized with a list of {total_size} integers"
+            )
 
         memorizer = EvmMemorizer(
             dict_raw_ptrs=calldata[0 : EvmMemorizer.size()],
@@ -148,13 +171,23 @@ class SyscallHandler(SyscallHandlerBase):
         retdata = handler.handle(function_id=function_id, key=key)
 
         return CallResult(gas_consumed=0, failure_flag=0, retdata=list(retdata))
-    
-    def _handle_starknet_call(self, request: CairoStructProxy, calldata: list) -> CallResult:
+
+    def _handle_starknet_call(
+        self, request: CairoStructProxy, calldata: list
+    ) -> CallResult:
         retdata = []
         memorizerId = StarknetStateId.from_int(request.contract_address)
         handlers = {
-            StarknetStateId.Header: (StarknetHeaderHandler, StarknetHeaderKey, StarknetHeaderFunctionId),
-            StarknetStateId.Storage: (StarknetStorageHandler, StarknetStorageKey, StarknetStorageFunctionId),
+            StarknetStateId.Header: (
+                StarknetHeaderHandler,
+                StarknetHeaderKey,
+                StarknetHeaderFunctionId,
+            ),
+            StarknetStateId.Storage: (
+                StarknetStorageHandler,
+                StarknetStorageKey,
+                StarknetStorageFunctionId,
+            ),
         }
 
         if memorizerId not in handlers:
@@ -164,7 +197,9 @@ class SyscallHandler(SyscallHandlerBase):
         total_size = StarknetMemorizer.size() + KeyClass.size()
 
         if len(calldata) != total_size:
-            raise ValueError(f"Memorizer read must be initialized with a list of {total_size} integers")
+            raise ValueError(
+                f"Memorizer read must be initialized with a list of {total_size} integers"
+            )
 
         memorizer = StarknetMemorizer(
             dict_raw_ptrs=calldata[0 : StarknetMemorizer.size()],

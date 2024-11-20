@@ -66,8 +66,8 @@ setup(
     cmdclass={"install": PostInstallCommand},
     develop=True,
     options={
-        'develop': {
-            'build_dir': 'build',
+        "develop": {
+            "build_dir": "build",
         }
-    }
+    },
 )

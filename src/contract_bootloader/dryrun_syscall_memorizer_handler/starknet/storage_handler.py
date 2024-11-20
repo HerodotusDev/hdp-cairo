@@ -15,7 +15,7 @@ class DryRunStarknetStorageHandler(AbstractStarknetStorageBase):
     def get_slot(self, key: MemorizerKey) -> int:
         self.fetch_keys_registry.add(key)
         return self.provider.get_storage(key=key)
-    
+
     def fetch_keys_dict(self) -> set:
         def create_dict(key: MemorizerKey):
             data = dict()

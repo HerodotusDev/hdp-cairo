@@ -8,7 +8,10 @@ from starkware.cairo.common.cairo_builtins import (
     EcOpBuiltin,
 )
 from src.contract_bootloader.contract_class.compiled_class import CompiledClass, compiled_class_hash
-from src.contract_bootloader.contract_bootloader import run_contract_bootloader, compute_program_hash
+from src.contract_bootloader.contract_bootloader import (
+    run_contract_bootloader,
+    compute_program_hash,
+)
 from starkware.cairo.common.uint256 import Uint256, felt_to_uint256
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.memcpy import memcpy

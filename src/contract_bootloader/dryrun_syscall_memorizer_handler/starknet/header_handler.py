@@ -5,6 +5,7 @@ from contract_bootloader.memorizer.starknet.header import (
 )
 from tools.py.providers.starknet.provider import StarknetKeyProvider
 
+
 class DryRunStarknetHeaderHandler(AbstractStarknetHeaderBase):
     def __init__(self, memorizer: StarknetMemorizer, provider: StarknetKeyProvider):
         super().__init__(memorizer=memorizer)
@@ -86,7 +87,7 @@ class DryRunStarknetHeaderHandler(AbstractStarknetHeaderBase):
     def get_protocol_version(self, key: MemorizerKey) -> int:
         self.fetch_keys_registry.add(key)
         return int(self.provider.get_block_header(key=key).protocol_version)
-    
+
     def fetch_keys_dict(self) -> set:
         def create_dict(key: MemorizerKey):
             data = dict()

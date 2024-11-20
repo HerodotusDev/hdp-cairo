@@ -40,13 +40,12 @@ namespace StarknetHeaderDecoder {
     }
 
     func get_field{range_check_ptr}(fields: felt*, field: felt) -> (value: felt) {
-
         // %{
         //     i = 0
         //     while i < 18:
         //         print("Field ", i, ": ", hex(memory[ids.fields + i]))
         //         i += 1
-        
+
         // %}
 
         if (field == StarknetHeaderFields.TRANSACTION_COUNT) {
@@ -76,7 +75,6 @@ namespace StarknetHeaderDecoder {
 
         %{ print("Index: ", ids.index); %}
 
-
         // todo: handle len decoding for v2 headers
         return (value=fields[index]);
     }
@@ -89,21 +87,21 @@ namespace StarknetHeaderDecoder {
     //         return (value=value);
     //     }
 
-    //     if (field == StarknetHeaderFields.EVENT_COUNT) {
+    // if (field == StarknetHeaderFields.EVENT_COUNT) {
     //         // Extract using EVENT_COUNT_MASK and get middle 64 bits
     //         let (masked) = bitwise_and(value_concat, EVENT_COUNT_MASK);
     //         let (value, _) = felt_divmod(masked, 2**128);
     //         return (value=value);
     //     }
 
-    //     if (field == StarknetHeaderFields.STATE_DIFF_LENGTH) {
+    // if (field == StarknetHeaderFields.STATE_DIFF_LENGTH) {
     //         // Extract using STATE_DIFF_LENGTH_MASK and get next 64 bits
     //         let (masked) = bitwise_and(value_concat, STATE_DIFF_LENGTH_MASK);
     //         let (value, _) = felt_divmod(masked, 2**64);
     //         return (value=value);
     //     }
 
-    //     if (field == StarknetHeaderFields.L1_DATA_MODE) {
+    // if (field == StarknetHeaderFields.L1_DATA_MODE) {
     //         // Extract using L1_DA_MODE_MASK and get last byte
     //         let (masked) = bitwise_and(value_concat, L1_DA_MODE_MASK);
     //         let (value, _) = felt_divmod(masked, 2**56);
@@ -178,15 +176,15 @@ func get_header_field_index{range_check_ptr}(version: felt, field: felt) -> felt
 
     data:
     // VERSION_1 field indices
-    dw 1;           // BLOCK_NUMBER
-    dw 2;           // STATE_ROOT
-    dw 3;           // SEQUENCER_ADDRESS
-    dw 4;           // BLOCK_TIMESTAMP
-    dw 5;           // TRANSACTION_COUNT
-    dw 6;           // TRANSACTION_COMMITMENT
-    dw 7;           // EVENT_COUNT
-    dw 8;           // EVENT_COMMITMENT
-    dw 11;          // PARENT_BLOCK_HASH
+    dw 1;  // BLOCK_NUMBER
+    dw 2;  // STATE_ROOT
+    dw 3;  // SEQUENCER_ADDRESS
+    dw 4;  // BLOCK_TIMESTAMP
+    dw 5;  // TRANSACTION_COUNT
+    dw 6;  // TRANSACTION_COMMITMENT
+    dw 7;  // EVENT_COUNT
+    dw 8;  // EVENT_COMMITMENT
+    dw 11;  // PARENT_BLOCK_HASH
     dw 0xFFFFFFFF;  // STATE_DIFF_COMMITMENT
     dw 0xFFFFFFFF;  // STATE_DIFF_LENGTH
     dw 0xFFFFFFFF;  // L1_GAS_PRICE_IN_WEI
@@ -198,22 +196,22 @@ func get_header_field_index{range_check_ptr}(version: felt, field: felt) -> felt
     dw 0xFFFFFFFF;  // PROTOCOL_VERSION
 
     // VERSION_2 field indices
-    dw 2;           // BLOCK_NUMBER
-    dw 3;           // STATE_ROOT
-    dw 4;           // SEQUENCER_ADDRESS
-    dw 5;           // BLOCK_TIMESTAMP
-    dw 6;           // TRANSACTION_COUNT
-    dw 8;           // TRANSACTION_COMMITMENT
-    dw 6;           // EVENT_COUNT
-    dw 9;           // EVENT_COMMITMENT
-    dw 17;          // PARENT_BLOCK_HASH
-    dw 7;           // STATE_DIFF_COMMITMENT
-    dw 6;           // STATE_DIFF_LENGTH
-    dw 11;          // L1_GAS_PRICE_IN_WEI
-    dw 12;          // L1_GAS_PRICE_IN_FRI
-    dw 13;          // L1_DATA_GAS_PRICE_IN_WEI
-    dw 14;          // L1_DATA_GAS_PRICE_IN_FRI
-    dw 10;          // RECEIPTS_COMMITMENT
-    dw 6;           // L1_DATA_MODE
-    dw 15;          // PROTOCOL_VERSION
+    dw 2;  // BLOCK_NUMBER
+    dw 3;  // STATE_ROOT
+    dw 4;  // SEQUENCER_ADDRESS
+    dw 5;  // BLOCK_TIMESTAMP
+    dw 6;  // TRANSACTION_COUNT
+    dw 8;  // TRANSACTION_COMMITMENT
+    dw 6;  // EVENT_COUNT
+    dw 9;  // EVENT_COMMITMENT
+    dw 17;  // PARENT_BLOCK_HASH
+    dw 7;  // STATE_DIFF_COMMITMENT
+    dw 6;  // STATE_DIFF_LENGTH
+    dw 11;  // L1_GAS_PRICE_IN_WEI
+    dw 12;  // L1_GAS_PRICE_IN_FRI
+    dw 13;  // L1_DATA_GAS_PRICE_IN_WEI
+    dw 14;  // L1_DATA_GAS_PRICE_IN_FRI
+    dw 10;  // RECEIPTS_COMMITMENT
+    dw 6;  // L1_DATA_MODE
+    dw 15;  // PROTOCOL_VERSION
 }

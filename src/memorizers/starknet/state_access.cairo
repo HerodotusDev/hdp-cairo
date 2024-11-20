@@ -46,11 +46,7 @@ namespace StarknetDecoder {
     // Returns:
     // - The length of the result in felts
     func decode{range_check_ptr, starknet_decoder_ptr: felt***, output_ptr: felt*}(
-        data: felt*,
-        state_access_type: felt,
-        field: felt,
-        decoder_target: felt,
-        as_be: felt,
+        data: felt*, state_access_type: felt, field: felt, decoder_target: felt, as_be: felt
     ) -> (result_len: felt) {
         alloc_locals;  // ToDo: solve output_ptr revoke and remove this
 

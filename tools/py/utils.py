@@ -20,6 +20,7 @@ from poseidon_py.poseidon_hash import (
     poseidon_hash_many,
 )
 
+
 def load_json_from_package(resource):
     path = os.path.join(sysconfig.get_path("purelib"), resource)
     with open(path, "r") as file:
@@ -323,6 +324,7 @@ def validate_initial_params(initial_params: dict):
         initial_params["mmr_size"]
     ), f"Invalid MMR size: {initial_params['mmr_size']}"
 
+
 def pedersen_hash(left: int, right: int) -> int:
     """
     One of two hash functions (along with starknet_keccak) used throughout Starknet.
@@ -352,6 +354,7 @@ def compute_hash_on_elements(
     # Convert all elements to integers if they aren't already
     processed_data = [to_int(x) if not isinstance(x, int) else x for x in data]
     return functools.reduce(func, [*processed_data, len(data)], 0)
+
 
 def to_int(value: str | int):
     if isinstance(value, str):

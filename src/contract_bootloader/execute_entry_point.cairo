@@ -27,7 +27,10 @@ from starkware.starknet.core.os.constants import (
     ENTRY_POINT_TYPE_EXTERNAL,
     ENTRY_POINT_TYPE_L1_HANDLER,
 )
-from src.contract_bootloader.contract_class.compiled_class import CompiledClass, CompiledClassEntryPoint
+from src.contract_bootloader.contract_class.compiled_class import (
+    CompiledClass,
+    CompiledClassEntryPoint,
+)
 from src.contract_bootloader.execute_syscalls import ExecutionContext, execute_syscalls
 from starkware.cairo.common.registers import get_fp_and_pc
 

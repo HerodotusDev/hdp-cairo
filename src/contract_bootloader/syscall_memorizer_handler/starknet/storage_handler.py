@@ -6,6 +6,7 @@ from contract_bootloader.memorizer.starknet.storage import (
 )
 from starkware.cairo.lang.vm.memory_segments import MemorySegmentManager
 
+
 class StarknetStorageHandler(AbstractStarknetStorageBase):
     def __init__(self, segments: MemorySegmentManager, memorizer: StarknetMemorizer):
         super().__init__(memorizer=memorizer)

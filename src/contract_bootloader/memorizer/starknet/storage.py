@@ -6,6 +6,7 @@ from marshmallow_dataclass import dataclass
 from starkware.cairo.lang.vm.crypto import poseidon_hash_many
 from starkware.cairo.lang.vm.relocatable import RelocatableValue
 
+
 class StarknetStateFunctionId(Enum):
     GET_SLOT = 0
 
@@ -33,9 +34,7 @@ class MemorizerKey:
                 "MemorizerKey must be initialized with a list of five integers"
             )
 
-        return cls(
-            values[0], values[1], values[2], values[3]
-        )
+        return cls(values[0], values[1], values[2], values[3])
 
     def derive(self) -> int:
         return poseidon_hash_many(

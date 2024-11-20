@@ -64,9 +64,13 @@ func verify_proofs_inner{
         ids.contract_address = int(storage_proof["contract_address"], 16)
         ids.block_number = storage_proof["block_number"]
     %}
-    let memorizer_key = StarknetHashParams.header(chain_id=chain_info.id, block_number=block_number);
+    let memorizer_key = StarknetHashParams.header(
+        chain_id=chain_info.id, block_number=block_number
+    );
     let (header_data) = StarknetMemorizer.get(key=memorizer_key);
-    let (state_root) = StarknetHeaderDecoder.get_field(header_data, StarknetHeaderFields.STATE_ROOT);
+    let (state_root) = StarknetHeaderDecoder.get_field(
+        header_data, StarknetHeaderFields.STATE_ROOT
+    );
 
     // Compute contract_root and write values to memorizer
     with contract_address, storage_addresses, block_number {
@@ -134,7 +138,7 @@ func validate_storage_proofs{
     }
 
     // Compute contract_root
-    %{ 
+    %{
         vm_enter_scope({
             'nodes': storage_proof["proof"]["contract_data"]["storage_proofs"][ids.index],
         })

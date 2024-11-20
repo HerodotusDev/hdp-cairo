@@ -3,7 +3,9 @@ from typing import (
     Dict,
     Iterable,
 )
-from src.contract_bootloader.dryrun_syscall_memorizer_handler.starknet.header_handler import DryRunStarknetHeaderHandler
+from src.contract_bootloader.dryrun_syscall_memorizer_handler.starknet.header_handler import (
+    DryRunStarknetHeaderHandler,
+)
 from starkware.cairo.lang.vm.relocatable import RelocatableValue, MaybeRelocatable
 from starkware.cairo.lang.vm.memory_segments import MemorySegmentManager
 from contract_bootloader.syscall_handler_base import SyscallHandlerBase
@@ -11,7 +13,10 @@ from starkware.cairo.common.dict import DictManager
 from starkware.cairo.common.structs import CairoStructProxy
 from starkware.starknet.business_logic.execution.objects import CallResult
 from contract_bootloader.memorizer.evm.memorizer import EvmStateId, EvmMemorizer
-from contract_bootloader.memorizer.starknet.memorizer import StarknetStateId, StarknetMemorizer
+from contract_bootloader.memorizer.starknet.memorizer import (
+    StarknetStateId,
+    StarknetMemorizer,
+)
 from contract_bootloader.memorizer.evm.account import (
     EvmStateFunctionId as EvmAccountFunctionId,
     MemorizerKey as EvmAccountKey,
@@ -67,24 +72,30 @@ from enum import Enum
 from dotenv import load_dotenv
 from tools.py.providers.evm.provider import EvmKeyProvider
 from tools.py.providers.starknet.provider import StarknetKeyProvider
+
 load_dotenv()
 
 RPC_URL = os.getenv("RPC_URL", "")
-RPC_URL_STARKNET = os.getenv("RPC_URL_STARKNET", "https://pathfinder.sepolia.iosis.tech/")
+RPC_URL_STARKNET = os.getenv(
+    "RPC_URL_STARKNET", "https://pathfinder.sepolia.iosis.tech/"
+)
 
 if not RPC_URL:
     raise ValueError(
         "RPC_URL environment variable is not set. Please set it in your environment or in a .env file."
     )
 
+
 class ChainType(Enum):
     EVM = "evm"
     STARKNET = "starknet"
+
 
 def get_chain_type(chain_id: int) -> ChainType:
     if chain_id == 393402133025997798000961 or chain_id == 23448594291968334:
         return ChainType.STARKNET
     return ChainType.EVM
+
 
 class DryRunSyscallHandler(SyscallHandlerBase):
     """
@@ -125,23 +136,45 @@ class DryRunSyscallHandler(SyscallHandlerBase):
         )
         chain_id = calldata[2]
         chain_type = get_chain_type(chain_id)
-        
+
         if chain_type == ChainType.EVM:
             return self._handle_evm_call(request, calldata, chain_id)
         else:
             return self._handle_starknet_call(request, calldata, chain_id)
 
-    def _handle_evm_call(self, request: CairoStructProxy, calldata: list, chain_id: int) -> CallResult:
+    def _handle_evm_call(
+        self, request: CairoStructProxy, calldata: list, chain_id: int
+    ) -> CallResult:
         provider = EvmKeyProvider(RPC_URL, chain_id)
         retdata = []
 
         memorizerId = EvmStateId.from_int(request.contract_address)
         handlers = {
-            EvmStateId.Header: (DryRunEvmHeaderHandler, EvmHeaderKey, EvmHeaderFunctionId),
-            EvmStateId.Account: (DryRunEvmAccountHandler, EvmAccountKey, EvmAccountFunctionId),
-            EvmStateId.Storage: (DryRunEvmStorageHandler, EvmStorageKey, EvmStorageFunctionId),
-            EvmStateId.BlockTx: (DryRunEvmBlockTxHandler, EvmBlockTxKey, EvmBlockTxFunctionId),
-            EvmStateId.BlockReceipt: (DryRunEvmBlockReceiptHandler, EvmBlockReceiptKey, EvmBlockReceiptFunctionId),
+            EvmStateId.Header: (
+                DryRunEvmHeaderHandler,
+                EvmHeaderKey,
+                EvmHeaderFunctionId,
+            ),
+            EvmStateId.Account: (
+                DryRunEvmAccountHandler,
+                EvmAccountKey,
+                EvmAccountFunctionId,
+            ),
+            EvmStateId.Storage: (
+                DryRunEvmStorageHandler,
+                EvmStorageKey,
+                EvmStorageFunctionId,
+            ),
+            EvmStateId.BlockTx: (
+                DryRunEvmBlockTxHandler,
+                EvmBlockTxKey,
+                EvmBlockTxFunctionId,
+            ),
+            EvmStateId.BlockReceipt: (
+                DryRunEvmBlockReceiptHandler,
+                EvmBlockReceiptKey,
+                EvmBlockReceiptFunctionId,
+            ),
         }
 
         if memorizerId not in handlers:
@@ -151,7 +184,9 @@ class DryRunSyscallHandler(SyscallHandlerBase):
         total_size = EvmMemorizer.size() + KeyClass.size()
 
         if len(calldata) != total_size:
-            raise ValueError(f"Memorizer read must be initialized with a list of {total_size} integers")
+            raise ValueError(
+                f"Memorizer read must be initialized with a list of {total_size} integers"
+            )
 
         memorizer = EvmMemorizer(
             dict_raw_ptrs=calldata[0 : EvmMemorizer.size()],
@@ -168,14 +203,28 @@ class DryRunSyscallHandler(SyscallHandlerBase):
 
         return CallResult(gas_consumed=0, failure_flag=0, retdata=list(retdata))
 
-    def _handle_starknet_call(self, request: CairoStructProxy, calldata: list, chain_id: int) -> CallResult:
-        provider = StarknetKeyProvider(RPC_URL_STARKNET, "https://alpha-sepolia.starknet.io/feeder_gateway/", chain_id)
+    def _handle_starknet_call(
+        self, request: CairoStructProxy, calldata: list, chain_id: int
+    ) -> CallResult:
+        provider = StarknetKeyProvider(
+            RPC_URL_STARKNET,
+            "https://alpha-sepolia.starknet.io/feeder_gateway/",
+            chain_id,
+        )
         retdata = []
 
         memorizerId = StarknetStateId.from_int(request.contract_address)
         handlers = {
-            StarknetStateId.Header: (DryRunStarknetHeaderHandler, StarknetHeaderKey, StarknetHeaderFunctionId),
-            StarknetStateId.Storage: (DryRunStarknetStorageHandler, StarknetStorageKey, StarknetStorageFunctionId),
+            StarknetStateId.Header: (
+                DryRunStarknetHeaderHandler,
+                StarknetHeaderKey,
+                StarknetHeaderFunctionId,
+            ),
+            StarknetStateId.Storage: (
+                DryRunStarknetStorageHandler,
+                StarknetStorageKey,
+                StarknetStorageFunctionId,
+            ),
         }
 
         if memorizerId not in handlers:
@@ -185,7 +234,9 @@ class DryRunSyscallHandler(SyscallHandlerBase):
         total_size = StarknetMemorizer.size() + KeyClass.size()
 
         if len(calldata) != total_size:
-            raise ValueError(f"Memorizer read must be initialized with a list of {total_size} integers")
+            raise ValueError(
+                f"Memorizer read must be initialized with a list of {total_size} integers"
+            )
 
         memorizer = StarknetMemorizer(
             dict_raw_ptrs=calldata[0 : StarknetMemorizer.size()],
@@ -199,7 +250,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
         handler = HandlerClass(memorizer=memorizer, provider=provider)
         retdata = handler.handle(function_id=function_id, key=key)
         self.fetch_keys_registry.append(handler.fetch_keys_dict())
-        retdata = [retdata] # since we return a single felt for now
+        retdata = [retdata]  # since we return a single felt for now
 
         return CallResult(gas_consumed=0, failure_flag=0, retdata=retdata)
 

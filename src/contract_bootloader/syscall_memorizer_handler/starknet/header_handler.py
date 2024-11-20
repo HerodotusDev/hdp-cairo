@@ -19,7 +19,7 @@ class StarknetHeaderHandler(AbstractStarknetHeaderBase):
 
         fields = self._get_felt_range(
             start_addr=memorizer_value_ptr,
-            end_addr=memorizer_value_ptr + fields_len + 1
+            end_addr=memorizer_value_ptr + fields_len + 1,
         )
         return fields
 
@@ -94,5 +94,3 @@ class StarknetHeaderHandler(AbstractStarknetHeaderBase):
     def get_protocol_version(self, key: MemorizerKey) -> int:
         fields = self.extract_fields(key)
         return StarknetHeader.from_memorizer_fields(fields).protocol_version
-
-    
