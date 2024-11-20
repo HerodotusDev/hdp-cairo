@@ -9,15 +9,9 @@ import functools
 from typing import Callable
 
 from crypto_cpp_py.cpp_bindings import cpp_hash
-from poseidon_py.poseidon_hash import (
-    poseidon_hash_func,
-)
-from starknet_py.hash.utils import _starknet_keccak as starknet_keccak
 
 from poseidon_py.poseidon_hash import (
-    poseidon_hash,
     poseidon_hash_func,
-    poseidon_hash_many,
 )
 
 
