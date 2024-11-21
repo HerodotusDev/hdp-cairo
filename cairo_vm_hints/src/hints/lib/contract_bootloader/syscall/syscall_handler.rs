@@ -83,6 +83,7 @@ impl SyscallHandlerWrapper {
         Ok(())
     }
 }
+
 struct CallContractHandler;
 
 impl SyscallHandler for CallContractHandler {

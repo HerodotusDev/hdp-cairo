@@ -158,7 +158,6 @@ pub struct EmptyRequest;
 pub struct EmptyResponse;
 
 #[derive(Debug)]
-// Invariant: read-only.
 pub struct ReadOnlySegment {
     pub start_ptr: Relocatable,
     pub length: usize,
