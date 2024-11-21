@@ -157,7 +157,6 @@ func execute_entry_point{
     if (compiled_class_entry_point == cast(0, CompiledClassEntryPoint*)) {
         // Assert that there is no call data in the case of NOP entry point.
         assert execution_context.calldata_size = 0;
-        %{ execution_helper.skip_call() %}
         return (retdata_size=0, retdata=cast(0, felt*));
     }
 
