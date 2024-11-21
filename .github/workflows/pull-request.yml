@@ -41,7 +41,7 @@ jobs:
       - name: Check Python tests
         env:
           RPC_URL_MAINNET: ${{ secrets.RPC_URL_MAINNET }}
-          RPC_URL_STARKNET: ${{ secrets.RPC_URL_STARKNET }}
+          PROVIDER_URL_STARKNET: ${{ secrets.PROVIDER_URL_STARKNET }}
           RPC_URL: ${{ secrets.RPC_URL }}
         run: |
           source venv/bin/activate
@@ -60,7 +60,7 @@ jobs:
       - name: Run Unit Cairo tests
         env:
           RPC_URL_MAINNET: ${{ secrets.RPC_URL_MAINNET }}
-          RPC_URL_STARKNET: ${{ secrets.RPC_URL_STARKNET_TESTNET }}
+          PROVIDER_URL_STARKNET: ${{ secrets.PROVIDER_URL_STARKNET_TESTNET }}
           RPC_URL: ${{ secrets.RPC_URL }}
         run: |
           source venv/bin/activate

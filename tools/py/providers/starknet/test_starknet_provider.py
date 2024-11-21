@@ -12,12 +12,12 @@ from dotenv import load_dotenv
 @pytest.fixture
 def starknet_provider():
     load_dotenv()
-    RPC_URL_STARKNET = os.getenv("RPC_URL_STARKNET")
+    PROVIDER_URL_STARKNET = os.getenv("PROVIDER_URL_STARKNET")
     FEEDER_URL = os.getenv(
         "FEEDER_URL", "https://alpha-sepolia.starknet.io/feeder_gateway/"
     )
     return StarknetProvider(
-        RPC_URL_STARKNET,
+        PROVIDER_URL_STARKNET,
         FEEDER_URL,
     )
 

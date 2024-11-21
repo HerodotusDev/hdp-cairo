@@ -22,15 +22,15 @@ func test_starknet_header_decoding{range_check_ptr}(header_len: felt, index: fel
         from tools.py.providers.starknet.provider import StarknetProvider
 
         load_dotenv()
-        RPC_URL_STARKNET = os.getenv("RPC_URL_STARKNET")
+        PROVIDER_URL_STARKNET = os.getenv("PROVIDER_URL_STARKNET")
         FEEDER_URL = os.getenv("FEEDER_URL", "https://alpha-sepolia.starknet.io/feeder_gateway/")
 
-        if RPC_URL_STARKNET is None:
-            raise ValueError("RPC_URL_STARKNET environment variable is not set")
+        if PROVIDER_URL_STARKNET is None:
+            raise ValueError("PROVIDER_URL_STARKNET environment variable is not set")
         if FEEDER_URL is None:
             raise ValueError("STARKNET_FEEDER_URL environment variable is not set")
 
-        provider = StarknetProvider(RPC_URL_STARKNET, FEEDER_URL)
+        provider = StarknetProvider(PROVIDER_URL_STARKNET, FEEDER_URL)
         block_header = provider.get_block_header_by_number(block_numbers[ids.index])
         # Write header data to memory
         fields = block_header.header.to_fields()

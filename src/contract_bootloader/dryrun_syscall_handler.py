@@ -76,7 +76,7 @@ from tools.py.providers.starknet.provider import StarknetKeyProvider
 load_dotenv()
 
 RPC_URL = os.getenv("RPC_URL")
-RPC_URL_STARKNET = os.getenv("RPC_URL_STARKNET")
+PROVIDER_URL_STARKNET = os.getenv("PROVIDER_URL_STARKNET")
 FEEDER_URL = os.getenv(
     "STARKNET_FEEDER_URL", "https://alpha-sepolia.starknet.io/feeder_gateway/"
 )
@@ -208,7 +208,7 @@ class DryRunSyscallHandler(SyscallHandlerBase):
         self, request: CairoStructProxy, calldata: list
     ) -> CallResult:
         provider = StarknetKeyProvider(
-            RPC_URL_STARKNET,
+            PROVIDER_URL_STARKNET,
             FEEDER_URL,
         )
         retdata = []
