@@ -6,6 +6,8 @@ use cairo_vm::{
 };
 use std::collections::HashMap;
 
+pub mod contract_bootloader;
+
 pub fn run_hint(
     _vm: &mut VirtualMachine,
     _exec_scope: &mut ExecutionScopes,

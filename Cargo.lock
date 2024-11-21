@@ -200,6 +200,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 
 [[package]]
+name = "cairo-type-derive"
+version = "0.1.0"
+source = "git+https://github.com/keep-starknet-strange/snos.git#b7957e5ff76118cad77abc40e4ecc75f2701847e"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.89",
+]
+
+[[package]]
 name = "cairo-vm"
 version = "1.0.1"
 source = "git+https://github.com/lambdaclass/cairo-vm?rev=3fb0344ce038b3a68cae897c403d1f561cfe8da7#3fb0344ce038b3a68cae897c403d1f561cfe8da7"
@@ -440,6 +450,7 @@ name = "hdp_cairo_vm_hints"
 version = "0.1.0"
 dependencies = [
  "bincode",
+ "cairo-type-derive",
  "cairo-vm",
  "clap",
  "hex",
