@@ -1,0 +1,19 @@
+[workspace]
+resolver = "2"
+
+members = ["cairo_vm_hints"]
+
+
+[workspace.dependencies]
+bincode = { version = "2.0.0-rc.3", default-features = false, features = ["serde"] }
+cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", rev = "3fb0344ce038b3a68cae897c403d1f561cfe8da7", features = ["extensive_hints", "clap", "std"] }
+clap = { version = "4.3.10", features = ["derive"] }
+rand = "0.8"
+sha3 = "0.10.8"
+starknet-types-core = "0.1.7"
+thiserror = "1.0.64"
+num-bigint = "0.4.6"
+num-traits = "0.2.19"
+tiny-keccak = { version = "2.0.2", features = ["keccak"] }
+hex = "0.4.3"
+starknet-crypto = "0.7.2"
