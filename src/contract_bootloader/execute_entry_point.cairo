@@ -178,9 +178,7 @@ func execute_entry_point{
 
     local syscall_ptr: felt* = nondet %{ segments.add() %};
 
-    %{
-        syscall_handler.set_syscall_ptr(syscall_ptr=ids.syscall_ptr)
-    %}
+    %{ syscall_handler.set_syscall_ptr(syscall_ptr=ids.syscall_ptr) %}
 
     let builtin_ptrs: BuiltinPointers* = prepare_builtin_ptrs_for_execute(builtin_ptrs);
 

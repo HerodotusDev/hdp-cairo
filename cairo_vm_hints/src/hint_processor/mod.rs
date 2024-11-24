@@ -30,54 +30,10 @@ impl CustomHintProcessor {
 impl HintProcessorLogic for CustomHintProcessor {
     fn execute_hint(
         &mut self,
-        vm: &mut VirtualMachine,
-        exec_scopes: &mut ExecutionScopes,
-        hint_data: &Box<dyn Any>,
-        constants: &HashMap<String, Felt252>,
-    ) -> Result<(), HintError> {
-        let hint_data = hint_data
-            .downcast_ref::<HintProcessorData>()
-            .ok_or(HintError::WrongHintData)?;
-
-        hints::run_hint(vm, exec_scopes, hint_data, constants)
-    }
-}
-
-impl ResourceTracker for CustomHintProcessor {}
-
-pub struct ExtendedHintProcessor {
-    custom_hint_processor: CustomHintProcessor,
-    builtin_hint_processor: BuiltinHintProcessor,
-}
-
-impl Default for ExtendedHintProcessor {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl ExtendedHintProcessor {
-    pub fn new() -> Self {
-        Self {
-            custom_hint_processor: CustomHintProcessor {},
-            builtin_hint_processor: BuiltinHintProcessor::new_empty(),
-        }
-    }
-
-    pub fn add_hint(&mut self, hint_code: String, hint_func: Rc<HintFunc>) {
-        self.builtin_hint_processor
-            .extra_hints
-            .insert(hint_code, hint_func);
-    }
-}
-
-impl HintProcessorLogic for ExtendedHintProcessor {
-    fn execute_hint(
-        &mut self,
         _vm: &mut VirtualMachine,
         _exec_scopes: &mut ExecutionScopes,
         _hint_data: &Box<dyn Any>,
-        _constants: &HashMap<String, Felt>,
+        _constants: &HashMap<String, Felt252>,
     ) -> Result<(), HintError> {
         unreachable!();
     }
@@ -89,21 +45,18 @@ impl HintProcessorLogic for ExtendedHintProcessor {
         hint_data: &Box<dyn Any>,
         constants: &HashMap<String, Felt>,
     ) -> Result<HintExtension, HintError> {
-        match self.custom_hint_processor.execute_hint_extensive(
-            vm,
-            exec_scopes,
-            hint_data,
-            constants,
-        ) {
-            Err(HintError::UnknownHint(_)) => {}
-            result => {
-                return result;
-            }
+        let hint_data = hint_data
+            .downcast_ref::<HintProcessorData>()
+            .ok_or(HintError::WrongHintData)?;
+
+        let res = hints::run_hint(vm, exec_scopes, hint_data, constants);
+
+        if !matches!(res, Err(HintError::UnknownHint(_))) {
+            return res.and(Ok(HintExtension::default()));
         }
 
-        self.builtin_hint_processor
-            .execute_hint_extensive(vm, exec_scopes, hint_data, constants)
+        hints::run_extensive_hint(vm, exec_scopes, hint_data, constants)
     }
 }
 
-impl ResourceTracker for ExtendedHintProcessor {}
+impl ResourceTracker for CustomHintProcessor {}

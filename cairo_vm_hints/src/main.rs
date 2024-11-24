@@ -18,7 +18,7 @@ use cairo_vm::vm::runners::cairo_pie::CairoPie;
 // #[cfg(feature = "with_tracer")]
 // use cairo_vm::vm::runners::cairo_runner::CairoRunner;
 use cairo_vm::vm::runners::cairo_runner::RunResources;
-use hint_processor::ExtendedHintProcessor;
+use hint_processor::CustomHintProcessor;
 // #[cfg(feature = "with_tracer")]
 // use cairo_vm_tracer::error::trace_data_errors::TraceDataError;
 // #[cfg(feature = "with_tracer")]
@@ -198,7 +198,7 @@ fn run(args: impl Iterator<Item = String>) -> Result<(), Error> {
         cairo_run::cairo_run_pie(&pie, &cairo_run_config, &mut hint_processor)
     } else {
         let program_content = std::fs::read(args.filename).map_err(Error::IO)?;
-        let mut hint_processor = ExtendedHintProcessor::new();
+        let mut hint_processor = CustomHintProcessor::new();
         cairo_run::cairo_run(&program_content, &cairo_run_config, &mut hint_processor)
     } {
         Ok(runner) => runner,

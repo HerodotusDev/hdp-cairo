@@ -18,11 +18,11 @@ pub const LOAD_PROGRAM: &str = "vm_load_program(\n    compiled_class.get_runnabl
 
 pub fn load_program(
     vm: &mut VirtualMachine,
-    exec_scope: &mut ExecutionScopes,
+    exec_scopes: &mut ExecutionScopes,
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<HintExtension, HintError> {
-    let cairo_lang_class = exec_scope.get::<CasmContractClass>(CONTRACT_CLASS)?;
+    let cairo_lang_class = exec_scopes.get::<CasmContractClass>(CONTRACT_CLASS)?;
 
     let compiled_class_ptr = get_ptr_from_var_name(
         CONTRACT_CLASS,
@@ -36,7 +36,7 @@ pub fn load_program(
     let mut hint_extension = HintExtension::new();
 
     for (rel_pc, hints) in cairo_lang_class.hints.into_iter() {
-        let abs_pc = Relocatable::from((byte_code_ptr.segment_index, rel_pc));
+        let abs_pc: Relocatable = Relocatable::from((byte_code_ptr.segment_index, rel_pc));
         hint_extension.insert(abs_pc, hints.iter().map(|h| any_box!(h.clone())).collect());
     }
 

@@ -15,7 +15,7 @@ pub const SEGMENTS_ADD_TO_FELT_OR_RELOCATABLE: &str =
 
 pub fn segments_add(
     vm: &mut VirtualMachine,
-    _exec_scope: &mut ExecutionScopes,
+    _exec_scopes: &mut ExecutionScopes,
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
@@ -28,7 +28,7 @@ pub const SET_FP_PLUS_8_SEGMENTS_ADD: &str =
 
 pub fn set_fp_plus_8_segments_add(
     vm: &mut VirtualMachine,
-    _exec_scope: &mut ExecutionScopes,
+    _exec_scopes: &mut ExecutionScopes,
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
@@ -41,7 +41,7 @@ pub const SET_FP_PLUS_9_SEGMENTS_ADD: &str =
 
 pub fn set_fp_plus_9_segments_add(
     vm: &mut VirtualMachine,
-    _exec_scope: &mut ExecutionScopes,
+    _exec_scopes: &mut ExecutionScopes,
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
