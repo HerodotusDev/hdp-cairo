@@ -6,6 +6,7 @@ members = ["cairo_vm_hints"]
 
 [workspace.dependencies]
 bincode = { version = "2.0.0-rc.3", default-features = false, features = ["serde"] }
+cairo-lang-starknet-classes = { version = "=2.8.2" }
 cairo-type-derive = { git = "https://github.com/keep-starknet-strange/snos.git" }
 cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", rev = "3fb0344ce038b3a68cae897c403d1f561cfe8da7", features = ["extensive_hints", "clap", "std"] }
 clap = { version = "4.3.10", features = ["derive"] }
