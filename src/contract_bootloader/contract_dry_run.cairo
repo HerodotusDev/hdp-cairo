@@ -99,12 +99,13 @@ func main{
     local pow2_array: felt* = nondet %{ segments.add() %};
 
     %{
-        from contract_bootloader.dryrun_syscall_handler import DryRunSyscallHandler
-
         if '__dict_manager' not in globals():
                 from starkware.cairo.common.dict import DictManager
                 __dict_manager = DictManager()
+    %}
 
+    %{
+        from contract_bootloader.dryrun_syscall_handler import DryRunSyscallHandler
         syscall_handler = DryRunSyscallHandler(segments=segments, dict_manager=__dict_manager)
     %}
 
