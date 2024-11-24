@@ -100,8 +100,8 @@ func main{
 
     %{
         if '__dict_manager' not in globals():
-                from starkware.cairo.common.dict import DictManager
-                __dict_manager = DictManager()
+            from starkware.cairo.common.dict import DictManager
+            __dict_manager = DictManager()
     %}
 
     %{

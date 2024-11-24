@@ -165,17 +165,21 @@ func execute_entry_point{
     local range_check_ptr = range_check_ptr;
     local contract_entry_point: felt* = compiled_class.bytecode_ptr + entry_point_offset;
 
-    local syscall_ptr: felt*;
+    %{
+        if '__dict_manager' not in globals():
+            from starkware.cairo.common.dict import DictManager
+            __dict_manager = DictManager()
+    %}
 
     %{
         if 'syscall_handler' not in globals():
             from contract_bootloader.syscall_handler import SyscallHandler
-            if '__dict_manager' not in globals():
-                from starkware.cairo.common.dict import DictManager
-                __dict_manager = DictManager()
             syscall_handler = SyscallHandler(segments=segments, dict_manager=__dict_manager)
+    %}
 
-        ids.syscall_ptr = segments.add()
+    local syscall_ptr: felt* = nondet %{ segments.add() %};
+
+    %{
         syscall_handler.set_syscall_ptr(syscall_ptr=ids.syscall_ptr)
     %}
 
