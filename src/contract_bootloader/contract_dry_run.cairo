@@ -48,6 +48,7 @@ func main{
 
         inputs = [input.value for input in module_input.inputs]
         ids.inputs_len = len(inputs)
+        print("inputs_len", len(inputs))
         segments.write_arg(ids.inputs, inputs)
     %}
 
