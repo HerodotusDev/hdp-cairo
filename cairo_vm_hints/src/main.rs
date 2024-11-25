@@ -11,7 +11,6 @@ use cairo_vm::hint_processor::builtin_hint_processor::builtin_hint_processor_def
 // TODO
 // #[cfg(feature = "with_tracer")]
 // use cairo_vm::serde::deserialize_program::DebugInfo;
-use cairo_vm::types::layout::CairoLayoutParams;
 use cairo_vm::types::layout_name::LayoutName;
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use cairo_vm::vm::errors::trace_errors::TraceError;
@@ -174,11 +173,6 @@ fn run(args: impl Iterator<Item = String>) -> Result<(), Error> {
 
     let trace_enabled = args.trace_file.is_some() || args.air_public_input.is_some();
 
-    let cairo_layout_params = match args.cairo_layout_params_file {
-        Some(file) => Some(CairoLayoutParams::from_file(&file)?),
-        None => None,
-    };
-
     let cairo_run_config = cairo_run::CairoRunConfig {
         entrypoint: &args.entrypoint,
         trace_enabled,
@@ -187,7 +181,6 @@ fn run(args: impl Iterator<Item = String>) -> Result<(), Error> {
         proof_mode: args.proof_mode,
         secure_run: args.secure_run,
         allow_missing_builtins: args.allow_missing_builtins,
-        dynamic_layout_params: cairo_layout_params,
         ..Default::default()
     };
 

@@ -17,16 +17,14 @@ pub struct HDPSyscallHandler {
 
 /// SyscallHandler is wrapped in Rc<RefCell<_>> in order
 /// to clone the reference when entering and exiting vm scopes
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SyscallHandlerWrapper {
     pub syscall_handler: Rc<RwLock<HDPSyscallHandler>>,
 }
 
-impl Clone for SyscallHandlerWrapper {
-    fn clone(&self) -> Self {
-        Self {
-            syscall_handler: self.syscall_handler.clone(),
-        }
+impl Default for SyscallHandlerWrapper {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -62,9 +60,6 @@ impl SyscallHandlerWrapper {
 
         match selector {
             SyscallSelector::CallContract => run_handler::<CallContractHandler>(ptr, vm),
-            _ => Err(HintError::CustomHint(
-                format!("Unknown syscall selector: {:?}", selector).into(),
-            )),
         }?;
 
         syscall_handler.syscall_ptr = Some(*ptr);
