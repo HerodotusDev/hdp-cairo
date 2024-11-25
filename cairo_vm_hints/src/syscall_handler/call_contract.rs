@@ -12,10 +12,7 @@ impl SyscallHandler for CallContractHandler {
         todo!()
     }
 
-    async fn execute(
-        request: Self::Request,
-        vm: &mut VirtualMachine,
-    ) -> SyscallResult<Self::Response> {
+    fn execute(request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
         todo!()
     }
 

@@ -11,6 +11,7 @@ use cairo_vm::{
 pub const DICT_MANAGER: &str = "dict_manager";
 pub const SYSCALL_HANDLER: &str = "syscall_handler";
 pub const CONTRACT_CLASS: &str = "syscall_handler";
+pub const SYSCALL_PTR: &str = "syscall_ptr";
 
 pub const ENTER_SCOPE_SYSCALL_HANDLER: &str =
     "vm_enter_scope({'syscall_handler': syscall_handler})";

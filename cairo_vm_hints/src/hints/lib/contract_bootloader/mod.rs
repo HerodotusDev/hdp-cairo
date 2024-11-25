@@ -13,6 +13,7 @@ use cairo_vm::{
 pub mod dict_manager;
 pub mod program;
 pub mod scopes;
+pub mod syscall_handler;
 
 pub fn run_hint(
     vm: &mut VirtualMachine,
@@ -25,6 +26,15 @@ pub fn run_hint(
             scopes::enter_scope_syscall_handler(vm, exec_scopes, hint_data, constants)
         }
         scopes::EXIT_SCOPE => scopes::exit_scope(vm, exec_scopes, hint_data, constants),
+        dict_manager::DICT_MANAGER_CREATE => {
+            dict_manager::dict_manager_create(vm, exec_scopes, hint_data, constants)
+        }
+        syscall_handler::SYSCALL_HANDLER_CREATE => {
+            syscall_handler::syscall_handler_create(vm, exec_scopes, hint_data, constants)
+        }
+        syscall_handler::SYSCALL_HANDLER_SET_SYSCALL_PTR => {
+            syscall_handler::syscall_handler_set_syscall_ptr(vm, exec_scopes, hint_data, constants)
+        }
         _ => Err(HintError::UnknownHint(
             hint_data.code.to_string().into_boxed_str(),
         )),

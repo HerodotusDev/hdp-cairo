@@ -180,10 +180,7 @@ pub trait SyscallHandler {
     type Request;
     type Response;
     fn read_request(vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Request>;
-    async fn execute(
-        request: Self::Request,
-        vm: &mut VirtualMachine,
-    ) -> SyscallResult<Self::Response>;
+    fn execute(request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response>;
     fn write_response(
         response: Self::Response,
         vm: &mut VirtualMachine,
@@ -220,7 +217,7 @@ pub const REMAINING_GAS: Felt252 = Felt252::from_hex_unchecked("0xffffff");
 pub const OUT_OF_GAS_ERROR: &str =
     "0x000000000000000000000000000000000000000000004f7574206f6620676173";
 
-pub async fn run_handler<SH>(
+pub fn run_handler<SH>(
     syscall_ptr: &mut Relocatable,
     vm: &mut VirtualMachine,
 ) -> Result<(), HintError>
@@ -228,7 +225,7 @@ where
     SH: SyscallHandler,
 {
     let request = SH::read_request(vm, syscall_ptr)?;
-    let syscall_result = SH::execute(request, vm).await;
+    let syscall_result = SH::execute(request, vm);
     match syscall_result {
         Ok(response) => {
             write_felt(vm, syscall_ptr, REMAINING_GAS)?;

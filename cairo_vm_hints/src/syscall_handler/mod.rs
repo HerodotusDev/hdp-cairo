@@ -9,15 +9,10 @@ use call_contract::CallContractHandler;
 use std::{rc::Rc, sync::RwLock};
 use utils::{felt_from_ptr, run_handler, ReadOnlySegment, SyscallSelector};
 
-/// Represents read-only segments dynamically allocated during execution.
-#[derive(Debug, Default)]
-pub struct ReadOnlySegments(Vec<ReadOnlySegment>);
-
 /// SyscallHandler implementation for execution of system calls in the StarkNet OS
 #[derive(Debug)]
 pub struct HDPSyscallHandler {
     pub syscall_ptr: Option<Relocatable>,
-    pub segments: ReadOnlySegments,
 }
 
 /// SyscallHandler is wrapped in Rc<RefCell<_>> in order
@@ -38,18 +33,15 @@ impl Clone for SyscallHandlerWrapper {
 impl SyscallHandlerWrapper {
     pub fn new() -> Self {
         Self {
-            syscall_handler: Rc::new(RwLock::new(HDPSyscallHandler {
-                syscall_ptr: None,
-                segments: ReadOnlySegments::default(),
-            })),
+            syscall_handler: Rc::new(RwLock::new(HDPSyscallHandler { syscall_ptr: None })),
         }
     }
-    pub async fn set_syscall_ptr(&self, syscall_ptr: Relocatable) {
+    pub fn set_syscall_ptr(&self, syscall_ptr: Relocatable) {
         let mut syscall_handler = self.syscall_handler.write().unwrap();
         syscall_handler.syscall_ptr = Some(syscall_ptr);
     }
 
-    pub async fn syscall_ptr(&self) -> Option<Relocatable> {
+    pub fn syscall_ptr(&self) -> Option<Relocatable> {
         let syscall_handler = self.syscall_handler.read().unwrap();
         syscall_handler.syscall_ptr
     }
@@ -69,7 +61,7 @@ impl SyscallHandlerWrapper {
         let selector = SyscallSelector::try_from(felt_from_ptr(vm, ptr)?)?;
 
         match selector {
-            SyscallSelector::CallContract => run_handler::<CallContractHandler>(ptr, vm).await,
+            SyscallSelector::CallContract => run_handler::<CallContractHandler>(ptr, vm),
             _ => Err(HintError::CustomHint(
                 format!("Unknown syscall selector: {:?}", selector).into(),
             )),
