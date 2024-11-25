@@ -1,4 +1,3 @@
-use super::{cairo_types::structs::CompiledClass, scopes::CONTRACT_CLASS};
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use cairo_vm::{
     any_box,
@@ -13,6 +12,10 @@ use cairo_vm::{
     Felt252,
 };
 use std::collections::HashMap;
+
+use crate::cairo_types::structs::CompiledClass;
+
+use super::scopes::CONTRACT_CLASS;
 
 pub const LOAD_PROGRAM: &str = "vm_load_program(\n    compiled_class.get_runnable_program(entrypoint_builtins=[]),\n    ids.compiled_class.bytecode_ptr\n)";
 

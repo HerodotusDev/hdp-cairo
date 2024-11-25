@@ -10,11 +10,9 @@ use cairo_vm::{
     Felt252,
 };
 
-pub mod cairo_types;
 pub mod dict_manager;
 pub mod program;
 pub mod scopes;
-pub mod syscall;
 
 pub fn run_hint(
     vm: &mut VirtualMachine,

@@ -1,16 +1,13 @@
-use super::utils::{ReadOnlySegment, SyscallResult, WriteResponseResult};
-use crate::hints::lib::contract_bootloader::syscall::utils::{
-    felt_from_ptr, run_handler, SyscallSelector,
-};
-use crate::hints::lib::contract_bootloader::{
-    cairo_types::new_syscalls::{CallContractRequest, CallContractResponse},
-    syscall::utils::SyscallHandler,
-};
+pub mod call_contract;
+pub mod utils;
+
 use cairo_vm::{
     types::relocatable::Relocatable,
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
 };
+use call_contract::CallContractHandler;
 use std::{rc::Rc, sync::RwLock};
+use utils::{felt_from_ptr, run_handler, ReadOnlySegment, SyscallSelector};
 
 /// Represents read-only segments dynamically allocated during execution.
 #[derive(Debug, Default)]
@@ -81,31 +78,5 @@ impl SyscallHandlerWrapper {
         syscall_handler.syscall_ptr = Some(*ptr);
 
         Ok(())
-    }
-}
-
-struct CallContractHandler;
-
-impl SyscallHandler for CallContractHandler {
-    type Request = CallContractRequest;
-    type Response = CallContractResponse;
-
-    fn read_request(_vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Request> {
-        todo!()
-    }
-
-    async fn execute(
-        request: Self::Request,
-        vm: &mut VirtualMachine,
-    ) -> SyscallResult<Self::Response> {
-        todo!()
-    }
-
-    fn write_response(
-        response: Self::Response,
-        vm: &mut VirtualMachine,
-        ptr: &mut Relocatable,
-    ) -> WriteResponseResult {
-        todo!()
     }
 }
