@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+pub mod add_segments;
 
 use cairo_vm::{
     hint_processor::builtin_hint_processor::builtin_hint_processor_definition::HintProcessorData,
@@ -6,8 +6,7 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-
-mod add_segments;
+use std::collections::HashMap;
 
 pub fn run_hint(
     vm: &mut VirtualMachine,

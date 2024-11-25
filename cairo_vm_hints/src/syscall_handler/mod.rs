@@ -7,12 +7,12 @@ use cairo_vm::{
 };
 use call_contract::CallContractHandler;
 use std::{rc::Rc, sync::RwLock};
-use utils::{felt_from_ptr, run_handler, ReadOnlySegment, SyscallSelector};
+use utils::{felt_from_ptr, run_handler, SyscallSelector};
 
 /// SyscallHandler implementation for execution of system calls in the StarkNet OS
 #[derive(Debug)]
 pub struct HDPSyscallHandler {
-    pub syscall_ptr: Option<Relocatable>,
+    syscall_ptr: Option<Relocatable>,
 }
 
 /// SyscallHandler is wrapped in Rc<RefCell<_>> in order
@@ -46,7 +46,7 @@ impl SyscallHandlerWrapper {
         syscall_handler.syscall_ptr
     }
 
-    pub async fn execute_syscall(
+    pub fn execute_syscall(
         &self,
         vm: &mut VirtualMachine,
         syscall_ptr: Relocatable,

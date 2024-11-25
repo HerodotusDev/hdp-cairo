@@ -1,3 +1,6 @@
+pub mod contract_bootloader;
+pub mod segments;
+
 use cairo_vm::{
     hint_processor::{
         builtin_hint_processor::builtin_hint_processor_definition::HintProcessorData,
@@ -8,9 +11,6 @@ use cairo_vm::{
     Felt252,
 };
 use std::collections::HashMap;
-
-pub mod contract_bootloader;
-pub mod segments;
 
 pub fn run_hint(
     vm: &mut VirtualMachine,

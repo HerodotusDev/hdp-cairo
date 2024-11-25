@@ -1,5 +1,3 @@
-use std::{any::Any, collections::HashMap};
-
 use crate::syscall_handler::SyscallHandlerWrapper;
 use cairo_vm::{
     hint_processor::builtin_hint_processor::builtin_hint_processor_definition::HintProcessorData,
@@ -7,10 +5,11 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
+use std::{any::Any, collections::HashMap};
 
 pub const DICT_MANAGER: &str = "dict_manager";
 pub const SYSCALL_HANDLER: &str = "syscall_handler";
-pub const CONTRACT_CLASS: &str = "syscall_handler";
+pub const CONTRACT_CLASS: &str = "contract_class";
 pub const SYSCALL_PTR: &str = "syscall_ptr";
 
 pub const ENTER_SCOPE_SYSCALL_HANDLER: &str =
