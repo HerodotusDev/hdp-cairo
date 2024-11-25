@@ -1,12 +1,16 @@
+use cairo_lang_casm::{
+    hints::{Hint, StarknetHint},
+    operand::{BinOpOperand, DerefOrImmediate, Operation, Register, ResOperand},
+};
 use cairo_vm::{
     hint_processor::{
         builtin_hint_processor::builtin_hint_processor_definition::{
             BuiltinHintProcessor, HintProcessorData,
         },
+        cairo_1_hint_processor::hint_processor::Cairo1HintProcessor,
         hint_processor_definition::{HintExtension, HintProcessorLogic},
-        // cairo_1_hint_processor::hint_processor::Cairo1HintProcessor,
     },
-    types::exec_scope::ExecutionScopes,
+    types::{exec_scope::ExecutionScopes, relocatable::Relocatable},
     vm::{
         errors::hint_errors::HintError, runners::cairo_runner::ResourceTracker,
         vm_core::VirtualMachine,
@@ -16,6 +20,11 @@ use cairo_vm::{
 use starknet_types_core::felt::Felt;
 use std::any::Any;
 use std::collections::HashMap;
+
+use crate::{
+    hints::lib::contract_bootloader::scopes::SYSCALL_HANDLER,
+    syscall_handler::SyscallHandlerWrapper,
+};
 
 pub type HintImpl = fn(
     &mut VirtualMachine,
@@ -36,7 +45,7 @@ type ExtensiveHintImpl = fn(
 
 pub struct CustomHintProcessor {
     builtin_hint_proc: BuiltinHintProcessor,
-    // cairo1_builtin_hint_proc: Cairo1HintProcessor,
+    cairo1_builtin_hint_proc: Cairo1HintProcessor,
     hints: HashMap<String, HintImpl>,
     extensive_hints: HashMap<String, ExtensiveHintImpl>,
 }
@@ -51,7 +60,11 @@ impl CustomHintProcessor {
     pub fn new() -> Self {
         Self {
             builtin_hint_proc: BuiltinHintProcessor::new_empty(),
-            // cairo1_builtin_hint_proc: Cairo1HintProcessor::new(Default::default(), Default::default(), true),
+            cairo1_builtin_hint_proc: Cairo1HintProcessor::new(
+                Default::default(),
+                Default::default(),
+                true,
+            ),
             hints: Self::hints(),
             extensive_hints: Self::extensive_hints(),
         }
@@ -108,21 +121,52 @@ impl HintProcessorLogic for CustomHintProcessor {
                 .map(|_| HintExtension::default());
         }
 
-        // if let Some(hint) = hint_data.downcast_ref::<Hint>() {
-        //     if let Hint::Starknet(StarknetHint::SystemCall { system }) = hint {
-        //         let syscall_ptr = get_ptr_from_res_operand(vm, system)?;
-        //         // TODO: need to be generic here
-        //         let syscall_handler = exec_scopes.get::<SyscallHandlerWrapper>(SYSCALL_HANDLER)?;
+        if let Some(hint) = hint_data.downcast_ref::<Hint>() {
+            if let Hint::Starknet(StarknetHint::SystemCall { system }) = hint {
+                let syscall_ptr = get_ptr_from_res_operand(vm, system)?;
+                // TODO: need to be generic here
+                let syscall_handler = exec_scopes.get::<SyscallHandlerWrapper>(SYSCALL_HANDLER)?;
 
-        //         return syscall_handler.execute_syscall(vm, syscall_ptr)?
-        //             .map(|_| HintExtension::default());
-        //     } else {
-        //         return self.cairo1_builtin_hint_proc.execute(vm, exec_scopes, hint).map(|_| HintExtension::default());
-        //     }
-        // }
+                return syscall_handler
+                    .execute_syscall(vm, syscall_ptr)
+                    .map(|_| HintExtension::default());
+            } else {
+                return self
+                    .cairo1_builtin_hint_proc
+                    .execute(vm, exec_scopes, hint)
+                    .map(|_| HintExtension::default());
+            }
+        }
 
         Err(HintError::WrongHintData)
     }
 }
 
 impl ResourceTracker for CustomHintProcessor {}
+
+fn get_ptr_from_res_operand(
+    vm: &mut VirtualMachine,
+    res: &ResOperand,
+) -> Result<Relocatable, HintError> {
+    let (cell, base_offset) = match res {
+        ResOperand::Deref(cell) => (cell, Felt252::ZERO),
+        ResOperand::BinOp(BinOpOperand {
+            op: Operation::Add,
+            a,
+            b: DerefOrImmediate::Immediate(b),
+        }) => (a, Felt252::from(&b.value)),
+        _ => {
+            return Err(HintError::CustomHint(
+                "Failed to extract buffer, expected ResOperand of BinOp type to have Inmediate b value"
+                    .to_owned()
+                    .into_boxed_str(),
+            ));
+        }
+    };
+    let base = match cell.register {
+        Register::AP => vm.get_ap(),
+        Register::FP => vm.get_fp(),
+    };
+    let cell_reloc = (base + (i32::from(cell.offset)))?;
+    (vm.get_relocatable(cell_reloc)? + &base_offset).map_err(|e| e.into())
+}

@@ -18,3 +18,4 @@ starknet-types-core.workspace = true
 thiserror.workspace = true
 tiny-keccak.workspace = true
 cairo-lang-starknet-classes.workspace = true
+cairo-lang-casm.workspace = true

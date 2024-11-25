@@ -6,9 +6,10 @@ members = ["cairo_vm_hints"]
 
 [workspace.dependencies]
 bincode = { version = "2.0.0-rc.3", default-features = false, features = ["serde"] }
-cairo-lang-starknet-classes = { version = "2.7.0" }
+cairo-lang-casm = { version = "2.9.0-dev.0", default-features = false }
+cairo-lang-starknet-classes = { version = "2.9.0-dev.0" }
 cairo-type-derive = { git = "https://github.com/keep-starknet-strange/snos.git" }
-cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", rev = "93f1f54f38059af89850b1c06d4c901300f9b94d", features = ["extensive_hints", "clap"] }
+cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", rev = "388a4e51001377717b7e4c902c35f8e271c92ad7", features = ["extensive_hints", "clap", "cairo-1-hints"] }
 clap = { version = "4.3.10", features = ["derive"] }
 hex = "0.4.3"
 num-bigint = "0.4.6"
