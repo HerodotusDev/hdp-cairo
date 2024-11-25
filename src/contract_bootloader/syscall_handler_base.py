@@ -11,7 +11,14 @@ from starkware.starknet.core.os.syscall_handler import (
     SyscallInfo,
 )
 import functools
-from starkware.cairo.common.structs import CairoStructProxy
+from starkware.cairo.common.structs import (
+    CairoStructProxy,
+    CairoStructFactory
+)    
+from starkware.cairo.common.cairo_sha256.sha256_utils import (
+    compute_message_schedule,
+    sha2_compress_function
+)
 from abc import ABC, abstractmethod
 from starkware.cairo.lang.vm.relocatable import RelocatableValue, MaybeRelocatable
 from starkware.cairo.lang.vm.memory_segments import MemorySegmentManager
@@ -36,10 +43,18 @@ from starkware.starknet.business_logic.execution.objects import (
     CallResult,
 )
 
+import pprint
+
 SyscallFullResponse = Tuple[
     tuple, tuple
 ]  # Response header + specific syscall response.
 
+        
+# @cachetools.cached(cache={})
+# def get_syscall_structs() -> CairoStructProxy:
+#     syscalls_program = load_program(path=STARKNET_SYSCALLS_COMPILED_PATH)
+#     return CairoStructFactory.from_program(program=syscalls_program, additional_imports=[]).structs
+        
 
 class SyscallHandlerBase(ABC):
     def __init__(
@@ -60,6 +75,7 @@ class SyscallHandlerBase(ABC):
     @cachetools.cached(cache={})
     def get_selector_to_syscall_info(cls) -> Dict[int, SyscallInfo]:
         structs = get_syscall_structs()
+        pprint.pp(structs)
         syscalls_program = load_program(path=STARKNET_SYSCALLS_COMPILED_PATH)
         get_selector = functools.partial(
             get_selector_from_program, syscalls_program=syscalls_program
@@ -69,6 +85,12 @@ class SyscallHandlerBase(ABC):
                 name="call_contract",
                 execute_callback=cls.call_contract,
                 request_struct=structs.CallContractRequest,
+            ),
+            # starkli selector Sha256ProcessBlock
+            0x53686132353650726f63657373426c6f636b: SyscallInfo(
+                name="sha256_process_block",
+                execute_callback=cls.sha256_process_block,
+                request_struct=structs.Sha256ProcessBlockRequest,
             ),
         }
 
@@ -90,6 +112,7 @@ class SyscallHandlerBase(ABC):
 
         # Validate syscall selector and request.
         selector = cast_to_int(request_header.selector)
+        print(f"Executing selector: {selector} ")
         syscall_info = self.selector_to_syscall_info.get(selector)
         assert (
             syscall_info is not None
@@ -144,6 +167,28 @@ class SyscallHandlerBase(ABC):
 
         syscall_name can be "call_contract" or "library_call".
         """
+
+    def sha256_process_block(
+        self, remaining_gas: int, request: CairoStructProxy
+    ) -> SyscallFullResponse:
+        assert isinstance(request.state_ptr, RelocatableValue)
+        assert isinstance(request.input_start, RelocatableValue)
+
+        state_array = self._get_felt_range(
+            start_addr=request.state_ptr, end_addr=request.state_ptr + 8
+        )
+
+        input_array = self._get_felt_range(
+            start_addr=request.input_start, end_addr=request.input_start + 16
+        )
+
+        state_array =  sha2_compress_function(state_array, compute_message_schedule(input_array))
+
+        response_header = self.structs.ResponseHeader(gas=remaining_gas, failure_flag=0)
+        response = self.structs.Sha256ProcessBlockResponse(state_ptr=state_array)
+
+        return response_header, response
+
 
     # Internal utilities.
 
