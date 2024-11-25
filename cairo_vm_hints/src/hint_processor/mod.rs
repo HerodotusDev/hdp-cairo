@@ -1,11 +1,8 @@
 use crate::hints;
 use cairo_vm::{
     hint_processor::{
-        builtin_hint_processor::builtin_hint_processor_definition::{
-            BuiltinHintProcessor, HintFunc, HintProcessorData,
-        },
-        hint_processor_definition::HintExtension,
-        hint_processor_definition::HintProcessorLogic,
+        builtin_hint_processor::builtin_hint_processor_definition::HintProcessorData,
+        hint_processor_definition::HintExtension, hint_processor_definition::HintProcessorLogic,
     },
     types::exec_scope::ExecutionScopes,
     vm::{
@@ -15,8 +12,8 @@ use cairo_vm::{
     Felt252,
 };
 use starknet_types_core::felt::Felt;
+use std::any::Any;
 use std::collections::HashMap;
-use std::{any::Any, rc::Rc};
 
 #[derive(Default)]
 pub struct CustomHintProcessor;

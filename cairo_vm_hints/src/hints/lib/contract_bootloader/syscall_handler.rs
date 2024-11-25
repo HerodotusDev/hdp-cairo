@@ -1,12 +1,8 @@
 use super::scopes::{SYSCALL_HANDLER, SYSCALL_PTR};
 use crate::syscall_handler::SyscallHandlerWrapper;
 use cairo_vm::{
-    hint_processor::{
-        builtin_hint_processor::{
-            builtin_hint_processor_definition::HintProcessorData,
-            hint_utils::{get_address_from_var_name, get_ptr_from_var_name},
-        },
-        hint_processor_utils::get_integer_from_reference,
+    hint_processor::builtin_hint_processor::{
+        builtin_hint_processor_definition::HintProcessorData, hint_utils::get_ptr_from_var_name,
     },
     types::exec_scope::ExecutionScopes,
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},

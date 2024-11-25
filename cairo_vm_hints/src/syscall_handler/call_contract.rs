@@ -8,18 +8,18 @@ impl SyscallHandler for CallContractHandler {
     type Request = CallContractRequest;
     type Response = CallContractResponse;
 
-    fn read_request(_vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Request> {
+    fn read_request(_vm: &VirtualMachine, _ptr: &mut Relocatable) -> SyscallResult<Self::Request> {
         todo!()
     }
 
-    fn execute(request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
+    fn execute(_request: Self::Request, _vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
         todo!()
     }
 
     fn write_response(
-        response: Self::Response,
-        vm: &mut VirtualMachine,
-        ptr: &mut Relocatable,
+        _response: Self::Response,
+        _vm: &mut VirtualMachine,
+        _ptr: &mut Relocatable,
     ) -> WriteResponseResult {
         todo!()
     }
