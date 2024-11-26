@@ -1,21 +1,25 @@
-use cairo_type_derive::FieldOffsetGetters;
+use crate::cairo_types::traits::CairoType;
+use cairo_type_derive::{CairoType, FieldOffsetGetters};
+use cairo_vm::types::relocatable::Relocatable;
+use cairo_vm::vm::errors::memory_errors::MemoryError;
+use cairo_vm::vm::vm_core::VirtualMachine;
 use cairo_vm::Felt252;
 
 #[allow(unused)]
-#[derive(FieldOffsetGetters)]
+#[derive(FieldOffsetGetters, CairoType)]
 pub struct CallContractRequest {
     // The address of the L2 contract to call.
-    contract_address: Felt252,
+    pub contract_address: Felt252,
     // The selector of the function to call.
-    selector: Felt252,
+    pub selector: Felt252,
     // The calldata.
-    calldata_start: Felt252,
-    calldata_end: Felt252,
+    pub calldata_start: Felt252,
+    pub calldata_end: Felt252,
 }
 
 #[allow(unused)]
-#[derive(FieldOffsetGetters)]
+#[derive(FieldOffsetGetters, CairoType)]
 pub struct CallContractResponse {
-    retdata_start: Felt252,
-    retdata_end: Felt252,
+    pub retdata_start: Felt252,
+    pub retdata_end: Felt252,
 }
