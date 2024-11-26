@@ -19,8 +19,8 @@ impl SyscallHandler for CallContractHandler {
 
     fn execute(_request: Self::Request, _vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
         Ok(Self::Response {
-            retdata_start: Felt252::from(6_u32),
-            retdata_end: Felt252::from(9_u32),
+            retdata_start: Felt252::from(0_u32),
+            retdata_end: Felt252::from(1_u32),
         })
     }
 

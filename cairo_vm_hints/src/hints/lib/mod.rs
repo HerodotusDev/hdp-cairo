@@ -1,4 +1,5 @@
 pub mod contract_bootloader;
+pub mod print;
 pub mod segments;
 
 use cairo_vm::{

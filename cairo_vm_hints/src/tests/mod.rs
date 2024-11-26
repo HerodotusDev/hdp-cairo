@@ -15,6 +15,6 @@ pub fn run_cairo_program(program_content: &[u8]) -> Result<CairoRunner, CairoRun
     Ok(cairo_run::cairo_run(
         program_content,
         &cairo_run_config,
-        &mut CustomHintProcessor::new(),
+        &mut CustomHintProcessor::default(),
     )?)
 }

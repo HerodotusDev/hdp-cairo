@@ -34,21 +34,7 @@ func main{
 
     %{
         from tools.py.schema import HDPDryRunInput
-
-        # Load the dry run input
-        dry_run_input = HDPDryRunInput.Schema().load(program_input)
-        dry_run_output_path = dry_run_input.dry_run_output_path
-        # Check if the modules list contains more than one element
-        if len(dry_run_input.modules) > 1:
-            raise ValueError("The modules list contains more than one element, which is not supported.")
-
-        module_input = dry_run_input.modules[0]
-
-        compiled_class = module_input.module_class
-
-        inputs = [input.value for input in module_input.inputs]
-        ids.inputs_len = len(inputs)
-        segments.write_arg(ids.inputs, inputs)
+        compiled_class = HDPDryRunInput.Schema().load(program_input).modules[0].module_class
     %}
 
     local compiled_class: CompiledClass*;
@@ -124,24 +110,6 @@ func main{
     %{
         print("result.low", hex(ids.result.low))
         print("result.high", hex(ids.result.high))
-    %}
-
-    %{
-        import json
-        list = list()
-        dictionary = dict()
-
-        dictionary["fetch_keys"] = syscall_handler.fetch_keys_dict()
-        dictionary["result"] = {
-            "low": hex(ids.result.low),
-            "high": hex(ids.result.high)
-        }
-        dictionary["program_hash"] = hex(ids.program_hash)
-
-        list.append(dictionary)
-
-        with open(dry_run_output_path, 'w') as json_file:
-            json.dump(list, json_file)
     %}
 
     return ();

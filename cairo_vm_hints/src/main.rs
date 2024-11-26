@@ -25,6 +25,7 @@ use hint_processor::CustomHintProcessor;
 // #[cfg(feature = "with_tracer")]
 // use cairo_vm_tracer::tracer::run_tracer;
 use clap::{Parser, ValueHint};
+use std::fs;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use thiserror::Error;
@@ -86,6 +87,8 @@ struct Args {
         conflicts_with_all = ["proof_mode", "air_private_input", "air_public_input"]
     )]
     run_from_cairo_pie: bool,
+    #[structopt(long = "program_input")]
+    program_input: Option<PathBuf>,
 }
 
 #[derive(Debug, Error)]
@@ -193,7 +196,9 @@ fn run(args: impl Iterator<Item = String>) -> Result<(), Error> {
         cairo_run::cairo_run_pie(&pie, &cairo_run_config, &mut hint_processor)
     } else {
         let program_content = std::fs::read(args.filename).map_err(Error::IO)?;
-        let mut hint_processor = CustomHintProcessor::new();
+        let mut hint_processor = CustomHintProcessor::new(
+            serde_json::from_slice(&fs::read(args.program_input.unwrap()).unwrap()).unwrap(),
+        );
         cairo_run::cairo_run(&program_content, &cairo_run_config, &mut hint_processor)
     } {
         Ok(runner) => runner,

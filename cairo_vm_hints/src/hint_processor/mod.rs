@@ -1,3 +1,10 @@
+pub mod input;
+pub mod output;
+
+use crate::{
+    hints::lib::contract_bootloader::scopes::SYSCALL_HANDLER,
+    syscall_handler::SyscallHandlerWrapper,
+};
 use cairo_lang_casm::{
     hints::{Hint, StarknetHint},
     operand::{BinOpOperand, DerefOrImmediate, Operation, Register, ResOperand},
@@ -18,13 +25,7 @@ use cairo_vm::{
     Felt252,
 };
 use starknet_types_core::felt::Felt;
-use std::any::Any;
-use std::collections::HashMap;
-
-use crate::{
-    hints::lib::contract_bootloader::scopes::SYSCALL_HANDLER,
-    syscall_handler::SyscallHandlerWrapper,
-};
+use std::{any::Any, collections::HashMap};
 
 pub type HintImpl = fn(
     &mut VirtualMachine,
@@ -44,6 +45,7 @@ type ExtensiveHintImpl = fn(
 ) -> Result<HintExtension, HintError>;
 
 pub struct CustomHintProcessor {
+    private_inputs: serde_json::Value,
     builtin_hint_proc: BuiltinHintProcessor,
     cairo1_builtin_hint_proc: Cairo1HintProcessor,
     hints: HashMap<String, HintImpl>,
@@ -52,13 +54,14 @@ pub struct CustomHintProcessor {
 
 impl Default for CustomHintProcessor {
     fn default() -> Self {
-        Self::new()
+        Self::new(serde_json::Value::default())
     }
 }
 
 impl CustomHintProcessor {
-    pub fn new() -> Self {
+    pub fn new(private_inputs: serde_json::Value) -> Self {
         Self {
+            private_inputs,
             builtin_hint_proc: BuiltinHintProcessor::new_empty(),
             cairo1_builtin_hint_proc: Cairo1HintProcessor::new(
                 Default::default(),

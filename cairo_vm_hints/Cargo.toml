@@ -19,3 +19,4 @@ thiserror.workspace = true
 tiny-keccak.workspace = true
 cairo-lang-starknet-classes.workspace = true
 cairo-lang-casm.workspace = true
+serde_json.workspace = true
