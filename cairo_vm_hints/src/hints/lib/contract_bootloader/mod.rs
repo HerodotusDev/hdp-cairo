@@ -1,3 +1,8 @@
+pub mod dict_manager;
+pub mod program;
+pub mod scopes;
+pub mod syscall_handler;
+
 use cairo_vm::{
     hint_processor::{
         builtin_hint_processor::builtin_hint_processor_definition::HintProcessorData,
@@ -8,11 +13,6 @@ use cairo_vm::{
     Felt252,
 };
 use std::collections::HashMap;
-
-pub mod dict_manager;
-pub mod program;
-pub mod scopes;
-pub mod syscall_handler;
 
 pub fn run_hint(
     vm: &mut VirtualMachine,

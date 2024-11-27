@@ -1,6 +1,5 @@
-use crate::hints::lib::contract_bootloader::scopes::CONTRACT_CLASS;
-
 use super::CustomHintProcessor;
+use crate::hints::lib::contract_bootloader::scopes::CONTRACT_CLASS;
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use cairo_vm::{
     hint_processor::builtin_hint_processor::builtin_hint_processor_definition::HintProcessorData,
