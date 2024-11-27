@@ -9,9 +9,9 @@ use cairo_vm::Felt252;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
-const HINT_V_IS_ENCODED: &str = "ids.v_is_encoded = 1 if ids.v.low > 0x7f else 0";
+pub const HINT_V_IS_ENCODED: &str = "ids.v_is_encoded = 1 if ids.v.low > 0x7f else 0";
 
-fn hint_v_is_encoded(
+pub fn hint_v_is_encoded(
     vm: &mut VirtualMachine,
     _exec_scope: &mut ExecutionScopes,
     hint_data: &HintProcessorData,

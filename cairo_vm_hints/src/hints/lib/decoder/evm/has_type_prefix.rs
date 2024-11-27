@@ -9,9 +9,10 @@ use cairo_vm::Felt252;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
-const HINT_HAS_TYPE_PREFIX: &str = "ids.has_type_prefix = 1 if 0x0 < ids.first_byte < 0x04 else 0";
+pub const HINT_HAS_TYPE_PREFIX: &str =
+    "ids.has_type_prefix = 1 if 0x0 < ids.first_byte < 0x04 else 0";
 
-fn hint_has_type_prefix(
+pub fn hint_has_type_prefix(
     vm: &mut VirtualMachine,
     _exec_scope: &mut ExecutionScopes,
     hint_data: &HintProcessorData,

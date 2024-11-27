@@ -9,12 +9,12 @@ use cairo_vm::Felt252;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
-const HINT_IS_BYZANTIUM: &str =
+pub const HINT_IS_BYZANTIUM: &str =
     "ids.is_byzantium = 1 if ids.block_number >= ids.chain_info.byzantium else 0";
 
 const BYZANTIUM_START_BLOCK_NUMBER: Felt252 = Felt252::from_hex_unchecked("0x42AE50");
 
-fn hint_is_byzantium(
+pub fn hint_is_byzantium(
     vm: &mut VirtualMachine,
     _exec_scope: &mut ExecutionScopes,
     hint_data: &HintProcessorData,

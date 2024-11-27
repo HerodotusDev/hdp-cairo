@@ -85,6 +85,9 @@ impl CustomHintProcessor {
         hints.insert(lib::segments::SEGMENTS_ADD_EVM_MEMORIZER_OFFSET.into(), lib::segments::segments_add_evm_memorizer_offset);
         hints.insert(lib::segments::SEGMENTS_ADD_EVM_STARKNET_MEMORIZER_INDEX.into(), lib::segments::segments_add_evm_starknet_memorizer_index);
         hints.insert(lib::segments::SEGMENTS_ADD_STARKNET_MEMORIZER_OFFSET.into(), lib::segments::segments_add_starknet_memorizer_offset);
+        hints.insert(lib::decoder::evm::has_type_prefix::HINT_HAS_TYPE_PREFIX.into(), lib::decoder::evm::has_type_prefix::hint_has_type_prefix);
+        hints.insert(lib::decoder::evm::is_byzantium::HINT_IS_BYZANTIUM.into(), lib::decoder::evm::is_byzantium::hint_is_byzantium);
+        hints.insert(lib::decoder::evm::v_is_encoded::HINT_V_IS_ENCODED.into(), lib::decoder::evm::v_is_encoded::hint_v_is_encoded);
         hints
     }
 
