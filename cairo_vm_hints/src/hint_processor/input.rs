@@ -1,5 +1,6 @@
+use crate::hints::vars;
+
 use super::CustomHintProcessor;
-use crate::hints::lib::contract_bootloader::scopes::CONTRACT_CLASS;
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use cairo_vm::{
     hint_processor::builtin_hint_processor::builtin_hint_processor_definition::HintProcessorData,
@@ -21,7 +22,7 @@ impl CustomHintProcessor {
     ) -> Result<(), HintError> {
         let contract_class: CasmContractClass = serde_json::from_value(self.private_inputs.clone())
             .map_err(|_| HintError::WrongHintData)?;
-        exec_scopes.insert_value::<CasmContractClass>(CONTRACT_CLASS, contract_class);
+        exec_scopes.insert_value::<CasmContractClass>(vars::scopes::COMPILED_CLASS, contract_class);
         Ok(())
     }
 }

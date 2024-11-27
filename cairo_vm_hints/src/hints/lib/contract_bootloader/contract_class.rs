@@ -1,4 +1,3 @@
-use super::scopes::CONTRACT_CLASS;
 use cairo_lang_starknet_classes::casm_contract_class::{CasmContractClass, CasmContractEntryPoint};
 use cairo_vm::{
     hint_processor::builtin_hint_processor::builtin_hint_processor_definition::HintProcessorData,
@@ -11,6 +10,8 @@ use cairo_vm::{
 };
 use std::collections::HashMap;
 
+use crate::hints::vars;
+
 const COMPILED_CLASS_V1: Felt252 =
     Felt252::from_hex_unchecked("0x434f4d50494c45445f434c4153535f5631");
 
@@ -22,7 +23,7 @@ pub fn load_contract_class(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let contract_class = exec_scopes.get::<CasmContractClass>(CONTRACT_CLASS)?;
+    let contract_class = exec_scopes.get::<CasmContractClass>(vars::scopes::COMPILED_CLASS)?;
     let class_base = vm.add_memory_segment();
     write_class(vm, class_base, contract_class)?;
     Ok(())

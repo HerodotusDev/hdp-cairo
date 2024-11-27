@@ -1,11 +1,8 @@
 pub mod input;
 pub mod output;
 
-use crate::hints::lib;
-use crate::{
-    hints::lib::contract_bootloader::scopes::SYSCALL_HANDLER,
-    syscall_handler::SyscallHandlerWrapper,
-};
+use crate::hints::{lib, vars};
+use crate::syscall_handler::SyscallHandlerWrapper;
 use cairo_lang_casm::{
     hints::{Hint, StarknetHint},
     operand::{BinOpOperand, DerefOrImmediate, Operation, Register, ResOperand},
@@ -139,7 +136,8 @@ impl HintProcessorLogic for CustomHintProcessor {
             if let Hint::Starknet(StarknetHint::SystemCall { system }) = hint {
                 let syscall_ptr = get_ptr_from_res_operand(vm, system)?;
                 // TODO: need to be generic here
-                let syscall_handler = exec_scopes.get::<SyscallHandlerWrapper>(SYSCALL_HANDLER)?;
+                let syscall_handler =
+                    exec_scopes.get::<SyscallHandlerWrapper>(vars::scopes::SYSCALL_HANDLER)?;
 
                 return syscall_handler
                     .execute_syscall(vm, syscall_ptr)

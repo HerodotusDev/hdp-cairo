@@ -1,5 +1,4 @@
-use super::scopes::CONTRACT_CLASS;
-use crate::cairo_types::structs::CompiledClass;
+use crate::{cairo_types::structs::CompiledClass, hints::vars};
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use cairo_vm::{
     any_box,
@@ -23,10 +22,10 @@ pub fn load_program(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<HintExtension, HintError> {
-    let cairo_lang_class = exec_scopes.get::<CasmContractClass>(CONTRACT_CLASS)?;
+    let cairo_lang_class = exec_scopes.get::<CasmContractClass>(vars::scopes::COMPILED_CLASS)?;
 
     let compiled_class_ptr = get_ptr_from_var_name(
-        CONTRACT_CLASS,
+        vars::scopes::COMPILED_CLASS,
         vm,
         &hint_data.ids_data,
         &hint_data.ap_tracking,

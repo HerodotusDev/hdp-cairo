@@ -1,5 +1,4 @@
-use super::scopes::{SYSCALL_HANDLER, SYSCALL_PTR};
-use crate::syscall_handler::SyscallHandlerWrapper;
+use crate::{hints::vars, syscall_handler::SyscallHandlerWrapper};
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData, hint_utils::get_ptr_from_var_name,
@@ -19,10 +18,13 @@ pub fn syscall_handler_create(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     if let Err(HintError::VariableNotInScopeError(_)) =
-        exec_scopes.get::<SyscallHandlerWrapper>(SYSCALL_HANDLER)
+        exec_scopes.get::<SyscallHandlerWrapper>(vars::scopes::SYSCALL_HANDLER)
     {
         let syscall_handler = SyscallHandlerWrapper::new();
-        exec_scopes.insert_value(SYSCALL_HANDLER, Rc::new(RefCell::new(syscall_handler)));
+        exec_scopes.insert_value(
+            vars::scopes::SYSCALL_HANDLER,
+            Rc::new(RefCell::new(syscall_handler)),
+        );
     }
 
     Ok(())
@@ -37,9 +39,14 @@ pub fn syscall_handler_set_syscall_ptr(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let syscall_ptr =
-        get_ptr_from_var_name(SYSCALL_PTR, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let syscall_handler = exec_scopes.get::<SyscallHandlerWrapper>(SYSCALL_HANDLER)?;
+    let syscall_ptr = get_ptr_from_var_name(
+        vars::ids::SYSCALL_PTR,
+        vm,
+        &hint_data.ids_data,
+        &hint_data.ap_tracking,
+    )?;
+    let syscall_handler =
+        exec_scopes.get::<SyscallHandlerWrapper>(vars::scopes::SYSCALL_HANDLER)?;
     syscall_handler.set_syscall_ptr(syscall_ptr);
 
     Ok(())

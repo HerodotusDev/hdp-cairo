@@ -114,7 +114,7 @@ func execute_call_contract{
     }
 
     if (layout == Layout.STARKNET) {
-        %{ print("Caught Starknet syscall") %}
+        // %{ print("Caught Starknet syscall") %}
         assert 1 = 0;
 
         return ();
