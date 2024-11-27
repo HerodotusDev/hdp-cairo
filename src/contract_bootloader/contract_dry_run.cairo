@@ -70,7 +70,7 @@ func main{
 
     let (local evm_memorizer) = default_dict_new(default_value=7);
     let (local starknet_memorizer) = default_dict_new(default_value=7);
-    local pow2_array: felt* = nondet %{ segments.add() %};
+    tempvar pow2_array: felt* = nondet %{ segments.add() %};
 
     %{
         if '__dict_manager' not in globals():
@@ -83,7 +83,7 @@ func main{
         syscall_handler = DryRunSyscallHandler(segments=segments, dict_manager=__dict_manager)
     %}
 
-    local calldata: felt* = nondet %{ segments.add() %};
+    tempvar calldata: felt* = nondet %{ segments.add() %};
 
     assert calldata[0] = nondet %{ ids.evm_memorizer.address_.segment_index %};
     assert calldata[1] = nondet %{ ids.evm_memorizer.address_.offset %};

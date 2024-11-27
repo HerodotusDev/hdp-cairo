@@ -1,6 +1,7 @@
 pub mod input;
 pub mod output;
 
+use crate::hints::lib;
 use crate::{
     hints::lib::contract_bootloader::scopes::SYSCALL_HANDLER,
     syscall_handler::SyscallHandlerWrapper,
@@ -76,7 +77,17 @@ impl CustomHintProcessor {
     #[rustfmt::skip]
     fn hints() -> HashMap<String, HintImpl> {
         let mut hints = HashMap::<String, HintImpl>::new();
-        hints.insert(crate::hints::lib::contract_bootloader::dict_manager::DICT_MANAGER_CREATE.into(), crate::hints::lib::contract_bootloader::dict_manager::dict_manager_create);
+        hints.insert(lib::contract_bootloader::contract_class::LOAD_CONTRACT_CLASS.into(), lib::contract_bootloader::contract_class::load_contract_class);
+        hints.insert(lib::contract_bootloader::dict_manager::DICT_MANAGER_CREATE.into(), lib::contract_bootloader::dict_manager::dict_manager_create);
+        hints.insert(lib::contract_bootloader::scopes::ENTER_SCOPE_SYSCALL_HANDLER.into(), lib::contract_bootloader::scopes::enter_scope_syscall_handler);
+        hints.insert(lib::contract_bootloader::syscall_handler::SYSCALL_HANDLER_CREATE.into(), lib::contract_bootloader::syscall_handler::syscall_handler_create);
+        hints.insert(lib::contract_bootloader::syscall_handler::SYSCALL_HANDLER_SET_SYSCALL_PTR.into(), lib::contract_bootloader::syscall_handler::syscall_handler_set_syscall_ptr);
+        hints.insert(lib::print::PROGRAM_HASH.into(), lib::print::program_hash);
+        hints.insert(lib::segments::SEGMENTS_ADD.into(), lib::segments::segments_add);
+        hints.insert(lib::segments::SEGMENTS_ADD_EVM_MEMORIZER_SEGMENT_INDEX.into(), lib::segments::segments_add_evm_memorizer_segment_index);
+        hints.insert(lib::segments::SEGMENTS_ADD_EVM_MEMORIZER_OFFSET.into(), lib::segments::segments_add_evm_memorizer_offset);
+        hints.insert(lib::segments::SEGMENTS_ADD_EVM_STARKNET_MEMORIZER_INDEX.into(), lib::segments::segments_add_evm_starknet_memorizer_index);
+        hints.insert(lib::segments::SEGMENTS_ADD_STARKNET_MEMORIZER_OFFSET.into(), lib::segments::segments_add_starknet_memorizer_offset);
         hints
     }
 

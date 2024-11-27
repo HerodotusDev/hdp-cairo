@@ -29,14 +29,3 @@ pub fn enter_scope_syscall_handler(
     )]));
     Ok(())
 }
-
-pub const EXIT_SCOPE: &str = "vm_exit_scope()";
-
-pub fn exit_scope(
-    _vm: &mut VirtualMachine,
-    exec_scopes: &mut ExecutionScopes,
-    _hint_data: &HintProcessorData,
-    _constants: &HashMap<String, Felt252>,
-) -> Result<(), HintError> {
-    exec_scopes.exit_scope().map_err(HintError::FromScopeError)
-}
