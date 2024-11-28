@@ -13,6 +13,11 @@ from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.registers import get_label_location
 from src.utils.chain_info import chain_id_to_layout
 from src.memorizers.evm.state_access import EvmStateAccess, EvmStateAccessType, EvmDecoderTarget
+from src.memorizers.starknet.state_access import (
+    StarknetStateAccess,
+    StarknetStateAccessType,
+    StarknetDecoderTarget,
+)
 from src.utils.chain_info import Layout
 
 struct ExecutionInfo {
@@ -114,8 +119,15 @@ func execute_call_contract{
     }
 
     if (layout == Layout.STARKNET) {
-        %{ print("Caught Starknet syscall") %}
-        assert 1 = 0;
+        with output_ptr {
+            let output_len = StarknetStateAccess.read_and_decode(
+                params=call_contract_request.calldata_start + 2,
+                state_access_type=state_access_type,
+                field=field,
+                decoder_target=StarknetDecoderTarget.FELT,
+                as_be=1,
+            );
+        }
 
         return ();
     }

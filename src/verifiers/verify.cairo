@@ -49,7 +49,7 @@ func run_state_verification_inner{
     }
 
     local chain_id: felt;
-    %{ ids.chain_id = program_input["proofs"][ids.batch_len - 1]["chain_id"] %}
+    %{ ids.chain_id = int(program_input["proofs"][ids.batch_len - 1]["chain_id"], 16) %}
 
     let (chain_info) = fetch_chain_info(chain_id);
 

@@ -47,7 +47,7 @@ class MemorizerKey:
 
     def to_dict(self):
         return {
-            "chain_id": self.chain_id,
+            "chain_id": hex(self.chain_id),
             "block_number": self.block_number,
             "address": f"0x{self.address:040x}",
         }

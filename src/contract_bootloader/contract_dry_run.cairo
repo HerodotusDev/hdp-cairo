@@ -13,8 +13,11 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
-from contract_bootloader.contract_class.compiled_class import CompiledClass, compiled_class_hash
-from contract_bootloader.contract_bootloader import run_contract_bootloader, compute_program_hash
+from src.contract_bootloader.contract_class.compiled_class import CompiledClass, compiled_class_hash
+from src.contract_bootloader.contract_bootloader import (
+    run_contract_bootloader,
+    compute_program_hash,
+)
 from starkware.cairo.common.memcpy import memcpy
 
 func main{
@@ -34,6 +37,8 @@ func main{
 
     %{
         from tools.py.schema import HDPDryRunInput
+
+        print("Starting Dry Run")
 
         # Load the dry run input
         dry_run_input = HDPDryRunInput.Schema().load(program_input)
@@ -56,7 +61,7 @@ func main{
     // Fetch contract data form hints.
     %{
         from starkware.starknet.core.os.contract_class.compiled_class_hash import create_bytecode_segment_structure
-        from contract_bootloader.contract_class.compiled_class_hash_utils import get_compiled_class_struct
+        from src.contract_bootloader.contract_class.compiled_class_hash_utils import get_compiled_class_struct
 
         bytecode_segment_structure = create_bytecode_segment_structure(
             bytecode=compiled_class.bytecode,
@@ -99,7 +104,7 @@ func main{
     local pow2_array: felt* = nondet %{ segments.add() %};
 
     %{
-        from contract_bootloader.dryrun_syscall_handler import DryRunSyscallHandler
+        from src.contract_bootloader.dryrun_syscall_handler import DryRunSyscallHandler
 
         if '__dict_manager' not in globals():
                 from starkware.cairo.common.dict import DictManager
@@ -129,25 +134,28 @@ func main{
         );
     }
 
-    assert retdata_size = 2;
-    local result: Uint256 = Uint256(low=retdata[0], high=retdata[1]);
-
-    %{
-        print("result.low", hex(ids.result.low))
-        print("result.high", hex(ids.result.high))
-    %}
-
     %{
         import json
         list = list()
         dictionary = dict()
 
         dictionary["fetch_keys"] = syscall_handler.fetch_keys_dict()
-        dictionary["result"] = {
-            "low": hex(ids.result.low),
-            "high": hex(ids.result.high)
-        }
+
+        if ids.retdata_size == 2:
+            dictionary["result"] = {
+                "low": hex(memory[ids.retdata]),
+                "high": hex(memory[ids.retdata + 1])
+            }
+        else:
+            high, low = divmod(memory[ids.retdata], 2**128)
+            dictionary["result"] = {
+                "low": hex(low),
+                "high": hex(high)
+            }
+
         dictionary["program_hash"] = hex(ids.program_hash)
+
+        print("Dry Run Result", dictionary["result"])
 
         list.append(dictionary)
 

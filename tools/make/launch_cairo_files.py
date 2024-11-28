@@ -149,11 +149,11 @@ class CairoRunner:
     def run_hdp(self):
         self.filename_dot_cairo_path = "src/hdp.cairo"
         compiled_path = self.compile_cairo_file()
-        cmd_base = f"cairo-run --program={compiled_path} --layout=starknet_with_keccak  --program_input=src/hdp_input.json --print_output --print_info --proof_mode"
+        cmd_base = f"cairo-run --program={compiled_path} --layout=starknet_with_keccak  --program_input=src/hdp_input.json --print_output --print_info"
         os.system(cmd_base)
 
     def contract_dry_run(self):
-        self.filename_dot_cairo_path = "src/contract_dry_run.cairo"
+        self.filename_dot_cairo_path = "src/contract_bootloader/contract_dry_run.cairo"
         compiled_path = self.compile_cairo_file()
         cmd_base = f"cairo-run --program={compiled_path} --layout=starknet_with_keccak  --program_input=src/dry_run_input.json --print_output"
         os.system(cmd_base)
@@ -174,7 +174,7 @@ class CairoRunner:
         """Run all tests."""
         tests_files = get_files_from_folders(["tests/cairo_programs"], ".cairo")
         for test_file in tests_files:
-            if test_file != "tests/cairo_programs/tx_decoder.cairo":
+            if test_file != "tests/cairo_programs/sn_header_decoder.cairo":
                 continue
 
             self.filename_dot_cairo_path = test_file

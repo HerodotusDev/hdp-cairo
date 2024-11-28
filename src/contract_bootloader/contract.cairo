@@ -7,9 +7,12 @@ from starkware.cairo.common.cairo_builtins import (
     SignatureBuiltin,
     EcOpBuiltin,
 )
-from contract_bootloader.contract_class.compiled_class import CompiledClass, compiled_class_hash
-from starkware.cairo.common.uint256 import Uint256
-from contract_bootloader.contract_bootloader import run_contract_bootloader, compute_program_hash
+from src.contract_bootloader.contract_class.compiled_class import CompiledClass, compiled_class_hash
+from src.contract_bootloader.contract_bootloader import (
+    run_contract_bootloader,
+    compute_program_hash,
+)
+from starkware.cairo.common.uint256 import Uint256, felt_to_uint256
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.registers import get_fp_and_pc
@@ -36,7 +39,7 @@ func compute_contract{
     // Fetch contract data form hints.
     %{
         from starkware.starknet.core.os.contract_class.compiled_class_hash import create_bytecode_segment_structure
-        from contract_bootloader.contract_class.compiled_class_hash_utils import get_compiled_class_struct
+        from src.contract_bootloader.contract_class.compiled_class_hash_utils import get_compiled_class_struct
 
         bytecode_segment_structure = create_bytecode_segment_structure(
             bytecode=compiled_class.bytecode,
@@ -90,7 +93,12 @@ func compute_contract{
         );
     }
 
-    assert retdata_size = 2;
-    local result: Uint256 = Uint256(low=retdata[0], high=retdata[1]);
-    return (result=result, program_hash=program_hash);
+    if (retdata_size == 1) {
+        let result = felt_to_uint256(retdata[0]);
+        return (result=result, program_hash=program_hash);
+    } else {
+        assert retdata_size = 2;
+        let result = Uint256(low=retdata[0], high=retdata[1]);
+        return (result=result, program_hash=program_hash);
+    }
 }

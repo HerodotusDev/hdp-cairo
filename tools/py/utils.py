@@ -5,6 +5,15 @@ import os
 import shutil
 import requests
 import sysconfig
+import functools
+from typing import Callable
+
+# from crypto_cpp_py.cpp_bindings import cpp_hash
+from starkware.crypto.signature.signature import pedersen_hash
+
+from poseidon_py.poseidon_hash import (
+    poseidon_hash_func,
+)
 
 
 def load_json_from_package(resource):
@@ -309,3 +318,90 @@ def validate_initial_params(initial_params: dict):
     assert is_valid_mmr_size(
         initial_params["mmr_size"]
     ), f"Invalid MMR size: {initial_params['mmr_size']}"
+
+
+# def pedersen_hash(left: int, right: int) -> int:
+#     """
+#     One of two hash functions (along with starknet_keccak) used throughout Starknet.
+#     """
+#     return cpp_hash(left, right)
+
+
+def bytes_hash_pedersen_function(x: bytes, y: bytes) -> bytes:
+    return to_bytes_32(pedersen_hash(from_bytes(x), from_bytes(y)))
+
+
+def bytes_hash_poseidon_function(x: bytes, y: bytes) -> bytes:
+    return poseidon_hash_func(x, y)
+
+
+def compute_hash_on_elements(
+    data: list[int], func: Callable[[int, int], int] = pedersen_hash
+) -> int:
+    """
+    Computes a hash chain over the data, in the following order:
+        h(h(h(h(0, data[0]), data[1]), ...), data[n-1]), n).
+
+    The hash is initialized with 0 and ends with the data length appended.
+    The length is appended in order to avoid collisions of the following kind:
+    H([x,y,z]) = h(h(x,y),z) = H([w, z]) where w = h(x,y).
+    """
+    # Convert all elements to integers if they aren't already
+    processed_data = [to_int(x) if not isinstance(x, int) else x for x in data]
+    return functools.reduce(func, [*processed_data, len(data)], 0)
+
+
+def to_int(value: str | int):
+    if isinstance(value, str):
+        value = value.strip()  # Trim whitespaces
+        if value.lower().startswith("0x"):
+            try:
+                return int(value, 16)
+            except ValueError:
+                raise ValueError(f"Invalid hexadecimal value: {value}")
+        else:
+            try:
+                return int(value)
+            except ValueError:
+                raise ValueError(f"Invalid decimal value: {value}")
+    elif isinstance(value, int):
+        return value
+    else:
+        raise TypeError(f"Expected str or int, got {type(value).__name__}")
+
+
+def to_hex_str(value: str | int):
+    if isinstance(value, str):
+        value = value.strip()  # Trim whitespaces
+        if value.lower().startswith("0x"):
+            try:
+                # Validate hexadecimal and return in lowercase
+                return "0x" + hex(int(value, 16))[2:].lower()
+            except ValueError:
+                raise ValueError(f"Invalid hexadecimal value: {value}")
+        else:
+            try:
+                # Convert decimal string to int then to hex
+                return hex(int(value)).lower()
+            except ValueError:
+                raise ValueError(f"Invalid decimal value: {value}")
+    elif isinstance(value, int):
+        return hex(value).lower()
+    else:
+        raise TypeError(f"Expected str or int, got {type(value).__name__}")
+
+
+def to_bytes_32(value: int) -> bytes:
+    return int.to_bytes(value, length=32, byteorder="big")
+
+
+def from_bytes(value: bytes) -> int:
+    return int.from_bytes(value, byteorder="big")
+
+
+def string_literal_to_int(value: str) -> int:
+    return int.from_bytes(value.encode(), "big")
+
+
+def string_literal_to_bytes(value: str) -> bytes:
+    return value.encode()

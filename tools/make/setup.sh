@@ -1,7 +1,7 @@
 #!/bin/bash
 
 VENV_PATH=${1:-venv}
-PYTHON_VERSION=${2:-3.9}
+PYTHON_VERSION=${2:-3.10}
 
 echo "Setting up virtual environment at $VENV_PATH with Python $PYTHON_VERSION"
 
@@ -59,9 +59,12 @@ source "$VENV_PATH/bin/activate" || { echo "Failed to activate virtual environme
 echo "Updating dependencies..."
 pip install -r tools/make/requirements.txt || { echo "Failed to install requirements."; exit 1; }
 pip install packages/cairo-lang-0.13.1.zip || { echo "Failed to install cairo-lang-0.13.1."; exit 1; }
-pip install . || { echo "Failed to install the package."; exit 1; }
+
+pip uninstall -y hdp-cairo-dev
+pip install -e . || { echo "Failed to install the package in development mode."; exit 1; }
 
 # Update submodules
 echo "Updating git submodule..."
 git submodule update --init || { echo "Failed to update git submodules."; exit 1; }
+
 

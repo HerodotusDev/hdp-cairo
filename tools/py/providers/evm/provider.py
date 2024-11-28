@@ -1,6 +1,6 @@
 import json
 import requests
-from tools.py.types.evm.storage import FeltStorage, Storage
+from tools.py.types.evm.storage import FeltStorage
 from web3.types import BlockData, TxParams
 
 from tools.py.types.evm.account import Account, FeltAccount
