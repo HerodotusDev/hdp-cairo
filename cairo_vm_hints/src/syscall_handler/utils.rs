@@ -212,8 +212,6 @@ fn write_failure(
     Ok(())
 }
 
-// Dummy value we dont use gas in HDP runtime
-pub const REMAINING_GAS: Felt252 = Felt252::from_hex_unchecked("0xffffff");
 pub const OUT_OF_GAS_ERROR: &str =
     "0x000000000000000000000000000000000000000000004f7574206f6620676173";
 
@@ -224,17 +222,17 @@ pub fn run_handler<SH>(
 where
     SH: SyscallHandler,
 {
+    let remaining_gas = felt_from_ptr(vm, syscall_ptr)?;
     let request = SH::read_request(vm, syscall_ptr)?;
     let syscall_result = SH::execute(request, vm);
     match syscall_result {
         Ok(response) => {
-            write_felt(vm, syscall_ptr, REMAINING_GAS)?;
-            // 0 to indicate success.
+            write_felt(vm, syscall_ptr, remaining_gas)?;
             write_felt(vm, syscall_ptr, Felt252::ZERO)?;
             SH::write_response(response, vm, syscall_ptr)?
         }
         Err(SyscallExecutionError::SyscallError { error_data: data }) => {
-            write_failure(REMAINING_GAS, data, vm, syscall_ptr)?;
+            write_failure(Felt252::ZERO, data, vm, syscall_ptr)?;
         }
         Err(error) => return Err(error.into()),
     };

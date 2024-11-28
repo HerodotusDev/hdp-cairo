@@ -1,9 +1,13 @@
-use super::utils::{SyscallHandler, SyscallResult, WriteResponseResult};
+use super::utils::{SyscallExecutionError, SyscallHandler, SyscallResult, WriteResponseResult};
 use crate::cairo_types::{
     new_syscalls::{CallContractRequest, CallContractResponse},
     traits::CairoType,
 };
-use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
+use cairo_vm::{
+    types::relocatable::{MaybeRelocatable, Relocatable},
+    vm::vm_core::VirtualMachine,
+    Felt252,
+};
 
 pub struct CallContractHandler;
 
@@ -17,10 +21,32 @@ impl SyscallHandler for CallContractHandler {
         Ok(ret)
     }
 
-    fn execute(_request: Self::Request, _vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
+    fn execute(request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
+        let _calldata: Vec<Felt252> = vm
+            .get_range(
+                request.calldata_start,
+                (request.calldata_end - request.calldata_start)?,
+            )
+            .into_iter()
+            .map(|f| f.and_then(|f| f.get_int()))
+            .collect::<Option<Vec<Felt252>>>()
+            .ok_or(SyscallExecutionError::InternalError(
+                "Memory error: failed to read full calldata"
+                    .to_string()
+                    .into(),
+            ))?;
+
+        // SYSCALL HANDLER LOGIC HERE!
+
+        let retdata = vm.add_temporary_segment();
+        let data = vec![
+            MaybeRelocatable::from(Felt252::TWO),
+            MaybeRelocatable::from(Felt252::THREE),
+        ];
+        vm.load_data(retdata, &data)?;
         Ok(Self::Response {
-            retdata_start: Felt252::from(0_u32),
-            retdata_end: Felt252::from(1_u32),
+            retdata_start: retdata,
+            retdata_end: (retdata + data.len())?,
         })
     }
 
