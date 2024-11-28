@@ -74,7 +74,7 @@ func compute_contract{
         )
     %}
 
-    local calldata: felt* = nondet %{ segments.add() %};
+    tempvar calldata: felt* = nondet %{ segments.add() %};
 
     assert calldata[0] = nondet %{ ids.evm_memorizer.address_.segment_index %};
     assert calldata[1] = nondet %{ ids.evm_memorizer.address_.offset %};

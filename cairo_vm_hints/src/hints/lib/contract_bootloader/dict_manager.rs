@@ -10,7 +10,7 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::hints::vars;
 
-pub const DICT_MANAGER_CREATE: &str = "if '__dict_manager' not in globals():\n    from starkware.cairo.common.dict import DictManager\n    __dict_manager = DictManager()\n\nmemory[ap] = __dict_manager.new_dict(segments, initial_dict)\ndel initial_dict";
+pub const DICT_MANAGER_CREATE: &str = "if '__dict_manager' not in globals():\n    from starkware.cairo.common.dict import DictManager\n    __dict_manager = DictManager()";
 
 pub fn dict_manager_create(
     _vm: &mut VirtualMachine,

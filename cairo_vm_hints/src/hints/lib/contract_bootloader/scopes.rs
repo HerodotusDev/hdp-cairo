@@ -16,11 +16,12 @@ pub fn enter_scope_syscall_handler(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let sys = exec_scopes.get::<SyscallHandlerWrapper>(vars::scopes::SYSCALL_HANDLER)?;
-    let syscall_handler: Box<dyn Any> = Box::new(sys);
+    let syscall_handler: Box<dyn Any> =
+        Box::new(exec_scopes.get::<SyscallHandlerWrapper>(vars::scopes::SYSCALL_HANDLER)?);
     exec_scopes.enter_scope(HashMap::from_iter([(
         vars::scopes::SYSCALL_HANDLER.to_string(),
         syscall_handler,
     )]));
+
     Ok(())
 }

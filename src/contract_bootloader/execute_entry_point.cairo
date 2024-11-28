@@ -176,7 +176,7 @@ func execute_entry_point{
             syscall_handler = SyscallHandler(segments=segments, dict_manager=__dict_manager)
     %}
 
-    local syscall_ptr: felt* = nondet %{ segments.add() %};
+    tempvar syscall_ptr: felt* = nondet %{ segments.add() %};
 
     %{ syscall_handler.set_syscall_ptr(syscall_ptr=ids.syscall_ptr) %}
 

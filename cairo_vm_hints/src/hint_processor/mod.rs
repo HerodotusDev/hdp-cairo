@@ -78,7 +78,11 @@ impl CustomHintProcessor {
         hints.insert(lib::contract_bootloader::dict_manager::DICT_MANAGER_CREATE.into(), lib::contract_bootloader::dict_manager::dict_manager_create);
         hints.insert(lib::contract_bootloader::scopes::ENTER_SCOPE_SYSCALL_HANDLER.into(), lib::contract_bootloader::scopes::enter_scope_syscall_handler);
         hints.insert(lib::contract_bootloader::syscall_handler::SYSCALL_HANDLER_CREATE.into(), lib::contract_bootloader::syscall_handler::syscall_handler_create);
+        hints.insert(lib::contract_bootloader::syscall_handler::DRY_RUN_SYSCALL_HANDLER_CREATE.into(), lib::contract_bootloader::syscall_handler::dry_run_syscall_handler_create);
         hints.insert(lib::contract_bootloader::syscall_handler::SYSCALL_HANDLER_SET_SYSCALL_PTR.into(), lib::contract_bootloader::syscall_handler::syscall_handler_set_syscall_ptr);
+        hints.insert(lib::contract_bootloader::builtins::UPDATE_BUILTIN_PTRS.into(), lib::contract_bootloader::builtins::update_builtin_ptrs);
+        hints.insert(lib::contract_bootloader::builtins::SELECTED_BUILTINS.into(), lib::contract_bootloader::builtins::selected_builtins);
+        hints.insert(lib::contract_bootloader::builtins::SELECT_BUILTIN.into(), lib::contract_bootloader::builtins::select_builtin);
         hints.insert(lib::decoder::evm::has_type_prefix::HINT_HAS_TYPE_PREFIX.into(), lib::decoder::evm::has_type_prefix::hint_has_type_prefix);
         hints.insert(lib::decoder::evm::is_byzantium::HINT_IS_BYZANTIUM.into(), lib::decoder::evm::is_byzantium::hint_is_byzantium);
         hints.insert(lib::decoder::evm::v_is_encoded::HINT_V_IS_ENCODED.into(), lib::decoder::evm::v_is_encoded::hint_v_is_encoded);
@@ -119,6 +123,23 @@ impl HintProcessorLogic for CustomHintProcessor {
     ) -> Result<HintExtension, HintError> {
         if let Some(hpd) = hint_data.downcast_ref::<HintProcessorData>() {
             let hint_code = hpd.code.as_str();
+
+            let res = match hint_code {
+                crate::hint_processor::input::HINT_INPUT => {
+                    self.hint_input(vm, exec_scopes, hpd, constants)
+                }
+                crate::hint_processor::output::HINT_OUTPUT => {
+                    self.hint_output(vm, exec_scopes, hpd, constants)
+                }
+                _ => Err(HintError::UnknownHint(
+                    hint_code.to_string().into_boxed_str(),
+                )),
+            };
+
+            if !matches!(res, Err(HintError::UnknownHint(_))) {
+                return res.map(|_| HintExtension::default());
+            }
+
             if let Some(hint_impl) = self.hints.get(hint_code) {
                 return hint_impl(vm, exec_scopes, hpd, constants)
                     .map(|_| HintExtension::default());
@@ -138,7 +159,6 @@ impl HintProcessorLogic for CustomHintProcessor {
         if let Some(hint) = hint_data.downcast_ref::<Hint>() {
             if let Hint::Starknet(StarknetHint::SystemCall { system }) = hint {
                 let syscall_ptr = get_ptr_from_res_operand(vm, system)?;
-                // TODO: need to be generic here
                 let syscall_handler =
                     exec_scopes.get::<SyscallHandlerWrapper>(vars::scopes::SYSCALL_HANDLER)?;
 

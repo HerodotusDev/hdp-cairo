@@ -6,11 +6,14 @@ pub mod scopes {
 }
 
 pub mod ids {
+    pub(crate) const ALL_ENCODINGS: &str = "all_encodings";
     pub(crate) const BUILTIN_PARAMS: &str = "builtin_params";
     pub(crate) const BUILTIN_PTRS: &str = "builtin_ptrs";
+    pub(crate) const COMPILED_CLASS: &str = "compiled_class";
     pub(crate) const N_BUILTINS: &str = "n_builtins";
     pub(crate) const N_SELECTED_BUILTINS: &str = "n_selected_builtins";
     pub(crate) const RETURN_BUILTIN_PTRS: &str = "return_builtin_ptrs";
+    pub(crate) const SELECT_BUILTIN: &str = "select_builtin";
     pub(crate) const SELECTED_ENCODINGS: &str = "selected_encodings";
     pub(crate) const SELECTED_PTRS: &str = "selected_ptrs";
     pub(crate) const SYSCALL_PTR: &str = "syscall_ptr";

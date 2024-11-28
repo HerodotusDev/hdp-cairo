@@ -13,7 +13,7 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use std::{any::Any, collections::HashMap};
+use std::{any::Any, collections::HashMap, ops::AddAssign};
 
 pub const UPDATE_BUILTIN_PTRS: &str = "from starkware.starknet.core.os.os_utils import update_builtin_pointers\n\n# Fill the values of all builtin pointers after the current transaction.\nids.return_builtin_ptrs = segments.gen_arg(\n    update_builtin_pointers(\n        memory=memory,\n        n_builtins=ids.n_builtins,\n        builtins_encoding_addr=ids.builtin_params.builtin_encodings.address_,\n        n_selected_builtins=ids.n_selected_builtins,\n        selected_builtins_encoding_addr=ids.selected_encodings,\n        orig_builtin_ptrs_addr=ids.builtin_ptrs.selectable.address_,\n        selected_builtin_ptrs_addr=ids.selected_ptrs,\n        ),\n    )";
 
@@ -92,6 +92,7 @@ pub fn update_builtin_ptrs(
 
     let return_builtin_ptrs_base = vm.add_memory_segment();
     vm.load_data(return_builtin_ptrs_base, &returned_builtins)?;
+
     insert_value_from_var_name(
         vars::ids::RETURN_BUILTIN_PTRS,
         return_builtin_ptrs_base,
@@ -101,8 +102,52 @@ pub fn update_builtin_ptrs(
     )
 }
 
+pub const SELECT_BUILTIN: &str = "# A builtin should be selected iff its encoding appears in the selected encodings list\n# and the list wasn't exhausted.\n# Note that testing inclusion by a single comparison is possible since the lists are sorted.\nids.select_builtin = int(\n  n_selected_builtins > 0 and memory[ids.selected_encodings] == memory[ids.all_encodings])\nif ids.select_builtin:\n  n_selected_builtins = n_selected_builtins - 1";
+
+pub fn select_builtin(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let selected_encodings = get_ptr_from_var_name(
+        vars::ids::SELECTED_ENCODINGS,
+        vm,
+        &hint_data.ids_data,
+        &hint_data.ap_tracking,
+    )?;
+
+    let all_encodings = get_ptr_from_var_name(
+        vars::ids::ALL_ENCODINGS,
+        vm,
+        &hint_data.ids_data,
+        &hint_data.ap_tracking,
+    )?;
+
+    let n_selected_builtins =
+        exec_scopes.get_mut_ref::<Felt252>(vars::scopes::N_SELECTED_BUILTINS)?;
+
+    let select_builtin = *n_selected_builtins > Felt252::ZERO
+        && vm.get_maybe(&selected_encodings).unwrap() == vm.get_maybe(&all_encodings).unwrap();
+
+    insert_value_from_var_name(
+        vars::ids::SELECT_BUILTIN,
+        Felt252::from(select_builtin),
+        vm,
+        &hint_data.ids_data,
+        &hint_data.ap_tracking,
+    )?;
+
+    if select_builtin {
+        n_selected_builtins.add_assign(-Felt252::ONE);
+    }
+
+    Ok(())
+}
+
 pub const SELECTED_BUILTINS: &str =
     "vm_enter_scope({'n_selected_builtins': ids.n_selected_builtins})";
+
 pub fn selected_builtins(
     vm: &mut VirtualMachine,
     exec_scopes: &mut ExecutionScopes,
@@ -119,5 +164,6 @@ pub fn selected_builtins(
         String::from(vars::scopes::N_SELECTED_BUILTINS),
         n_selected_builtins,
     )]));
+
     Ok(())
 }

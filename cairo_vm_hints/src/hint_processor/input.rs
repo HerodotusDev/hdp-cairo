@@ -20,8 +20,9 @@ impl CustomHintProcessor {
         _hint_data: &HintProcessorData,
         _constants: &HashMap<String, Felt252>,
     ) -> Result<(), HintError> {
-        let contract_class: CasmContractClass = serde_json::from_value(self.private_inputs.clone())
-            .map_err(|_| HintError::WrongHintData)?;
+        let contract_class: CasmContractClass =
+            serde_json::from_value(self.private_inputs[vars::scopes::COMPILED_CLASS].clone())
+                .map_err(|_| HintError::WrongHintData)?;
         exec_scopes.insert_value::<CasmContractClass>(vars::scopes::COMPILED_CLASS, contract_class);
         Ok(())
     }

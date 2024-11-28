@@ -29,7 +29,7 @@ func main{
 }() {
     alloc_locals;
 
-    local inputs_len: felt;
+    local inputs_len: felt = 0;
     let (inputs) = alloc();
 
     %{

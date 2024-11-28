@@ -1,6 +1,9 @@
 use cairo_lang_starknet_classes::casm_contract_class::{CasmContractClass, CasmContractEntryPoint};
 use cairo_vm::{
-    hint_processor::builtin_hint_processor::builtin_hint_processor_definition::HintProcessorData,
+    hint_processor::builtin_hint_processor::{
+        builtin_hint_processor_definition::HintProcessorData,
+        hint_utils::insert_value_from_var_name,
+    },
     types::{
         exec_scope::ExecutionScopes,
         relocatable::{MaybeRelocatable, Relocatable},
@@ -20,12 +23,20 @@ pub const LOAD_CONTRACT_CLASS: &str = "from contract_bootloader.contract_class.c
 pub fn load_contract_class(
     vm: &mut VirtualMachine,
     exec_scopes: &mut ExecutionScopes,
-    _hint_data: &HintProcessorData,
+    hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let contract_class = exec_scopes.get::<CasmContractClass>(vars::scopes::COMPILED_CLASS)?;
     let class_base = vm.add_memory_segment();
     write_class(vm, class_base, contract_class)?;
+    insert_value_from_var_name(
+        vars::ids::COMPILED_CLASS,
+        class_base,
+        vm,
+        &hint_data.ids_data,
+        &hint_data.ap_tracking,
+    )?;
+
     Ok(())
 }
 
@@ -67,6 +78,7 @@ pub fn write_class(
     let data_base = vm.add_memory_segment();
     vm.load_data(data_base, &data)?;
     vm.insert_value((ptr + 8)?, data_base)?;
+
     Ok(())
 }
 
