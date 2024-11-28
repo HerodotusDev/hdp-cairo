@@ -75,16 +75,9 @@ from tools.py.providers.starknet.provider import StarknetKeyProvider
 
 load_dotenv()
 
-RPC_URL = os.getenv("RPC_URL")
-PROVIDER_URL_STARKNET = os.getenv("PROVIDER_URL_STARKNET")
 FEEDER_URL = os.getenv(
     "STARKNET_FEEDER_URL", "https://alpha-sepolia.starknet.io/feeder_gateway/"
 )
-
-if not RPC_URL:
-    raise ValueError(
-        "RPC_URL environment variable is not set. Please set it in your environment or in a .env file."
-    )
 
 
 class ChainType(Enum):
@@ -146,7 +139,15 @@ class DryRunSyscallHandler(SyscallHandlerBase):
     def _handle_evm_call(
         self, request: CairoStructProxy, calldata: list, chain_id: int
     ) -> CallResult:
-        provider = EvmKeyProvider(RPC_URL, chain_id)
+        EVM_RPC_URL = os.getenv("PROVIDER_URL_ETHEREUM_SEPOLIA") or os.getenv(
+            "PROVIDER_URL_ETHEREUM_MAINNET"
+        )
+        if not EVM_RPC_URL:
+            raise ValueError(
+                "Neither PROVIDER_URL_ETHEREUM_SEPOLIA nor PROVIDER_URL_ETHEREUM_MAINNET environment variables are set. Please set one of them in your environment or in a .env file."
+            )
+
+        provider = EvmKeyProvider(EVM_RPC_URL, chain_id)
         retdata = []
 
         memorizerId = EvmStateId.from_int(request.contract_address)
@@ -207,8 +208,16 @@ class DryRunSyscallHandler(SyscallHandlerBase):
     def _handle_starknet_call(
         self, request: CairoStructProxy, calldata: list
     ) -> CallResult:
+        STARKNET_RPC_URL = os.getenv("PROVIDER_URL_STARKNET_SEPOLIA") or os.getenv(
+            "PROVIDER_URL_STARKNET_MAINNET"
+        )
+        if not STARKNET_RPC_URL:
+            raise ValueError(
+                "Neither PROVIDER_URL_STARKNET_SEPOLIA nor PROVIDER_URL_STARKNET_MAINNET environment variables are set. Please set one of them in your environment or in a .env file."
+            )
+
         provider = StarknetKeyProvider(
-            PROVIDER_URL_STARKNET,
+            STARKNET_RPC_URL,
             FEEDER_URL,
         )
         retdata = []
