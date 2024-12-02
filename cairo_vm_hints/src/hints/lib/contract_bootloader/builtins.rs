@@ -13,7 +13,7 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use std::{any::Any, collections::HashMap, ops::AddAssign};
+use std::{any::Any, collections::HashMap};
 
 pub const UPDATE_BUILTIN_PTRS: &str = "from starkware.starknet.core.os.os_utils import update_builtin_pointers\n\n# Fill the values of all builtin pointers after the current transaction.\nids.return_builtin_ptrs = segments.gen_arg(\n    update_builtin_pointers(\n        memory=memory,\n        n_builtins=ids.n_builtins,\n        builtins_encoding_addr=ids.builtin_params.builtin_encodings.address_,\n        n_selected_builtins=ids.n_selected_builtins,\n        selected_builtins_encoding_addr=ids.selected_encodings,\n        orig_builtin_ptrs_addr=ids.builtin_ptrs.selectable.address_,\n        selected_builtin_ptrs_addr=ids.selected_ptrs,\n        ),\n    )";
 
@@ -139,7 +139,7 @@ pub fn select_builtin(
     )?;
 
     if select_builtin {
-        n_selected_builtins.add_assign(-Felt252::ONE);
+        *n_selected_builtins -= Felt252::ONE;
     }
 
     Ok(())

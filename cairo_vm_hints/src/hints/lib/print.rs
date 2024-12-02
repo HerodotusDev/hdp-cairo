@@ -1,3 +1,4 @@
+use crate::hints::vars;
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData, hint_utils::get_integer_from_var_name,
@@ -16,14 +17,14 @@ pub fn program_hash(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    println!(
-        "program_hash: {}",
-        get_integer_from_var_name(
-            "program_hash",
-            vm,
-            &hint_data.ids_data,
-            &hint_data.ap_tracking
-        )?
-    );
+    let program_hash = get_integer_from_var_name(
+        vars::ids::PROGRAM_HASH,
+        vm,
+        &hint_data.ids_data,
+        &hint_data.ap_tracking,
+    )?;
+
+    println!("program_hash: {}", program_hash);
+
     Ok(())
 }

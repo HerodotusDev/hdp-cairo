@@ -1,6 +1,8 @@
+use super::{
+    models::{HDPDryRunInput, Param},
+    CustomHintProcessor,
+};
 use crate::hints::vars;
-
-use super::CustomHintProcessor;
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use cairo_vm::{
     hint_processor::builtin_hint_processor::builtin_hint_processor_definition::HintProcessorData,
@@ -10,7 +12,7 @@ use cairo_vm::{
 };
 use std::collections::HashMap;
 
-pub const HINT_INPUT: &str = "from tools.py.schema import HDPDryRunInput\ncompiled_class = HDPDryRunInput.Schema().load(program_input).modules[0].module_class";
+pub const HINT_INPUT: &str = "from tools.py.schema import HDPDryRunInput\ndry_run_input = HDPDryRunInput.Schema().load(program_input)\nparams = dry_run_input.params\ncompiled_class = dry_run_input.compiled_class";
 
 impl CustomHintProcessor {
     pub fn hint_input(
@@ -20,10 +22,13 @@ impl CustomHintProcessor {
         _hint_data: &HintProcessorData,
         _constants: &HashMap<String, Felt252>,
     ) -> Result<(), HintError> {
-        let contract_class: CasmContractClass =
-            serde_json::from_value(self.private_inputs[vars::scopes::COMPILED_CLASS].clone())
-                .map_err(|_| HintError::WrongHintData)?;
-        exec_scopes.insert_value::<CasmContractClass>(vars::scopes::COMPILED_CLASS, contract_class);
+        let hdp_dry_run_input: HDPDryRunInput = serde_json::from_value(self.private_inputs.clone())
+            .map_err(|_| HintError::WrongHintData)?;
+        exec_scopes.insert_value::<Vec<Param>>(vars::scopes::PARAMS, hdp_dry_run_input.params);
+        exec_scopes.insert_value::<CasmContractClass>(
+            vars::scopes::COMPILED_CLASS,
+            hdp_dry_run_input.compiled_class,
+        );
         Ok(())
     }
 }

@@ -17,6 +17,11 @@ from contract_bootloader.contract_class.compiled_class import CompiledClass, com
 from contract_bootloader.contract_bootloader import run_contract_bootloader, compute_program_hash
 from starkware.cairo.common.memcpy import memcpy
 
+struct DryRunOutput {
+    program_hash: felt,
+    result: Uint256,
+}
+
 func main{
     output_ptr: felt*,
     pedersen_ptr: HashBuiltin*,
@@ -29,20 +34,25 @@ func main{
 }() {
     alloc_locals;
 
-    local inputs_len: felt = 0;
-    let (inputs) = alloc();
-
     %{
         from tools.py.schema import HDPDryRunInput
-        compiled_class = HDPDryRunInput.Schema().load(program_input).modules[0].module_class
+        dry_run_input = HDPDryRunInput.Schema().load(program_input)
+        params = dry_run_input.params
+        compiled_class = dry_run_input.compiled_class
     %}
 
+    local params_len: felt;
+    let (params) = alloc();
     local compiled_class: CompiledClass*;
 
-    // Fetch contract data form hints.
     %{
         from contract_bootloader.contract_class.compiled_class_hash_utils import get_compiled_class_struct
         ids.compiled_class = segments.gen_arg(get_compiled_class_struct(compiled_class=compiled_class))
+    %}
+
+    %{
+        ids.params_len = len(params)
+        segments.write_arg(ids.params, [param.value for param in params])
     %}
 
     let (builtin_costs: felt*) = alloc();
@@ -90,8 +100,8 @@ func main{
     assert calldata[2] = nondet %{ ids.starknet_memorizer.address_.segment_index %};
     assert calldata[3] = nondet %{ ids.starknet_memorizer.address_.offset %};
 
-    memcpy(dst=calldata + 4, src=inputs, len=inputs_len);
-    let calldata_size = 4 + inputs_len;
+    memcpy(dst=calldata + 4, src=params, len=params_len);
+    let calldata_size = 4 + params_len;
 
     let (evm_decoder_ptr: felt***) = alloc();
     let (starknet_decoder_ptr: felt***) = alloc();
@@ -103,14 +113,17 @@ func main{
             compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata, dry_run=1
         );
     }
-
     assert retdata_size = 2;
     local result: Uint256 = Uint256(low=retdata[0], high=retdata[1]);
 
-    %{
-        print("result.low", hex(ids.result.low))
-        print("result.high", hex(ids.result.high))
-    %}
+    %{ print("result", [hex(ids.result.low), hex(ids.result.high)]) %}
+
+    // Write DryRunOutput to output.
+    assert [cast(output_ptr, DryRunOutput*)] = DryRunOutput(
+        program_hash=program_hash,
+        result=result
+    );
+    let output_ptr = output_ptr + DryRunOutput.SIZE;
 
     return ();
 }

@@ -2,6 +2,7 @@ pub mod scopes {
     pub(crate) const COMPILED_CLASS: &str = "compiled_class";
     pub(crate) const DICT_MANAGER: &str = "dict_manager";
     pub(crate) const N_SELECTED_BUILTINS: &str = "n_selected_builtins";
+    pub(crate) const PARAMS: &str = "params";
     pub(crate) const SYSCALL_HANDLER: &str = "syscall_handler";
 }
 
@@ -19,8 +20,12 @@ pub mod ids {
     pub(crate) const N_BUILTINS: &str = "n_builtins";
     pub(crate) const N_PROCESSED_WORDS: &str = "ids.n_processed_words";
     pub(crate) const N_SELECTED_BUILTINS: &str = "n_selected_builtins";
+    pub(crate) const PARAMS_LEN: &str = "params_len";
+    pub(crate) const PARAMS: &str = "params";
+    pub(crate) const PROGRAM_HASH: &str = "program_hash";
     pub(crate) const Q: &str = "ids.q";
     pub(crate) const R: &str = "ids.r";
+    pub(crate) const RESULT: &str = "result";
     pub(crate) const RETURN_BUILTIN_PTRS: &str = "return_builtin_ptrs";
     pub(crate) const RLP: &str = "ids.rlp";
     pub(crate) const SELECT_BUILTIN: &str = "select_builtin";

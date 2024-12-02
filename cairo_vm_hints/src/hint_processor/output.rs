@@ -1,4 +1,5 @@
 use super::CustomHintProcessor;
+use crate::hints::vars;
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData,
@@ -10,8 +11,7 @@ use cairo_vm::{
 };
 use std::collections::HashMap;
 
-pub const HINT_OUTPUT: &str =
-    "print(\"result.low\", hex(ids.result.low))\nprint(\"result.high\", hex(ids.result.high))";
+pub const HINT_OUTPUT: &str = "print(\"result\", [hex(ids.result.low), hex(ids.result.high)])";
 
 impl CustomHintProcessor {
     pub fn hint_output(
@@ -22,7 +22,7 @@ impl CustomHintProcessor {
         _constants: &HashMap<String, Felt252>,
     ) -> Result<(), HintError> {
         let result_ptr = get_relocatable_from_var_name(
-            "result",
+            vars::ids::RESULT,
             vm,
             &hint_data.ids_data,
             &hint_data.ap_tracking,
@@ -34,8 +34,7 @@ impl CustomHintProcessor {
             .map(|v| v.get_int().unwrap())
             .collect::<Vec<Felt252>>();
 
-        println!("result.low: {}", result[0]);
-        println!("result.high: {}", result[1]);
+        println!("result: {}, {}", result[0], result[1]);
         Ok(())
     }
 }

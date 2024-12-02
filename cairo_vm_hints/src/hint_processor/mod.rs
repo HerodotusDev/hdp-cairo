@@ -1,4 +1,5 @@
 pub mod input;
+pub mod models;
 pub mod output;
 
 use crate::hints::{lib, vars};
@@ -76,6 +77,7 @@ impl CustomHintProcessor {
         let mut hints = HashMap::<String, HintImpl>::new();
         hints.insert(lib::contract_bootloader::contract_class::LOAD_CONTRACT_CLASS.into(), lib::contract_bootloader::contract_class::load_contract_class);
         hints.insert(lib::contract_bootloader::dict_manager::DICT_MANAGER_CREATE.into(), lib::contract_bootloader::dict_manager::dict_manager_create);
+        hints.insert(lib::contract_bootloader::params::LOAD_PARMAS.into(), lib::contract_bootloader::params::load_parmas);
         hints.insert(lib::contract_bootloader::scopes::ENTER_SCOPE_SYSCALL_HANDLER.into(), lib::contract_bootloader::scopes::enter_scope_syscall_handler);
         hints.insert(lib::contract_bootloader::syscall_handler::SYSCALL_HANDLER_CREATE.into(), lib::contract_bootloader::syscall_handler::syscall_handler_create);
         hints.insert(lib::contract_bootloader::syscall_handler::DRY_RUN_SYSCALL_HANDLER_CREATE.into(), lib::contract_bootloader::syscall_handler::dry_run_syscall_handler_create);

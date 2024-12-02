@@ -1,3 +1,4 @@
+use crate::hints::vars;
 use cairo_lang_starknet_classes::casm_contract_class::{CasmContractClass, CasmContractEntryPoint};
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
@@ -12,8 +13,6 @@ use cairo_vm::{
     Felt252,
 };
 use std::collections::HashMap;
-
-use crate::hints::vars;
 
 const COMPILED_CLASS_V1: Felt252 =
     Felt252::from_hex_unchecked("0x434f4d50494c45445f434c4153535f5631");
