@@ -29,4 +29,8 @@ pub mod ids {
     pub(crate) const SYSCALL_PTR: &str = "syscall_ptr";
     pub(crate) const VALUE_LEN: &str = "ids.value_len";
     pub(crate) const VALUE: &str = "ids.value";
+    pub(crate) const IS_LEFT_SMALLER: &str = "ids.is_left_smaller";
+    pub(crate) const LEFT: &str = "ids.left";
+    pub(crate) const RIGHT: &str = "ids.right";
+    pub(crate) const TASK_HASH: &str = "ids.task_hash";
 }

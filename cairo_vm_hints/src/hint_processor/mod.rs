@@ -97,6 +97,8 @@ impl CustomHintProcessor {
         hints.insert(lib::segments::SEGMENTS_ADD_EVM_MEMORIZER_OFFSET.into(), lib::segments::segments_add_evm_memorizer_offset);
         hints.insert(lib::segments::SEGMENTS_ADD_EVM_STARKNET_MEMORIZER_INDEX.into(), lib::segments::segments_add_evm_starknet_memorizer_index);
         hints.insert(lib::segments::SEGMENTS_ADD_STARKNET_MEMORIZER_OFFSET.into(), lib::segments::segments_add_starknet_memorizer_offset);
+        hints.insert(lib::merkle::HINT_TARGET_TASK_HASH.into(), lib::merkle::hint_target_task_hash);
+        hints.insert(lib::merkle::HINT_IS_LEFT_SMALLER.into(), lib::merkle::hint_is_left_smaller);
         hints
     }
 
