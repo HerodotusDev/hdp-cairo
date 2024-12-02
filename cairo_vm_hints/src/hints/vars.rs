@@ -10,11 +10,23 @@ pub mod ids {
     pub(crate) const BUILTIN_PARAMS: &str = "builtin_params";
     pub(crate) const BUILTIN_PTRS: &str = "builtin_ptrs";
     pub(crate) const COMPILED_CLASS: &str = "compiled_class";
+    pub(crate) const CURRENT_ITEM: &str = "ids.current_item";
+    pub(crate) const DEVISOR: &str = "ids.devisor";
+    pub(crate) const FIRST_BYTE: &str = "ids.first_byte";
+    pub(crate) const I: &str = "ids.i";
+    pub(crate) const IS_LONG: &str = "ids.is_long";
+    pub(crate) const ITEM_TYPE: &str = "ids.item_type";
     pub(crate) const N_BUILTINS: &str = "n_builtins";
+    pub(crate) const N_PROCESSED_WORDS: &str = "ids.n_processed_words";
     pub(crate) const N_SELECTED_BUILTINS: &str = "n_selected_builtins";
+    pub(crate) const Q: &str = "ids.q";
+    pub(crate) const R: &str = "ids.r";
     pub(crate) const RETURN_BUILTIN_PTRS: &str = "return_builtin_ptrs";
+    pub(crate) const RLP: &str = "ids.rlp";
     pub(crate) const SELECT_BUILTIN: &str = "select_builtin";
     pub(crate) const SELECTED_ENCODINGS: &str = "selected_encodings";
     pub(crate) const SELECTED_PTRS: &str = "selected_ptrs";
     pub(crate) const SYSCALL_PTR: &str = "syscall_ptr";
+    pub(crate) const VALUE_LEN: &str = "ids.value_len";
+    pub(crate) const VALUE: &str = "ids.value";
 }
