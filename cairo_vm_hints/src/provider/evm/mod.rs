@@ -2,7 +2,7 @@ use alloy::{
     hex::ToHexExt,
     primitives::{Address, BlockNumber, B256},
     rpc::{
-        client::{ClientBuilder, ReqwestClient},
+        client::{ClientBuilder, ReqwestClient, Waiter},
         types::{Block, EIP1186AccountProofResponse, Receipt, Transaction},
     },
     transports::{http::reqwest::Url, RpcError, TransportErrorKind},
@@ -27,7 +27,7 @@ impl EVMProvider {
 impl EVMProviderTrait for EVMProvider {
     async fn get_account(&self, address: Address, block_number: BlockNumber) -> Result<EIP1186AccountProofResponse, RpcError<TransportErrorKind>> {
         let mut batch = self.client.new_batch();
-        let fut = batch.add_call(
+        let fut: Waiter<EIP1186AccountProofResponse> = batch.add_call(
             "eth_getProof",
             &json!([
                 address.encode_hex_with_prefix(),

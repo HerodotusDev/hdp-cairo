@@ -1,11 +1,46 @@
-use cairo_type_derive::FieldOffsetGetters;
-use cairo_vm::Felt252;
+use crate::cairo_types::traits::CairoType;
+use alloy::primitives::{B256, U256};
+use cairo_type_derive::{CairoType, FieldOffsetGetters};
+use cairo_vm::{
+    types::relocatable::Relocatable,
+    vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
+    Felt252,
+};
 
 #[allow(unused)]
-#[derive(FieldOffsetGetters)]
-pub struct CompiledClassFact {
-    pub hash: Felt252,
-    pub compiled_class: Felt252,
+#[derive(FieldOffsetGetters, CairoType)]
+pub struct Uint256 {
+    pub low: Felt252,
+    pub high: Felt252,
+}
+
+impl From<u64> for Uint256 {
+    fn from(value: u64) -> Self {
+        Self {
+            low: Felt252::from(value),
+            high: Felt252::ZERO,
+        }
+    }
+}
+
+impl From<U256> for Uint256 {
+    fn from(value: U256) -> Self {
+        let bytes: [u8; 32] = value.to_be_bytes();
+        Self {
+            low: Felt252::from_bytes_be_slice(&bytes[0..16]),
+            high: Felt252::from_bytes_be_slice(&bytes[16..32]),
+        }
+    }
+}
+
+impl From<B256> for Uint256 {
+    fn from(value: B256) -> Self {
+        let bytes: [u8; 32] = value.0;
+        Self {
+            low: Felt252::from_bytes_be_slice(&bytes[0..16]),
+            high: Felt252::from_bytes_be_slice(&bytes[16..32]),
+        }
+    }
 }
 
 #[allow(unused)]
@@ -20,16 +55,6 @@ pub struct CompiledClass {
     constructors: Felt252,
     bytecode_length: Felt252,
     bytecode_ptr: Felt252,
-}
-
-#[allow(unused)]
-#[derive(FieldOffsetGetters)]
-pub struct EntryPointReturnValues {
-    gas_builtin: Felt252,
-    syscall_ptr: Felt252,
-    failure_flag: Felt252,
-    retdata_start: Felt252,
-    retdata_end: Felt252,
 }
 
 #[allow(unused)]

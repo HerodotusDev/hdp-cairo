@@ -2347,6 +2347,7 @@ name = "hdp_cairo_vm_hints"
 version = "0.1.0"
 dependencies = [
  "alloy",
+ "alloy-rlp",
  "bincode",
  "cairo-lang-casm",
  "cairo-lang-starknet-classes",
