@@ -123,8 +123,7 @@ func main{
 
     // Write DryRunOutput to output.
     assert [cast(output_ptr, DryRunOutput*)] = DryRunOutput(
-        program_hash=program_hash,
-        result=result
+        program_hash=program_hash, result=result
     );
     let output_ptr = output_ptr + DryRunOutput.SIZE;
 

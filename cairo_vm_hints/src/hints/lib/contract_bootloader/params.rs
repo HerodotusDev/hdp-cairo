@@ -33,7 +33,7 @@ pub fn load_parmas(
         &hint_data.ids_data,
         &hint_data.ap_tracking,
     )?;
-    
+
     write_params(vm, params_base, params)?;
 
     Ok(())
