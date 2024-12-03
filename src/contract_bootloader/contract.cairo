@@ -36,22 +36,9 @@ func compute_contract{
     alloc_locals;
     local compiled_class: CompiledClass*;
 
-    // Fetch contract data form hints.
     %{
-        from starkware.starknet.core.os.contract_class.compiled_class_hash import create_bytecode_segment_structure
-        from src.contract_bootloader.contract_class.compiled_class_hash_utils import get_compiled_class_struct
-
-        bytecode_segment_structure = create_bytecode_segment_structure(
-            bytecode=compiled_class.bytecode,
-            bytecode_segment_lengths=compiled_class.bytecode_segment_lengths,
-            visited_pcs=None,
-        )
-
-        cairo_contract = get_compiled_class_struct(
-            compiled_class=compiled_class,
-            bytecode=bytecode_segment_structure.bytecode_with_skipped_segments()
-        )
-        ids.compiled_class = segments.gen_arg(cairo_contract)
+        from contract_bootloader.contract_class.compiled_class_hash_utils import get_compiled_class_struct
+        ids.compiled_class = segments.gen_arg(get_compiled_class_struct(compiled_class=compiled_class))
     %}
 
     let (builtin_costs: felt*) = alloc();
@@ -93,12 +80,7 @@ func compute_contract{
         );
     }
 
-    if (retdata_size == 1) {
-        let result = felt_to_uint256(retdata[0]);
-        return (result=result, program_hash=program_hash);
-    } else {
-        assert retdata_size = 2;
-        let result = Uint256(low=retdata[0], high=retdata[1]);
-        return (result=result, program_hash=program_hash);
-    }
+    assert retdata_size = 2;
+    let result = Uint256(low=retdata[0], high=retdata[1]);
+    return (result=result, program_hash=program_hash);
 }
