@@ -10,14 +10,14 @@ from tools.py.types.evm.header import (
     BlockHeaderDencun,
 )
 from tools.py.types.evm.receipt import Receipt
-import rlp
+import os
+from dotenv import load_dotenv
 
 
 @pytest.fixture
 def evm_provider():
-    return EvmProvider(
-        "https://mainnet.infura.io/v3/66dda5ed7d56432a82c8da4ac54fde8e", 1
-    )
+    load_dotenv()
+    return EvmProvider(os.getenv("RPC_URL_MAINNET"), 1)
 
 
 def test_legacy_header(evm_provider):
