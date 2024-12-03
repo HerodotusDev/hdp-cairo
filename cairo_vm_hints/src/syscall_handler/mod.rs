@@ -44,11 +44,7 @@ impl SyscallHandlerWrapper {
         syscall_handler.syscall_ptr
     }
 
-    pub fn execute_syscall(
-        &self,
-        vm: &mut VirtualMachine,
-        syscall_ptr: Relocatable,
-    ) -> Result<(), HintError> {
+    pub fn execute_syscall(&self, vm: &mut VirtualMachine, syscall_ptr: Relocatable) -> Result<(), HintError> {
         let mut syscall_handler = self.syscall_handler.write().unwrap();
         let ptr = &mut syscall_handler
             .syscall_ptr

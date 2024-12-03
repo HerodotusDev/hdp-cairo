@@ -19,8 +19,7 @@ pub fn hint_v_is_encoded(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let v_ptr =
-        get_relocatable_from_var_name("v", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let v_ptr = get_relocatable_from_var_name("v", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     let v = vm
         .get_continuous_range(v_ptr, 2)?

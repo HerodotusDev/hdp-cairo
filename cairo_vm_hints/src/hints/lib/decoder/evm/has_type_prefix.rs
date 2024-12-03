@@ -11,8 +11,7 @@ use std::collections::HashMap;
 
 const FELT_4: Felt252 = Felt252::from_hex_unchecked("0x04");
 
-pub const HINT_HAS_TYPE_PREFIX: &str =
-    "ids.has_type_prefix = 1 if 0x0 < ids.first_byte < 0x04 else 0";
+pub const HINT_HAS_TYPE_PREFIX: &str = "ids.has_type_prefix = 1 if 0x0 < ids.first_byte < 0x04 else 0";
 
 pub fn hint_has_type_prefix(
     vm: &mut VirtualMachine,
@@ -20,12 +19,7 @@ pub fn hint_has_type_prefix(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let first_byte = get_integer_from_var_name(
-        "first_byte",
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
-    )?;
+    let first_byte = get_integer_from_var_name("first_byte", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     let insert = if Felt252::ZERO < first_byte && first_byte < FELT_4 {
         Felt252::ZERO
