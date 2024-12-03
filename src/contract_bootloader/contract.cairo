@@ -80,7 +80,12 @@ func compute_contract{
         );
     }
 
-    assert retdata_size = 2;
-    let result = Uint256(low=retdata[0], high=retdata[1]);
-    return (result=result, program_hash=program_hash);
+    if (retdata_size == 1) {
+        let result = felt_to_uint256(retdata[0]);
+        return (result=result, program_hash=program_hash);
+    } else {
+        assert retdata_size = 2;
+        let result = Uint256(low=retdata[0], high=retdata[1]);
+        return (result=result, program_hash=program_hash);
+    }
 }
