@@ -1,14 +1,13 @@
 from enum import Enum
 from typing import List, Tuple
 from abc import ABC, abstractmethod
-from contract_bootloader.memorizer.evm.memorizer import EvmMemorizer
+from contract_bootloader.memorizer.starknet.memorizer import StarknetMemorizer
 from marshmallow_dataclass import dataclass
 from starkware.cairo.lang.vm.crypto import poseidon_hash_many
 from starkware.cairo.lang.vm.relocatable import RelocatableValue
-from web3 import Web3
 
 
-class EvmStateFunctionId(Enum):
+class StarknetStateFunctionId(Enum):
     GET_SLOT = 0
 
     @classmethod
@@ -26,7 +25,7 @@ class MemorizerKey:
     chain_id: int
     block_number: int
     address: int
-    storage_slot: Tuple[int, int]
+    storage_slot: int
 
     @classmethod
     def from_int(cls, values: List[int]):
@@ -34,16 +33,8 @@ class MemorizerKey:
             raise ValueError(
                 "MemorizerKey must be initialized with a list of five integers"
             )
-        if (
-            values[3] >= 0x100000000000000000000000000000000
-            or values[4] >= 0x100000000000000000000000000000000
-        ):
-            raise ValueError("Storage slot value not u128")
-        storage_slot_high = values[3] % 0x100000000000000000000000000000000
-        storage_slot_low = values[4] % 0x100000000000000000000000000000000
-        return cls(
-            values[0], values[1], values[2], (storage_slot_high, storage_slot_low)
-        )
+
+        return cls(values[0], values[1], values[2], values[3])
 
     def derive(self) -> int:
         return poseidon_hash_many(
@@ -51,35 +42,33 @@ class MemorizerKey:
                 self.chain_id,
                 self.block_number,
                 self.address,
-                self.storage_slot[0],
-                self.storage_slot[1],
+                self.storage_slot,
             ]
         )
 
     def to_dict(self):
-        storage_slot_value = (self.storage_slot[0] << 128) + self.storage_slot[1]
 
         return {
             "chain_id": hex(self.chain_id),
             "block_number": self.block_number,
             "address": f"0x{self.address:040x}",
-            "key": f"0x{storage_slot_value:064x}",
+            "key": hex(self.storage_slot),
         }
 
     @classmethod
     def size(cls) -> int:
-        return 5
+        return 4
 
 
-class AbstractEvmStorageBase(ABC):
-    def __init__(self, memorizer: EvmMemorizer):
+class AbstractStarknetStorageBase(ABC):
+    def __init__(self, memorizer: StarknetMemorizer):
         self.memorizer = memorizer
         self.function_map = {
-            EvmStateFunctionId.GET_SLOT: self.get_slot,
+            StarknetStateFunctionId.GET_SLOT: self.get_slot,
         }
 
     def handle(
-        self, function_id: EvmStateFunctionId, key: MemorizerKey
+        self, function_id: StarknetStateFunctionId, key: MemorizerKey
     ) -> Tuple[int, int]:
         if function_id in self.function_map:
             return self.function_map[function_id](key=key)
@@ -87,7 +76,7 @@ class AbstractEvmStorageBase(ABC):
             raise ValueError(f"Function ID {function_id} is not recognized.")
 
     @abstractmethod
-    def get_slot(self, key: MemorizerKey) -> Tuple[int, int]:
+    def get_slot(self, key: MemorizerKey) -> int:
         pass
 
     def _get_felt_range(self, start_addr: int, end_addr: int) -> List[int]:

@@ -44,6 +44,37 @@ from contract_bootloader.syscall_memorizer_handler.evm.block_tx_handler import (
 from contract_bootloader.syscall_memorizer_handler.evm.block_receipt_handler import (
     EvmBlockReceiptHandler,
 )
+from contract_bootloader.memorizer.starknet.memorizer import (
+    StarknetStateId,
+    StarknetMemorizer,
+)
+from contract_bootloader.memorizer.starknet.header import (
+    MemorizerKey as StarknetHeaderKey,
+    StarknetStateFunctionId as StarknetHeaderFunctionId,
+)
+from contract_bootloader.memorizer.starknet.storage import (
+    MemorizerKey as StarknetStorageKey,
+    StarknetStateFunctionId as StarknetStorageFunctionId,
+)
+from contract_bootloader.syscall_memorizer_handler.starknet.header_handler import (
+    StarknetHeaderHandler,
+)
+from contract_bootloader.syscall_memorizer_handler.starknet.storage_handler import (
+    StarknetStorageHandler,
+)
+
+from enum import Enum
+
+
+class ChainType(Enum):
+    EVM = "evm"
+    STARKNET = "starknet"
+
+
+def get_chain_type(chain_id: int) -> ChainType:
+    if chain_id == 393402133025997798000961 or chain_id == 23448594291968334:
+        return ChainType.STARKNET
+    return ChainType.EVM
 
 
 class SyscallHandler(SyscallHandlerBase):
@@ -78,128 +109,112 @@ class SyscallHandler(SyscallHandlerBase):
         calldata = self._get_felt_range(
             start_addr=request.calldata_start, end_addr=request.calldata_end
         )
+        chain_id = calldata[2]
+        chain_type = get_chain_type(chain_id)
 
+        if chain_type == ChainType.EVM:
+            return self._handle_evm_call(request, calldata)
+        else:
+            return self._handle_starknet_call(request, calldata)
+
+    def _handle_evm_call(self, request: CairoStructProxy, calldata: list) -> CallResult:
         retdata = []
-
         memorizerId = EvmStateId.from_int(request.contract_address)
-        if memorizerId == EvmStateId.Header:
-            total_size = EvmMemorizer.size() + EvmHeaderKey.size()
+        handlers = {
+            EvmStateId.Header: (EvmHeaderHandler, EvmHeaderKey, EvmHeaderFunctionId),
+            EvmStateId.Account: (
+                EvmAccountHandler,
+                EvmAccountKey,
+                EvmAccountFunctionId,
+            ),
+            EvmStateId.Storage: (
+                EvmStorageHandler,
+                EvmStorageKey,
+                EvmStorageFunctionId,
+            ),
+            EvmStateId.BlockTx: (
+                EvmBlockTxHandler,
+                EvmBlockTxKey,
+                EvmBlockTxFunctionId,
+            ),
+            EvmStateId.BlockReceipt: (
+                EvmBlockReceiptHandler,
+                EvmBlockReceiptKey,
+                EvmBlockReceiptFunctionId,
+            ),
+        }
 
-            if len(calldata) != total_size:
-                raise ValueError(
-                    f"Memorizer read must be initialized with a list of {total_size} integers"
-                )
+        if memorizerId not in handlers:
+            raise ValueError(f"EvmStateId {memorizerId} not matched")
 
-            function_id = EvmHeaderFunctionId.from_int(request.selector)
-            memorizer = EvmMemorizer(
-                dict_raw_ptrs=calldata[0 : EvmMemorizer.size()],
-                dict_manager=self.dict_manager,
+        HandlerClass, KeyClass, FunctionIdClass = handlers[memorizerId]
+        total_size = EvmMemorizer.size() + KeyClass.size()
+
+        if len(calldata) != total_size:
+            raise ValueError(
+                f"Memorizer read must be initialized with a list of {total_size} integers"
             )
 
-            idx = EvmMemorizer.size()
-            key = EvmHeaderKey.from_int(calldata[idx : idx + EvmHeaderKey.size()])
-
-            handler = EvmHeaderHandler(
-                segments=self.segments,
-                memorizer=memorizer,
-            )
-            retdata = handler.handle(function_id=function_id, key=key)
-
-        elif memorizerId == EvmStateId.Account:
-            total_size = EvmMemorizer.size() + EvmAccountKey.size()
-
-            if len(calldata) != total_size:
-                raise ValueError(
-                    f"Memorizer read must be initialized with a list of {total_size} integers"
-                )
-
-            function_id = EvmAccountFunctionId.from_int(request.selector)
-            memorizer = EvmMemorizer(
-                dict_raw_ptrs=calldata[0 : EvmMemorizer.size()],
-                dict_manager=self.dict_manager,
-            )
-
-            idx = EvmMemorizer.size()
-            key = EvmAccountKey.from_int(calldata[idx : idx + EvmAccountKey.size()])
-
-            handler = EvmAccountHandler(
-                segments=self.segments,
-                memorizer=memorizer,
-            )
-            retdata = handler.handle(function_id=function_id, key=key)
-
-        elif memorizerId == EvmStateId.Storage:
-            total_size = EvmMemorizer.size() + EvmStorageKey.size()
-
-            if len(calldata) != total_size:
-                raise ValueError(
-                    f"Memorizer read must be initialized with a list of {total_size} integers"
-                )
-
-            function_id = EvmStorageFunctionId.from_int(request.selector)
-            memorizer = EvmMemorizer(
-                dict_raw_ptrs=calldata[0 : EvmMemorizer.size()],
-                dict_manager=self.dict_manager,
-            )
-            print(memorizer.dict_ptr)
-
-            idx = EvmMemorizer.size()
-            key = EvmStorageKey.from_int(calldata[idx : idx + EvmStorageKey.size()])
-
-            handler = EvmStorageHandler(
-                segments=self.segments,
-                memorizer=memorizer,
-            )
-            retdata = handler.handle(function_id=function_id, key=key)
-        elif memorizerId == EvmStateId.BlockTx:
-            total_size = EvmMemorizer.size() + EvmBlockTxKey.size()
-
-            if len(calldata) != total_size:
-                raise ValueError(
-                    f"Memorizer read must be initialized with a list of {total_size} integers"
-                )
-
-            function_id = EvmBlockTxFunctionId.from_int(request.selector)
-            memorizer = EvmMemorizer(
-                dict_raw_ptrs=calldata[0 : EvmMemorizer.size()],
-                dict_manager=self.dict_manager,
-            )
-
-            idx = EvmMemorizer.size()
-            key = EvmBlockTxKey.from_int(calldata[idx : idx + EvmBlockTxKey.size()])
-
-            handler = EvmBlockTxHandler(
-                segments=self.segments,
-                memorizer=memorizer,
-            )
-            retdata = handler.handle(function_id=function_id, key=key)
-        elif memorizerId == EvmStateId.BlockReceipt:
-            total_size = EvmMemorizer.size() + EvmBlockReceiptKey.size()
-
-            if len(calldata) != total_size:
-                raise ValueError(
-                    f"Memorizer read must be initialized with a list of {total_size} integers"
-                )
-
-            function_id = EvmBlockReceiptFunctionId.from_int(request.selector)
-            memorizer = EvmMemorizer(
-                dict_raw_ptrs=calldata[0 : EvmMemorizer.size()],
-                dict_manager=self.dict_manager,
-            )
-
-            idx = EvmMemorizer.size()
-            key = EvmBlockReceiptKey.from_int(
-                calldata[idx : idx + EvmBlockReceiptKey.size()]
-            )
-
-            handler = EvmBlockReceiptHandler(
-                segments=self.segments,
-                memorizer=memorizer,
-            )
-            retdata = handler.handle(function_id=function_id, key=key)
-
-        return CallResult(
-            gas_consumed=0,
-            failure_flag=0,
-            retdata=list(retdata),
+        memorizer = EvmMemorizer(
+            dict_raw_ptrs=calldata[0 : EvmMemorizer.size()],
+            dict_manager=self.dict_manager,
         )
+
+        idx = EvmMemorizer.size()
+        key = KeyClass.from_int(calldata[idx : idx + KeyClass.size()])
+        function_id = FunctionIdClass.from_int(request.selector)
+
+        handler = HandlerClass(
+            segments=self.segments,
+            memorizer=memorizer,
+        )
+        retdata = handler.handle(function_id=function_id, key=key)
+
+        return CallResult(gas_consumed=0, failure_flag=0, retdata=list(retdata))
+
+    def _handle_starknet_call(
+        self, request: CairoStructProxy, calldata: list
+    ) -> CallResult:
+        retdata = []
+        memorizerId = StarknetStateId.from_int(request.contract_address)
+        handlers = {
+            StarknetStateId.Header: (
+                StarknetHeaderHandler,
+                StarknetHeaderKey,
+                StarknetHeaderFunctionId,
+            ),
+            StarknetStateId.Storage: (
+                StarknetStorageHandler,
+                StarknetStorageKey,
+                StarknetStorageFunctionId,
+            ),
+        }
+
+        if memorizerId not in handlers:
+            raise ValueError(f"StarknetStateId {memorizerId} not matched")
+
+        HandlerClass, KeyClass, FunctionIdClass = handlers[memorizerId]
+        total_size = StarknetMemorizer.size() + KeyClass.size()
+
+        if len(calldata) != total_size:
+            raise ValueError(
+                f"Memorizer read must be initialized with a list of {total_size} integers"
+            )
+
+        memorizer = StarknetMemorizer(
+            dict_raw_ptrs=calldata[0 : StarknetMemorizer.size()],
+            dict_manager=self.dict_manager,
+        )
+
+        idx = StarknetMemorizer.size()
+        key = KeyClass.from_int(calldata[idx : idx + KeyClass.size()])
+        function_id = FunctionIdClass.from_int(request.selector)
+
+        handler = HandlerClass(
+            segments=self.segments,
+            memorizer=memorizer,
+        )
+        retdata = handler.handle(function_id=function_id, key=key)
+        retdata = [retdata]  # since we return a single felt for now
+
+        return CallResult(gas_consumed=0, failure_flag=0, retdata=retdata)

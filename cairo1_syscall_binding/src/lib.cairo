@@ -1,4 +1,5 @@
 pub mod evm;
+pub mod starknet;
 
 #[derive(Serde, Drop)]
 pub struct HDP {

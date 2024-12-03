@@ -2,9 +2,11 @@ aiofiles==23.2.1
 typeguard==2.13.3
 protobuf==3.20.3
 inquirer
-python-dotenv
+python-dotenv==1.0.1
 pysha3
 web3==7.4.0
-trie
 black
-
+poseidon-py
+trie==3.0.1
+sympy==1.12.1
+# crypto-cpp-py==1.4.4
