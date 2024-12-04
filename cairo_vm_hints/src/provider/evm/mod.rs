@@ -59,12 +59,7 @@ impl EVMProviderTrait for EVMProvider {
         batch.send().await?;
         fut.await
     }
-    async fn get_storage(
-        &self,
-        address: Address,
-        key: StorageKey,
-        block_number: BlockNumber,
-    ) -> Result<StorageValue, RpcError<TransportErrorKind>> {
+    async fn get_storage(&self, address: Address, key: StorageKey, block_number: BlockNumber) -> Result<StorageValue, RpcError<TransportErrorKind>> {
         let mut batch = self.client.new_batch();
         let fut = batch.add_call(
             "eth_getStorageAt",
