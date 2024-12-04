@@ -17,6 +17,8 @@ impl CairoStorage {
         keccak256(self.rlp_encode()).into()
     }
 
+    // TODO missing impl
+
     pub fn rlp_encode(&self) -> Vec<u8> {
         let mut buffer = Vec::<u8>::new();
         self.0.encode(&mut buffer);

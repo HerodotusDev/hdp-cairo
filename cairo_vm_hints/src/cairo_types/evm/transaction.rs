@@ -1,6 +1,5 @@
 use crate::cairo_types::structs::Uint256;
-use alloy::consensus::transaction::TxEnvelope;
-use alloy::primitives::keccak256;
+use alloy::{consensus::transaction::TxEnvelope, rpc::types::Transaction};
 use alloy_rlp::{Decodable, Encodable};
 
 pub struct CairoTransaction(TxEnvelope);
@@ -11,8 +10,14 @@ impl CairoTransaction {
     }
 
     pub fn hash(&self) -> Uint256 {
-        keccak256(self.rlp_encode()).into()
+        self.0.tx_hash().to_owned().into()
     }
+
+    pub fn signature_hash(&self) -> Uint256 {
+        self.0.signature_hash().into()
+    }
+
+    // TODO missing impl
 
     pub fn rlp_encode(&self) -> Vec<u8> {
         let mut buffer = Vec::<u8>::new();
@@ -25,8 +30,8 @@ impl CairoTransaction {
     }
 }
 
-impl From<TxEnvelope> for CairoTransaction {
-    fn from(value: TxEnvelope) -> Self {
-        Self(value)
+impl From<Transaction> for CairoTransaction {
+    fn from(value: Transaction) -> Self {
+        Self(value.inner)
     }
 }
