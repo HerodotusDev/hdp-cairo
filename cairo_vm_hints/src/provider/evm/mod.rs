@@ -1,6 +1,6 @@
 use alloy::{
     hex::ToHexExt,
-    primitives::{Address, BlockNumber, B256},
+    primitives::{Address, BlockNumber, StorageKey, StorageValue, B256},
     rpc::{
         client::{ClientBuilder, ReqwestClient, Waiter},
         types::{Block, EIP1186AccountProofResponse, Receipt, Transaction},
@@ -47,7 +47,7 @@ impl EVMProviderTrait for EVMProvider {
         batch.send().await?;
         fut.await
     }
-    async fn get_receipt(&self, hash: B256) -> Result<Receipt, RpcError<TransportErrorKind>> {
+    async fn get_transaction_receipt(&self, hash: B256) -> Result<Receipt, RpcError<TransportErrorKind>> {
         let mut batch = self.client.new_batch();
         let fut = batch.add_call("eth_getTransactionReceipt", &json!([hash.encode_hex_with_prefix()]))?;
         batch.send().await?;
@@ -56,6 +56,24 @@ impl EVMProviderTrait for EVMProvider {
     async fn get_transaction(&self, hash: B256) -> Result<Transaction, RpcError<TransportErrorKind>> {
         let mut batch = self.client.new_batch();
         let fut = batch.add_call("eth_getTransactionByHash", &json!([hash.encode_hex_with_prefix()]))?;
+        batch.send().await?;
+        fut.await
+    }
+    async fn get_storage(
+        &self,
+        address: Address,
+        key: StorageKey,
+        block_number: BlockNumber,
+    ) -> Result<StorageValue, RpcError<TransportErrorKind>> {
+        let mut batch = self.client.new_batch();
+        let fut = batch.add_call(
+            "eth_getStorageAt",
+            &json!([
+                address.encode_hex_with_prefix(),
+                key.encode_hex_with_prefix(),
+                format!("0x{}", block_number.to_be_bytes().encode_hex().trim_start_matches('0'))
+            ]),
+        )?;
         batch.send().await?;
         fut.await
     }
@@ -90,7 +108,7 @@ mod tests {
     async fn test_get_recipt() {
         let client = EVMProvider::new(RPC_URL.parse().unwrap());
         client
-            .get_receipt(B256::from_hex("237f99e622d67413956b8674cf16ea56b0ba0a18a9f68a5e254f4ac8d2050b51").unwrap())
+            .get_transaction_receipt(B256::from_hex("237f99e622d67413956b8674cf16ea56b0ba0a18a9f68a5e254f4ac8d2050b51").unwrap())
             .await
             .unwrap();
     }
