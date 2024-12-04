@@ -8,7 +8,7 @@ use cairo_vm::{
 };
 
 #[allow(unused)]
-#[derive(FieldOffsetGetters, CairoType)]
+#[derive(FieldOffsetGetters, CairoType, Default)]
 pub struct Uint256 {
     pub low: Felt252,
     pub high: Felt252,

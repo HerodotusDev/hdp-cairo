@@ -1,5 +1,30 @@
+use cairo_vm::Felt252;
+use starknet_crypto::Felt;
+
 pub(crate) mod evm;
 pub(crate) mod new_syscalls;
 pub(crate) mod starknet;
 pub(crate) mod structs;
 pub(crate) mod traits;
+
+pub const FELT_0: Felt = Felt252::from_hex_unchecked("0x00");
+pub const FELT_1: Felt252 = Felt252::from_hex_unchecked("0x01");
+pub const FELT_2: Felt252 = Felt252::from_hex_unchecked("0x02");
+pub const FELT_3: Felt252 = Felt252::from_hex_unchecked("0x03");
+pub const FELT_4: Felt252 = Felt252::from_hex_unchecked("0x04");
+pub const FELT_5: Felt252 = Felt252::from_hex_unchecked("0x05");
+pub const FELT_6: Felt252 = Felt252::from_hex_unchecked("0x06");
+pub const FELT_7: Felt252 = Felt252::from_hex_unchecked("0x07");
+pub const FELT_8: Felt252 = Felt252::from_hex_unchecked("0x08");
+pub const FELT_9: Felt252 = Felt252::from_hex_unchecked("0x09");
+pub const FELT_10: Felt252 = Felt252::from_hex_unchecked("0x0a");
+pub const FELT_11: Felt252 = Felt252::from_hex_unchecked("0x0b");
+pub const FELT_12: Felt252 = Felt252::from_hex_unchecked("0x0c");
+pub const FELT_13: Felt252 = Felt252::from_hex_unchecked("0x0d");
+pub const FELT_14: Felt252 = Felt252::from_hex_unchecked("0x0e");
+pub const FELT_15: Felt252 = Felt252::from_hex_unchecked("0x0f");
+pub const FELT_16: Felt252 = Felt252::from_hex_unchecked("0x10");
+pub const FELT_17: Felt252 = Felt252::from_hex_unchecked("0x11");
+pub const FELT_18: Felt252 = Felt252::from_hex_unchecked("0x12");
+pub const FELT_19: Felt252 = Felt252::from_hex_unchecked("0x13");
+pub const FELT_20: Felt252 = Felt252::from_hex_unchecked("0x14");

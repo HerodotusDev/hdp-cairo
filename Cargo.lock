@@ -2363,6 +2363,7 @@ dependencies = [
  "sha3",
  "starknet-crypto 0.7.3",
  "starknet-types-core",
+ "strum_macros",
  "thiserror 1.0.69",
  "tiny-keccak",
  "tokio",

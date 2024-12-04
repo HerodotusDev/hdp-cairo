@@ -1,4 +1,7 @@
 pub mod call_contract;
+pub mod evm;
+pub mod starknet;
+pub mod traits;
 pub mod utils;
 
 use cairo_vm::{

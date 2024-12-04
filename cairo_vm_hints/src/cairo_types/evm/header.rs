@@ -1,6 +1,31 @@
 use crate::cairo_types::structs::Uint256;
 use alloy::{consensus::Header, primitives::keccak256};
 use alloy_rlp::{Decodable, Encodable};
+use strum_macros::FromRepr;
+
+#[derive(FromRepr)]
+pub enum FunctionId {
+    Parent = 0,
+    Uncle = 1,
+    Coinbase = 2,
+    StateRoot = 3,
+    TransactionRoot = 4,
+    ReceiptRoot = 5,
+    Bloom = 6,
+    Difficulty = 7,
+    Number = 8,
+    GasLimit = 9,
+    GasUsed = 10,
+    Timestamp = 11,
+    ExtraData = 12,
+    MixHash = 13,
+    Nonce = 14,
+    BaseFeePerGas = 15,
+    WithdrawalsRoot = 16,
+    BlobGasUsed = 17,
+    ExcessBlobGas = 18,
+    ParentBeaconBlockRoot = 19,
+}
 
 pub struct CairoHeader(Header);
 
@@ -31,6 +56,14 @@ impl CairoHeader {
 
     pub fn rlp_decode(mut rlp: &[u8]) -> Self {
         Self(<Header>::decode(&mut rlp).unwrap())
+    }
+
+    pub fn handle(&self, function_id: FunctionId) -> Uint256 {
+        match function_id {
+            FunctionId::Parent => self.get_parent(),
+            FunctionId::Uncle => self.get_uncle(),
+            _ => Uint256::default(),
+        }
     }
 }
 
