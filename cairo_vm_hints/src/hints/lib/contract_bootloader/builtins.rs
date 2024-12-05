@@ -3,9 +3,7 @@ use cairo_vm::{
     hint_processor::{
         builtin_hint_processor::{
             builtin_hint_processor_definition::HintProcessorData,
-            hint_utils::{
-                get_integer_from_var_name, get_ptr_from_var_name, insert_value_from_var_name,
-            },
+            hint_utils::{get_integer_from_var_name, get_ptr_from_var_name, insert_value_from_var_name},
         },
         hint_processor_utils::felt_to_usize,
     },
@@ -23,67 +21,31 @@ pub fn update_builtin_ptrs(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let n_builtins = get_integer_from_var_name(
-        vars::ids::N_BUILTINS,
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
-    )?;
+    let n_builtins = get_integer_from_var_name(vars::ids::N_BUILTINS, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    let builtin_params = get_ptr_from_var_name(
-        vars::ids::BUILTIN_PARAMS,
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
-    )?;
-    let builtins_encoding_addr =
-        vm.get_relocatable((builtin_params + BuiltinParams::builtin_encodings_offset())?)?;
+    let builtin_params = get_ptr_from_var_name(vars::ids::BUILTIN_PARAMS, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let builtins_encoding_addr = vm.get_relocatable((builtin_params + BuiltinParams::builtin_encodings_offset())?)?;
 
-    let n_selected_builtins = get_integer_from_var_name(
-        vars::ids::N_SELECTED_BUILTINS,
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
-    )?;
+    let n_selected_builtins = get_integer_from_var_name(vars::ids::N_SELECTED_BUILTINS, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    let selected_encodings = get_ptr_from_var_name(
-        vars::ids::SELECTED_ENCODINGS,
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
-    )?;
+    let selected_encodings = get_ptr_from_var_name(vars::ids::SELECTED_ENCODINGS, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    let builtin_ptrs = get_ptr_from_var_name(
-        vars::ids::BUILTIN_PTRS,
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
-    )?;
+    let builtin_ptrs = get_ptr_from_var_name(vars::ids::BUILTIN_PTRS, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     let orig_builtin_ptrs = builtin_ptrs;
 
-    let selected_ptrs = get_ptr_from_var_name(
-        vars::ids::SELECTED_PTRS,
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
-    )?;
+    let selected_ptrs = get_ptr_from_var_name(vars::ids::SELECTED_PTRS, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    let all_builtins =
-        vm.get_continuous_range(builtins_encoding_addr, felt_to_usize(&n_builtins)?)?;
+    let all_builtins = vm.get_continuous_range(builtins_encoding_addr, felt_to_usize(&n_builtins)?)?;
 
-    let selected_builtins =
-        vm.get_continuous_range(selected_encodings, felt_to_usize(&n_selected_builtins)?)?;
+    let selected_builtins = vm.get_continuous_range(selected_encodings, felt_to_usize(&n_selected_builtins)?)?;
 
     let mut returned_builtins: Vec<MaybeRelocatable> = Vec::new();
     let mut selected_builtin_offset: usize = 0;
 
     for (i, builtin) in all_builtins.iter().enumerate() {
         if selected_builtins.contains(builtin) {
-            returned_builtins.push(
-                vm.get_maybe(&(selected_ptrs + selected_builtin_offset)?)
-                    .unwrap(),
-            );
+            returned_builtins.push(vm.get_maybe(&(selected_ptrs + selected_builtin_offset)?).unwrap());
             selected_builtin_offset += 1;
         } else {
             returned_builtins.push(vm.get_maybe(&(orig_builtin_ptrs + i)?).unwrap());
@@ -110,25 +72,13 @@ pub fn select_builtin(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let selected_encodings = get_ptr_from_var_name(
-        vars::ids::SELECTED_ENCODINGS,
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
-    )?;
+    let selected_encodings = get_ptr_from_var_name(vars::ids::SELECTED_ENCODINGS, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    let all_encodings = get_ptr_from_var_name(
-        vars::ids::ALL_ENCODINGS,
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
-    )?;
+    let all_encodings = get_ptr_from_var_name(vars::ids::ALL_ENCODINGS, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    let n_selected_builtins =
-        exec_scopes.get_mut_ref::<Felt252>(vars::scopes::N_SELECTED_BUILTINS)?;
+    let n_selected_builtins = exec_scopes.get_mut_ref::<Felt252>(vars::scopes::N_SELECTED_BUILTINS)?;
 
-    let select_builtin = *n_selected_builtins > Felt252::ZERO
-        && vm.get_maybe(&selected_encodings).unwrap() == vm.get_maybe(&all_encodings).unwrap();
+    let select_builtin = *n_selected_builtins > Felt252::ZERO && vm.get_maybe(&selected_encodings).unwrap() == vm.get_maybe(&all_encodings).unwrap();
 
     insert_value_from_var_name(
         vars::ids::SELECT_BUILTIN,
@@ -145,8 +95,7 @@ pub fn select_builtin(
     Ok(())
 }
 
-pub const SELECTED_BUILTINS: &str =
-    "vm_enter_scope({'n_selected_builtins': ids.n_selected_builtins})";
+pub const SELECTED_BUILTINS: &str = "vm_enter_scope({'n_selected_builtins': ids.n_selected_builtins})";
 
 pub fn selected_builtins(
     vm: &mut VirtualMachine,

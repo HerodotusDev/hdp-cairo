@@ -1,7 +1,9 @@
 #![forbid(unsafe_code)]
+#![allow(async_fn_in_trait)]
 pub mod cairo_types;
 pub mod hint_processor;
 pub mod hints;
+pub mod provider;
 pub mod syscall_handler;
 
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;

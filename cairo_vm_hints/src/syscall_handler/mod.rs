@@ -1,4 +1,7 @@
 pub mod call_contract;
+pub mod evm;
+pub mod starknet;
+pub mod traits;
 pub mod utils;
 
 use cairo_vm::{
@@ -8,6 +11,8 @@ use cairo_vm::{
 use call_contract::CallContractHandler;
 use std::{rc::Rc, sync::RwLock};
 use utils::{felt_from_ptr, run_handler, SyscallSelector};
+
+pub(crate) const RPC: &str = "RPC";
 
 /// SyscallHandler implementation for execution of system calls in the StarkNet OS
 #[derive(Debug)]
@@ -44,11 +49,7 @@ impl SyscallHandlerWrapper {
         syscall_handler.syscall_ptr
     }
 
-    pub fn execute_syscall(
-        &self,
-        vm: &mut VirtualMachine,
-        syscall_ptr: Relocatable,
-    ) -> Result<(), HintError> {
+    pub fn execute_syscall(&self, vm: &mut VirtualMachine, syscall_ptr: Relocatable) -> Result<(), HintError> {
         let mut syscall_handler = self.syscall_handler.write().unwrap();
         let ptr = &mut syscall_handler
             .syscall_ptr
@@ -56,9 +57,7 @@ impl SyscallHandlerWrapper {
 
         assert_eq!(*ptr, syscall_ptr);
 
-        let selector = SyscallSelector::try_from(felt_from_ptr(vm, ptr)?)?;
-
-        match selector {
+        match SyscallSelector::try_from(felt_from_ptr(vm, ptr)?)? {
             SyscallSelector::CallContract => run_handler::<CallContractHandler>(ptr, vm),
         }?;
 

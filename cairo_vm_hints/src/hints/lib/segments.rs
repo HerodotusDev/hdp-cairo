@@ -21,8 +21,7 @@ pub fn segments_add(
     insert_value_into_ap(vm, segment)
 }
 
-pub const SEGMENTS_ADD_EVM_MEMORIZER_SEGMENT_INDEX: &str =
-    "memory[ap] = to_felt_or_relocatable(ids.evm_memorizer.address_.segment_index)";
+pub const SEGMENTS_ADD_EVM_MEMORIZER_SEGMENT_INDEX: &str = "memory[ap] = to_felt_or_relocatable(ids.evm_memorizer.address_.segment_index)";
 
 pub fn segments_add_evm_memorizer_segment_index(
     vm: &mut VirtualMachine,
@@ -30,17 +29,11 @@ pub fn segments_add_evm_memorizer_segment_index(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let memorizer = get_relocatable_from_var_name(
-        "evm_memorizer",
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
-    )?;
+    let memorizer = get_relocatable_from_var_name("evm_memorizer", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     insert_value_into_ap(vm, Felt252::from(memorizer.segment_index))
 }
 
-pub const SEGMENTS_ADD_EVM_MEMORIZER_OFFSET: &str =
-    "memory[ap] = to_felt_or_relocatable(ids.evm_memorizer.address_.offset)";
+pub const SEGMENTS_ADD_EVM_MEMORIZER_OFFSET: &str = "memory[ap] = to_felt_or_relocatable(ids.evm_memorizer.address_.offset)";
 
 pub fn segments_add_evm_memorizer_offset(
     vm: &mut VirtualMachine,
@@ -48,17 +41,11 @@ pub fn segments_add_evm_memorizer_offset(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let memorizer = get_relocatable_from_var_name(
-        "evm_memorizer",
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
-    )?;
+    let memorizer = get_relocatable_from_var_name("evm_memorizer", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     insert_value_into_ap(vm, Felt252::from(memorizer.offset))
 }
 
-pub const SEGMENTS_ADD_EVM_STARKNET_MEMORIZER_INDEX: &str =
-    "memory[ap] = to_felt_or_relocatable(ids.starknet_memorizer.address_.segment_index)";
+pub const SEGMENTS_ADD_EVM_STARKNET_MEMORIZER_INDEX: &str = "memory[ap] = to_felt_or_relocatable(ids.starknet_memorizer.address_.segment_index)";
 
 pub fn segments_add_evm_starknet_memorizer_index(
     vm: &mut VirtualMachine,
@@ -66,17 +53,11 @@ pub fn segments_add_evm_starknet_memorizer_index(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let memorizer = get_relocatable_from_var_name(
-        "starknet_memorizer",
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
-    )?;
+    let memorizer = get_relocatable_from_var_name("starknet_memorizer", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     insert_value_into_ap(vm, Felt252::from(memorizer.segment_index))
 }
 
-pub const SEGMENTS_ADD_STARKNET_MEMORIZER_OFFSET: &str =
-    "memory[ap] = to_felt_or_relocatable(ids.starknet_memorizer.address_.offset)";
+pub const SEGMENTS_ADD_STARKNET_MEMORIZER_OFFSET: &str = "memory[ap] = to_felt_or_relocatable(ids.starknet_memorizer.address_.offset)";
 
 pub fn segments_add_starknet_memorizer_offset(
     vm: &mut VirtualMachine,
@@ -84,11 +65,6 @@ pub fn segments_add_starknet_memorizer_offset(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let memorizer = get_relocatable_from_var_name(
-        "starknet_memorizer",
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
-    )?;
+    let memorizer = get_relocatable_from_var_name("starknet_memorizer", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     insert_value_into_ap(vm, Felt252::from(memorizer.offset))
 }

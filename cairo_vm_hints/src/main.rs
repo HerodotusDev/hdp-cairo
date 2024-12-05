@@ -1,7 +1,9 @@
 #![forbid(unsafe_code)]
+#![allow(async_fn_in_trait)]
 pub mod cairo_types;
 pub mod hint_processor;
 pub mod hints;
+pub mod provider;
 pub mod syscall_handler;
 
 use cairo_vm::cairo_run::CairoRunConfig;
@@ -43,8 +45,7 @@ fn run(args: impl Iterator<Item = String>) -> Result<(), HdpOsError> {
     let program_inputs = std::fs::read(args.program_input).map_err(HdpOsError::IO)?;
 
     // Load the Program
-    let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))
-        .map_err(|e| HdpOsError::Runner(e.into()))?;
+    let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint)).map_err(|e| HdpOsError::Runner(e.into()))?;
 
     // Init cairo runner
     let mut cairo_runner = CairoRunner::new(

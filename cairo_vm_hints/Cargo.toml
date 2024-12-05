@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+alloy.workspace = true
+alloy-rlp.workspace = true
 bincode.workspace = true
 cairo-lang-casm.workspace = true
 cairo-lang-starknet-classes.workspace = true
@@ -21,3 +23,5 @@ starknet-crypto.workspace = true
 starknet-types-core.workspace = true
 thiserror.workspace = true
 tiny-keccak.workspace = true
+tokio = { workspace = true }
+strum_macros.workspace = true

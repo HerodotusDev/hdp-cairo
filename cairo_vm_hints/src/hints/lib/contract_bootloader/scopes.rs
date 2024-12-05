@@ -7,8 +7,7 @@ use cairo_vm::{
 };
 use std::{any::Any, collections::HashMap};
 
-pub const ENTER_SCOPE_SYSCALL_HANDLER: &str =
-    "vm_enter_scope({'syscall_handler': syscall_handler})";
+pub const ENTER_SCOPE_SYSCALL_HANDLER: &str = "vm_enter_scope({'syscall_handler': syscall_handler})";
 
 pub fn enter_scope_syscall_handler(
     _vm: &mut VirtualMachine,
@@ -16,12 +15,8 @@ pub fn enter_scope_syscall_handler(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let syscall_handler: Box<dyn Any> =
-        Box::new(exec_scopes.get::<SyscallHandlerWrapper>(vars::scopes::SYSCALL_HANDLER)?);
-    exec_scopes.enter_scope(HashMap::from_iter([(
-        vars::scopes::SYSCALL_HANDLER.to_string(),
-        syscall_handler,
-    )]));
+    let syscall_handler: Box<dyn Any> = Box::new(exec_scopes.get::<SyscallHandlerWrapper>(vars::scopes::SYSCALL_HANDLER)?);
+    exec_scopes.enter_scope(HashMap::from_iter([(vars::scopes::SYSCALL_HANDLER.to_string(), syscall_handler)]));
 
     Ok(())
 }

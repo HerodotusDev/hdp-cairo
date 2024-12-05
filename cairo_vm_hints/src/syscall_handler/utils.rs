@@ -4,9 +4,7 @@ use cairo_vm::{
         relocatable::{MaybeRelocatable, Relocatable},
     },
     vm::{
-        errors::{
-            hint_errors::HintError, memory_errors::MemoryError, vm_errors::VirtualMachineError,
-        },
+        errors::{hint_errors::HintError, memory_errors::MemoryError, vm_errors::VirtualMachineError},
         vm_core::VirtualMachine,
     },
     Felt252,
@@ -23,16 +21,11 @@ impl TryFrom<Felt252> for SyscallSelector {
     fn try_from(raw_selector: Felt252) -> Result<Self, Self::Error> {
         // Remove leading zero bytes from selector.
         let selector_bytes = raw_selector.to_bytes_be();
-        let first_non_zero = selector_bytes
-            .iter()
-            .position(|&byte| byte != b'\0')
-            .unwrap_or(32);
+        let first_non_zero = selector_bytes.iter().position(|&byte| byte != b'\0').unwrap_or(32);
 
         match &selector_bytes[first_non_zero..] {
             b"CallContract" => Ok(Self::CallContract),
-            _ => Err(HintError::CustomHint(
-                format!("Unknown syscall selector: {}", raw_selector).into(),
-            )),
+            _ => Err(HintError::CustomHint(format!("Unknown syscall selector: {}", raw_selector).into())),
         }
     }
 }
@@ -48,10 +41,7 @@ pub fn ignore_felt(ptr: &mut Relocatable) -> SyscallResult<()> {
     Ok(())
 }
 
-pub fn read_felt_array<TErr>(
-    vm: &VirtualMachine,
-    ptr: &mut Relocatable,
-) -> Result<Vec<Felt252>, TErr>
+pub fn read_felt_array<TErr>(vm: &VirtualMachine, ptr: &mut Relocatable) -> Result<Vec<Felt252>, TErr>
 where
     TErr: From<VirtualMachineError> + From<MemoryError> + From<MathError>,
 {
@@ -76,29 +66,18 @@ pub fn read_calldata(vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResul
     read_felt_array::<SyscallExecutionError>(vm, ptr)
 }
 
-pub fn read_call_params(
-    vm: &VirtualMachine,
-    ptr: &mut Relocatable,
-) -> SyscallResult<(Felt252, Vec<Felt252>)> {
+pub fn read_call_params(vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<(Felt252, Vec<Felt252>)> {
     let function_selector = felt_from_ptr(vm, ptr)?;
     let calldata = read_calldata(vm, ptr)?;
 
     Ok((function_selector, calldata))
 }
 
-pub fn write_felt(
-    vm: &mut VirtualMachine,
-    ptr: &mut Relocatable,
-    felt: Felt252,
-) -> Result<(), MemoryError> {
+pub fn write_felt(vm: &mut VirtualMachine, ptr: &mut Relocatable, felt: Felt252) -> Result<(), MemoryError> {
     write_maybe_relocatable(vm, ptr, felt)
 }
 
-pub fn write_maybe_relocatable<T: Into<MaybeRelocatable>>(
-    vm: &mut VirtualMachine,
-    ptr: &mut Relocatable,
-    value: T,
-) -> Result<(), MemoryError> {
+pub fn write_maybe_relocatable<T: Into<MaybeRelocatable>>(vm: &mut VirtualMachine, ptr: &mut Relocatable, value: T) -> Result<(), MemoryError> {
     vm.insert_value(*ptr, value.into())?;
     *ptr = (*ptr + 1)?;
     Ok(())
@@ -163,11 +142,7 @@ pub struct ReadOnlySegment {
     pub length: usize,
 }
 
-pub fn write_segment(
-    vm: &mut VirtualMachine,
-    ptr: &mut Relocatable,
-    segment: ReadOnlySegment,
-) -> SyscallResult<()> {
+pub fn write_segment(vm: &mut VirtualMachine, ptr: &mut Relocatable, segment: ReadOnlySegment) -> SyscallResult<()> {
     write_maybe_relocatable(vm, ptr, segment.start_ptr)?;
     let segment_end_ptr = (segment.start_ptr + segment.length)?;
     write_maybe_relocatable(vm, ptr, segment_end_ptr)?;
@@ -181,29 +156,17 @@ pub trait SyscallHandler {
     type Response;
     fn read_request(vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Request>;
     fn execute(request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response>;
-    fn write_response(
-        response: Self::Response,
-        vm: &mut VirtualMachine,
-        ptr: &mut Relocatable,
-    ) -> WriteResponseResult;
+    fn write_response(response: Self::Response, vm: &mut VirtualMachine, ptr: &mut Relocatable) -> WriteResponseResult;
 }
 
-fn write_failure(
-    gas_counter: Felt252,
-    error_data: Vec<Felt252>,
-    vm: &mut VirtualMachine,
-    ptr: &mut Relocatable,
-) -> SyscallResult<()> {
+fn write_failure(gas_counter: Felt252, error_data: Vec<Felt252>, vm: &mut VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<()> {
     write_felt(vm, ptr, gas_counter)?;
     // 1 to indicate failure.
     write_felt(vm, ptr, Felt252::ONE)?;
 
     // Write the error data to a new memory segment.
     let revert_reason_start = vm.add_memory_segment();
-    let revert_reason_end = vm.load_data(
-        revert_reason_start,
-        &error_data.into_iter().map(Into::into).collect::<Vec<_>>(),
-    )?;
+    let revert_reason_end = vm.load_data(revert_reason_start, &error_data.into_iter().map(Into::into).collect::<Vec<_>>())?;
 
     // Write the start and end pointers of the error data.
     write_maybe_relocatable(vm, ptr, revert_reason_start)?;
@@ -212,13 +175,9 @@ fn write_failure(
     Ok(())
 }
 
-pub const OUT_OF_GAS_ERROR: &str =
-    "0x000000000000000000000000000000000000000000004f7574206f6620676173";
+pub const OUT_OF_GAS_ERROR: &str = "0x000000000000000000000000000000000000000000004f7574206f6620676173";
 
-pub fn run_handler<SH>(
-    syscall_ptr: &mut Relocatable,
-    vm: &mut VirtualMachine,
-) -> Result<(), HintError>
+pub fn run_handler<SH>(syscall_ptr: &mut Relocatable, vm: &mut VirtualMachine) -> Result<(), HintError>
 where
     SH: SyscallHandler,
 {

@@ -19,31 +19,16 @@ pub fn load_parmas(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let params = exec_scopes.get::<Vec<Param>>(vars::scopes::PARAMS)?;
-    insert_value_from_var_name(
-        vars::ids::PARAMS_LEN,
-        params.len(),
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
-    )?;
+    insert_value_from_var_name(vars::ids::PARAMS_LEN, params.len(), vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    let params_base = get_ptr_from_var_name(
-        vars::ids::PARAMS,
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
-    )?;
+    let params_base = get_ptr_from_var_name(vars::ids::PARAMS, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     write_params(vm, params_base, params)?;
 
     Ok(())
 }
 
-pub fn write_params(
-    vm: &mut VirtualMachine,
-    ptr: Relocatable,
-    params: Vec<Param>,
-) -> Result<(), HintError> {
+pub fn write_params(vm: &mut VirtualMachine, ptr: Relocatable, params: Vec<Param>) -> Result<(), HintError> {
     for (idx, param) in params.into_iter().enumerate() {
         vm.insert_value((ptr + idx)?, param.value)?;
     }

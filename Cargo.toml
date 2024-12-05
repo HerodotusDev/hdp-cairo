@@ -5,6 +5,7 @@ members = ["cairo_vm_hints"]
 
 
 [workspace.dependencies]
+alloy = { version = "0.7.2", features = ["full"] }
 bincode = { version = "2.0.0-rc.3", default-features = false, features = ["serde"] }
 cairo-lang-casm = { version = "2.9.0-dev.0", default-features = false }
 cairo-lang-starknet-classes = { version = "2.9.0-dev.0" }
@@ -22,3 +23,6 @@ starknet-crypto = "0.7.2"
 starknet-types-core = "0.1.7"
 thiserror = "1.0.64"
 tiny-keccak = { version = "2.0.2", features = ["keccak"] }
+tokio = { version = "1.41.1", features = ["full"] }
+alloy-rlp = { version = "0.3.5", features = ["derive"] }
+strum_macros = "0.26.4"
