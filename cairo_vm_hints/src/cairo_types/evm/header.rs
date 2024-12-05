@@ -1,9 +1,10 @@
-use crate::cairo_types::structs::Uint256;
+use crate::{cairo_types::structs::Uint256, syscall_handler::utils::SyscallExecutionError};
 use alloy::{consensus::Header, primitives::keccak256};
 use alloy_rlp::{Decodable, Encodable};
+use cairo_vm::Felt252;
 use strum_macros::FromRepr;
 
-#[derive(FromRepr)]
+#[derive(FromRepr, Debug)]
 pub enum FunctionId {
     Parent = 0,
     Uncle = 1,
@@ -34,11 +35,11 @@ impl CairoHeader {
         Self(value)
     }
 
-    pub fn get_parent(&self) -> Uint256 {
+    pub fn parent(&self) -> Uint256 {
         self.0.parent_hash.into()
     }
 
-    pub fn get_uncle(&self) -> Uint256 {
+    pub fn uncle(&self) -> Uint256 {
         self.0.ommers_hash.into()
     }
 
@@ -60,8 +61,8 @@ impl CairoHeader {
 
     pub fn handle(&self, function_id: FunctionId) -> Uint256 {
         match function_id {
-            FunctionId::Parent => self.get_parent(),
-            FunctionId::Uncle => self.get_uncle(),
+            FunctionId::Parent => self.parent(),
+            FunctionId::Uncle => self.uncle(),
             _ => Uint256::default(),
         }
     }
@@ -70,5 +71,19 @@ impl CairoHeader {
 impl From<Header> for CairoHeader {
     fn from(value: Header) -> Self {
         Self(value)
+    }
+}
+
+impl TryFrom<Felt252> for FunctionId {
+    type Error = SyscallExecutionError;
+    fn try_from(value: Felt252) -> Result<Self, Self::Error> {
+        Self::from_repr(value.try_into().map_err(|e| Self::Error::InvalidSyscallInput {
+            input: value,
+            info: format!("{}", e),
+        })?)
+        .ok_or(Self::Error::InvalidSyscallInput {
+            input: value,
+            info: "Invalid function identifier".to_string(),
+        })
     }
 }

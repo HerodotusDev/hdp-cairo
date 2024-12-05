@@ -12,6 +12,8 @@ use call_contract::CallContractHandler;
 use std::{rc::Rc, sync::RwLock};
 use utils::{felt_from_ptr, run_handler, SyscallSelector};
 
+pub(crate) const RPC: &str = "RPC";
+
 /// SyscallHandler implementation for execution of system calls in the StarkNet OS
 #[derive(Debug)]
 pub struct HDPSyscallHandler {
@@ -55,9 +57,7 @@ impl SyscallHandlerWrapper {
 
         assert_eq!(*ptr, syscall_ptr);
 
-        let selector = SyscallSelector::try_from(felt_from_ptr(vm, ptr)?)?;
-
-        match selector {
+        match SyscallSelector::try_from(felt_from_ptr(vm, ptr)?)? {
             SyscallSelector::CallContract => run_handler::<CallContractHandler>(ptr, vm),
         }?;
 

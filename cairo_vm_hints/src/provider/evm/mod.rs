@@ -38,6 +38,7 @@ impl EVMProviderTrait for EVMProvider {
         batch.send().await?;
         fut.await
     }
+
     async fn get_block(&self, block_number: BlockNumber) -> Result<Block, RpcError<TransportErrorKind>> {
         let mut batch = self.client.new_batch();
         let fut = batch.add_call(
@@ -47,19 +48,22 @@ impl EVMProviderTrait for EVMProvider {
         batch.send().await?;
         fut.await
     }
+
     async fn get_transaction_receipt(&self, hash: B256) -> Result<Receipt, RpcError<TransportErrorKind>> {
         let mut batch = self.client.new_batch();
         let fut = batch.add_call("eth_getTransactionReceipt", &json!([hash.encode_hex_with_prefix()]))?;
         batch.send().await?;
         fut.await
     }
+
     async fn get_transaction(&self, hash: B256) -> Result<Transaction, RpcError<TransportErrorKind>> {
         let mut batch = self.client.new_batch();
         let fut = batch.add_call("eth_getTransactionByHash", &json!([hash.encode_hex_with_prefix()]))?;
         batch.send().await?;
         fut.await
     }
-    async fn get_storage(&self, address: Address, key: StorageKey, block_number: BlockNumber) -> Result<StorageValue, RpcError<TransportErrorKind>> {
+
+    async fn get_storage(&self, address: Address, block_number: BlockNumber, key: StorageKey) -> Result<StorageValue, RpcError<TransportErrorKind>> {
         let mut batch = self.client.new_batch();
         let fut = batch.add_call(
             "eth_getStorageAt",

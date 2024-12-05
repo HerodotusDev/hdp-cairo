@@ -7,7 +7,7 @@ use alloy::{
 pub trait EVMProviderTrait {
     async fn get_account(&self, address: Address, block_number: BlockNumber) -> Result<EIP1186AccountProofResponse, RpcError<TransportErrorKind>>;
     async fn get_block(&self, block_number: BlockNumber) -> Result<Block, RpcError<TransportErrorKind>>;
-    async fn get_storage(&self, address: Address, key: StorageKey, block_number: BlockNumber) -> Result<StorageValue, RpcError<TransportErrorKind>>;
+    async fn get_storage(&self, address: Address, block_number: BlockNumber, key: StorageKey) -> Result<StorageValue, RpcError<TransportErrorKind>>;
     async fn get_transaction_receipt(&self, hash: B256) -> Result<Receipt, RpcError<TransportErrorKind>>;
     async fn get_transaction(&self, hash: B256) -> Result<Transaction, RpcError<TransportErrorKind>>;
 }
