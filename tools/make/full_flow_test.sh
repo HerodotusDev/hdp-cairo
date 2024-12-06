@@ -39,7 +39,7 @@ cairo-compile --cairo_path="packages/eth_essentials" "src/hdp.cairo" --output "b
 
 # Clone the repository if the directory doesn't exist
 if [ ! -d "hdp-test" ]; then
-    git clone https://github.com/HerodotusDev/hdp-test && cd hdp-test && git checkout starknet && cd ..
+    git clone https://github.com/HerodotusDev/hdp-test
 fi
 echo "Starting tests..."
 # Use find to locate all input.json files in hdp-test/fixtures directory and run them in parallel
