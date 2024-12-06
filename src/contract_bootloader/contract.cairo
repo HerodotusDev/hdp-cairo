@@ -39,7 +39,7 @@ func compute_contract{
     // Fetch contract data form hints.
     %{
         from starkware.starknet.core.os.contract_class.compiled_class_hash import create_bytecode_segment_structure
-        from src.contract_bootloader.contract_class.compiled_class_hash_utils import get_compiled_class_struct
+        from contract_bootloader.contract_class.compiled_class_hash_utils import get_compiled_class_struct
 
         bytecode_segment_structure = create_bytecode_segment_structure(
             bytecode=compiled_class.bytecode,

@@ -172,7 +172,7 @@ func execute_entry_point{
 
     %{
         if 'syscall_handler' not in globals():
-            from src.contract_bootloader.syscall_handler import SyscallHandler
+            from contract_bootloader.syscall_handler import SyscallHandler
             if '__dict_manager' not in globals():
                 from starkware.cairo.common.dict import DictManager
                 __dict_manager = DictManager()
