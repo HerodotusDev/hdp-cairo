@@ -88,6 +88,10 @@ impl CustomHintProcessor {
         hints.insert(lib::decoder::evm::has_type_prefix::HINT_HAS_TYPE_PREFIX.into(), lib::decoder::evm::has_type_prefix::hint_has_type_prefix);
         hints.insert(lib::decoder::evm::is_byzantium::HINT_IS_BYZANTIUM.into(), lib::decoder::evm::is_byzantium::hint_is_byzantium);
         hints.insert(lib::decoder::evm::v_is_encoded::HINT_V_IS_ENCODED.into(), lib::decoder::evm::v_is_encoded::hint_v_is_encoded);
+        hints.insert(lib::verifiers::evm::account_verifier::HINT_N_ACCOUNTS.into(), lib::verifiers::evm::account_verifier::hint_n_accounts);    
+        hints.insert(lib::verifiers::evm::account_verifier::HINT_N_PROOFS.into(), lib::verifiers::evm::account_verifier::hint_n_proofs);
+        hints.insert(lib::verifiers::evm::account_verifier::HINT_ACCOUNT_KEY.into(), lib::verifiers::evm::account_verifier::hint_account_key);
+        hints.insert(lib::verifiers::evm::account_verifier::HINT_GET_MPT_PROOF.into(), lib::verifiers::evm::account_verifier::hint_get_mpt_proof);
         hints.insert(lib::rlp::divmod::HINT_DIVMOD_RLP.into(), lib::rlp::divmod::hint_divmod_rlp);
         hints.insert(lib::rlp::divmod::HINT_DIVMOD_VALUE.into(), lib::rlp::divmod::hint_divmod_value);
         hints.insert(lib::rlp::item_type::HINT_IS_LONG.into(), lib::rlp::item_type::hint_is_long);
