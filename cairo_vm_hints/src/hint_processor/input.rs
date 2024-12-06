@@ -22,13 +22,9 @@ impl CustomHintProcessor {
         _hint_data: &HintProcessorData,
         _constants: &HashMap<String, Felt252>,
     ) -> Result<(), HintError> {
-        let hdp_dry_run_input: HDPDryRunInput = serde_json::from_value(self.private_inputs.clone())
-            .map_err(|_| HintError::WrongHintData)?;
+        let hdp_dry_run_input: HDPDryRunInput = serde_json::from_value(self.private_inputs.clone()).map_err(|_| HintError::WrongHintData)?;
         exec_scopes.insert_value::<Vec<Param>>(vars::scopes::PARAMS, hdp_dry_run_input.params);
-        exec_scopes.insert_value::<CasmContractClass>(
-            vars::scopes::COMPILED_CLASS,
-            hdp_dry_run_input.compiled_class,
-        );
+        exec_scopes.insert_value::<CasmContractClass>(vars::scopes::COMPILED_CLASS, hdp_dry_run_input.compiled_class);
         Ok(())
     }
 }

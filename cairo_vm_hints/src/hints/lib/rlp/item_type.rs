@@ -21,21 +21,14 @@ pub fn hint_is_long(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let first_byte = get_integer_from_var_name(
-        vars::ids::FIRST_BYTE,
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
-    )?;
+    let first_byte = get_integer_from_var_name(vars::ids::FIRST_BYTE, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     let insert = if FELT_C0 <= first_byte && first_byte <= FELT_F6 {
         Felt252::ZERO
     } else if FELT_F7 <= first_byte && first_byte <= FELT_FF {
         Felt252::ONE
     } else {
-        return Err(HintError::UnknownIdentifier(
-            "Invalid RLP list".to_string().into_boxed_str(),
-        ));
+        return Err(HintError::UnknownIdentifier("Invalid RLP list".to_string().into_boxed_str()));
     };
 
     insert_value_from_var_name(
@@ -55,12 +48,7 @@ pub fn hint_item_type(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let current_item = get_integer_from_var_name(
-        vars::ids::CURRENT_ITEM,
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
-    )?;
+    let current_item = get_integer_from_var_name(vars::ids::CURRENT_ITEM, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     let insert = if current_item <= FELT_7F {
         Felt252::ZERO
@@ -73,9 +61,7 @@ pub fn hint_item_type(
     } else if FELT_F7 <= current_item && current_item <= FELT_FF {
         FELT_4 // long list
     } else {
-        return Err(HintError::UnknownIdentifier(
-            "Invalid RLP item".to_string().into_boxed_str(),
-        ));
+        return Err(HintError::UnknownIdentifier("Invalid RLP item".to_string().into_boxed_str()));
     };
 
     insert_value_from_var_name(

@@ -11,8 +11,7 @@ use std::{cmp::Ordering, collections::HashMap};
 
 const BYZANTIUM_START_BLOCK_NUMBER: Felt252 = Felt252::from_hex_unchecked("0x42AE50");
 
-pub const HINT_IS_BYZANTIUM: &str =
-    "ids.is_byzantium = 1 if ids.block_number >= ids.chain_info.byzantium else 0";
+pub const HINT_IS_BYZANTIUM: &str = "ids.is_byzantium = 1 if ids.block_number >= ids.chain_info.byzantium else 0";
 
 pub fn hint_is_byzantium(
     vm: &mut VirtualMachine,
@@ -20,13 +19,7 @@ pub fn hint_is_byzantium(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let insert = match get_integer_from_var_name(
-        "block_number",
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
-    )?
-    .cmp(&BYZANTIUM_START_BLOCK_NUMBER)
+    let insert = match get_integer_from_var_name("block_number", vm, &hint_data.ids_data, &hint_data.ap_tracking)?.cmp(&BYZANTIUM_START_BLOCK_NUMBER)
     {
         Ordering::Less => Felt252::ZERO,
         Ordering::Equal | Ordering::Greater => Felt252::ONE,

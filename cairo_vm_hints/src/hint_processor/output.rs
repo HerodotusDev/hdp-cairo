@@ -1,10 +1,7 @@
 use super::CustomHintProcessor;
 use crate::hints::vars;
 use cairo_vm::{
-    hint_processor::builtin_hint_processor::{
-        builtin_hint_processor_definition::HintProcessorData,
-        hint_utils::get_relocatable_from_var_name,
-    },
+    hint_processor::builtin_hint_processor::{builtin_hint_processor_definition::HintProcessorData, hint_utils::get_relocatable_from_var_name},
     types::exec_scope::ExecutionScopes,
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
@@ -21,12 +18,7 @@ impl CustomHintProcessor {
         hint_data: &HintProcessorData,
         _constants: &HashMap<String, Felt252>,
     ) -> Result<(), HintError> {
-        let result_ptr = get_relocatable_from_var_name(
-            vars::ids::RESULT,
-            vm,
-            &hint_data.ids_data,
-            &hint_data.ap_tracking,
-        )?;
+        let result_ptr = get_relocatable_from_var_name(vars::ids::RESULT, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
         let result = vm
             .get_continuous_range(result_ptr, 2)?
