@@ -61,7 +61,7 @@ func main{
     // Fetch contract data form hints.
     %{
         from starkware.starknet.core.os.contract_class.compiled_class_hash import create_bytecode_segment_structure
-        from src.contract_bootloader.contract_class.compiled_class_hash_utils import get_compiled_class_struct
+        from contract_bootloader.contract_class.compiled_class_hash_utils import get_compiled_class_struct
 
         bytecode_segment_structure = create_bytecode_segment_structure(
             bytecode=compiled_class.bytecode,
@@ -104,7 +104,7 @@ func main{
     local pow2_array: felt* = nondet %{ segments.add() %};
 
     %{
-        from src.contract_bootloader.dryrun_syscall_handler import DryRunSyscallHandler
+        from contract_bootloader.dryrun_syscall_handler import DryRunSyscallHandler
 
         if '__dict_manager' not in globals():
                 from starkware.cairo.common.dict import DictManager

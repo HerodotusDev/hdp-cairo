@@ -11,13 +11,13 @@ from tools.py.types.evm.header import (
 )
 from tools.py.types.evm.receipt import Receipt
 import rlp
+import os
 
 
 @pytest.fixture
 def evm_provider():
-    return EvmProvider(
-        "https://mainnet.infura.io/v3/66dda5ed7d56432a82c8da4ac54fde8e", 1
-    )
+    RPC_URL = os.getenv("RPC_URL_MAINNET")
+    return EvmProvider(RPC_URL, 1)
 
 
 def test_legacy_header(evm_provider):
