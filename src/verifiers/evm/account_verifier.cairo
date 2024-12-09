@@ -22,7 +22,7 @@ func verify_accounts{
 }() {
     alloc_locals;
     local n_accounts: felt;
-    %{ ids.n_accounts = len(batch["accounts"]) %}
+    %{ ids.n_accounts = len(batch.accounts) %}
 
     verify_accounts_inner(n_accounts, 0);
 

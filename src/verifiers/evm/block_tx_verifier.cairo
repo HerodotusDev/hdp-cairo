@@ -30,7 +30,7 @@ func verify_block_tx_proofs{
     alloc_locals;
 
     local n_tx_proofs: felt;
-    %{ ids.n_tx_proofs = len(batch["transactions"]) %}
+    %{ ids.n_tx_proofs = len(batch.transactions) %}
 
     verify_block_tx_proofs_inner(n_tx_proofs, 0);
     return ();

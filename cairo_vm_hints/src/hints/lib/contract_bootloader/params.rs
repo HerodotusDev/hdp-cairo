@@ -1,4 +1,4 @@
-use crate::{hint_processor::models::Param, hints::vars};
+use crate::{hint_processor::models::param::Param, hints::vars};
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData,

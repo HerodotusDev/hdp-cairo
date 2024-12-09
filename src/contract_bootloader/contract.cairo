@@ -32,13 +32,21 @@ func compute_contract{
     starknet_memorizer: DictAccess*,
     starknet_decoder_ptr: felt***,
     starknet_key_hasher_ptr: felt**,
-}(inputs: felt*, inputs_len: felt) -> (result: Uint256, program_hash: felt) {
+}() -> (result: Uint256, program_hash: felt) {
     alloc_locals;
+
+    local params_len: felt;
+    let (params) = alloc();
     local compiled_class: CompiledClass*;
 
     %{
         from contract_bootloader.contract_class.compiled_class_hash_utils import get_compiled_class_struct
         ids.compiled_class = segments.gen_arg(get_compiled_class_struct(compiled_class=compiled_class))
+    %}
+
+    %{
+        ids.params_len = len(params)
+        segments.write_arg(ids.params, [param.value for param in params])
     %}
 
     let (builtin_costs: felt*) = alloc();

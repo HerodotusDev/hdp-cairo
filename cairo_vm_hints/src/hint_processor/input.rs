@@ -1,5 +1,5 @@
 use super::{
-    models::{HDPDryRunInput, Param},
+    models::{param::Param, HDPDryRunInput},
     CustomHintProcessor,
 };
 use crate::hints::vars;

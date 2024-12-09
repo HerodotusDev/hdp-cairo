@@ -1,4 +1,3 @@
-use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use cairo_vm::Felt252;
 use serde::{Deserialize, Serialize};
 
@@ -13,10 +12,4 @@ pub struct Param {
 pub enum Visibility {
     Public,
     Private,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub struct HDPDryRunInput {
-    pub params: Vec<Param>,
-    pub compiled_class: CasmContractClass,
 }

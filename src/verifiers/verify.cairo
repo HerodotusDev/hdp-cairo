@@ -26,7 +26,7 @@ func run_state_verification{
 }() -> (mmr_metas_len: felt) {
     alloc_locals;
     local batch_len: felt;
-    %{ ids.batch_len = len(program_input["proofs"]) %}
+    %{ ids.batch_len = len(proofs) %}
 
     let (mmr_meta_idx) = run_state_verification_inner(batch_len, 0);
     return (mmr_metas_len=mmr_meta_idx);
@@ -49,19 +49,12 @@ func run_state_verification_inner{
     }
 
     local chain_id: felt;
-    %{ ids.chain_id = int(program_input["proofs"][ids.batch_len - 1]["chain_id"], 16) %}
+    %{ ids.chain_id = proofs[ids.batch_len - 1].mmr_meta.chain_id %}
 
     let (chain_info) = fetch_chain_info(chain_id);
 
     if (chain_info.layout == 0) {
-        // EVM
-        %{ print("EVM") %}
-        %{
-            vm_enter_scope({
-                       'batch': program_input["proofs"][ids.batch_len - 1],
-                       '__dict_manager': __dict_manager
-                   })
-        %}
+        %{ vm_enter_scope({'batch': proofs[ids.batch_len - 1], '__dict_manager': __dict_manager}) %}
         with chain_info {
             let mmr_meta_idx = evm_run_state_verification(mmr_meta_idx);
         }
@@ -69,14 +62,7 @@ func run_state_verification_inner{
 
         return run_state_verification_inner(batch_len=batch_len - 1, mmr_meta_idx=mmr_meta_idx);
     } else {
-        // STARKNET
-        %{ print("STARKNET") %}
-        %{
-            vm_enter_scope({
-                       'batch': program_input["proofs"][ids.batch_len - 1],
-                       '__dict_manager': __dict_manager
-                   })
-        %}
+        %{ vm_enter_scope({'batch': proofs[ids.batch_len - 1], '__dict_manager': __dict_manager}) %}
         with chain_info {
             let mmr_meta_idx = starknet_run_state_verification(mmr_meta_idx);
         }
