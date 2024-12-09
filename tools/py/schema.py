@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional, Union
+from typing import List
 from marshmallow import ValidationError
 import marshmallow_dataclass
 from dataclasses import field
@@ -14,16 +14,19 @@ from starkware.starkware_utils.marshmallow_dataclass_fields import (
 
 
 @marshmallow_dataclass.dataclass(frozen=True)
-class ProcessedMPTProof:
+class MPTProof:
     block_number: int
-    proof: List[str]
+    proof: List[str] = field(
+        metadata=additional_metadata(marshmallow_field=mfields.List(IntAsHex()))
+    )
 
 
 @marshmallow_dataclass.dataclass(frozen=True)
 class MMRMeta:
     id: int
-    root: str
     size: int
+    root: str
+    chain_id: int
     peaks: List[str] = field(
         metadata=additional_metadata(marshmallow_field=mfields.List(IntAsHex()))
     )
@@ -31,62 +34,51 @@ class MMRMeta:
 
 @marshmallow_dataclass.dataclass(frozen=True)
 class HeaderProof:
-    rlp: str
     leaf_idx: int
     mmr_path: List[str]
 
 
 @marshmallow_dataclass.dataclass(frozen=True)
-class AccountProof:
-    address: str
-    account_key: str
-    proofs: List[ProcessedMPTProof]
+class Header:
+    rlp: str
+    proof: HeaderProof
 
 
 @marshmallow_dataclass.dataclass(frozen=True)
-class StorageProof:
+class Account:
+    address: str
+    account_key: str
+    proof: MPTProof
+
+
+@marshmallow_dataclass.dataclass(frozen=True)
+class Storage:
     address: str
     slot: str
     storage_key: str
-    proofs: List[ProcessedMPTProof]
+    proof: MPTProof
 
 
 @marshmallow_dataclass.dataclass(frozen=True)
-class TransactionProof:
+class Transaction:
     key: str
-    block_number: int
-    proof: List[str]
+    proof: MPTProof
 
 
 @marshmallow_dataclass.dataclass(frozen=True)
-class ReceiptProof:
+class Receipt:
     key: str
-    block_number: int
-    proof: List[str]
+    proof: MPTProof
 
 
 @marshmallow_dataclass.dataclass(frozen=True)
-class Proofs(ValidatedMarshmallowDataclass):
+class Proof(ValidatedMarshmallowDataclass):
     mmr_meta: MMRMeta
-    headers: List[HeaderProof]
-    accounts: List[AccountProof]
-    storages: List[StorageProof]
-    transactions: List[TransactionProof]
-    transaction_receipts: List[ReceiptProof]
-
-
-@marshmallow_dataclass.dataclass(frozen=True)
-class Datalake:
-    task_bytes_len: int
-    encoded_task: List[int] = field(
-        metadata=additional_metadata(marshmallow_field=mfields.List(IntAsHex()))
-    )
-    datalake_bytes_len: int
-    encoded_datalake: List[int] = field(
-        metadata=additional_metadata(marshmallow_field=mfields.List(IntAsHex()))
-    )
-    datalake_type: int
-    property_type: int
+    headers: List[Header]
+    accounts: List[Account]
+    storages: List[Storage]
+    transactions: List[Transaction]
+    receipts: List[Receipt]
 
 
 class Visibility(Enum):
@@ -106,7 +98,7 @@ class VisibilityField(mfields.Field):
 
 
 @marshmallow_dataclass.dataclass(frozen=True)
-class Input:
+class Param:
     visibility: Visibility = field(
         metadata={"marshmallow_field": VisibilityField(required=True)}
     )
@@ -114,66 +106,25 @@ class Input:
 
 
 @marshmallow_dataclass.dataclass(frozen=True)
-class Module(ValidatedMarshmallowDataclass):
-    inputs: List[Input] = field(
-        metadata=additional_metadata(
-            marshmallow_field=mfields.List(mfields.Nested(Input.Schema))
-        )
-    )
-    encoded_task: List[int] = field(
-        metadata=additional_metadata(marshmallow_field=mfields.List(IntAsHex()))
-    )
-    task_bytes_len: int
-    module_class: CompiledClass
-
-
-@marshmallow_dataclass.dataclass(frozen=True)
-class DryRunModule(ValidatedMarshmallowDataclass):
-    inputs: List[Input] = field(
-        metadata=additional_metadata(
-            marshmallow_field=mfields.List(mfields.Nested(Input.Schema))
-        )
-    )
-    module_class: CompiledClass
-
-
-@marshmallow_dataclass.dataclass(frozen=True)
-class DatalakeTask:
-    datalake: Datalake
-
-
-@marshmallow_dataclass.dataclass(frozen=True)
-class ModuleTask:
-    module: Module
-
-
-@marshmallow_dataclass.dataclass(frozen=True)
-class InputTask(ValidatedMarshmallowDataclass):
-    task: Union[DatalakeTask, ModuleTask] = field(
-        metadata=additional_metadata(marshmallow_field=mfields.Raw())
-    )
-
-
-@marshmallow_dataclass.dataclass(frozen=True)
 class HDPInput(ValidatedMarshmallowDataclass):
-    cairo_run_output_path: str
-    task_root: int = field(metadata=additional_metadata(marshmallow_field=IntAsHex()))
-    proofs: Proofs
-    tasks: List[InputTask] = field(
+    proofs: List[Proof] = field(
         metadata=additional_metadata(
-            marshmallow_field=mfields.List(mfields.Nested(InputTask.Schema))
+            marshmallow_field=mfields.List(mfields.Nested(Proof.Schema))
         )
     )
-    result_root: Optional[int] = field(
-        default=None, metadata=additional_metadata(marshmallow_field=IntAsHex())
+    params: List[Param] = field(
+        metadata=additional_metadata(
+            marshmallow_field=mfields.List(mfields.Nested(Param.Schema))
+        )
     )
+    module_class: CompiledClass
 
 
 @marshmallow_dataclass.dataclass(frozen=True)
 class HDPDryRunInput(ValidatedMarshmallowDataclass):
-    dry_run_output_path: str
-    modules: List[DryRunModule] = field(
+    params: List[Param] = field(
         metadata=additional_metadata(
-            marshmallow_field=mfields.List(mfields.Nested(DryRunModule.Schema))
+            marshmallow_field=mfields.List(mfields.Nested(Param.Schema))
         )
     )
+    module_class: CompiledClass

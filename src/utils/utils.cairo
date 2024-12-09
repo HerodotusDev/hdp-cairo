@@ -22,13 +22,12 @@ from src.types import MMRMeta
 // The first 4 words are reserved for the tasks and results root.
 // The rest of the words are reserved for the MMR metas. Each MMR will contain 4 fields, and we can add an arbitrary amount of them.
 func write_output_ptr{output_ptr: felt*}(
-    mmr_metas: MMRMeta*, mmr_metas_len: felt, tasks_root: Uint256, results_root: Uint256
+    mmr_metas: MMRMeta*, mmr_metas_len: felt, program_hash: felt, result: Uint256
 ) {
-    assert [output_ptr] = results_root.low;
-    assert [output_ptr + 1] = results_root.high;
-    assert [output_ptr + 2] = tasks_root.low;
-    assert [output_ptr + 3] = tasks_root.high;
-    let output_ptr = output_ptr + 4;
+    assert [output_ptr + 0] = program_hash;
+    assert [output_ptr + 1] = result.low;
+    assert [output_ptr + 2] = result.high;
+    let output_ptr = output_ptr + 3;
 
     tempvar counter = 0;
 

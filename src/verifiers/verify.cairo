@@ -49,7 +49,7 @@ func run_state_verification_inner{
     }
 
     local chain_id: felt;
-    %{ ids.chain_id = int(program_input["proofs"][ids.batch_len - 1]["chain_id"], 16) %}
+    %{ ids.chain_id = proofs[ids.batch_len - 1].mmr_meta.chain_id %}
 
     let (chain_info) = fetch_chain_info(chain_id);
 
@@ -58,7 +58,7 @@ func run_state_verification_inner{
         %{ print("EVM") %}
         %{
             vm_enter_scope({
-                       'batch': program_input["proofs"][ids.batch_len - 1],
+                       'batch': proofs[ids.batch_len - 1],
                        '__dict_manager': __dict_manager
                    })
         %}
@@ -73,7 +73,7 @@ func run_state_verification_inner{
         %{ print("STARKNET") %}
         %{
             vm_enter_scope({
-                       'batch': program_input["proofs"][ids.batch_len - 1],
+                       'batch': proofs[ids.batch_len - 1],
                        '__dict_manager': __dict_manager
                    })
         %}

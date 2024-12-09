@@ -28,7 +28,7 @@ func verify_storage_items{
 }() {
     alloc_locals;
     local n_storage_items: felt;
-    %{ ids.n_storage_items = len(batch["storages"]) %}
+    %{ ids.n_storage_items = len(batch.storages) %}
 
     verify_storage_items_inner(n_storage_items, 0);
 

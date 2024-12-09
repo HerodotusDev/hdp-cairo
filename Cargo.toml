@@ -19,10 +19,12 @@ rand = "0.8"
 serde = "1.0.215"
 serde_json = "1.0.132"
 sha3 = "0.10.8"
-starknet-crypto = "0.7.2"
-starknet-types-core = "0.1.7"
 thiserror = "1.0.64"
 tiny-keccak = { version = "2.0.2", features = ["keccak"] }
 tokio = { version = "1.41.1", features = ["full"] }
 alloy-rlp = { version = "0.3.5", features = ["derive"] }
 strum_macros = "0.26.4"
+serde_with = { version = "3.11.0", features = ["hex"] }
+starknet-core = { version = "0.11.1", default-features = false }
+starknet-crypto = { version = "0.7.1", default-features = false }
+starknet-types-core = { version = "0.1.5", default-features = false }

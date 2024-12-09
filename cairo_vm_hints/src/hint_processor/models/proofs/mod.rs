@@ -16,7 +16,7 @@ use transaction::Transaction;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Proofs {
-    pub mmr_meta: Vec<MmrMeta>,
+    pub mmr_meta: MmrMeta,
     pub headers: Vec<Header>,
     pub accounts: Vec<Account>,
     pub storages: Vec<Storage>,

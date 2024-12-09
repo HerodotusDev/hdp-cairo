@@ -29,17 +29,12 @@ func validate_mmr_meta{range_check_ptr, poseidon_ptr: PoseidonBuiltin*, pow2_arr
     local peaks_len: felt;
 
     %{
-        def hex_to_int_array(hex_array):
-            return [int(x, 16) for x in hex_array]
-
-        # Load data from inputs
-        memory[ids.mmr_meta._reference_value] = mmr_batch["mmr_meta"]["id"]
-        memory[ids.mmr_meta._reference_value + 1] = int(mmr_batch["mmr_meta"]["root"], 16)
-        memory[ids.mmr_meta._reference_value + 2] = mmr_batch["mmr_meta"]["size"]
-        memory[ids.mmr_meta._reference_value + 3] = ids.chain_id
-
-        ids.peaks_len = len(mmr_batch["mmr_meta"]["peaks"])
-        segments.write_arg(ids.peaks, hex_to_int_array(mmr_batch["mmr_meta"]["peaks"]))
+        memory[ids.mmr_meta._reference_value + 0] = batch.mmr_meta.id
+        memory[ids.mmr_meta._reference_value + 1] = batch.mmr_meta.root
+        memory[ids.mmr_meta._reference_value + 2] = batch.mmr_meta.size
+        memory[ids.mmr_meta._reference_value + 3] = batch.mmr_meta.chain_id
+        ids.peaks_len = len(batch.mmr_meta.peaks)
+        segments.write_arg(ids.peaks, batch.mmr_meta.peaks)
     %}
 
     assert_mmr_size_is_valid(mmr_meta.size);
