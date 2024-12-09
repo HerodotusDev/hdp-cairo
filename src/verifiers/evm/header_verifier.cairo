@@ -93,12 +93,10 @@ func verify_headers_with_mmr_peaks{
     local rlp_len: felt;
     local leaf_idx: felt;
     %{
-        from tools.py.utils import hex_to_int_array
-
-        header = mmr_batch["headers"][ids.idx - 1]
-        segments.write_arg(ids.rlp, hex_to_int_array(header["rlp"]))
-        ids.rlp_len = len(header["rlp"])
-        ids.leaf_idx = header["proof"]["leaf_idx"]
+        header = batch.headers[ids.idx - 1]
+        ids.rlp_len = len(header.rlp)
+        segments.write_arg(ids.rlp, [int(x, 16) for x in header.rlp])
+        ids.leaf_idx = header.proof.leaf_idx
     %}
 
     // compute the hash of the header
@@ -123,9 +121,8 @@ func verify_headers_with_mmr_peaks{
     let (mmr_path) = alloc();
     local mmr_path_len: felt;
     %{
-        proof = header["proof"]
-        segments.write_arg(ids.mmr_path, hex_to_int_array(proof["mmr_path"]))
-        ids.mmr_path_len = len(proof["mmr_path"])
+        ids.mmr_path_len = len(header.proof.mmr_path)
+        segments.write_arg(ids.mmr_path, [int(x, 16) for x in header.proof.mmr_path])
     %}
 
     // compute the peak of the header
