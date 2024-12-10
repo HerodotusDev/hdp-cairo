@@ -79,8 +79,8 @@ func compute_contract{
     assert calldata[2] = nondet %{ ids.starknet_memorizer.address_.segment_index %};
     assert calldata[3] = nondet %{ ids.starknet_memorizer.address_.offset %};
 
-    memcpy(dst=calldata + 4, src=inputs, len=inputs_len);
-    let calldata_size = 4 + inputs_len;
+    memcpy(dst=calldata + 4, src=params, len=params_len);
+    let calldata_size = 4 + params_len;
 
     with evm_memorizer, starknet_memorizer, pow2_array {
         let (retdata_size, retdata) = run_contract_bootloader(

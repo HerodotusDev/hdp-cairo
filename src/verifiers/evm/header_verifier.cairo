@@ -19,10 +19,11 @@ func verify_mmr_batches{
     evm_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
     chain_id: felt,
-}() -> () {
+}(mmr_meta_idx: felt) -> (mmr_meta_idx: felt) {
     alloc_locals;
 
     let (mmr_meta, peaks_dict, peaks_dict_start) = validate_mmr_meta(chain_id);
+    assert mmr_metas[mmr_meta_idx] = mmr_meta;
 
     local n_header_proofs: felt = nondet %{ len(batch.headers) %};
     with mmr_meta, peaks_dict {
@@ -32,7 +33,7 @@ func verify_mmr_batches{
     // Ensure the peaks dict for this batch is finalized
     default_dict_finalize(peaks_dict_start, peaks_dict, -1);
 
-    return ();
+    return (mmr_meta_idx=mmr_meta_idx + 1);
 }
 
 // Guard function that verifies the inclusion of headers in the MMR.

@@ -86,7 +86,7 @@ func run{
     // MMR Params
     let (mmr_metas: MMRMeta*) = alloc();
 
-    let (local mmr_metas_len) = run_state_verification{
+    let (mmr_metas_len) = run_state_verification{
         range_check_ptr=range_check_ptr,
         poseidon_ptr=poseidon_ptr,
         keccak_ptr=keccak_ptr,
@@ -102,7 +102,7 @@ func run{
     let starknet_key_hasher_ptr = StarknetStateAccess.init();
     let starknet_decoder_ptr = StarknetDecoder.init();
 
-    let (program_hash, results, results_len) = compute_tasks{
+    let (program_hash, result) = compute_tasks{
         pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
         ecdsa_ptr=ecdsa_ptr,
@@ -126,10 +126,7 @@ func run{
     );
 
     write_output_ptr{output_ptr=output_ptr}(
-        mmr_metas=mmr_metas,
-        mmr_metas_len=mmr_metas_len,
-        tasks_root=tasks_root,
-        results_root=results_root,
+        mmr_metas=mmr_metas, mmr_metas_len=mmr_metas_len, program_hash=program_hash, result=result
     );
 
     return ();
