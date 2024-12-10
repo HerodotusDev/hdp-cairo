@@ -1,6 +1,7 @@
-pub mod input;
+pub mod dry_run_input;
 pub mod models;
 pub mod output;
+pub mod run_input;
 
 use crate::hints::{lib, vars};
 use crate::syscall_handler::SyscallHandlerWrapper;
@@ -83,10 +84,10 @@ impl CustomHintProcessor {
         hints.insert(lib::segments::SEGMENTS_ADD_EVM_MEMORIZER_OFFSET.into(), lib::segments::segments_add_evm_memorizer_offset);
         hints.insert(lib::segments::SEGMENTS_ADD_EVM_STARKNET_MEMORIZER_INDEX.into(), lib::segments::segments_add_evm_starknet_memorizer_index);
         hints.insert(lib::segments::SEGMENTS_ADD_STARKNET_MEMORIZER_OFFSET.into(), lib::segments::segments_add_starknet_memorizer_offset);
+        hints.insert(lib::verifiers::utils::HINT_PRINT_TASK_RESULT.into(), lib::verifiers::utils::hint_print_task_result);
         hints.insert(lib::verifiers::verify::HINT_BATCH_LEN.into(), lib::verifiers::verify::hint_batch_len);
         hints.insert(lib::verifiers::verify::HINT_CHAIN_ID.into(), lib::verifiers::verify::hint_chain_id);
         hints.insert(lib::verifiers::verify::HINT_VM_ENTER_SCOPE.into(), lib::verifiers::verify::hint_vm_enter_scope);
-
         hints
     }
 
@@ -120,7 +121,8 @@ impl HintProcessorLogic for CustomHintProcessor {
             let hint_code = hpd.code.as_str();
 
             let res = match hint_code {
-                crate::hint_processor::input::HINT_INPUT => self.hint_input(vm, exec_scopes, hpd, constants),
+                crate::hint_processor::dry_run_input::HINT_DRY_RUN_INPUT => self.hint_dry_run_input(vm, exec_scopes, hpd, constants),
+                crate::hint_processor::run_input::HINT_RUN_INPUT => self.hint_run_input(vm, exec_scopes, hpd, constants),
                 crate::hint_processor::output::HINT_OUTPUT => self.hint_output(vm, exec_scopes, hpd, constants),
                 _ => Err(HintError::UnknownHint(hint_code.to_string().into_boxed_str())),
             };
