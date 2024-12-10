@@ -70,6 +70,8 @@ impl CustomHintProcessor {
         hints.insert(lib::decoder::evm::has_type_prefix::HINT_HAS_TYPE_PREFIX.into(), lib::decoder::evm::has_type_prefix::hint_has_type_prefix);
         hints.insert(lib::decoder::evm::is_byzantium::HINT_IS_BYZANTIUM.into(), lib::decoder::evm::is_byzantium::hint_is_byzantium);
         hints.insert(lib::decoder::evm::v_is_encoded::HINT_V_IS_ENCODED.into(), lib::decoder::evm::v_is_encoded::hint_v_is_encoded);
+        hints.insert(lib::merkle::HINT_TARGET_TASK_HASH.into(), lib::merkle::hint_target_task_hash);
+        hints.insert(lib::merkle::HINT_IS_LEFT_SMALLER.into(), lib::merkle::hint_is_left_smaller);
         hints.insert(lib::rlp::divmod::HINT_DIVMOD_RLP.into(), lib::rlp::divmod::hint_divmod_rlp);
         hints.insert(lib::rlp::divmod::HINT_DIVMOD_VALUE.into(), lib::rlp::divmod::hint_divmod_value);
         hints.insert(lib::rlp::item_type::HINT_IS_LONG.into(), lib::rlp::item_type::hint_is_long);
@@ -81,8 +83,10 @@ impl CustomHintProcessor {
         hints.insert(lib::segments::SEGMENTS_ADD_EVM_MEMORIZER_OFFSET.into(), lib::segments::segments_add_evm_memorizer_offset);
         hints.insert(lib::segments::SEGMENTS_ADD_EVM_STARKNET_MEMORIZER_INDEX.into(), lib::segments::segments_add_evm_starknet_memorizer_index);
         hints.insert(lib::segments::SEGMENTS_ADD_STARKNET_MEMORIZER_OFFSET.into(), lib::segments::segments_add_starknet_memorizer_offset);
-        hints.insert(lib::merkle::HINT_TARGET_TASK_HASH.into(), lib::merkle::hint_target_task_hash);
-        hints.insert(lib::merkle::HINT_IS_LEFT_SMALLER.into(), lib::merkle::hint_is_left_smaller);
+        hints.insert(lib::verifiers::verify::HINT_BATCH_LEN.into(), lib::verifiers::verify::hint_batch_len);
+        hints.insert(lib::verifiers::verify::HINT_CHAIN_ID.into(), lib::verifiers::verify::hint_chain_id);
+        hints.insert(lib::verifiers::verify::HINT_VM_ENTER_SCOPE.into(), lib::verifiers::verify::hint_vm_enter_scope);
+
         hints
     }
 
