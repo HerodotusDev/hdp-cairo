@@ -1,5 +1,5 @@
 # Use the official Python 3.9 image from the Docker Hub
-FROM python:3.9.0
+FROM python:3.10
 
 # Set the default shell to bash and the working directory in the container
 SHELL ["/bin/bash", "-ci"]

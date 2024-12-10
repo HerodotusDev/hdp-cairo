@@ -3,7 +3,7 @@ from typing import (
     Dict,
     Iterable,
 )
-from src.contract_bootloader.dryrun_syscall_memorizer_handler.starknet.header_handler import (
+from contract_bootloader.dryrun_syscall_memorizer_handler.starknet.header_handler import (
     DryRunStarknetHeaderHandler,
 )
 from starkware.cairo.lang.vm.relocatable import RelocatableValue, MaybeRelocatable
