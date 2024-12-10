@@ -1,0 +1,28 @@
+[workspace]
+resolver = "2"
+
+members = ["cairo_vm_hints"]
+
+
+[workspace.dependencies]
+alloy = { version = "0.7.2", features = ["full"] }
+bincode = { version = "2.0.0-rc.3", default-features = false, features = ["serde"] }
+cairo-lang-casm = { version = "2.9.0-dev.0", default-features = false }
+cairo-lang-starknet-classes = { version = "2.9.0-dev.0" }
+cairo-type-derive = { git = "https://github.com/keep-starknet-strange/snos.git" }
+cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", rev = "388a4e51001377717b7e4c902c35f8e271c92ad7", features = ["extensive_hints", "clap", "cairo-1-hints"] }
+clap = { version = "4.3.10", features = ["derive"] }
+hex = "0.4.3"
+num-bigint = "0.4.6"
+num-traits = "0.2.19"
+rand = "0.8"
+serde = "1.0.215"
+serde_json = "1.0.132"
+sha3 = "0.10.8"
+starknet-crypto = "0.7.2"
+starknet-types-core = "0.1.7"
+thiserror = "1.0.64"
+tiny-keccak = { version = "2.0.2", features = ["keccak"] }
+tokio = { version = "1.41.1", features = ["full"] }
+alloy-rlp = { version = "0.3.5", features = ["derive"] }
+strum_macros = "0.26.4"
