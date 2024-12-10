@@ -55,14 +55,13 @@ func verify_headers_with_mmr_peaks{
     }
 
     let (fields) = alloc();
-    local fields_len: felt;
-    local leaf_idx: felt;
     %{
-        header = mmr_batch["headers"][ids.idx - 1]
-        segments.write_arg(ids.fields, hex_to_int_array(header["fields"]))
-        ids.fields_len = len(header["fields"])
-        ids.leaf_idx = header["proof"]["leaf_idx"]
+        header = batch.headers[ids.idx - 1]
+        segments.write_arg(ids.fields, [int(x, 16) for x in header.fields])
     %}
+
+    local fields_len: felt = nondet %{ len(header.fields) %};
+    local leaf_idx: felt = nondet %{ len(header.proof.leaf_idx) %};
 
     // compute the hash of the header
     let (header_hash) = poseidon_hash_many(n=fields_len, elements=fields);
@@ -82,12 +81,8 @@ func verify_headers_with_mmr_peaks{
     }
 
     let (mmr_path) = alloc();
-    local mmr_path_len: felt;
-    %{
-        proof = header["proof"]
-        segments.write_arg(ids.mmr_path, hex_to_int_array(proof["mmr_path"]))
-        ids.mmr_path_len = len(proof["mmr_path"])
-    %}
+    local mmr_path_len: felt = nondet %{ len(header.proof.mmr_path) %};
+    %{ segments.write_arg(ids.mmr_path, [int(x, 16) for x in header.proof.mmr_path]) %}
 
     // compute the peak of the header
     let (computed_peak) = hash_subtree_path(

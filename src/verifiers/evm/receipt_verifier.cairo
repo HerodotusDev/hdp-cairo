@@ -28,9 +28,7 @@ func verify_block_receipt_proofs{
 }() {
     alloc_locals;
 
-    local n_receipts: felt;
-    %{ ids.n_receipts = len(batch.receipts) %}
-
+    local n_receipts: felt = nondet %{ len(batch.receipts) %};
     verify_block_receipt_proofs_inner(n_receipts, 0);
 
     return ();

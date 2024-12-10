@@ -27,9 +27,8 @@ func verify_storage_items{
     pow2_array: felt*,
 }() {
     alloc_locals;
-    local n_storage_items: felt;
-    %{ ids.n_storage_items = len(batch.storages) %}
 
+    local n_storage_items: felt = nondet %{ len(batch.storages) %};
     verify_storage_items_inner(n_storage_items, 0);
 
     return ();

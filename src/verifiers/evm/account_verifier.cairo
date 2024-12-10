@@ -21,9 +21,8 @@ func verify_accounts{
     pow2_array: felt*,
 }() {
     alloc_locals;
-    local n_accounts: felt;
-    %{ ids.n_accounts = len(batch.accounts) %}
 
+    local n_accounts: felt = nondet %{ len(batch.accounts) %};
     verify_accounts_inner(n_accounts, 0);
 
     return ();

@@ -28,9 +28,8 @@ func verify_block_tx_proofs{
     pow2_array: felt*,
 }() {
     alloc_locals;
-    local n_tx_proofs: felt;
-    %{ ids.n_tx_proofs = len(batch.transactions) %}
 
+    local n_tx_proofs: felt = nondet %{ len(batch.transactions) %};
     verify_block_tx_proofs_inner(n_tx_proofs, 0);
 
     return ();
