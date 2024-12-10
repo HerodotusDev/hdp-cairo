@@ -19,34 +19,10 @@ func verify_mmr_batches{
     evm_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
     chain_id: felt,
-}(mmr_meta_idx: felt) -> (mmr_meta_idx: felt) {
+}() -> () {
     alloc_locals;
-
-    local mmr_batches_len: felt;
-    %{ ids.mmr_batches_len = len(batch["mmr_with_headers"]) %}
-    verify_mmr_batches_inner(mmr_batches_len, 0, mmr_meta_idx);
-
-    return (mmr_meta_idx=mmr_meta_idx + mmr_batches_len);
-}
-
-// Check if the passed MMR meta is valid and if the headers are included in the MMR.
-// Headers included in the MMR are memorized.
-func verify_mmr_batches_inner{
-    range_check_ptr,
-    poseidon_ptr: PoseidonBuiltin*,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*,
-    evm_memorizer: DictAccess*,
-    mmr_metas: MMRMeta*,
-    chain_id: felt,
-}(mmr_batches_len: felt, idx: felt, mmr_meta_idx: felt) {
-    alloc_locals;
-    if (mmr_batches_len == idx) {
-        return ();
-    }
 
     let (mmr_meta, peaks_dict, peaks_dict_start) = validate_mmr_meta(chain_id);
-    assert mmr_metas[mmr_meta_idx + idx] = mmr_meta;
 
     local n_header_proofs: felt = nondet %{ len(batch.headers) %};
     with mmr_meta, peaks_dict {
@@ -56,9 +32,7 @@ func verify_mmr_batches_inner{
     // Ensure the peaks dict for this batch is finalized
     default_dict_finalize(peaks_dict_start, peaks_dict, -1);
 
-    return verify_mmr_batches_inner(
-        mmr_batches_len=mmr_batches_len, idx=idx + 1, mmr_meta_idx=mmr_meta_idx
-    );
+    return ();
 }
 
 // Guard function that verifies the inclusion of headers in the MMR.

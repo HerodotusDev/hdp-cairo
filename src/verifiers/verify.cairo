@@ -42,10 +42,10 @@ func run_state_verification_inner{
     evm_memorizer: DictAccess*,
     starknet_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
-}(batch_len: felt, mmr_meta_idx: felt) -> (mmr_meta_idx: felt) {
+}(batch_len: felt) -> () {
     alloc_locals;
     if (batch_len == 0) {
-        return (mmr_meta_idx=mmr_meta_idx);
+        return ();
     }
 
     local chain_id: felt;
@@ -56,18 +56,18 @@ func run_state_verification_inner{
     if (chain_info.layout == 0) {
         %{ vm_enter_scope({'batch': proofs[ids.batch_len - 1], '__dict_manager': __dict_manager}) %}
         with chain_info {
-            let mmr_meta_idx = evm_run_state_verification(mmr_meta_idx);
+            evm_run_state_verification();
         }
         %{ vm_exit_scope() %}
 
-        return run_state_verification_inner(batch_len=batch_len - 1, mmr_meta_idx=mmr_meta_idx);
+        return run_state_verification_inner(batch_len=batch_len - 1);
     } else {
         %{ vm_enter_scope({'batch': proofs[ids.batch_len - 1], '__dict_manager': __dict_manager}) %}
         with chain_info {
-            let mmr_meta_idx = starknet_run_state_verification(mmr_meta_idx);
+            starknet_run_state_verification();
         }
         %{ vm_exit_scope() %}
 
-        return run_state_verification_inner(batch_len=batch_len - 1, mmr_meta_idx=mmr_meta_idx);
+        return run_state_verification_inner(batch_len=batch_len - 1);
     }
 }
