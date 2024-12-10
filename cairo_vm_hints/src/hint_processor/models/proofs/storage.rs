@@ -7,18 +7,18 @@ pub struct Storage {
     pub address: Address,
     pub slot: B256,
     pub storage_key: StorageKey,
-    pub proof: MPTProof,
+    pub proofs: Vec<MPTProof>,
 }
 
 impl Storage {
-    pub fn new(address: Address, slot: B256, proof: MPTProof) -> Self {
+    pub fn new(address: Address, slot: B256, proofs: Vec<MPTProof>) -> Self {
         // TODO: actually this is storage leaf. slot == storage key
         let storage_trie_leaf = keccak256(slot);
         Storage {
             address,
             slot,
             storage_key: storage_trie_leaf,
-            proof,
+            proofs,
         }
     }
 }

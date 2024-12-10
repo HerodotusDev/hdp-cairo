@@ -43,30 +43,30 @@ func verify_storage_items_inner{
     evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
-}(n_storage_items: felt, index: felt) {
+}(n_storage_items: felt, idx: felt) {
     alloc_locals;
 
-    if (n_storage_items == index) {
+    if (n_storage_items == idx) {
         return ();
     }
 
     let (address: felt*) = alloc();
-    let (slot: felt*) = alloc();
-    local n_proofs: felt;
-    local key: Uint256;
-    local key_leading_zeros: felt;
     %{
-        from tools.py.utils import split_128, count_leading_zero_nibbles_from_hex, hex_to_int_array, nested_hex_to_int_array
-
-        storage_item = batch["storages"][ids.index]
-        ids.n_proofs = len(storage_item["proofs"])
-        segments.write_arg(ids.address, hex_to_int_array(storage_item["address"]))
-        segments.write_arg(ids.slot, hex_to_int_array(storage_item["slot"]))
-        (key_low, key_high) = split_128(int(storage_item["storage_key"], 16))
-        ids.key.low = key_low
-        ids.key.high = key_high
-        ids.key_leading_zeros = count_leading_zero_nibbles_from_hex(storage_item["storage_key"])
+        storage = batch.storages[ids.idx]
+        segments.write_arg(ids.address, [int(x, 16) for x in storage.address]))
     %}
+
+    let (slot: felt*) = alloc();
+    %{ segments.write_arg(ids.slot, [int(x, 16) for x in storage.slot])) %}
+
+    local key: Uint256;
+    %{
+        from tools.py.utils import split_128
+        (ids.key.low, ids.key.high) = split_128(int(storage.storage_key, 16))
+    %}
+
+    local key_leading_zeros: felt;
+    %{ ids.key_leading_zeros = len(storage.storage_key.lstrip("0x")) - len(storage.storage_key.lstrip("0x").lstrip("0")) %}
 
     // ensure that slot matches the key
     let (hash: Uint256) = keccak_bigend(slot, 32);
@@ -79,16 +79,17 @@ func verify_storage_items_inner{
 
     let (felt_address) = le_address_chunks_to_felt(address);
 
+    local n_proofs: felt = nondet %{ len(storage.proofs) %};
     verify_storage_item(
         address=felt_address,
         slot=slot_be,
         key=key,
         key_leading_zeros=key_leading_zeros,
         n_proofs=n_proofs,
-        proof_idx=0,
+        idx=0,
     );
 
-    return verify_storage_items_inner(n_storage_items=n_storage_items, index=index + 1);
+    return verify_storage_items_inner(n_storage_items=n_storage_items, idx=idx + 1);
 }
 
 func verify_storage_item{
@@ -99,31 +100,22 @@ func verify_storage_item{
     evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
-}(
-    address: felt,
-    slot: Uint256,
-    key: Uint256,
-    key_leading_zeros: felt,
-    n_proofs: felt,
-    proof_idx: felt,
-) {
+}(address: felt, slot: Uint256, key: Uint256, key_leading_zeros: felt, n_proofs: felt, idx: felt) {
     alloc_locals;
 
-    if (n_proofs == proof_idx) {
+    if (n_proofs == idx) {
         return ();
     }
 
-    local block_number: felt;
-    local proof_len: felt;
-    let (mpt_proof: felt**) = alloc();
+    %{ proof = storage.proofs[ids.idx] %}
+    local proof_len: felt = nondet %{ len(proof.proof) %};
+    local block_number: felt = nondet %{ proof.block_number %};
+
     let (proof_bytes_len: felt*) = alloc();
-    %{
-        proof = storage_item["proofs"][ids.proof_idx]
-        ids.block_number = proof["block_number"]
-        segments.write_arg(ids.mpt_proof, nested_hex_to_int_array(proof["proof"]))
-        segments.write_arg(ids.proof_bytes_len, proof["proof_bytes_len"])
-        ids.proof_len = len(proof["proof"])
-    %}
+    %{ segments.write_arg(ids.proof_bytes_len, proof.proof_bytes_len) %}
+
+    let (mpt_proof: felt**) = alloc();
+    %{ segments.write_arg(ids.mpt_proof, [int(x, 16) for x in proof.proof]) %}
 
     let memorizer_key = EvmHashParams.account(
         chain_id=chain_info.id, block_number=block_number, address=address
@@ -152,6 +144,6 @@ func verify_storage_item{
         key=key,
         key_leading_zeros=key_leading_zeros,
         n_proofs=n_proofs,
-        proof_idx=proof_idx + 1,
+        idx=idx + 1,
     );
 }

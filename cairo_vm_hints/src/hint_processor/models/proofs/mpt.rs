@@ -6,6 +6,7 @@ use serde_with::serde_as;
 #[serde_as]
 pub struct MPTProof {
     pub block_number: u64,
+    pub proof_bytes_len: u64,
     #[serde_as(as = "starknet_core::serde::unsigned_field_element::UfeHex")]
     pub proof: Vec<Felt252>,
 }

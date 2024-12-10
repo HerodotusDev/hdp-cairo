@@ -16,6 +16,7 @@ from starkware.starkware_utils.marshmallow_dataclass_fields import (
 @marshmallow_dataclass.dataclass(frozen=True)
 class MPTProof:
     block_number: int
+    proof_bytes_len: int
     proof: List[str] = field(
         metadata=additional_metadata(marshmallow_field=mfields.List(IntAsHex()))
     )
@@ -48,7 +49,11 @@ class Header:
 class Account:
     address: str
     account_key: str
-    proof: MPTProof
+    proofs: List[MPTProof] = field(
+        metadata=additional_metadata(
+            marshmallow_field=mfields.List(mfields.Nested(MPTProof.Schema))
+        )
+    )
 
 
 @marshmallow_dataclass.dataclass(frozen=True)
@@ -56,19 +61,23 @@ class Storage:
     address: str
     slot: str
     storage_key: str
-    proof: MPTProof
+    proofs: List[MPTProof] = field(
+        metadata=additional_metadata(
+            marshmallow_field=mfields.List(mfields.Nested(MPTProof.Schema))
+        )
+    )
 
 
 @marshmallow_dataclass.dataclass(frozen=True)
 class Transaction:
     key: str
-    proof: MPTProof
+    proofs: MPTProof
 
 
 @marshmallow_dataclass.dataclass(frozen=True)
 class Receipt:
     key: str
-    proof: MPTProof
+    proofs: MPTProof
 
 
 @marshmallow_dataclass.dataclass(frozen=True)

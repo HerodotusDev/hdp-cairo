@@ -6,17 +6,17 @@ use serde::{Deserialize, Serialize};
 pub struct Account {
     pub address: Address,
     pub account_key: B256,
-    pub proof: MPTProof,
+    pub proofs: Vec<MPTProof>,
 }
 
 impl Account {
-    pub fn new(address: Address, proof: MPTProof) -> Self {
+    pub fn new(address: Address, proofs: Vec<MPTProof>) -> Self {
         // TODO: actually this is account trie leaf to be more accurate
         let account_trie_leaf = keccak256(address);
         Account {
             address,
             account_key: account_trie_leaf,
-            proof,
+            proofs,
         }
     }
 }
