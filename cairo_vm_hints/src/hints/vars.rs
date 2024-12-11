@@ -1,15 +1,19 @@
 pub mod scopes {
+    pub(crate) const BATCH: &str = "batch";
     pub(crate) const COMPILED_CLASS: &str = "compiled_class";
     pub(crate) const DICT_MANAGER: &str = "dict_manager";
     pub(crate) const N_SELECTED_BUILTINS: &str = "n_selected_builtins";
     pub(crate) const PARAMS: &str = "params";
+    pub(crate) const PROOFS: &str = "proofs";
     pub(crate) const SYSCALL_HANDLER: &str = "syscall_handler";
 }
 
 pub mod ids {
     pub(crate) const ALL_ENCODINGS: &str = "all_encodings";
+    pub(crate) const BATCH_LEN: &str = "batch_len";
     pub(crate) const BUILTIN_PARAMS: &str = "builtin_params";
     pub(crate) const BUILTIN_PTRS: &str = "builtin_ptrs";
+    pub(crate) const CHAIN_ID: &str = "chain_id";
     pub(crate) const COMPILED_CLASS: &str = "compiled_class";
     pub(crate) const CURRENT_ITEM: &str = "ids.current_item";
     pub(crate) const DEVISOR: &str = "ids.devisor";

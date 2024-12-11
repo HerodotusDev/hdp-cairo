@@ -1,4 +1,3 @@
-use crate::provider::evm::{traits::EVMProviderTrait, EVMProvider};
 use crate::syscall_handler::{
     traits::CallHandler,
     utils::{SyscallExecutionError, SyscallResult},
@@ -12,12 +11,15 @@ use crate::{
     },
     syscall_handler::RPC,
 };
+use alloy::providers::{Provider, RootProvider};
+use alloy::transports::http::{Client, Http};
 use alloy::{
     hex::FromHex,
     primitives::{Address, BlockNumber, ChainId},
     transports::http::reqwest::Url,
 };
 use cairo_vm::{vm::errors::memory_errors::MemoryError, Felt252};
+use serde::{Deserialize, Serialize};
 use std::env;
 
 pub struct AccountCallHandler;
@@ -39,10 +41,10 @@ impl CallHandler for AccountCallHandler {
     }
 
     fn handle(key: Self::Key, function_id: Self::Id) -> SyscallResult<Self::CallHandlerResult> {
-        let provider = EVMProvider::new(Url::parse(&env::var(RPC).unwrap()).unwrap());
+        let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
         let runtime = tokio::runtime::Runtime::new().unwrap();
         let account = runtime
-            .block_on(async { provider.get_account(key.address, key.block_number).await })
+            .block_on(async { provider.get_account(key.address).block_id(key.block_number.into()).await })
             .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
 
         Ok(CairoAccount::from(account).handle(function_id))
@@ -75,7 +77,7 @@ impl CairoType for CairoKey {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Key {
     chain_id: ChainId,
     block_number: BlockNumber,

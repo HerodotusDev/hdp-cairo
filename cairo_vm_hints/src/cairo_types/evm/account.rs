@@ -59,14 +59,9 @@ impl CairoAccount {
     }
 }
 
-impl From<EIP1186AccountProofResponse> for CairoAccount {
-    fn from(value: EIP1186AccountProofResponse) -> Self {
-        Self(Account {
-            nonce: value.nonce,
-            balance: value.balance,
-            storage_root: value.storage_hash,
-            code_hash: value.code_hash,
-        })
+impl From<Account> for CairoAccount {
+    fn from(value: Account) -> Self {
+        Self(value)
     }
 }
 
