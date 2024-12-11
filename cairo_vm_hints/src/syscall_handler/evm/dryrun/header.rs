@@ -1,4 +1,3 @@
-use crate::provider::evm::{traits::EVMProviderTrait, EVMProvider};
 use crate::syscall_handler::{
     traits::CallHandler,
     utils::{SyscallExecutionError, SyscallResult},
@@ -12,6 +11,9 @@ use crate::{
     },
     syscall_handler::RPC,
 };
+use alloy::providers::{Provider, RootProvider};
+use alloy::rpc::types::BlockTransactionsKind;
+use alloy::transports::http::{Client, Http};
 use alloy::{
     primitives::{BlockNumber, ChainId},
     transports::http::reqwest::Url,
@@ -38,11 +40,12 @@ impl CallHandler for HeaderCallHandler {
     }
 
     fn handle(key: Self::Key, function_id: Self::Id) -> SyscallResult<Self::CallHandlerResult> {
-        let provider = EVMProvider::new(Url::parse(&env::var(RPC).unwrap()).unwrap());
+        let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
         let runtime = tokio::runtime::Runtime::new().unwrap();
         let block = runtime
-            .block_on(async { provider.get_block(key.block_number).await })
-            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
+            .block_on(async { provider.get_block_by_number(key.block_number.into(), BlockTransactionsKind::Hashes).await })
+            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?
+            .ok_or(SyscallExecutionError::InternalError("Block not found".into()))?;
 
         Ok(CairoHeader::from(block.header.inner).handle(function_id))
     }
