@@ -11,6 +11,8 @@ use cairo_vm::{
 };
 use thiserror::Error;
 
+use super::traits::SyscallHandler;
+
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SyscallSelector {
     CallContract,
@@ -128,37 +130,6 @@ impl From<MathError> for SyscallExecutionError {
 pub type SyscallResult<T> = Result<T, SyscallExecutionError>;
 pub type WriteResponseResult = SyscallResult<()>;
 
-// Common structs.
-
-#[derive(Debug, Eq, PartialEq)]
-pub struct EmptyRequest;
-
-#[derive(Debug, Eq, PartialEq)]
-pub struct EmptyResponse;
-
-#[derive(Debug)]
-pub struct ReadOnlySegment {
-    pub start_ptr: Relocatable,
-    pub length: usize,
-}
-
-pub fn write_segment(vm: &mut VirtualMachine, ptr: &mut Relocatable, segment: ReadOnlySegment) -> SyscallResult<()> {
-    write_maybe_relocatable(vm, ptr, segment.start_ptr)?;
-    let segment_end_ptr = (segment.start_ptr + segment.length)?;
-    write_maybe_relocatable(vm, ptr, segment_end_ptr)?;
-
-    Ok(())
-}
-
-#[allow(async_fn_in_trait)]
-pub trait SyscallHandler {
-    type Request;
-    type Response;
-    fn read_request(vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Request>;
-    fn execute(request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response>;
-    fn write_response(response: Self::Response, vm: &mut VirtualMachine, ptr: &mut Relocatable) -> WriteResponseResult;
-}
-
 fn write_failure(gas_counter: Felt252, error_data: Vec<Felt252>, vm: &mut VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<()> {
     write_felt(vm, ptr, gas_counter)?;
     // 1 to indicate failure.
@@ -177,18 +148,15 @@ fn write_failure(gas_counter: Felt252, error_data: Vec<Felt252>, vm: &mut Virtua
 
 pub const OUT_OF_GAS_ERROR: &str = "0x000000000000000000000000000000000000000000004f7574206f6620676173";
 
-pub fn run_handler<SH>(syscall_ptr: &mut Relocatable, vm: &mut VirtualMachine) -> Result<(), HintError>
-where
-    SH: SyscallHandler,
-{
+pub fn run_handler(syscall_handler: &mut impl SyscallHandler, syscall_ptr: &mut Relocatable, vm: &mut VirtualMachine) -> Result<(), HintError> {
     let remaining_gas = felt_from_ptr(vm, syscall_ptr)?;
-    let request = SH::read_request(vm, syscall_ptr)?;
-    let syscall_result = SH::execute(request, vm);
+    let request = syscall_handler.read_request(vm, syscall_ptr)?;
+    let syscall_result = syscall_handler.execute(request, vm);
     match syscall_result {
         Ok(response) => {
             write_felt(vm, syscall_ptr, remaining_gas)?;
             write_felt(vm, syscall_ptr, Felt252::ZERO)?;
-            SH::write_response(response, vm, syscall_ptr)?
+            syscall_handler.write_response(response, vm, syscall_ptr)?
         }
         Err(SyscallExecutionError::SyscallError { error_data: data }) => {
             write_failure(Felt252::ZERO, data, vm, syscall_ptr)?;

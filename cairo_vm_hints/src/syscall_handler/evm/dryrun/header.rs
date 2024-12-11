@@ -19,6 +19,7 @@ use alloy::{
     transports::http::reqwest::Url,
 };
 use cairo_vm::{vm::errors::memory_errors::MemoryError, Felt252};
+use serde::{Deserialize, Serialize};
 use std::env;
 
 pub struct HeaderCallHandler;
@@ -51,7 +52,7 @@ impl CallHandler for HeaderCallHandler {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct CairoKey {
     chain_id: Felt252,
     block_number: Felt252,
@@ -74,7 +75,7 @@ impl CairoType for CairoKey {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Key {
     chain_id: ChainId,
     block_number: BlockNumber,

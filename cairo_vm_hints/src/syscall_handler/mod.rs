@@ -1,4 +1,3 @@
-pub mod call_contract;
 pub mod evm;
 pub mod starknet;
 pub mod traits;
@@ -8,35 +7,29 @@ use cairo_vm::{
     types::relocatable::Relocatable,
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
 };
-use call_contract::CallContractHandler;
 use std::{rc::Rc, sync::RwLock};
 use utils::{felt_from_ptr, run_handler, SyscallSelector};
 
 pub(crate) const RPC: &str = "RPC";
 
 /// SyscallHandler implementation for execution of system calls in the StarkNet OS
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct HDPSyscallHandler {
     syscall_ptr: Option<Relocatable>,
+    call_contract_handler: evm::dryrun::CallContractHandler,
 }
 
 /// SyscallHandler is wrapped in Rc<RefCell<_>> in order
 /// to clone the reference when entering and exiting vm scopes
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct SyscallHandlerWrapper {
     pub syscall_handler: Rc<RwLock<HDPSyscallHandler>>,
-}
-
-impl Default for SyscallHandlerWrapper {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl SyscallHandlerWrapper {
     pub fn new() -> Self {
         Self {
-            syscall_handler: Rc::new(RwLock::new(HDPSyscallHandler { syscall_ptr: None })),
+            syscall_handler: Rc::new(RwLock::new(HDPSyscallHandler::default())),
         }
     }
     pub fn set_syscall_ptr(&self, syscall_ptr: Relocatable) {
@@ -49,7 +42,7 @@ impl SyscallHandlerWrapper {
         syscall_handler.syscall_ptr
     }
 
-    pub fn execute_syscall(&self, vm: &mut VirtualMachine, syscall_ptr: Relocatable) -> Result<(), HintError> {
+    pub fn execute_syscall(&mut self, vm: &mut VirtualMachine, syscall_ptr: Relocatable) -> Result<(), HintError> {
         let mut syscall_handler = self.syscall_handler.write().unwrap();
         let ptr = &mut syscall_handler
             .syscall_ptr
@@ -58,7 +51,7 @@ impl SyscallHandlerWrapper {
         assert_eq!(*ptr, syscall_ptr);
 
         match SyscallSelector::try_from(felt_from_ptr(vm, ptr)?)? {
-            SyscallSelector::CallContract => run_handler::<CallContractHandler>(ptr, vm),
+            SyscallSelector::CallContract => run_handler(&mut syscall_handler.call_contract_handler, ptr, vm),
         }?;
 
         syscall_handler.syscall_ptr = Some(*ptr);
