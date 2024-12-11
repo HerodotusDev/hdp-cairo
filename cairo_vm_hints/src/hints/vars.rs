@@ -9,6 +9,7 @@ pub mod scopes {
 }
 
 pub mod ids {
+    pub(crate) const ADDRESS: &str = "ids.address";
     pub(crate) const ALL_ENCODINGS: &str = "all_encodings";
     pub(crate) const BATCH_LEN: &str = "batch_len";
     pub(crate) const BUILTIN_PARAMS: &str = "builtin_params";
@@ -19,10 +20,17 @@ pub mod ids {
     pub(crate) const DEVISOR: &str = "ids.devisor";
     pub(crate) const FIRST_BYTE: &str = "ids.first_byte";
     pub(crate) const I: &str = "ids.i";
+    pub(crate) const IDX: &str = "ids.idx";
     pub(crate) const IS_LEFT_SMALLER: &str = "ids.is_left_smaller";
     pub(crate) const IS_LONG: &str = "ids.is_long";
     pub(crate) const ITEM_TYPE: &str = "ids.item_type";
+    pub(crate) const KEY_LOW: &str = "ids.key_low";
+    pub(crate) const KEY_LEADING_ZEROS: &str = "ids.key_leading_zeros";
+    pub(crate) const KEY_HIGH: &str = "ids.key_high";
     pub(crate) const LEFT: &str = "ids.left";
+    pub(crate) const MPT_PROOF: &str = "ids.mpt_proof";
+    pub(crate) const PROOF: &str = "ids.proof";
+    pub(crate) const PROOF_BYTES_LEN: &str = "ids.proof_bytes_len";
     pub(crate) const N_BUILTINS: &str = "n_builtins";
     pub(crate) const N_PROCESSED_WORDS: &str = "ids.n_processed_words";
     pub(crate) const N_SELECTED_BUILTINS: &str = "n_selected_builtins";

@@ -73,8 +73,8 @@ impl CustomHintProcessor {
         hints.insert(lib::decoder::evm::v_is_encoded::HINT_V_IS_ENCODED.into(), lib::decoder::evm::v_is_encoded::hint_v_is_encoded);
         hints.insert(lib::merkle::HINT_TARGET_TASK_HASH.into(), lib::merkle::hint_target_task_hash);
         hints.insert(lib::merkle::HINT_IS_LEFT_SMALLER.into(), lib::merkle::hint_is_left_smaller);
-        hints.insert(lib::rlp::divmod::HINT_DIVMOD_RLP.into(), lib::rlp::divmod::hint_divmod_rlp);
         hints.insert(lib::rlp::divmod::HINT_DIVMOD_VALUE.into(), lib::rlp::divmod::hint_divmod_value);
+        hints.insert(lib::rlp::divmod::HINT_DIVMOD_RLP.into(), lib::rlp::divmod::hint_divmod_rlp);
         hints.insert(lib::rlp::item_type::HINT_IS_LONG.into(), lib::rlp::item_type::hint_is_long);
         hints.insert(lib::rlp::item_type::HINT_ITEM_TYPE.into(), lib::rlp::item_type::hint_item_type);
         hints.insert(lib::rlp::processed_words::HINT_PROCESSED_WORDS.into(), lib::rlp::processed_words::hint_processed_words);
@@ -84,10 +84,20 @@ impl CustomHintProcessor {
         hints.insert(lib::segments::SEGMENTS_ADD_EVM_MEMORIZER_OFFSET.into(), lib::segments::segments_add_evm_memorizer_offset);
         hints.insert(lib::segments::SEGMENTS_ADD_EVM_STARKNET_MEMORIZER_INDEX.into(), lib::segments::segments_add_evm_starknet_memorizer_index);
         hints.insert(lib::segments::SEGMENTS_ADD_STARKNET_MEMORIZER_OFFSET.into(), lib::segments::segments_add_starknet_memorizer_offset);
-        hints.insert(lib::verifiers::utils::HINT_PRINT_TASK_RESULT.into(), lib::verifiers::utils::hint_print_task_result);
+        hints.insert(lib::verifiers::evm::account_verifier::HINT_BATCH_ACCOUNTS_LEN.into(), lib::verifiers::evm::account_verifier::hint_batch_accounts_len);
+        hints.insert(lib::verifiers::evm::account_verifier::HINT_ACCOUNT_KEY.into(), lib::verifiers::evm::account_verifier::hint_account_key);
+        hints.insert(lib::verifiers::evm::account_verifier::HINT_ACCOUNT_KEY_LEADING_ZEROS.into(), lib::verifiers::evm::account_verifier::hint_account_key_leading_zeros);
+        hints.insert(lib::verifiers::evm::account_verifier::HINT_ACCOUNT_PROOF_AT.into(), lib::verifiers::evm::account_verifier::hint_account_proof_at);
+        hints.insert(lib::verifiers::evm::account_verifier::HINT_ACCOUNT_PROOF_BLOCK_NUMBER.into(), lib::verifiers::evm::account_verifier::hint_account_proof_block_number);
+        hints.insert(lib::verifiers::evm::account_verifier::HINT_ACCOUNT_PROOF_BYTES_LEN.into(), lib::verifiers::evm::account_verifier::hint_account_proof_bytes_len);
+        hints.insert(lib::verifiers::evm::account_verifier::HINT_ACCOUNT_PROOFS_LEN.into(), lib::verifiers::evm::account_verifier::hint_account_proofs_len);
+        hints.insert(lib::verifiers::evm::account_verifier::HINT_ACCOUNT_PROOF_LEN.into(), lib::verifiers::evm::account_verifier::hint_account_proof_len);
+        hints.insert(lib::verifiers::evm::account_verifier::HINT_GET_ACCOUNT_ADDRESS.into(), lib::verifiers::evm::account_verifier::hint_get_account_address);
+        hints.insert(lib::verifiers::evm::account_verifier::HINT_GET_MPT_PROOF.into(), lib::verifiers::evm::account_verifier::hint_get_mpt_proof);
         hints.insert(lib::verifiers::verify::HINT_BATCH_LEN.into(), lib::verifiers::verify::hint_batch_len);
         hints.insert(lib::verifiers::verify::HINT_CHAIN_ID.into(), lib::verifiers::verify::hint_chain_id);
         hints.insert(lib::verifiers::verify::HINT_VM_ENTER_SCOPE.into(), lib::verifiers::verify::hint_vm_enter_scope);
+        hints.insert(lib::verifiers::utils::HINT_PRINT_TASK_RESULT.into(), lib::verifiers::utils::hint_print_task_result);
         hints
     }
 
