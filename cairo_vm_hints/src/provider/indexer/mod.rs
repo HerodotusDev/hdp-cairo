@@ -1,7 +1,7 @@
 pub mod types;
 
 use reqwest::Client;
-use types::{IndexerError, IndexerHeadersProofResponse, IndexerQuery, MMRFromNewIndexer};
+use types::{IndexerError, IndexerHeadersProofResponse, IndexerQuery, MMRResponse};
 
 pub const HERODOTUS_RS_INDEXER_URL: &str = "https://rs-indexer.api.herodotus.cloud/accumulators/proofs";
 
@@ -32,7 +32,7 @@ impl Indexer {
             .map_err(IndexerError::ReqwestError)?;
 
         if response.status().is_success() {
-            let parsed_mmr: MMRFromNewIndexer =
+            let parsed_mmr: MMRResponse =
                 serde_json::from_value(response.json().await.map_err(IndexerError::ReqwestError)?).map_err(IndexerError::SerdeJsonError)?;
 
             if parsed_mmr.data.is_empty() {

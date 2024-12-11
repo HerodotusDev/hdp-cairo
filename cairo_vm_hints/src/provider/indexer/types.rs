@@ -81,18 +81,18 @@ impl IndexerQuery {
 /// MMR metadata and proof returned from indexer
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct MMRFromNewIndexer {
-    pub data: Vec<MMRDataFromNewIndexer>,
+pub struct MMRResponse {
+    pub data: Vec<MMRData>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct MMRDataFromNewIndexer {
-    pub meta: MMRMetaFromNewIndexer,
-    pub proofs: Vec<MMRProofFromNewIndexer>,
+pub struct MMRData {
+    pub meta: MMRMetadata,
+    pub proofs: Vec<MMRProof>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct MMRMetaFromNewIndexer {
+pub struct MMRMetadata {
     pub mmr_id: String,
     pub mmr_peaks: Vec<String>,
     pub mmr_root: String,
@@ -101,7 +101,7 @@ pub struct MMRMetaFromNewIndexer {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde_as]
-pub struct MMRProofFromNewIndexer {
+pub struct MMRProof {
     pub block_number: u64,
     pub element_hash: String,
     pub element_index: u64,
@@ -118,12 +118,12 @@ pub enum BlockHeader {
 
 #[derive(Debug)]
 pub struct IndexerHeadersProofResponse {
-    pub mmr_meta: MMRMetaFromNewIndexer,
-    pub headers: HashMap<BlockNumber, MMRProofFromNewIndexer>,
+    pub mmr_meta: MMRMetadata,
+    pub headers: HashMap<BlockNumber, MMRProof>,
 }
 
 impl IndexerHeadersProofResponse {
-    pub fn new(mmr_data: MMRDataFromNewIndexer) -> Self {
+    pub fn new(mmr_data: MMRData) -> Self {
         let mmr_meta = mmr_data.meta;
         let headers = mmr_data.proofs.into_iter().map(|block| (block.block_number, block)).collect();
         Self { mmr_meta, headers }
