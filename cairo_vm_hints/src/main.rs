@@ -30,8 +30,8 @@ struct Args {
     program_input: PathBuf,
 }
 
-fn run(args: impl Iterator<Item = String>) -> Result<(), HdpOsError> {
-    let args = Args::try_parse_from(args).map_err(HdpOsError::Args)?;
+fn main() -> Result<(), HdpOsError> {
+    let args = Args::try_parse_from(std::env::args()).map_err(HdpOsError::Args)?;
 
     // Init CairoRunConfig
     let cairo_run_config = CairoRunConfig {
@@ -70,8 +70,4 @@ fn run(args: impl Iterator<Item = String>) -> Result<(), HdpOsError> {
         .map_err(|e| HdpOsError::Runner(e.into()))?;
 
     Ok(())
-}
-
-fn main() -> Result<(), HdpOsError> {
-    run(std::env::args())
 }
