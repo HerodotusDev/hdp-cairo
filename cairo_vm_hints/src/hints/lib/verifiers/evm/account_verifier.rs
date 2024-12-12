@@ -12,14 +12,14 @@ use num_traits::Num;
 use std::collections::HashMap;
 
 use crate::{
-    hint_processor::models::proofs::Proofs,
+    hint_processor::models::proofs::{account::Account, mpt::MPTProof, Proofs},
     hints::{
         lib::utils::{count_leading_zero_nibbles_from_hex, split_128},
         vars,
     },
 };
 
-pub const HINT_BATCH_ACCOUNTS_LEN: &str = "len(batch[\"accounts\"])";
+pub const HINT_BATCH_ACCOUNTS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch.accounts))";
 
 pub fn hint_batch_accounts_len(
     vm: &mut VirtualMachine,
@@ -33,7 +33,7 @@ pub fn hint_batch_accounts_len(
 }
 
 pub const HINT_GET_ACCOUNT_ADDRESS: &str =
-    "account = batch.accounts[ids.idx]\nsegments.write_arg(ids.address, [int(x, 16) for x in account.address])";
+    "account = batch.accounts[ids.idx]\nsegments.write_arg(ids.address, [int(x, 16) for x in account.address]))";
 
 pub fn hint_get_account_address(
     vm: &mut VirtualMachine,
@@ -46,10 +46,12 @@ pub fn hint_get_account_address(
         .try_into()
         .unwrap();
     let account = batch.accounts[idx].clone();
-    let address = BigUint::from_str_radix(&account.address.to_string(), 16).unwrap();
+    let address = account.address;
+
+    exec_scopes.insert_value::<Account>(vars::scopes::ACCOUNT, account);
 
     let address_ptr = get_ptr_from_var_name(vars::ids::ADDRESS, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    vm.insert_value(address_ptr, Felt252::from(address))?;
+    vm.write_arg(address_ptr, &address)?;
 
     Ok(())
 }
@@ -62,11 +64,7 @@ pub fn hint_account_key(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let batch = exec_scopes.get::<Proofs>("batch")?;
-    let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
-        .try_into()
-        .unwrap();
-    let account = batch.accounts[idx].clone();
+    let account = exec_scopes.get::<Account>(vars::scopes::ACCOUNT)?;
     let account_key = BigUint::from_str_radix(&account.account_key.to_string(), 16).unwrap();
 
     let (key_low, key_high) = split_128(&account_key);
@@ -97,13 +95,9 @@ pub fn hint_account_key_leading_zeros(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let batch = exec_scopes.get::<Proofs>("batch")?;
-    let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
-        .try_into()
-        .unwrap();
-    let account = batch.accounts[idx].clone();
-
+    let account = exec_scopes.get::<Account>(vars::scopes::ACCOUNT)?;
     let key_leading_zeros = count_leading_zero_nibbles_from_hex(&account.account_key.to_string());
+
     insert_value_from_var_name(
         vars::ids::KEY_LEADING_ZEROS,
         MaybeRelocatable::Int(Felt252::from(key_leading_zeros)),
@@ -113,19 +107,15 @@ pub fn hint_account_key_leading_zeros(
     )
 }
 
-pub const HINT_ACCOUNT_PROOFS_LEN: &str = "len(account.proofs)";
+pub const HINT_ACCOUNT_PROOFS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(account.proofs))";
 
 pub fn hint_account_proofs_len(
     vm: &mut VirtualMachine,
     exec_scopes: &mut ExecutionScopes,
-    hint_data: &HintProcessorData,
+    _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let batch = exec_scopes.get::<Proofs>("batch")?;
-    let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
-        .try_into()
-        .unwrap();
-    let account = batch.accounts[idx].clone();
+    let account = exec_scopes.get::<Account>(vars::scopes::ACCOUNT)?;
 
     insert_value_into_ap(vm, Felt252::from(account.proofs.len()))
 }
@@ -138,48 +128,38 @@ pub fn hint_account_proof_at(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let batch = exec_scopes.get::<Proofs>("batch")?;
+    let account = exec_scopes.get::<Account>(vars::scopes::ACCOUNT)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
         .unwrap();
-    let proof = batch.accounts[idx].proofs[idx].clone();
 
-    let proof_ptr = get_ptr_from_var_name(vars::ids::PROOF, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    vm.write_arg(proof_ptr, &proof)?;
+    exec_scopes.insert_value::<MPTProof>(vars::scopes::PROOF, account.proofs[idx].clone());
 
     Ok(())
 }
 
-pub const HINT_ACCOUNT_PROOF_LEN: &str = "len(proof.proof)";
+pub const HINT_ACCOUNT_PROOF_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(proof.proof))";
 
 pub fn hint_account_proof_len(
     vm: &mut VirtualMachine,
     exec_scopes: &mut ExecutionScopes,
-    hint_data: &HintProcessorData,
+    _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let batch = exec_scopes.get::<Proofs>("batch")?;
-    let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
-        .try_into()
-        .unwrap();
-    let proof = batch.accounts[idx].proofs[idx].clone();
+    let proof = exec_scopes.get::<MPTProof>(vars::scopes::PROOF)?;
 
     insert_value_into_ap(vm, Felt252::from(proof.proof.len()))
 }
 
-pub const HINT_ACCOUNT_PROOF_BLOCK_NUMBER: &str = "proof.block_number";
+pub const HINT_ACCOUNT_PROOF_BLOCK_NUMBER: &str = "memory[ap] = to_felt_or_relocatable(proof.block_number)";
 
 pub fn hint_account_proof_block_number(
     vm: &mut VirtualMachine,
     exec_scopes: &mut ExecutionScopes,
-    hint_data: &HintProcessorData,
+    _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let batch = exec_scopes.get::<Proofs>("batch")?;
-    let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
-        .try_into()
-        .unwrap();
-    let proof = batch.accounts[idx].proofs[idx].clone();
+    let proof = exec_scopes.get::<MPTProof>(vars::scopes::PROOF)?;
 
     insert_value_into_ap(vm, Felt252::from(proof.block_number))
 }
@@ -192,11 +172,7 @@ pub fn hint_account_proof_bytes_len(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let batch = exec_scopes.get::<Proofs>("batch")?;
-    let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
-        .try_into()
-        .unwrap();
-    let proof = batch.accounts[idx].proofs[idx].clone();
+    let proof = exec_scopes.get::<MPTProof>(vars::scopes::PROOF)?;
 
     insert_value_from_var_name(
         vars::ids::PROOF_BYTES_LEN,
@@ -215,16 +191,10 @@ pub fn hint_get_mpt_proof(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let batch = exec_scopes.get::<Proofs>("batch")?;
-    let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
-        .try_into()
-        .unwrap();
-    let proof = batch.accounts[idx].proofs[idx].clone();
+    let proof = exec_scopes.get::<MPTProof>(vars::scopes::PROOF)?;
     let mpt_proof_ptr = get_ptr_from_var_name(vars::ids::MPT_PROOF, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    let proof_bytes: Vec<u8> = proof.proof.iter().map(|x| x.to_bytes_be()).flatten().collect();
-    let proof_bytes_biguint = BigUint::from_bytes_be(&proof_bytes);
-    vm.insert_value(mpt_proof_ptr, Felt252::from(proof_bytes_biguint))?;
+    vm.write_arg(mpt_proof_ptr, &proof.proof)?;
 
     Ok(())
 }

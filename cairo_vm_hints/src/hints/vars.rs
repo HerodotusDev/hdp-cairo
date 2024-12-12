@@ -1,9 +1,11 @@
 pub mod scopes {
+    pub(crate) const ACCOUNT: &str = "account";
     pub(crate) const BATCH: &str = "batch";
     pub(crate) const COMPILED_CLASS: &str = "compiled_class";
     pub(crate) const DICT_MANAGER: &str = "dict_manager";
     pub(crate) const N_SELECTED_BUILTINS: &str = "n_selected_builtins";
     pub(crate) const PARAMS: &str = "params";
+    pub(crate) const PROOF: &str = "proof";
     pub(crate) const PROOFS: &str = "proofs";
     pub(crate) const SYSCALL_HANDLER: &str = "syscall_handler";
 }
@@ -29,7 +31,6 @@ pub mod ids {
     pub(crate) const KEY_HIGH: &str = "ids.key_high";
     pub(crate) const LEFT: &str = "ids.left";
     pub(crate) const MPT_PROOF: &str = "ids.mpt_proof";
-    pub(crate) const PROOF: &str = "ids.proof";
     pub(crate) const PROOF_BYTES_LEN: &str = "ids.proof_bytes_len";
     pub(crate) const N_BUILTINS: &str = "n_builtins";
     pub(crate) const N_PROCESSED_WORDS: &str = "ids.n_processed_words";
