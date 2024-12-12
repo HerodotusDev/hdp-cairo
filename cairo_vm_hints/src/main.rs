@@ -14,7 +14,9 @@ use cairo_vm::vm::runners::cairo_runner::CairoRunner;
 use clap::{Parser, ValueHint};
 use hdp_cairo_vm_hints::HdpOsError;
 use hint_processor::CustomHintProcessor;
-use std::path::PathBuf;
+use hints::vars;
+use std::{fs, path::PathBuf};
+use syscall_handler::evm::dryrun::{SyscallHandler, SyscallHandlerWrapper};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -28,6 +30,8 @@ struct Args {
     proof_mode: bool,
     #[structopt(long = "program_input")]
     program_input: PathBuf,
+    #[structopt(long = "program_output")]
+    program_output: PathBuf,
 }
 
 fn main() -> Result<(), HdpOsError> {
@@ -68,6 +72,21 @@ fn main() -> Result<(), HdpOsError> {
         .run_until_pc(end, &mut hint_processor)
         .map_err(|err| VmException::from_vm_error(&cairo_runner, err))
         .map_err(|e| HdpOsError::Runner(e.into()))?;
+
+    fs::write(
+        args.program_output,
+        serde_json::to_vec::<SyscallHandler>(
+            &cairo_runner
+                .exec_scopes
+                .get::<SyscallHandlerWrapper>(vars::scopes::SYSCALL_HANDLER)
+                .unwrap()
+                .syscall_handler
+                .try_read()
+                .unwrap(),
+        )
+        .unwrap(),
+    )
+    .unwrap();
 
     Ok(())
 }

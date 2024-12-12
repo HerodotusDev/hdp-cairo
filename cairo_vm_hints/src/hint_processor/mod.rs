@@ -2,8 +2,10 @@ pub mod input;
 pub mod models;
 pub mod output;
 
-use crate::hints::{lib, vars};
-use crate::syscall_handler::SyscallHandlerWrapper;
+use crate::{
+    hints::{lib, vars},
+    syscall_handler::evm::dryrun::SyscallHandlerWrapper,
+};
 use cairo_lang_casm::{
     hints::{Hint, StarknetHint},
     operand::{BinOpOperand, DerefOrImmediate, Operation, Register, ResOperand},

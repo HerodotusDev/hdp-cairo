@@ -1,7 +1,6 @@
 use crate::syscall_handler::{
     traits::CallHandler,
     utils::{SyscallExecutionError, SyscallResult},
-    Relocatable, VirtualMachine,
 };
 use crate::{
     cairo_types::{
@@ -18,7 +17,11 @@ use alloy::{
     primitives::{Address, BlockNumber, ChainId},
     transports::http::reqwest::Url,
 };
-use cairo_vm::{vm::errors::memory_errors::MemoryError, Felt252};
+use cairo_vm::{
+    types::relocatable::Relocatable,
+    vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
+    Felt252,
+};
 use serde::{Deserialize, Serialize};
 use std::env;
 
@@ -77,7 +80,7 @@ impl CairoType for CairoKey {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Key {
     chain_id: ChainId,
     block_number: BlockNumber,
