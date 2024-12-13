@@ -1,4 +1,8 @@
 use crate::syscall_handler::{
+    keys::{
+        header::{CairoKey, Key},
+        KeyFetch,
+    },
     traits::CallHandler,
     utils::{SyscallExecutionError, SyscallResult},
 };
@@ -44,58 +48,6 @@ impl CallHandler for HeaderCallHandler {
     }
 
     fn handle(key: Self::Key, function_id: Self::Id) -> SyscallResult<Self::CallHandlerResult> {
-        let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
-        let runtime = tokio::runtime::Runtime::new().unwrap();
-        let block = runtime
-            .block_on(async { provider.get_block_by_number(key.block_number.into(), BlockTransactionsKind::Hashes).await })
-            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?
-            .ok_or(SyscallExecutionError::InternalError("Block not found".into()))?;
-
-        Ok(CairoHeader::from(block.header.inner).handle(function_id))
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct CairoKey {
-    chain_id: Felt252,
-    block_number: Felt252,
-}
-
-impl CairoType for CairoKey {
-    fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
-        Ok(Self {
-            chain_id: *vm.get_integer((address + 0)?)?,
-            block_number: *vm.get_integer((address + 1)?)?,
-        })
-    }
-    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<(), MemoryError> {
-        vm.insert_value((address + 0)?, self.chain_id)?;
-        vm.insert_value((address + 1)?, self.block_number)?;
-        Ok(())
-    }
-    fn n_fields() -> usize {
-        2
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct Key {
-    chain_id: ChainId,
-    block_number: BlockNumber,
-}
-
-impl TryFrom<CairoKey> for Key {
-    type Error = SyscallExecutionError;
-    fn try_from(value: CairoKey) -> Result<Self, Self::Error> {
-        Ok(Self {
-            chain_id: value
-                .chain_id
-                .try_into()
-                .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
-            block_number: value
-                .block_number
-                .try_into()
-                .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
-        })
+        Ok(CairoHeader::from(key.fetch_value()?.header.inner).handle(function_id))
     }
 }

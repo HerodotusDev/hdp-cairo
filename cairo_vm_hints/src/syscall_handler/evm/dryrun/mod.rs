@@ -6,6 +6,7 @@ pub mod storage;
 pub mod transaction;
 
 use crate::cairo_types::traits::CairoType;
+use crate::syscall_handler::keys;
 use crate::syscall_handler::traits::{self, CallHandler};
 use crate::syscall_handler::utils::{run_handler, SyscallSelector};
 use crate::{
@@ -117,28 +118,26 @@ impl traits::SyscallHandler for CallContractHandler {
             CallHandlerId::Header => {
                 let key = header::HeaderCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = header::HeaderCallHandler::derive_id(request.selector)?;
-                println!("key: {:?}, function_id: {:?}", key, function_id);
                 let result = header::HeaderCallHandler::handle(key.clone(), function_id)?;
+                self.key_set.insert(DryRunKey::Header(key));
                 result.to_memory(vm, retdata_end)?;
                 retdata_end += <header::HeaderCallHandler as CallHandler>::CallHandlerResult::n_fields();
-                self.key_set.insert(DryRunKey::Header(key));
             }
             CallHandlerId::Account => {
                 let key = account::AccountCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = account::AccountCallHandler::derive_id(request.selector)?;
-                println!("key: {:?}, function_id: {:?}", key, function_id);
                 let result = account::AccountCallHandler::handle(key.clone(), function_id)?;
+                self.key_set.insert(DryRunKey::Account(key));
                 result.to_memory(vm, retdata_end)?;
                 retdata_end += <account::AccountCallHandler as CallHandler>::CallHandlerResult::n_fields();
-                self.key_set.insert(DryRunKey::Account(key));
             }
             CallHandlerId::Storage => {
                 let key = storage::StorageCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = storage::StorageCallHandler::derive_id(request.selector)?;
                 let result = storage::StorageCallHandler::handle(key.clone(), function_id)?;
+                self.key_set.insert(DryRunKey::Storage(key));
                 result.to_memory(vm, retdata_end)?;
                 retdata_end += <storage::StorageCallHandler as CallHandler>::CallHandlerResult::n_fields();
-                self.key_set.insert(DryRunKey::Storage(key));
             }
             _ => {}
         }
@@ -170,9 +169,9 @@ impl TryFrom<Felt252> for CallHandlerId {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
 enum DryRunKey {
-    Account(account::Key),
-    Header(header::Key),
-    Storage(storage::Key),
+    Account(keys::account::Key),
+    Header(keys::header::Key),
+    Storage(keys::storage::Key),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
