@@ -94,6 +94,14 @@ impl CustomHintProcessor {
         hints.insert(lib::verifiers::evm::account_verifier::HINT_ACCOUNT_PROOF_LEN.into(), lib::verifiers::evm::account_verifier::hint_account_proof_len);
         hints.insert(lib::verifiers::evm::account_verifier::HINT_GET_ACCOUNT_ADDRESS.into(), lib::verifiers::evm::account_verifier::hint_get_account_address);
         hints.insert(lib::verifiers::evm::account_verifier::HINT_GET_MPT_PROOF.into(), lib::verifiers::evm::account_verifier::hint_get_mpt_proof);
+        hints.insert(lib::verifiers::evm::block_tx_verifier::HINT_BATCH_TRANSACTIONS_LEN.into(), lib::verifiers::evm::block_tx_verifier::hint_batch_transactions_len);
+        hints.insert(lib::verifiers::evm::block_tx_verifier::HINT_SET_TX.into(), lib::verifiers::evm::block_tx_verifier::hint_set_tx);
+        hints.insert(lib::verifiers::evm::block_tx_verifier::HINT_SET_TX_KEY.into(), lib::verifiers::evm::block_tx_verifier::hint_set_tx_key);
+        hints.insert(lib::verifiers::evm::block_tx_verifier::HINT_SET_TX_KEY_LEADING_ZEROS.into(), lib::verifiers::evm::block_tx_verifier::hint_set_tx_key_leading_zeros);
+        hints.insert(lib::verifiers::evm::block_tx_verifier::HINT_SET_TX_PROOF_LEN.into(), lib::verifiers::evm::block_tx_verifier::hint_set_tx_proof_len);
+        hints.insert(lib::verifiers::evm::block_tx_verifier::HINT_SET_TX_BLOCK_NUMBER.into(), lib::verifiers::evm::block_tx_verifier::hint_set_tx_block_number);
+        hints.insert(lib::verifiers::evm::block_tx_verifier::HINT_PROOF_BYTES_LEN.into(), lib::verifiers::evm::block_tx_verifier::hint_proof_bytes_len);
+        hints.insert(lib::verifiers::evm::block_tx_verifier::HINT_MPT_PROOF.into(), lib::verifiers::evm::block_tx_verifier::hint_mpt_proof);
         hints.insert(lib::verifiers::verify::HINT_BATCH_LEN.into(), lib::verifiers::verify::hint_batch_len);
         hints.insert(lib::verifiers::verify::HINT_CHAIN_ID.into(), lib::verifiers::verify::hint_chain_id);
         hints.insert(lib::verifiers::verify::HINT_VM_ENTER_SCOPE.into(), lib::verifiers::verify::hint_vm_enter_scope);
