@@ -108,6 +108,14 @@ impl CustomHintProcessor {
         hints.insert(lib::verifiers::evm::header_verifier::HINT_MMR_PATH.into(), lib::verifiers::evm::header_verifier::hint_mmr_path);
         hints.insert(lib::verifiers::evm::header_verifier::HINT_RLP_LEN.into(), lib::verifiers::evm::header_verifier::hint_rlp_len);
         hints.insert(lib::verifiers::evm::header_verifier::HINT_SET_HEADER.into(), lib::verifiers::evm::header_verifier::hint_set_header);
+        hints.insert(lib::verifiers::evm::receipt_verifier::HINT_BATCH_RECEIPTS_LEN.into(), lib::verifiers::evm::receipt_verifier::hint_batch_receipts_len);
+        hints.insert(lib::verifiers::evm::receipt_verifier::HINT_RECEIPT_BLOCK_NUMBER.into(), lib::verifiers::evm::receipt_verifier::hint_receipt_block_number);
+        hints.insert(lib::verifiers::evm::receipt_verifier::HINT_RECEIPT_KEY.into(), lib::verifiers::evm::receipt_verifier::hint_receipt_key);
+        hints.insert(lib::verifiers::evm::receipt_verifier::HINT_RECEIPT_KEY_LEADING_ZEROS.into(), lib::verifiers::evm::receipt_verifier::hint_receipt_key_leading_zeros);
+        hints.insert(lib::verifiers::evm::receipt_verifier::HINT_RECEIPT_MPT_PROOF.into(), lib::verifiers::evm::receipt_verifier::hint_receipt_mpt_proof);
+        hints.insert(lib::verifiers::evm::receipt_verifier::HINT_RECEIPT_PROOF_LEN.into(), lib::verifiers::evm::receipt_verifier::hint_receipt_proof_len);
+        hints.insert(lib::verifiers::evm::receipt_verifier::HINT_RECEIPT_PROOF_BYTES_LEN.into(), lib::verifiers::evm::receipt_verifier::hint_receipt_proof_bytes_len);
+        hints.insert(lib::verifiers::evm::receipt_verifier::HINT_SET_RECEIPT.into(), lib::verifiers::evm::receipt_verifier::hint_set_receipt);
         hints.insert(lib::verifiers::verify::HINT_BATCH_LEN.into(), lib::verifiers::verify::hint_batch_len);
         hints.insert(lib::verifiers::verify::HINT_CHAIN_ID.into(), lib::verifiers::verify::hint_chain_id);
         hints.insert(lib::verifiers::verify::HINT_VM_ENTER_SCOPE.into(), lib::verifiers::verify::hint_vm_enter_scope);
