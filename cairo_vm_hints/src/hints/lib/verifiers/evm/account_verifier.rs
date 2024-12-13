@@ -46,7 +46,7 @@ pub fn hint_get_account_address(
         .try_into()
         .unwrap();
     let account = batch.accounts[idx].clone();
-    let address = account.address;
+    let address: Vec<Felt252> = account.address.chunks(8).map(Felt252::from_bytes_le_slice).collect();
 
     exec_scopes.insert_value::<Account>(vars::scopes::ACCOUNT, account);
 
