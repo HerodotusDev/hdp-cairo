@@ -351,7 +351,7 @@ def compute_hash_on_elements(
     return functools.reduce(func, [*processed_data, len(data)], 0)
 
 
-def to_int(value: str | int):
+def to_int(value):
     if isinstance(value, str):
         value = value.strip()  # Trim whitespaces
         if value.lower().startswith("0x"):
@@ -370,7 +370,7 @@ def to_int(value: str | int):
         raise TypeError(f"Expected str or int, got {type(value).__name__}")
 
 
-def to_hex_str(value: str | int):
+def to_hex_str(value):
     if isinstance(value, str):
         value = value.strip()  # Trim whitespaces
         if value.lower().startswith("0x"):

@@ -7,7 +7,7 @@ from poseidon_py.poseidon_hash import (
 )
 
 
-@dataclass(slots=True, frozen=True)
+@dataclass(frozen=True)
 class LegacyStarknetBlock:
     """
     Starknet block data class.
@@ -52,7 +52,7 @@ class LegacyStarknetBlock:
         ]
 
 
-@dataclass(slots=True, frozen=True)
+@dataclass(frozen=True)
 class StarknetBlockV0_13_2(LegacyStarknetBlock):
     """
     Represents a Starknet block for version 0.13.2.
