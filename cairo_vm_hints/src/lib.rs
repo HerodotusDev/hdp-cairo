@@ -11,14 +11,6 @@ pub use hint_processor::CustomHintProcessor;
 
 #[derive(thiserror::Error, Debug)]
 pub enum HdpOsError {
-    #[error("Error: {0}")]
-    CatchAll(String),
-    #[error("PIE Parse Error: {0}")]
-    PieParsing(String),
-    #[error("PIE Zip Error: {0}")]
-    PieZipping(String),
-    #[error("PIE Encode Error: {0}")]
-    PieEncoding(String),
     #[error(transparent)]
     Args(#[from] clap::error::Error),
     #[error("Runner Error: {0}")]

@@ -84,9 +84,9 @@ fn main() -> Result<(), HdpOsError> {
                 .try_read()
                 .unwrap(),
         )
-        .unwrap(),
+        .map_err(|e| HdpOsError::IO(e.into()))?,
     )
-    .unwrap();
+    .map_err(HdpOsError::IO)?;
 
     Ok(())
 }
