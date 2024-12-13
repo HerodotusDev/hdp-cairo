@@ -30,6 +30,7 @@ pub mod ids {
     pub(crate) const KEY_LEADING_ZEROS: &str = "ids.key_leading_zeros";
     pub(crate) const KEY_HIGH: &str = "ids.key_high";
     pub(crate) const LEFT: &str = "ids.left";
+    pub(crate) const MMR_PATH: &str = "ids.mmr_path";
     pub(crate) const MPT_PROOF: &str = "ids.mpt_proof";
     pub(crate) const PROOF_BYTES_LEN: &str = "ids.proof_bytes_len";
     pub(crate) const N_BUILTINS: &str = "n_builtins";
