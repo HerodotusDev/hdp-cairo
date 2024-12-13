@@ -1,4 +1,4 @@
-use cairo_vm::Felt252;
+use alloy::primitives::Bytes;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
@@ -6,7 +6,11 @@ use serde_with::serde_as;
 #[serde_as]
 pub struct MPTProof {
     pub block_number: u64,
-    pub proof_bytes_len: u64,
-    #[serde_as(as = "starknet_core::serde::unsigned_field_element::UfeHex")]
-    pub proof: Vec<Felt252>,
+    pub proof: Vec<Bytes>,
+}
+
+impl MPTProof {
+    pub fn new(block_number: u64, proof: Vec<Bytes>) -> Self {
+        Self { block_number, proof }
+    }
 }

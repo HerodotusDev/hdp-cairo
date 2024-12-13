@@ -1,7 +1,7 @@
-use std::env;
-
+use super::KeyFetch;
 use crate::{
     cairo_types::traits::CairoType,
+    hint_processor::models::proofs::header::HeaderProof,
     syscall_handler::{utils::SyscallExecutionError, RPC},
 };
 use alloy::{
@@ -17,8 +17,7 @@ use cairo_vm::{
 };
 use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
-
-use super::KeyFetch;
+use std::env;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CairoKey {
@@ -51,7 +50,7 @@ pub struct Key {
 
 impl KeyFetch for Key {
     type Value = Block;
-    type Proof = Block; // TODO change it
+    type Proof = HeaderProof;
 
     fn fetch_value(&self) -> Result<Self::Value, SyscallExecutionError> {
         let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
