@@ -102,10 +102,10 @@ pub struct MMRMetadata {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde_as]
 pub struct MMRProof {
+    pub block_header: BlockHeader,
     pub block_number: u64,
     pub element_hash: String,
     pub element_index: u64,
-    pub block_header: BlockHeader,
     pub siblings_hashes: Vec<String>,
 }
 
