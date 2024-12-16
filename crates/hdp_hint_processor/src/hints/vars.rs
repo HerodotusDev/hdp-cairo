@@ -1,0 +1,60 @@
+pub mod scopes {
+    pub const ACCOUNT: &str = "account";
+    pub const BATCH: &str = "batch";
+    pub const COMPILED_CLASS: &str = "compiled_class";
+    pub const DICT_MANAGER: &str = "dict_manager";
+    pub const HEADER: &str = "header";
+    pub const N_SELECTED_BUILTINS: &str = "n_selected_builtins";
+    pub const PARAMS: &str = "params";
+    pub const PROOF: &str = "proof";
+    pub const PROOFS: &str = "proofs";
+    pub const RECEIPT: &str = "receipt";
+    pub const STORAGE: &str = "storage";
+    pub const SYSCALL_HANDLER: &str = "syscall_handler";
+    pub const TRANSACTION: &str = "transaction";
+}
+
+pub mod ids {
+    pub const ADDRESS: &str = "ids.address";
+    pub const ALL_ENCODINGS: &str = "all_encodings";
+    pub const BATCH_LEN: &str = "batch_len";
+    pub const BUILTIN_PARAMS: &str = "builtin_params";
+    pub const BUILTIN_PTRS: &str = "builtin_ptrs";
+    pub const CHAIN_ID: &str = "chain_id";
+    pub const COMPILED_CLASS: &str = "compiled_class";
+    pub const CURRENT_ITEM: &str = "ids.current_item";
+    pub const DEVISOR: &str = "ids.devisor";
+    pub const FIRST_BYTE: &str = "ids.first_byte";
+    pub const I: &str = "ids.i";
+    pub const IDX: &str = "ids.idx";
+    pub const IS_LEFT_SMALLER: &str = "ids.is_left_smaller";
+    pub const IS_LONG: &str = "ids.is_long";
+    pub const ITEM_TYPE: &str = "ids.item_type";
+    pub const KEY_LOW: &str = "ids.key_low";
+    pub const KEY_LEADING_ZEROS: &str = "ids.key_leading_zeros";
+    pub const KEY_HIGH: &str = "ids.key_high";
+    pub const LEFT: &str = "ids.left";
+    pub const MMR_PATH: &str = "ids.mmr_path";
+    pub const MPT_PROOF: &str = "ids.mpt_proof";
+    pub const PROOF_BYTES_LEN: &str = "ids.proof_bytes_len";
+    pub const N_BUILTINS: &str = "n_builtins";
+    pub const N_PROCESSED_WORDS: &str = "ids.n_processed_words";
+    pub const N_SELECTED_BUILTINS: &str = "n_selected_builtins";
+    pub const PARAMS_LEN: &str = "params_len";
+    pub const PARAMS: &str = "params";
+    pub const PROGRAM_HASH: &str = "program_hash";
+    pub const Q: &str = "ids.q";
+    pub const R: &str = "ids.r";
+    pub const RESULT: &str = "result";
+    pub const RETURN_BUILTIN_PTRS: &str = "return_builtin_ptrs";
+    pub const RIGHT: &str = "ids.right";
+    pub const RLP: &str = "ids.rlp";
+    pub const SELECT_BUILTIN: &str = "select_builtin";
+    pub const SELECTED_ENCODINGS: &str = "selected_encodings";
+    pub const SELECTED_PTRS: &str = "selected_ptrs";
+    pub const SLOT: &str = "ids.slot";
+    pub const SYSCALL_PTR: &str = "syscall_ptr";
+    pub const TASK_HASH: &str = "ids.task_hash";
+    pub const VALUE_LEN: &str = "ids.value_len";
+    pub const VALUE: &str = "ids.value";
+}

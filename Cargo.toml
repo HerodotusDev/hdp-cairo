@@ -1,8 +1,12 @@
 [workspace]
 resolver = "2"
 
-members = ["cairo_vm_hints"]
-
+members = [
+    "crates/hdp_hint_processor",
+    "crates/provider",
+    "crates/cairo_types",
+    "crates/dry_run"
+]
 
 [workspace.dependencies]
 alloy = { version = "0.7.2", features = ["full"] }
@@ -29,3 +33,7 @@ starknet-core = { version = "0.11.1", default-features = false }
 starknet-crypto = { version = "0.7.1", default-features = false }
 starknet-types-core = { version = "0.1.5", default-features = false }
 reqwest = "0.12.9"
+
+hdp_hint_processor = { path = "crates/hdp_hint_processor" }
+provider = { path = "crates/provider" }
+cairo_types = { path = "crates/cairo_types" }

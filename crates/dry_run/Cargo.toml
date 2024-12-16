@@ -1,0 +1,11 @@
+[package]
+name = "dry_run"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+hdp_hint_processor.workspace = true
+cairo-vm.workspace = true
+clap.workspace = true
+thiserror.workspace = true
+serde_json.workspace = true
