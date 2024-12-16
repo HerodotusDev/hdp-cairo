@@ -116,6 +116,17 @@ impl CustomHintProcessor {
         hints.insert(lib::verifiers::evm::receipt_verifier::HINT_RECEIPT_PROOF_LEN.into(), lib::verifiers::evm::receipt_verifier::hint_receipt_proof_len);
         hints.insert(lib::verifiers::evm::receipt_verifier::HINT_RECEIPT_PROOF_BYTES_LEN.into(), lib::verifiers::evm::receipt_verifier::hint_receipt_proof_bytes_len);
         hints.insert(lib::verifiers::evm::receipt_verifier::HINT_SET_RECEIPT.into(), lib::verifiers::evm::receipt_verifier::hint_set_receipt);
+        hints.insert(lib::verifiers::evm::storage_item_verifier::HINT_BATCH_STORAGES_LEN.into(), lib::verifiers::evm::storage_item_verifier::hint_batch_storages_len);
+        hints.insert(lib::verifiers::evm::storage_item_verifier::HINT_SET_BATCH_STORAGES.into(), lib::verifiers::evm::storage_item_verifier::hint_set_batch_storages);
+        hints.insert(lib::verifiers::evm::storage_item_verifier::HINT_SET_MPT_PROOF.into(), lib::verifiers::evm::storage_item_verifier::hint_set_mpt_proof);
+        hints.insert(lib::verifiers::evm::storage_item_verifier::HINT_SET_PROOF_LEN.into(), lib::verifiers::evm::storage_item_verifier::hint_set_proof_len);
+        hints.insert(lib::verifiers::evm::storage_item_verifier::HINT_SET_PROOF_BYTES_LEN.into(), lib::verifiers::evm::storage_item_verifier::hint_set_proof_bytes_len);
+        hints.insert(lib::verifiers::evm::storage_item_verifier::HINT_SET_PROOF_BLOCK_NUMBER.into(), lib::verifiers::evm::storage_item_verifier::hint_set_proof_block_number);
+        hints.insert(lib::verifiers::evm::storage_item_verifier::HINT_SET_STORAGE_KEY.into(), lib::verifiers::evm::storage_item_verifier::hint_set_storage_key);
+        hints.insert(lib::verifiers::evm::storage_item_verifier::HINT_SET_STORAGE_KEY_LEADING_ZEROS.into(), lib::verifiers::evm::storage_item_verifier::hint_set_storage_key_leading_zeros);
+        hints.insert(lib::verifiers::evm::storage_item_verifier::HINT_SET_STORAGE_PROOFS_LEN.into(), lib::verifiers::evm::storage_item_verifier::hint_set_storage_proofs_len);
+        hints.insert(lib::verifiers::evm::storage_item_verifier::HINT_SET_STORAGE_PROOF_AT.into(), lib::verifiers::evm::storage_item_verifier::hint_set_storage_proof_at);
+        hints.insert(lib::verifiers::evm::storage_item_verifier::HINT_SET_STORAGE_SLOT.into(), lib::verifiers::evm::storage_item_verifier::hint_set_storage_slot);
         hints.insert(lib::verifiers::verify::HINT_BATCH_LEN.into(), lib::verifiers::verify::hint_batch_len);
         hints.insert(lib::verifiers::verify::HINT_CHAIN_ID.into(), lib::verifiers::verify::hint_chain_id);
         hints.insert(lib::verifiers::verify::HINT_VM_ENTER_SCOPE.into(), lib::verifiers::verify::hint_vm_enter_scope);

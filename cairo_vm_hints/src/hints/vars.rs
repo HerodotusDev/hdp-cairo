@@ -9,6 +9,7 @@ pub mod scopes {
     pub(crate) const PROOF: &str = "proof";
     pub(crate) const PROOFS: &str = "proofs";
     pub(crate) const RECEIPT: &str = "receipt";
+    pub(crate) const STORAGE: &str = "storage";
     pub(crate) const SYSCALL_HANDLER: &str = "syscall_handler";
     pub(crate) const TRANSACTION: &str = "transaction";
 }
@@ -51,6 +52,7 @@ pub mod ids {
     pub(crate) const SELECT_BUILTIN: &str = "select_builtin";
     pub(crate) const SELECTED_ENCODINGS: &str = "selected_encodings";
     pub(crate) const SELECTED_PTRS: &str = "selected_ptrs";
+    pub(crate) const SLOT: &str = "ids.slot";
     pub(crate) const SYSCALL_PTR: &str = "syscall_ptr";
     pub(crate) const TASK_HASH: &str = "ids.task_hash";
     pub(crate) const VALUE_LEN: &str = "ids.value_len";
