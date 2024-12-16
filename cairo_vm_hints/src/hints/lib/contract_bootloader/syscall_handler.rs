@@ -1,4 +1,4 @@
-use crate::{hints::vars, syscall_handler::SyscallHandlerWrapper};
+use crate::{hints::vars, syscall_handler::evm::dryrun::SyscallHandlerWrapper};
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{builtin_hint_processor_definition::HintProcessorData, hint_utils::get_ptr_from_var_name},
     types::exec_scope::ExecutionScopes,

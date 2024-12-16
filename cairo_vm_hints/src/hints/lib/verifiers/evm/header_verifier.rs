@@ -40,12 +40,13 @@ pub fn hint_set_header(
         .try_into()
         .unwrap();
     let header = batch.headers[idx - 1].clone();
-    let rlp = header.rlp.clone();
+    let rlp_le_chunks: Vec<Felt252> = header.rlp.chunks(8).map(Felt252::from_bytes_le_slice).collect();
 
     exec_scopes.insert_value::<Header>(vars::scopes::HEADER, header);
 
     let rlp_ptr = get_ptr_from_var_name(vars::ids::RLP, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    vm.write_arg(rlp_ptr, &rlp)?;
+
+    vm.write_arg(rlp_ptr, &rlp_le_chunks)?;
 
     Ok(())
 }
@@ -98,9 +99,10 @@ pub fn hint_mmr_path(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let header = exec_scopes.get::<Header>(vars::scopes::HEADER)?;
-
     let mmr_path_ptr = get_ptr_from_var_name(vars::ids::MMR_PATH, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    vm.write_arg(mmr_path_ptr, &header.proof.mmr_path)?;
+    let mmr_path: Vec<Felt252> = header.proof.mmr_path.into_iter().map(|f| Felt252::from_bytes_be_slice(&f.0)).collect();
+
+    vm.write_arg(mmr_path_ptr, &mmr_path)?;
 
     Ok(())
 }

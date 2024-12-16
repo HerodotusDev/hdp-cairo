@@ -136,9 +136,9 @@ pub fn hint_proof_bytes_len(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let transaction = exec_scopes.get::<Transaction>(vars::scopes::TRANSACTION)?;
-
     let proof_bytes_len_ptr = get_ptr_from_var_name(vars::ids::PROOF_BYTES_LEN, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    vm.insert_value(proof_bytes_len_ptr, Felt252::from(transaction.proof.proof_bytes_len))?;
+
+    vm.insert_value(proof_bytes_len_ptr, Felt252::from(transaction.proof.proof.len()))?;
 
     Ok(())
 }
@@ -152,9 +152,10 @@ pub fn hint_mpt_proof(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let transaction = exec_scopes.get::<Transaction>(vars::scopes::TRANSACTION)?;
-
     let mpt_proof_ptr = get_ptr_from_var_name(vars::ids::MPT_PROOF, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    vm.write_arg(mpt_proof_ptr, &transaction.proof.proof)?;
+    let proof_le_chunks: Vec<Felt252> = transaction.proof.proof.chunks(8).map(Felt252::from_bytes_le_slice).collect();
+
+    vm.write_arg(mpt_proof_ptr, &proof_le_chunks)?;
 
     Ok(())
 }

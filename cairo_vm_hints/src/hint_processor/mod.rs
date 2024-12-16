@@ -3,8 +3,10 @@ pub mod models;
 pub mod output;
 pub mod run_input;
 
-use crate::hints::{lib, vars};
-use crate::syscall_handler::SyscallHandlerWrapper;
+use crate::{
+    hints::{lib, vars},
+    syscall_handler::evm::dryrun::SyscallHandlerWrapper,
+};
 use cairo_lang_casm::{
     hints::{Hint, StarknetHint},
     operand::{BinOpOperand, DerefOrImmediate, Operation, Register, ResOperand},
@@ -93,14 +95,14 @@ impl CustomHintProcessor {
         hints.insert(lib::verifiers::evm::account_verifier::HINT_BATCH_ACCOUNTS_LEN.into(), lib::verifiers::evm::account_verifier::hint_batch_accounts_len);
         hints.insert(lib::verifiers::evm::account_verifier::HINT_GET_ACCOUNT_ADDRESS.into(), lib::verifiers::evm::account_verifier::hint_get_account_address);
         hints.insert(lib::verifiers::evm::account_verifier::HINT_GET_MPT_PROOF.into(), lib::verifiers::evm::account_verifier::hint_get_mpt_proof);
-        hints.insert(lib::verifiers::evm::block_tx_verifier::HINT_BATCH_TRANSACTIONS_LEN.into(), lib::verifiers::evm::block_tx_verifier::hint_batch_transactions_len);
-        hints.insert(lib::verifiers::evm::block_tx_verifier::HINT_SET_TX.into(), lib::verifiers::evm::block_tx_verifier::hint_set_tx);
-        hints.insert(lib::verifiers::evm::block_tx_verifier::HINT_SET_TX_KEY.into(), lib::verifiers::evm::block_tx_verifier::hint_set_tx_key);
-        hints.insert(lib::verifiers::evm::block_tx_verifier::HINT_SET_TX_KEY_LEADING_ZEROS.into(), lib::verifiers::evm::block_tx_verifier::hint_set_tx_key_leading_zeros);
-        hints.insert(lib::verifiers::evm::block_tx_verifier::HINT_SET_TX_PROOF_LEN.into(), lib::verifiers::evm::block_tx_verifier::hint_set_tx_proof_len);
-        hints.insert(lib::verifiers::evm::block_tx_verifier::HINT_SET_TX_BLOCK_NUMBER.into(), lib::verifiers::evm::block_tx_verifier::hint_set_tx_block_number);
-        hints.insert(lib::verifiers::evm::block_tx_verifier::HINT_PROOF_BYTES_LEN.into(), lib::verifiers::evm::block_tx_verifier::hint_proof_bytes_len);
-        hints.insert(lib::verifiers::evm::block_tx_verifier::HINT_MPT_PROOF.into(), lib::verifiers::evm::block_tx_verifier::hint_mpt_proof);
+        hints.insert(lib::verifiers::evm::transaction_verifier::HINT_BATCH_TRANSACTIONS_LEN.into(), lib::verifiers::evm::transaction_verifier::hint_batch_transactions_len);
+        hints.insert(lib::verifiers::evm::transaction_verifier::HINT_SET_TX.into(), lib::verifiers::evm::transaction_verifier::hint_set_tx);
+        hints.insert(lib::verifiers::evm::transaction_verifier::HINT_SET_TX_KEY.into(), lib::verifiers::evm::transaction_verifier::hint_set_tx_key);
+        hints.insert(lib::verifiers::evm::transaction_verifier::HINT_SET_TX_KEY_LEADING_ZEROS.into(), lib::verifiers::evm::transaction_verifier::hint_set_tx_key_leading_zeros);
+        hints.insert(lib::verifiers::evm::transaction_verifier::HINT_SET_TX_PROOF_LEN.into(), lib::verifiers::evm::transaction_verifier::hint_set_tx_proof_len);
+        hints.insert(lib::verifiers::evm::transaction_verifier::HINT_SET_TX_BLOCK_NUMBER.into(), lib::verifiers::evm::transaction_verifier::hint_set_tx_block_number);
+        hints.insert(lib::verifiers::evm::transaction_verifier::HINT_PROOF_BYTES_LEN.into(), lib::verifiers::evm::transaction_verifier::hint_proof_bytes_len);
+        hints.insert(lib::verifiers::evm::transaction_verifier::HINT_MPT_PROOF.into(), lib::verifiers::evm::transaction_verifier::hint_mpt_proof);
         hints.insert(lib::verifiers::evm::header_verifier::HINT_BATCH_HEADERS_LEN.into(), lib::verifiers::evm::header_verifier::hint_batch_headers_len);
         hints.insert(lib::verifiers::evm::header_verifier::HINT_LEAF_IDX.into(), lib::verifiers::evm::header_verifier::hint_leaf_idx);
         hints.insert(lib::verifiers::evm::header_verifier::HINT_MMR_PATH_LEN.into(), lib::verifiers::evm::header_verifier::hint_mmr_path_len);
@@ -191,8 +193,7 @@ impl HintProcessorLogic for CustomHintProcessor {
         if let Some(hint) = hint_data.downcast_ref::<Hint>() {
             if let Hint::Starknet(StarknetHint::SystemCall { system }) = hint {
                 let syscall_ptr = get_ptr_from_res_operand(vm, system)?;
-                let syscall_handler = exec_scopes.get::<SyscallHandlerWrapper>(vars::scopes::SYSCALL_HANDLER)?;
-
+                let syscall_handler = exec_scopes.get_mut_ref::<SyscallHandlerWrapper>(vars::scopes::SYSCALL_HANDLER)?;
                 return syscall_handler.execute_syscall(vm, syscall_ptr).map(|_| HintExtension::default());
             } else {
                 return self
