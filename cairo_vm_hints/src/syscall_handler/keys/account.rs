@@ -1,7 +1,7 @@
 use super::KeyFetch;
 use crate::{
     cairo_types::traits::CairoType,
-    hint_processor::models::proofs::mpt::MPTProof,
+    hint_processor::models::proofs::{self, mpt::MPTProof},
     syscall_handler::{utils::SyscallExecutionError, RPC},
 };
 use alloy::{
@@ -55,7 +55,7 @@ pub struct Key {
 
 impl KeyFetch for Key {
     type Value = Account;
-    type Proof = MPTProof;
+    type Proof = proofs::account::Account;
 
     fn fetch_value(&self) -> Result<Self::Value, SyscallExecutionError> {
         let runtime = tokio::runtime::Runtime::new().unwrap();
@@ -72,7 +72,10 @@ impl KeyFetch for Key {
         let value = runtime
             .block_on(async { provider.get_proof(self.address, vec![]).block_id(self.block_number.into()).await })
             .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
-        Ok(Self::Proof::new(self.block_number, value.account_proof))
+        Ok(Self::Proof::new(
+            value.address,
+            vec![MPTProof::new(self.block_number, value.account_proof)],
+        ))
     }
 }
 

@@ -1,7 +1,7 @@
 use super::KeyFetch;
 use crate::{
     cairo_types::traits::CairoType,
-    hint_processor::models::proofs::mpt::MPTProof,
+    hint_processor::models::proofs::{self, mpt::MPTProof},
     syscall_handler::{utils::SyscallExecutionError, RPC},
 };
 use alloy::{
@@ -61,7 +61,7 @@ pub struct Key {
 
 impl KeyFetch for Key {
     type Value = StorageValue;
-    type Proof = MPTProof;
+    type Proof = (proofs::account::Account, proofs::storage::Storage);
 
     fn fetch_value(&self) -> Result<Self::Value, SyscallExecutionError> {
         let runtime = tokio::runtime::Runtime::new().unwrap();
@@ -81,9 +81,24 @@ impl KeyFetch for Key {
         let runtime = tokio::runtime::Runtime::new().unwrap();
         let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
         let value = runtime
-            .block_on(async { provider.get_proof(self.address, vec![]).block_id(self.block_number.into()).await })
+            .block_on(async {
+                provider
+                    .get_proof(self.address, vec![self.storage_slot])
+                    .block_id(self.block_number.into())
+                    .await
+            })
             .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
-        Ok(Self::Proof::new(self.block_number, value.account_proof))
+        Ok((
+            proofs::account::Account::new(value.address, vec![MPTProof::new(self.block_number, value.account_proof)]),
+            proofs::storage::Storage::new(
+                value.address,
+                self.storage_slot,
+                vec![MPTProof::new(
+                    self.block_number,
+                    value.storage_proof.into_iter().flat_map(|f| f.proof).collect(),
+                )],
+            ),
+        ))
     }
 }
 

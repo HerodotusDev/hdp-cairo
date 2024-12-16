@@ -79,6 +79,8 @@ impl KeyFetch for Key {
     fn fetch_proof(&self) -> Result<Self::Proof, SyscallExecutionError> {
         let provider = Indexer::default();
         let runtime = tokio::runtime::Runtime::new().unwrap();
+
+        // Fetch proof response
         let response = runtime
             .block_on(async {
                 provider
@@ -87,6 +89,7 @@ impl KeyFetch for Key {
             })
             .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
 
+        // Extract MMR metadata
         let mmr_meta = MmrMeta {
             id: response
                 .mmr_meta
@@ -104,21 +107,24 @@ impl KeyFetch for Key {
                 .mmr_meta
                 .mmr_peaks
                 .iter()
-                .map(|f| f.parse())
+                .map(|peak| peak.parse())
                 .collect::<Result<Vec<Bytes>, FromHexError>>()
                 .map_err(|e| SyscallExecutionError::InternalError(format!("{e}").into()))?,
         };
 
+        // Retrieve MMR proof
         let mmr_proof = response
             .headers
             .get(&self.block_number)
-            .ok_or(SyscallExecutionError::InternalError("block not found".into()))?;
+            .ok_or_else(|| SyscallExecutionError::InternalError("block not found".into()))?;
 
+        // Parse RLP
         let rlp = match &mmr_proof.block_header {
             BlockHeader::RlpString(rlp) => rlp,
-            _ => panic!("wrong rlp format"),
+            _ => return Err(SyscallExecutionError::InternalError("wrong rlp format".into())),
         };
 
+        // Construct Header
         let header = Header {
             rlp: rlp.parse().map_err(|e| SyscallExecutionError::InternalError(format!("{e}").into()))?,
             proof: HeaderProof {
@@ -126,7 +132,7 @@ impl KeyFetch for Key {
                 mmr_path: mmr_proof
                     .siblings_hashes
                     .iter()
-                    .map(|f| f.parse())
+                    .map(|hash| hash.parse())
                     .collect::<Result<Vec<Bytes>, FromHexError>>()
                     .map_err(|e| SyscallExecutionError::InternalError(format!("{e}").into()))?,
             },
