@@ -1,4 +1,3 @@
-use crate::syscall_handler::RPC;
 use crate::syscall_handler::{
     keys::{
         storage::{CairoKey, Key},
@@ -24,6 +23,7 @@ use cairo_vm::{
     vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
     Felt252,
 };
+use provider::RPC;
 use serde::{Deserialize, Serialize};
 use std::env;
 

@@ -1,11 +1,11 @@
-use super::FetchValue;
+use super::{account, storage, FetchValue};
 use crate::{
     hint_processor::models::proofs::{
         self,
         header::{Header, HeaderProof},
         mmr::MmrMeta,
     },
-    syscall_handler::{utils::SyscallExecutionError, RPC},
+    syscall_handler::utils::SyscallExecutionError,
 };
 use alloy::{
     hex::FromHexError,
@@ -24,6 +24,7 @@ use provider::indexer::{
     types::{BlockHeader, IndexerQuery, MMRData},
     Indexer,
 };
+use provider::RPC;
 use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::FromStrError;
@@ -54,8 +55,8 @@ impl CairoType for CairoKey {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Key {
-    chain_id: ChainId,
-    block_number: BlockNumber,
+    pub chain_id: ChainId,
+    pub block_number: BlockNumber,
 }
 
 impl FetchValue for Key {
@@ -74,71 +75,24 @@ impl FetchValue for Key {
             .ok_or(SyscallExecutionError::InternalError("Block not found".into()))?;
         Ok(block)
     }
+}
 
-    // fn fetch_proof(&self) -> Result<Self::Proof, SyscallExecutionError> {
-    //     let provider = Indexer::default();
-    //     let runtime = tokio::runtime::Runtime::new().unwrap();
+impl From<account::Key> for Key {
+    fn from(value: account::Key) -> Self {
+        Self {
+            chain_id: value.chain_id,
+            block_number: value.block_number,
+        }
+    }
+}
 
-    //     // Fetch proof response
-    //     let response = runtime
-    //         .block_on(async {
-    //             provider
-    //                 .get_headers_proof(IndexerQuery::new(self.chain_id, self.block_number, self.block_number))
-    //                 .await
-    //         })
-    //         .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
-
-    //     // Extract MMR metadata
-    //     let mmr_meta = MmrMeta {
-    //         id: response
-    //             .mmr_meta
-    //             .mmr_id
-    //             .parse()
-    //             .map_err(|e| SyscallExecutionError::InternalError(format!("{e}").into()))?,
-    //         size: response.mmr_meta.mmr_size,
-    //         root: response
-    //             .mmr_meta
-    //             .mmr_root
-    //             .parse()
-    //             .map_err(|e| SyscallExecutionError::InternalError(format!("{e}").into()))?,
-    //         chain_id: self.chain_id,
-    //         peaks: response
-    //             .mmr_meta
-    //             .mmr_peaks
-    //             .iter()
-    //             .map(|peak| peak.parse())
-    //             .collect::<Result<Vec<Bytes>, FromHexError>>()
-    //             .map_err(|e| SyscallExecutionError::InternalError(format!("{e}").into()))?,
-    //     };
-
-    //     // Retrieve MMR proof
-    //     let mmr_proof = response
-    //         .headers
-    //         .get(&self.block_number)
-    //         .ok_or_else(|| SyscallExecutionError::InternalError("block not found".into()))?;
-
-    //     // Parse RLP
-    //     let rlp = match &mmr_proof.block_header {
-    //         BlockHeader::RlpString(rlp) => rlp,
-    //         _ => return Err(SyscallExecutionError::InternalError("wrong rlp format".into())),
-    //     };
-
-    //     // Construct Header
-    //     let header = Header {
-    //         rlp: rlp.parse().map_err(|e| SyscallExecutionError::InternalError(format!("{e}").into()))?,
-    //         proof: HeaderProof {
-    //             leaf_idx: mmr_proof.element_index,
-    //             mmr_path: mmr_proof
-    //                 .siblings_hashes
-    //                 .iter()
-    //                 .map(|hash| hash.parse())
-    //                 .collect::<Result<Vec<Bytes>, FromHexError>>()
-    //                 .map_err(|e| SyscallExecutionError::InternalError(format!("{e}").into()))?,
-    //         },
-    //     };
-
-    //     Ok((mmr_meta, header))
-    // }
+impl From<storage::Key> for Key {
+    fn from(value: storage::Key) -> Self {
+        Self {
+            chain_id: value.chain_id,
+            block_number: value.block_number,
+        }
+    }
 }
 
 impl TryFrom<CairoKey> for Key {

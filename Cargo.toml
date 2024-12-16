@@ -2,10 +2,11 @@
 resolver = "2"
 
 members = [
-    "crates/hdp_hint_processor",
-    "crates/provider",
     "crates/cairo_types",
-    "crates/dry_run"
+    "crates/dry_run",
+    "crates/hdp_hint_processor",
+    "crates/fetcher",
+    "crates/provider",
 ]
 
 [workspace.dependencies]

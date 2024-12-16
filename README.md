@@ -23,7 +23,7 @@ Before running the program, prepare the input data. The inputs are provided via 
 To run the program, use:
 
 ```bash
-make run-hdp
+cargo run --bin dry_run -- build/compiled_cairo_files/contract_dry_run.json --program_input rust_input.json --program_output a.json --layout all_cairo
 ```
 
 The program will output the results root and tasks root. These roots can be used to extract the results from the on-chain contract.

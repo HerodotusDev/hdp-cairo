@@ -13,8 +13,3 @@ pub trait FetchValue {
     type Value;
     fn fetch_value(&self) -> Result<Self::Value, SyscallExecutionError>;
 }
-
-pub trait FetchProofs {
-    type Key;
-    fn fetch_proofs(&self, keys: Vec<Self::Key>) -> Result<Proofs, SyscallExecutionError>;
-}

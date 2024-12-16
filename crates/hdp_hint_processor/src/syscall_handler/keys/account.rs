@@ -1,6 +1,6 @@
 use crate::{
     hint_processor::models::proofs::{self, mpt::MPTProof},
-    syscall_handler::{utils::SyscallExecutionError, RPC},
+    syscall_handler::utils::SyscallExecutionError,
 };
 use alloy::{
     consensus::Account,
@@ -15,11 +15,12 @@ use cairo_vm::{
     vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
     Felt252,
 };
+use provider::RPC;
 use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
 use std::env;
 
-use super::FetchValue;
+use super::{storage, FetchValue};
 
 #[derive(Debug)]
 pub struct CairoKey {
@@ -49,9 +50,9 @@ impl CairoType for CairoKey {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Key {
-    chain_id: ChainId,
-    block_number: BlockNumber,
-    address: Address,
+    pub chain_id: ChainId,
+    pub block_number: BlockNumber,
+    pub address: Address,
 }
 
 impl FetchValue for Key {
@@ -65,18 +66,16 @@ impl FetchValue for Key {
             .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
         Ok(value)
     }
+}
 
-    // fn fetch_proof(&self) -> Result<Self::Proof, SyscallExecutionError> {
-    //     let runtime = tokio::runtime::Runtime::new().unwrap();
-    //     let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
-    //     let value = runtime
-    //         .block_on(async { provider.get_proof(self.address, vec![]).block_id(self.block_number.into()).await })
-    //         .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
-    //     Ok(Self::Proof::new(
-    //         value.address,
-    //         vec![MPTProof::new(self.block_number, value.account_proof)],
-    //     ))
-    // }
+impl From<storage::Key> for Key {
+    fn from(value: storage::Key) -> Self {
+        Self {
+            chain_id: value.chain_id,
+            block_number: value.block_number,
+            address: value.address,
+        }
+    }
 }
 
 impl TryFrom<CairoKey> for Key {

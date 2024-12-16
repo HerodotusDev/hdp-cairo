@@ -25,8 +25,8 @@ use strum_macros::FromRepr;
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct SyscallHandler {
     #[serde(skip)]
-    syscall_ptr: Option<Relocatable>,
-    call_contract_handler: CallContractHandler,
+    pub syscall_ptr: Option<Relocatable>,
+    pub call_contract_handler: CallContractHandler,
 }
 
 /// SyscallHandler is wrapped in Rc<RefCell<_>> in order
@@ -47,7 +47,7 @@ pub enum CallHandlerId {
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct CallContractHandler {
-    key_set: HashSet<DryRunKey>,
+    pub key_set: HashSet<DryRunKey>,
 }
 
 impl SyscallHandlerWrapper {
@@ -168,10 +168,24 @@ impl TryFrom<Felt252> for CallHandlerId {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
-enum DryRunKey {
+pub enum DryRunKey {
     Account(keys::account::Key),
     Header(keys::header::Key),
     Storage(keys::storage::Key),
+}
+
+impl DryRunKey {
+    pub fn is_account(&self) -> bool {
+        matches!(self, Self::Account(_))
+    }
+
+    pub fn is_header(&self) -> bool {
+        matches!(self, Self::Header(_))
+    }
+
+    pub fn is_storage(&self) -> bool {
+        matches!(self, Self::Storage(_))
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

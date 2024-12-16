@@ -1,7 +1,7 @@
 use super::FetchValue;
 use crate::{
     hint_processor::models::proofs::{self, mpt::MPTProof},
-    syscall_handler::{utils::SyscallExecutionError, RPC},
+    syscall_handler::utils::SyscallExecutionError,
 };
 use alloy::{
     primitives::{Address, BlockNumber, ChainId, StorageKey, StorageValue},
@@ -15,6 +15,7 @@ use cairo_vm::{
     vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
     Felt252,
 };
+use provider::RPC;
 use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -53,10 +54,10 @@ impl CairoType for CairoKey {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Key {
-    chain_id: ChainId,
-    block_number: BlockNumber,
-    address: Address,
-    storage_slot: StorageKey,
+    pub chain_id: ChainId,
+    pub block_number: BlockNumber,
+    pub address: Address,
+    pub storage_slot: StorageKey,
 }
 
 impl FetchValue for Key {
@@ -75,30 +76,6 @@ impl FetchValue for Key {
             .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
         Ok(value)
     }
-
-    // fn fetch_proof(&self) -> Result<Self::Proof, SyscallExecutionError> {
-    //     let runtime = tokio::runtime::Runtime::new().unwrap();
-    //     let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
-    //     let value = runtime
-    //         .block_on(async {
-    //             provider
-    //                 .get_proof(self.address, vec![self.storage_slot])
-    //                 .block_id(self.block_number.into())
-    //                 .await
-    //         })
-    //         .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
-    //     Ok((
-    //         proofs::account::Account::new(value.address, vec![MPTProof::new(self.block_number, value.account_proof)]),
-    //         proofs::storage::Storage::new(
-    //             value.address,
-    //             self.storage_slot,
-    //             vec![MPTProof::new(
-    //                 self.block_number,
-    //                 value.storage_proof.into_iter().flat_map(|f| f.proof).collect(),
-    //             )],
-    //         ),
-    //     ))
-    // }
 }
 
 impl TryFrom<CairoKey> for Key {

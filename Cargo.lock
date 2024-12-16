@@ -2166,6 +2166,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "fetcher"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "cairo-vm",
+ "clap",
+ "hdp_hint_processor",
+ "hex",
+ "provider",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tokio",
+]
+
+[[package]]
 name = "ff"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

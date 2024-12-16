@@ -153,7 +153,12 @@ pub fn hint_receipt_mpt_proof(
 ) -> Result<(), HintError> {
     let receipt = exec_scopes.get::<Receipt>(vars::scopes::RECEIPT)?;
     let mpt_proof_ptr = get_ptr_from_var_name(vars::ids::MPT_PROOF, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let proof_le_chunks: Vec<Felt252> = receipt.proof.proof.chunks(8).map(Felt252::from_bytes_le_slice).collect();
+    let proof_le_chunks: Vec<Vec<Felt252>> = receipt
+        .proof
+        .proof
+        .into_iter()
+        .map(|p| p.chunks(8).map(Felt252::from_bytes_le_slice).collect())
+        .collect();
 
     vm.write_arg(mpt_proof_ptr, &proof_le_chunks)?;
 
