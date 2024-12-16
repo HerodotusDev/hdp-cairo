@@ -22,7 +22,7 @@ pub fn hint_batch_headers_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let batch = exec_scopes.get::<Proofs>("batch")?;
+    let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH)?;
 
     insert_value_into_ap(vm, Felt252::from(batch.headers.len()))
 }
@@ -35,14 +35,14 @@ pub fn hint_set_header(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let batch = exec_scopes.get::<Proofs>("batch")?;
+    let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
         .unwrap();
     let header = batch.headers[idx - 1].clone();
     let rlp = header.rlp.clone();
 
-    exec_scopes.insert_value::<Header>("header", header);
+    exec_scopes.insert_value::<Header>(vars::scopes::HEADER, header);
 
     let rlp_ptr = get_ptr_from_var_name(vars::ids::RLP, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     vm.write_arg(rlp_ptr, &rlp)?;
@@ -58,7 +58,7 @@ pub fn hint_rlp_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let header = exec_scopes.get::<Header>("header")?;
+    let header = exec_scopes.get::<Header>(vars::scopes::HEADER)?;
 
     insert_value_into_ap(vm, Felt252::from(header.rlp.len()))
 }
@@ -71,7 +71,7 @@ pub fn hint_leaf_idx(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let header = exec_scopes.get::<Header>("header")?;
+    let header = exec_scopes.get::<Header>(vars::scopes::HEADER)?;
 
     insert_value_into_ap(vm, Felt252::from(header.proof.leaf_idx))
 }
@@ -84,7 +84,7 @@ pub fn hint_mmr_path_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let header = exec_scopes.get::<Header>("header")?;
+    let header = exec_scopes.get::<Header>(vars::scopes::HEADER)?;
 
     insert_value_into_ap(vm, Felt252::from(header.proof.mmr_path.len()))
 }
@@ -97,7 +97,7 @@ pub fn hint_mmr_path(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let header = exec_scopes.get::<Header>("header")?;
+    let header = exec_scopes.get::<Header>(vars::scopes::HEADER)?;
 
     let mmr_path_ptr = get_ptr_from_var_name(vars::ids::MMR_PATH, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     vm.write_arg(mmr_path_ptr, &header.proof.mmr_path)?;

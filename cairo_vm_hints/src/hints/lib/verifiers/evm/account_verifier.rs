@@ -27,7 +27,7 @@ pub fn hint_batch_accounts_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let batch = exec_scopes.get::<Proofs>("batch")?;
+    let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH)?;
 
     insert_value_into_ap(vm, Felt252::from(batch.accounts.len()))
 }
@@ -41,7 +41,7 @@ pub fn hint_get_account_address(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let batch = exec_scopes.get::<Proofs>("batch")?;
+    let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
         .unwrap();

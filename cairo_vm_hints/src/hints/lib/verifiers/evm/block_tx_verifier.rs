@@ -7,11 +7,15 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
+use num_bigint::BigUint;
 use std::collections::HashMap;
 
 use crate::{
     hint_processor::models::proofs::{transaction::Transaction, Proofs},
-    hints::{lib::utils::count_leading_zero_nibbles_from_hex, vars},
+    hints::{
+        lib::utils::{count_leading_zero_nibbles_from_hex, split_128},
+        vars,
+    },
 };
 
 pub const HINT_BATCH_TRANSACTIONS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch.transactions))";
@@ -22,7 +26,7 @@ pub fn hint_batch_transactions_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let batch = exec_scopes.get::<Proofs>("batch")?;
+    let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH)?;
 
     insert_value_into_ap(vm, Felt252::from(batch.transactions.len()))
 }
@@ -35,13 +39,13 @@ pub fn hint_set_tx(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let batch = exec_scopes.get::<Proofs>("batch")?;
+    let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
         .unwrap();
     let transaction = batch.transactions[idx].clone();
 
-    exec_scopes.insert_value::<Transaction>("transaction", transaction);
+    exec_scopes.insert_value::<Transaction>(vars::scopes::TRANSACTION, transaction);
 
     Ok(())
 }
@@ -54,13 +58,10 @@ pub fn hint_set_tx_key(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let transaction = exec_scopes.get::<Transaction>("transaction")?;
-    let key = transaction.key;
+    let transaction = exec_scopes.get::<Transaction>(vars::scopes::TRANSACTION)?;
+    let key = BigUint::from_bytes_be(&transaction.key.to_be_bytes::<32>());
 
-    let key_as_limbs = key.as_limbs();
-    let key_low = key_as_limbs[0] as u128 | ((key_as_limbs[1] as u128) << 64);
-    let key_high = key_as_limbs[2] as u128 | ((key_as_limbs[3] as u128) << 64);
-
+    let (key_low, key_high) = split_128(&key);
     insert_value_from_var_name(
         vars::ids::KEY_LOW,
         Felt252::from(key_low),
@@ -88,7 +89,7 @@ pub fn hint_set_tx_key_leading_zeros(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let transaction = exec_scopes.get::<Transaction>("transaction")?;
+    let transaction = exec_scopes.get::<Transaction>(vars::scopes::TRANSACTION)?;
     let key_leading_zeros = count_leading_zero_nibbles_from_hex(&format!("{:x}", transaction.key));
 
     insert_value_from_var_name(
@@ -108,7 +109,7 @@ pub fn hint_set_tx_proof_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let transaction = exec_scopes.get::<Transaction>("transaction")?;
+    let transaction = exec_scopes.get::<Transaction>(vars::scopes::TRANSACTION)?;
 
     insert_value_into_ap(vm, Felt252::from(transaction.proof.proof.len()))
 }
@@ -121,7 +122,7 @@ pub fn hint_set_tx_block_number(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let transaction = exec_scopes.get::<Transaction>("transaction")?;
+    let transaction = exec_scopes.get::<Transaction>(vars::scopes::TRANSACTION)?;
 
     insert_value_into_ap(vm, Felt252::from(transaction.proof.block_number))
 }
@@ -134,7 +135,7 @@ pub fn hint_proof_bytes_len(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let transaction = exec_scopes.get::<Transaction>("transaction")?;
+    let transaction = exec_scopes.get::<Transaction>(vars::scopes::TRANSACTION)?;
 
     let proof_bytes_len_ptr = get_ptr_from_var_name(vars::ids::PROOF_BYTES_LEN, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     vm.insert_value(proof_bytes_len_ptr, Felt252::from(transaction.proof.proof_bytes_len))?;
@@ -150,7 +151,7 @@ pub fn hint_mpt_proof(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let transaction = exec_scopes.get::<Transaction>("transaction")?;
+    let transaction = exec_scopes.get::<Transaction>(vars::scopes::TRANSACTION)?;
 
     let mpt_proof_ptr = get_ptr_from_var_name(vars::ids::MPT_PROOF, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     vm.write_arg(mpt_proof_ptr, &transaction.proof.proof)?;

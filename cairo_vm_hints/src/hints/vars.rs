@@ -3,11 +3,14 @@ pub mod scopes {
     pub(crate) const BATCH: &str = "batch";
     pub(crate) const COMPILED_CLASS: &str = "compiled_class";
     pub(crate) const DICT_MANAGER: &str = "dict_manager";
+    pub(crate) const HEADER: &str = "header";
     pub(crate) const N_SELECTED_BUILTINS: &str = "n_selected_builtins";
     pub(crate) const PARAMS: &str = "params";
     pub(crate) const PROOF: &str = "proof";
     pub(crate) const PROOFS: &str = "proofs";
+    pub(crate) const RECEIPT: &str = "receipt";
     pub(crate) const SYSCALL_HANDLER: &str = "syscall_handler";
+    pub(crate) const TRANSACTION: &str = "transaction";
 }
 
 pub mod ids {
