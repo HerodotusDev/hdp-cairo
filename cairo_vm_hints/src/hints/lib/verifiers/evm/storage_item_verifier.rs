@@ -61,10 +61,11 @@ pub fn hint_set_storage_slot(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE)?;
-    let slot = BigUint::from_str_radix(&storage.slot.to_string(), 16).unwrap();
+    let slot_le_chunks: Vec<Felt252> = storage.slot.chunks(8).map(Felt252::from_bytes_le_slice).collect();
 
     let slot_ptr = get_ptr_from_var_name(vars::ids::SLOT, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    vm.insert_value(slot_ptr, &Felt252::from(slot))?;
+
+    vm.write_arg(slot_ptr, &slot_le_chunks)?;
 
     Ok(())
 }
@@ -189,9 +190,9 @@ pub fn hint_set_proof_bytes_len(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let proof = exec_scopes.get::<MPTProof>(vars::scopes::PROOF)?;
-
     let proof_bytes_len_ptr = get_ptr_from_var_name(vars::ids::PROOF_BYTES_LEN, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    vm.insert_value(proof_bytes_len_ptr, &Felt252::from(proof.proof_bytes_len))?;
+
+    vm.insert_value(proof_bytes_len_ptr, Felt252::from(proof.proof.len()))?;
 
     Ok(())
 }
@@ -205,9 +206,10 @@ pub fn hint_set_mpt_proof(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let proof = exec_scopes.get::<MPTProof>(vars::scopes::PROOF)?;
-
     let mpt_proof_ptr = get_ptr_from_var_name(vars::ids::MPT_PROOF, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    vm.write_arg(mpt_proof_ptr, &proof.proof)?;
+    let proof_le_chunks: Vec<Felt252> = proof.proof.chunks(8).map(Felt252::from_bytes_le_slice).collect();
+
+    vm.write_arg(mpt_proof_ptr, &proof_le_chunks)?;
 
     Ok(())
 }

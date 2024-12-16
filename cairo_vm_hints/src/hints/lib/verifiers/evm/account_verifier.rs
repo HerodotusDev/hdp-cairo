@@ -46,12 +46,13 @@ pub fn hint_get_account_address(
         .try_into()
         .unwrap();
     let account = batch.accounts[idx].clone();
-    let address: Vec<Felt252> = account.address.chunks(8).map(Felt252::from_bytes_le_slice).collect();
+    let address_le_chunks: Vec<Felt252> = account.address.chunks(8).map(Felt252::from_bytes_le_slice).collect();
 
     exec_scopes.insert_value::<Account>(vars::scopes::ACCOUNT, account);
 
     let address_ptr = get_ptr_from_var_name(vars::ids::ADDRESS, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    vm.write_arg(address_ptr, &address)?;
+
+    vm.write_arg(address_ptr, &address_le_chunks)?;
 
     Ok(())
 }
@@ -176,7 +177,7 @@ pub fn hint_account_proof_bytes_len(
 
     insert_value_from_var_name(
         vars::ids::PROOF_BYTES_LEN,
-        MaybeRelocatable::Int(Felt252::from(proof.proof_bytes_len)),
+        MaybeRelocatable::Int(Felt252::from(proof.proof.len())),
         vm,
         &hint_data.ids_data,
         &hint_data.ap_tracking,
@@ -193,8 +194,9 @@ pub fn hint_get_mpt_proof(
 ) -> Result<(), HintError> {
     let proof = exec_scopes.get::<MPTProof>(vars::scopes::PROOF)?;
     let mpt_proof_ptr = get_ptr_from_var_name(vars::ids::MPT_PROOF, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let proof_le_chunks: Vec<Felt252> = proof.proof.chunks(8).map(Felt252::from_bytes_le_slice).collect();
 
-    vm.write_arg(mpt_proof_ptr, &proof.proof)?;
+    vm.write_arg(mpt_proof_ptr, &proof_le_chunks)?;
 
     Ok(())
 }

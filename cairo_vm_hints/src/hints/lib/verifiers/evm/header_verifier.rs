@@ -40,12 +40,13 @@ pub fn hint_set_header(
         .try_into()
         .unwrap();
     let header = batch.headers[idx - 1].clone();
-    let rlp = header.rlp.clone();
+    let rlp_le_chunks: Vec<Felt252> = header.rlp.chunks(8).map(Felt252::from_bytes_le_slice).collect();
 
     exec_scopes.insert_value::<Header>(vars::scopes::HEADER, header);
 
     let rlp_ptr = get_ptr_from_var_name(vars::ids::RLP, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    vm.write_arg(rlp_ptr, &rlp)?;
+
+    vm.write_arg(rlp_ptr, &rlp_le_chunks)?;
 
     Ok(())
 }

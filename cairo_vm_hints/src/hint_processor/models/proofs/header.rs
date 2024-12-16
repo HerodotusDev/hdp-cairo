@@ -13,6 +13,6 @@ pub struct HeaderProof {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
 pub struct Header {
-    pub rlp: Vec<Bytes>,
+    pub rlp: Bytes,
     pub proof: HeaderProof,
 }
