@@ -11,7 +11,7 @@ use std::{cmp::Ordering, collections::HashMap};
 
 const BYZANTIUM_START_BLOCK_NUMBER: Felt252 = Felt252::from_hex_unchecked("0x42AE50");
 
-pub const HINT_IS_BYZANTIUM: &str = "ids.is_byzantium = 1 if ids.block_number >= ids.chain_info.byzantium else 0";
+pub const HINT_IS_BYZANTIUM: &str = "if ids.block_number >= ids.chain_info.byzantium:\n    ids.is_byzantium = 1\nelse:\n    ids.is_byzantium = 0";
 
 pub fn hint_is_byzantium(
     vm: &mut VirtualMachine,

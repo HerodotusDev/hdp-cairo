@@ -11,7 +11,7 @@ use std::{cmp::Ordering, collections::HashMap};
 
 const FELT_127: Felt252 = Felt252::from_hex_unchecked("0x7f");
 
-pub const HINT_V_IS_ENCODED: &str = "ids.v_is_encoded = 1 if ids.v.low > 0x7f else 0";
+pub const HINT_V_IS_ENCODED: &str = "if ids.v.low <= 0x7f:\n    ids.v_is_encoded = 0\nelse:\n    ids.v_is_encoded = 1";
 
 pub fn hint_v_is_encoded(
     vm: &mut VirtualMachine,

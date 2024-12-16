@@ -13,7 +13,7 @@ use std::{any::Any, collections::HashMap};
 
 use crate::{hint_processor::models::proofs::Proofs, hints::vars};
 
-pub const HINT_BATCH_LEN: &str = "ids.batch_len = len(ids.proofs)";
+pub const HINT_BATCH_LEN: &str = "ids.batch_len = len(proofs)";
 
 pub fn hint_batch_len(
     vm: &mut VirtualMachine,

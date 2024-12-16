@@ -13,7 +13,7 @@ use std::collections::HashMap;
 const FELT_TWO_POW_128: Felt252 = Felt252::from_hex_unchecked("0x0100000000000000000000000000000000");
 
 pub const HINT_TARGET_TASK_HASH: &str =
-    "target_task_hash = hex(ids.task_hash.low + ids.task_hash.high*2**128)[2:] print(f\"Task Hash: 0x{target_task_hash}\")";
+    "target_task_hash = hex(ids.task_hash.low + ids.task_hash.high*2**128)[2:]\nprint(f\"Task Hash: 0x{target_task_hash}\")";
 
 pub fn hint_target_task_hash(
     vm: &mut VirtualMachine,
@@ -39,7 +39,7 @@ pub fn hint_target_task_hash(
 }
 
 pub const HINT_IS_LEFT_SMALLER: &str =
-    "def flip_endianess(val): val_hex = hex(val)[2:] if len(val_hex) % 2: val_hex = '0' + val_hex # Convert hex string to bytes byte_data = bytes.fromhex(val_hex) num = int.from_bytes(byte_data, byteorder=\"little\") return num # In LE Uint256, the low and high are reversed left = flip_endianess(ids.left.low) * 2**128 + flip_endianess(ids.left.high) right = flip_endianess(ids.right.low) * 2**128 + flip_endianess(ids.right.high) # Compare the values to derive correct hashing order if left < right: ids.is_left_smaller = 1 #print(f\"H({hex(left)}, {hex(right)}\") else: #print(f\"H({hex(right)}, {hex(left)}\") ids.is_left_smaller = 0";
+    "def flip_endianess(val):\n    val_hex = hex(val)[2:]\n\n    if len(val_hex) % 2:\n        val_hex = '0' + val_hex\n\n    # Convert hex string to bytes\n    byte_data = bytes.fromhex(val_hex)\n    num = int.from_bytes(byte_data, byteorder=\"little\")\n\n    return num\n\n# In LE Uint256, the low and high are reversed\nleft = flip_endianess(ids.left.low) * 2**128 + flip_endianess(ids.left.high)\nright = flip_endianess(ids.right.low) * 2**128 + flip_endianess(ids.right.high)\n\n# Compare the values to derive correct hashing order\nif left < right:\n    ids.is_left_smaller = 1\n    #print(f\"H({hex(left)}, {hex(right)})\")\nelse:\n    #print(f\"H({hex(right)}, {hex(left)})\")\n    ids.is_left_smaller = 0";
 
 pub fn hint_is_left_smaller(
     vm: &mut VirtualMachine,

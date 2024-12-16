@@ -90,7 +90,6 @@ impl CustomHintProcessor {
         hints.insert(lib::verifiers::evm::account_verifier::HINT_ACCOUNT_PROOF_BLOCK_NUMBER.into(), lib::verifiers::evm::account_verifier::hint_account_proof_block_number);
         hints.insert(lib::verifiers::evm::account_verifier::HINT_ACCOUNT_PROOF_BYTES_LEN.into(), lib::verifiers::evm::account_verifier::hint_account_proof_bytes_len);
         hints.insert(lib::verifiers::evm::account_verifier::HINT_ACCOUNT_PROOFS_LEN.into(), lib::verifiers::evm::account_verifier::hint_account_proofs_len);
-        hints.insert(lib::verifiers::evm::account_verifier::HINT_ACCOUNT_PROOF_LEN.into(), lib::verifiers::evm::account_verifier::hint_account_proof_len);
         hints.insert(lib::verifiers::evm::account_verifier::HINT_BATCH_ACCOUNTS_LEN.into(), lib::verifiers::evm::account_verifier::hint_batch_accounts_len);
         hints.insert(lib::verifiers::evm::account_verifier::HINT_GET_ACCOUNT_ADDRESS.into(), lib::verifiers::evm::account_verifier::hint_get_account_address);
         hints.insert(lib::verifiers::evm::account_verifier::HINT_GET_MPT_PROOF.into(), lib::verifiers::evm::account_verifier::hint_get_mpt_proof);

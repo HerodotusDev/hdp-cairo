@@ -13,7 +13,7 @@ use cairo_vm::{
 use std::collections::HashMap;
 
 pub const HINT_IS_LONG: &str =
-    "ids.is_long = 0 if 0xc0 <= ids.first_byte <= 0xf6 else 1 if 0xf7 <= ids.first_byte <= 0xff else assert False, 'Invalid RLP list'";
+    "if 0xc0 <= ids.first_byte <= 0xf6:\n    ids.is_long = 0 # short list\nelif 0xf7 <= ids.first_byte <= 0xff:\n    ids.is_long = 1 # long list\nelse:\n    assert False, \"Invalid RLP list\"";
 
 pub fn hint_is_long(
     vm: &mut VirtualMachine,
@@ -40,7 +40,7 @@ pub fn hint_is_long(
     )
 }
 
-pub const HINT_ITEM_TYPE: &str = "ids.item_type = 0 if ids.current_item <= 0x7f else 1 if 0x80 <= ids.current_item <= 0xb6 else 2 if 0xb7 <= ids.current_item <= 0xbf else 3 if 0xc0 <= ids.current_item <= 0xf6 else 4 if 0xf7 <= ids.current_item <= 0xff else assert False, 'Invalid RLP item'";
+pub const HINT_ITEM_TYPE: &str = "if ids.current_item <= 0x7f:\n    ids.item_type = 0 # single byte\nelif 0x80 <= ids.current_item <= 0xb6:\n    ids.item_type = 1 # short string\nelif 0xb7 <= ids.current_item <= 0xbf:\n    ids.item_type = 2 # long string\nelif 0xc0 <= ids.current_item <= 0xf6:\n    ids.item_type = 3 # short list\nelif 0xf7 <= ids.current_item <= 0xff:\n    ids.item_type = 4 # long list\nelse:\n    assert False, \"Invalid RLP item\"";
 
 pub fn hint_item_type(
     vm: &mut VirtualMachine,
