@@ -1,4 +1,4 @@
-use cairo_vm::Felt252;
+use alloy::primitives::Bytes;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
@@ -7,9 +7,13 @@ use serde_with::serde_as;
 pub struct MmrMeta {
     pub id: u64,
     pub size: u64,
-    #[serde_as(as = "starknet_core::serde::unsigned_field_element::UfeHex")]
-    pub root: Felt252,
+    pub root: Bytes,
     pub chain_id: u64,
-    #[serde_as(as = "Vec<starknet_core::serde::unsigned_field_element::UfeHex>")]
-    pub peaks: Vec<Felt252>,
+    pub peaks: Vec<Bytes>,
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum MmrMetaError {
+    #[error(transparent)]
+    SerdeJson(#[from] serde_json::Error),
 }

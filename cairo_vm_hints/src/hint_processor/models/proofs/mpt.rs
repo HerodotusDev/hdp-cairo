@@ -8,3 +8,9 @@ pub struct MPTProof {
     pub block_number: u64,
     pub proof: Bytes,
 }
+
+impl MPTProof {
+    pub fn new(block_number: u64, proof: Bytes) -> Self {
+        Self { block_number, proof }
+    }
+}
