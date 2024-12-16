@@ -1,7 +1,7 @@
 use crate::syscall_handler::{
     keys::{
         storage::{CairoKey, Key},
-        KeyFetch,
+        FetchValue,
     },
     traits::CallHandler,
     utils::{SyscallExecutionError, SyscallResult},

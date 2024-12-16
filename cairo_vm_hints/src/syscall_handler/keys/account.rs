@@ -1,4 +1,3 @@
-use super::KeyFetch;
 use crate::{
     cairo_types::traits::CairoType,
     hint_processor::models::proofs::{self, mpt::MPTProof},
@@ -19,6 +18,8 @@ use cairo_vm::{
 use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
 use std::env;
+
+use super::FetchValue;
 
 #[derive(Debug)]
 pub struct CairoKey {
@@ -53,9 +54,8 @@ pub struct Key {
     address: Address,
 }
 
-impl KeyFetch for Key {
+impl FetchValue for Key {
     type Value = Account;
-    type Proof = proofs::account::Account;
 
     fn fetch_value(&self) -> Result<Self::Value, SyscallExecutionError> {
         let runtime = tokio::runtime::Runtime::new().unwrap();
@@ -66,17 +66,17 @@ impl KeyFetch for Key {
         Ok(value)
     }
 
-    fn fetch_proof(&self) -> Result<Self::Proof, SyscallExecutionError> {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
-        let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
-        let value = runtime
-            .block_on(async { provider.get_proof(self.address, vec![]).block_id(self.block_number.into()).await })
-            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
-        Ok(Self::Proof::new(
-            value.address,
-            vec![MPTProof::new(self.block_number, value.account_proof)],
-        ))
-    }
+    // fn fetch_proof(&self) -> Result<Self::Proof, SyscallExecutionError> {
+    //     let runtime = tokio::runtime::Runtime::new().unwrap();
+    //     let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
+    //     let value = runtime
+    //         .block_on(async { provider.get_proof(self.address, vec![]).block_id(self.block_number.into()).await })
+    //         .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
+    //     Ok(Self::Proof::new(
+    //         value.address,
+    //         vec![MPTProof::new(self.block_number, value.account_proof)],
+    //     ))
+    // }
 }
 
 impl TryFrom<CairoKey> for Key {
