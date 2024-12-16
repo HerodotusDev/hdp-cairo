@@ -1,14 +1,21 @@
 pub mod scopes {
+    pub(crate) const ACCOUNT: &str = "account";
     pub(crate) const BATCH: &str = "batch";
     pub(crate) const COMPILED_CLASS: &str = "compiled_class";
     pub(crate) const DICT_MANAGER: &str = "dict_manager";
+    pub(crate) const HEADER: &str = "header";
     pub(crate) const N_SELECTED_BUILTINS: &str = "n_selected_builtins";
     pub(crate) const PARAMS: &str = "params";
+    pub(crate) const PROOF: &str = "proof";
     pub(crate) const PROOFS: &str = "proofs";
+    pub(crate) const RECEIPT: &str = "receipt";
+    pub(crate) const STORAGE: &str = "storage";
     pub(crate) const SYSCALL_HANDLER: &str = "syscall_handler";
+    pub(crate) const TRANSACTION: &str = "transaction";
 }
 
 pub mod ids {
+    pub(crate) const ADDRESS: &str = "ids.address";
     pub(crate) const ALL_ENCODINGS: &str = "all_encodings";
     pub(crate) const BATCH_LEN: &str = "batch_len";
     pub(crate) const BUILTIN_PARAMS: &str = "builtin_params";
@@ -19,10 +26,17 @@ pub mod ids {
     pub(crate) const DEVISOR: &str = "ids.devisor";
     pub(crate) const FIRST_BYTE: &str = "ids.first_byte";
     pub(crate) const I: &str = "ids.i";
+    pub(crate) const IDX: &str = "ids.idx";
     pub(crate) const IS_LEFT_SMALLER: &str = "ids.is_left_smaller";
     pub(crate) const IS_LONG: &str = "ids.is_long";
     pub(crate) const ITEM_TYPE: &str = "ids.item_type";
+    pub(crate) const KEY_LOW: &str = "ids.key_low";
+    pub(crate) const KEY_LEADING_ZEROS: &str = "ids.key_leading_zeros";
+    pub(crate) const KEY_HIGH: &str = "ids.key_high";
     pub(crate) const LEFT: &str = "ids.left";
+    pub(crate) const MMR_PATH: &str = "ids.mmr_path";
+    pub(crate) const MPT_PROOF: &str = "ids.mpt_proof";
+    pub(crate) const PROOF_BYTES_LEN: &str = "ids.proof_bytes_len";
     pub(crate) const N_BUILTINS: &str = "n_builtins";
     pub(crate) const N_PROCESSED_WORDS: &str = "ids.n_processed_words";
     pub(crate) const N_SELECTED_BUILTINS: &str = "n_selected_builtins";
@@ -38,6 +52,7 @@ pub mod ids {
     pub(crate) const SELECT_BUILTIN: &str = "select_builtin";
     pub(crate) const SELECTED_ENCODINGS: &str = "selected_encodings";
     pub(crate) const SELECTED_PTRS: &str = "selected_ptrs";
+    pub(crate) const SLOT: &str = "ids.slot";
     pub(crate) const SYSCALL_PTR: &str = "syscall_ptr";
     pub(crate) const TASK_HASH: &str = "ids.task_hash";
     pub(crate) const VALUE_LEN: &str = "ids.value_len";

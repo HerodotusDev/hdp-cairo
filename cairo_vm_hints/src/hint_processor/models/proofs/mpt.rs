@@ -6,11 +6,11 @@ use serde_with::serde_as;
 #[serde_as]
 pub struct MPTProof {
     pub block_number: u64,
-    pub proof: Vec<Bytes>,
+    pub proof: Bytes,
 }
 
 impl MPTProof {
-    pub fn new(block_number: u64, proof: Vec<Bytes>) -> Self {
+    pub fn new(block_number: u64, proof: Bytes) -> Self {
         Self { block_number, proof }
     }
 }
