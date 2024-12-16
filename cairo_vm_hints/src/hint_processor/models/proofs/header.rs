@@ -14,11 +14,3 @@ pub struct Header {
     pub rlp: Bytes,
     pub proof: HeaderProof,
 }
-
-// impl TryFrom<MMRProof> for Header {
-//     fn try_from(value: MMRProof) -> Result<Self, Self::Error> {
-//         Self {
-//             rlp: value.block_header..
-//         }
-//     }
-// }
