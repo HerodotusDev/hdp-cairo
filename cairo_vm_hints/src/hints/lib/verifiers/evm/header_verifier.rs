@@ -99,9 +99,10 @@ pub fn hint_mmr_path(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let header = exec_scopes.get::<Header>(vars::scopes::HEADER)?;
-
     let mmr_path_ptr = get_ptr_from_var_name(vars::ids::MMR_PATH, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    vm.write_arg(mmr_path_ptr, &header.proof.mmr_path)?;
+    let mmr_path: Vec<Felt252> = header.proof.mmr_path.into_iter().map(|f| Felt252::from_bytes_be_slice(&f.0)).collect();
+
+    vm.write_arg(mmr_path_ptr, &mmr_path)?;
 
     Ok(())
 }
