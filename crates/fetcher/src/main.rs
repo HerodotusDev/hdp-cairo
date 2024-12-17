@@ -3,7 +3,7 @@
 use clap::{Parser, ValueHint};
 use fetcher::{proof_keys::ProofKeys, FetcherError};
 use hdp_hint_processor::{
-    hint_processor::models::proofs::{account::Account, header::Header, mmr::MmrMeta, storage::Storage, Proofs},
+    hint_processor::models::proofs::{account::Account, storage::Storage, HeaderMmrMeta, Proofs},
     syscall_handler::evm::{self, dryrun::SyscallHandler},
 };
 use std::{collections::HashSet, fs, path::PathBuf};
@@ -44,7 +44,7 @@ fn main() -> Result<(), FetcherError> {
         .header_keys
         .iter()
         .map(ProofKeys::fetch_header_proof)
-        .collect::<Result<HashSet<(MmrMeta, Header)>, FetcherError>>()?;
+        .collect::<Result<HashSet<HeaderMmrMeta>, FetcherError>>()?;
 
     let mut accounts: HashSet<Account> = HashSet::default();
 
@@ -52,7 +52,7 @@ fn main() -> Result<(), FetcherError> {
         .account_keys
         .iter()
         .map(ProofKeys::fetch_account_proof)
-        .collect::<Result<Vec<((MmrMeta, Header), Account)>, FetcherError>>()?
+        .collect::<Result<Vec<(HeaderMmrMeta, Account)>, FetcherError>>()?
         .into_iter()
     {
         headers_with_mmr.insert(header_with_mmr);
@@ -65,7 +65,7 @@ fn main() -> Result<(), FetcherError> {
         .storage_keys
         .iter()
         .map(ProofKeys::fetch_storage_proof)
-        .collect::<Result<Vec<((MmrMeta, Header), Account, Storage)>, FetcherError>>()?
+        .collect::<Result<Vec<(HeaderMmrMeta, Account, Storage)>, FetcherError>>()?
         .into_iter()
     {
         headers_with_mmr.insert(header_with_mmr);

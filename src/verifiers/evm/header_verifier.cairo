@@ -18,22 +18,30 @@ func verify_mmr_batches{
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
-    chain_id: felt,
-}(mmr_meta_idx: felt) -> (mmr_meta_idx: felt) {
+    chain_info: ChainInfo,
+}(idx: felt, mmr_meta_idx: felt) -> (mmr_meta_idx: felt) {
     alloc_locals;
 
-    let (mmr_meta, peaks_dict, peaks_dict_start) = validate_mmr_meta(chain_id);
+    if (0 == idx) {
+        return (mmr_meta_idx=mmr_meta_idx);
+    }
+
+    %{ vm_enter_scope({'header_with_mmr': batch.header_with_mmr[ids.idx], '__dict_manager': __dict_manager}) %}
+
+    let (mmr_meta, peaks_dict, peaks_dict_start) = validate_mmr_meta();
     assert mmr_metas[mmr_meta_idx] = mmr_meta;
 
-    local n_header_proofs: felt = nondet %{ len(batch.headers) %};
+    local n_header_proofs: felt = nondet %{ len(header_with_mmr.headers) %};
     with mmr_meta, peaks_dict {
         verify_headers_with_mmr_peaks(n_header_proofs);
     }
 
+    %{ vm_exit_scope() %}
+
     // Ensure the peaks dict for this batch is finalized
     default_dict_finalize(peaks_dict_start, peaks_dict, -1);
 
-    return (mmr_meta_idx=mmr_meta_idx + 1);
+    return verify_mmr_batches(idx=idx - 1, mmr_meta_idx=mmr_meta_idx + 1);
 }
 
 // Guard function that verifies the inclusion of headers in the MMR.
@@ -48,6 +56,7 @@ func verify_headers_with_mmr_peaks{
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
+    chain_info: ChainInfo,
     mmr_meta: MMRMeta,
     peaks_dict: DictAccess*,
 }(idx: felt) {
@@ -58,7 +67,7 @@ func verify_headers_with_mmr_peaks{
 
     let (rlp) = alloc();
     %{
-        header = batch.headers[ids.idx - 1]
+        header = header_with_mmr.headers[ids.idx - 1]
         segments.write_arg(ids.rlp, [int(x, 16) for x in header.rlp])
     %}
 
@@ -76,9 +85,7 @@ func verify_headers_with_mmr_peaks{
 
         // add to memorizer
         let block_number = HeaderDecoder.get_block_number(rlp);
-        let memorizer_key = EvmHashParams.header(
-            chain_id=mmr_meta.chain_id, block_number=block_number
-        );
+        let memorizer_key = EvmHashParams.header(chain_id=chain_info.id, block_number=block_number);
         EvmMemorizer.add(key=memorizer_key, data=rlp);
 
         return verify_headers_with_mmr_peaks(idx=idx - 1);
@@ -103,7 +110,7 @@ func verify_headers_with_mmr_peaks{
 
     // add to memorizer
     let block_number = HeaderDecoder.get_block_number(rlp);
-    let memorizer_key = EvmHashParams.header(chain_id=mmr_meta.chain_id, block_number=block_number);
+    let memorizer_key = EvmHashParams.header(chain_id=chain_info.id, block_number=block_number);
     EvmMemorizer.add(key=memorizer_key, data=rlp);
 
     return verify_headers_with_mmr_peaks(idx=idx - 1);

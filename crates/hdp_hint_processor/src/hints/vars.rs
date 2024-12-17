@@ -12,6 +12,7 @@ pub mod scopes {
     pub const STORAGE: &str = "storage";
     pub const SYSCALL_HANDLER: &str = "syscall_handler";
     pub const TRANSACTION: &str = "transaction";
+    pub const HEADER_WITH_MMR: &str = "header_with_mmr";
 }
 
 pub mod ids {

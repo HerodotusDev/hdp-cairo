@@ -103,7 +103,6 @@ impl CustomHintProcessor {
         hints.insert(lib::verifiers::evm::transaction_verifier::HINT_SET_TX_BLOCK_NUMBER.into(), lib::verifiers::evm::transaction_verifier::hint_set_tx_block_number);
         hints.insert(lib::verifiers::evm::transaction_verifier::HINT_PROOF_BYTES_LEN.into(), lib::verifiers::evm::transaction_verifier::hint_proof_bytes_len);
         hints.insert(lib::verifiers::evm::transaction_verifier::HINT_MPT_PROOF.into(), lib::verifiers::evm::transaction_verifier::hint_mpt_proof);
-        hints.insert(lib::verifiers::evm::header_verifier::HINT_BATCH_HEADERS_LEN.into(), lib::verifiers::evm::header_verifier::hint_batch_headers_len);
         hints.insert(lib::verifiers::evm::header_verifier::HINT_LEAF_IDX.into(), lib::verifiers::evm::header_verifier::hint_leaf_idx);
         hints.insert(lib::verifiers::evm::header_verifier::HINT_MMR_PATH_LEN.into(), lib::verifiers::evm::header_verifier::hint_mmr_path_len);
         hints.insert(lib::verifiers::evm::header_verifier::HINT_MMR_PATH.into(), lib::verifiers::evm::header_verifier::hint_mmr_path);
@@ -128,8 +127,6 @@ impl CustomHintProcessor {
         hints.insert(lib::verifiers::evm::storage_item_verifier::HINT_SET_STORAGE_PROOFS_LEN.into(), lib::verifiers::evm::storage_item_verifier::hint_set_storage_proofs_len);
         hints.insert(lib::verifiers::evm::storage_item_verifier::HINT_SET_STORAGE_PROOF_AT.into(), lib::verifiers::evm::storage_item_verifier::hint_set_storage_proof_at);
         hints.insert(lib::verifiers::evm::storage_item_verifier::HINT_SET_STORAGE_SLOT.into(), lib::verifiers::evm::storage_item_verifier::hint_set_storage_slot);
-        hints.insert(lib::verifiers::verify::HINT_BATCH_LEN.into(), lib::verifiers::verify::hint_batch_len);
-        hints.insert(lib::verifiers::verify::HINT_CHAIN_ID.into(), lib::verifiers::verify::hint_chain_id);
         hints.insert(lib::verifiers::verify::HINT_VM_ENTER_SCOPE.into(), lib::verifiers::verify::hint_vm_enter_scope);
         hints.insert(lib::verifiers::utils::HINT_PRINT_TASK_RESULT.into(), lib::verifiers::utils::hint_print_task_result);
         hints

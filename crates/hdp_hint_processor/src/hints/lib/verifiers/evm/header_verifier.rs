@@ -1,33 +1,57 @@
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData,
+        dict_manager::DictManager,
         hint_utils::{get_integer_from_var_name, get_ptr_from_var_name, insert_value_into_ap},
     },
     types::exec_scope::ExecutionScopes,
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use std::collections::HashMap;
+use std::{any::Any, collections::HashMap};
 
 use crate::{
-    hint_processor::models::proofs::{header::Header, Proofs},
+    hint_processor::models::proofs::{header::Header, HeaderMmrMeta, Proofs},
     hints::vars,
 };
 
-pub const HINT_BATCH_HEADERS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch.headers))";
+pub const HINT_VM_ENTER_SCOPE: &str = "vm_enter_scope({'header_with_mmr': batch.header_with_mmr[ids.idx], '__dict_manager': __dict_manager})";
 
-pub fn hint_batch_headers_len(
+pub fn hint_vm_enter_scope(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let proofs = exec_scopes.get::<Proofs>(vars::scopes::BATCH)?;
+    let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
+        .try_into()
+        .unwrap();
+
+    let headers_with_mmr: Box<dyn Any> = Box::new(proofs.headers_with_mmr[idx].clone());
+    let dict_manager: Box<dyn Any> = Box::new(exec_scopes.get::<DictManager>(vars::scopes::DICT_MANAGER)?);
+    exec_scopes.enter_scope(HashMap::from([
+        (String::from(vars::scopes::HEADER_WITH_MMR), headers_with_mmr),
+        (String::from(vars::scopes::DICT_MANAGER), dict_manager),
+    ]));
+
+    Ok(())
+}
+
+pub const HINT_HEADERS_WITH_MMR_HEADERS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(headers_with_mmr.headers))";
+
+pub fn hint_headers_with_mmr_headers_len(
     vm: &mut VirtualMachine,
     exec_scopes: &mut ExecutionScopes,
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH)?;
+    let header_with_mmr = exec_scopes.get::<HeaderMmrMeta>(vars::scopes::HEADER_WITH_MMR)?;
 
-    insert_value_into_ap(vm, Felt252::from(batch.headers.len()))
+    insert_value_into_ap(vm, Felt252::from(header_with_mmr.headers.len()))
 }
 
-pub const HINT_SET_HEADER: &str = "header = batch.headers[ids.idx - 1]\nsegments.write_arg(ids.rlp, [int(x, 16) for x in header.rlp])";
+pub const HINT_SET_HEADER: &str = "header = header_with_mmr.headers[ids.idx - 1]\nsegments.write_arg(ids.rlp, [int(x, 16) for x in header.rlp])";
 
 pub fn hint_set_header(
     vm: &mut VirtualMachine,
@@ -35,11 +59,11 @@ pub fn hint_set_header(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH)?;
+    let headers_with_mmr = exec_scopes.get::<HeaderMmrMeta>(vars::scopes::HEADER_WITH_MMR)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
         .unwrap();
-    let header = batch.headers[idx - 1].clone();
+    let header = headers_with_mmr.headers[idx - 1].clone();
     let rlp_le_chunks: Vec<Felt252> = header.rlp.chunks(8).map(Felt252::from_bytes_le_slice).collect();
 
     exec_scopes.insert_value::<Header>(vars::scopes::HEADER, header);

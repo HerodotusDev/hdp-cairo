@@ -39,7 +39,6 @@ func write_output_ptr{output_ptr: felt*}(
 
     assert [output_ptr + counter * 4] = mmr_metas[counter].id;
     assert [output_ptr + counter * 4 + 1] = mmr_metas[counter].size;
-    assert [output_ptr + counter * 4 + 2] = mmr_metas[counter].chain_id;
     assert [output_ptr + counter * 4 + 3] = mmr_metas[counter].root;
 
     [ap] = counter + 1, ap++;

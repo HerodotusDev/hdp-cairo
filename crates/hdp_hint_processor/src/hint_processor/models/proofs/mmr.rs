@@ -8,7 +8,6 @@ pub struct MmrMeta {
     pub id: u64,
     pub size: u64,
     pub root: Bytes,
-    pub chain_id: u64,
     pub peaks: Vec<Bytes>,
 }
 

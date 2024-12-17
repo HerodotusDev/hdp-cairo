@@ -59,6 +59,7 @@ pub struct IndexerQuery {
     pub is_whole_tree: bool,
     pub is_rlp_included: bool,
     pub is_pure_rlp: bool,
+    pub prefer_native_block_header: bool,
 }
 
 impl IndexerQuery {
@@ -74,6 +75,7 @@ impl IndexerQuery {
             is_whole_tree: true,
             is_rlp_included: true,
             is_pure_rlp: true,
+            prefer_native_block_header: false,
         }
     }
 }

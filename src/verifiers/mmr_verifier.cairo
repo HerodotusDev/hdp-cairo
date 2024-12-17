@@ -16,9 +16,9 @@ from packages.eth_essentials.lib.mmr import (
 // 2. mmr_peaks_len matches the expected value based on mmr_size
 // 3. mmr_peaks, mmr_size recreate the mmr_root
 // It writes the peaks to the dict and returns the mmr_meta.
-func validate_mmr_meta{range_check_ptr, poseidon_ptr: PoseidonBuiltin*, pow2_array: felt*}(
-    chain_id: felt
-) -> (mmr_meta: MMRMeta, dict: DictAccess*, dict_start: DictAccess*) {
+func validate_mmr_meta{range_check_ptr, poseidon_ptr: PoseidonBuiltin*, pow2_array: felt*}() -> (
+    mmr_meta: MMRMeta, dict: DictAccess*, dict_start: DictAccess*
+) {
     alloc_locals;
 
     let (local dict: DictAccess*) = default_dict_new(default_value=-1);
@@ -29,12 +29,11 @@ func validate_mmr_meta{range_check_ptr, poseidon_ptr: PoseidonBuiltin*, pow2_arr
     local peaks_len: felt;
 
     %{
-        memory[ids.mmr_meta._reference_value + 0] = batch.mmr_meta.id
-        memory[ids.mmr_meta._reference_value + 1] = batch.mmr_meta.root
-        memory[ids.mmr_meta._reference_value + 2] = batch.mmr_meta.size
-        memory[ids.mmr_meta._reference_value + 3] = batch.mmr_meta.chain_id
-        ids.peaks_len = len(batch.mmr_meta.peaks)
-        segments.write_arg(ids.peaks, batch.mmr_meta.peaks)
+        memory[ids.mmr_meta._reference_value + 0] = header_with_mmr.mmr_meta.id
+        memory[ids.mmr_meta._reference_value + 1] = header_with_mmr.mmr_meta.root
+        memory[ids.mmr_meta._reference_value + 2] = header_with_mmr.mmr_meta.size
+        ids.peaks_len = len(header_with_mmr.mmr_meta.peaks)
+        segments.write_arg(ids.peaks, header_with_mmr.mmr_meta.peaks)
     %}
 
     assert_mmr_size_is_valid(mmr_meta.size);

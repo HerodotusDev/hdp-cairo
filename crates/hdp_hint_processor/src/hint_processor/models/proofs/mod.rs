@@ -14,11 +14,15 @@ use serde::{Deserialize, Serialize};
 use storage::Storage;
 use transaction::Transaction;
 
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default, Hash)]
+pub struct HeaderMmrMeta {
+    pub headers: Vec<Header>,
+    pub mmr_meta: MmrMeta,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub struct Proofs {
-    pub mmr_meta: MmrMeta,
-    pub headers: Vec<Header>,
-    pub headers_with_mmr: Vec<(MmrMeta, Header)>,
+    pub headers_with_mmr: Vec<HeaderMmrMeta>,
     pub accounts: Vec<Account>,
     pub storages: Vec<Storage>,
     pub transactions: Vec<Transaction>,
