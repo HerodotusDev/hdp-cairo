@@ -1,9 +1,8 @@
+use crate::CustomHintProcessor;
 use cairo_vm::{
     cairo_run,
     vm::{errors::cairo_run_errors::CairoRunError, runners::cairo_runner::CairoRunner},
 };
-
-use crate::hint_processor::CustomHintProcessor;
 
 pub fn run_cairo_program(program_content: &[u8]) -> Result<CairoRunner, CairoRunError> {
     let cairo_run_config = cairo_run::CairoRunConfig {

@@ -1,9 +1,10 @@
-use super::FetchValue;
-use crate::syscall_handler::utils::SyscallExecutionError;
+use super::{account, storage, FetchValue};
+use crate::{syscall_handler::utils::SyscallExecutionError, RPC};
 use alloy::{
-    primitives::{Address, BlockNumber, ChainId, StorageKey, StorageValue},
+    hex::FromHexError,
+    primitives::{BlockNumber, Bytes, ChainId},
     providers::{Provider, RootProvider},
-    rpc::types::EIP1186AccountProofResponse,
+    rpc::types::{Block, BlockTransactionsKind},
     transports::http::Http,
 };
 use cairo_types::traits::CairoType;
@@ -12,18 +13,15 @@ use cairo_vm::{
     vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
     Felt252,
 };
-use provider::RPC;
 use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
+use starknet_types_core::felt::FromStrError;
 use std::env;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct CairoKey {
     chain_id: Felt252,
     block_number: Felt252,
-    address: Felt252,
-    storage_slot_high: Felt252,
-    storage_slot_low: Felt252,
 }
 
 impl CairoType for CairoKey {
@@ -31,21 +29,15 @@ impl CairoType for CairoKey {
         Ok(Self {
             chain_id: *vm.get_integer((address + 0)?)?,
             block_number: *vm.get_integer((address + 1)?)?,
-            address: *vm.get_integer((address + 2)?)?,
-            storage_slot_high: *vm.get_integer((address + 3)?)?,
-            storage_slot_low: *vm.get_integer((address + 4)?)?,
         })
     }
     fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<(), MemoryError> {
         vm.insert_value((address + 0)?, self.chain_id)?;
         vm.insert_value((address + 1)?, self.block_number)?;
-        vm.insert_value((address + 2)?, self.address)?;
-        vm.insert_value((address + 2)?, self.storage_slot_high)?;
-        vm.insert_value((address + 2)?, self.storage_slot_low)?;
         Ok(())
     }
     fn n_fields() -> usize {
-        5
+        2
     }
 }
 
@@ -53,25 +45,41 @@ impl CairoType for CairoKey {
 pub struct Key {
     pub chain_id: ChainId,
     pub block_number: BlockNumber,
-    pub address: Address,
-    pub storage_slot: StorageKey,
 }
 
 impl FetchValue for Key {
-    type Value = StorageValue;
+    type Value = Block;
 
     fn fetch_value(&self) -> Result<Self::Value, SyscallExecutionError> {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
         let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
-        let value = runtime
+        let runtime = tokio::runtime::Runtime::new().unwrap();
+        let block = runtime
             .block_on(async {
                 provider
-                    .get_storage_at(self.address, self.storage_slot.into())
-                    .block_id(self.block_number.into())
+                    .get_block_by_number(self.block_number.into(), BlockTransactionsKind::Hashes)
                     .await
             })
-            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
-        Ok(value)
+            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?
+            .ok_or(SyscallExecutionError::InternalError("Block not found".into()))?;
+        Ok(block)
+    }
+}
+
+impl From<account::Key> for Key {
+    fn from(value: account::Key) -> Self {
+        Self {
+            chain_id: value.chain_id,
+            block_number: value.block_number,
+        }
+    }
+}
+
+impl From<storage::Key> for Key {
+    fn from(value: storage::Key) -> Self {
+        Self {
+            chain_id: value.chain_id,
+            block_number: value.block_number,
+        }
     }
 }
 
@@ -87,17 +95,6 @@ impl TryFrom<CairoKey> for Key {
                 .block_number
                 .try_into()
                 .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
-            address: Address::try_from(value.address.to_biguint().to_bytes_be().as_slice())
-                .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
-            storage_slot: StorageKey::from(
-                &[
-                    &value.storage_slot_high.to_bytes_be().as_slice()[16..],
-                    &value.storage_slot_low.to_bytes_be().as_slice()[16..],
-                ]
-                .concat()
-                .try_into()
-                .map_err(|_| SyscallExecutionError::InternalError("Failed to form StorageKey".into()))?,
-            ),
         })
     }
 }

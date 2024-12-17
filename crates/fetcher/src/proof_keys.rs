@@ -4,13 +4,10 @@ use alloy::{
     providers::{Provider, RootProvider},
     transports::http::{reqwest::Url, Client, Http},
 };
-use hdp_hint_processor::syscall_handler::keys;
-use provider::{
-    indexer::{
-        types::{BlockHeader, IndexerQuery},
-        Indexer,
-    },
-    RPC,
+use dry_run_hint_processor::{syscall_handler::keys, RPC};
+use indexer::{
+    types::{BlockHeader, IndexerQuery},
+    Indexer,
 };
 use std::{collections::HashSet, env};
 use types::proofs::{

@@ -2058,10 +2058,41 @@ version = "0.1.0"
 dependencies = [
  "cairo-vm",
  "clap",
- "hdp_hint_processor",
+ "dry_run_hint_processor",
  "hints",
  "serde_json",
  "thiserror 1.0.69",
+]
+
+[[package]]
+name = "dry_run_hint_processor"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "alloy-rlp",
+ "bincode",
+ "cairo-lang-casm",
+ "cairo-lang-starknet-classes",
+ "cairo-type-derive",
+ "cairo-vm",
+ "cairo_types",
+ "hex",
+ "hints",
+ "indexer",
+ "num-bigint",
+ "num-traits",
+ "rand",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "serde_with 3.11.0",
+ "starknet-core",
+ "starknet-crypto 0.7.3",
+ "starknet-types-core",
+ "strum_macros",
+ "thiserror 1.0.69",
+ "tokio",
+ "types",
 ]
 
 [[package]]
@@ -2173,9 +2204,9 @@ dependencies = [
  "alloy",
  "cairo-vm",
  "clap",
- "hdp_hint_processor",
+ "dry_run_hint_processor",
  "hex",
- "provider",
+ "indexer",
  "serde_json",
  "thiserror 1.0.69",
  "tokio",
@@ -2501,37 +2532,6 @@ dependencies = [
  "equivalent",
  "foldhash",
  "serde",
-]
-
-[[package]]
-name = "hdp_hint_processor"
-version = "0.1.0"
-dependencies = [
- "alloy",
- "alloy-rlp",
- "bincode",
- "cairo-lang-casm",
- "cairo-lang-starknet-classes",
- "cairo-type-derive",
- "cairo-vm",
- "cairo_types",
- "hex",
- "hints",
- "num-bigint",
- "num-traits",
- "provider",
- "rand",
- "reqwest",
- "serde",
- "serde_json",
- "serde_with 3.11.0",
- "starknet-core",
- "starknet-crypto 0.7.3",
- "starknet-types-core",
- "strum_macros",
- "thiserror 1.0.69",
- "tokio",
- "types",
 ]
 
 [[package]]
@@ -2932,6 +2932,19 @@ name = "indent"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d9f1a0777d972970f204fdf8ef319f1f4f8459131636d7e3c96c5d59570d0fa6"
+
+[[package]]
+name = "indexer"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "serde_with 3.11.0",
+ "thiserror 1.0.69",
+ "tokio",
+]
 
 [[package]]
 name = "indexmap"
@@ -3772,19 +3785,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "provider"
-version = "0.1.0"
-dependencies = [
- "alloy",
- "reqwest",
- "serde",
- "serde_json",
- "serde_with 3.11.0",
- "thiserror 1.0.69",
- "tokio",
-]
-
-[[package]]
 name = "quick-error"
 version = "1.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4565,17 +4565,6 @@ checksum = "c970269d99b64e60ec3bd6ad27270092a5394c4e309314b18ae3fe575695fbe8"
 dependencies = [
  "libc",
  "windows-sys 0.52.0",
-]
-
-[[package]]
-name = "sound_run"
-version = "0.1.0"
-dependencies = [
- "cairo-vm",
- "clap",
- "hdp_hint_processor",
- "serde_json",
- "thiserror 1.0.69",
 ]
 
 [[package]]

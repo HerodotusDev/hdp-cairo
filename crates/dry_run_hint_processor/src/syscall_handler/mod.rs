@@ -4,7 +4,7 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use evm::dryrun::SyscallHandlerWrapper;
+use evm::SyscallHandlerWrapper;
 use hints::vars;
 use std::collections::HashMap;
 

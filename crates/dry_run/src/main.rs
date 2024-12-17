@@ -6,10 +6,10 @@ use cairo_vm::{
     vm::{errors::vm_exception::VmException, runners::cairo_runner::CairoRunner},
 };
 use clap::{Parser, ValueHint};
-use hdp_hint_processor::{
+use dry_run_hint_processor::{
     self,
-    hint_processor::CustomHintProcessor,
-    syscall_handler::evm::dryrun::{SyscallHandler, SyscallHandlerWrapper},
+    syscall_handler::evm::{SyscallHandler, SyscallHandlerWrapper},
+    CustomHintProcessor,
 };
 use hints::vars;
 use std::path::PathBuf;

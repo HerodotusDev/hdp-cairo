@@ -1,20 +1,20 @@
 use crate::syscall_handler::{
     keys::{
-        header::{CairoKey, Key},
+        storage::{CairoKey, Key},
         FetchValue,
     },
     traits::CallHandler,
     utils::{SyscallExecutionError, SyscallResult},
 };
 use alloy::providers::{Provider, RootProvider};
-use alloy::rpc::types::BlockTransactionsKind;
 use alloy::transports::http::{Client, Http};
 use alloy::{
-    primitives::{BlockNumber, ChainId},
+    hex::FromHex,
+    primitives::{Address, BlockNumber, ChainId, StorageKey, StorageValue},
     transports::http::reqwest::Url,
 };
 use cairo_types::{
-    evm::header::{CairoHeader, FunctionId},
+    evm::storage::{CairoStorage, FunctionId},
     structs::Uint256,
     traits::CairoType,
 };
@@ -23,14 +23,13 @@ use cairo_vm::{
     vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
     Felt252,
 };
-use provider::RPC;
 use serde::{Deserialize, Serialize};
 use std::env;
 
-pub struct HeaderCallHandler;
+pub struct StorageCallHandler;
 
 #[allow(refining_impl_trait)]
-impl CallHandler for HeaderCallHandler {
+impl CallHandler for StorageCallHandler {
     type Key = Key;
     type Id = FunctionId;
     type CallHandlerResult = Uint256;
@@ -53,6 +52,6 @@ impl CallHandler for HeaderCallHandler {
     }
 
     fn handle(key: Self::Key, function_id: Self::Id) -> SyscallResult<Self::CallHandlerResult> {
-        Ok(CairoHeader::from(key.fetch_value()?.header.inner).handle(function_id))
+        Ok(CairoStorage::from(key.fetch_value()?).handle(function_id))
     }
 }

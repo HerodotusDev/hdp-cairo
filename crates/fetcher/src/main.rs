@@ -1,8 +1,8 @@
 #![forbid(unsafe_code)]
 #![allow(async_fn_in_trait)]
 use clap::{Parser, ValueHint};
+use dry_run_hint_processor::syscall_handler::evm::{self, SyscallHandler};
 use fetcher::{proof_keys::ProofKeys, FetcherError};
-use hdp_hint_processor::syscall_handler::evm::{self, dryrun::SyscallHandler};
 use std::{collections::HashSet, fs, path::PathBuf};
 use types::proofs::{account::Account, storage::Storage, HeaderMmrMeta, Proofs};
 
@@ -26,13 +26,13 @@ fn main() -> Result<(), FetcherError> {
     let mut proof_keys = ProofKeys::default();
     for key in syscall_handler.call_contract_handler.key_set {
         match key {
-            evm::dryrun::DryRunKey::Account(value) => {
+            evm::DryRunKey::Account(value) => {
                 proof_keys.account_keys.insert(value);
             }
-            evm::dryrun::DryRunKey::Header(value) => {
+            evm::DryRunKey::Header(value) => {
                 proof_keys.header_keys.insert(value);
             }
-            evm::dryrun::DryRunKey::Storage(value) => {
+            evm::DryRunKey::Storage(value) => {
                 proof_keys.storage_keys.insert(value);
             }
         }

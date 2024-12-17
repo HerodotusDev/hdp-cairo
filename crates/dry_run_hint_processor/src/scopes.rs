@@ -1,4 +1,4 @@
-use crate::syscall_handler::evm::dryrun::SyscallHandlerWrapper;
+use crate::syscall_handler::evm::SyscallHandlerWrapper;
 use cairo_vm::{
     hint_processor::builtin_hint_processor::builtin_hint_processor_definition::HintProcessorData,
     types::exec_scope::ExecutionScopes,

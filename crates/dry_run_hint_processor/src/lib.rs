@@ -1,11 +1,11 @@
+#![forbid(unsafe_code)]
+#![allow(async_fn_in_trait)]
 pub mod dry_run_input;
 pub mod output;
 pub mod run_input;
+pub mod scopes;
+pub mod syscall_handler;
 
-use crate::{
-    scopes,
-    syscall_handler::{self, evm::dryrun::SyscallHandlerWrapper},
-};
 use cairo_lang_casm::{
     hints::{Hint, StarknetHint},
     operand::{BinOpOperand, DerefOrImmediate, Operation, Register, ResOperand},
@@ -23,6 +23,9 @@ use cairo_vm::{
 use hints::{contract_bootloader, decoder, merkle, print, rlp, segments, vars, verifiers};
 use starknet_types_core::felt::Felt;
 use std::{any::Any, collections::HashMap};
+use syscall_handler::evm::SyscallHandlerWrapper;
+
+pub const RPC: &str = "RPC";
 
 pub type HintImpl = fn(&mut VirtualMachine, &mut ExecutionScopes, &HintProcessorData, &HashMap<String, Felt252>) -> Result<(), HintError>;
 
@@ -162,9 +165,9 @@ impl HintProcessorLogic for CustomHintProcessor {
             let hint_code = hpd.code.as_str();
 
             let res = match hint_code {
-                crate::hint_processor::dry_run_input::HINT_DRY_RUN_INPUT => self.hint_dry_run_input(vm, exec_scopes, hpd, constants),
-                crate::hint_processor::run_input::HINT_RUN_INPUT => self.hint_run_input(vm, exec_scopes, hpd, constants),
-                crate::hint_processor::output::HINT_OUTPUT => self.hint_output(vm, exec_scopes, hpd, constants),
+                crate::dry_run_input::HINT_DRY_RUN_INPUT => self.hint_dry_run_input(vm, exec_scopes, hpd, constants),
+                crate::run_input::HINT_RUN_INPUT => self.hint_run_input(vm, exec_scopes, hpd, constants),
+                crate::output::HINT_OUTPUT => self.hint_output(vm, exec_scopes, hpd, constants),
                 _ => Err(HintError::UnknownHint(hint_code.to_string().into_boxed_str())),
             };
 
@@ -229,3 +232,6 @@ fn get_ptr_from_res_operand(vm: &mut VirtualMachine, res: &ResOperand) -> Result
     let cell_reloc = (base + (i32::from(cell.offset)))?;
     (vm.get_relocatable(cell_reloc)? + &base_offset).map_err(|e| e.into())
 }
+
+#[cfg(test)]
+pub mod tests;

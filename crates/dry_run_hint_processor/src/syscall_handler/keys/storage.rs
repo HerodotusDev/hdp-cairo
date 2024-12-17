@@ -1,7 +1,7 @@
-use crate::syscall_handler::utils::SyscallExecutionError;
+use super::FetchValue;
+use crate::{syscall_handler::utils::SyscallExecutionError, RPC};
 use alloy::{
-    consensus::Account,
-    primitives::{Address, BlockNumber, ChainId},
+    primitives::{Address, BlockNumber, ChainId, StorageKey, StorageValue},
     providers::{Provider, RootProvider},
     rpc::types::EIP1186AccountProofResponse,
     transports::http::Http,
@@ -12,18 +12,17 @@ use cairo_vm::{
     vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
     Felt252,
 };
-use provider::RPC;
 use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
 use std::env;
-
-use super::{storage, FetchValue};
 
 #[derive(Debug)]
 pub struct CairoKey {
     chain_id: Felt252,
     block_number: Felt252,
     address: Felt252,
+    storage_slot_high: Felt252,
+    storage_slot_low: Felt252,
 }
 
 impl CairoType for CairoKey {
@@ -32,16 +31,20 @@ impl CairoType for CairoKey {
             chain_id: *vm.get_integer((address + 0)?)?,
             block_number: *vm.get_integer((address + 1)?)?,
             address: *vm.get_integer((address + 2)?)?,
+            storage_slot_high: *vm.get_integer((address + 3)?)?,
+            storage_slot_low: *vm.get_integer((address + 4)?)?,
         })
     }
     fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<(), MemoryError> {
         vm.insert_value((address + 0)?, self.chain_id)?;
         vm.insert_value((address + 1)?, self.block_number)?;
         vm.insert_value((address + 2)?, self.address)?;
+        vm.insert_value((address + 2)?, self.storage_slot_high)?;
+        vm.insert_value((address + 2)?, self.storage_slot_low)?;
         Ok(())
     }
     fn n_fields() -> usize {
-        3
+        5
     }
 }
 
@@ -50,28 +53,24 @@ pub struct Key {
     pub chain_id: ChainId,
     pub block_number: BlockNumber,
     pub address: Address,
+    pub storage_slot: StorageKey,
 }
 
 impl FetchValue for Key {
-    type Value = Account;
+    type Value = StorageValue;
 
     fn fetch_value(&self) -> Result<Self::Value, SyscallExecutionError> {
         let runtime = tokio::runtime::Runtime::new().unwrap();
         let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
         let value = runtime
-            .block_on(async { provider.get_account(self.address).block_id(self.block_number.into()).await })
+            .block_on(async {
+                provider
+                    .get_storage_at(self.address, self.storage_slot.into())
+                    .block_id(self.block_number.into())
+                    .await
+            })
             .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
         Ok(value)
-    }
-}
-
-impl From<storage::Key> for Key {
-    fn from(value: storage::Key) -> Self {
-        Self {
-            chain_id: value.chain_id,
-            block_number: value.block_number,
-            address: value.address,
-        }
     }
 }
 
@@ -89,6 +88,15 @@ impl TryFrom<CairoKey> for Key {
                 .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
             address: Address::try_from(value.address.to_biguint().to_bytes_be().as_slice())
                 .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
+            storage_slot: StorageKey::from(
+                &[
+                    &value.storage_slot_high.to_bytes_be().as_slice()[16..],
+                    &value.storage_slot_low.to_bytes_be().as_slice()[16..],
+                ]
+                .concat()
+                .try_into()
+                .map_err(|_| SyscallExecutionError::InternalError("Failed to form StorageKey".into()))?,
+            ),
         })
     }
 }

@@ -1,5 +1,5 @@
 use alloy::hex::FromHexError;
-use provider::indexer::types::IndexerError;
+use indexer::types::IndexerError;
 use std::num::ParseIntError;
 use thiserror::Error;
 

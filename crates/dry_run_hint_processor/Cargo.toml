@@ -1,5 +1,5 @@
 [package]
-name = "hdp_hint_processor"
+name = "dry_run_hint_processor"
 version = "0.1.0"
 edition = "2021"
 
@@ -26,7 +26,7 @@ reqwest.workspace = true
 strum_macros.workspace = true
 starknet-core.workspace = true
 
-provider.workspace = true
+indexer.workspace = true
 cairo_types.workspace = true
 types.workspace = true
 hints.workspace = true

@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-hdp_hint_processor.workspace = true
+dry_run_hint_processor.workspace = true
 cairo-vm.workspace = true
 clap.workspace = true
 thiserror.workspace = true
@@ -13,5 +13,5 @@ serde_json.workspace = true
 alloy.workspace = true
 hex.workspace = true
 
-provider.workspace = true
+indexer.workspace = true
 types.workspace = true
