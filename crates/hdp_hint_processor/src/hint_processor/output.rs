@@ -1,11 +1,11 @@
 use super::CustomHintProcessor;
-use crate::hints::vars;
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{builtin_hint_processor_definition::HintProcessorData, hint_utils::get_relocatable_from_var_name},
     types::exec_scope::ExecutionScopes,
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
+use hints::vars;
 use std::collections::HashMap;
 
 pub const HINT_OUTPUT: &str = "print(\"result\", [hex(ids.result.low), hex(ids.result.high)])";

@@ -1,3 +1,4 @@
+use crate::vars;
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData,
@@ -9,11 +10,7 @@ use cairo_vm::{
     Felt252,
 };
 use std::{any::Any, collections::HashMap};
-
-use crate::{
-    hint_processor::models::proofs::{header::Header, HeaderMmrMeta, Proofs},
-    hints::vars,
-};
+use types::proofs::{header::Header, HeaderMmrMeta, Proofs};
 
 pub const HINT_VM_ENTER_SCOPE: &str = "vm_enter_scope({'header_with_mmr': batch.header_with_mmr[ids.idx], '__dict_manager': __dict_manager})";
 

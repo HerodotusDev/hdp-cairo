@@ -5,4 +5,5 @@ pub mod print;
 pub mod rlp;
 pub mod segments;
 pub mod utils;
+pub mod vars;
 pub mod verifiers;

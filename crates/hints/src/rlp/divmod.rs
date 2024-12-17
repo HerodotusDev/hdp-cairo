@@ -1,3 +1,4 @@
+use crate::vars;
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData,
@@ -12,8 +13,6 @@ use cairo_vm::{
 };
 use starknet_types_core::felt::NonZeroFelt;
 use std::collections::HashMap;
-
-use crate::hints::vars;
 
 pub const HINT_DIVMOD_RLP: &str = "ids.q, ids.r = divmod(memory[ids.rlp + ids.i], ids.devisor)";
 

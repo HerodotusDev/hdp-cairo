@@ -1,3 +1,4 @@
+use crate::vars;
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{builtin_hint_processor_definition::HintProcessorData, dict_manager::DictManager},
     types::exec_scope::ExecutionScopes,
@@ -5,8 +6,6 @@ use cairo_vm::{
     Felt252,
 };
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
-
-use crate::hints::vars;
 
 pub const DICT_MANAGER_CREATE: &str =
     "if '__dict_manager' not in globals():\n    from starkware.cairo.common.dict import DictManager\n    __dict_manager = DictManager()";

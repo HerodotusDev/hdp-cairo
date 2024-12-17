@@ -7,6 +7,8 @@ members = [
     "crates/fetcher",
     "crates/hdp_hint_processor",
     "crates/provider",
+    "crates/hints",
+    "crates/types",
     "crates/sound_run",
 ]
 
@@ -39,3 +41,5 @@ reqwest = "0.12.9"
 hdp_hint_processor = { path = "crates/hdp_hint_processor" }
 provider = { path = "crates/provider" }
 cairo_types = { path = "crates/cairo_types" }
+types = { path = "crates/types" }
+hints = { path = "crates/hints" }

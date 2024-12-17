@@ -1,4 +1,4 @@
-use crate::hints::vars;
+use crate::vars;
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use cairo_types::structs::CompiledClass;
 use cairo_vm::{

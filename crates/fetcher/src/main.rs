@@ -2,11 +2,9 @@
 #![allow(async_fn_in_trait)]
 use clap::{Parser, ValueHint};
 use fetcher::{proof_keys::ProofKeys, FetcherError};
-use hdp_hint_processor::{
-    hint_processor::models::proofs::{account::Account, storage::Storage, HeaderMmrMeta, Proofs},
-    syscall_handler::evm::{self, dryrun::SyscallHandler},
-};
+use hdp_hint_processor::syscall_handler::evm::{self, dryrun::SyscallHandler};
 use std::{collections::HashSet, fs, path::PathBuf};
+use types::proofs::{account::Account, storage::Storage, HeaderMmrMeta, Proofs};
 
 pub mod proof_keys;
 

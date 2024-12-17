@@ -1,10 +1,11 @@
-use crate::{hints::vars, syscall_handler::evm::dryrun::SyscallHandlerWrapper};
+use crate::syscall_handler::evm::dryrun::SyscallHandlerWrapper;
 use cairo_vm::{
     hint_processor::builtin_hint_processor::builtin_hint_processor_definition::HintProcessorData,
     types::exec_scope::ExecutionScopes,
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
+use hints::vars;
 use std::{any::Any, collections::HashMap};
 
 pub const ENTER_SCOPE_SYSCALL_HANDLER: &str = "vm_enter_scope({'syscall_handler': syscall_handler})";

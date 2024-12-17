@@ -1,3 +1,4 @@
+use crate::vars;
 use cairo_vm::hint_processor::builtin_hint_processor::{
     builtin_hint_processor_definition::HintProcessorData, hint_utils::get_relocatable_from_var_name,
 };
@@ -8,8 +9,6 @@ use cairo_vm::{
 };
 use num_bigint::BigUint;
 use std::collections::HashMap;
-
-use crate::hints::vars;
 
 pub const HINT_PRINT_TASK_RESULT: &str = "print(f\"Task Result: {hex(ids.result.high * 2 ** 128 + ids.result.low)}\")";
 

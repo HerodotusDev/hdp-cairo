@@ -1,4 +1,4 @@
-use crate::hints::vars;
+use crate::vars;
 use cairo_lang_starknet_classes::casm_contract_class::{CasmContractClass, CasmContractEntryPoint};
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{builtin_hint_processor_definition::HintProcessorData, hint_utils::insert_value_from_var_name},

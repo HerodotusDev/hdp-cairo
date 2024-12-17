@@ -9,9 +9,9 @@ use clap::{Parser, ValueHint};
 use hdp_hint_processor::{
     self,
     hint_processor::CustomHintProcessor,
-    hints::vars,
     syscall_handler::evm::dryrun::{SyscallHandler, SyscallHandlerWrapper},
 };
+use hints::vars;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]

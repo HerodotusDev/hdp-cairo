@@ -1,7 +1,4 @@
-use crate::{
-    hint_processor::models::proofs::{self, mpt::MPTProof},
-    syscall_handler::utils::SyscallExecutionError,
-};
+use crate::syscall_handler::utils::SyscallExecutionError;
 use alloy::{
     consensus::Account,
     primitives::{Address, BlockNumber, ChainId},

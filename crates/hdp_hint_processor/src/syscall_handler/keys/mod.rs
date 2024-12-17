@@ -1,7 +1,5 @@
 #![allow(unused)]
 
-use crate::hint_processor::models::proofs::Proofs;
-
 use super::utils::SyscallExecutionError;
 pub mod account;
 pub mod header;

@@ -1,4 +1,4 @@
-use crate::{hint_processor::models::param::Param, hints::vars};
+use crate::vars;
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData,
@@ -9,6 +9,7 @@ use cairo_vm::{
     Felt252,
 };
 use std::collections::HashMap;
+use types::param::Param;
 
 pub const LOAD_PARMAS: &str = "ids.params_len = len(params)\nsegments.write_arg(ids.params, [param.value for param in params])";
 

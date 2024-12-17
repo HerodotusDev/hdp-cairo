@@ -1,4 +1,4 @@
-use crate::hints::vars;
+use crate::vars;
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{builtin_hint_processor_definition::HintProcessorData, hint_utils::get_integer_from_var_name},
     types::exec_scope::ExecutionScopes,

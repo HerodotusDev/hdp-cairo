@@ -1,3 +1,4 @@
+use crate::vars;
 use cairo_vm::{
     hint_processor::builtin_hint_processor::builtin_hint_processor_definition::HintProcessorData,
     hint_processor::builtin_hint_processor::hint_utils::{get_integer_from_var_name, insert_value_into_ap},
@@ -8,8 +9,6 @@ use cairo_vm::{
     Felt252,
 };
 use std::{cmp::Ordering, collections::HashMap};
-
-use crate::hints::vars;
 
 pub const HINT_PROCESSED_WORDS: &str = "memory[ap] = 1 if (ids.value_len - ids.n_processed_words == 0) else 0";
 

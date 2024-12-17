@@ -4,17 +4,7 @@ use alloy::{
     providers::{Provider, RootProvider},
     transports::http::{reqwest::Url, Client, Http},
 };
-use hdp_hint_processor::{
-    hint_processor::models::proofs::{
-        account::Account,
-        header::{Header, HeaderProof},
-        mmr::MmrMeta,
-        mpt::MPTProof,
-        storage::Storage,
-        HeaderMmrMeta,
-    },
-    syscall_handler::keys,
-};
+use hdp_hint_processor::syscall_handler::keys;
 use provider::{
     indexer::{
         types::{BlockHeader, IndexerQuery},
@@ -23,6 +13,14 @@ use provider::{
     RPC,
 };
 use std::{collections::HashSet, env};
+use types::proofs::{
+    account::Account,
+    header::{Header, HeaderProof},
+    mmr::MmrMeta,
+    mpt::MPTProof,
+    storage::Storage,
+    HeaderMmrMeta,
+};
 
 use crate::FetcherError;
 

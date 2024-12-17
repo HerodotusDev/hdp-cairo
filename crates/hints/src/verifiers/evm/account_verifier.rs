@@ -1,3 +1,7 @@
+use crate::{
+    utils::{count_leading_zero_nibbles_from_hex, split_128},
+    vars,
+};
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData,
@@ -10,14 +14,7 @@ use cairo_vm::{
 use num_bigint::BigUint;
 use num_traits::Num;
 use std::collections::HashMap;
-
-use crate::{
-    hint_processor::models::proofs::{account::Account, mpt::MPTProof, Proofs},
-    hints::{
-        lib::utils::{count_leading_zero_nibbles_from_hex, split_128},
-        vars,
-    },
-};
+use types::proofs::{account::Account, mpt::MPTProof, Proofs};
 
 pub const HINT_BATCH_ACCOUNTS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch.accounts))";
 

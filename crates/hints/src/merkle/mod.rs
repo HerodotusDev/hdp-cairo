@@ -1,4 +1,4 @@
-use crate::hints::vars;
+use crate::vars;
 use cairo_vm::hint_processor::builtin_hint_processor::builtin_hint_processor_definition::HintProcessorData;
 use cairo_vm::hint_processor::builtin_hint_processor::hint_utils::{get_relocatable_from_var_name, insert_value_from_var_name};
 use cairo_vm::types::relocatable::MaybeRelocatable;

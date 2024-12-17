@@ -1,4 +1,4 @@
-use crate::hints::vars;
+use crate::vars;
 use cairo_types::structs::BuiltinParams;
 use cairo_vm::{
     hint_processor::{

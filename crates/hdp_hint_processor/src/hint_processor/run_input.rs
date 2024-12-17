@@ -1,8 +1,4 @@
-use super::{
-    models::{param::Param, proofs::Proofs, HDPInput},
-    CustomHintProcessor,
-};
-use crate::hints::vars;
+use super::CustomHintProcessor;
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use cairo_vm::{
     hint_processor::builtin_hint_processor::builtin_hint_processor_definition::HintProcessorData,
@@ -10,7 +6,9 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
+use hints::vars;
 use std::collections::HashMap;
+use types::{param::Param, proofs::Proofs, HDPInput};
 
 pub const HINT_RUN_INPUT: &str = "from tools.py.schema import HDPInput\nrun_input = HDPInput.Schema().load(program_input)\nproofs = run_input.proofs\nparams = run_input.params\ncompiled_class = run_input.compiled_class";
 

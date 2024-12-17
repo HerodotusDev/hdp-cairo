@@ -1,8 +1,5 @@
 use super::FetchValue;
-use crate::{
-    hint_processor::models::proofs::{self, mpt::MPTProof},
-    syscall_handler::utils::SyscallExecutionError,
-};
+use crate::syscall_handler::utils::SyscallExecutionError;
 use alloy::{
     primitives::{Address, BlockNumber, ChainId, StorageKey, StorageValue},
     providers::{Provider, RootProvider},

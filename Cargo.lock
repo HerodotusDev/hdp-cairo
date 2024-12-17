@@ -2059,6 +2059,7 @@ dependencies = [
  "cairo-vm",
  "clap",
  "hdp_hint_processor",
+ "hints",
  "serde_json",
  "thiserror 1.0.69",
 ]
@@ -2178,6 +2179,7 @@ dependencies = [
  "serde_json",
  "thiserror 1.0.69",
  "tokio",
+ "types",
 ]
 
 [[package]]
@@ -2514,6 +2516,7 @@ dependencies = [
  "cairo-vm",
  "cairo_types",
  "hex",
+ "hints",
  "num-bigint",
  "num-traits",
  "provider",
@@ -2528,6 +2531,7 @@ dependencies = [
  "strum_macros",
  "thiserror 1.0.69",
  "tokio",
+ "types",
 ]
 
 [[package]]
@@ -2562,6 +2566,35 @@ name = "hex-literal"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6fe2267d4ed49bc07b63801559be28c718ea06c4738b7a03c94df7386d2cde46"
+
+[[package]]
+name = "hints"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "alloy-rlp",
+ "bincode",
+ "cairo-lang-casm",
+ "cairo-lang-starknet-classes",
+ "cairo-type-derive",
+ "cairo-vm",
+ "cairo_types",
+ "hex",
+ "num-bigint",
+ "num-traits",
+ "rand",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "serde_with 3.11.0",
+ "starknet-core",
+ "starknet-crypto 0.7.3",
+ "starknet-types-core",
+ "strum_macros",
+ "thiserror 1.0.69",
+ "tokio",
+ "types",
+]
 
 [[package]]
 name = "hmac"
@@ -5198,6 +5231,21 @@ name = "typenum"
 version = "1.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "42ff0bf0c66b8238c6f3b578df37d0b7848e55df8577b3f74f92a69acceeb825"
+
+[[package]]
+name = "types"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "cairo-lang-casm",
+ "cairo-lang-starknet-classes",
+ "cairo-type-derive",
+ "cairo-vm",
+ "serde",
+ "serde_json",
+ "serde_with 3.11.0",
+ "thiserror 1.0.69",
+]
 
 [[package]]
 name = "ucd-trie"

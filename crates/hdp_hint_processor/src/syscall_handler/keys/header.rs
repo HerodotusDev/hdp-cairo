@@ -1,12 +1,5 @@
 use super::{account, storage, FetchValue};
-use crate::{
-    hint_processor::models::proofs::{
-        self,
-        header::{Header, HeaderProof},
-        mmr::MmrMeta,
-    },
-    syscall_handler::utils::SyscallExecutionError,
-};
+use crate::syscall_handler::utils::SyscallExecutionError;
 use alloy::{
     hex::FromHexError,
     primitives::{BlockNumber, Bytes, ChainId},

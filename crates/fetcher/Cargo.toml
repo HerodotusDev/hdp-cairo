@@ -14,3 +14,4 @@ alloy.workspace = true
 hex.workspace = true
 
 provider.workspace = true
+types.workspace = true
