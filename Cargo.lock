@@ -4614,6 +4614,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "sound_run"
+version = "0.1.0"
+dependencies = [
+ "cairo-vm",
+ "clap",
+ "hints",
+ "serde_json",
+ "sound_hint_processor",
+ "thiserror 1.0.69",
+]
+
+[[package]]
 name = "spin"
 version = "0.9.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -5,6 +5,7 @@ members = [
     "crates/dry_hint_processor",
     "crates/sound_hint_processor",
     "crates/dry_run",
+    "crates/sound_run",
     "crates/fetcher",
     "crates/hints",
     "crates/indexer",
@@ -39,6 +40,7 @@ tiny-keccak = { version = "2.0.2", features = ["keccak"] }
 tokio = { version = "1.41.1", features = ["full"] }
 
 dry_hint_processor = { path = "crates/dry_hint_processor" }
+sound_hint_processor = { path = "crates/sound_hint_processor" }
 hints = { path = "crates/hints" }
 indexer = { path = "crates/indexer" }
 syscall_handler = { path = "crates/syscall_handler" }
