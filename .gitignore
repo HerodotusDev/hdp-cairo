@@ -61,3 +61,4 @@ hdp/
 # Scarb & snfoundry
 target
 .snfoundry_cache/
+.cargo

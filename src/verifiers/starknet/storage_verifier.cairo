@@ -28,9 +28,8 @@ func verify_proofs{
     pow2_array: felt*,
 }() {
     alloc_locals;
-    local n_storage_items: felt;
-    %{ ids.n_storage_items = len(batch["storages"]) %}
 
+    local n_storage_items: felt = nondet %{ len(batch.storages) %};
     verify_proofs_loop(n_storage_items, 0);
 
     return ();

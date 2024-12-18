@@ -19,7 +19,7 @@ func run_state_verification{
     starknet_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
     chain_info: ChainInfo,
-}(mmr_meta_idx: felt) -> felt {
+}(mmr_meta_idx: felt) -> (mmr_meta_idx: felt) {
     alloc_locals;
 
     // Step 1: Verify MMR and headers inclusion
@@ -40,5 +40,5 @@ func run_state_verification{
     // // Step 5: Verify the block receipt proofs
     // verify_block_receipt_proofs();
 
-    return mmr_meta_idx;
+    return (mmr_meta_idx=mmr_meta_idx);
 }
