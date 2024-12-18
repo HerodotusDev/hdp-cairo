@@ -4,7 +4,6 @@ use alloy::{
     primitives::{keccak256, Bloom, Bytes},
 };
 use alloy_rlp::{Decodable, Encodable};
-use cairo_vm::Felt252;
 use strum_macros::FromRepr;
 
 #[derive(FromRepr, Debug)]

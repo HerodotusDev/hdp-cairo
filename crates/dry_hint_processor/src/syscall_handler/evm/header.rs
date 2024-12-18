@@ -4,17 +4,9 @@ use crate::syscall_handler::{
 };
 use alloy::providers::{Provider, RootProvider};
 use alloy::rpc::types::BlockTransactionsKind;
+use alloy::transports::http::reqwest::Url;
 use alloy::transports::http::{Client, Http};
-use alloy::{
-    primitives::{BlockNumber, ChainId},
-    transports::http::reqwest::Url,
-};
-use cairo_vm::{
-    types::relocatable::Relocatable,
-    vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
-    Felt252,
-};
-use serde::{Deserialize, Serialize};
+use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
 use std::env;
 use types::{
     cairo::{

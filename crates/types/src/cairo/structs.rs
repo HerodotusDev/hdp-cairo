@@ -7,7 +7,6 @@ use cairo_vm::{
     Felt252,
 };
 
-#[allow(unused)]
 #[derive(FieldOffsetGetters, CairoType, Default, Debug)]
 pub struct Uint256 {
     pub high: Felt252,

@@ -6,7 +6,6 @@ use cairo_vm::{
     Felt252,
 };
 
-#[allow(unused)]
 #[derive(FieldOffsetGetters, Debug)]
 pub struct CallContractRequest {
     // The address of the L2 contract to call.
@@ -43,7 +42,6 @@ impl CairoType for CallContractRequest {
     }
 }
 
-#[allow(unused)]
 #[derive(FieldOffsetGetters, Debug)]
 pub struct CallContractResponse {
     pub retdata_start: Relocatable,

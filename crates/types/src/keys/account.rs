@@ -1,19 +1,12 @@
 use super::{storage, KeyError};
 use crate::cairo::traits::CairoType;
-use alloy::{
-    consensus::Account,
-    primitives::{Address, BlockNumber, ChainId},
-    providers::{Provider, RootProvider},
-    rpc::types::EIP1186AccountProofResponse,
-    transports::http::Http,
-};
+use alloy::primitives::{Address, BlockNumber, ChainId};
 use cairo_vm::{
     types::relocatable::Relocatable,
     vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
     Felt252,
 };
 use serde::{Deserialize, Serialize};
-use std::env;
 
 #[derive(Debug)]
 pub struct CairoKey {

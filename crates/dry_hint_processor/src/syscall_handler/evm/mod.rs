@@ -1,4 +1,3 @@
-#![allow(unused)]
 pub mod account;
 pub mod header;
 pub mod receipt;
@@ -11,10 +10,9 @@ use crate::syscall_handler::utils::{run_handler, SyscallSelector};
 use cairo_vm::vm::errors::hint_errors::HintError;
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::rc::Rc;
 use std::sync::RwLock;
-use std::{collections::HashSet, hash::Hash, marker::PhantomData};
+use std::{collections::HashSet, hash::Hash};
 use strum_macros::FromRepr;
 use types::cairo::new_syscalls::{CallContractRequest, CallContractResponse};
 use types::cairo::traits::CairoType;

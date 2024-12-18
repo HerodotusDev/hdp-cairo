@@ -1,7 +1,6 @@
 use crate::cairo::structs::Uint256;
-use alloy::{consensus::Account, primitives::keccak256, rpc::types::EIP1186AccountProofResponse};
+use alloy::{consensus::Account, primitives::keccak256};
 use alloy_rlp::{Decodable, Encodable};
-use cairo_vm::Felt252;
 use strum_macros::FromRepr;
 
 #[derive(FromRepr, Debug)]

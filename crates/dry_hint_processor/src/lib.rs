@@ -1,9 +1,7 @@
 #![forbid(unsafe_code)]
 #![allow(async_fn_in_trait)]
-pub mod dry_run_input;
+pub mod input;
 pub mod output;
-pub mod run_input;
-pub mod scopes;
 pub mod syscall_handler;
 
 use cairo_lang_casm::{
@@ -129,7 +127,7 @@ impl CustomHintProcessor {
         hints.insert(syscall_handler::DRY_RUN_SYSCALL_HANDLER_CREATE.into(), syscall_handler::dry_run_syscall_handler_create);
         hints.insert(syscall_handler::SYSCALL_HANDLER_CREATE.into(), syscall_handler::syscall_handler_create);
         hints.insert(syscall_handler::SYSCALL_HANDLER_SET_SYSCALL_PTR.into(), syscall_handler::syscall_handler_set_syscall_ptr);
-        hints.insert(scopes::ENTER_SCOPE_SYSCALL_HANDLER.into(), scopes::enter_scope_syscall_handler);
+        hints.insert(syscall_handler::ENTER_SCOPE_SYSCALL_HANDLER.into(), syscall_handler::enter_scope_syscall_handler);
         hints
     }
 
@@ -163,8 +161,7 @@ impl HintProcessorLogic for CustomHintProcessor {
             let hint_code = hpd.code.as_str();
 
             let res = match hint_code {
-                crate::dry_run_input::HINT_DRY_RUN_INPUT => self.hint_dry_run_input(vm, exec_scopes, hpd, constants),
-                crate::run_input::HINT_RUN_INPUT => self.hint_run_input(vm, exec_scopes, hpd, constants),
+                crate::input::HINT_INPUT => self.hint_input(vm, exec_scopes, hpd, constants),
                 crate::output::HINT_OUTPUT => self.hint_output(vm, exec_scopes, hpd, constants),
                 _ => Err(HintError::UnknownHint(hint_code.to_string().into_boxed_str())),
             };

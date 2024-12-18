@@ -3,18 +3,9 @@ use crate::syscall_handler::{
     utils::{SyscallExecutionError, SyscallResult},
 };
 use alloy::providers::{Provider, RootProvider};
+use alloy::transports::http::reqwest::Url;
 use alloy::transports::http::{Client, Http};
-use alloy::{
-    hex::FromHex,
-    primitives::{Address, BlockNumber, ChainId},
-    transports::http::reqwest::Url,
-};
-use cairo_vm::{
-    types::relocatable::Relocatable,
-    vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
-    Felt252,
-};
-use serde::{Deserialize, Serialize};
+use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
 use std::env;
 use types::{
     cairo::{
