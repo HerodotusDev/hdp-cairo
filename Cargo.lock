@@ -1633,20 +1633,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo_types"
-version = "0.1.0"
-dependencies = [
- "alloy",
- "alloy-rlp",
- "cairo-lang-casm",
- "cairo-lang-starknet-classes",
- "cairo-type-derive",
- "cairo-vm",
- "starknet-crypto 0.7.3",
- "strum_macros",
-]
-
-[[package]]
 name = "cc"
 version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2053,19 +2039,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aac81fa3e28d21450aa4d2ac065992ba96a1d7303efbce51a95f4fd175b67562"
 
 [[package]]
-name = "dry_run"
-version = "0.1.0"
-dependencies = [
- "cairo-vm",
- "clap",
- "dry_run_hint_processor",
- "hints",
- "serde_json",
- "thiserror 1.0.69",
-]
-
-[[package]]
-name = "dry_run_hint_processor"
+name = "dry_hint_processor"
 version = "0.1.0"
 dependencies = [
  "alloy",
@@ -2075,7 +2049,6 @@ dependencies = [
  "cairo-lang-starknet-classes",
  "cairo-type-derive",
  "cairo-vm",
- "cairo_types",
  "hex",
  "hints",
  "indexer",
@@ -2093,6 +2066,18 @@ dependencies = [
  "thiserror 1.0.69",
  "tokio",
  "types",
+]
+
+[[package]]
+name = "dry_run"
+version = "0.1.0"
+dependencies = [
+ "cairo-vm",
+ "clap",
+ "dry_hint_processor",
+ "hints",
+ "serde_json",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -2204,7 +2189,7 @@ dependencies = [
  "alloy",
  "cairo-vm",
  "clap",
- "dry_run_hint_processor",
+ "dry_hint_processor",
  "hex",
  "indexer",
  "serde_json",
@@ -2578,7 +2563,6 @@ dependencies = [
  "cairo-lang-starknet-classes",
  "cairo-type-derive",
  "cairo-vm",
- "cairo_types",
  "hex",
  "num-bigint",
  "num-traits",
@@ -5226,6 +5210,7 @@ name = "types"
 version = "0.1.0"
 dependencies = [
  "alloy",
+ "alloy-rlp",
  "cairo-lang-casm",
  "cairo-lang-starknet-classes",
  "cairo-type-derive",
@@ -5233,6 +5218,9 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_with 3.11.0",
+ "starknet-crypto 0.7.3",
+ "starknet-types-core",
+ "strum_macros",
  "thiserror 1.0.69",
 ]
 

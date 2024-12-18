@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 #![allow(async_fn_in_trait)]
 use clap::{Parser, ValueHint};
-use dry_run_hint_processor::syscall_handler::evm::{self, SyscallHandler};
+use dry_hint_processor::syscall_handler::evm::{self, SyscallHandler};
 use fetcher::{proof_keys::ProofKeys, FetcherError};
 use std::{collections::HashSet, fs, path::PathBuf};
 use types::proofs::{account::Account, storage::Storage, HeaderMmrMeta, Proofs};

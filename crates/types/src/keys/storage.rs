@@ -1,20 +1,19 @@
-use super::FetchValue;
-use crate::{syscall_handler::utils::SyscallExecutionError, RPC};
+use crate::cairo::traits::CairoType;
 use alloy::{
     primitives::{Address, BlockNumber, ChainId, StorageKey, StorageValue},
     providers::{Provider, RootProvider},
     rpc::types::EIP1186AccountProofResponse,
     transports::http::Http,
 };
-use cairo_types::traits::CairoType;
 use cairo_vm::{
     types::relocatable::Relocatable,
     vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
     Felt252,
 };
-use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
 use std::env;
+
+use super::KeyError;
 
 #[derive(Debug)]
 pub struct CairoKey {
@@ -56,38 +55,14 @@ pub struct Key {
     pub storage_slot: StorageKey,
 }
 
-impl FetchValue for Key {
-    type Value = StorageValue;
-
-    fn fetch_value(&self) -> Result<Self::Value, SyscallExecutionError> {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
-        let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
-        let value = runtime
-            .block_on(async {
-                provider
-                    .get_storage_at(self.address, self.storage_slot.into())
-                    .block_id(self.block_number.into())
-                    .await
-            })
-            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
-        Ok(value)
-    }
-}
-
 impl TryFrom<CairoKey> for Key {
-    type Error = SyscallExecutionError;
+    type Error = KeyError;
     fn try_from(value: CairoKey) -> Result<Self, Self::Error> {
         Ok(Self {
-            chain_id: value
-                .chain_id
-                .try_into()
-                .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
-            block_number: value
-                .block_number
-                .try_into()
-                .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
+            chain_id: value.chain_id.try_into().map_err(|e| KeyError::ConversionError(format!("{}", e)))?,
+            block_number: value.block_number.try_into().map_err(|e| KeyError::ConversionError(format!("{}", e)))?,
             address: Address::try_from(value.address.to_biguint().to_bytes_be().as_slice())
-                .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
+                .map_err(|e| KeyError::ConversionError(format!("{}", e)))?,
             storage_slot: StorageKey::from(
                 &[
                     &value.storage_slot_high.to_bytes_be().as_slice()[16..],
@@ -95,7 +70,7 @@ impl TryFrom<CairoKey> for Key {
                 ]
                 .concat()
                 .try_into()
-                .map_err(|_| SyscallExecutionError::InternalError("Failed to form StorageKey".into()))?,
+                .map_err(|_| KeyError::ConversionError("Failed to form StorageKey".into()))?,
             ),
         })
     }

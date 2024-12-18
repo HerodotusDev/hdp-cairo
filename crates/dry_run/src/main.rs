@@ -6,8 +6,7 @@ use cairo_vm::{
     vm::{errors::vm_exception::VmException, runners::cairo_runner::CairoRunner},
 };
 use clap::{Parser, ValueHint};
-use dry_run_hint_processor::{
-    self,
+use dry_hint_processor::{
     syscall_handler::evm::{SyscallHandler, SyscallHandlerWrapper},
     CustomHintProcessor,
 };

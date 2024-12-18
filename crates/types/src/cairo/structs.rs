@@ -1,4 +1,4 @@
-use crate::traits::CairoType;
+use crate::cairo::traits::CairoType;
 use alloy::primitives::{Address, B256, B64, U256};
 use cairo_type_derive::{CairoType, FieldOffsetGetters};
 use cairo_vm::{

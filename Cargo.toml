@@ -2,10 +2,9 @@
 resolver = "2"
 
 members = [
-    "crates/cairo_types",
     "crates/dry_run",
     "crates/fetcher",
-    "crates/dry_run_hint_processor",
+    "crates/dry_hint_processor",
     "crates/indexer",
     "crates/hints",
     "crates/types",
@@ -37,8 +36,7 @@ starknet-crypto = { version = "0.7.1", default-features = false }
 starknet-types-core = { version = "0.1.5", default-features = false }
 reqwest = "0.12.9"
 
-dry_run_hint_processor = { path = "crates/dry_run_hint_processor" }
+dry_hint_processor = { path = "crates/dry_hint_processor" }
 indexer = { path = "crates/indexer" }
-cairo_types = { path = "crates/cairo_types" }
 types = { path = "crates/types" }
 hints = { path = "crates/hints" }

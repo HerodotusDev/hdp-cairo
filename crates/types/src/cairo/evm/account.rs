@@ -1,4 +1,4 @@
-use crate::structs::Uint256;
+use crate::cairo::structs::Uint256;
 use alloy::{consensus::Account, primitives::keccak256, rpc::types::EIP1186AccountProofResponse};
 use alloy_rlp::{Decodable, Encodable};
 use cairo_vm::Felt252;

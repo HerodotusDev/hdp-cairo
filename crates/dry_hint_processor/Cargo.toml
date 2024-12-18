@@ -1,5 +1,5 @@
 [package]
-name = "dry_run_hint_processor"
+name = "dry_hint_processor"
 version = "0.1.0"
 edition = "2021"
 
@@ -27,6 +27,5 @@ strum_macros.workspace = true
 starknet-core.workspace = true
 
 indexer.workspace = true
-cairo_types.workspace = true
 types.workspace = true
 hints.workspace = true

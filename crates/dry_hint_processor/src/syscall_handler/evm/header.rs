@@ -1,8 +1,4 @@
 use crate::syscall_handler::{
-    keys::{
-        header::{CairoKey, Key},
-        FetchValue,
-    },
     traits::CallHandler,
     utils::{SyscallExecutionError, SyscallResult},
 };
@@ -13,11 +9,6 @@ use alloy::{
     primitives::{BlockNumber, ChainId},
     transports::http::reqwest::Url,
 };
-use cairo_types::{
-    evm::header::{CairoHeader, FunctionId},
-    structs::Uint256,
-    traits::CairoType,
-};
 use cairo_vm::{
     types::relocatable::Relocatable,
     vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
@@ -25,6 +16,15 @@ use cairo_vm::{
 };
 use serde::{Deserialize, Serialize};
 use std::env;
+use types::{
+    cairo::{
+        evm::header::{CairoHeader, FunctionId},
+        structs::Uint256,
+        traits::CairoType,
+    },
+    keys::header::{CairoKey, Key},
+    RPC,
+};
 
 pub struct HeaderCallHandler;
 
@@ -37,7 +37,7 @@ impl CallHandler for HeaderCallHandler {
     fn derive_key(vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Key> {
         let ret = CairoKey::from_memory(vm, *ptr)?;
         *ptr = (*ptr + CairoKey::n_fields())?;
-        ret.try_into()
+        ret.try_into().map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))
     }
 
     fn derive_id(selector: Felt252) -> SyscallResult<Self::Id> {
@@ -52,6 +52,12 @@ impl CallHandler for HeaderCallHandler {
     }
 
     fn handle(key: Self::Key, function_id: Self::Id) -> SyscallResult<Self::CallHandlerResult> {
-        Ok(CairoHeader::from(key.fetch_value()?.header.inner).handle(function_id))
+        let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
+        let runtime = tokio::runtime::Runtime::new().unwrap();
+        let value = runtime
+            .block_on(async { provider.get_block_by_number(key.block_number.into(), BlockTransactionsKind::Hashes).await })
+            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?
+            .ok_or(SyscallExecutionError::InternalError("Block not found".into()))?;
+        Ok(CairoHeader::from(value.header.inner).handle(function_id))
     }
 }

@@ -4,19 +4,22 @@ use alloy::{
     providers::{Provider, RootProvider},
     transports::http::{reqwest::Url, Client, Http},
 };
-use dry_run_hint_processor::{syscall_handler::keys, RPC};
 use indexer::{
     types::{BlockHeader, IndexerQuery},
     Indexer,
 };
 use std::{collections::HashSet, env};
-use types::proofs::{
-    account::Account,
-    header::{Header, HeaderProof},
-    mmr::MmrMeta,
-    mpt::MPTProof,
-    storage::Storage,
-    HeaderMmrMeta,
+use types::{
+    keys,
+    proofs::{
+        account::Account,
+        header::{Header, HeaderProof},
+        mmr::MmrMeta,
+        mpt::MPTProof,
+        storage::Storage,
+        HeaderMmrMeta,
+    },
+    RPC,
 };
 
 use crate::FetcherError;

@@ -1,5 +1,5 @@
-use super::{account, storage, FetchValue};
-use crate::{syscall_handler::utils::SyscallExecutionError, RPC};
+use super::{account, storage, KeyError};
+use crate::cairo::traits::CairoType;
 use alloy::{
     hex::FromHexError,
     primitives::{BlockNumber, Bytes, ChainId},
@@ -7,13 +7,11 @@ use alloy::{
     rpc::types::{Block, BlockTransactionsKind},
     transports::http::Http,
 };
-use cairo_types::traits::CairoType;
 use cairo_vm::{
     types::relocatable::Relocatable,
     vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
     Felt252,
 };
-use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::FromStrError;
 use std::env;
@@ -47,24 +45,6 @@ pub struct Key {
     pub block_number: BlockNumber,
 }
 
-impl FetchValue for Key {
-    type Value = Block;
-
-    fn fetch_value(&self) -> Result<Self::Value, SyscallExecutionError> {
-        let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
-        let runtime = tokio::runtime::Runtime::new().unwrap();
-        let block = runtime
-            .block_on(async {
-                provider
-                    .get_block_by_number(self.block_number.into(), BlockTransactionsKind::Hashes)
-                    .await
-            })
-            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?
-            .ok_or(SyscallExecutionError::InternalError("Block not found".into()))?;
-        Ok(block)
-    }
-}
-
 impl From<account::Key> for Key {
     fn from(value: account::Key) -> Self {
         Self {
@@ -84,17 +64,11 @@ impl From<storage::Key> for Key {
 }
 
 impl TryFrom<CairoKey> for Key {
-    type Error = SyscallExecutionError;
+    type Error = KeyError;
     fn try_from(value: CairoKey) -> Result<Self, Self::Error> {
         Ok(Self {
-            chain_id: value
-                .chain_id
-                .try_into()
-                .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
-            block_number: value
-                .block_number
-                .try_into()
-                .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
+            chain_id: value.chain_id.try_into().map_err(|e| KeyError::ConversionError(format!("{}", e)))?,
+            block_number: value.block_number.try_into().map_err(|e| KeyError::ConversionError(format!("{}", e)))?,
         })
     }
 }

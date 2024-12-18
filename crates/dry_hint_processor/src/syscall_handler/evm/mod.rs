@@ -5,14 +5,9 @@ pub mod receipt;
 pub mod storage;
 pub mod transaction;
 
-use crate::syscall_handler::keys;
 use crate::syscall_handler::traits::{self, CallHandler};
 use crate::syscall_handler::utils::{felt_from_ptr, SyscallExecutionError, SyscallResult, WriteResponseResult};
 use crate::syscall_handler::utils::{run_handler, SyscallSelector};
-use cairo_types::{
-    new_syscalls::{CallContractRequest, CallContractResponse},
-    traits::CairoType,
-};
 use cairo_vm::vm::errors::hint_errors::HintError;
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
 use serde::{Deserialize, Serialize};
@@ -21,6 +16,9 @@ use std::rc::Rc;
 use std::sync::RwLock;
 use std::{collections::HashSet, hash::Hash, marker::PhantomData};
 use strum_macros::FromRepr;
+use types::cairo::new_syscalls::{CallContractRequest, CallContractResponse};
+use types::cairo::traits::CairoType;
+use types::keys;
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct SyscallHandler {

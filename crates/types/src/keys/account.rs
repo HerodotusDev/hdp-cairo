@@ -1,4 +1,5 @@
-use crate::{syscall_handler::utils::SyscallExecutionError, RPC};
+use super::{storage, KeyError};
+use crate::cairo::traits::CairoType;
 use alloy::{
     consensus::Account,
     primitives::{Address, BlockNumber, ChainId},
@@ -6,17 +7,13 @@ use alloy::{
     rpc::types::EIP1186AccountProofResponse,
     transports::http::Http,
 };
-use cairo_types::traits::CairoType;
 use cairo_vm::{
     types::relocatable::Relocatable,
     vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
     Felt252,
 };
-use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
 use std::env;
-
-use super::{storage, FetchValue};
 
 #[derive(Debug)]
 pub struct CairoKey {
@@ -51,19 +48,6 @@ pub struct Key {
     pub address: Address,
 }
 
-impl FetchValue for Key {
-    type Value = Account;
-
-    fn fetch_value(&self) -> Result<Self::Value, SyscallExecutionError> {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
-        let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
-        let value = runtime
-            .block_on(async { provider.get_account(self.address).block_id(self.block_number.into()).await })
-            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
-        Ok(value)
-    }
-}
-
 impl From<storage::Key> for Key {
     fn from(value: storage::Key) -> Self {
         Self {
@@ -75,19 +59,13 @@ impl From<storage::Key> for Key {
 }
 
 impl TryFrom<CairoKey> for Key {
-    type Error = SyscallExecutionError;
+    type Error = KeyError;
     fn try_from(value: CairoKey) -> Result<Self, Self::Error> {
         Ok(Self {
-            chain_id: value
-                .chain_id
-                .try_into()
-                .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
-            block_number: value
-                .block_number
-                .try_into()
-                .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
+            chain_id: value.chain_id.try_into().map_err(|e| KeyError::ConversionError(format!("{}", e)))?,
+            block_number: value.block_number.try_into().map_err(|e| KeyError::ConversionError(format!("{}", e)))?,
             address: Address::try_from(value.address.to_biguint().to_bytes_be().as_slice())
-                .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
+                .map_err(|e| KeyError::ConversionError(format!("{}", e)))?,
         })
     }
 }

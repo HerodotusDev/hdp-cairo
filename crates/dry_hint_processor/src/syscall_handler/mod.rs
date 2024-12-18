@@ -9,7 +9,6 @@ use hints::vars;
 use std::collections::HashMap;
 
 pub mod evm;
-pub mod keys;
 pub mod starknet;
 pub mod traits;
 pub mod utils;

@@ -26,5 +26,4 @@ reqwest.workspace = true
 strum_macros.workspace = true
 starknet-core.workspace = true
 
-cairo_types.workspace = true
 types.workspace = true

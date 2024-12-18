@@ -1,7 +1,6 @@
-use cairo_types::traits::CairoType;
-
 use super::utils::{SyscallResult, WriteResponseResult};
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
+use types::cairo::traits::CairoType;
 
 pub trait SyscallHandler {
     type Request;

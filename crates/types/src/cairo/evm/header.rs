@@ -1,4 +1,4 @@
-use crate::structs::Uint256;
+use crate::cairo::structs::Uint256;
 use alloy::{
     consensus::Header,
     primitives::{keccak256, Bloom, Bytes},

@@ -25,8 +25,6 @@ use starknet_types_core::felt::Felt;
 use std::{any::Any, collections::HashMap};
 use syscall_handler::evm::SyscallHandlerWrapper;
 
-pub const RPC: &str = "RPC";
-
 pub type HintImpl = fn(&mut VirtualMachine, &mut ExecutionScopes, &HintProcessorData, &HashMap<String, Felt252>) -> Result<(), HintError>;
 
 /// Hint Extensions extend the current map of hints used by the VM.
