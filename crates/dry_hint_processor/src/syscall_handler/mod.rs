@@ -10,8 +10,6 @@ use std::{any::Any, collections::HashMap};
 
 pub mod evm;
 pub mod starknet;
-pub mod traits;
-pub mod utils;
 
 pub const SYSCALL_HANDLER_CREATE: &str = "if 'syscall_handler' not in globals():\n    from contract_bootloader.syscall_handler import SyscallHandler\n    syscall_handler = SyscallHandler(segments=segments, dict_manager=__dict_manager)";
 

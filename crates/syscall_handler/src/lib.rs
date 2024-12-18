@@ -1,3 +1,5 @@
+pub mod traits;
+
 use cairo_vm::{
     types::{
         errors::math_errors::MathError,
@@ -10,8 +12,7 @@ use cairo_vm::{
     Felt252,
 };
 use thiserror::Error;
-
-use super::traits::SyscallHandler;
+use traits::SyscallHandler;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SyscallSelector {
@@ -145,8 +146,6 @@ fn write_failure(gas_counter: Felt252, error_data: Vec<Felt252>, vm: &mut Virtua
 
     Ok(())
 }
-
-pub const OUT_OF_GAS_ERROR: &str = "0x000000000000000000000000000000000000000000004f7574206f6620676173";
 
 pub fn run_handler(syscall_handler: &mut impl SyscallHandler, syscall_ptr: &mut Relocatable, vm: &mut VirtualMachine) -> Result<(), HintError> {
     let remaining_gas = felt_from_ptr(vm, syscall_ptr)?;

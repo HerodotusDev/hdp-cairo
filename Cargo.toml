@@ -2,16 +2,18 @@
 resolver = "2"
 
 members = [
+    "crates/dry_hint_processor",
     "crates/dry_run",
     "crates/fetcher",
-    "crates/dry_hint_processor",
-    "crates/indexer",
     "crates/hints",
+    "crates/indexer",
+    "crates/syscall_handler",
     "crates/types",
 ]
 
 [workspace.dependencies]
 alloy = { version = "0.7.2", features = ["full"] }
+alloy-rlp = { version = "0.3.5", features = ["derive"] }
 bincode = { version = "2.0.0-rc.3", default-features = false, features = ["serde"] }
 cairo-lang-casm = { version = "2.9.0-dev.0", default-features = false }
 cairo-lang-starknet-classes = { version = "2.9.0-dev.0" }
@@ -22,21 +24,21 @@ hex = "0.4.3"
 num-bigint = "0.4.6"
 num-traits = "0.2.19"
 rand = "0.8"
+reqwest = "0.12.9"
 serde = "1.0.215"
 serde_json = "1.0.132"
-sha3 = "0.10.8"
-thiserror = "1.0.64"
-tiny-keccak = { version = "2.0.2", features = ["keccak"] }
-tokio = { version = "1.41.1", features = ["full"] }
-alloy-rlp = { version = "0.3.5", features = ["derive"] }
-strum_macros = "0.26.4"
 serde_with = { version = "3.11.0", features = ["hex"] }
+sha3 = "0.10.8"
 starknet-core = { version = "0.11.1", default-features = false }
 starknet-crypto = { version = "0.7.1", default-features = false }
 starknet-types-core = { version = "0.1.5", default-features = false }
-reqwest = "0.12.9"
+strum_macros = "0.26.4"
+thiserror = "1.0.64"
+tiny-keccak = { version = "2.0.2", features = ["keccak"] }
+tokio = { version = "1.41.1", features = ["full"] }
 
 dry_hint_processor = { path = "crates/dry_hint_processor" }
-indexer = { path = "crates/indexer" }
-types = { path = "crates/types" }
 hints = { path = "crates/hints" }
+indexer = { path = "crates/indexer" }
+syscall_handler = { path = "crates/syscall_handler" }
+types = { path = "crates/types" }

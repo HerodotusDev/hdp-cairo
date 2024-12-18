@@ -29,3 +29,4 @@ starknet-core.workspace = true
 indexer.workspace = true
 types.workspace = true
 hints.workspace = true
+syscall_handler.workspace = true

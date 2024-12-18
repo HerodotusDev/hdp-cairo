@@ -1,12 +1,10 @@
-use crate::syscall_handler::{
-    traits::CallHandler,
-    utils::{SyscallExecutionError, SyscallResult},
-};
 use alloy::providers::{Provider, RootProvider};
 use alloy::rpc::types::BlockTransactionsKind;
 use alloy::transports::http::reqwest::Url;
 use alloy::transports::http::{Client, Http};
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
+use syscall_handler::traits::CallHandler;
+use syscall_handler::{SyscallExecutionError, SyscallResult};
 use std::env;
 use types::{
     cairo::{
