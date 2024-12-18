@@ -3,6 +3,7 @@ resolver = "2"
 
 members = [
     "crates/dry_hint_processor",
+    "crates/sound_hint_processor",
     "crates/dry_run",
     "crates/fetcher",
     "crates/hints",

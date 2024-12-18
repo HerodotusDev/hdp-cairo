@@ -1,19 +1,9 @@
-use alloy::providers::{Provider, RootProvider};
-use alloy::rpc::types::BlockTransactionsKind;
-use alloy::transports::http::reqwest::Url;
-use alloy::transports::http::{Client, Http};
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
-use std::env;
 use syscall_handler::traits::CallHandler;
 use syscall_handler::{SyscallExecutionError, SyscallResult};
 use types::{
-    cairo::{
-        evm::header::{CairoHeader, FunctionId},
-        structs::Uint256,
-        traits::CairoType,
-    },
+    cairo::{evm::header::FunctionId, structs::Uint256, traits::CairoType},
     keys::header::{CairoKey, Key},
-    RPC,
 };
 
 pub struct HeaderCallHandler;
@@ -41,13 +31,7 @@ impl CallHandler for HeaderCallHandler {
         })
     }
 
-    fn handle(key: Self::Key, function_id: Self::Id) -> SyscallResult<Self::CallHandlerResult> {
-        let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
-        let runtime = tokio::runtime::Runtime::new().unwrap();
-        let value = runtime
-            .block_on(async { provider.get_block_by_number(key.block_number.into(), BlockTransactionsKind::Hashes).await })
-            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?
-            .ok_or(SyscallExecutionError::InternalError("Block not found".into()))?;
-        Ok(CairoHeader::from(value.header.inner).handle(function_id))
+    fn handle(_key: Self::Key, _function_id: Self::Id) -> SyscallResult<Self::CallHandlerResult> {
+        todo!()
     }
 }

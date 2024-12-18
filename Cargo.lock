@@ -4583,6 +4583,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "sound_hint_processor"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "alloy-rlp",
+ "bincode",
+ "cairo-lang-casm",
+ "cairo-lang-starknet-classes",
+ "cairo-type-derive",
+ "cairo-vm",
+ "hex",
+ "hints",
+ "indexer",
+ "num-bigint",
+ "num-traits",
+ "rand",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "serde_with 3.11.0",
+ "starknet-core",
+ "starknet-crypto 0.7.3",
+ "starknet-types-core",
+ "strum_macros",
+ "syscall_handler",
+ "thiserror 1.0.69",
+ "tokio",
+ "types",
+]
+
+[[package]]
 name = "spin"
 version = "0.9.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
