@@ -28,7 +28,7 @@ func verify_block_receipt_proofs{
 }() {
     alloc_locals;
 
-    local n_receipts: felt = nondet %{ len(batch.receipts) %};
+    tempvar n_receipts: felt = nondet %{ len(batch.receipts) %};
     verify_block_receipt_proofs_inner(n_receipts, 0);
 
     return ();
@@ -60,8 +60,8 @@ func verify_block_receipt_proofs_inner{
     local key_leading_zeros: felt;
     %{ ids.key_leading_zeros = len(receipt.key.lstrip("0x")) - len(receipt.key.lstrip("0x").lstrip("0")) %}
 
-    local proof_len: felt = nondet %{ len(receipt.proof) %};
-    local block_number: felt = nondet %{ receipt.block_number %};
+    tempvar proof_len: felt = nondet %{ len(receipt.proof) %};
+    tempvar block_number: felt = nondet %{ receipt.block_number %};
 
     let (proof_bytes_len: felt*) = alloc();
     %{ segments.write_arg(ids.proof_bytes_len, receipt.proof_bytes_len) %}

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 VENV_PATH=${1:-venv}
-PYTHON_VERSION=${2:-3.10}
+PYTHON_VERSION=${2:-3.9}
 
 echo "Setting up virtual environment at $VENV_PATH with Python $PYTHON_VERSION"
 

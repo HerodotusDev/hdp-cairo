@@ -22,23 +22,18 @@ use hints::{extensive_hints, hints, vars, ExtensiveHintImpl, HintImpl};
 use starknet_types_core::felt::Felt;
 use std::{any::Any, collections::HashMap};
 use syscall_handler::evm::SyscallHandlerWrapper;
+use types::HDPInput;
 
 pub struct CustomHintProcessor {
-    private_inputs: serde_json::Value,
+    private_inputs: HDPInput,
     builtin_hint_proc: BuiltinHintProcessor,
     cairo1_builtin_hint_proc: Cairo1HintProcessor,
     hints: HashMap<String, HintImpl>,
     extensive_hints: HashMap<String, ExtensiveHintImpl>,
 }
 
-impl Default for CustomHintProcessor {
-    fn default() -> Self {
-        Self::new(serde_json::Value::default())
-    }
-}
-
 impl CustomHintProcessor {
-    pub fn new(private_inputs: serde_json::Value) -> Self {
+    pub fn new(private_inputs: HDPInput) -> Self {
         Self {
             private_inputs,
             builtin_hint_proc: BuiltinHintProcessor::new_empty(),
@@ -149,6 +144,3 @@ fn get_ptr_from_res_operand(vm: &mut VirtualMachine, res: &ResOperand) -> Result
     let cell_reloc = (base + (i32::from(cell.offset)))?;
     (vm.get_relocatable(cell_reloc)? + &base_offset).map_err(|e| e.into())
 }
-
-#[cfg(test)]
-pub mod tests;

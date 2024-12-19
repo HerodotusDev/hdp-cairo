@@ -24,17 +24,16 @@ func validate_mmr_meta{range_check_ptr, poseidon_ptr: PoseidonBuiltin*, pow2_arr
     let (local dict: DictAccess*) = default_dict_new(default_value=-1);
     tempvar dict_start = dict;
 
-    local mmr_meta: MMRMeta;
-    let (peaks: felt*) = alloc();
-    local peaks_len: felt;
+    local mmr_meta: MMRMeta = MMRMeta(
+        id=nondet %{ header_with_mmr.mmr_meta.id %},
+        root=nondet %{ header_with_mmr.mmr_meta.root %},
+        size=nondet %{ header_with_mmr.mmr_meta.size %},
+    );
 
-    %{
-        memory[ids.mmr_meta._reference_value + 0] = header_with_mmr.mmr_meta.id
-        memory[ids.mmr_meta._reference_value + 1] = header_with_mmr.mmr_meta.root
-        memory[ids.mmr_meta._reference_value + 2] = header_with_mmr.mmr_meta.size
-        ids.peaks_len = len(header_with_mmr.mmr_meta.peaks)
-        segments.write_arg(ids.peaks, header_with_mmr.mmr_meta.peaks)
-    %}
+    tempvar peaks_len: felt = nondet %{ len(header_with_mmr.mmr_meta.peaks) %};
+    
+    let (peaks: felt*) = alloc();
+    %{ segments.write_arg(ids.peaks, header_with_mmr.mmr_meta.peaks) %}
 
     assert_mmr_size_is_valid(mmr_meta.size);
 

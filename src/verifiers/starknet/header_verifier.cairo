@@ -24,7 +24,7 @@ func verify_mmr_batches{
     let (mmr_meta, peaks_dict, peaks_dict_start) = validate_mmr_meta();
     assert mmr_metas[mmr_meta_idx] = mmr_meta;
 
-    local n_header_proofs: felt = nondet %{ len(batch.header_with_mmr.headers) %};
+    tempvar n_header_proofs: felt = nondet %{ len(header_with_mmr.headers) %};
     with mmr_meta, peaks_dict {
         verify_headers_with_mmr_peaks(n_header_proofs);
     }
@@ -57,12 +57,12 @@ func verify_headers_with_mmr_peaks{
 
     let (fields) = alloc();
     %{
-        header = batch.header_with_mmr.headers[ids.idx - 1]
+        header = header_with_mmr.headers[ids.idx - 1]
         segments.write_arg(ids.fields, [int(x, 16) for x in header.fields])
     %}
 
-    local fields_len: felt = nondet %{ len(header.fields) %};
-    local leaf_idx: felt = nondet %{ len(header.proof.leaf_idx) %};
+    tempvar fields_len: felt = nondet %{ len(header.fields) %};
+    tempvar leaf_idx: felt = nondet %{ len(header.proof.leaf_idx) %};
 
     // compute the hash of the header
     let (header_hash) = poseidon_hash_many(n=fields_len, elements=fields);
@@ -82,7 +82,7 @@ func verify_headers_with_mmr_peaks{
     }
 
     let (mmr_path) = alloc();
-    local mmr_path_len: felt = nondet %{ len(header.proof.mmr_path) %};
+    tempvar mmr_path_len: felt = nondet %{ len(header.proof.mmr_path) %};
     %{ segments.write_arg(ids.mmr_path, [int(x, 16) for x in header.proof.mmr_path]) %}
 
     // compute the peak of the header

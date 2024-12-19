@@ -150,11 +150,15 @@ pub fn hint_receipt_mpt_proof(
 ) -> Result<(), HintError> {
     let receipt = exec_scopes.get::<Receipt>(vars::scopes::RECEIPT)?;
     let mpt_proof_ptr = get_ptr_from_var_name(vars::ids::MPT_PROOF, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let proof_le_chunks: Vec<Vec<Felt252>> = receipt
+    let proof_le_chunks: Vec<Vec<MaybeRelocatable>> = receipt
         .proof
         .proof
         .into_iter()
-        .map(|p| p.chunks(8).map(Felt252::from_bytes_le_slice).collect())
+        .map(|p| {
+            p.chunks(8)
+                .map(|chunk| MaybeRelocatable::from(Felt252::from_bytes_be_slice(&chunk.iter().rev().copied().collect::<Vec<_>>())))
+                .collect()
+        })
         .collect();
 
     vm.write_arg(mpt_proof_ptr, &proof_le_chunks)?;

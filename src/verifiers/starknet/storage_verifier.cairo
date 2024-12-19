@@ -29,7 +29,7 @@ func verify_proofs{
 }() {
     alloc_locals;
 
-    local n_storage_items: felt = nondet %{ len(batch.storages) %};
+    tempvar n_storage_items: felt = nondet %{ len(batch.storages) %};
     verify_proofs_loop(n_storage_items, 0);
 
     return ();

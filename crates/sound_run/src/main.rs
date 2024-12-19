@@ -6,12 +6,9 @@ use cairo_vm::{
     vm::{errors::vm_exception::VmException, runners::cairo_runner::CairoRunner},
 };
 use clap::{Parser, ValueHint};
-use hints::vars;
-use sound_hint_processor::{
-    syscall_handler::evm::{SyscallHandler, SyscallHandlerWrapper},
-    CustomHintProcessor,
-};
+use sound_hint_processor::CustomHintProcessor;
 use std::path::PathBuf;
+use types::{proofs::Proofs, HDPDryRunInput, HDPInput};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -25,6 +22,8 @@ struct Args {
     proof_mode: bool,
     #[structopt(long = "program_input")]
     program_input: PathBuf,
+    #[structopt(long = "program_proofs")]
+    program_proofs: PathBuf,
     #[structopt(long = "program_output")]
     program_output: PathBuf,
 }
@@ -41,7 +40,8 @@ fn main() -> Result<(), HdpOsError> {
     };
 
     let program_file = std::fs::read(args.filename).map_err(HdpOsError::IO)?;
-    let program_inputs = std::fs::read(args.program_input).map_err(HdpOsError::IO)?;
+    let program_inputs: HDPDryRunInput = serde_json::from_slice(&std::fs::read(args.program_input).map_err(HdpOsError::IO)?)?;
+    let program_proofs: Proofs = serde_json::from_slice(&std::fs::read(args.program_proofs).map_err(HdpOsError::IO)?)?;
 
     // Load the Program
     let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint)).map_err(|e| HdpOsError::Runner(e.into()))?;
@@ -62,26 +62,15 @@ fn main() -> Result<(), HdpOsError> {
         .map_err(|e| HdpOsError::Runner(e.into()))?;
 
     // Run the Cairo VM
-    let mut hint_processor = CustomHintProcessor::new(serde_json::from_slice(&program_inputs)?);
+    let mut hint_processor = CustomHintProcessor::new(HDPInput {
+        proofs: program_proofs,
+        params: program_inputs.params,
+        compiled_class: program_inputs.compiled_class,
+    });
     cairo_runner
         .run_until_pc(end, &mut hint_processor)
         .map_err(|err| VmException::from_vm_error(&cairo_runner, err))
         .map_err(|e| HdpOsError::Runner(e.into()))?;
-
-    std::fs::write(
-        args.program_output,
-        serde_json::to_vec::<SyscallHandler>(
-            &cairo_runner
-                .exec_scopes
-                .get::<SyscallHandlerWrapper>(vars::scopes::SYSCALL_HANDLER)
-                .unwrap()
-                .syscall_handler
-                .try_read()
-                .unwrap(),
-        )
-        .map_err(|e| HdpOsError::IO(e.into()))?,
-    )
-    .map_err(HdpOsError::IO)?;
 
     Ok(())
 }

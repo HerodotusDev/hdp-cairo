@@ -58,7 +58,11 @@ pub fn hint_set_storage_slot(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE)?;
-    let slot_le_chunks: Vec<Felt252> = storage.slot.chunks(8).map(Felt252::from_bytes_le_slice).collect();
+    let slot_le_chunks: Vec<MaybeRelocatable> = storage
+        .slot
+        .chunks(8)
+        .map(|chunk| MaybeRelocatable::from(Felt252::from_bytes_be_slice(&chunk.iter().rev().copied().collect::<Vec<_>>())))
+        .collect();
 
     let slot_ptr = get_ptr_from_var_name(vars::ids::SLOT, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
@@ -204,10 +208,14 @@ pub fn hint_set_mpt_proof(
 ) -> Result<(), HintError> {
     let proof = exec_scopes.get::<MPTProof>(vars::scopes::PROOF)?;
     let mpt_proof_ptr = get_ptr_from_var_name(vars::ids::MPT_PROOF, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let proof_le_chunks: Vec<Vec<Felt252>> = proof
+    let proof_le_chunks: Vec<Vec<MaybeRelocatable>> = proof
         .proof
         .into_iter()
-        .map(|p| p.chunks(8).map(Felt252::from_bytes_le_slice).collect())
+        .map(|p| {
+            p.chunks(8)
+                .map(|chunk| MaybeRelocatable::from(Felt252::from_bytes_be_slice(&chunk.iter().rev().copied().collect::<Vec<_>>())))
+                .collect()
+        })
         .collect();
 
     vm.write_arg(mpt_proof_ptr, &proof_le_chunks)?;

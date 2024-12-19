@@ -27,3 +27,4 @@ strum_macros.workspace = true
 starknet-core.workspace = true
 
 types.workspace = true
+eth_essentials_cairo_vm_hints.workspace = true

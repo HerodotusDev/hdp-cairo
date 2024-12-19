@@ -22,9 +22,9 @@ pub fn hint_has_type_prefix(
     let first_byte = get_integer_from_var_name("first_byte", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     let insert = if Felt252::ZERO < first_byte && first_byte < FELT_4 {
-        Felt252::ZERO
-    } else {
         Felt252::ONE
+    } else {
+        Felt252::ZERO
     };
 
     insert_value_from_var_name(

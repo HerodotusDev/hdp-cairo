@@ -21,6 +21,18 @@ pub fn segments_add(
     insert_value_into_ap(vm, segment)
 }
 
+pub const SEGMENTS_ADD_FP: &str = "memory[fp + 0] = to_felt_or_relocatable(segments.add())";
+pub fn segments_add_fp(
+    vm: &mut VirtualMachine,
+    _exec_scopes: &mut ExecutionScopes,
+    _hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let segment = vm.add_memory_segment();
+    vm.insert_value((vm.get_fp() + 0)?, segment)?;
+    Ok(())
+}
+
 pub const SEGMENTS_ADD_EVM_MEMORIZER_SEGMENT_INDEX: &str = "memory[ap] = to_felt_or_relocatable(ids.evm_memorizer.address_.segment_index)";
 
 pub fn segments_add_evm_memorizer_segment_index(

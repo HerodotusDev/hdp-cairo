@@ -22,7 +22,7 @@ func verify_accounts{
 }() {
     alloc_locals;
 
-    local n_accounts: felt = nondet %{ len(batch.accounts) %};
+    tempvar n_accounts: felt = nondet %{ len(batch.accounts) %};
     verify_accounts_inner(n_accounts, 0);
 
     return ();
@@ -64,7 +64,7 @@ func verify_accounts_inner{
 
     let (felt_address) = le_address_chunks_to_felt(address);
 
-    local n_proofs: felt = nondet %{ len(account.proofs) %};
+    tempvar n_proofs: felt = nondet %{ len(account.proofs) %};
     verify_account(
         address=felt_address, key=key, key_leading_zeros=key_leading_zeros, n_proofs=n_proofs, idx=0
     );
@@ -87,8 +87,8 @@ func verify_account{
     }
 
     %{ proof = account.proofs[ids.idx] %}
-    local proof_len: felt = nondet %{ len(proof.proof) %};
-    local block_number: felt = nondet %{ proof.block_number %};
+    tempvar proof_len: felt = nondet %{ len(proof.proof) %};
+    tempvar block_number: felt = nondet %{ proof.block_number %};
 
     let (proof_bytes_len: felt*) = alloc();
     %{ segments.write_arg(ids.proof_bytes_len, proof.proof_bytes_len) %}

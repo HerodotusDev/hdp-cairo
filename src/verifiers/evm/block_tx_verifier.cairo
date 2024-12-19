@@ -29,7 +29,7 @@ func verify_block_tx_proofs{
 }() {
     alloc_locals;
 
-    local n_tx_proofs: felt = nondet %{ len(batch.transactions) %};
+    tempvar n_tx_proofs: felt = nondet %{ len(batch.transactions) %};
     verify_block_tx_proofs_inner(n_tx_proofs, 0);
 
     return ();
@@ -61,8 +61,8 @@ func verify_block_tx_proofs_inner{
     local key_leading_zeros: felt;
     %{ ids.key_leading_zeros = len(transaction.key.lstrip("0x")) - len(transaction.key.lstrip("0x").lstrip("0")) %}
 
-    local proof_len: felt = nondet %{ len(transaction.proof) %};
-    local block_number: felt = nondet %{ transaction.block_number %};
+    tempvar proof_len: felt = nondet %{ len(transaction.proof) %};
+    tempvar block_number: felt = nondet %{ transaction.block_number %};
 
     let (proof_bytes_len: felt*) = alloc();
     %{ segments.write_arg(ids.proof_bytes_len, transaction.proof_bytes_len) %}

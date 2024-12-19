@@ -26,20 +26,20 @@ func verify_mmr_batches{
         return (mmr_meta_idx=mmr_meta_idx);
     }
 
-    %{ vm_enter_scope({'header_with_mmr': batch.header_with_mmr[ids.idx], '__dict_manager': __dict_manager}) %}
+    %{ vm_enter_scope({'header_with_mmr': batch.headers_with_mmr[ids.idx - 1], '__dict_manager': __dict_manager}) %}
 
     let (mmr_meta, peaks_dict, peaks_dict_start) = validate_mmr_meta();
     assert mmr_metas[mmr_meta_idx] = mmr_meta;
 
-    local n_header_proofs: felt = nondet %{ len(header_with_mmr.headers) %};
+    tempvar n_header_proofs: felt = nondet %{ len(header_with_mmr.headers) %};
     with mmr_meta, peaks_dict {
         verify_headers_with_mmr_peaks(n_header_proofs);
     }
 
-    %{ vm_exit_scope() %}
-
     // Ensure the peaks dict for this batch is finalized
     default_dict_finalize(peaks_dict_start, peaks_dict, -1);
+
+    %{ vm_exit_scope() %}
 
     return verify_mmr_batches(idx=idx - 1, mmr_meta_idx=mmr_meta_idx + 1);
 }
@@ -71,8 +71,8 @@ func verify_headers_with_mmr_peaks{
         segments.write_arg(ids.rlp, [int(x, 16) for x in header.rlp])
     %}
 
-    local rlp_len: felt = nondet %{ len(header.rlp) %};
-    local leaf_idx: felt = nondet %{ len(header.proof.leaf_idx) %};
+    tempvar rlp_len: felt = nondet %{ len(header.rlp) %};
+    tempvar leaf_idx: felt = nondet %{ len(header.proof.leaf_idx) %};
 
     // compute the hash of the header
     let (poseidon_hash) = poseidon_hash_many(n=rlp_len, elements=rlp);
@@ -92,7 +92,7 @@ func verify_headers_with_mmr_peaks{
     }
 
     let (mmr_path) = alloc();
-    local mmr_path_len: felt = nondet %{ len(header.proof.mmr_path) %};
+    tempvar mmr_path_len: felt = nondet %{ len(header.proof.mmr_path) %};
     %{ segments.write_arg(ids.mmr_path, [int(x, 16) for x in header.proof.mmr_path]) %}
 
     // compute the peak of the header

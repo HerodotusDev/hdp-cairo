@@ -18,7 +18,7 @@ pub struct HDPDryRunInput {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct HDPInput {
-    pub proofs: Vec<Proofs>,
+    pub proofs: Proofs,
     pub params: Vec<Param>,
     pub compiled_class: CasmContractClass,
 }

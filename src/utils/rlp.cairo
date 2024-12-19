@@ -375,18 +375,17 @@ func le_chunks_to_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
     elements: felt*, elements_len: felt, bytes_len: felt
 ) -> Uint256 {
     alloc_locals;
-    local value: Uint256;
 
     if (elements_len == 1) {
         let high = elements[0] * pow2_array[(16 - bytes_len) * 8];
-        assert value = Uint256(low=0, high=high);
+        return(Uint256(low=0, high=high));
     }
 
     if (elements_len == 2) {
-        assert value = Uint256(
+        return(Uint256(
             low=0,
             high=(elements[1] * pow2_array[64] + elements[0]) * pow2_array[(16 - bytes_len) * 8],
-        );
+        ));
     }
 
     // For values larger then 16 bytes, we need to shift the chunks to the left.
@@ -394,19 +393,21 @@ func le_chunks_to_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
     let (le_shifted) = right_shift_le_chunks(elements, elements_len, offset);
 
     if (elements_len == 3) {
-        assert value = Uint256(
+       return(Uint256(
             low=le_shifted[0] * pow2_array[64], high=le_shifted[2] * pow2_array[64] + le_shifted[1]
-        );
+        ));
     }
 
     if (elements_len == 4) {
-        assert value = Uint256(
+        return(Uint256(
             low=le_shifted[1] * pow2_array[64] + le_shifted[0],
             high=le_shifted[3] * pow2_array[64] + le_shifted[2],
-        );
+        ));
     }
 
-    return (value);
+    assert 0 = 1;
+
+    return (Uint256(low=0, high=0));
 }
 
 // This function is required when constructing a LE uint256 from LE chunks.

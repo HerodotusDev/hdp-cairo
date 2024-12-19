@@ -2091,6 +2091,7 @@ dependencies = [
  "hints",
  "serde_json",
  "thiserror 1.0.69",
+ "types",
 ]
 
 [[package]]
@@ -2176,6 +2177,24 @@ checksum = "33d852cb9b869c2a9b3df2f71a3074817f01e1844f839a144f5fcef059a4eb5d"
 dependencies = [
  "libc",
  "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "eth_essentials_cairo_vm_hints"
+version = "0.1.0"
+dependencies = [
+ "bincode",
+ "cairo-vm",
+ "clap",
+ "hex",
+ "num-bigint",
+ "num-traits",
+ "rand",
+ "sha3",
+ "starknet-crypto 0.7.3",
+ "starknet-types-core",
+ "thiserror 1.0.69",
+ "tiny-keccak",
 ]
 
 [[package]]
@@ -2587,6 +2606,7 @@ dependencies = [
  "cairo-lang-starknet-classes",
  "cairo-type-derive",
  "cairo-vm",
+ "eth_essentials_cairo_vm_hints",
  "hex",
  "num-bigint",
  "num-traits",
@@ -4623,6 +4643,7 @@ dependencies = [
  "serde_json",
  "sound_hint_processor",
  "thiserror 1.0.69",
+ "types",
 ]
 
 [[package]]

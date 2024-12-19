@@ -26,6 +26,7 @@ func run_state_verification{
 }() -> (mmr_metas_len: felt) {
     alloc_locals;
 
+    // batch abstraction will be usefull with multiple chains
     %{ vm_enter_scope({'batch': proofs, '__dict_manager': __dict_manager}) %}
 
     let (mmr_meta_idx) = evm_run_state_verification(0);

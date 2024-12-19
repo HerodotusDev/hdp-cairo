@@ -7,7 +7,7 @@ use cairo_vm::{
         builtin_hint_processor_definition::HintProcessorData,
         hint_utils::{get_integer_from_var_name, get_ptr_from_var_name, insert_value_from_var_name, insert_value_into_ap},
     },
-    types::exec_scope::ExecutionScopes,
+    types::{exec_scope::ExecutionScopes, relocatable::MaybeRelocatable},
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
@@ -150,11 +150,15 @@ pub fn hint_mpt_proof(
 ) -> Result<(), HintError> {
     let transaction = exec_scopes.get::<Transaction>(vars::scopes::TRANSACTION)?;
     let mpt_proof_ptr = get_ptr_from_var_name(vars::ids::MPT_PROOF, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let proof_le_chunks: Vec<Vec<Felt252>> = transaction
+    let proof_le_chunks: Vec<Vec<MaybeRelocatable>> = transaction
         .proof
         .proof
         .into_iter()
-        .map(|p| p.chunks(8).map(Felt252::from_bytes_le_slice).collect())
+        .map(|p| {
+            p.chunks(8)
+                .map(|chunk| MaybeRelocatable::from(Felt252::from_bytes_be_slice(&chunk.iter().rev().copied().collect::<Vec<_>>())))
+                .collect()
+        })
         .collect();
 
     vm.write_arg(mpt_proof_ptr, &proof_le_chunks)?;

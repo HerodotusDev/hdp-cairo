@@ -45,3 +45,4 @@ hints = { path = "crates/hints" }
 indexer = { path = "crates/indexer" }
 syscall_handler = { path = "crates/syscall_handler" }
 types = { path = "crates/types" }
+eth_essentials_cairo_vm_hints = { path = "packages/eth_essentials/cairo_vm_hints"}

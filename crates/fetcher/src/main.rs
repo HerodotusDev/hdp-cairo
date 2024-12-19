@@ -77,6 +77,7 @@ fn main() -> Result<(), FetcherError> {
         storages: storages.into_iter().collect(),
         ..Default::default()
     };
+
     fs::write(args.program_output, serde_json::to_vec(&proofs).map_err(|e| FetcherError::IO(e.into()))?)?;
 
     Ok(())

@@ -21,8 +21,8 @@ pub fn hint_is_byzantium(
 ) -> Result<(), HintError> {
     let insert = match get_integer_from_var_name("block_number", vm, &hint_data.ids_data, &hint_data.ap_tracking)?.cmp(&BYZANTIUM_START_BLOCK_NUMBER)
     {
-        Ordering::Less => Felt252::ZERO,
         Ordering::Equal | Ordering::Greater => Felt252::ONE,
+        Ordering::Less => Felt252::ZERO,
     };
 
     insert_value_from_var_name(

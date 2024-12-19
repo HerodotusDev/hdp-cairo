@@ -28,7 +28,7 @@ func verify_storage_items{
 }() {
     alloc_locals;
 
-    local n_storage_items: felt = nondet %{ len(batch.storages) %};
+    tempvar n_storage_items: felt = nondet %{ len(batch.storages) %};
     verify_storage_items_inner(n_storage_items, 0);
 
     return ();
@@ -78,7 +78,7 @@ func verify_storage_items_inner{
 
     let (felt_address) = le_address_chunks_to_felt(address);
 
-    local n_proofs: felt = nondet %{ len(storage.proofs) %};
+    tempvar n_proofs: felt = nondet %{ len(storage.proofs) %};
     verify_storage_item(
         address=felt_address,
         slot=slot_be,
@@ -107,8 +107,8 @@ func verify_storage_item{
     }
 
     %{ proof = storage.proofs[ids.idx] %}
-    local proof_len: felt = nondet %{ len(proof.proof) %};
-    local block_number: felt = nondet %{ proof.block_number %};
+    tempvar proof_len: felt = nondet %{ len(proof.proof) %};
+    tempvar block_number: felt = nondet %{ proof.block_number %};
 
     let (proof_bytes_len: felt*) = alloc();
     %{ segments.write_arg(ids.proof_bytes_len, proof.proof_bytes_len) %}

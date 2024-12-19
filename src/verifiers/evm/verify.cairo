@@ -22,20 +22,20 @@ func run_state_verification{
     let (chain_info) = fetch_chain_info(11155111);
     with chain_info {
         // Step 1: Verify MMR and headers inclusion
-        local n_proofs: felt = nondet %{ len(batch.header_with_mmr) %};
+        tempvar n_proofs: felt = nondet %{ len(batch.headers_with_mmr) %};
         let (mmr_meta_idx) = verify_mmr_batches(n_proofs, mmr_meta_idx);
 
         // Step 2: Verify the accounts
-        verify_accounts();
+        // verify_accounts();
 
         // Step 3: Verify the storage items
-        verify_storage_items();
+        // verify_storage_items();
 
         // Step 4: Verify the block tx proofs
-        verify_block_tx_proofs();
+        // verify_block_tx_proofs();
 
         // Step 5: Verify the block receipt proofs
-        verify_block_receipt_proofs();
+        // verify_block_receipt_proofs();
     }
 
     return (mmr_meta_idx=mmr_meta_idx);

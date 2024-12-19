@@ -5,14 +5,14 @@ use cairo_vm::{
         dict_manager::DictManager,
         hint_utils::{get_integer_from_var_name, get_ptr_from_var_name, insert_value_into_ap},
     },
-    types::exec_scope::ExecutionScopes,
+    types::{exec_scope::ExecutionScopes, relocatable::MaybeRelocatable},
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use std::{any::Any, collections::HashMap};
+use std::{any::Any, cell::RefCell, collections::HashMap, rc::Rc};
 use types::proofs::{header::Header, HeaderMmrMeta, Proofs};
 
-pub const HINT_VM_ENTER_SCOPE: &str = "vm_enter_scope({'header_with_mmr': batch.header_with_mmr[ids.idx], '__dict_manager': __dict_manager})";
+pub const HINT_VM_ENTER_SCOPE: &str = "vm_enter_scope({'header_with_mmr': batch.headers_with_mmr[ids.idx - 1], '__dict_manager': __dict_manager})";
 
 pub fn hint_vm_enter_scope(
     vm: &mut VirtualMachine,
@@ -25,8 +25,8 @@ pub fn hint_vm_enter_scope(
         .try_into()
         .unwrap();
 
-    let headers_with_mmr: Box<dyn Any> = Box::new(proofs.headers_with_mmr[idx].clone());
-    let dict_manager: Box<dyn Any> = Box::new(exec_scopes.get::<DictManager>(vars::scopes::DICT_MANAGER)?);
+    let headers_with_mmr: Box<dyn Any> = Box::new(proofs.headers_with_mmr[idx - 1].clone());
+    let dict_manager: Box<dyn Any> = Box::new(exec_scopes.get::<Rc<RefCell<DictManager>>>(vars::scopes::DICT_MANAGER)?);
     exec_scopes.enter_scope(HashMap::from([
         (String::from(vars::scopes::HEADER_WITH_MMR), headers_with_mmr),
         (String::from(vars::scopes::DICT_MANAGER), dict_manager),
@@ -35,7 +35,7 @@ pub fn hint_vm_enter_scope(
     Ok(())
 }
 
-pub const HINT_HEADERS_WITH_MMR_HEADERS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(headers_with_mmr.headers))";
+pub const HINT_HEADERS_WITH_MMR_HEADERS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(header_with_mmr.headers))";
 
 pub fn hint_headers_with_mmr_headers_len(
     vm: &mut VirtualMachine,
@@ -60,14 +60,19 @@ pub fn hint_set_header(
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
         .unwrap();
+
     let header = headers_with_mmr.headers[idx - 1].clone();
-    let rlp_le_chunks: Vec<Felt252> = header.rlp.chunks(8).map(Felt252::from_bytes_le_slice).collect();
+    let rlp_le_chunks: Vec<MaybeRelocatable> = header
+        .rlp
+        .chunks(8)
+        .map(|chunk| MaybeRelocatable::from(Felt252::from_bytes_be_slice(&chunk.iter().rev().copied().collect::<Vec<_>>())))
+        .collect();
 
     exec_scopes.insert_value::<Header>(vars::scopes::HEADER, header);
 
     let rlp_ptr = get_ptr_from_var_name(vars::ids::RLP, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    vm.write_arg(rlp_ptr, &rlp_le_chunks)?;
+    vm.load_data(rlp_ptr, &rlp_le_chunks)?;
 
     Ok(())
 }
@@ -82,7 +87,7 @@ pub fn hint_rlp_len(
 ) -> Result<(), HintError> {
     let header = exec_scopes.get::<Header>(vars::scopes::HEADER)?;
 
-    insert_value_into_ap(vm, Felt252::from(header.rlp.len()))
+    insert_value_into_ap(vm, Felt252::from(header.rlp.chunks(8).count()))
 }
 
 pub const HINT_LEAF_IDX: &str = "memory[ap] = to_felt_or_relocatable(len(header.proof.leaf_idx))";
@@ -121,9 +126,15 @@ pub fn hint_mmr_path(
 ) -> Result<(), HintError> {
     let header = exec_scopes.get::<Header>(vars::scopes::HEADER)?;
     let mmr_path_ptr = get_ptr_from_var_name(vars::ids::MMR_PATH, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let mmr_path: Vec<Felt252> = header.proof.mmr_path.into_iter().map(|f| Felt252::from_bytes_be_slice(&f.0)).collect();
+    let mmr_path: Vec<MaybeRelocatable> = header
+        .proof
+        .mmr_path
+        .into_iter()
+        .map(|f| Felt252::from_bytes_be_slice(&f))
+        .map(MaybeRelocatable::from)
+        .collect();
 
-    vm.write_arg(mmr_path_ptr, &mmr_path)?;
+    vm.load_data(mmr_path_ptr, &mmr_path)?;
 
     Ok(())
 }

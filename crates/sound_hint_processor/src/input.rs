@@ -8,7 +8,7 @@ use cairo_vm::{
 };
 use hints::vars;
 use std::collections::HashMap;
-use types::{param::Param, proofs::Proofs, HDPInput};
+use types::{param::Param, proofs::Proofs};
 
 pub const HINT_INPUT: &str = "from tools.py.schema import HDPInput\nrun_input = HDPInput.Schema().load(program_input)\nproofs = run_input.proofs\nparams = run_input.params\ncompiled_class = run_input.compiled_class";
 
@@ -20,10 +20,9 @@ impl CustomHintProcessor {
         _hint_data: &HintProcessorData,
         _constants: &HashMap<String, Felt252>,
     ) -> Result<(), HintError> {
-        let hdp_input: HDPInput = serde_json::from_value(self.private_inputs.clone()).map_err(|_| HintError::WrongHintData)?;
-        exec_scopes.insert_value::<Vec<Proofs>>(vars::scopes::PROOFS, hdp_input.proofs);
-        exec_scopes.insert_value::<Vec<Param>>(vars::scopes::PARAMS, hdp_input.params);
-        exec_scopes.insert_value::<CasmContractClass>(vars::scopes::COMPILED_CLASS, hdp_input.compiled_class);
+        exec_scopes.insert_value::<Proofs>(vars::scopes::PROOFS, self.private_inputs.proofs.to_owned());
+        exec_scopes.insert_value::<Vec<Param>>(vars::scopes::PARAMS, self.private_inputs.params.to_owned());
+        exec_scopes.insert_value::<CasmContractClass>(vars::scopes::COMPILED_CLASS, self.private_inputs.compiled_class.to_owned());
         Ok(())
     }
 }

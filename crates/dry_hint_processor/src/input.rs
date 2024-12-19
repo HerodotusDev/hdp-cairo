@@ -8,7 +8,7 @@ use cairo_vm::{
 };
 use hints::vars;
 use std::collections::HashMap;
-use types::{param::Param, HDPDryRunInput};
+use types::param::Param;
 
 pub const HINT_INPUT: &str = "from tools.py.schema import HDPDryRunInput\ndry_run_input = HDPDryRunInput.Schema().load(program_input)\nparams = dry_run_input.params\ncompiled_class = dry_run_input.compiled_class";
 
@@ -20,9 +20,8 @@ impl CustomHintProcessor {
         _hint_data: &HintProcessorData,
         _constants: &HashMap<String, Felt252>,
     ) -> Result<(), HintError> {
-        let hdp_dry_run_input: HDPDryRunInput = serde_json::from_value(self.private_inputs.clone()).map_err(|_| HintError::WrongHintData)?;
-        exec_scopes.insert_value::<Vec<Param>>(vars::scopes::PARAMS, hdp_dry_run_input.params);
-        exec_scopes.insert_value::<CasmContractClass>(vars::scopes::COMPILED_CLASS, hdp_dry_run_input.compiled_class);
+        exec_scopes.insert_value::<Vec<Param>>(vars::scopes::PARAMS, self.private_inputs.params.to_owned());
+        exec_scopes.insert_value::<CasmContractClass>(vars::scopes::COMPILED_CLASS, self.private_inputs.compiled_class.to_owned());
         Ok(())
     }
 }
