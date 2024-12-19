@@ -104,6 +104,8 @@ func verify_headers_with_mmr_peaks{
     // compute the hash of the header
     let (poseidon_hash) = poseidon_hash_many(n=rlp_len, elements=rlp);
 
+    %{ print(f"poseidon_hash: {hex(ids.poseidon_hash)}") %}
+
     // a header can be the right-most peak
     if (leaf_idx == mmr_meta.size) {
         // instead of running an inclusion proof, we ensure its a known peak
@@ -136,6 +138,8 @@ func verify_headers_with_mmr_peaks{
         inclusion_proof=mmr_path,
         inclusion_proof_len=mmr_path_len,
     );
+
+    %{ print(f"computed_peak: {hex(ids.computed_peak)}") %}
 
     // ensure the peak is included in the peaks dict, which contains the peaks of the mmr_root
     let (contains_peak) = dict_read{dict_ptr=peaks_dict}(computed_peak);
