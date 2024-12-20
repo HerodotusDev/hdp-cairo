@@ -34,9 +34,8 @@ pub mod ids {
     pub const IS_LEFT_SMALLER: &str = "is_left_smaller";
     pub const IS_LONG: &str = "is_long";
     pub const ITEM_TYPE: &str = "item_type";
-    pub const KEY_LOW: &str = "key_low";
+    pub const KEY: &str = "key";
     pub const KEY_LEADING_ZEROS: &str = "key_leading_zeros";
-    pub const KEY_HIGH: &str = "key_high";
     pub const LEFT: &str = "left";
     pub const MMR_PATH: &str = "mmr_path";
     pub const MPT_PROOF: &str = "mpt_proof";

@@ -5,14 +5,13 @@ use crate::{
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData,
-        hint_utils::{get_integer_from_var_name, get_ptr_from_var_name, insert_value_from_var_name, insert_value_into_ap},
+        hint_utils::{get_address_from_var_name, get_integer_from_var_name, get_ptr_from_var_name, insert_value_from_var_name, insert_value_into_ap},
     },
     types::{exec_scope::ExecutionScopes, relocatable::MaybeRelocatable},
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
 use num_bigint::BigUint;
-use num_traits::Num;
 use std::collections::HashMap;
 use types::proofs::{mpt::MPTProof, storage::Storage, Proofs};
 
@@ -80,22 +79,17 @@ pub fn hint_set_storage_key(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE)?;
-    let key = BigUint::from_str_radix(&storage.storage_key.to_string(), 16).unwrap();
 
-    let (key_low, key_high) = split_128(&key);
-    insert_value_from_var_name(
-        vars::ids::KEY_LOW,
-        MaybeRelocatable::Int(Felt252::from(key_low)),
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
+    let (key_low, key_high) = split_128(&BigUint::from_bytes_be(storage.storage_key.as_slice()));
+    
+    let key_ptr = get_address_from_var_name(vars::ids::KEY, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    vm.insert_value(
+        (key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 0)?,
+        Felt252::try_from(key_low).map_err(|_| HintError::WrongHintData)?,
     )?;
-    insert_value_from_var_name(
-        vars::ids::KEY_HIGH,
-        MaybeRelocatable::Int(Felt252::from(key_high)),
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
+    vm.insert_value(
+        (key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 1)?,
+        Felt252::try_from(key_high).map_err(|_| HintError::WrongHintData)?,
     )?;
 
     Ok(())

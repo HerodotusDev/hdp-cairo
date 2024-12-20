@@ -51,6 +51,8 @@ pub fn hint_divmod_value(
         .try_into()
         .unwrap();
 
+    println!("{}", vm.get_integer((value + i)?)?);
+
     let devisor = get_integer_from_var_name(vars::ids::DEVISOR, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     let (q, r) = vm.get_integer((value + i)?)?.div_rem(&NonZeroFelt::try_from(devisor).unwrap());

@@ -101,21 +101,21 @@ func verify_account{
     let (header_rlp) = EvmMemorizer.get(key=memorizer_key);
     let state_root = HeaderDecoder.get_field(header_rlp, HeaderField.STATE_ROOT);
 
-    let (rlp: felt*, value_len: felt) = verify_mpt_proof(
-        mpt_proof=mpt_proof,
-        mpt_proof_bytes_len=proof_bytes_len,
-        mpt_proof_len=proof_len,
-        key_be=key,
-        key_be_leading_zeroes_nibbles=key_leading_zeros,
-        root=state_root,
-        pow2_array=pow2_array,
-    );
+    // let (rlp: felt*, value_len: felt) = verify_mpt_proof(
+    //     mpt_proof=mpt_proof,
+    //     mpt_proof_bytes_len=proof_bytes_len,
+    //     mpt_proof_len=proof_len,
+    //     key_be=key,
+    //     key_be_leading_zeroes_nibbles=key_leading_zeros,
+    //     root=state_root,
+    //     pow2_array=pow2_array,
+    // );
 
-    // add account to memorizer
-    let memorizer_key = EvmHashParams.account(
-        chain_id=chain_info.id, block_number=block_number, address=address
-    );
-    EvmMemorizer.add(key=memorizer_key, data=rlp);
+    // // add account to memorizer
+    // let memorizer_key = EvmHashParams.account(
+    //     chain_id=chain_info.id, block_number=block_number, address=address
+    // );
+    // EvmMemorizer.add(key=memorizer_key, data=rlp);
 
     return verify_account(
         address=address,

@@ -26,7 +26,7 @@ func run_state_verification{
         let (mmr_meta_idx) = verify_mmr_batches(n_proofs, mmr_meta_idx);
 
         // Step 2: Verify the accounts
-        // verify_accounts();
+        verify_accounts();
 
         // Step 3: Verify the storage items
         // verify_storage_items();
