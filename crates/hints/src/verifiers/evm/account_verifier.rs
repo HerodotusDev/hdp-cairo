@@ -189,7 +189,7 @@ pub fn hint_get_mpt_proof(
 ) -> Result<(), HintError> {
     let proof = exec_scopes.get::<MPTProof>(vars::scopes::PROOF)?;
     let mpt_proof_ptr = get_ptr_from_var_name(vars::ids::MPT_PROOF, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let proof_le_chunks: Vec<Vec<MaybeRelocatable>> = proof
+    let proof_le_chunks: Vec<MaybeRelocatable> = proof
         .proof
         .into_iter()
         .map(|p| {
@@ -197,9 +197,10 @@ pub fn hint_get_mpt_proof(
                 .map(|chunk| MaybeRelocatable::from(Felt252::from_bytes_be_slice(&chunk.iter().rev().copied().collect::<Vec<_>>())))
                 .collect()
         })
+        .flat_map(|f: Vec<MaybeRelocatable>| f)
         .collect();
 
-    vm.write_arg(mpt_proof_ptr, &proof_le_chunks)?;
+    vm.load_data(mpt_proof_ptr, &proof_le_chunks)?;
 
     Ok(())
 }

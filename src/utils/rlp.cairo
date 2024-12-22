@@ -435,8 +435,8 @@ func right_shift_le_chunks{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_a
     assert [range_check_ptr + 1] = value_len - 1;
     let range_check_ptr = range_check_ptr + 2;
 
-    let devisor = pow2_array[offset * 8];
-    let shifter = pow2_array[(8 - offset) * 8];
+    local devisor = pow2_array[offset * 8];
+    local shifter = pow2_array[(8 - offset) * 8];
 
     tempvar current_word = 0;
     tempvar n_processed_words = 0;
@@ -452,13 +452,12 @@ func right_shift_le_chunks{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_a
 
     // Inlined felt_divmod (unsigned_div_rem).
     %{ print1 %}
-    let q = [ap];
-    let r = [ap + 1];
-    %{ ids.q, ids.r = divmod(memory[ids.value + ids.i], ids.devisor) %}
+    %{ q, r = divmod(memory[ids.value + ids.i], ids.devisor) %}
+    tempvar q = nondet %{ q %};
+    tempvar r = nondet %{ r %};
     // %{
     //     #print(f"val={memory[ids.value + ids.i]} q={ids.q} r={ids.r} i={ids.i}")
     // %}
-    ap += 2;
     tempvar offset = 3 * n_processed_words;
     assert [range_check_ptr + offset] = q;
     assert [range_check_ptr + offset + 1] = r;
