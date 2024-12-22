@@ -40,15 +40,11 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(merkle::HINT_IS_LEFT_SMALLER.into(), merkle::hint_is_left_smaller);
     hints.insert(rlp::divmod::HINT_DIVMOD_VALUE.into(), rlp::divmod::hint_divmod_value);
     hints.insert(rlp::divmod::HINT_DIVMOD_RLP.into(), rlp::divmod::hint_divmod_rlp);
-    hints.insert(rlp::divmod::HINT_DIVMOD_VALUE_INSERT_Q.into(), rlp::divmod::hint_divmod_value_insert_q);
-    hints.insert(rlp::divmod::HINT_DIVMOD_VALUE_INSERT_R.into(), rlp::divmod::hint_divmod_value_insert_r);
     hints.insert(rlp::item_type::HINT_IS_LONG.into(), rlp::item_type::hint_is_long);
     hints.insert(rlp::item_type::HINT_ITEM_TYPE.into(), rlp::item_type::hint_item_type);
     hints.insert(rlp::processed_words::HINT_PROCESSED_WORDS.into(), rlp::processed_words::hint_processed_words);
     hints.insert(rlp::processed_words::HINT_PROCESSED_WORDS_RLP.into(), rlp::processed_words::hint_processed_words_rlp);
     hints.insert(print::PROGRAM_HASH.into(), print::program_hash);
-    hints.insert(print::PRINT1.into(), print::print1);
-    hints.insert(print::PRINT2.into(), print::print2);
     hints.insert(segments::SEGMENTS_ADD.into(), segments::segments_add);
     hints.insert(segments::SEGMENTS_ADD_FP.into(), segments::segments_add_fp);
     hints.insert(segments::SEGMENTS_ADD_EVM_MEMORIZER_SEGMENT_INDEX.into(), segments::segments_add_evm_memorizer_segment_index);

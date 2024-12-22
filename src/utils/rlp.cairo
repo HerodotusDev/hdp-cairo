@@ -451,10 +451,10 @@ func right_shift_le_chunks{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_a
     jmp end_loop if [ap] != 0, ap++;
 
     // Inlined felt_divmod (unsigned_div_rem).
-    %{ print1 %}
-    %{ q, r = divmod(memory[ids.value + ids.i], ids.devisor) %}
-    tempvar q = nondet %{ q %};
-    tempvar r = nondet %{ r %};
+    let q = [ap];
+    let r = [ap + 1];
+    %{ ids.q, ids.r = divmod(memory[ids.value + ids.i], ids.devisor) %}
+    ap += 2;
     // %{
     //     #print(f"val={memory[ids.value + ids.i]} q={ids.q} r={ids.r} i={ids.i}")
     // %}
@@ -462,7 +462,6 @@ func right_shift_le_chunks{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_a
     assert [range_check_ptr + offset] = q;
     assert [range_check_ptr + offset + 1] = r;
     assert [range_check_ptr + offset + 2] = devisor - r - 1;
-    %{ print2 %}
     assert q * devisor + r = value[i];
     // done inlining felt_divmod.
 
