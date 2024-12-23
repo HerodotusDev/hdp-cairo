@@ -8,7 +8,10 @@ use cairo_vm::{
         hint_utils::{get_address_from_var_name, get_integer_from_var_name, get_ptr_from_var_name, insert_value_from_var_name, insert_value_into_ap},
     },
     types::{exec_scope::ExecutionScopes, relocatable::MaybeRelocatable},
-    vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
+    vm::{
+        errors::{hint_errors::HintError, memory_errors::MemoryError},
+        vm_core::VirtualMachine,
+    },
     Felt252,
 };
 use num_bigint::BigUint;
@@ -52,7 +55,7 @@ pub fn hint_get_account_address(
 
     let address_ptr = get_ptr_from_var_name(vars::ids::ADDRESS, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    vm.write_arg(address_ptr, &address_le_chunks)?;
+    vm.load_data(address_ptr, &address_le_chunks)?;
 
     Ok(())
 }
@@ -70,14 +73,8 @@ pub fn hint_account_key(
     let (key_low, key_high) = split_128(&BigUint::from_bytes_be(account.account_key.as_slice()));
 
     let key_ptr = get_address_from_var_name(vars::ids::KEY, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    vm.insert_value(
-        (key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 0)?,
-        Felt252::try_from(key_low).map_err(|_| HintError::WrongHintData)?,
-    )?;
-    vm.insert_value(
-        (key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 1)?,
-        Felt252::try_from(key_high).map_err(|_| HintError::WrongHintData)?,
-    )?;
+    vm.insert_value((key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 0)?, Felt252::from(key_low))?;
+    vm.insert_value((key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 1)?, Felt252::from(key_high))?;
 
     Ok(())
 }
@@ -169,14 +166,10 @@ pub fn hint_account_proof_bytes_len(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let proof = exec_scopes.get::<MPTProof>(vars::scopes::PROOF)?;
-
-    insert_value_from_var_name(
-        vars::ids::PROOF_BYTES_LEN,
-        MaybeRelocatable::Int(Felt252::from(proof.proof.len())),
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
-    )
+    let proof_bytes_len_ptr = get_ptr_from_var_name(vars::ids::PROOF_BYTES_LEN, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let proof_len: Vec<MaybeRelocatable> = proof.proof.into_iter().map(|f| f.len().into()).collect();
+    vm.load_data(proof_bytes_len_ptr, &proof_len)?;
+    Ok(())
 }
 
 pub const HINT_GET_MPT_PROOF: &str = "segments.write_arg(ids.mpt_proof, [int(x, 16) for x in proof.proof])";
@@ -189,18 +182,21 @@ pub fn hint_get_mpt_proof(
 ) -> Result<(), HintError> {
     let proof = exec_scopes.get::<MPTProof>(vars::scopes::PROOF)?;
     let mpt_proof_ptr = get_ptr_from_var_name(vars::ids::MPT_PROOF, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let proof_le_chunks: Vec<MaybeRelocatable> = proof
+    let proof_le_chunks: Result<Vec<MaybeRelocatable>, MemoryError> = proof
         .proof
         .into_iter()
         .map(|p| {
             p.chunks(8)
                 .map(|chunk| MaybeRelocatable::from(Felt252::from_bytes_be_slice(&chunk.iter().rev().copied().collect::<Vec<_>>())))
-                .collect()
+                .collect::<Vec<MaybeRelocatable>>()
         })
-        .flat_map(|f: Vec<MaybeRelocatable>| f)
+        .map(|f| {
+            let segment = vm.add_memory_segment();
+            vm.load_data(segment, &f).map(|_| MaybeRelocatable::from(segment))
+        })
         .collect();
 
-    vm.load_data(mpt_proof_ptr, &proof_le_chunks)?;
+    vm.load_data(mpt_proof_ptr, &proof_le_chunks?)?;
 
     Ok(())
 }

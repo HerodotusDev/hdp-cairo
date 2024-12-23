@@ -1,4 +1,7 @@
-use crate::{utils::{count_leading_zero_nibbles_from_hex, split_128}, vars};
+use crate::{
+    utils::{count_leading_zero_nibbles_from_hex, split_128},
+    vars,
+};
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData,
@@ -57,14 +60,8 @@ pub fn hint_receipt_key(
     let (key_low, key_high) = split_128(&BigUint::from_bytes_be(&receipt.key.to_be_bytes_vec()));
 
     let key_ptr = get_address_from_var_name(vars::ids::KEY, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    vm.insert_value(
-        (key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 0)?,
-        Felt252::try_from(key_low).map_err(|_| HintError::WrongHintData)?,
-    )?;
-    vm.insert_value(
-        (key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 1)?,
-        Felt252::try_from(key_high).map_err(|_| HintError::WrongHintData)?,
-    )?;
+    vm.insert_value((key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 0)?, Felt252::from(key_low))?;
+    vm.insert_value((key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 1)?, Felt252::from(key_high))?;
 
     Ok(())
 }

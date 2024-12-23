@@ -3,7 +3,10 @@
 use cairo_vm::{
     cairo_run::CairoRunConfig,
     types::{layout_name::LayoutName, program::Program},
-    vm::{errors::vm_exception::VmException, runners::cairo_runner::CairoRunner},
+    vm::{
+        errors::vm_exception::VmException,
+        runners::cairo_runner::{CairoRunner, RunnerMode},
+    },
 };
 use clap::{Parser, ValueHint};
 use dry_hint_processor::{
@@ -47,15 +50,15 @@ fn main() -> Result<(), HdpOsError> {
     // Load the Program
     let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint)).map_err(|e| HdpOsError::Runner(e.into()))?;
 
+    let runner_mode = if cairo_run_config.proof_mode {
+        RunnerMode::ProofModeCairo1
+    } else {
+        RunnerMode::ExecutionMode
+    };
+
     // Init cairo runner
-    let mut cairo_runner = CairoRunner::new(
-        &program,
-        cairo_run_config.layout,
-        None,
-        cairo_run_config.proof_mode,
-        cairo_run_config.trace_enabled,
-    )
-    .map_err(|e| HdpOsError::Runner(e.into()))?;
+    let mut cairo_runner = CairoRunner::new_v2(&program, cairo_run_config.layout, None, runner_mode, cairo_run_config.trace_enabled)
+        .map_err(|e| HdpOsError::Runner(e.into()))?;
 
     // Init the Cairo VM
     let end = cairo_runner
@@ -68,6 +71,9 @@ fn main() -> Result<(), HdpOsError> {
         .run_until_pc(end, &mut hint_processor)
         .map_err(|err| VmException::from_vm_error(&cairo_runner, err))
         .map_err(|e| HdpOsError::Runner(e.into()))?;
+
+    cairo_runner.vm.compute_segments_effective_sizes();
+    println!("{:?}", cairo_runner.get_execution_resources());
 
     std::fs::write(
         args.program_output,

@@ -29,13 +29,13 @@ func run_state_verification{
         verify_accounts();
 
         // Step 3: Verify the storage items
-        // verify_storage_items();
+        verify_storage_items();
 
         // Step 4: Verify the block tx proofs
-        // verify_block_tx_proofs();
+        verify_block_tx_proofs();
 
         // Step 5: Verify the block receipt proofs
-        // verify_block_receipt_proofs();
+        verify_block_receipt_proofs();
     }
 
     return (mmr_meta_idx=mmr_meta_idx);

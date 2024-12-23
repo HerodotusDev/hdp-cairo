@@ -60,6 +60,8 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(verifiers::evm::account_verifier::HINT_BATCH_ACCOUNTS_LEN.into(), verifiers::evm::account_verifier::hint_batch_accounts_len);
     hints.insert(verifiers::evm::account_verifier::HINT_GET_ACCOUNT_ADDRESS.into(), verifiers::evm::account_verifier::hint_get_account_address);
     hints.insert(verifiers::evm::account_verifier::HINT_GET_MPT_PROOF.into(), verifiers::evm::account_verifier::hint_get_mpt_proof);
+    hints.insert(verifiers::evm::account_verifier::HINT_ACCOUNT_PROOF_LEN.into(), verifiers::evm::account_verifier::hint_account_proof_len);
+    hints.insert(verifiers::evm::account_verifier::HINT_ACCOUNT_PROOFS_LEN.into(), verifiers::evm::account_verifier::hint_account_proofs_len);
     hints.insert(verifiers::evm::transaction_verifier::HINT_BATCH_TRANSACTIONS_LEN.into(), verifiers::evm::transaction_verifier::hint_batch_transactions_len);
     hints.insert(verifiers::evm::transaction_verifier::HINT_SET_TX.into(), verifiers::evm::transaction_verifier::hint_set_tx);
     hints.insert(verifiers::evm::transaction_verifier::HINT_SET_TX_KEY.into(), verifiers::evm::transaction_verifier::hint_set_tx_key);
@@ -67,7 +69,6 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(verifiers::evm::transaction_verifier::HINT_SET_TX_PROOF_LEN.into(), verifiers::evm::transaction_verifier::hint_set_tx_proof_len);
     hints.insert(verifiers::evm::transaction_verifier::HINT_SET_TX_BLOCK_NUMBER.into(), verifiers::evm::transaction_verifier::hint_set_tx_block_number);
     hints.insert(verifiers::evm::transaction_verifier::HINT_PROOF_BYTES_LEN.into(), verifiers::evm::transaction_verifier::hint_proof_bytes_len);
-    hints.insert(verifiers::evm::transaction_verifier::HINT_MPT_PROOF.into(), verifiers::evm::transaction_verifier::hint_mpt_proof);
     hints.insert(verifiers::evm::header_verifier::HINT_VM_ENTER_SCOPE.into(), verifiers::evm::header_verifier::hint_vm_enter_scope);
     hints.insert(verifiers::evm::header_verifier::HINT_HEADERS_WITH_MMR_HEADERS_LEN.into(), verifiers::evm::header_verifier::hint_headers_with_mmr_headers_len);
     hints.insert(verifiers::evm::header_verifier::HINT_LEAF_IDX.into(), verifiers::evm::header_verifier::hint_leaf_idx);
@@ -79,15 +80,12 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(verifiers::evm::receipt_verifier::HINT_RECEIPT_BLOCK_NUMBER.into(), verifiers::evm::receipt_verifier::hint_receipt_block_number);
     hints.insert(verifiers::evm::receipt_verifier::HINT_RECEIPT_KEY.into(), verifiers::evm::receipt_verifier::hint_receipt_key);
     hints.insert(verifiers::evm::receipt_verifier::HINT_RECEIPT_KEY_LEADING_ZEROS.into(), verifiers::evm::receipt_verifier::hint_receipt_key_leading_zeros);
-    hints.insert(verifiers::evm::receipt_verifier::HINT_RECEIPT_MPT_PROOF.into(), verifiers::evm::receipt_verifier::hint_receipt_mpt_proof);
     hints.insert(verifiers::evm::receipt_verifier::HINT_RECEIPT_PROOF_LEN.into(), verifiers::evm::receipt_verifier::hint_receipt_proof_len);
     hints.insert(verifiers::evm::receipt_verifier::HINT_RECEIPT_PROOF_BYTES_LEN.into(), verifiers::evm::receipt_verifier::hint_receipt_proof_bytes_len);
     hints.insert(verifiers::evm::receipt_verifier::HINT_SET_RECEIPT.into(), verifiers::evm::receipt_verifier::hint_set_receipt);
     hints.insert(verifiers::evm::storage_item_verifier::HINT_BATCH_STORAGES_LEN.into(), verifiers::evm::storage_item_verifier::hint_batch_storages_len);
     hints.insert(verifiers::evm::storage_item_verifier::HINT_SET_BATCH_STORAGES.into(), verifiers::evm::storage_item_verifier::hint_set_batch_storages);
-    hints.insert(verifiers::evm::storage_item_verifier::HINT_SET_MPT_PROOF.into(), verifiers::evm::storage_item_verifier::hint_set_mpt_proof);
     hints.insert(verifiers::evm::storage_item_verifier::HINT_SET_PROOF_LEN.into(), verifiers::evm::storage_item_verifier::hint_set_proof_len);
-    hints.insert(verifiers::evm::storage_item_verifier::HINT_SET_PROOF_BYTES_LEN.into(), verifiers::evm::storage_item_verifier::hint_set_proof_bytes_len);
     hints.insert(verifiers::evm::storage_item_verifier::HINT_SET_PROOF_BLOCK_NUMBER.into(), verifiers::evm::storage_item_verifier::hint_set_proof_block_number);
     hints.insert(verifiers::evm::storage_item_verifier::HINT_SET_STORAGE_KEY.into(), verifiers::evm::storage_item_verifier::hint_set_storage_key);
     hints.insert(verifiers::evm::storage_item_verifier::HINT_SET_STORAGE_KEY_LEADING_ZEROS.into(), verifiers::evm::storage_item_verifier::hint_set_storage_key_leading_zeros);
@@ -109,7 +107,19 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::utils::assert::HINT_ASSERT_INTEGER_DIV.into(), eth_essentials_cairo_vm_hints::hints::lib::utils::assert::hint_assert_integer_div);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::utils::divmod::HINT_VALUE_DIV.into(), eth_essentials_cairo_vm_hints::hints::lib::utils::divmod::hint_value_div);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::utils::divmod::HINT_VALUE_8.into(), eth_essentials_cairo_vm_hints::hints::lib::utils::divmod::hint_value_8);
+    hints.insert(eth_essentials_cairo_vm_hints::hints::lib::utils::trailing_zeroes::HINT_TRAILING_ZEROES_BYTES.into(), eth_essentials_cairo_vm_hints::hints::lib::utils::trailing_zeroes::hint_trailing_zeroes_bytes);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::rlp_little::nibbles::HINT_NEEDS_NEXT_WORD.into(), eth_essentials_cairo_vm_hints::hints::lib::rlp_little::nibbles::hint_needs_next_word);
+    hints.insert(eth_essentials_cairo_vm_hints::hints::lib::rlp_little::nibbles::HINT_IS_ZERO.into(), eth_essentials_cairo_vm_hints::hints::lib::rlp_little::nibbles::hint_is_zero);
+    hints.insert(eth_essentials_cairo_vm_hints::hints::lib::rlp_little::nibbles::HINT_NIBBLE_FROM_LOW.into(), eth_essentials_cairo_vm_hints::hints::lib::rlp_little::nibbles::hint_nibble_from_low);
+    hints.insert(eth_essentials_cairo_vm_hints::hints::lib::rlp_little::nibbles::HINT_WORDS_LOOP.into(), eth_essentials_cairo_vm_hints::hints::lib::rlp_little::nibbles::hint_words_loop);
+    hints.insert(eth_essentials_cairo_vm_hints::hints::lib::rlp_little::nibbles::HINT_NEEDS_NEXT_WORD_ENDING.into(), eth_essentials_cairo_vm_hints::hints::lib::rlp_little::nibbles::hint_needs_next_word_ending);
+    hints.insert(eth_essentials_cairo_vm_hints::hints::lib::rlp_little::leading_zeros::HINT_EXPECTED_NIBBLE.into(), eth_essentials_cairo_vm_hints::hints::lib::rlp_little::leading_zeros::hint_expected_nibble);
+    hints.insert(eth_essentials_cairo_vm_hints::hints::lib::rlp_little::assert::HINT_EXPECTED_NIBBLE.into(), eth_essentials_cairo_vm_hints::hints::lib::rlp_little::assert::hint_expected_nibble);
+    hints.insert(eth_essentials_cairo_vm_hints::hints::lib::rlp_little::divmod::HINT_POW_CUT.into(), eth_essentials_cairo_vm_hints::hints::lib::rlp_little::divmod::hint_pow_cut);
+    hints.insert(eth_essentials_cairo_vm_hints::hints::lib::mpt::HINT_LONG_SHORT_LIST.into(), eth_essentials_cairo_vm_hints::hints::lib::mpt::hint_long_short_list);
+    hints.insert(eth_essentials_cairo_vm_hints::hints::lib::mpt::HINT_FIRST_ITEM_TYPE.into(), eth_essentials_cairo_vm_hints::hints::lib::mpt::hint_first_item_type);
+    hints.insert(eth_essentials_cairo_vm_hints::hints::lib::mpt::HINT_SECOND_ITEM_TYPE.into(), eth_essentials_cairo_vm_hints::hints::lib::mpt::hint_second_item_type);
+    hints.insert(eth_essentials_cairo_vm_hints::hints::lib::mpt::HINT_ITEM_TYPE.into(), eth_essentials_cairo_vm_hints::hints::lib::mpt::hint_item_type);
     hints
 }
 

@@ -378,14 +378,18 @@ func le_chunks_to_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
 
     if (elements_len == 1) {
         let high = elements[0] * pow2_array[(16 - bytes_len) * 8];
-        return(Uint256(low=0, high=high));
+        return (Uint256(low=0, high=high));
     }
 
     if (elements_len == 2) {
-        return(Uint256(
-            low=0,
-            high=(elements[1] * pow2_array[64] + elements[0]) * pow2_array[(16 - bytes_len) * 8],
-        ));
+        return (
+            Uint256(
+                low=0,
+                high=(elements[1] * pow2_array[64] + elements[0]) * pow2_array[
+                    (16 - bytes_len) * 8
+                ],
+            )
+        );
     }
 
     // For values larger then 16 bytes, we need to shift the chunks to the left.
@@ -393,16 +397,21 @@ func le_chunks_to_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
     let (le_shifted) = right_shift_le_chunks(elements, elements_len, offset);
 
     if (elements_len == 3) {
-       return(Uint256(
-            low=le_shifted[0] * pow2_array[64], high=le_shifted[2] * pow2_array[64] + le_shifted[1]
-        ));
+        return (
+            Uint256(
+                low=le_shifted[0] * pow2_array[64],
+                high=le_shifted[2] * pow2_array[64] + le_shifted[1],
+            )
+        );
     }
 
     if (elements_len == 4) {
-        return(Uint256(
-            low=le_shifted[1] * pow2_array[64] + le_shifted[0],
-            high=le_shifted[3] * pow2_array[64] + le_shifted[2],
-        ));
+        return (
+            Uint256(
+                low=le_shifted[1] * pow2_array[64] + le_shifted[0],
+                high=le_shifted[3] * pow2_array[64] + le_shifted[2],
+            )
+        );
     }
 
     assert 0 = 1;

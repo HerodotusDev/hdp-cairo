@@ -56,18 +56,12 @@ pub fn hint_set_tx_key(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let transaction = exec_scopes.get::<Transaction>(vars::scopes::TRANSACTION)?;
-    
+
     let (key_low, key_high) = split_128(&BigUint::from_bytes_be(&transaction.key.to_be_bytes_vec()));
 
     let key_ptr = get_address_from_var_name(vars::ids::KEY, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    vm.insert_value(
-        (key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 0)?,
-        Felt252::try_from(key_low).map_err(|_| HintError::WrongHintData)?,
-    )?;
-    vm.insert_value(
-        (key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 1)?,
-        Felt252::try_from(key_high).map_err(|_| HintError::WrongHintData)?,
-    )?;
+    vm.insert_value((key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 0)?, Felt252::from(key_low))?;
+    vm.insert_value((key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 1)?, Felt252::from(key_high))?;
 
     Ok(())
 }
