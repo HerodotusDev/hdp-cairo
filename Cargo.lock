@@ -2076,6 +2076,7 @@ dependencies = [
  "dry_hint_processor",
  "hints",
  "serde_json",
+ "sha2",
  "thiserror 1.0.69",
  "types",
 ]
@@ -4608,6 +4609,7 @@ dependencies = [
  "cairo-vm",
  "clap",
  "serde_json",
+ "sha2",
  "sound_hint_processor",
  "thiserror 1.0.69",
  "types",

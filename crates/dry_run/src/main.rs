@@ -11,21 +11,18 @@ use cairo_vm::{
         runners::cairo_runner::{CairoRunner, RunnerMode},
     },
 };
-use clap::{Parser, ValueHint};
+use clap::Parser;
 use dry_hint_processor::{
     syscall_handler::evm::{SyscallHandler, SyscallHandlerWrapper},
     CustomHintProcessor,
 };
 use hints::vars;
-use std::path::PathBuf;
+use std::{env, path::PathBuf};
 use types::HDPDryRunInput;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
-    #[clap(value_parser, value_hint=ValueHint::FilePath)]
-    filename: PathBuf,
-    /// When using dynamic layout, it's parameters must be specified through a layout params file.
     #[clap(long = "layout", default_value = "plain", value_enum)]
     layout: LayoutName,
     #[structopt(long = "proof_mode")]
@@ -47,7 +44,11 @@ fn main() -> Result<(), HdpOsError> {
         ..Default::default()
     };
 
-    let program_file = std::fs::read(args.filename).map_err(HdpOsError::IO)?;
+    // Locate the compiled program file in the `OUT_DIR` folder.
+    let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR is not set"));
+    let program_file_path = out_dir.join("cairo").join("compiled.json");
+
+    let program_file = std::fs::read(program_file_path).map_err(HdpOsError::IO)?;
     let program_inputs: HDPDryRunInput = serde_json::from_slice(&std::fs::read(args.program_input).map_err(HdpOsError::IO)?)?;
 
     // Load the Program

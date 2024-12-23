@@ -11,3 +11,6 @@ sound_hint_processor.workspace = true
 thiserror.workspace = true
 
 types.workspace = true
+
+[build-dependencies]
+sha2 = "0.10.6"
