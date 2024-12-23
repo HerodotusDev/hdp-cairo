@@ -4,29 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-alloy.workspace = true
-alloy-rlp.workspace = true
-bincode.workspace = true
 cairo-lang-casm.workspace = true
 cairo-lang-starknet-classes.workspace = true
-cairo-type-derive.workspace = true
 cairo-vm.workspace = true
-hex.workspace = true
-num-bigint.workspace = true
-num-traits.workspace = true
-rand.workspace = true
-serde_json.workspace = true
 serde.workspace = true
-starknet-crypto.workspace = true
 starknet-types-core.workspace = true
-thiserror.workspace = true
-tokio = { workspace = true }
-serde_with.workspace = true
-reqwest.workspace = true
 strum_macros.workspace = true
-starknet-core.workspace = true
 
-indexer.workspace = true
-types.workspace = true
 hints.workspace = true
 syscall_handler.workspace = true
+types.workspace = true

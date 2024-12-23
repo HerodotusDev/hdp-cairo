@@ -1,9 +1,15 @@
-#![forbid(unsafe_code)]
 #![allow(async_fn_in_trait)]
+#![warn(unused_extern_crates)]
+#![warn(unused_crate_dependencies)]
+#![forbid(unsafe_code)]
+
+use alloy::hex::FromHexError;
 use clap::{Parser, ValueHint};
 use dry_hint_processor::syscall_handler::evm::{self, SyscallHandler};
-use fetcher::{proof_keys::ProofKeys, FetcherError};
-use std::{collections::HashSet, fs, path::PathBuf};
+use indexer::types::IndexerError;
+use proof_keys::ProofKeys;
+use std::{collections::HashSet, fs, num::ParseIntError, path::PathBuf};
+use thiserror::Error;
 use types::proofs::{account::Account, storage::Storage, HeaderMmrMeta, Proofs};
 
 pub mod proof_keys;
@@ -81,4 +87,24 @@ fn main() -> Result<(), FetcherError> {
     fs::write(args.program_output, serde_json::to_vec(&proofs).map_err(|e| FetcherError::IO(e.into()))?)?;
 
     Ok(())
+}
+
+#[derive(Error, Debug)]
+pub enum FetcherError {
+    #[error(transparent)]
+    Args(#[from] clap::error::Error),
+    #[error("Output Error: {0}")]
+    Output(String),
+    #[error(transparent)]
+    IO(#[from] std::io::Error),
+    #[error(transparent)]
+    Indexer(#[from] IndexerError),
+    #[error(transparent)]
+    ParseIntError(#[from] ParseIntError),
+    #[error(transparent)]
+    FromHexError(#[from] FromHexError),
+    #[error(transparent)]
+    SerdeJson(#[from] serde_json::Error),
+    #[error("Internal Error: {0}")]
+    InternalError(String),
 }

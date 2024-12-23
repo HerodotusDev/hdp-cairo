@@ -4,14 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-dry_hint_processor.workspace = true
-cairo-vm.workspace = true
+alloy.workspace = true
 clap.workspace = true
+dry_hint_processor.workspace = true
+serde_json.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
-serde_json.workspace = true
-alloy.workspace = true
-hex.workspace = true
 
 indexer.workspace = true
 types.workspace = true

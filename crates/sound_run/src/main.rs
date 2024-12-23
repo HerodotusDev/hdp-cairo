@@ -1,5 +1,8 @@
-#![forbid(unsafe_code)]
 #![allow(async_fn_in_trait)]
+#![warn(unused_extern_crates)]
+#![warn(unused_crate_dependencies)]
+#![forbid(unsafe_code)]
+
 use cairo_vm::{
     cairo_run::CairoRunConfig,
     types::{layout_name::LayoutName, program::Program},

@@ -47,7 +47,7 @@ pub fn hint_divmod_value(
         .unwrap();
     let devisor = get_integer_from_var_name(vars::ids::DEVISOR, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     let (q, r) = vm.get_integer((value + i)?)?.div_rem(&NonZeroFelt::try_from(devisor).unwrap());
-    
+
     insert_value_from_var_name(vars::ids::Q, MaybeRelocatable::Int(q), vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     insert_value_from_var_name(vars::ids::R, MaybeRelocatable::Int(r), vm, &hint_data.ids_data, &hint_data.ap_tracking)
 }

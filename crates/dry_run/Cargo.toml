@@ -4,11 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-dry_hint_processor.workspace = true
 cairo-vm.workspace = true
 clap.workspace = true
-thiserror.workspace = true
+dry_hint_processor.workspace = true
 serde_json.workspace = true
+thiserror.workspace = true
 
 hints.workspace = true
 types.workspace = true
