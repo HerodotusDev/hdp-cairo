@@ -16,7 +16,7 @@ pub fn dict_manager_create(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    if let Err(HintError::VariableNotInScopeError(_)) = exec_scopes.get::<DictManager>(vars::scopes::DICT_MANAGER) {
+    if let Err(HintError::VariableNotInScopeError(_)) = exec_scopes.get_dict_manager() {
         let dict_manager = DictManager::new();
         exec_scopes.insert_value(vars::scopes::DICT_MANAGER, Rc::new(RefCell::new(dict_manager)));
     }

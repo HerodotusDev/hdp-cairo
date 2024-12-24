@@ -51,6 +51,7 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(segments::SEGMENTS_ADD_EVM_MEMORIZER_OFFSET.into(), segments::segments_add_evm_memorizer_offset);
     hints.insert(segments::SEGMENTS_ADD_EVM_STARKNET_MEMORIZER_INDEX.into(), segments::segments_add_evm_starknet_memorizer_index);
     hints.insert(segments::SEGMENTS_ADD_STARKNET_MEMORIZER_OFFSET.into(), segments::segments_add_starknet_memorizer_offset);
+    hints.insert(segments::MMR_METAS_LEN_COUNTER.into(), segments::mmr_metas_len_counter);
     hints.insert(verifiers::evm::account_verifier::HINT_ACCOUNT_KEY.into(), verifiers::evm::account_verifier::hint_account_key);
     hints.insert(verifiers::evm::account_verifier::HINT_ACCOUNT_KEY_LEADING_ZEROS.into(), verifiers::evm::account_verifier::hint_account_key_leading_zeros);
     hints.insert(verifiers::evm::account_verifier::HINT_ACCOUNT_PROOF_AT.into(), verifiers::evm::account_verifier::hint_account_proof_at);

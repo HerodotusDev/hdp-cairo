@@ -102,36 +102,34 @@ func run{
     let starknet_key_hasher_ptr = StarknetStateAccess.init();
     let starknet_decoder_ptr = StarknetDecoder.init();
 
+    let (program_hash, result) = compute_tasks{
+        pedersen_ptr=pedersen_ptr,
+        range_check_ptr=range_check_ptr,
+        ecdsa_ptr=ecdsa_ptr,
+        bitwise_ptr=bitwise_ptr,
+        ec_op_ptr=ec_op_ptr,
+        keccak_ptr=keccak_ptr,
+        poseidon_ptr=poseidon_ptr,
+        pow2_array=pow2_array,
+        evm_memorizer=evm_memorizer,
+        evm_decoder_ptr=evm_decoder_ptr,
+        evm_key_hasher_ptr=evm_key_hasher_ptr,
+        starknet_memorizer=starknet_memorizer,
+        starknet_decoder_ptr=starknet_decoder_ptr,
+        starknet_key_hasher_ptr=starknet_key_hasher_ptr,
+    }();
+
+    // Post Verification Checks: Ensure dict consistency
+    default_dict_finalize(evm_memorizer_start, evm_memorizer, BareMemorizer.DEFAULT_VALUE);
+    default_dict_finalize(
+        starknet_memorizer_start, starknet_memorizer, BareMemorizer.DEFAULT_VALUE
+    );
+
+    write_output_ptr{output_ptr=output_ptr}(
+        mmr_metas=mmr_metas, mmr_metas_len=mmr_metas_len, program_hash=program_hash, result=result
+    );
+
     return ();
-
-    // let (program_hash, result) = compute_tasks{
-    //     pedersen_ptr=pedersen_ptr,
-    //     range_check_ptr=range_check_ptr,
-    //     ecdsa_ptr=ecdsa_ptr,
-    //     bitwise_ptr=bitwise_ptr,
-    //     ec_op_ptr=ec_op_ptr,
-    //     keccak_ptr=keccak_ptr,
-    //     poseidon_ptr=poseidon_ptr,
-    //     pow2_array=pow2_array,
-    //     evm_memorizer=evm_memorizer,
-    //     evm_decoder_ptr=evm_decoder_ptr,
-    //     evm_key_hasher_ptr=evm_key_hasher_ptr,
-    //     starknet_memorizer=starknet_memorizer,
-    //     starknet_decoder_ptr=starknet_decoder_ptr,
-    //     starknet_key_hasher_ptr=starknet_key_hasher_ptr,
-    // }();
-
-    // // Post Verification Checks: Ensure dict consistency
-    // default_dict_finalize(evm_memorizer_start, evm_memorizer, BareMemorizer.DEFAULT_VALUE);
-    // default_dict_finalize(
-    //     starknet_memorizer_start, starknet_memorizer, BareMemorizer.DEFAULT_VALUE
-    // );
-
-    // write_output_ptr{output_ptr=output_ptr}(
-    //     mmr_metas=mmr_metas, mmr_metas_len=mmr_metas_len, program_hash=program_hash, result=result
-    // );
-
-    // return ();
 }
 
 func compute_tasks{

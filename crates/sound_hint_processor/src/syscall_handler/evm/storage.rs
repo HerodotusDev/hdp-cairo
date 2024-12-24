@@ -32,6 +32,6 @@ impl CallHandler for StorageCallHandler {
     }
 
     fn handle(_key: Self::Key, _function_id: Self::Id) -> SyscallResult<Self::CallHandlerResult> {
-        todo!()
+        Ok(Uint256::from(0_u64))
     }
 }

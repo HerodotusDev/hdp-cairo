@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2023_11"
 
 members = [
-    "cairo1_syscall_binding"
+    "cairo1"
 ]
 
 [workspace.dependencies]

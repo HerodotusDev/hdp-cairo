@@ -1,7 +1,7 @@
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData,
-        hint_utils::{get_relocatable_from_var_name, insert_value_into_ap},
+        hint_utils::{get_integer_from_var_name, get_relocatable_from_var_name, insert_value_into_ap},
     },
     types::exec_scope::ExecutionScopes,
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
@@ -79,4 +79,20 @@ pub fn segments_add_starknet_memorizer_offset(
 ) -> Result<(), HintError> {
     let memorizer = get_relocatable_from_var_name("starknet_memorizer", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     insert_value_into_ap(vm, Felt252::from(memorizer.offset))
+}
+
+pub const MMR_METAS_LEN_COUNTER: &str = "memory[ap] = 1 if (ids.mmr_metas_len == ids.counter) else 0";
+
+pub fn mmr_metas_len_counter(
+    vm: &mut VirtualMachine,
+    _exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let mmr_metas_len = get_integer_from_var_name("mmr_metas_len", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let counter = get_integer_from_var_name("counter", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+
+    let insert = if mmr_metas_len == counter { Felt252::ONE } else { Felt252::ZERO };
+
+    insert_value_into_ap(vm, insert)
 }
