@@ -11,6 +11,18 @@ use std::{any::Any, collections::HashMap};
 pub mod evm;
 pub mod starknet;
 
+pub const SYSCALL_HANDLER_CREATE_MOCK: &str = "if 'syscall_handler' not in globals():\n    from contract_bootloader.syscall_handler import SyscallHandler\n    syscall_handler = SyscallHandler(segments=segments, dict_manager=__dict_manager)";
+
+pub fn syscall_handler_create_mock(
+    _vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    _hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    exec_scopes.get::<SyscallHandlerWrapper>(vars::scopes::SYSCALL_HANDLER)?;
+    Ok(())
+}
+
 pub const SYSCALL_HANDLER_CREATE: &str = "from contract_bootloader.dryrun_syscall_handler import DryRunSyscallHandler\nsyscall_handler = DryRunSyscallHandler(segments=segments, dict_manager=__dict_manager)";
 
 pub fn syscall_handler_create(

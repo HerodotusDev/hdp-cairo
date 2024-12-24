@@ -49,9 +49,9 @@ impl CustomHintProcessor {
     #[rustfmt::skip]
     fn hints() -> HashMap<String, HintImpl> {
         let mut hints = hints();
+        hints.insert(syscall_handler::ENTER_SCOPE_SYSCALL_HANDLER.into(), syscall_handler::enter_scope_syscall_handler);
         hints.insert(syscall_handler::SYSCALL_HANDLER_CREATE.into(), syscall_handler::syscall_handler_create);
         hints.insert(syscall_handler::SYSCALL_HANDLER_SET_SYSCALL_PTR.into(), syscall_handler::syscall_handler_set_syscall_ptr);
-        hints.insert(syscall_handler::ENTER_SCOPE_SYSCALL_HANDLER.into(), syscall_handler::enter_scope_syscall_handler);
         hints
     }
 
