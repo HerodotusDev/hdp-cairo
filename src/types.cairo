@@ -11,7 +11,6 @@ struct MMRMeta {
     id: felt,
     root: felt,
     size: felt,
-    chain_id: felt,
 }
 
 struct ModuleTask {

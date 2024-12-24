@@ -16,31 +16,24 @@ from packages.eth_essentials.lib.mmr import (
 // 2. mmr_peaks_len matches the expected value based on mmr_size
 // 3. mmr_peaks, mmr_size recreate the mmr_root
 // It writes the peaks to the dict and returns the mmr_meta.
-func validate_mmr_meta{range_check_ptr, poseidon_ptr: PoseidonBuiltin*, pow2_array: felt*}(
-    chain_id: felt
-) -> (mmr_meta: MMRMeta, dict: DictAccess*, dict_start: DictAccess*) {
+func validate_mmr_meta{range_check_ptr, poseidon_ptr: PoseidonBuiltin*, pow2_array: felt*}() -> (
+    mmr_meta: MMRMeta, dict: DictAccess*, dict_start: DictAccess*
+) {
     alloc_locals;
 
     let (local dict: DictAccess*) = default_dict_new(default_value=-1);
     tempvar dict_start = dict;
 
-    local mmr_meta: MMRMeta;
+    local mmr_meta: MMRMeta = MMRMeta(
+        id=nondet %{ header_with_mmr.mmr_meta.id %},
+        root=nondet %{ header_with_mmr.mmr_meta.root %},
+        size=nondet %{ header_with_mmr.mmr_meta.size %},
+    );
+
+    tempvar peaks_len: felt = nondet %{ len(header_with_mmr.mmr_meta.peaks) %};
+
     let (peaks: felt*) = alloc();
-    local peaks_len: felt;
-
-    %{
-        def hex_to_int_array(hex_array):
-            return [int(x, 16) for x in hex_array]
-
-        # Load data from inputs
-        memory[ids.mmr_meta._reference_value] = mmr_batch["mmr_meta"]["id"]
-        memory[ids.mmr_meta._reference_value + 1] = int(mmr_batch["mmr_meta"]["root"], 16)
-        memory[ids.mmr_meta._reference_value + 2] = mmr_batch["mmr_meta"]["size"]
-        memory[ids.mmr_meta._reference_value + 3] = ids.chain_id
-
-        ids.peaks_len = len(mmr_batch["mmr_meta"]["peaks"])
-        segments.write_arg(ids.peaks, hex_to_int_array(mmr_batch["mmr_meta"]["peaks"]))
-    %}
+    %{ segments.write_arg(ids.peaks, header_with_mmr.mmr_meta.peaks) %}
 
     assert_mmr_size_is_valid(mmr_meta.size);
 

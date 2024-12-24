@@ -25,63 +25,13 @@ func run_state_verification{
     mmr_metas: MMRMeta*,
 }() -> (mmr_metas_len: felt) {
     alloc_locals;
-    local batch_len: felt;
-    %{ ids.batch_len = len(program_input["proofs"]) %}
 
-    let (mmr_meta_idx) = run_state_verification_inner(batch_len, 0);
+    // batch abstraction will be usefull with multiple chains
+    %{ vm_enter_scope({'batch': proofs, '__dict_manager': __dict_manager}) %}
+
+    let (mmr_meta_idx) = evm_run_state_verification(0);
+
+    %{ vm_exit_scope() %}
+
     return (mmr_metas_len=mmr_meta_idx);
-}
-
-func run_state_verification_inner{
-    range_check_ptr,
-    pedersen_ptr: HashBuiltin*,
-    poseidon_ptr: PoseidonBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*,
-    evm_memorizer: DictAccess*,
-    starknet_memorizer: DictAccess*,
-    mmr_metas: MMRMeta*,
-}(batch_len: felt, mmr_meta_idx: felt) -> (mmr_meta_idx: felt) {
-    alloc_locals;
-    if (batch_len == 0) {
-        return (mmr_meta_idx=mmr_meta_idx);
-    }
-
-    local chain_id: felt;
-    %{ ids.chain_id = int(program_input["proofs"][ids.batch_len - 1]["chain_id"], 16) %}
-
-    let (chain_info) = fetch_chain_info(chain_id);
-
-    if (chain_info.layout == 0) {
-        // EVM
-        %{ print("EVM") %}
-        %{
-            vm_enter_scope({
-                       'batch': program_input["proofs"][ids.batch_len - 1],
-                       '__dict_manager': __dict_manager
-                   })
-        %}
-        with chain_info {
-            let mmr_meta_idx = evm_run_state_verification(mmr_meta_idx);
-        }
-        %{ vm_exit_scope() %}
-
-        return run_state_verification_inner(batch_len=batch_len - 1, mmr_meta_idx=mmr_meta_idx);
-    } else {
-        // STARKNET
-        %{ print("STARKNET") %}
-        %{
-            vm_enter_scope({
-                       'batch': program_input["proofs"][ids.batch_len - 1],
-                       '__dict_manager': __dict_manager
-                   })
-        %}
-        with chain_info {
-            let mmr_meta_idx = starknet_run_state_verification(mmr_meta_idx);
-        }
-        %{ vm_exit_scope() %}
-
-        return run_state_verification_inner(batch_len=batch_len - 1, mmr_meta_idx=mmr_meta_idx);
-    }
 }

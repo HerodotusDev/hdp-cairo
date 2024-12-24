@@ -6,7 +6,7 @@ from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash_many
 from starkware.cairo.common.default_dict import default_dict_finalize
 from packages.eth_essentials.lib.mmr import hash_subtree_path
-from src.types import MMRMeta
+from src.types import MMRMeta, ChainInfo
 from src.memorizers.starknet.memorizer import StarknetMemorizer, StarknetHashParams
 from src.decoders.starknet.header_decoder import StarknetHeaderDecoder, StarknetHeaderFields
 from src.verifiers.mmr_verifier import validate_mmr_meta
@@ -17,54 +17,22 @@ func verify_mmr_batches{
     pow2_array: felt*,
     starknet_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
-    chain_id: felt,
+    chain_info: ChainInfo,
 }(mmr_meta_idx: felt) -> (mmr_meta_idx: felt) {
     alloc_locals;
 
-    local mmr_batches_len: felt;
-    %{ ids.mmr_batches_len = len(batch["mmr_with_headers"]) %}
-    verify_mmr_batches_inner(mmr_batches_len, 0, mmr_meta_idx);
+    let (mmr_meta, peaks_dict, peaks_dict_start) = validate_mmr_meta();
+    assert mmr_metas[mmr_meta_idx] = mmr_meta;
 
-    return (mmr_meta_idx=mmr_meta_idx + mmr_batches_len);
-}
-
-// Check if the passed MMR meta is valid and if the headers are included in the MMR.
-// Headers included in the MMR are memorized.
-func verify_mmr_batches_inner{
-    range_check_ptr,
-    poseidon_ptr: PoseidonBuiltin*,
-    pow2_array: felt*,
-    mmr_metas: MMRMeta*,
-    starknet_memorizer: DictAccess*,
-    chain_id: felt,
-}(mmr_batches_len: felt, idx: felt, mmr_meta_idx: felt) {
-    alloc_locals;
-    if (mmr_batches_len == idx) {
-        return ();
-    }
-
-    %{
-        vm_enter_scope({
-               'mmr_batch': batch["mmr_with_headers"][ids.idx],
-               '__dict_manager': __dict_manager
-           })
-    %}
-    let (mmr_meta, peaks_dict, peaks_dict_start) = validate_mmr_meta(chain_id);
-    assert mmr_metas[mmr_meta_idx + idx] = mmr_meta;
-
-    local n_header_proofs: felt;
-    %{ ids.n_header_proofs = len(mmr_batch["headers"]) %}
+    tempvar n_header_proofs: felt = nondet %{ len(header_with_mmr.headers) %};
     with mmr_meta, peaks_dict {
         verify_headers_with_mmr_peaks(n_header_proofs);
     }
-    %{ vm_exit_scope() %}
 
     // Ensure the peaks dict for this batch is finalized
     default_dict_finalize(peaks_dict_start, peaks_dict, -1);
 
-    return verify_mmr_batches_inner(
-        mmr_batches_len=mmr_batches_len, idx=idx + 1, mmr_meta_idx=mmr_meta_idx
-    );
+    return (mmr_meta_idx=mmr_meta_idx + 1);
 }
 
 // Guard function that verifies the inclusion of headers in the MMR.
@@ -77,6 +45,7 @@ func verify_headers_with_mmr_peaks{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     pow2_array: felt*,
+    chain_info: ChainInfo,
     mmr_meta: MMRMeta,
     starknet_memorizer: DictAccess*,
     peaks_dict: DictAccess*,
@@ -87,14 +56,13 @@ func verify_headers_with_mmr_peaks{
     }
 
     let (fields) = alloc();
-    local fields_len: felt;
-    local leaf_idx: felt;
     %{
-        header = mmr_batch["headers"][ids.idx - 1]
-        segments.write_arg(ids.fields, hex_to_int_array(header["fields"]))
-        ids.fields_len = len(header["fields"])
-        ids.leaf_idx = header["proof"]["leaf_idx"]
+        header = header_with_mmr.headers[ids.idx - 1]
+        segments.write_arg(ids.fields, [int(x, 16) for x in header.fields])
     %}
+
+    tempvar fields_len: felt = nondet %{ len(header.fields) %};
+    tempvar leaf_idx: felt = nondet %{ len(header.proof.leaf_idx) %};
 
     // compute the hash of the header
     let (header_hash) = poseidon_hash_many(n=fields_len, elements=fields);
@@ -107,19 +75,15 @@ func verify_headers_with_mmr_peaks{
 
         // add to memorizer
         let block_number = [fields + 1];
-        let memorizer_key = StarknetHashParams.header(mmr_meta.chain_id, block_number);
+        let memorizer_key = StarknetHashParams.header(chain_info.id, block_number);
         StarknetMemorizer.add(key=memorizer_key, data=fields);
 
         return verify_headers_with_mmr_peaks(idx=idx - 1);
     }
 
     let (mmr_path) = alloc();
-    local mmr_path_len: felt;
-    %{
-        proof = header["proof"]
-        segments.write_arg(ids.mmr_path, hex_to_int_array(proof["mmr_path"]))
-        ids.mmr_path_len = len(proof["mmr_path"])
-    %}
+    tempvar mmr_path_len: felt = nondet %{ len(header.proof.mmr_path) %};
+    %{ segments.write_arg(ids.mmr_path, [int(x, 16) for x in header.proof.mmr_path]) %}
 
     // compute the peak of the header
     let (computed_peak) = hash_subtree_path(
@@ -142,7 +106,7 @@ func verify_headers_with_mmr_peaks{
     let (block_number) = StarknetHeaderDecoder.get_field(
         length_and_fields, StarknetHeaderFields.BLOCK_NUMBER
     );
-    let memorizer_key = StarknetHashParams.header(mmr_meta.chain_id, block_number);
+    let memorizer_key = StarknetHashParams.header(chain_info.id, block_number);
     StarknetMemorizer.add(key=memorizer_key, data=length_and_fields);
 
     return verify_headers_with_mmr_peaks(idx=idx - 1);

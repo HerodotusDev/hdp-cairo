@@ -21,9 +21,8 @@ func verify_accounts{
     pow2_array: felt*,
 }() {
     alloc_locals;
-    local n_accounts: felt;
-    %{ ids.n_accounts = len(batch["accounts"]) %}
 
+    tempvar n_accounts: felt = nondet %{ len(batch.accounts) %};
     verify_accounts_inner(n_accounts, 0);
 
     return ();
@@ -37,36 +36,40 @@ func verify_accounts_inner{
     evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
-}(n_accounts: felt, index: felt) {
+}(n_accounts: felt, idx: felt) {
     alloc_locals;
-    if (n_accounts == index) {
+    if (n_accounts == idx) {
         return ();
     }
 
     let (address: felt*) = alloc();
-    local key: Uint256;
-    local key_leading_zeros: felt;
     %{
-        from tools.py.utils import split_128, count_leading_zero_nibbles_from_hex, hex_to_int_array, nested_hex_to_int_array
-        account = batch["accounts"][ids.index]
-        ids.key_leading_zeros = count_leading_zero_nibbles_from_hex(account["account_key"])
-        segments.write_arg(ids.address, hex_to_int_array(account["address"]))
-        (key_low, key_high) = split_128(int(account["account_key"], 16))
-        ids.key.low = key_low
-        ids.key.high = key_high
+        account = batch.accounts[ids.idx]
+        segments.write_arg(ids.address, [int(x, 16) for x in account.address]))
     %}
+
+    local key: Uint256;
+    %{
+        from tools.py.utils import split_128
+        (ids.key.low, ids.key.high) = split_128(int(account.account_key, 16))
+    %}
+
+    local key_leading_zeros: felt;
+    %{ ids.key_leading_zeros = len(account.account_key.lstrip("0x")) - len(account.account_key.lstrip("0x").lstrip("0")) %}
 
     // Validate MPT key matches address
     let (hash: Uint256) = keccak_bigend(address, 20);
     assert key.low = hash.low;
     assert key.high = hash.high;
 
-    local n_proofs: felt;
-    %{ ids.n_proofs = len(account["proofs"]) %}
+    let (felt_address) = le_address_chunks_to_felt(address);
 
-    verify_account(address, key, key_leading_zeros, n_proofs, 0);
+    tempvar n_proofs: felt = nondet %{ len(account.proofs) %};
+    verify_account(
+        address=felt_address, key=key, key_leading_zeros=key_leading_zeros, n_proofs=n_proofs, idx=0
+    );
 
-    return verify_accounts_inner(n_accounts=n_accounts, index=index + 1);
+    return verify_accounts_inner(n_accounts=n_accounts, idx=idx + 1);
 }
 
 func verify_account{
@@ -77,24 +80,21 @@ func verify_account{
     evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
-}(address: felt*, key: Uint256, key_leading_zeros: felt, n_proofs: felt, proof_idx: felt) {
+}(address: felt, key: Uint256, key_leading_zeros: felt, n_proofs: felt, idx: felt) {
     alloc_locals;
-    if (proof_idx == n_proofs) {
+    if (idx == n_proofs) {
         return ();
     }
 
-    local block_number: felt;
-    let (mpt_proof: felt**) = alloc();
-    local proof_len: felt;
-    let (proof_bytes_len: felt*) = alloc();
+    %{ proof = account.proofs[ids.idx] %}
+    tempvar proof_len: felt = nondet %{ len(proof.proof) %};
+    tempvar block_number: felt = nondet %{ proof.block_number %};
 
-    %{
-        proof = account["proofs"][ids.proof_idx]
-        ids.block_number = proof["block_number"]
-        segments.write_arg(ids.mpt_proof, nested_hex_to_int_array(proof["proof"]))
-        segments.write_arg(ids.proof_bytes_len, proof["proof_bytes_len"])
-        ids.proof_len = len(proof["proof"])
-    %}
+    let (proof_bytes_len: felt*) = alloc();
+    %{ segments.write_arg(ids.proof_bytes_len, proof.proof_bytes_len) %}
+
+    let (mpt_proof: felt**) = alloc();
+    %{ segments.write_arg(ids.mpt_proof, [int(x, 16) for x in proof.proof]) %}
 
     // get state_root from verified headers
     let memorizer_key = EvmHashParams.header(chain_id=chain_info.id, block_number=block_number);
@@ -111,11 +111,9 @@ func verify_account{
         pow2_array=pow2_array,
     );
 
-    let (felt_address) = le_address_chunks_to_felt(address);
-
     // add account to memorizer
     let memorizer_key = EvmHashParams.account(
-        chain_id=chain_info.id, block_number=block_number, address=felt_address
+        chain_id=chain_info.id, block_number=block_number, address=address
     );
     EvmMemorizer.add(key=memorizer_key, data=rlp);
 
@@ -124,6 +122,6 @@ func verify_account{
         key=key,
         key_leading_zeros=key_leading_zeros,
         n_proofs=n_proofs,
-        proof_idx=proof_idx + 1,
+        idx=idx + 1,
     );
 }
