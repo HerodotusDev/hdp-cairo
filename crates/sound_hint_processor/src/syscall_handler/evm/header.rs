@@ -1,3 +1,4 @@
+use crate::syscall_handler::Memorizer;
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
 use syscall_handler::traits::CallHandler;
 use syscall_handler::{SyscallExecutionError, SyscallResult};
@@ -6,7 +7,16 @@ use types::{
     keys::header::{CairoKey, Key},
 };
 
-pub struct HeaderCallHandler;
+#[derive(Debug)]
+pub struct HeaderCallHandler {
+    pub memorizer: Memorizer,
+}
+
+impl HeaderCallHandler {
+    pub fn new(memorizer: Memorizer) -> Self {
+        Self { memorizer }
+    }
+}
 
 #[allow(refining_impl_trait)]
 impl CallHandler for HeaderCallHandler {
@@ -31,7 +41,7 @@ impl CallHandler for HeaderCallHandler {
         })
     }
 
-    fn handle(_key: Self::Key, _function_id: Self::Id) -> SyscallResult<Self::CallHandlerResult> {
+    fn handle(&mut self, _key: Self::Key, _function_id: Self::Id) -> SyscallResult<Self::CallHandlerResult> {
         Ok(Uint256::from(0_u64))
     }
 }

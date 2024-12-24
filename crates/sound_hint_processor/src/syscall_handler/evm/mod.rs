@@ -4,9 +4,11 @@ pub mod receipt;
 pub mod storage;
 pub mod transaction;
 
+use cairo_vm::hint_processor::builtin_hint_processor::dict_manager::DictManager;
 use cairo_vm::vm::errors::hint_errors::HintError;
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
 use serde::{Deserialize, Serialize};
+use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::RwLock;
 use std::{collections::HashSet, hash::Hash};
@@ -17,11 +19,22 @@ use types::cairo::new_syscalls::{CallContractRequest, CallContractResponse};
 use types::cairo::traits::CairoType;
 use types::keys;
 
+use super::Memorizer;
+
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct SyscallHandler {
     #[serde(skip)]
     pub syscall_ptr: Option<Relocatable>,
     pub call_contract_handler: CallContractHandler,
+}
+
+impl SyscallHandler {
+    pub fn new(dict_manager: Rc<RefCell<DictManager>>) -> Self {
+        Self {
+            call_contract_handler: CallContractHandler::new(dict_manager),
+            ..Default::default()
+        }
+    }
 }
 
 /// SyscallHandler is wrapped in Rc<RefCell<_>> in order
@@ -42,13 +55,24 @@ pub enum CallHandlerId {
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct CallContractHandler {
+    #[serde(skip)]
+    pub dict_manager: Rc<RefCell<DictManager>>,
     pub key_set: HashSet<DryRunKey>,
 }
 
-impl SyscallHandlerWrapper {
-    pub fn new() -> Self {
+impl CallContractHandler {
+    pub fn new(dict_manager: Rc<RefCell<DictManager>>) -> Self {
         Self {
-            syscall_handler: Rc::new(RwLock::new(SyscallHandler::default())),
+            dict_manager,
+            ..Default::default()
+        }
+    }
+}
+
+impl SyscallHandlerWrapper {
+    pub fn new(dict_manager: Rc<RefCell<DictManager>>) -> Self {
+        Self {
+            syscall_handler: Rc::new(RwLock::new(SyscallHandler::new(dict_manager))),
         }
     }
     pub fn set_syscall_ptr(&self, syscall_ptr: Relocatable) {
@@ -94,17 +118,7 @@ impl traits::SyscallHandler for CallContractHandler {
 
         let call_handler_id = CallHandlerId::try_from(request.contract_address)?;
 
-        let segment_index = felt_from_ptr(vm, &mut calldata)?;
-        let offset = felt_from_ptr(vm, &mut calldata)?;
-
-        let _memorizer = Relocatable::from((
-            segment_index
-                .try_into()
-                .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
-            offset
-                .try_into()
-                .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
-        ));
+        let memorizer = Memorizer::derive(vm, &mut calldata)?;
 
         let retdata_start = vm.add_temporary_segment();
         let mut retdata_end = retdata_start;
@@ -113,7 +127,7 @@ impl traits::SyscallHandler for CallContractHandler {
             CallHandlerId::Header => {
                 let key = header::HeaderCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = header::HeaderCallHandler::derive_id(request.selector)?;
-                let result = header::HeaderCallHandler::handle(key.clone(), function_id)?;
+                let result = header::HeaderCallHandler::new(memorizer).handle(key.clone(), function_id)?;
                 self.key_set.insert(DryRunKey::Header(key));
                 result.to_memory(vm, retdata_end)?;
                 retdata_end += <header::HeaderCallHandler as CallHandler>::CallHandlerResult::n_fields();
@@ -121,7 +135,7 @@ impl traits::SyscallHandler for CallContractHandler {
             CallHandlerId::Account => {
                 let key = account::AccountCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = account::AccountCallHandler::derive_id(request.selector)?;
-                let result = account::AccountCallHandler::handle(key.clone(), function_id)?;
+                let result = account::AccountCallHandler::new(memorizer).handle(key.clone(), function_id)?;
                 self.key_set.insert(DryRunKey::Account(key));
                 result.to_memory(vm, retdata_end)?;
                 retdata_end += <account::AccountCallHandler as CallHandler>::CallHandlerResult::n_fields();
@@ -129,8 +143,11 @@ impl traits::SyscallHandler for CallContractHandler {
             CallHandlerId::Storage => {
                 let key = storage::StorageCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = storage::StorageCallHandler::derive_id(request.selector)?;
-                let result = storage::StorageCallHandler::handle(key.clone(), function_id)?;
-                self.key_set.insert(DryRunKey::Storage(key));
+                let result = storage::StorageCallHandler::new(memorizer, self.dict_manager.clone()).handle(key.clone(), function_id)?;
+                self.key_set.insert(DryRunKey::Storage(
+                    key.try_into()
+                        .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
+                ));
                 result.to_memory(vm, retdata_end)?;
                 retdata_end += <storage::StorageCallHandler as CallHandler>::CallHandlerResult::n_fields();
             }

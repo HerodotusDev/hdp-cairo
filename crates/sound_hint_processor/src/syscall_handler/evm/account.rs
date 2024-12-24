@@ -6,7 +6,18 @@ use types::{
     keys::account::{CairoKey, Key},
 };
 
-pub struct AccountCallHandler;
+use crate::syscall_handler::Memorizer;
+
+#[derive(Debug)]
+pub struct AccountCallHandler {
+    pub memorizer: Memorizer,
+}
+
+impl AccountCallHandler {
+    pub fn new(memorizer: Memorizer) -> Self {
+        Self { memorizer }
+    }
+}
 
 #[allow(refining_impl_trait)]
 impl CallHandler for AccountCallHandler {
@@ -31,7 +42,7 @@ impl CallHandler for AccountCallHandler {
         })
     }
 
-    fn handle(_key: Self::Key, _function_id: Self::Id) -> SyscallResult<Self::CallHandlerResult> {
+    fn handle(&mut self, _key: Self::Key, _function_id: Self::Id) -> SyscallResult<Self::CallHandlerResult> {
         Ok(Uint256::from(0_u64))
     }
 }

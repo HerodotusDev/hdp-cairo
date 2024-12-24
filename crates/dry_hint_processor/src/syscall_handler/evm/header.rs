@@ -16,6 +16,7 @@ use types::{
     RPC,
 };
 
+#[derive(Debug, Default)]
 pub struct HeaderCallHandler;
 
 #[allow(refining_impl_trait)]
@@ -41,7 +42,7 @@ impl CallHandler for HeaderCallHandler {
         })
     }
 
-    fn handle(key: Self::Key, function_id: Self::Id) -> SyscallResult<Self::CallHandlerResult> {
+    fn handle(&mut self, key: Self::Key, function_id: Self::Id) -> SyscallResult<Self::CallHandlerResult> {
         let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
         let runtime = tokio::runtime::Runtime::new().unwrap();
         let value = runtime

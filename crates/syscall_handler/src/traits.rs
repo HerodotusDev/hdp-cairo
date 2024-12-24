@@ -18,5 +18,5 @@ pub trait CallHandler {
 
     fn derive_key(vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Key>;
     fn derive_id(selector: Felt252) -> SyscallResult<Self::Id>;
-    fn handle(key: Self::Key, function_id: Self::Id) -> SyscallResult<Self::CallHandlerResult>;
+    fn handle(&mut self, key: Self::Key, function_id: Self::Id) -> SyscallResult<Self::CallHandlerResult>;
 }
