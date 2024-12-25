@@ -7,12 +7,19 @@ use cairo_vm::{
     Felt252,
 };
 use serde::{Deserialize, Serialize};
+use starknet_crypto::poseidon_hash_many;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CairoKey {
     chain_id: Felt252,
     block_number: Felt252,
     address: Felt252,
+}
+
+impl CairoKey {
+    pub fn hash(&self) -> Felt252 {
+        poseidon_hash_many(&[self.chain_id, self.block_number, self.address])
+    }
 }
 
 impl CairoType for CairoKey {

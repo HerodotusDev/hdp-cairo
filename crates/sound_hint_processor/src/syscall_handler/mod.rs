@@ -37,13 +37,13 @@ impl Memorizer {
         Ok(ret)
     }
 
-    pub fn read_key(&self, key: Felt252, dict_manager: Rc<RefCell<DictManager>>) -> Result<Felt252, HintError> {
+    pub fn read_key(&self, key: Felt252, dict_manager: Rc<RefCell<DictManager>>) -> Result<Relocatable, HintError> {
         let key = MaybeRelocatable::from(key);
         dict_manager
             .borrow_mut()
             .get_tracker_mut(self.dict_ptr)?
             .get_value(&key)?
-            .get_int()
+            .get_relocatable()
             .ok_or(HintError::NoValueForKey(Box::new(key.clone())))
     }
 }

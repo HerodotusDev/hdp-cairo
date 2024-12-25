@@ -4591,6 +4591,7 @@ dependencies = [
 name = "sound_hint_processor"
 version = "0.1.0"
 dependencies = [
+ "alloy-rlp",
  "cairo-lang-casm",
  "cairo-lang-starknet-classes",
  "cairo-vm",

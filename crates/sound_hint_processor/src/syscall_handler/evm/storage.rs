@@ -6,6 +6,7 @@ use cairo_vm::hint_processor::builtin_hint_processor::dict_manager::DictManager;
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
 use syscall_handler::traits::CallHandler;
 use syscall_handler::{SyscallExecutionError, SyscallResult};
+use types::cairo::evm::storage::CairoStorage;
 use types::{
     cairo::{evm::storage::FunctionId, structs::Uint256, traits::CairoType},
     keys::storage::CairoKey,
@@ -46,8 +47,18 @@ impl CallHandler for StorageCallHandler {
         })
     }
 
-    fn handle(&mut self, key: Self::Key, _function_id: Self::Id) -> SyscallResult<Self::CallHandlerResult> {
-        let _ptr = self.memorizer.read_key(key.hash(), self.dict_manager.clone())?;
-        Ok(Uint256::from(0_u64))
+    fn handle(&mut self, key: Self::Key, function_id: Self::Id, vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
+        let ptr = self.memorizer.read_key(key.hash(), self.dict_manager.clone())?;
+        let header = alloy_rlp::Header::decode(&mut vm.get_integer(ptr)?.to_bytes_le().as_slice())
+            .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?;
+        let length = header.payload_length + 1;
+        let rlp = vm
+            .get_integer_range(ptr, (length + 7) / 8)?
+            .into_iter()
+            .flat_map(|f| f.to_bytes_le().into_iter().take(8))
+            .take(length)
+            .collect::<Vec<u8>>();
+
+        Ok(CairoStorage::rlp_decode(&rlp).handle(function_id))
     }
 }

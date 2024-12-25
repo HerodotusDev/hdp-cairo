@@ -127,23 +127,29 @@ impl traits::SyscallHandler for CallContractHandler {
             CallHandlerId::Header => {
                 let key = header::HeaderCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = header::HeaderCallHandler::derive_id(request.selector)?;
-                let result = header::HeaderCallHandler::new(memorizer).handle(key.clone(), function_id)?;
-                self.key_set.insert(DryRunKey::Header(key));
+                let result = header::HeaderCallHandler::new(memorizer, self.dict_manager.clone()).handle(key.clone(), function_id, vm)?;
+                self.key_set.insert(DryRunKey::Header(
+                    key.try_into()
+                        .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
+                ));
                 result.to_memory(vm, retdata_end)?;
                 retdata_end += <header::HeaderCallHandler as CallHandler>::CallHandlerResult::n_fields();
             }
             CallHandlerId::Account => {
                 let key = account::AccountCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = account::AccountCallHandler::derive_id(request.selector)?;
-                let result = account::AccountCallHandler::new(memorizer).handle(key.clone(), function_id)?;
-                self.key_set.insert(DryRunKey::Account(key));
+                let result = account::AccountCallHandler::new(memorizer, self.dict_manager.clone()).handle(key.clone(), function_id, vm)?;
+                self.key_set.insert(DryRunKey::Account(
+                    key.try_into()
+                        .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
+                ));
                 result.to_memory(vm, retdata_end)?;
                 retdata_end += <account::AccountCallHandler as CallHandler>::CallHandlerResult::n_fields();
             }
             CallHandlerId::Storage => {
                 let key = storage::StorageCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = storage::StorageCallHandler::derive_id(request.selector)?;
-                let result = storage::StorageCallHandler::new(memorizer, self.dict_manager.clone()).handle(key.clone(), function_id)?;
+                let result = storage::StorageCallHandler::new(memorizer, self.dict_manager.clone()).handle(key.clone(), function_id, vm)?;
                 self.key_set.insert(DryRunKey::Storage(
                     key.try_into()
                         .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
