@@ -50,44 +50,41 @@ async fn main() -> Result<(), FetcherError> {
 
     let mut headers_with_mmr: HashSet<HeaderMmrMeta> = HashSet::default();
 
-    while let Some(Ok(item)) = futures::stream::iter(proof_keys.header_keys.iter().map(ProofKeys::fetch_header_proof).map(|f| f.boxed_local()))
-        .buffer_unordered(BUFFER_UNORDERED)
-        .next()
-        .await
-    {
+    let mut headers_with_mmr_fut = futures::stream::iter(proof_keys.header_keys.iter().map(ProofKeys::fetch_header_proof).map(|f| f.boxed_local()))
+        .buffer_unordered(BUFFER_UNORDERED);
+
+    while let Some(Ok(item)) = headers_with_mmr_fut.next().await {
         headers_with_mmr.insert(item);
     }
 
     let mut accounts: HashSet<Account> = HashSet::default();
 
-    while let Some(Ok((header_with_mmr, account))) = futures::stream::iter(
+    let mut accounts_fut = futures::stream::iter(
         proof_keys
             .account_keys
             .iter()
             .map(ProofKeys::fetch_account_proof)
             .map(|f| f.boxed_local()),
     )
-    .buffer_unordered(BUFFER_UNORDERED)
-    .next()
-    .await
-    {
+    .buffer_unordered(BUFFER_UNORDERED);
+
+    while let Some(Ok((header_with_mmr, account))) = accounts_fut.next().await {
         headers_with_mmr.insert(header_with_mmr);
         accounts.insert(account);
     }
 
     let mut storages: HashSet<Storage> = HashSet::default();
 
-    while let Some(Ok((header_with_mmr, account, storage))) = futures::stream::iter(
+    let mut storages_fut = futures::stream::iter(
         proof_keys
             .storage_keys
             .iter()
             .map(ProofKeys::fetch_storage_proof)
             .map(|f| f.boxed_local()),
     )
-    .buffer_unordered(BUFFER_UNORDERED)
-    .next()
-    .await
-    {
+    .buffer_unordered(BUFFER_UNORDERED);
+
+    while let Some(Ok((header_with_mmr, account, storage))) = storages_fut.next().await {
         headers_with_mmr.insert(header_with_mmr.clone());
         accounts.insert(account);
         storages.insert(storage);
