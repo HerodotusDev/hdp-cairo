@@ -24,6 +24,7 @@ cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", rev = "388a4e51001
 clap = { version = "4.3.10", features = ["derive"] }
 futures = "0.3.31"
 hex = "0.4.3"
+indicatif = "0.17.9"
 num-bigint = "0.4.6"
 num-traits = "0.2.19"
 rand = "0.8"
@@ -39,7 +40,6 @@ strum_macros = "0.26.4"
 thiserror = "1.0.64"
 tiny-keccak = { version = "2.0.2", features = ["keccak"] }
 tokio = { version = "1.41.1", features = ["full"] }
-indicatif = "0.17.9"
 
 dry_hint_processor = { path = "crates/dry_hint_processor" }
 eth_essentials_cairo_vm_hints = { path = "packages/eth_essentials/cairo_vm_hints"}

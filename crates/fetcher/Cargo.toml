@@ -8,10 +8,10 @@ alloy.workspace = true
 clap.workspace = true
 dry_hint_processor.workspace = true
 futures.workspace = true
+indicatif.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
-indicatif.workspace = true
 
 indexer.workspace = true
 types.workspace = true
