@@ -37,16 +37,13 @@ impl ProofKeys {
         format!("{:0>width$}", hex_str, width = (hex_str.len() + 1) / 2 * 2)
     }
 
-    pub fn fetch_header_proof(key: &keys::header::Key) -> Result<HeaderMmrMeta, FetcherError> {
+    pub async fn fetch_header_proof(key: &keys::header::Key) -> Result<HeaderMmrMeta, FetcherError> {
         let provider = Indexer::default();
-        let runtime = tokio::runtime::Runtime::new().unwrap();
 
         // Fetch proof response
-        let response = runtime.block_on(async {
-            provider
-                .get_headers_proof(IndexerQuery::new(key.chain_id, key.block_number, key.block_number))
-                .await
-        })?;
+        let response = provider
+            .get_headers_proof(IndexerQuery::new(key.chain_id, key.block_number, key.block_number))
+            .await?;
 
         // Extract MMR metadata
         let mmr_meta = MmrMeta {
@@ -99,31 +96,28 @@ impl ProofKeys {
         })
     }
 
-    pub fn fetch_account_proof(key: &keys::account::Key) -> Result<(HeaderMmrMeta, Account), FetcherError> {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
+    pub async fn fetch_account_proof(key: &keys::account::Key) -> Result<(HeaderMmrMeta, Account), FetcherError> {
         let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
-        let value = runtime
-            .block_on(async { provider.get_proof(key.address, vec![]).block_id(key.block_number.into()).await })
+        let value = provider
+            .get_proof(key.address, vec![])
+            .block_id(key.block_number.into())
+            .await
             .map_err(|e| FetcherError::InternalError(e.to_string()))?;
         Ok((
-            Self::fetch_header_proof(&key.to_owned().into())?,
+            Self::fetch_header_proof(&key.to_owned().into()).await?,
             Account::new(value.address, vec![MPTProof::new(key.block_number, value.account_proof)]),
         ))
     }
 
-    pub fn fetch_storage_proof(key: &keys::storage::Key) -> Result<(HeaderMmrMeta, Account, Storage), FetcherError> {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
+    pub async fn fetch_storage_proof(key: &keys::storage::Key) -> Result<(HeaderMmrMeta, Account, Storage), FetcherError> {
         let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
-        let value = runtime
-            .block_on(async {
-                provider
-                    .get_proof(key.address, vec![key.storage_slot])
-                    .block_id(key.block_number.into())
-                    .await
-            })
+        let value = provider
+            .get_proof(key.address, vec![key.storage_slot])
+            .block_id(key.block_number.into())
+            .await
             .map_err(|e| FetcherError::InternalError(e.to_string()))?;
         Ok((
-            Self::fetch_header_proof(&key.to_owned().into())?,
+            Self::fetch_header_proof(&key.to_owned().into()).await?,
             Account::new(value.address, vec![MPTProof::new(key.block_number, value.account_proof)]),
             Storage::new(
                 value.address,

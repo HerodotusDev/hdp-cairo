@@ -6,6 +6,7 @@
 use alloy::hex::FromHexError;
 use clap::{Parser, ValueHint};
 use dry_hint_processor::syscall_handler::evm::{self, SyscallHandler};
+use futures::{FutureExt, StreamExt};
 use indexer::types::IndexerError;
 use proof_keys::ProofKeys;
 use std::{collections::HashSet, fs, num::ParseIntError, path::PathBuf};
@@ -13,6 +14,8 @@ use thiserror::Error;
 use types::proofs::{account::Account, storage::Storage, HeaderMmrMeta, Proofs};
 
 pub mod proof_keys;
+
+const BUFFER_UNORDERED: usize = 10;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -23,7 +26,8 @@ struct Args {
     program_output: PathBuf,
 }
 
-fn main() -> Result<(), FetcherError> {
+#[tokio::main]
+async fn main() -> Result<(), FetcherError> {
     let args = Args::try_parse_from(std::env::args()).map_err(FetcherError::Args)?;
 
     let input_file = fs::read(args.filename)?;
@@ -44,20 +48,28 @@ fn main() -> Result<(), FetcherError> {
         }
     }
 
-    let mut headers_with_mmr = proof_keys
-        .header_keys
-        .iter()
-        .map(ProofKeys::fetch_header_proof)
-        .collect::<Result<HashSet<HeaderMmrMeta>, FetcherError>>()?;
+    let mut headers_with_mmr: HashSet<HeaderMmrMeta> = HashSet::default();
+
+    while let Some(Ok(item)) = futures::stream::iter(proof_keys.header_keys.iter().map(ProofKeys::fetch_header_proof).map(|f| f.boxed_local()))
+        .buffer_unordered(BUFFER_UNORDERED)
+        .next()
+        .await
+    {
+        headers_with_mmr.insert(item);
+    }
 
     let mut accounts: HashSet<Account> = HashSet::default();
 
-    for (header_with_mmr, account) in proof_keys
-        .account_keys
-        .iter()
-        .map(ProofKeys::fetch_account_proof)
-        .collect::<Result<Vec<(HeaderMmrMeta, Account)>, FetcherError>>()?
-        .into_iter()
+    while let Some(Ok((header_with_mmr, account))) = futures::stream::iter(
+        proof_keys
+            .account_keys
+            .iter()
+            .map(ProofKeys::fetch_account_proof)
+            .map(|f| f.boxed_local()),
+    )
+    .buffer_unordered(BUFFER_UNORDERED)
+    .next()
+    .await
     {
         headers_with_mmr.insert(header_with_mmr);
         accounts.insert(account);
@@ -65,14 +77,18 @@ fn main() -> Result<(), FetcherError> {
 
     let mut storages: HashSet<Storage> = HashSet::default();
 
-    for (header_with_mmr, account, storage) in proof_keys
-        .storage_keys
-        .iter()
-        .map(ProofKeys::fetch_storage_proof)
-        .collect::<Result<Vec<(HeaderMmrMeta, Account, Storage)>, FetcherError>>()?
-        .into_iter()
+    while let Some(Ok((header_with_mmr, account, storage))) = futures::stream::iter(
+        proof_keys
+            .storage_keys
+            .iter()
+            .map(ProofKeys::fetch_storage_proof)
+            .map(|f| f.boxed_local()),
+    )
+    .buffer_unordered(BUFFER_UNORDERED)
+    .next()
+    .await
     {
-        headers_with_mmr.insert(header_with_mmr);
+        headers_with_mmr.insert(header_with_mmr.clone());
         accounts.insert(account);
         storages.insert(storage);
     }

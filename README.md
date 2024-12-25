@@ -18,24 +18,30 @@ source venv/bin/activate
 
 ## Running
 
-Before running the program, prepare the input data. The inputs are provided via the `hdp_input.json` file located in the root directory of the HDP project. These inputs can be generated using the [HDP CLI](https://github.com/HerodotusDev/hdp). Example inputs are available in `tests/hdp/fixtures`.
+Before running the program, prepare the input data. The inputs are provided via the `hdp_input.json` file located in the root directory of the HDP project.
 
-To run the program, use:
+To run the program, execute following steps:
 
+Simulate Cairo1 module and collect info about proofs to fetch
 ```bash
-cargo run --bin dry_run -- build/compiled_cairo_files/contract_dry_run.json --program_input rust_input.json --program_output a.json --layout all_cairo
+cargo run --release --bin dry_run -- --program_input examples/hdp_input.json --program_output hdp_keys.json --layout starknet_with_keccak
+```
 
-cargo run --bin fetcher -- a.json --program_output b.json
+Fetch the on-chain proofs needed for the HDP run:
+```bash
+cargo run --release --bin fetcher -- hdp_keys.json --program_output hdp_proofs.json
+```
+
+Run Cairo1 module with verified onchain data
+```bash
+cargo run --release --bin sound_run -- --program_input examples/hdp_input.json --program_proofs hdp_proofs.json --program_output hdp_output.json --layout starknet_with_keccak
 ```
 
 The program will output the results root and tasks root. These roots can be used to extract the results from the on-chain contract.
 
 ## How It Works
 
-HDP Cairo is the repository containing the logic for verifying on-chain state via storage proofs, and then making that state available to custom Cairo1 contract modules. To enable this functionality, a custom syscall was designed, enabling dynamic access to the verified state. The syscalls are defined in `cairo1_syscall_binding` where we have some examples.
-
-### Architecture
-The overall program is split into two main parts:
+HDP Cairo is the repository containing the logic for verifying on-chain state via storage proofs, and then making that state available to custom Cairo1 contract modules. To enable this functionality, a custom syscall was designed, enabling dynamic access to the verified state. The syscalls are defined in `cairo1` where we have some examples.
 
 ### Architecture
 The overall program is split into two main parts:
