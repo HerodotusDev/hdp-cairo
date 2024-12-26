@@ -6,11 +6,7 @@ use std::env;
 use syscall_handler::traits::CallHandler;
 use syscall_handler::{SyscallExecutionError, SyscallResult};
 use types::{
-    cairo::{
-        evm::account::{CairoAccount, FunctionId},
-        structs::Uint256,
-        traits::CairoType,
-    },
+    cairo::{evm::account::FunctionId, structs::Uint256, traits::CairoType},
     keys::account::{CairoKey, Key},
     RPC,
 };
@@ -45,8 +41,31 @@ impl CallHandler for AccountCallHandler {
         let runtime = tokio::runtime::Runtime::new().unwrap();
         let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
         let value = runtime
-            .block_on(async { provider.get_account(key.address).block_id(key.block_number.into()).await })
+            .block_on(async {
+                match function_id {
+                    FunctionId::Balance => provider
+                        .get_balance(key.address)
+                        .block_id(key.block_number.into())
+                        .await
+                        .map(Uint256::from),
+                    FunctionId::Nonce => provider
+                        .get_transaction_count(key.address)
+                        .block_id(key.block_number.into())
+                        .await
+                        .map(Uint256::from),
+                    FunctionId::StateRoot => provider
+                        .get_proof(key.address, vec![])
+                        .block_id(key.block_number.into())
+                        .await
+                        .map(|f| Uint256::from(f.storage_hash)),
+                    FunctionId::CodeHash => provider
+                        .get_proof(key.address, vec![])
+                        .block_id(key.block_number.into())
+                        .await
+                        .map(|f| Uint256::from(f.code_hash)),
+                }
+            })
             .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
-        Ok(CairoAccount::from(value).handle(function_id))
+        Ok(value)
     }
 }

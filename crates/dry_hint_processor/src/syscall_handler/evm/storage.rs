@@ -6,11 +6,7 @@ use std::env;
 use syscall_handler::traits::CallHandler;
 use syscall_handler::{SyscallExecutionError, SyscallResult};
 use types::{
-    cairo::{
-        evm::storage::{CairoStorage, FunctionId},
-        structs::Uint256,
-        traits::CairoType,
-    },
+    cairo::{evm::storage::FunctionId, structs::Uint256, traits::CairoType},
     keys::storage::{CairoKey, Key},
     RPC,
 };
@@ -46,12 +42,15 @@ impl CallHandler for StorageCallHandler {
         let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
         let value = runtime
             .block_on(async {
-                provider
-                    .get_storage_at(key.address, key.storage_slot.into())
-                    .block_id(key.block_number.into())
-                    .await
+                match function_id {
+                    FunctionId::Storage => provider
+                        .get_storage_at(key.address, key.storage_slot.into())
+                        .block_id(key.block_number.into())
+                        .await
+                        .map(Uint256::from),
+                }
             })
             .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
-        Ok(CairoStorage::from(value).handle(function_id))
+        Ok(value)
     }
 }
