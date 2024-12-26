@@ -8,6 +8,7 @@ pub mod keys;
 pub mod param;
 pub mod proofs;
 
+use alloy::primitives::ChainId;
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use param::Param;
 use proofs::Proofs;
@@ -23,7 +24,22 @@ pub struct HDPDryRunInput {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct HDPInput {
-    pub proofs: Proofs,
+    pub chain_proofs: Vec<ChainProofs>,
     pub params: Vec<Param>,
     pub compiled_class: CasmContractClass,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum ChainProofs {
+    EthereumMainnet(Proofs),
+    EthereumSepolia(Proofs),
+}
+
+impl ChainProofs {
+    pub fn chain_id(&self) -> ChainId {
+        match self {
+            ChainProofs::EthereumMainnet(_) => 1,
+            ChainProofs::EthereumSepolia(_) => 11155111,
+        }
+    }
 }

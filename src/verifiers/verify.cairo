@@ -24,14 +24,34 @@ func run_state_verification{
     starknet_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
 }() -> (mmr_metas_len: felt) {
-    alloc_locals;
+    tempvar chain_proofs_len: felt = nondet %{ len(chain_proofs) %};
+    let (mmr_meta_idx, _) = run_state_verification_inner(mmr_meta_idx=0, idx=chain_proofs_len);
+    return (mmr_metas_len=mmr_meta_idx);
+}
 
-    // batch abstraction will be usefull with multiple chains
-    %{ vm_enter_scope({'batch': proofs, '__dict_manager': __dict_manager}) %}
+func run_state_verification_inner{
+    range_check_ptr,
+    pedersen_ptr: HashBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
+    bitwise_ptr: BitwiseBuiltin*,
+    pow2_array: felt*,
+    evm_memorizer: DictAccess*,
+    starknet_memorizer: DictAccess*,
+    mmr_metas: MMRMeta*,
+}(mmr_meta_idx: felt, idx: felt) -> (mmr_meta_idx: felt, idx: felt) {
+    if (idx == 0) {
+        return (mmr_meta_idx=mmr_meta_idx, idx=idx);
+    }
 
-    let (mmr_meta_idx) = evm_run_state_verification(0);
+    tempvar chain_id: felt = nondet %{ chain_proofs[ids.idx - 1].chain_id %};
+    let (chain_info) = fetch_chain_info(chain_id);
 
+    %{ vm_enter_scope({'batch': chain_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
+    with chain_info {
+        let (mmr_meta_idx) = evm_run_state_verification(mmr_meta_idx);
+    }
     %{ vm_exit_scope() %}
 
-    return (mmr_metas_len=mmr_meta_idx);
+    return run_state_verification_inner(mmr_meta_idx=mmr_meta_idx, idx=idx - 1);
 }

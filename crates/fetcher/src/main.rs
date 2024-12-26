@@ -12,7 +12,10 @@ use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use proof_keys::ProofKeys;
 use std::{collections::HashSet, fs, num::ParseIntError, path::PathBuf};
 use thiserror::Error;
-use types::proofs::{account::Account, storage::Storage, HeaderMmrMeta, Proofs};
+use types::{
+    proofs::{account::Account, storage::Storage, HeaderMmrMeta, Proofs},
+    ChainProofs,
+};
 
 pub mod proof_keys;
 
@@ -116,7 +119,10 @@ async fn main() -> Result<(), FetcherError> {
         ..Default::default()
     };
 
-    fs::write(args.program_output, serde_json::to_vec(&proofs).map_err(|e| FetcherError::IO(e.into()))?)?;
+    fs::write(
+        args.program_output,
+        serde_json::to_vec::<Vec<ChainProofs>>(&vec![ChainProofs::EthereumSepolia(proofs)]).map_err(|e| FetcherError::IO(e.into()))?,
+    )?;
 
     Ok(())
 }

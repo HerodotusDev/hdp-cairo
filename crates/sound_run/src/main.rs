@@ -15,7 +15,7 @@ use clap::Parser;
 use sound_hint_processor::CustomHintProcessor;
 use std::{env, path::PathBuf};
 use tracing::debug;
-use types::{proofs::Proofs, HDPDryRunInput, HDPInput};
+use types::{ChainProofs, HDPDryRunInput, HDPInput};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -53,7 +53,7 @@ fn main() -> Result<(), HdpOsError> {
 
     let program_file = std::fs::read(program_file_path.as_path()).map_err(HdpOsError::IO)?;
     let program_inputs: HDPDryRunInput = serde_json::from_slice(&std::fs::read(args.program_input).map_err(HdpOsError::IO)?)?;
-    let program_proofs: Proofs = serde_json::from_slice(&std::fs::read(args.program_proofs).map_err(HdpOsError::IO)?)?;
+    let program_proofs: Vec<ChainProofs> = serde_json::from_slice(&std::fs::read(args.program_proofs).map_err(HdpOsError::IO)?)?;
     // Load the Program
     let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint)).map_err(|e| HdpOsError::Runner(e.into()))?;
 
@@ -74,7 +74,7 @@ fn main() -> Result<(), HdpOsError> {
 
     // Run the Cairo VM
     let mut hint_processor = CustomHintProcessor::new(HDPInput {
-        proofs: program_proofs,
+        chain_proofs: program_proofs,
         params: program_inputs.params,
         compiled_class: program_inputs.compiled_class,
     });

@@ -71,7 +71,7 @@ func run{
     %{
         from tools.py.schema import HDPInput
         run_input = HDPInput.Schema().load(program_input)
-        proofs = run_input.proofs
+        chain_proofs = run_input.proofs
         params = run_input.params
         compiled_class = run_input.compiled_class
     %}

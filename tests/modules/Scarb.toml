@@ -1,0 +1,15 @@
+[workspace]
+name = "contracts"
+version = "0.1.0"
+edition = "2023_11"
+
+members = [
+    "account_modules",
+    "header_modules",
+    "receipt_modules",
+    "storage_modules",
+    "transaction_modules",
+]
+
+[workspace.dependencies]
+hdp_cairo = { path = "../../." }

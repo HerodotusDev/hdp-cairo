@@ -8,6 +8,7 @@ pub mod scopes {
     pub const PARAMS: &str = "params";
     pub const PROOF: &str = "proof";
     pub const PROOFS: &str = "proofs";
+    pub const CHAIN_PROOFS: &str = "chain_proofs";
     pub const RECEIPT: &str = "receipt";
     pub const STORAGE: &str = "storage";
     pub const SYSCALL_HANDLER: &str = "syscall_handler";
@@ -17,6 +18,7 @@ pub mod scopes {
 
 pub mod ids {
     pub const PEAKS: &str = "peaks";
+    pub const CHAIN_PROOFS_LEN: &str = "chain_proofs_len";
     pub const RLP_LEN: &str = "rlp_len";
     pub const ADDRESS: &str = "address";
     pub const ALL_ENCODINGS: &str = "all_encodings";

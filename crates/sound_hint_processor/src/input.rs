@@ -8,9 +8,9 @@ use cairo_vm::{
 };
 use hints::vars;
 use std::collections::HashMap;
-use types::{param::Param, proofs::Proofs};
+use types::{param::Param, ChainProofs};
 
-pub const HINT_INPUT: &str = "from tools.py.schema import HDPInput\nrun_input = HDPInput.Schema().load(program_input)\nproofs = run_input.proofs\nparams = run_input.params\ncompiled_class = run_input.compiled_class";
+pub const HINT_INPUT: &str = "from tools.py.schema import HDPInput\nrun_input = HDPInput.Schema().load(program_input)\nchain_proofs = run_input.proofs\nparams = run_input.params\ncompiled_class = run_input.compiled_class";
 
 impl CustomHintProcessor {
     pub fn hint_input(
@@ -20,7 +20,7 @@ impl CustomHintProcessor {
         _hint_data: &HintProcessorData,
         _constants: &HashMap<String, Felt252>,
     ) -> Result<(), HintError> {
-        exec_scopes.insert_value::<Proofs>(vars::scopes::PROOFS, self.private_inputs.proofs.to_owned());
+        exec_scopes.insert_value::<Vec<ChainProofs>>(vars::scopes::CHAIN_PROOFS, self.private_inputs.chain_proofs.to_owned());
         exec_scopes.insert_value::<Vec<Param>>(vars::scopes::PARAMS, self.private_inputs.params.to_owned());
         exec_scopes.insert_value::<CasmContractClass>(vars::scopes::COMPILED_CLASS, self.private_inputs.compiled_class.to_owned());
         Ok(())
