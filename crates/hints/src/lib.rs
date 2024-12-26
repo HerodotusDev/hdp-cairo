@@ -39,6 +39,7 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(merkle::HINT_IS_LEFT_SMALLER.into(), merkle::hint_is_left_smaller);
     hints.insert(merkle::HINT_TARGET_TASK_HASH.into(), merkle::hint_target_task_hash);
     hints.insert(print::PROGRAM_HASH.into(), print::program_hash);
+    hints.insert(print::HINT_PRINT_TASK_RESULT.into(), print::hint_print_task_result);
     hints.insert(rlp::divmod::HINT_DIVMOD_RLP.into(), rlp::divmod::hint_divmod_rlp);
     hints.insert(rlp::divmod::HINT_DIVMOD_VALUE.into(), rlp::divmod::hint_divmod_value);
     hints.insert(rlp::item_type::HINT_IS_LONG.into(), rlp::item_type::hint_is_long);
@@ -98,7 +99,6 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(verifiers::mmr_verifier::HINT_HEADERS_WITH_MMR_META_ROOT.into(), verifiers::mmr_verifier::hint_headers_with_mmr_meta_root);
     hints.insert(verifiers::mmr_verifier::HINT_HEADERS_WITH_MMR_META_SIZE.into(), verifiers::mmr_verifier::hint_headers_with_mmr_meta_size);
     hints.insert(verifiers::mmr_verifier::HINT_HEADERS_WITH_MMR_PEAKS.into(), verifiers::mmr_verifier::hint_headers_with_mmr_peaks);
-    hints.insert(verifiers::utils::HINT_PRINT_TASK_RESULT.into(), verifiers::utils::hint_print_task_result);
     hints.insert(verifiers::verify::HINT_HEADERS_WITH_MMR_LEN.into(), verifiers::verify::hint_headers_with_mmr_headers_len);
     hints.insert(verifiers::verify::HINT_VM_ENTER_SCOPE.into(), verifiers::verify::hint_vm_enter_scope);
 

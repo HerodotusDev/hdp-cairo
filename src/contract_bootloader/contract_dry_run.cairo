@@ -119,7 +119,7 @@ func main{
     assert retdata_size = 2;
     local result: Uint256 = Uint256(low=retdata[0], high=retdata[1]);
 
-    %{ print("result", [hex(ids.result.low), hex(ids.result.high)]) %}
+    %{ print(f"Task Result: {hex(ids.result.high * 2 ** 128 + ids.result.low)}") %}
 
     // Write DryRunOutput to output.
     assert [cast(output_ptr, DryRunOutput*)] = DryRunOutput(

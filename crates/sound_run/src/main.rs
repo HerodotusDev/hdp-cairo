@@ -14,6 +14,7 @@ use cairo_vm::{
 use clap::Parser;
 use sound_hint_processor::CustomHintProcessor;
 use std::{env, path::PathBuf};
+use tracing::debug;
 use types::{proofs::Proofs, HDPDryRunInput, HDPInput};
 
 #[derive(Parser, Debug)]
@@ -32,6 +33,8 @@ struct Args {
 }
 
 fn main() -> Result<(), HdpOsError> {
+    tracing_subscriber::fmt::init();
+
     let args = Args::try_parse_from(std::env::args()).map_err(HdpOsError::Args)?;
 
     // Init CairoRunConfig
@@ -81,7 +84,7 @@ fn main() -> Result<(), HdpOsError> {
         .map_err(|e| HdpOsError::Runner(e.into()))?;
 
     cairo_runner.vm.compute_segments_effective_sizes();
-    println!("{:?}", cairo_runner.get_execution_resources());
+    debug!("{:?}", cairo_runner.get_execution_resources());
 
     Ok(())
 }

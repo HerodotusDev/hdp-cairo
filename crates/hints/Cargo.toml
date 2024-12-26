@@ -24,7 +24,8 @@ starknet-crypto.workspace = true
 starknet-types-core.workspace = true
 strum_macros.workspace = true
 thiserror.workspace = true
-tokio = { workspace = true }
+tokio.workspace = true
+tracing.workspace = true
 
 eth_essentials_cairo_vm_hints.workspace = true
 types.workspace = true
