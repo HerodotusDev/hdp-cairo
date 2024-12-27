@@ -152,10 +152,10 @@ fn write_failure(gas_counter: Felt252, error_data: Vec<Felt252>, vm: &mut Virtua
     Ok(())
 }
 
-pub fn run_handler(syscall_handler: &mut impl SyscallHandler, syscall_ptr: &mut Relocatable, vm: &mut VirtualMachine) -> Result<(), HintError> {
+pub async fn run_handler(syscall_handler: &mut impl SyscallHandler, syscall_ptr: &mut Relocatable, vm: &mut VirtualMachine) -> Result<(), HintError> {
     let remaining_gas = felt_from_ptr(vm, syscall_ptr)?;
     let request = syscall_handler.read_request(vm, syscall_ptr)?;
-    let syscall_result = syscall_handler.execute(request, vm);
+    let syscall_result = syscall_handler.execute(request, vm).await;
     match syscall_result {
         Ok(response) => {
             write_felt(vm, syscall_ptr, remaining_gas)?;

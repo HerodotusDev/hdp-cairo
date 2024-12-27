@@ -8,16 +8,17 @@ use cairo_vm::vm::errors::hint_errors::HintError;
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
-use std::sync::RwLock;
 use std::{collections::HashSet, hash::Hash};
 use strum_macros::FromRepr;
 use syscall_handler::traits::CallHandler;
 use syscall_handler::{felt_from_ptr, run_handler, traits, SyscallExecutionError, SyscallResult, SyscallSelector, WriteResponseResult};
+use tokio::sync::RwLock;
+use tokio::task;
 use types::cairo::new_syscalls::{CallContractRequest, CallContractResponse};
 use types::cairo::traits::CairoType;
 use types::keys;
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct SyscallHandler {
     #[serde(skip)]
     pub syscall_ptr: Option<Relocatable>,
@@ -40,7 +41,7 @@ pub enum CallHandlerId {
     Receipt = 4,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct CallContractHandler {
     pub key_set: HashSet<DryRunKey>,
 }
@@ -52,17 +53,17 @@ impl SyscallHandlerWrapper {
         }
     }
     pub fn set_syscall_ptr(&self, syscall_ptr: Relocatable) {
-        let mut syscall_handler = self.syscall_handler.write().unwrap();
+        let mut syscall_handler = task::block_in_place(|| self.syscall_handler.blocking_write());
         syscall_handler.syscall_ptr = Some(syscall_ptr);
     }
 
     pub fn syscall_ptr(&self) -> Option<Relocatable> {
-        let syscall_handler = self.syscall_handler.read().unwrap();
+        let syscall_handler = task::block_in_place(|| self.syscall_handler.blocking_read());
         syscall_handler.syscall_ptr
     }
 
-    pub fn execute_syscall(&mut self, vm: &mut VirtualMachine, syscall_ptr: Relocatable) -> Result<(), HintError> {
-        let mut syscall_handler = self.syscall_handler.write().unwrap();
+    pub async fn execute_syscall(&mut self, vm: &mut VirtualMachine, syscall_ptr: Relocatable) -> Result<(), HintError> {
+        let mut syscall_handler = self.syscall_handler.write().await;
         let ptr = &mut syscall_handler
             .syscall_ptr
             .ok_or(HintError::CustomHint(Box::from("syscall_ptr is None")))?;
@@ -70,7 +71,7 @@ impl SyscallHandlerWrapper {
         assert_eq!(*ptr, syscall_ptr);
 
         match SyscallSelector::try_from(felt_from_ptr(vm, ptr)?)? {
-            SyscallSelector::CallContract => run_handler(&mut syscall_handler.call_contract_handler, ptr, vm),
+            SyscallSelector::CallContract => run_handler(&mut syscall_handler.call_contract_handler, ptr, vm).await,
         }?;
 
         syscall_handler.syscall_ptr = Some(*ptr);
@@ -89,7 +90,7 @@ impl traits::SyscallHandler for CallContractHandler {
         Ok(ret)
     }
 
-    fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
+    async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
         let mut calldata = request.calldata_start;
 
         let call_handler_id = CallHandlerId::try_from(request.contract_address)?;
@@ -113,7 +114,7 @@ impl traits::SyscallHandler for CallContractHandler {
             CallHandlerId::Header => {
                 let key = header::HeaderCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = header::HeaderCallHandler::derive_id(request.selector)?;
-                let result = header::HeaderCallHandler.handle(key.clone(), function_id, vm)?;
+                let result = header::HeaderCallHandler.handle(key.clone(), function_id, vm).await?;
                 self.key_set.insert(DryRunKey::Header(key));
                 result.to_memory(vm, retdata_end)?;
                 retdata_end += <header::HeaderCallHandler as CallHandler>::CallHandlerResult::n_fields();
@@ -121,7 +122,7 @@ impl traits::SyscallHandler for CallContractHandler {
             CallHandlerId::Account => {
                 let key = account::AccountCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = account::AccountCallHandler::derive_id(request.selector)?;
-                let result = account::AccountCallHandler.handle(key.clone(), function_id, vm)?;
+                let result = account::AccountCallHandler.handle(key.clone(), function_id, vm).await?;
                 self.key_set.insert(DryRunKey::Account(key));
                 result.to_memory(vm, retdata_end)?;
                 retdata_end += <account::AccountCallHandler as CallHandler>::CallHandlerResult::n_fields();
@@ -129,7 +130,7 @@ impl traits::SyscallHandler for CallContractHandler {
             CallHandlerId::Storage => {
                 let key = storage::StorageCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = storage::StorageCallHandler::derive_id(request.selector)?;
-                let result = storage::StorageCallHandler.handle(key.clone(), function_id, vm)?;
+                let result = storage::StorageCallHandler.handle(key.clone(), function_id, vm).await?;
                 self.key_set.insert(DryRunKey::Storage(key));
                 result.to_memory(vm, retdata_end)?;
                 retdata_end += <storage::StorageCallHandler as CallHandler>::CallHandlerResult::n_fields();
@@ -161,7 +162,7 @@ impl TryFrom<Felt252> for CallHandlerId {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum DryRunKey {
     Account(keys::account::Key),

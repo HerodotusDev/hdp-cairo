@@ -37,20 +37,16 @@ impl CallHandler for StorageCallHandler {
         })
     }
 
-    fn handle(&mut self, key: Self::Key, function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
+    async fn handle(&mut self, key: Self::Key, function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
         let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
-        let value = runtime
-            .block_on(async {
-                match function_id {
-                    FunctionId::Storage => provider
-                        .get_storage_at(key.address, key.storage_slot.into())
-                        .block_id(key.block_number.into())
-                        .await
-                        .map(Uint256::from),
-                }
-            })
-            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
+        let value = match function_id {
+            FunctionId::Storage => provider
+                .get_storage_at(key.address, key.storage_slot.into())
+                .block_id(key.block_number.into())
+                .await
+                .map(Uint256::from),
+        }
+        .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
         Ok(value)
     }
 }

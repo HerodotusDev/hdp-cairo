@@ -1,0 +1,18 @@
+[package]
+name = "tests_modules"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+[dev-dependencies]
+cairo-lang-starknet-classes.workspace = true
+cairo-vm.workspace = true
+dry_hint_processor.workspace = true
+fetcher.workspace = true
+futures.workspace = true
+hints.workspace = true
+serde_json.workspace = true
+sound_hint_processor.workspace = true
+tokio.workspace = true
+types.workspace = true

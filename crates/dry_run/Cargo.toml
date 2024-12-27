@@ -9,8 +9,9 @@ clap.workspace = true
 dry_hint_processor.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
-tracing.workspace = true
+tokio.workspace = true
 tracing-subscriber.workspace = true
+tracing.workspace = true
 
 hints.workspace = true
 types.workspace = true

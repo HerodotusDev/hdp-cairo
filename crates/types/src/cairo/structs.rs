@@ -9,8 +9,8 @@ use cairo_vm::{
 
 #[derive(FieldOffsetGetters, CairoType, Default, Debug)]
 pub struct Uint256 {
-    pub high: Felt252,
     pub low: Felt252,
+    pub high: Felt252,
 }
 
 impl From<u64> for Uint256 {
@@ -36,8 +36,8 @@ impl From<U256> for Uint256 {
     fn from(value: U256) -> Self {
         let bytes: [u8; 32] = value.to_be_bytes();
         Self {
-            low: Felt252::from_bytes_be_slice(&bytes[0..16]),
-            high: Felt252::from_bytes_be_slice(&bytes[16..32]),
+            low: Felt252::from_bytes_be_slice(&bytes[16..32]),
+            high: Felt252::from_bytes_be_slice(&bytes[0..16]),
         }
     }
 }
@@ -46,8 +46,8 @@ impl From<B256> for Uint256 {
     fn from(value: B256) -> Self {
         let bytes: [u8; 32] = value.0;
         Self {
-            low: Felt252::from_bytes_be_slice(&bytes[0..16]),
-            high: Felt252::from_bytes_be_slice(&bytes[16..32]),
+            low: Felt252::from_bytes_be_slice(&bytes[16..32]),
+            high: Felt252::from_bytes_be_slice(&bytes[0..16]),
         }
     }
 }

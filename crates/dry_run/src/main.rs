@@ -34,7 +34,8 @@ struct Args {
     program_output: PathBuf,
 }
 
-fn main() -> Result<(), HdpOsError> {
+#[tokio::main(flavor = "multi_thread", worker_threads = 1)]
+async fn main() -> Result<(), HdpOsError> {
     tracing_subscriber::fmt::init();
 
     let args = Args::try_parse_from(std::env::args()).map_err(HdpOsError::Args)?;

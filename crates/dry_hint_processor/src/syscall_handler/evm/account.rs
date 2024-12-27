@@ -37,35 +37,31 @@ impl CallHandler for AccountCallHandler {
         })
     }
 
-    fn handle(&mut self, key: Self::Key, function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
+    async fn handle(&mut self, key: Self::Key, function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
         let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
-        let value = runtime
-            .block_on(async {
-                match function_id {
-                    FunctionId::Balance => provider
-                        .get_balance(key.address)
-                        .block_id(key.block_number.into())
-                        .await
-                        .map(Uint256::from),
-                    FunctionId::Nonce => provider
-                        .get_transaction_count(key.address)
-                        .block_id(key.block_number.into())
-                        .await
-                        .map(Uint256::from),
-                    FunctionId::StateRoot => provider
-                        .get_proof(key.address, vec![])
-                        .block_id(key.block_number.into())
-                        .await
-                        .map(|f| Uint256::from(f.storage_hash)),
-                    FunctionId::CodeHash => provider
-                        .get_proof(key.address, vec![])
-                        .block_id(key.block_number.into())
-                        .await
-                        .map(|f| Uint256::from(f.code_hash)),
-                }
-            })
-            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
+        let value = match function_id {
+            FunctionId::Balance => provider
+                .get_balance(key.address)
+                .block_id(key.block_number.into())
+                .await
+                .map(Uint256::from),
+            FunctionId::Nonce => provider
+                .get_transaction_count(key.address)
+                .block_id(key.block_number.into())
+                .await
+                .map(Uint256::from),
+            FunctionId::StateRoot => provider
+                .get_proof(key.address, vec![])
+                .block_id(key.block_number.into())
+                .await
+                .map(|f| Uint256::from(f.storage_hash)),
+            FunctionId::CodeHash => provider
+                .get_proof(key.address, vec![])
+                .block_id(key.block_number.into())
+                .await
+                .map(|f| Uint256::from(f.code_hash)),
+        }
+        .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
         Ok(value)
     }
 }

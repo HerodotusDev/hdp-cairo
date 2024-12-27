@@ -2091,6 +2091,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "thiserror 1.0.69",
+ "tokio",
  "tracing",
  "tracing-subscriber",
  "types",
@@ -4653,6 +4654,7 @@ dependencies = [
  "starknet-types-core",
  "strum_macros",
  "syscall_handler",
+ "tokio",
  "types",
 ]
 
@@ -4666,6 +4668,7 @@ dependencies = [
  "sha2",
  "sound_hint_processor",
  "thiserror 1.0.69",
+ "tokio",
  "tracing",
  "tracing-subscriber",
  "types",
@@ -4983,6 +4986,22 @@ dependencies = [
  "dirs-next",
  "rustversion",
  "winapi",
+]
+
+[[package]]
+name = "tests_modules"
+version = "0.1.0"
+dependencies = [
+ "cairo-lang-starknet-classes",
+ "cairo-vm",
+ "dry_hint_processor",
+ "fetcher",
+ "futures",
+ "hints",
+ "serde_json",
+ "sound_hint_processor",
+ "tokio",
+ "types",
 ]
 
 [[package]]

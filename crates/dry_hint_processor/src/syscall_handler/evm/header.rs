@@ -42,11 +42,11 @@ impl CallHandler for HeaderCallHandler {
         })
     }
 
-    fn handle(&mut self, key: Self::Key, function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
+    async fn handle(&mut self, key: Self::Key, function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
         let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
-        let runtime = tokio::runtime::Runtime::new().unwrap();
-        let value = runtime
-            .block_on(async { provider.get_block_by_number(key.block_number.into(), BlockTransactionsKind::Hashes).await })
+        let value = provider
+            .get_block_by_number(key.block_number.into(), BlockTransactionsKind::Hashes)
+            .await
             .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?
             .ok_or(SyscallExecutionError::InternalError("Block not found".into()))?;
         Ok(CairoHeader::from(value.header.inner).handle(function_id))

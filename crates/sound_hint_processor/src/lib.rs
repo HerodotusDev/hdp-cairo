@@ -25,6 +25,7 @@ use hints::{extensive_hints, hints, vars, ExtensiveHintImpl, HintImpl};
 use starknet_types_core::felt::Felt;
 use std::{any::Any, collections::HashMap};
 use syscall_handler::evm::SyscallHandlerWrapper;
+use tokio::{runtime::Handle, task};
 use types::HDPInput;
 
 pub struct CustomHintProcessor {
@@ -112,7 +113,9 @@ impl HintProcessorLogic for CustomHintProcessor {
             if let Hint::Starknet(StarknetHint::SystemCall { system }) = hint {
                 let syscall_ptr = get_ptr_from_res_operand(vm, system)?;
                 let syscall_handler = exec_scopes.get_mut_ref::<SyscallHandlerWrapper>(vars::scopes::SYSCALL_HANDLER)?;
-                return syscall_handler.execute_syscall(vm, syscall_ptr).map(|_| HintExtension::default());
+                return task::block_in_place(|| {
+                    Handle::current().block_on(async { syscall_handler.execute_syscall(vm, syscall_ptr).await.map(|_| HintExtension::default()) })
+                });
             } else {
                 return self
                     .cairo1_builtin_hint_proc
