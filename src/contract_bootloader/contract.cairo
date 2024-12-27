@@ -88,12 +88,25 @@ func compute_contract{
         );
     }
 
-    if (retdata_size == 1) {
-        let result = felt_to_uint256(retdata[0]);
-        return (result=result, program_hash=program_hash);
-    } else {
-        assert retdata_size = 2;
-        let result = Uint256(low=retdata[0], high=retdata[1]);
-        return (result=result, program_hash=program_hash);
+    tempvar low;
+    tempvar high;
+
+    if (retdata_size == 0) {
+        low = 0x0;
+        high = 0x0;
     }
+    if (retdata_size == 1) {
+        low = retdata[0];
+        high = 0x0;
+    }
+    if (retdata_size == 2) {
+        low = retdata[0];
+        high = retdata[1];
+    }
+
+    local result: Uint256 = Uint256(low=low, high=high);
+
+    %{ print(f"Task Result: {hex(ids.result.high * 2 ** 128 + ids.result.low)}") %}
+
+    return (result=result, program_hash=program_hash);
 }

@@ -102,7 +102,7 @@ func run{
     let starknet_key_hasher_ptr = StarknetStateAccess.init();
     let starknet_decoder_ptr = StarknetDecoder.init();
 
-    let (program_hash, result) = compute_tasks{
+    let (result, program_hash) = compute_contract{
         pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
         ecdsa_ptr=ecdsa_ptr,
@@ -130,29 +130,4 @@ func run{
     );
 
     return ();
-}
-
-func compute_tasks{
-    pedersen_ptr: HashBuiltin*,
-    range_check_ptr,
-    ecdsa_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    ec_op_ptr,
-    keccak_ptr: KeccakBuiltin*,
-    poseidon_ptr: PoseidonBuiltin*,
-    pow2_array: felt*,
-    evm_memorizer: DictAccess*,
-    evm_decoder_ptr: felt***,
-    evm_key_hasher_ptr: felt**,
-    starknet_memorizer: DictAccess*,
-    starknet_decoder_ptr: felt***,
-    starknet_key_hasher_ptr: felt**,
-}() -> (program_hash: felt, result: Uint256) {
-    alloc_locals;
-
-    let (result, program_hash) = compute_contract();
-
-    %{ print(f"Task Result: {hex(ids.result.high * 2 ** 128 + ids.result.low)}") %}
-
-    return (program_hash=program_hash, result=result);
 }

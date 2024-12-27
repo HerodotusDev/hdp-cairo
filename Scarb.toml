@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2023_11"
 
 members = [
-    "hdp_cairo"
+    "hdp_cairo",
 ]
 
 [workspace.dependencies]
-hdp_cairo = { path = "cairo" }
+hdp_cairo = { path = "hdp_cairo" }

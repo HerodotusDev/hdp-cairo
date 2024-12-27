@@ -23,7 +23,6 @@ pub fn program_hash(
     let program_hash = get_integer_from_var_name(vars::ids::PROGRAM_HASH, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     debug!("program_hash: {}", program_hash);
-
     Ok(())
 }
 
@@ -46,10 +45,8 @@ pub fn hint_print_task_result(
     let result_low = result[0].to_biguint();
     let result_high = result[1].to_biguint();
     let base = BigUint::from(2u32).pow(128);
-
     let result_value = result_high * base + result_low;
 
     debug!("Task Result: 0x{:x}", result_value);
-
     Ok(())
 }

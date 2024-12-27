@@ -1,8 +1,8 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-
+use crate::syscall_handler::Memorizer;
 use cairo_vm::hint_processor::builtin_hint_processor::dict_manager::DictManager;
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
+use std::cell::RefCell;
+use std::rc::Rc;
 use syscall_handler::traits::CallHandler;
 use syscall_handler::{SyscallExecutionError, SyscallResult};
 use types::cairo::evm::account::CairoAccount;
@@ -10,8 +10,6 @@ use types::{
     cairo::{evm::account::FunctionId, structs::Uint256, traits::CairoType},
     keys::account::CairoKey,
 };
-
-use crate::syscall_handler::Memorizer;
 
 #[derive(Debug)]
 pub struct AccountCallHandler {
@@ -50,9 +48,10 @@ impl CallHandler for AccountCallHandler {
 
     fn handle(&mut self, key: Self::Key, function_id: Self::Id, vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
         let ptr = self.memorizer.read_key(key.hash(), self.dict_manager.clone())?;
-        let header = alloy_rlp::Header::decode(&mut vm.get_integer(ptr)?.to_bytes_le().as_slice())
-            .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?;
-        let length = header.payload_length + 1;
+        let mut data = vm.get_integer(ptr)?.to_bytes_le().to_vec();
+        data.resize(1024, 0);
+        let header = alloy_rlp::Header::decode(&mut data.as_slice()).map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?;
+        let length = header.length_with_payload();
         let rlp = vm
             .get_integer_range(ptr, (length + 7) / 8)?
             .into_iter()
