@@ -20,48 +20,55 @@ source venv/bin/activate
 
 Before running the program, prepare the input data. The inputs are provided via the `hdp_input.json` file located in the root directory of the HDP project.
 
-To run the program, execute following steps:
+### Steps to Execute:
 
-Simulate Cairo1 module and collect info about proofs to fetch
-```bash
-cargo run --release --bin dry_run -- --program_input examples/hdp_input.json --program_output hdp_keys.json --layout starknet_with_keccak
-```
+1. **Simulate Cairo1 Module and Collect Proofs Information:**
+   ```bash
+   cargo run --release --bin dry_run -- --program_input examples/hdp_input.json --program_output hdp_keys.json --layout starknet_with_keccak
+   ```
 
-Fetch the on-chain proofs needed for the HDP run:
-```bash
-cargo run --release --bin fetcher -- hdp_keys.json --program_output hdp_proofs.json
-```
+2. **Fetch On-Chain Proofs Needed for the HDP Run:**
+   ```bash
+   cargo run --release --bin fetcher -- hdp_keys.json --program_output hdp_proofs.json
+   ```
 
-Run Cairo1 module with verified onchain data
-```bash
-cargo run --release --bin sound_run -- --program_input examples/hdp_input.json --program_proofs hdp_proofs.json --program_output hdp_output.json --layout starknet_with_keccak
-```
+3. **Run Cairo1 Module with Verified On-Chain Data:**
+   ```bash
+   cargo run --release --bin sound_run -- --program_input examples/hdp_input.json --program_proofs hdp_proofs.json --program_output hdp_output.json --layout starknet_with_keccak
+   ```
 
 The program will output the results root and tasks root. These roots can be used to extract the results from the on-chain contract.
 
 ## How It Works
 
-HDP Cairo is the repository containing the logic for verifying on-chain state via storage proofs, and then making that state available to custom Cairo1 contract modules. To enable this functionality, a custom syscall was designed, enabling dynamic access to the verified state. The syscalls are defined in `cairo1` where we have some examples.
+HDP Cairo is the repository containing the logic for verifying on-chain state via storage proofs and making that state available to custom Cairo1 contract modules. To enable this functionality, a custom syscall was designed, enabling dynamic access to the verified state. The syscalls are defined in `cairo1`, where examples are provided.
 
 ### Architecture
+
 The overall program is split into two main parts:
 
-![Architecture](.github/architecture.png)
+1. **Storage Proof Verification**
+   - In the first stage, we verify the storage proofs found in the `hdp_input.json` file. This file contains all the storage proofs for the state required by the contract's execution.
+   - The `hdp_input.json` file is generated during the Dry Run stage, where execution is mocked, and the state accessed by the contract is extracted.
+   - Once this stage is complete, all the verified state is stored in memorizers, enabling it to be queried via syscall.
 
-
-
-### 1. Storage Proof Verification
-In the first stage, we verify the storage proofs found in the `hdp_input.json` file. This file contains all the storage proof for the state required by the contracts execution. This file is generated in the Dry Run stage, where we mock the execution and extract the state that was accessed by the contract. This enables the dynamic access of state from the contract, while ensuring everything can be proven in a sound way. Once this stage is complete, all of the verified state is stored in the memorizers, allowing it to be queried via syscall.
-
-### 2. Bootloading
-In this stage, we bootload the cairo1 contract. The contracts bytecode is read from the `hdp_input.json` file and now executed in the HDP bootloader. The bootloader now processes the bytecode, and invokes the contained syscalls. These syscalls are then proccessed, fetching and decoding the requested state from the memorizers and loading it into the contracts memory. This enables the seamless access of verified on-chain state in contracts.
+2. **Bootloading**
+   - In this stage, we bootload the Cairo1 contract.
+   - The contract's bytecode is read from the `hdp_input.json` file and executed in the HDP bootloader.
+   - The bootloader processes the bytecode and invokes the contained syscalls, which fetch and decode the requested state from the memorizers, loading it into the contract's memory.
+   - This setup allows seamless access to verified on-chain state within contracts.
 
 ## Testing
 
-Some tests require Ethereum Mainnet RPC calls. Ensure an environment variable named `RPC_URL_MAINNET` is set.
+Some tests require Ethereum Mainnet RPC calls. Ensure an environment variable named `RPC` is set.
 
-To run the tests (from the virtual environment), execute:
+1. **Build Cairo1 Modules:**
+   ```bash
+   scarb build
+   ```
 
-```bash
-make test-full
-```
+2. **Run Tests with [nextest](https://nexte.st/):**
+   ```bash
+   cargo nextest run
+   ```
+
