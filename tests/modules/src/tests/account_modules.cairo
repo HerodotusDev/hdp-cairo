@@ -1,5 +1,5 @@
 #[starknet::contract]
-mod get_nonce {
+mod account_get_nonce {
     use hdp_cairo::evm::account::AccountTrait;
     use hdp_cairo::{HDP, evm::account::{AccountKey, AccountImpl}};
 
@@ -23,7 +23,7 @@ mod get_nonce {
 }
 
 #[starknet::contract]
-mod get_balance {
+mod account_get_balance {
     use hdp_cairo::evm::account::AccountTrait;
     use hdp_cairo::{HDP, evm::account::{AccountKey, AccountImpl}};
 
@@ -47,7 +47,7 @@ mod get_balance {
 }
 
 #[starknet::contract]
-mod get_state_root {
+mod account_get_state_root {
     use hdp_cairo::evm::account::AccountTrait;
     use hdp_cairo::{HDP, evm::account::{AccountKey, AccountImpl}};
 
@@ -74,7 +74,7 @@ mod get_state_root {
 }
 
 #[starknet::contract]
-mod get_code_hash {
+mod account_get_code_hash {
     use hdp_cairo::evm::account::AccountTrait;
     use hdp_cairo::{HDP, evm::account::{AccountKey, AccountImpl}};
 

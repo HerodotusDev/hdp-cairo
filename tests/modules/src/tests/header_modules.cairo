@@ -1,5 +1,5 @@
 #[starknet::contract]
-mod get_parent {
+mod header_get_parent {
     use hdp_cairo::evm::header::HeaderTrait;
     use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
 
@@ -22,7 +22,7 @@ mod get_parent {
 }
 
 #[starknet::contract]
-mod get_uncle {
+mod header_get_uncle {
     use hdp_cairo::evm::header::HeaderTrait;
     use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
 
@@ -45,7 +45,7 @@ mod get_uncle {
 }
 
 #[starknet::contract]
-mod get_coinbase {
+mod header_get_coinbase {
     use hdp_cairo::evm::header::HeaderTrait;
     use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
 
@@ -65,7 +65,7 @@ mod get_coinbase {
 }
 
 #[starknet::contract]
-mod get_state_root {
+mod header_get_state_root {
     use hdp_cairo::evm::header::HeaderTrait;
     use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
 
@@ -88,7 +88,7 @@ mod get_state_root {
 }
 
 #[starknet::contract]
-mod get_transaction_root {
+mod header_get_transaction_root {
     use hdp_cairo::evm::header::HeaderTrait;
     use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
 
@@ -111,7 +111,7 @@ mod get_transaction_root {
 }
 
 #[starknet::contract]
-mod get_receipt_root {
+mod header_get_receipt_root {
     use hdp_cairo::evm::header::HeaderTrait;
     use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
 
@@ -134,7 +134,7 @@ mod get_receipt_root {
 }
 
 #[starknet::contract]
-mod get_difficulty {
+mod header_get_difficulty {
     use hdp_cairo::evm::header::HeaderTrait;
     use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
 
@@ -154,7 +154,7 @@ mod get_difficulty {
 }
 
 #[starknet::contract]
-mod get_number {
+mod header_get_number {
     use hdp_cairo::evm::header::HeaderTrait;
     use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
 
@@ -174,7 +174,7 @@ mod get_number {
 }
 
 #[starknet::contract]
-mod get_gas_limit {
+mod header_get_gas_limit {
     use hdp_cairo::evm::header::HeaderTrait;
     use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
 
@@ -194,7 +194,7 @@ mod get_gas_limit {
 }
 
 #[starknet::contract]
-mod get_gas_used {
+mod header_get_gas_used {
     use hdp_cairo::evm::header::HeaderTrait;
     use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
 
@@ -214,7 +214,7 @@ mod get_gas_used {
 }
 
 #[starknet::contract]
-mod get_mix_hash {
+mod header_get_mix_hash {
     use hdp_cairo::evm::header::HeaderTrait;
     use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
 
@@ -237,7 +237,7 @@ mod get_mix_hash {
 }
 
 #[starknet::contract]
-mod get_nonce {
+mod header_get_nonce {
     use hdp_cairo::evm::header::HeaderTrait;
     use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
 
@@ -257,7 +257,7 @@ mod get_nonce {
 }
 
 #[starknet::contract]
-mod get_base_fee_per_gas {
+mod header_get_base_fee_per_gas {
     use hdp_cairo::evm::header::HeaderTrait;
     use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
 
