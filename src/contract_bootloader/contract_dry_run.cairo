@@ -116,10 +116,26 @@ func main{
             compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata, dry_run=1
         );
     }
-    assert retdata_size = 2;
-    local result: Uint256 = Uint256(low=retdata[0], high=retdata[1]);
 
-    %{ print("result", [hex(ids.result.low), hex(ids.result.high)]) %}
+    tempvar low;
+    tempvar high;
+
+    if (retdata_size == 0) {
+        low = 0x0;
+        high = 0x0;
+    }
+    if (retdata_size == 1) {
+        low = retdata[0];
+        high = 0x0;
+    }
+    if (retdata_size == 2) {
+        low = retdata[0];
+        high = retdata[1];
+    }
+
+    local result: Uint256 = Uint256(low=low, high=high);
+
+    %{ print(f"Task Result: {hex(ids.result.high * 2 ** 128 + ids.result.low)}") %}
 
     // Write DryRunOutput to output.
     assert [cast(output_ptr, DryRunOutput*)] = DryRunOutput(

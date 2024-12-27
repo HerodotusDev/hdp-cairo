@@ -1,0 +1,18 @@
+[package]
+name = "sound_hint_processor"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+alloy-rlp.workspace = true
+cairo-lang-casm.workspace = true
+cairo-lang-starknet-classes.workspace = true
+cairo-vm.workspace = true
+serde.workspace = true
+starknet-types-core.workspace = true
+strum_macros.workspace = true
+tokio.workspace = true
+
+hints.workspace = true
+syscall_handler.workspace = true
+types.workspace = true

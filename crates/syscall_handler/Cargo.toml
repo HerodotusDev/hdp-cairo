@@ -1,0 +1,10 @@
+[package]
+name = "syscall_handler"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cairo-vm.workspace = true
+thiserror.workspace = true
+
+types.workspace = true

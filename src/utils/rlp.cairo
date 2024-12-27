@@ -375,17 +375,20 @@ func le_chunks_to_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
     elements: felt*, elements_len: felt, bytes_len: felt
 ) -> Uint256 {
     alloc_locals;
-    local value: Uint256;
 
     if (elements_len == 1) {
         let high = elements[0] * pow2_array[(16 - bytes_len) * 8];
-        assert value = Uint256(low=0, high=high);
+        return (Uint256(low=0, high=high));
     }
 
     if (elements_len == 2) {
-        assert value = Uint256(
-            low=0,
-            high=(elements[1] * pow2_array[64] + elements[0]) * pow2_array[(16 - bytes_len) * 8],
+        return (
+            Uint256(
+                low=0,
+                high=(elements[1] * pow2_array[64] + elements[0]) * pow2_array[
+                    (16 - bytes_len) * 8
+                ],
+            )
         );
     }
 
@@ -394,19 +397,26 @@ func le_chunks_to_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
     let (le_shifted) = right_shift_le_chunks(elements, elements_len, offset);
 
     if (elements_len == 3) {
-        assert value = Uint256(
-            low=le_shifted[0] * pow2_array[64], high=le_shifted[2] * pow2_array[64] + le_shifted[1]
+        return (
+            Uint256(
+                low=le_shifted[0] * pow2_array[64],
+                high=le_shifted[2] * pow2_array[64] + le_shifted[1],
+            )
         );
     }
 
     if (elements_len == 4) {
-        assert value = Uint256(
-            low=le_shifted[1] * pow2_array[64] + le_shifted[0],
-            high=le_shifted[3] * pow2_array[64] + le_shifted[2],
+        return (
+            Uint256(
+                low=le_shifted[1] * pow2_array[64] + le_shifted[0],
+                high=le_shifted[3] * pow2_array[64] + le_shifted[2],
+            )
         );
     }
 
-    return (value);
+    assert 0 = 1;
+
+    return (Uint256(low=0, high=0));
 }
 
 // This function is required when constructing a LE uint256 from LE chunks.
@@ -434,8 +444,8 @@ func right_shift_le_chunks{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_a
     assert [range_check_ptr + 1] = value_len - 1;
     let range_check_ptr = range_check_ptr + 2;
 
-    let devisor = pow2_array[offset * 8];
-    let shifter = pow2_array[(8 - offset) * 8];
+    local devisor = pow2_array[offset * 8];
+    local shifter = pow2_array[(8 - offset) * 8];
 
     tempvar current_word = 0;
     tempvar n_processed_words = 0;
@@ -453,10 +463,10 @@ func right_shift_le_chunks{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_a
     let q = [ap];
     let r = [ap + 1];
     %{ ids.q, ids.r = divmod(memory[ids.value + ids.i], ids.devisor) %}
+    ap += 2;
     // %{
     //     #print(f"val={memory[ids.value + ids.i]} q={ids.q} r={ids.r} i={ids.i}")
     // %}
-    ap += 2;
     tempvar offset = 3 * n_processed_words;
     assert [range_check_ptr + offset] = q;
     assert [range_check_ptr + offset + 1] = r;
