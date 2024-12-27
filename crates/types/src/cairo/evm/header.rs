@@ -98,6 +98,7 @@ impl CairoHeader {
     }
 
     pub fn base_fee_per_gas(&self) -> Option<Uint256> {
+        println!("dupa");
         self.0.base_fee_per_gas.map(|f| f.into())
     }
 
@@ -146,6 +147,7 @@ impl CairoHeader {
             FunctionId::Timestamp => self.timestamp(),
             FunctionId::MixHash => self.mix_hash(),
             FunctionId::Nonce => self.nonce(),
+            FunctionId::BaseFeePerGas => self.base_fee_per_gas().unwrap(),
             _ => Uint256::default(),
         }
     }

@@ -56,8 +56,8 @@ impl From<Address> for Uint256 {
     fn from(value: Address) -> Self {
         let bytes: [u8; 20] = *value.0;
         Self {
-            low: Felt252::from_bytes_be_slice(&bytes[0..16]),
-            high: Felt252::from_bytes_be_slice(&bytes[16..20]),
+            low: Felt252::from_bytes_be_slice(&bytes[4..20]),
+            high: Felt252::from_bytes_be_slice(&bytes[0..4]),
         }
     }
 }
