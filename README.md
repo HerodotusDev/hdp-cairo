@@ -50,7 +50,7 @@ In this stage, we bootload the cairo1 contract. The contracts bytecode is read f
 
 ## Testing
 
-Some tests require Ethereum Mainnet RPC calls. Ensure an environment variable named `RPC_URL_MAINNET` is set.
+Some tests require Ethereum Mainnet and Starknet Mainnet RPC calls. Ensure environment variables named `RPC_URL_MAINNET` and `PROVIDER_URL_STARKNET` are set.
 
 To run the tests (from the virtual environment), execute:
 
