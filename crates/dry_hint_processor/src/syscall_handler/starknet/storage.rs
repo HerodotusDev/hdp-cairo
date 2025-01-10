@@ -1,21 +1,19 @@
+
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
+use std::env;
 use syscall_handler::traits::CallHandler;
 use syscall_handler::{SyscallExecutionError, SyscallResult};
 use types::{
-    cairo::{
-        starknet::header::{CairoStarknetHeader, FunctionId},
-        structs::Uint256,
-        traits::CairoType,
-    },
-    keys::starknet::header::{CairoKey, Key},
+    cairo::{evm::storage::FunctionId, structs::Uint256, traits::CairoType},
+    keys::starknet::storage::{CairoKey, Key},
     RPC,
 };
 
 #[derive(Debug, Default)]
-pub struct HeaderCallHandler;
+pub struct StorageCallHandler;
 
 #[allow(refining_impl_trait)]
-impl CallHandler for HeaderCallHandler {
+impl CallHandler for StorageCallHandler {
     type Key = Key;
     type Id = FunctionId;
     type CallHandlerResult = Uint256;

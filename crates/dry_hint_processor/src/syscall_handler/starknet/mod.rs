@@ -6,7 +6,7 @@ use strum_macros::FromRepr;
 
 
 pub mod header;
-// pub mod storage;
+pub mod storage;
 
 #[derive(FromRepr)]
 pub enum CallHandlerId {
