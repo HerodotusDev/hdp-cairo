@@ -8,7 +8,7 @@ use syscall_handler::{SyscallExecutionError, SyscallResult};
 use types::cairo::evm::storage::CairoStorage;
 use types::{
     cairo::{evm::storage::FunctionId, structs::Uint256, traits::CairoType},
-    keys::storage::CairoKey,
+    keys::evm::storage::CairoKey,
 };
 
 #[derive(Debug)]

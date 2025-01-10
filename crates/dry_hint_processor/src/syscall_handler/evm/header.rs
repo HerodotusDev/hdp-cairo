@@ -12,7 +12,7 @@ use types::{
         structs::Uint256,
         traits::CairoType,
     },
-    keys::header::{CairoKey, Key},
+    keys::evm::header::{CairoKey, Key},
     RPC,
 };
 

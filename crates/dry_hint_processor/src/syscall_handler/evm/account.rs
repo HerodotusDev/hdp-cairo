@@ -7,7 +7,7 @@ use syscall_handler::traits::CallHandler;
 use syscall_handler::{SyscallExecutionError, SyscallResult};
 use types::{
     cairo::{evm::account::FunctionId, structs::Uint256, traits::CairoType},
-    keys::account::{CairoKey, Key},
+    keys::evm::account::{CairoKey, Key},
     RPC,
 };
 
