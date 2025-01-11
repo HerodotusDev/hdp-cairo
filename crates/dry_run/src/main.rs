@@ -13,7 +13,7 @@ use cairo_vm::{
 };
 use clap::Parser;
 use dry_hint_processor::{
-    syscall_handler::evm::{SyscallHandler, SyscallHandlerWrapper},
+    syscall_handler::{SyscallHandler, SyscallHandlerWrapper},
     CustomHintProcessor,
 };
 use hints::vars;
