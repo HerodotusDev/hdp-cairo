@@ -1,6 +1,6 @@
-use super::mpt::MPTProof;
 use alloy::primitives::U256;
 use serde::{Deserialize, Serialize};
+use crate::proofs::mpt::MPTProof;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
 pub struct Receipt {
