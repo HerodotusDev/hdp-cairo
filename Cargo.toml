@@ -18,7 +18,7 @@ members = [
 alloy = { version = "0.7.2", features = ["full"] }
 alloy-rlp = { version = "0.3.5", features = ["derive"] }
 bincode = { version = "2.0.0-rc.3", default-features = false, features = ["serde"] }
-cairo-lang-casm = { version = "2.9.0-dev.0", default-features = false }
+cairo-lang-casm = { version = "2.9.2", default-features = false }
 cairo-lang-starknet-classes = "2.9.2"
 cairo-type-derive = { git = "https://github.com/keep-starknet-strange/snos.git", rev = "35a300a10d2107482ada440b5025ee2f651afbd4" }
 cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", rev = "388a4e51001377717b7e4c902c35f8e271c92ad7", features = ["extensive_hints", "clap", "cairo-1-hints"] }
@@ -36,13 +36,14 @@ serde_with = { version = "3.11.0", features = ["hex"] }
 sha3 = "0.10.8"
 starknet-core = { version = "0.11.1", default-features = false }
 starknet-crypto = { version = "0.7.1", default-features = false }
-starknet-types-core = { version = "0.1.5", default-features = false }
+starknet-types-core = { version = "0.1.6", default-features = false }
 strum_macros = "0.26.4"
 thiserror = "1.0.64"
 tiny-keccak = { version = "2.0.2", features = ["keccak"] }
 tokio = { version = "1.41.1", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
+pathfinder-rpc = { path = "../pathfinder/crates/rpc" }
 
 dry_hint_processor = { path = "crates/dry_hint_processor" }
 eth_essentials_cairo_vm_hints = { path = "packages/eth_essentials/cairo_vm_hints"}

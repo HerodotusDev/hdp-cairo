@@ -15,3 +15,4 @@ serde.workspace = true
 starknet-crypto.workspace = true
 strum_macros.workspace = true
 thiserror.workspace = true
+pathfinder-rpc.workspace = true
