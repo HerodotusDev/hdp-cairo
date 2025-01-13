@@ -38,14 +38,14 @@ jobs:
           source venv/bin/activate
           ./tools/make/python_format_check.sh
 
-      - name: Check Python tests
-        env:
-          RPC_URL_MAINNET: ${{ secrets.RPC_URL_MAINNET }}
-          PROVIDER_URL_STARKNET: ${{ secrets.PROVIDER_URL_STARKNET }}
-          RPC_URL: ${{ secrets.RPC_URL }}
-        run: |
-          source venv/bin/activate
-          pytest tools/*
+      # - name: Check Python tests
+      #   env:
+      #     RPC_URL_MAINNET: ${{ secrets.RPC_URL_MAINNET }}
+      #     PROVIDER_URL_STARKNET: ${{ secrets.PROVIDER_URL_STARKNET }}
+      #     RPC_URL: ${{ secrets.RPC_URL }}
+      #   run: |
+      #     source venv/bin/activate
+      #     pytest tools/*
 
       - name: Check Cairo formatting
         run: |

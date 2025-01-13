@@ -7,6 +7,9 @@ use syscall_handler::{SyscallExecutionError, SyscallResult, WriteResponseResult}
 use types::cairo::new_syscalls::{CallContractRequest, CallContractResponse};
 use types::keys;
 
+pub mod header;
+pub mod storage;
+
 #[derive(FromRepr)]
 pub enum CallHandlerId {
     Storage = 0,
@@ -51,7 +54,8 @@ impl TryFrom<Felt252> for CallHandlerId {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum DryRunKey {
-    Storage(keys::storage::Key),
+    Header(keys::starknet::header::Key),
+    Storage(keys::starknet::storage::Key),
 }
 
 impl DryRunKey {
