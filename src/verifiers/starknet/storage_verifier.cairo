@@ -104,9 +104,9 @@ func verify_proofs_inner{
     );
 
     // Compute contract_state_hash
-    %{ vm_enter_scope({'nodes': storage.proof.contract_proof}) %}
-    let (contract_nodes, contract_nodes_len) = load_nodes();
-    %{ vm_exit_scope() %}
+    tempvar contract_nodes_len: felt = nondet %{ len(storage.proof.contract_proof) %};
+    let (contract_nodes: felt**) = alloc();
+    %{ segments.write_arg(ids.contract_nodes, storage.proof.contract_proof) %}
 
     let (contract_tree_root, expected_contract_state_hash) = traverse(
         contract_nodes, contract_nodes_len, contract_address
@@ -141,14 +141,15 @@ func validate_storage_proofs{
     block_number: felt,
 }(contract_root: felt, storage_count: felt, idx: felt) -> (root: felt) {
     alloc_locals;
+
     if (storage_count == idx) {
         return (root=contract_root);
     }
 
     // Compute contract_root
-    %{ vm_enter_scope({'nodes': storage.proof.contract_data.storage_proofs[ids.idx]}) %}
-    let (contract_state_nodes, contract_state_nodes_len) = load_nodes();
-    %{ vm_exit_scope() %}
+    tempvar contract_state_nodes_len: felt = nondet %{ len(storage.proof.contract_data.storage_proofs[ids.idx]) %};
+    let (contract_state_nodes: felt**) = alloc();
+    %{ segments.write_arg(ids.contract_state_nodes, storage.proof.contract_data.storage_proofs[ids.idx]) %}
 
     let (new_contract_root, value) = traverse(
         contract_state_nodes, contract_state_nodes_len, storage_addresses[idx]
@@ -168,12 +169,10 @@ func validate_storage_proofs{
         storage_address=storage_addresses[idx],
     );
 
-    // ideally we could cast this somehow, but this is a quick fix
     local data: felt*;
     assert [data] = value;
-
-    // We need to cast the value to a felt* to match the expected input type.
     StarknetMemorizer.add(key=memorizer_key, data=data);
+
     return validate_storage_proofs(new_contract_root, storage_count, idx + 1);
 }
 
@@ -203,19 +202,11 @@ func traverse_edge_leaf{
     let leaf = nodes[n_nodes - 1];
     let leaf_hash = hash_edge_node(leaf);
     let node_path = leaf[1];
+
     // First we precompute the eval depth of the proof via hint.
     // In case of non-inclusion, we dont nececcary need to traverse the entire depth of the tree.
     // The eval depth is how many bits we went down the binary tree from the root for the proof.
-    local eval_depth: felt;
-    %{
-        eval_depth = 0
-        for i, node in enumerate(nodes_types):
-            if node == 0:
-                eval_depth += 1
-            else:
-                eval_depth += nodes[i][2]
-        ids.eval_depth = eval_depth
-    %}
+    tempvar eval_depth: felt = nondet %{ [ if Node(ids.nodes[i]).is_edge() Node(ids.nodes[i]).path_len else 1 for i in ids.n_nodes ] %};
 
     // If the eval_depth is not 251, we no we are dealing with a non-inclusion proof. (we can also have non-inclusion proofs with eval depth 251 though)
     // To verify these proofs correctly, we need to shift the traversed path, so it matches the length of the expected path (251 bits).
@@ -232,6 +223,7 @@ func traverse_edge_leaf{
     //                         |               |
     //             eval_depth - leaf_len       eval_depth
     local edge_node_shift = 251 - (eval_depth - leaf[2]);
+
     // Since devisions are impractical in Cairo, we traverse the proof from the bottom up.
     // To track where we are in the tree, we use this variable: path_length_pow2
     // We initializer it with the shifted index we computed above (pow of 2)
@@ -297,6 +289,7 @@ func traverse_inner{
     traversed_eval_depth: felt,
 ) -> (root: felt, traversed_path: felt, traversed_eval_depth: felt) {
     alloc_locals;
+
     if (n_nodes == 0) {
         return (
             root=hash_value,
@@ -306,7 +299,7 @@ func traverse_inner{
     }
 
     let node = nodes[n_nodes - 1];
-    %{ memory[ap] = nodes_types[ids.n_nodes - 1] %}
+    %{ memory[ap] = Node(ids.node).is_edge() %}
     jmp edge_node if [ap] != 0, ap++;
 
     // binary_node:
@@ -406,26 +399,4 @@ func assert_subpath{bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
     }
 
     return ();
-}
-
-// Loads the proof nodes into memory.
-func load_nodes() -> (nodes: felt**, len: felt) {
-    alloc_locals;
-    let (nodes: felt**) = alloc();
-    local len: felt;
-    %{
-        nodes_types = []
-        parsed_nodes = []
-        for node in nodes:
-            if "binary" in node:
-                nodes_types.append(0)
-                parsed_nodes.append([int(node["binary"]["left"], 16), int(node["binary"]["right"], 16)])
-            else:
-                nodes_types.append(1)
-                parsed_nodes.append([int(node["edge"]["child"], 16), int(node["edge"]["path"]["value"], 16), node["edge"]["path"]["len"]])
-        ids.len = len(parsed_nodes)
-        nodes = parsed_nodes
-        segments.write_arg(ids.nodes, parsed_nodes)
-    %}
-    return (nodes=nodes, len=len);
 }
