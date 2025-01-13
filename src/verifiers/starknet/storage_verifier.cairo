@@ -18,6 +18,8 @@ from src.memorizers.starknet.memorizer import StarknetMemorizer, StarknetHashPar
 from src.decoders.starknet.header_decoder import StarknetHeaderDecoder, StarknetHeaderFields
 from src.types import ChainInfo
 
+const STARKNET_STATE_V0 = 28355430774503553497671514844211693180464;
+
 func verify_proofs{
     range_check_ptr,
     pedersen_ptr: HashBuiltin*,
@@ -44,14 +46,16 @@ func verify_proofs_loop{
     starknet_memorizer: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
-}(n_storage_items: felt, index: felt) {
+}(n_storage_items: felt, idx: felt) {
     alloc_locals;
 
-    if (n_storage_items == index) {
+    if (n_storage_items == idx) {
         return ();
     }
-    local block_number: felt;
-    %{ ids.block_number = batch["storages"][ids.index]["block_number"] %}
+
+    %{ storage = batch.storages[ids.idx] %}
+
+    tempvar block_number: felt = nondet %{ storage.block_number %};
 
     let memorizer_key = StarknetHashParams.header(
         chain_id=chain_info.id, block_number=block_number
@@ -61,9 +65,9 @@ func verify_proofs_loop{
         header_data, StarknetHeaderFields.STATE_ROOT
     );
 
-    verify_proofs_inner(state_root, block_number, index);
+    verify_proofs_inner(state_root, block_number, idx);
 
-    return verify_proofs_loop(n_storage_items, index + 1);
+    return verify_proofs_loop(n_storage_items, idx + 1);
 }
 
 func verify_proofs_inner{
@@ -77,16 +81,11 @@ func verify_proofs_inner{
 }(state_root: felt, block_number: felt, index: felt) {
     alloc_locals;
 
-    let storage_addresses: felt* = alloc();
-    local state_root: felt;
-    local storage_count: felt;
-    local contract_address: felt;
-    %{
-        storage_proof = batch["storages"][ids.index]
-        segments.write_arg(ids.storage_addresses, [int(key, 16) for key in storage_proof["storage_addresses"]])
-        ids.storage_count = len(storage_proof["storage_addresses"])
-        ids.contract_address = int(storage_proof["contract_address"], 16)
-    %}
+    tempvar storage_count: felt = nondet %{ len(storage.storage_addresses) %};
+    tempvar contract_address: felt = nondet %{ storage.contract_address %};
+
+    let (storage_addresses: felt*) = alloc();
+    %{ segments.write_arg(ids.storage_addresses, [int(x, 16) for x in storage.storage_addresses])) %}
 
     // Compute contract_root and write values to memorizer
     with contract_address, storage_addresses, block_number {
@@ -94,14 +93,9 @@ func verify_proofs_inner{
     }
 
     // Compute contract_state_hash
-    local class_hash: felt;
-    local nonce: felt;
-    local contract_state_hash_version: felt;
-    %{
-        ids.class_hash = int(storage_proof["proof"]["contract_data"]["class_hash"], 16) 
-        ids.nonce = int(storage_proof["proof"]["contract_data"]["nonce"], 16)
-        ids.contract_state_hash_version = int(storage_proof["proof"]["contract_data"]["contract_state_hash_version"], 16)
-    %}
+    tempvar class_hash: felt = nondet %{ storage.proof.contract_data.class_hash) %};
+    tempvar nonce: felt = nondet %{ storage.proof.contract_data.nonce) %};
+    tempvar contract_state_hash_version: felt = nondet %{ storage.proof.contract_data.contract_state_hash_version) %};
 
     let (hash_value) = hash2{hash_ptr=pedersen_ptr}(class_hash, contract_root);
     let (hash_value) = hash2{hash_ptr=pedersen_ptr}(hash_value, nonce);
@@ -120,13 +114,10 @@ func verify_proofs_inner{
     // Assert Validity
     assert contract_state_hash = expected_contract_state_hash;
 
-    local class_commitment: felt;
-    %{ ids.class_commitment = int(storage_proof["proof"]["class_commitment"], 16) %}
-
     let (hash_chain: felt*) = alloc();
-    assert hash_chain[0] = 28355430774503553497671514844211693180464;  // STARKNET_STATE_V0
+    assert hash_chain[0] = STARKNET_STATE_V0;
     assert hash_chain[1] = contract_tree_root;
-    assert hash_chain[2] = class_commitment;
+    assert hash_chain[2] = nondet %{ storage.proof.class_commitment) %};
 
     let (computed_state_root) = poseidon_hash_many(3, hash_chain);
     assert state_root = computed_state_root;
