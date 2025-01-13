@@ -3,12 +3,11 @@ use syscall_handler::traits::CallHandler;
 use syscall_handler::{SyscallExecutionError, SyscallResult};
 use types::{
     cairo::{
-        starknet::header::{CairoStarknetHeader, FunctionId},
+        starknet::header::FunctionId,
         structs::Uint256,
         traits::CairoType,
     },
-    keys::starknet::header::{CairoKey, Key},
-    RPC,
+    keys::starknet::header::{CairoKey, Key}
 };
 
 #[derive(Debug, Default)]

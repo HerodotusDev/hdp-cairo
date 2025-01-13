@@ -1,12 +1,10 @@
 
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
-use std::env;
 use syscall_handler::traits::CallHandler;
 use syscall_handler::{SyscallExecutionError, SyscallResult};
 use types::{
     cairo::{evm::storage::FunctionId, structs::Uint256, traits::CairoType},
     keys::starknet::storage::{CairoKey, Key},
-    RPC,
 };
 
 #[derive(Debug, Default)]
