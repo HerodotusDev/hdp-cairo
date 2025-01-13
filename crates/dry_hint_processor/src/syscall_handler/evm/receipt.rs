@@ -1,5 +1,5 @@
 use alloy::{
-    consensus::{Receipt, ReceiptWithBloom},
+    eips::{BlockId, BlockNumberOrTag},
     providers::{Provider, RootProvider},
     transports::http::{reqwest::Url, Client, Http},
 };
@@ -44,18 +44,17 @@ impl CallHandler for ReceiptCallHandler {
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
         let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
 
-        let mut tx_hash_bytes = [0u8; 32];
-        tx_hash_bytes[0..16].copy_from_slice(&key.tx_hash_high.to_bytes_be());
-        tx_hash_bytes[16..32].copy_from_slice(&key.tx_hash_low.to_bytes_be());
-
-        let receipt = provider
-            .get_transaction_receipt(tx_hash_bytes.into())
+        let receipts = provider
+            .get_block_receipts(BlockId::Number(BlockNumberOrTag::Number(key.block_number.try_into().unwrap())))
             .await
-            .map(|receipt| match receipt {
-                Some(receipt) => CairoReceiptWithBloom::from(receipt),
-                None => CairoReceiptWithBloom::from(ReceiptWithBloom::from(Receipt::default())),
-            })
-            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
+            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?
+            .unwrap();
+
+        let tx_idx: usize = key.transaction_index.try_into().unwrap();
+        let receipt = match receipts[tx_idx].inner.as_receipt_with_bloom() {
+            Some(receipt) => CairoReceiptWithBloom::from(receipt.clone()),
+            None => return Err(SyscallExecutionError::InternalError("Receipt not found".into())),
+        };
 
         Ok(receipt.handle(function_id))
     }

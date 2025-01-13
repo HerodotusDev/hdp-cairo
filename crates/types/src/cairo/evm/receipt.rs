@@ -1,8 +1,8 @@
 use crate::cairo::structs::Uint256;
 use alloy::{
-    consensus::{Eip658Value, ReceiptWithBloom, TxReceipt},
-    primitives::{keccak256, Log},
-    rpc::types::{Receipt, TransactionReceipt},
+    consensus::{Eip658Value, Receipt, ReceiptWithBloom},
+    primitives::keccak256,
+    rpc::types::Log,
 };
 
 use alloy_rlp::{Decodable, Encodable};
@@ -53,18 +53,14 @@ impl CairoReceiptWithBloom {
     }
 }
 
-impl From<TransactionReceipt> for CairoReceiptWithBloom {
-    fn from(receipt: TransactionReceipt) -> Self {
-        let mut logs_vec = vec![];
-        for log in receipt.inner.logs() {
-            logs_vec.push(log.inner.clone());
-        }
+impl From<ReceiptWithBloom<Receipt<Log>>> for CairoReceiptWithBloom {
+    fn from(receipt: ReceiptWithBloom<Receipt<Log>>) -> Self {
         Self(ReceiptWithBloom {
-            logs_bloom: *receipt.inner.logs_bloom(),
-            receipt: Receipt::<Log> {
-                status: receipt.inner.status_or_post_state(),
-                logs: logs_vec,
-                cumulative_gas_used: receipt.inner.cumulative_gas_used(),
+            logs_bloom: receipt.logs_bloom,
+            receipt: Receipt {
+                status: receipt.receipt.status,
+                cumulative_gas_used: receipt.receipt.cumulative_gas_used,
+                logs: receipt.receipt.logs.into_iter().map(|log| log.inner.clone()).collect(),
             },
         })
     }
