@@ -37,7 +37,6 @@ sha3 = "0.10.8"
 starknet-core = { version = "0.11.1", default-features = false }
 starknet-crypto = { version = "0.7.1", default-features = false }
 starknet-types-core = { version = "0.1.6", default-features = false }
-starknet-types-rpc = { version = "0.7.1", git = "https://github.com/starknet-io/types-rs" }
 strum_macros = "0.26.4"
 thiserror = "1.0.64"
 tiny-keccak = { version = "2.0.2", features = ["keccak"] }
@@ -53,3 +52,4 @@ indexer = { path = "crates/indexer" }
 sound_hint_processor = { path = "crates/sound_hint_processor" }
 syscall_handler = { path = "crates/syscall_handler" }
 types = { path = "crates/types" }
+pathfinder_gateway_types = { git = "https://github.com/eqlabs/pathfinder", package = "starknet-gateway-types" }
