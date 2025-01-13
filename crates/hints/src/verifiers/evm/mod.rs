@@ -6,7 +6,7 @@ use cairo_vm::{
     Felt252,
 };
 use std::collections::HashMap;
-use types::proofs::Proofs;
+use types::proofs::evm::Proofs;
 
 pub mod account_verifier;
 pub mod header_verifier;

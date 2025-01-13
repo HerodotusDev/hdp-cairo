@@ -8,7 +8,6 @@ pub mod keys;
 pub mod param;
 pub mod proofs;
 
-use alloy::primitives::ChainId;
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use param::Param;
 use proofs::{evm, starknet};

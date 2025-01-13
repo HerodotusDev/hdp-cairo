@@ -37,6 +37,7 @@ sha3 = "0.10.8"
 starknet-core = { version = "0.11.1", default-features = false }
 starknet-crypto = { version = "0.7.1", default-features = false }
 starknet-types-core = { version = "0.1.6", default-features = false }
+starknet-types-rpc = { version = "0.7.1", git = "https://github.com/starknet-io/types-rs" }
 strum_macros = "0.26.4"
 thiserror = "1.0.64"
 tiny-keccak = { version = "2.0.2", features = ["keccak"] }

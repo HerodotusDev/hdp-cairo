@@ -1,6 +1,8 @@
 use strum_macros::FromRepr;
+use starknet_types_rpc::BlockHeader;
 
-pub struct CairoStarknetHeader;
+pub struct CairoHeader;
+
 
 #[derive(FromRepr, Debug)]
 pub enum FunctionId {

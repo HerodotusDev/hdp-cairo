@@ -12,11 +12,11 @@ use std::{collections::HashSet, env};
 use types::{
     keys,
     proofs::{
-        account::Account,
+        evm::account::Account,
         header::{Header, HeaderProof},
         mmr::MmrMeta,
         mpt::MPTProof,
-        storage::Storage,
+        evm::storage::Storage,
         HeaderMmrMeta,
     },
     RPC,

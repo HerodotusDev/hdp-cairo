@@ -36,7 +36,7 @@ impl CallHandler for HeaderCallHandler {
         })
     }
 
-    async fn handle(&mut self, _key: Self::Key, _function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
+    async fn handle(&mut self, key: Self::Key, _function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
         unimplemented!()
     }
 }

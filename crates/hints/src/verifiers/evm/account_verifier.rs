@@ -16,7 +16,7 @@ use cairo_vm::{
 };
 use num_bigint::BigUint;
 use std::collections::HashMap;
-use types::proofs::{account::Account, mpt::MPTProof, Proofs};
+use types::proofs::{evm::account::Account, mpt::MPTProof, evm::Proofs};
 
 pub const HINT_BATCH_ACCOUNTS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch.accounts))";
 
