@@ -47,11 +47,21 @@ func run_state_verification_inner{
     tempvar chain_id: felt = nondet %{ chain_proofs[ids.idx - 1].chain_id %};
     let (chain_info) = fetch_chain_info(chain_id);
 
-    %{ vm_enter_scope({'batch': chain_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
-    with chain_info {
-        let (mmr_meta_idx) = evm_run_state_verification(mmr_meta_idx);
+    if (chain_info.layout == Layout.EVM) {
+        %{ vm_enter_scope({'batch': chain_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
+        with chain_info {
+            let (mmr_meta_idx) = evm_run_state_verification(mmr_meta_idx);
+        }
+        %{ vm_exit_scope() %}
     }
-    %{ vm_exit_scope() %}
+
+    if (chain_info.layout == Layout.STARKNET) {
+        %{ vm_enter_scope({'batch': chain_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
+        with chain_info {
+            let (mmr_meta_idx) = starknet_run_state_verification(mmr_meta_idx);
+        }
+        %{ vm_exit_scope() %}
+    }
 
     return run_state_verification_inner(mmr_meta_idx=mmr_meta_idx, idx=idx - 1);
 }
