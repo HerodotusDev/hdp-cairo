@@ -104,12 +104,13 @@ func verify_proofs_inner{
     );
 
     // Compute contract_state_hash
-    %{ vm_enter_scope(dict(nodes=storage_proof["proof"]["contract_proof"])) %}
+    %{ vm_enter_scope({'nodes': storage.proof.contract_proof}) %}
     let (contract_nodes, contract_nodes_len) = load_nodes();
+    %{ vm_exit_scope() %}
+
     let (contract_tree_root, expected_contract_state_hash) = traverse(
         contract_nodes, contract_nodes_len, contract_address
     );
-    %{ vm_exit_scope() %}
 
     // Assert Validity
     assert contract_state_hash = expected_contract_state_hash;
@@ -138,44 +139,42 @@ func validate_storage_proofs{
     contract_address: felt,
     storage_addresses: felt*,
     block_number: felt,
-}(contract_root: felt, storage_count: felt, index: felt) -> (root: felt) {
+}(contract_root: felt, storage_count: felt, idx: felt) -> (root: felt) {
     alloc_locals;
-    if (index == storage_count) {
+    if (storage_count == idx) {
         return (root=contract_root);
     }
 
     // Compute contract_root
-    %{
-        vm_enter_scope({
-            'nodes': storage_proof["proof"]["contract_data"]["storage_proofs"][ids.index],
-        })
-    %}
+    %{ vm_enter_scope({'nodes': storage.proof.contract_data.storage_proofs[ids.idx]}) %}
     let (contract_state_nodes, contract_state_nodes_len) = load_nodes();
-    let (new_contract_root, value) = traverse(
-        contract_state_nodes, contract_state_nodes_len, storage_addresses[index]
-    );
     %{ vm_exit_scope() %}
 
+    let (new_contract_root, value) = traverse(
+        contract_state_nodes, contract_state_nodes_len, storage_addresses[idx]
+    );
+
     // Assert that the contract root is consistent between storage slots
-    if (index != 0) {
+    if (idx != 0) {
         with_attr error_message("Contract Root Mismatch!") {
             assert contract_root = new_contract_root;
         }
     }
+
     let memorizer_key = StarknetHashParams.storage(
         chain_id=chain_info.id,
         block_number=block_number,
         contract_address=contract_address,
-        storage_address=storage_addresses[index],
+        storage_address=storage_addresses[idx],
     );
 
     // ideally we could cast this somehow, but this is a quick fix
-    let (data) = alloc();
+    local data: felt*;
     assert [data] = value;
 
     // We need to cast the value to a felt* to match the expected input type.
     StarknetMemorizer.add(key=memorizer_key, data=data);
-    return validate_storage_proofs(new_contract_root, storage_count, index + 1);
+    return validate_storage_proofs(new_contract_root, storage_count, idx + 1);
 }
 
 // Function used to traverse the passed nodes. The nodes are hashed from the leaf to the root.
