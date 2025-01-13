@@ -4,7 +4,7 @@
 #![forbid(unsafe_code)]
 
 use clap::{Parser, ValueHint};
-use dry_hint_processor::syscall_handler::evm::{self, SyscallHandler};
+use dry_hint_processor::syscall_handler::{evm, SyscallHandler};
 use fetcher::FetcherError;
 use futures::{FutureExt, StreamExt};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
@@ -42,7 +42,7 @@ async fn main() -> Result<(), FetcherError> {
     let syscall_handler = serde_json::from_slice::<SyscallHandler>(&input_file)?;
 
     let mut proof_keys = ProofKeys::default();
-    for key in syscall_handler.call_contract_handler.key_set {
+    for key in syscall_handler.call_contract_handler.evm_call_contract_handler.key_set {
         match key {
             evm::DryRunKey::Account(value) => {
                 proof_keys.account_keys.insert(value);
