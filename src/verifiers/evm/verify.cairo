@@ -4,17 +4,19 @@ from src.verifiers.evm.header_verifier import verify_mmr_batches
 from src.verifiers.evm.block_tx_verifier import verify_block_tx_proofs
 from src.verifiers.evm.receipt_verifier import verify_block_receipt_proofs
 from starkware.cairo.common.dict_access import DictAccess
-from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, KeccakBuiltin
+from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, KeccakBuiltin, HashBuiltin
 from src.types import MMRMeta, ChainInfo
 from src.utils.chain_info import fetch_chain_info
 
 func run_state_verification{
     range_check_ptr,
+    pedersen_ptr: HashBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
+    starknet_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
     chain_info: ChainInfo,
 }(mmr_meta_idx: felt) -> (mmr_meta_idx: felt) {

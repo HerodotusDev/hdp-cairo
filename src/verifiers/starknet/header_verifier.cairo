@@ -1,4 +1,4 @@
-from starkware.cairo.common.cairo_builtins import PoseidonBuiltin
+from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.dict import dict_read
 from starkware.cairo.common.alloc import alloc
@@ -55,7 +55,7 @@ func verify_headers_with_mmr_peaks{
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
-    evm_memorizer: DictAccess*,
+    starknet_memorizer: DictAccess*,
     chain_info: ChainInfo,
     mmr_meta: MMRMeta,
     peaks_dict: DictAccess*,

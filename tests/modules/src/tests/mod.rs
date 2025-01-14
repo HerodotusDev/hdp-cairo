@@ -4,7 +4,7 @@ use cairo_vm::{
     types::{layout_name::LayoutName, program::Program},
     vm::runners::cairo_runner::{CairoRunner, RunnerMode},
 };
-use dry_hint_processor::syscall_handler::evm::{self, SyscallHandler, SyscallHandlerWrapper};
+use dry_hint_processor::syscall_handler::{evm, SyscallHandler, SyscallHandlerWrapper};
 use fetcher::proof_keys::ProofKeys;
 use futures::{FutureExt, StreamExt};
 use hints::vars;
@@ -77,7 +77,7 @@ async fn run(compiled_class: CasmContractClass) {
         .clone();
 
     let mut proof_keys = ProofKeys::default();
-    for key in syscall_handler.call_contract_handler.key_set {
+    for key in syscall_handler.call_contract_handler.evm_call_contract_handler.key_set {
         match key {
             evm::DryRunKey::Account(value) => {
                 proof_keys.account_keys.insert(value);

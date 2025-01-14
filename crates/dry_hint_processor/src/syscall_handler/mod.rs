@@ -18,7 +18,7 @@ use types::cairo::new_syscalls::{CallContractRequest, CallContractResponse};
 use types::cairo::traits::CairoType;
 
 pub const ETHEREUM_MAINNET_CHAIN_ID: u128 = 0x1;
-pub const ETHEREUM_TESTNET_CHAIN_ID: u128 = 0x11155111;
+pub const ETHEREUM_TESTNET_CHAIN_ID: u128 = 0xaa36a7;
 pub const STARKNET_MAINNET_CHAIN_ID: u128 = 0x534e5f4d41494e;
 pub const STARKNET_TESTNET_CHAIN_ID: u128 = 0x534e5f5345504f4c4941;
 
@@ -87,7 +87,7 @@ impl traits::SyscallHandler for CallContractHandlerRelay {
     }
 
     async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
-        let chain_id = <Felt252 as TryInto<u128>>::try_into(*vm.get_integer((request.calldata_start + 0)?)?)
+        let chain_id = <Felt252 as TryInto<u128>>::try_into(*vm.get_integer((request.calldata_start + 2)?)?)
             .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
         match chain_id {
             ETHEREUM_MAINNET_CHAIN_ID | ETHEREUM_TESTNET_CHAIN_ID => self.evm_call_contract_handler.execute(request, vm).await,
