@@ -1,0 +1,987 @@
+{
+    "params": [
+        {
+            "visibility": "public",
+            "value": "0x31640"
+        }
+    ],
+    "compiled_class": {
+        "prime": "0x800000000000011000000000000000000000000000000000000000000000001",
+        "compiler_version": "2.6.3",
+        "bytecode": [
+            "0xa0680017fff8000",
+            "0x7",
+            "0x482680017ffa8000",
+            "0x100000000000000000000000000000000",
+            "0x400280007ff97fff",
+            "0x10780017fff7fff",
+            "0xb6",
+            "0x4825800180007ffa",
+            "0x0",
+            "0x400280007ff97fff",
+            "0x480a7ffc7fff8000",
+            "0x480a7ffd7fff8000",
+            "0x1104800180018000",
+            "0xbe",
+            "0x482680017ff98000",
+            "0x1",
+            "0x20680017fff7ffa",
+            "0x9d",
+            "0x48307ff880007ff9",
+            "0x20680017fff7fff",
+            "0x4",
+            "0x10780017fff7fff",
+            "0xa",
+            "0x482480017ff78000",
+            "0x1",
+            "0x48127ff77fff8000",
+            "0x480680017fff8000",
+            "0x0",
+            "0x48127ff47fff8000",
+            "0x10780017fff7fff",
+            "0x8",
+            "0x48127ff77fff8000",
+            "0x48127ff77fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x480680017fff8000",
+            "0x0",
+            "0x20680017fff7ffe",
+            "0x77",
+            "0x480080007fff8000",
+            "0xa0680017fff8000",
+            "0x12",
+            "0x4824800180007ffe",
+            "0x100000000",
+            "0x4844800180008002",
+            "0x8000000000000110000000000000000",
+            "0x4830800080017ffe",
+            "0x480080007ff57fff",
+            "0x482480017ffe8000",
+            "0xefffffffffffffde00000000ffffffff",
+            "0x480080017ff37fff",
+            "0x400080027ff27ffb",
+            "0x402480017fff7ffb",
+            "0xffffffffffffffffffffffffffffffff",
+            "0x20680017fff7fff",
+            "0x62",
+            "0x402780017fff7fff",
+            "0x1",
+            "0x400080007ff87ffe",
+            "0x482480017ffe8000",
+            "0xffffffffffffffffffffffff00000000",
+            "0x400080017ff77fff",
+            "0x482480017ff78000",
+            "0x2",
+            "0x48307ff880007ff9",
+            "0x20680017fff7fff",
+            "0x4",
+            "0x10780017fff7fff",
+            "0x10",
+            "0x40780017fff7fff",
+            "0x1",
+            "0x480680017fff8000",
+            "0x496e70757420746f6f206c6f6e6720666f7220617267756d656e7473",
+            "0x400080007ffe7fff",
+            "0x48127ffc7fff8000",
+            "0x48127fc87fff8000",
+            "0x480a7ffb7fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x48127ffa7fff8000",
+            "0x482480017ff98000",
+            "0x1",
+            "0x208b7fff7fff7ffe",
+            "0x1104800180018000",
+            "0x1a6",
+            "0x482480017fff8000",
+            "0x1a5",
+            "0x480080007fff8000",
+            "0xa0680017fff8000",
+            "0x9",
+            "0x4824800180007fc6",
+            "0x3df4",
+            "0x482480017fff8000",
+            "0x100000000000000000000000000000000",
+            "0x400080007ff77fff",
+            "0x10780017fff7fff",
+            "0x2a",
+            "0x4824800180007fc6",
+            "0x3df4",
+            "0x400080007ff87fff",
+            "0x482480017ff88000",
+            "0x1",
+            "0x48127ffe7fff8000",
+            "0x480a7ffb7fff8000",
+            "0x48127fea7fff8000",
+            "0x48127fea7fff8000",
+            "0x480680017fff8000",
+            "0x534e5f5345504f4c4941",
+            "0x48127fef7fff8000",
+            "0x480680017fff8000",
+            "0x6b8838af5d2a023b24ec8a69720b152d72ae2e4528139c32e05d8a3b9d7d4e7",
+            "0x480680017fff8000",
+            "0x308cfbb7d2d38db3a215f9728501ac69445a6afbee328cdeae4e23db54b850a",
+            "0x1104800180018000",
+            "0x10e",
+            "0x20680017fff7ffd",
+            "0xe",
+            "0x40780017fff7fff",
+            "0x1",
+            "0x400080007fff7ffe",
+            "0x48127ff97fff8000",
+            "0x48127ff97fff8000",
+            "0x48127ff97fff8000",
+            "0x480680017fff8000",
+            "0x0",
+            "0x48127ffb7fff8000",
+            "0x482480017ffa8000",
+            "0x1",
+            "0x208b7fff7fff7ffe",
+            "0x48127ffa7fff8000",
+            "0x48127ffa7fff8000",
+            "0x48127ffa7fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x48127ffa7fff8000",
+            "0x48127ffa7fff8000",
+            "0x208b7fff7fff7ffe",
+            "0x40780017fff7fff",
+            "0x1",
+            "0x480680017fff8000",
+            "0x4f7574206f6620676173",
+            "0x400080007ffe7fff",
+            "0x482480017ff58000",
+            "0x1",
+            "0x48127fc17fff8000",
+            "0x480a7ffb7fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x48127ffa7fff8000",
+            "0x482480017ff98000",
+            "0x1",
+            "0x208b7fff7fff7ffe",
+            "0x482480017ff28000",
+            "0x3",
+            "0x10780017fff7fff",
+            "0x5",
+            "0x40780017fff7fff",
+            "0x8",
+            "0x48127ff27fff8000",
+            "0x40780017fff7fff",
+            "0x1",
+            "0x480680017fff8000",
+            "0x4661696c656420746f20646573657269616c697a6520706172616d202332",
+            "0x400080007ffe7fff",
+            "0x48127ffd7fff8000",
+            "0x48127fc47fff8000",
+            "0x480a7ffb7fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x48127ffa7fff8000",
+            "0x482480017ff98000",
+            "0x1",
+            "0x208b7fff7fff7ffe",
+            "0x40780017fff7fff",
+            "0x1",
+            "0x480680017fff8000",
+            "0x4661696c656420746f20646573657269616c697a6520706172616d202331",
+            "0x400080007ffe7fff",
+            "0x48127ffd7fff8000",
+            "0x48127fd27fff8000",
+            "0x480a7ffb7fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x48127ffa7fff8000",
+            "0x482480017ff98000",
+            "0x1",
+            "0x208b7fff7fff7ffe",
+            "0x40780017fff7fff",
+            "0x1",
+            "0x480680017fff8000",
+            "0x4f7574206f6620676173",
+            "0x400080007ffe7fff",
+            "0x482680017ff98000",
+            "0x1",
+            "0x480a7ffa7fff8000",
+            "0x480a7ffb7fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x48127ffa7fff8000",
+            "0x482480017ff98000",
+            "0x1",
+            "0x208b7fff7fff7ffe",
+            "0x48297ffc80007ffd",
+            "0x20680017fff7fff",
+            "0x4",
+            "0x10780017fff7fff",
+            "0xa",
+            "0x482680017ffc8000",
+            "0x1",
+            "0x480a7ffd7fff8000",
+            "0x480680017fff8000",
+            "0x0",
+            "0x480280007ffc8000",
+            "0x10780017fff7fff",
+            "0x8",
+            "0x480a7ffc7fff8000",
+            "0x480a7ffd7fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x480680017fff8000",
+            "0x0",
+            "0x20680017fff7ffe",
+            "0x29",
+            "0x48307ffc80007ffd",
+            "0x20680017fff7fff",
+            "0x4",
+            "0x10780017fff7fff",
+            "0xa",
+            "0x482480017ffb8000",
+            "0x1",
+            "0x48127ffb7fff8000",
+            "0x480680017fff8000",
+            "0x0",
+            "0x480080007ff88000",
+            "0x10780017fff7fff",
+            "0x8",
+            "0x48127ffb7fff8000",
+            "0x48127ffb7fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x480680017fff8000",
+            "0x0",
+            "0x20680017fff7ffe",
+            "0xa",
+            "0x48127ffc7fff8000",
+            "0x48127ffc7fff8000",
+            "0x480680017fff8000",
+            "0x0",
+            "0x48127ff77fff8000",
+            "0x48127ffb7fff8000",
+            "0x10780017fff7fff",
+            "0x16",
+            "0x48127ffc7fff8000",
+            "0x48127ffc7fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x480680017fff8000",
+            "0x0",
+            "0x480680017fff8000",
+            "0x0",
+            "0x10780017fff7fff",
+            "0xc",
+            "0x40780017fff7fff",
+            "0x5",
+            "0x48127ff77fff8000",
+            "0x48127ff77fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x480680017fff8000",
+            "0x0",
+            "0x480680017fff8000",
+            "0x0",
+            "0x20680017fff7ffd",
+            "0x60",
+            "0x48307ffb80007ffc",
+            "0x20680017fff7fff",
+            "0x4",
+            "0x10780017fff7fff",
+            "0xa",
+            "0x482480017ffa8000",
+            "0x1",
+            "0x48127ffa7fff8000",
+            "0x480680017fff8000",
+            "0x0",
+            "0x480080007ff78000",
+            "0x10780017fff7fff",
+            "0x8",
+            "0x48127ffa7fff8000",
+            "0x48127ffa7fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x480680017fff8000",
+            "0x0",
+            "0x20680017fff7ffe",
+            "0x29",
+            "0x48307ffc80007ffd",
+            "0x20680017fff7fff",
+            "0x4",
+            "0x10780017fff7fff",
+            "0xa",
+            "0x482480017ffb8000",
+            "0x1",
+            "0x48127ffb7fff8000",
+            "0x480680017fff8000",
+            "0x0",
+            "0x480080007ff88000",
+            "0x10780017fff7fff",
+            "0x8",
+            "0x48127ffb7fff8000",
+            "0x48127ffb7fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x480680017fff8000",
+            "0x0",
+            "0x20680017fff7ffe",
+            "0xa",
+            "0x48127ffc7fff8000",
+            "0x48127ffc7fff8000",
+            "0x480680017fff8000",
+            "0x0",
+            "0x48127ff77fff8000",
+            "0x48127ffb7fff8000",
+            "0x10780017fff7fff",
+            "0x16",
+            "0x48127ffc7fff8000",
+            "0x48127ffc7fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x480680017fff8000",
+            "0x0",
+            "0x480680017fff8000",
+            "0x0",
+            "0x10780017fff7fff",
+            "0xc",
+            "0x40780017fff7fff",
+            "0x5",
+            "0x48127ff77fff8000",
+            "0x48127ff77fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x480680017fff8000",
+            "0x0",
+            "0x480680017fff8000",
+            "0x0",
+            "0x20680017fff7ffd",
+            "0xb",
+            "0x48127ffb7fff8000",
+            "0x48127ffb7fff8000",
+            "0x480680017fff8000",
+            "0x0",
+            "0x48127fec7fff8000",
+            "0x48127fec7fff8000",
+            "0x48127ff97fff8000",
+            "0x48127ff97fff8000",
+            "0x208b7fff7fff7ffe",
+            "0x48127ffb7fff8000",
+            "0x48127ffb7fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x480680017fff8000",
+            "0x0",
+            "0x480680017fff8000",
+            "0x0",
+            "0x480680017fff8000",
+            "0x0",
+            "0x480680017fff8000",
+            "0x0",
+            "0x208b7fff7fff7ffe",
+            "0x40780017fff7fff",
+            "0xf",
+            "0x48127fec7fff8000",
+            "0x48127fec7fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x480680017fff8000",
+            "0x0",
+            "0x480680017fff8000",
+            "0x0",
+            "0x480680017fff8000",
+            "0x0",
+            "0x480680017fff8000",
+            "0x0",
+            "0x208b7fff7fff7ffe",
+            "0x480680017fff8000",
+            "0x1",
+            "0xa0680017fff8004",
+            "0xe",
+            "0x4824800180047ffe",
+            "0x800000000000000000000000000000000000000000000000000000000000000",
+            "0x484480017ffe8000",
+            "0x110000000000000000",
+            "0x48307ffe7fff8002",
+            "0x480280007ff57ffc",
+            "0x480280017ff57ffc",
+            "0x402480017ffb7ffd",
+            "0xffffffffffffffeeffffffffffffffff",
+            "0x400280027ff57ffd",
+            "0x10780017fff7fff",
+            "0x5b",
+            "0x484480017fff8001",
+            "0x8000000000000000000000000000000",
+            "0x48307fff80007ffd",
+            "0x480280007ff57ffd",
+            "0x480280017ff57ffd",
+            "0x402480017ffc7ffe",
+            "0xf8000000000000000000000000000000",
+            "0x400280027ff57ffe",
+            "0x40780017fff7fff",
+            "0x1",
+            "0x400180007fff7ff8",
+            "0x400180017fff7ff9",
+            "0x400180027fff7ffa",
+            "0x400180037fff7ffb",
+            "0x400180047fff7ffc",
+            "0x400180057fff7ffd",
+            "0x480680017fff8000",
+            "0x0",
+            "0x48127ffe7fff8000",
+            "0x482480017ffd8000",
+            "0x6",
+            "0x482680017ff58000",
+            "0x3",
+            "0x480680017fff8000",
+            "0x43616c6c436f6e7472616374",
+            "0x400280007ff77fff",
+            "0x400380017ff77ff6",
+            "0x400280027ff77ff4",
+            "0x400280037ff77ffb",
+            "0x400280047ff77ffc",
+            "0x400280057ff77ffd",
+            "0x480280077ff78000",
+            "0x20680017fff7fff",
+            "0x2e",
+            "0x480280087ff78000",
+            "0x480280097ff78000",
+            "0x480680017fff8000",
+            "0x0",
+            "0x480280067ff78000",
+            "0x482680017ff78000",
+            "0xa",
+            "0x48307ffb80007ffc",
+            "0xa0680017fff8000",
+            "0x6",
+            "0x48307ffe80007ffb",
+            "0x400080007ff57fff",
+            "0x10780017fff7fff",
+            "0x11",
+            "0x482480017ffb8000",
+            "0x1",
+            "0x48307fff80007ffd",
+            "0x400080007ff47fff",
+            "0x48307ff97ff78000",
+            "0x482480017ff38000",
+            "0x1",
+            "0x48127ff87fff8000",
+            "0x48127ff87fff8000",
+            "0x480680017fff8000",
+            "0x0",
+            "0x480680017fff8000",
+            "0x0",
+            "0x480080007ffa8000",
+            "0x208b7fff7fff7ffe",
+            "0x40780017fff7fff",
+            "0x1",
+            "0x480680017fff8000",
+            "0x496e646578206f7574206f6620626f756e6473",
+            "0x400080007ffe7fff",
+            "0x482480017ff38000",
+            "0x1",
+            "0x48127ff87fff8000",
+            "0x48127ff87fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x48127ffa7fff8000",
+            "0x482480017ff98000",
+            "0x1",
+            "0x208b7fff7fff7ffe",
+            "0x40780017fff7fff",
+            "0xa",
+            "0x48127ff37fff8000",
+            "0x480280067ff78000",
+            "0x482680017ff78000",
+            "0xa",
+            "0x480680017fff8000",
+            "0x1",
+            "0x480280087ff78000",
+            "0x480280097ff78000",
+            "0x208b7fff7fff7ffe",
+            "0x40780017fff7fff",
+            "0xe",
+            "0x40780017fff7fff",
+            "0x1",
+            "0x480680017fff8000",
+            "0x4f7074696f6e3a3a756e77726170206661696c65642e",
+            "0x400080007ffe7fff",
+            "0x482680017ff58000",
+            "0x3",
+            "0x480a7ff67fff8000",
+            "0x480a7ff77fff8000",
+            "0x480680017fff8000",
+            "0x1",
+            "0x48127ffa7fff8000",
+            "0x482480017ff98000",
+            "0x1",
+            "0x208b7fff7fff7ffe"
+        ],
+        "bytecode_segment_lengths": [
+            202,
+            181,
+            122
+        ],
+        "hints": [
+            [
+                0,
+                [
+                    {
+                        "TestLessThanOrEqual": {
+                            "lhs": {
+                                "Immediate": "0x0"
+                            },
+                            "rhs": {
+                                "Deref": {
+                                    "register": "FP",
+                                    "offset": -6
+                                }
+                            },
+                            "dst": {
+                                "register": "AP",
+                                "offset": 0
+                            }
+                        }
+                    }
+                ]
+            ],
+            [
+                40,
+                [
+                    {
+                        "TestLessThan": {
+                            "lhs": {
+                                "BinOp": {
+                                    "op": "Add",
+                                    "a": {
+                                        "register": "AP",
+                                        "offset": -1
+                                    },
+                                    "b": {
+                                        "Immediate": "0x0"
+                                    }
+                                }
+                            },
+                            "rhs": {
+                                "Immediate": "0x100000000"
+                            },
+                            "dst": {
+                                "register": "AP",
+                                "offset": 0
+                            }
+                        }
+                    }
+                ]
+            ],
+            [
+                44,
+                [
+                    {
+                        "LinearSplit": {
+                            "value": {
+                                "Deref": {
+                                    "register": "AP",
+                                    "offset": -1
+                                }
+                            },
+                            "scalar": {
+                                "Immediate": "0x8000000000000110000000000000000"
+                            },
+                            "max_x": {
+                                "Immediate": "0xfffffffffffffffffffffffffffffffe"
+                            },
+                            "x": {
+                                "register": "AP",
+                                "offset": 0
+                            },
+                            "y": {
+                                "register": "AP",
+                                "offset": 1
+                            }
+                        }
+                    }
+                ]
+            ],
+            [
+                69,
+                [
+                    {
+                        "AllocSegment": {
+                            "dst": {
+                                "register": "AP",
+                                "offset": 0
+                            }
+                        }
+                    }
+                ]
+            ],
+            [
+                88,
+                [
+                    {
+                        "TestLessThanOrEqual": {
+                            "lhs": {
+                                "Immediate": "0x3df4"
+                            },
+                            "rhs": {
+                                "Deref": {
+                                    "register": "AP",
+                                    "offset": -57
+                                }
+                            },
+                            "dst": {
+                                "register": "AP",
+                                "offset": 0
+                            }
+                        }
+                    }
+                ]
+            ],
+            [
+                117,
+                [
+                    {
+                        "AllocSegment": {
+                            "dst": {
+                                "register": "AP",
+                                "offset": 0
+                            }
+                        }
+                    }
+                ]
+            ],
+            [
+                137,
+                [
+                    {
+                        "AllocSegment": {
+                            "dst": {
+                                "register": "AP",
+                                "offset": 0
+                            }
+                        }
+                    }
+                ]
+            ],
+            [
+                159,
+                [
+                    {
+                        "AllocSegment": {
+                            "dst": {
+                                "register": "AP",
+                                "offset": 0
+                            }
+                        }
+                    }
+                ]
+            ],
+            [
+                173,
+                [
+                    {
+                        "AllocSegment": {
+                            "dst": {
+                                "register": "AP",
+                                "offset": 0
+                            }
+                        }
+                    }
+                ]
+            ],
+            [
+                187,
+                [
+                    {
+                        "AllocSegment": {
+                            "dst": {
+                                "register": "AP",
+                                "offset": 0
+                            }
+                        }
+                    }
+                ]
+            ],
+            [
+                385,
+                [
+                    {
+                        "TestLessThan": {
+                            "lhs": {
+                                "Deref": {
+                                    "register": "AP",
+                                    "offset": -1
+                                }
+                            },
+                            "rhs": {
+                                "Immediate": "0x800000000000000000000000000000000000000000000000000000000000000"
+                            },
+                            "dst": {
+                                "register": "AP",
+                                "offset": 4
+                            }
+                        }
+                    }
+                ]
+            ],
+            [
+                389,
+                [
+                    {
+                        "LinearSplit": {
+                            "value": {
+                                "Deref": {
+                                    "register": "AP",
+                                    "offset": 3
+                                }
+                            },
+                            "scalar": {
+                                "Immediate": "0x110000000000000000"
+                            },
+                            "max_x": {
+                                "Immediate": "0xffffffffffffffffffffffffffffffff"
+                            },
+                            "x": {
+                                "register": "AP",
+                                "offset": -2
+                            },
+                            "y": {
+                                "register": "AP",
+                                "offset": -1
+                            }
+                        }
+                    }
+                ]
+            ],
+            [
+                399,
+                [
+                    {
+                        "LinearSplit": {
+                            "value": {
+                                "Deref": {
+                                    "register": "AP",
+                                    "offset": -2
+                                }
+                            },
+                            "scalar": {
+                                "Immediate": "0x8000000000000000000000000000000"
+                            },
+                            "max_x": {
+                                "Immediate": "0xffffffffffffffffffffffffffffffff"
+                            },
+                            "x": {
+                                "register": "AP",
+                                "offset": -1
+                            },
+                            "y": {
+                                "register": "AP",
+                                "offset": 0
+                            }
+                        }
+                    }
+                ]
+            ],
+            [
+                407,
+                [
+                    {
+                        "AllocSegment": {
+                            "dst": {
+                                "register": "AP",
+                                "offset": 0
+                            }
+                        }
+                    }
+                ]
+            ],
+            [
+                430,
+                [
+                    {
+                        "SystemCall": {
+                            "system": {
+                                "Deref": {
+                                    "register": "FP",
+                                    "offset": -9
+                                }
+                            }
+                        }
+                    }
+                ]
+            ],
+            [
+                441,
+                [
+                    {
+                        "TestLessThan": {
+                            "lhs": {
+                                "Deref": {
+                                    "register": "AP",
+                                    "offset": -4
+                                }
+                            },
+                            "rhs": {
+                                "Deref": {
+                                    "register": "AP",
+                                    "offset": -1
+                                }
+                            },
+                            "dst": {
+                                "register": "AP",
+                                "offset": 0
+                            }
+                        }
+                    }
+                ]
+            ],
+            [
+                462,
+                [
+                    {
+                        "AllocSegment": {
+                            "dst": {
+                                "register": "AP",
+                                "offset": 0
+                            }
+                        }
+                    }
+                ]
+            ],
+            [
+                490,
+                [
+                    {
+                        "AllocSegment": {
+                            "dst": {
+                                "register": "AP",
+                                "offset": 0
+                            }
+                        }
+                    }
+                ]
+            ]
+        ],
+        "pythonic_hints": [
+            [
+                0,
+                [
+                    "memory[ap + 0] = 0 <= memory[fp + -6]"
+                ]
+            ],
+            [
+                40,
+                [
+                    "memory[ap + 0] = (memory[ap + -1] + 0) % PRIME < 4294967296"
+                ]
+            ],
+            [
+                44,
+                [
+                    "\n(value, scalar) = (memory[ap + -1], 10633823966279327296825105735305134080)\nx = min(value // scalar, 340282366920938463463374607431768211454)\ny = value - x * scalar\nmemory[ap + 0] = x\nmemory[ap + 1] = y\n"
+                ]
+            ],
+            [
+                69,
+                [
+                    "memory[ap + 0] = segments.add()"
+                ]
+            ],
+            [
+                88,
+                [
+                    "memory[ap + 0] = 15860 <= memory[ap + -57]"
+                ]
+            ],
+            [
+                117,
+                [
+                    "memory[ap + 0] = segments.add()"
+                ]
+            ],
+            [
+                137,
+                [
+                    "memory[ap + 0] = segments.add()"
+                ]
+            ],
+            [
+                159,
+                [
+                    "memory[ap + 0] = segments.add()"
+                ]
+            ],
+            [
+                173,
+                [
+                    "memory[ap + 0] = segments.add()"
+                ]
+            ],
+            [
+                187,
+                [
+                    "memory[ap + 0] = segments.add()"
+                ]
+            ],
+            [
+                385,
+                [
+                    "memory[ap + 4] = memory[ap + -1] < 3618502788666131106986593281521497120414687020801267626233049500247285301248"
+                ]
+            ],
+            [
+                389,
+                [
+                    "\n(value, scalar) = (memory[ap + 3], 313594649253062377472)\nx = min(value // scalar, 340282366920938463463374607431768211455)\ny = value - x * scalar\nmemory[ap + -2] = x\nmemory[ap + -1] = y\n"
+                ]
+            ],
+            [
+                399,
+                [
+                    "\n(value, scalar) = (memory[ap + -2], 10633823966279326983230456482242756608)\nx = min(value // scalar, 340282366920938463463374607431768211455)\ny = value - x * scalar\nmemory[ap + -1] = x\nmemory[ap + 0] = y\n"
+                ]
+            ],
+            [
+                407,
+                [
+                    "memory[ap + 0] = segments.add()"
+                ]
+            ],
+            [
+                430,
+                [
+                    "syscall_handler.syscall(syscall_ptr=memory[fp + -9])"
+                ]
+            ],
+            [
+                441,
+                [
+                    "memory[ap + 0] = memory[ap + -4] < memory[ap + -1]"
+                ]
+            ],
+            [
+                462,
+                [
+                    "memory[ap + 0] = segments.add()"
+                ]
+            ],
+            [
+                490,
+                [
+                    "memory[ap + 0] = segments.add()"
+                ]
+            ]
+        ],
+        "entry_points_by_type": {
+            "EXTERNAL": [
+                {
+                    "selector": "0xe2054f8a912367e38a22ce773328ff8aabf8082c4120bad9ef085e1dbf29a7",
+                    "offset": 0,
+                    "builtins": [
+                        "range_check"
+                    ]
+                }
+            ],
+            "L1_HANDLER": [],
+            "CONSTRUCTOR": []
+        }
+    }
+}

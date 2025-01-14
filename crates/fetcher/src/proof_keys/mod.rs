@@ -28,13 +28,6 @@ pub struct ProofKeys {
 }
 
 impl ProofKeys {
-    pub fn new() -> Self {
-        Self {
-            evm: evm::ProofKeys::default(),
-            starknet: starknet::ProofKeys::default(),
-        }
-    }
-
     fn normalize_hex(input: &str) -> String {
         let hex_str = input.trim_start_matches("0x");
         format!("{:0>width$}", hex_str, width = (hex_str.len() + 1) / 2 * 2)

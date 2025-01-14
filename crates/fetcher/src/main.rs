@@ -17,20 +17,17 @@ use std::{
 use thiserror as _;
 use types::{
     proofs::{
-        evm::{account::Account, storage::Storage},
-        header::Header,
-        mmr::MmrMeta,
-        HeaderMmrMeta, Proofs,
+        evm::{account::Account, storage::Storage}, header::Header, mmr::MmrMeta, starknet::GetProofOutput, HeaderMmrMeta
     },
     ChainProofs,
 };
 
 use types::proofs::evm::Proofs as EvmProofs;
-
+use types::proofs::starknet::Proofs as StarknetProofs;
 mod proof_keys;
 
 use proof_keys::evm::ProofKeys as EvmProofKeys;
-
+use proof_keys::starknet::ProofKeys as StarknetProofKeys;
 const BUFFER_UNORDERED: usize = 50;
 
 #[derive(Parser, Debug)]
@@ -53,6 +50,7 @@ async fn main() -> Result<(), FetcherError> {
 
     let input_file = fs::read(args.filename)?;
     let syscall_handler = serde_json::from_slice::<SyscallHandler>(&input_file)?;
+    println!("{:?}", syscall_handler);
 
     let mut proof_keys = ProofKeys::default();
     for key in syscall_handler.call_contract_handler.evm_call_contract_handler.key_set {
@@ -70,6 +68,7 @@ async fn main() -> Result<(), FetcherError> {
     }
 
     for key in syscall_handler.call_contract_handler.starknet_call_contract_handler.key_set {
+        println!("{:?}", key);
         match key {
             starknet::DryRunKey::Header(value) => {
                 proof_keys.starknet.header_keys.insert(value);
@@ -82,17 +81,22 @@ async fn main() -> Result<(), FetcherError> {
 
     let pb_evm_header_keys = multi_progress.add(ProgressBar::new(proof_keys.evm.header_keys.len() as u64));
     let pb_evm_account_keys = multi_progress.add(ProgressBar::new(proof_keys.evm.account_keys.len() as u64));
-    let pb_evm_storage_keys = multi_progress.add(ProgressBar::new(proof_keys.evm.storage_keys.len() as u64));
-
+    let pb_evm_storage_keys = multi_progress.add(ProgressBar::new(proof_keys.evm.storage_keys.len() as u64));    
+    let pb_starknet_header_keys = multi_progress.add(ProgressBar::new(proof_keys.starknet.header_keys.len() as u64));
+    let pb_starknet_storage_keys = multi_progress.add(ProgressBar::new(proof_keys.starknet.storage_keys.len() as u64));
+    
     pb_evm_header_keys.set_style(progress_style.clone());
     pb_evm_header_keys.set_message("evm_header_keys");
     pb_evm_account_keys.set_style(progress_style.clone());
     pb_evm_account_keys.set_message("evm_account_keys");
-    pb_evm_storage_keys.set_style(progress_style);
+    pb_evm_storage_keys.set_style(progress_style.clone());
     pb_evm_storage_keys.set_message("evm_storage_keys");
+    pb_starknet_header_keys.set_style(progress_style.clone());
+    pb_starknet_header_keys.set_message("starknet_header_keys");
+    pb_starknet_storage_keys.set_style(progress_style);
+    pb_starknet_storage_keys.set_message("starknet_storage_keys");
 
     let mut evm_headers_with_mmr: HashMap<MmrMeta, Vec<Header>> = HashMap::default();
-
     let mut evm_headers_with_mmr_fut = futures::stream::iter(
         proof_keys
             .evm
@@ -111,9 +115,8 @@ async fn main() -> Result<(), FetcherError> {
         pb_evm_header_keys.inc(1);
     }
 
-    let mut accounts: HashSet<Account> = HashSet::default();
-
-    let mut accounts_fut = futures::stream::iter(
+    let mut evm_accounts: HashSet<Account> = HashSet::default();
+    let mut evm_accounts_fut = futures::stream::iter(
         proof_keys
             .evm
             .account_keys
@@ -123,18 +126,17 @@ async fn main() -> Result<(), FetcherError> {
     )
     .buffer_unordered(BUFFER_UNORDERED);
 
-    while let Some(Ok((header_with_mmr, account))) = accounts_fut.next().await {
+    while let Some(Ok((header_with_mmr, account))) = evm_accounts_fut.next().await {
         evm_headers_with_mmr
             .entry(header_with_mmr.mmr_meta)
             .and_modify(|headers| headers.extend(header_with_mmr.headers.clone()))
             .or_insert(header_with_mmr.headers);
-        accounts.insert(account);
+        evm_accounts.insert(account);
         pb_evm_account_keys.inc(1);
     }
 
-    let mut storages: HashSet<Storage> = HashSet::default();
-
-    let mut storages_fut = futures::stream::iter(
+    let mut evm_storages: HashSet<Storage> = HashSet::default();
+    let mut evm_storages_fut = futures::stream::iter(
         proof_keys
             .evm
             .storage_keys
@@ -144,16 +146,17 @@ async fn main() -> Result<(), FetcherError> {
     )
     .buffer_unordered(BUFFER_UNORDERED);
 
-    while let Some(Ok((header_with_mmr, account, storage))) = storages_fut.next().await {
+    while let Some(Ok((header_with_mmr, account, storage))) = evm_storages_fut.next().await {
         evm_headers_with_mmr
             .entry(header_with_mmr.mmr_meta)
             .and_modify(|headers| headers.extend(header_with_mmr.headers.clone()))
             .or_insert(header_with_mmr.headers);
-        accounts.insert(account);
-        storages.insert(storage);
+        evm_accounts.insert(account);
+        evm_storages.insert(storage);
         pb_evm_storage_keys.inc(1);
     }
 
+    // Remove the duplicates from the headers
     let evm_headers: Vec<HeaderMmrMeta> = evm_headers_with_mmr
         .into_iter()
         .map(|(mmr_meta, headers)| {
@@ -165,17 +168,73 @@ async fn main() -> Result<(), FetcherError> {
         })
         .collect();
 
-    let proofs = Proofs {
-        evm: EvmProofs {
-            headers_with_mmr: evm_headers,
-            accounts: accounts.into_iter().collect(),
-            storages: storages.into_iter().collect(),
-            ..Default::default()
-        },
-        starknet: Default::default(),
+    let evm_proofs = EvmProofs { 
+        headers_with_mmr: evm_headers,
+        accounts: evm_accounts.into_iter().collect(),
+        storages: evm_storages.into_iter().collect(),
+        ..Default::default()
     };
 
-    let chain_proofs = vec![ChainProofs::EthereumSepolia(proofs.evm), ChainProofs::StarknetSepolia(proofs.starknet)];
+    let mut starknet_headers_with_mmr: HashMap<MmrMeta, Vec<Header>> = HashMap::default();
+    let mut starknet_headers_with_mmr_fut = futures::stream::iter(
+        proof_keys
+            .starknet
+            .header_keys
+            .iter()
+            .map(|key| ProofKeys::fetch_header_proof(key.chain_id, key.block_number))
+            .map(|f| f.boxed_local()),
+    )
+    .buffer_unordered(BUFFER_UNORDERED);
+
+    while let Some(Ok(item)) = starknet_headers_with_mmr_fut.next().await {
+        starknet_headers_with_mmr
+            .entry(item.mmr_meta)
+            .and_modify(|headers| headers.extend(item.headers.clone()))
+            .or_insert(item.headers);
+        pb_starknet_header_keys.inc(1);
+    }
+
+    let mut starknet_storages: HashSet<GetProofOutput> = HashSet::default();
+    let mut storages_fut = futures::stream::iter(
+        proof_keys
+            .starknet
+            .storage_keys
+            .iter()
+            .map(StarknetProofKeys::fetch_storage_proof)
+            .map(|f| f.boxed_local()),
+    )
+    .buffer_unordered(BUFFER_UNORDERED);
+
+    while let Some(Ok((header_with_mmr, storage))) = storages_fut.next().await {
+        starknet_headers_with_mmr
+            .entry(header_with_mmr.mmr_meta)
+            .and_modify(|headers| headers.extend(header_with_mmr.headers.clone()))
+            .or_insert(header_with_mmr.headers);
+        starknet_storages.insert(storage);
+        pb_starknet_storage_keys.inc(1);
+    }
+
+    let starknet_headers: Vec<HeaderMmrMeta> = starknet_headers_with_mmr
+        .into_iter()
+        .map(|(mmr_meta, headers)| {
+            let unique_headers: Vec<_> = headers.into_iter().collect::<HashSet<_>>().into_iter().collect();
+            HeaderMmrMeta {
+                headers: unique_headers,
+                mmr_meta,
+            }
+        })
+        .collect();
+
+    let starknet_proofs = StarknetProofs {
+        headers_with_mmr: starknet_headers,
+        storages: starknet_storages.into_iter().collect(),
+    };
+
+
+    let chain_proofs = vec![
+        ChainProofs::EthereumSepolia(evm_proofs), 
+        ChainProofs::StarknetSepolia(starknet_proofs)
+    ];
     println!("{:?}", chain_proofs);
 
     fs::write(

@@ -2,7 +2,7 @@ use super::HeaderMmrMeta;
 use serde::{Deserialize, Serialize};
 
 mod storage;
-use storage::GetProofOutput;
+pub use storage::GetProofOutput;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub struct Proofs {

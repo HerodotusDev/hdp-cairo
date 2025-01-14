@@ -2393,6 +2393,7 @@ dependencies = [
  "futures",
  "indexer",
  "indicatif",
+ "reqwest 0.12.10",
  "serde_json",
  "thiserror 1.0.69",
  "tokio",

@@ -47,7 +47,7 @@ pub type StorageKey = Felt252;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Key {
-    pub chain_id: u64,
+    pub chain_id: u128,
     pub block_number: u64,
     pub address: Felt252,
     pub storage_slot: Felt252,

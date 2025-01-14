@@ -23,4 +23,6 @@ pub enum FetcherError {
     SerdeJson(#[from] serde_json::Error),
     #[error("Internal Error: {0}")]
     InternalError(String),
+    #[error("HTTP request failed: {0}")]
+    RequestError(#[from] reqwest::Error),
 }

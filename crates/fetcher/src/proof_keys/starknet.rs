@@ -1,7 +1,6 @@
-use std::collections::HashSet;
-
-use indexer::{types::IndexerQuery, Indexer};
-use types::{keys, proofs::HeaderMmrMeta};
+use std::{collections::HashSet, env};
+use reqwest::Url;
+use types::{keys, proofs::{starknet::GetProofOutput, HeaderMmrMeta}, STARKNET_RPC};
 
 use crate::FetcherError;
 
@@ -12,13 +11,28 @@ pub struct ProofKeys {
 }
 
 impl ProofKeys {
-    pub async fn fetch_header_proof(&self, key: &keys::starknet::header::Key) -> Result<HeaderMmrMeta, FetcherError> {
-        let provider = Indexer::default();
+    pub async fn fetch_storage_proof(key: &keys::starknet::storage::Key) -> Result<(HeaderMmrMeta, GetProofOutput), FetcherError> {
+        let params = serde_json::json!([
+            key.address,
+            key.storage_slot,
+            key.block_number
+        ]);
 
-        let response = provider
-            .get_headers_proof(IndexerQuery::new(key.chain_id, key.block_number, key.block_number))
+        let response = reqwest::Client::new()
+            .post(Url::parse(&env::var(STARKNET_RPC).unwrap()).unwrap())
+            .json(&serde_json::json!({
+                "jsonrpc": "2.0",
+                "method": "starknet_getStorageAt",
+                "params": params,
+                "id": 1
+            }))
+            .send()
             .await?;
 
-        unimplemented!()
+        let proof: GetProofOutput = response.json().await?;
+        Ok((
+            super::ProofKeys::fetch_header_proof(key.chain_id, key.block_number).await?,
+            proof
+        ))
     }
 }
