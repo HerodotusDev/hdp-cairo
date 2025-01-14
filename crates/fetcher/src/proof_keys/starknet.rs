@@ -1,13 +1,9 @@
 use std::collections::HashSet;
 
 use indexer::{types::IndexerQuery, Indexer};
-use types::{
-    keys, proofs::HeaderMmrMeta, STARKNET_RPC
-};
+use types::{keys, proofs::HeaderMmrMeta};
 
 use crate::FetcherError;
-
-
 
 #[derive(Debug, Default)]
 pub struct ProofKeys {

@@ -1,22 +1,14 @@
 use alloy::{
-    hex::FromHexError,
-    primitives::Bytes,
     providers::{Provider, RootProvider},
     transports::http::{reqwest::Url, Client, Http},
-};
-use indexer::{
-    types::{BlockHeader, IndexerQuery},
-    Indexer,
 };
 use std::{collections::HashSet, env};
 use types::{
     keys,
     proofs::{
         evm::account::Account,
-        header::{Header, HeaderProof},
-        mmr::MmrMeta,
-        mpt::MPTProof,
         evm::storage::Storage,
+        mpt::MPTProof,
         HeaderMmrMeta,
     },
     ETH_RPC,

@@ -10,7 +10,11 @@ use cairo_vm::{
     Felt252,
 };
 use std::{any::Any, cell::RefCell, collections::HashMap, rc::Rc};
-use types::proofs::{evm::Proofs, header::{Header, HeaderPayload}, HeaderMmrMeta};
+use types::proofs::{
+    evm::Proofs,
+    header::{Header, HeaderPayload},
+    HeaderMmrMeta,
+};
 
 pub const HINT_VM_ENTER_SCOPE: &str = "vm_enter_scope({'header_with_mmr': batch.headers_with_mmr[ids.idx - 1], '__dict_manager': __dict_manager})";
 
@@ -89,7 +93,7 @@ pub fn hint_rlp_len(
 ) -> Result<(), HintError> {
     let header_len = match exec_scopes.get::<Header>(vars::scopes::HEADER)?.payload {
         HeaderPayload::Evm(ref bytes) => bytes.chunks(8).count(),
-         _ => return Err(HintError::CustomHint("Expected EVM header payload".into()))
+        _ => return Err(HintError::CustomHint("Expected EVM header payload".into())),
     };
 
     insert_value_into_ap(vm, Felt252::from(header_len))
@@ -131,12 +135,7 @@ pub fn hint_mmr_path(
 ) -> Result<(), HintError> {
     let header = exec_scopes.get::<Header>(vars::scopes::HEADER)?;
     let mmr_path_ptr = get_ptr_from_var_name(vars::ids::MMR_PATH, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let mmr_path: Vec<MaybeRelocatable> = header
-        .proof
-        .mmr_path
-        .into_iter()
-        .map(MaybeRelocatable::from)
-        .collect();
+    let mmr_path: Vec<MaybeRelocatable> = header.proof.mmr_path.into_iter().map(MaybeRelocatable::from).collect();
 
     vm.load_data(mmr_path_ptr, &mmr_path)?;
 

@@ -2,15 +2,14 @@
 // Currently, there is no good way of importing this type from an external crate. We have found the following implementations:
 // - https://github.com/keep-starknet-strange/snos/tree/main/crates/rpc-client/src/pathfinder
 // - https://github.com/eqlabs/pathfinder/blob/main/crates/rpc/src/pathfinder/methods/get_proof.rs
-// Both fo these implementations essentially force us to follow the cairo-vm versions that are used, which is a bad idea for us to do. 
-// We should aim for finding an implementation that we can simply update instead of manageing it ourself. 
+// Both fo these implementations essentially force us to follow the cairo-vm versions that are used, which is a bad idea for us to do.
+// We should aim for finding an implementation that we can simply update instead of manageing it ourself.
 // This is a temporary solution that we should aim to replace.
 
+use cairo_vm::Felt252;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use starknet_types_core::hash::StarkHash;
-use cairo_vm::Felt252;
-
 
 /// Codebase is from <https://github.com/eqlabs/pathfinder/tree/ae81d84b7c4157891069bd02ef810a29b60a94e3>
 

@@ -1,24 +1,18 @@
 use alloy::{
     hex::FromHexError,
     primitives::Bytes,
-    providers::{Provider, RootProvider},
-    transports::http::{reqwest::Url, Client, Http},
 };
 use indexer::{
     types::{BlockHeader, IndexerQuery},
     Indexer,
 };
-use std::{collections::HashSet, env};
 use types::{
-    keys::{self, KeyType},
+    keys::{KeyType},
     proofs::{
-        evm::{account::Account, storage::Storage},
         header::{Header, HeaderPayload, HeaderProof},
         mmr::MmrMeta,
-        mpt::MPTProof,
         HeaderMmrMeta,
     },
-    ETH_RPC,
 };
 
 use crate::FetcherError;
@@ -32,7 +26,6 @@ pub struct ProofKeys {
     pub evm: evm::ProofKeys,
     pub starknet: starknet::ProofKeys,
 }
-
 
 impl ProofKeys {
     pub fn new() -> Self {
@@ -74,22 +67,20 @@ impl ProofKeys {
             .ok_or_else(|| FetcherError::InternalError("block not found".into()))?;
 
         let payload = match KeyType::from(chain_id) {
-            KeyType::EVM => {
-                match &mmr_proof.block_header {
-                    BlockHeader::RlpString(rlp) => {
-                        let bytes: Bytes = rlp.parse()?;
-                        HeaderPayload::Evm(bytes)
-                    },
-                    BlockHeader::RlpLittleEndian8ByteChunks(rlp) => {
-                        let rlp_chunks: Vec<Bytes> = rlp
-                            .clone()
-                            .iter()
-                            .map(|x| Self::normalize_hex(x).parse())
-                            .collect::<Result<Vec<Bytes>, FromHexError>>()?;
-                        HeaderPayload::Evm(rlp_chunks.iter().flat_map(|x| x.iter().rev().cloned()).collect::<Vec<u8>>().into())
-                    }
-                    _ => return Err(FetcherError::InternalError("wrong rlp format".into())),
+            KeyType::EVM => match &mmr_proof.block_header {
+                BlockHeader::RlpString(rlp) => {
+                    let bytes: Bytes = rlp.parse()?;
+                    HeaderPayload::Evm(bytes)
                 }
+                BlockHeader::RlpLittleEndian8ByteChunks(rlp) => {
+                    let rlp_chunks: Vec<Bytes> = rlp
+                        .clone()
+                        .iter()
+                        .map(|x| Self::normalize_hex(x).parse())
+                        .collect::<Result<Vec<Bytes>, FromHexError>>()?;
+                    HeaderPayload::Evm(rlp_chunks.iter().flat_map(|x| x.iter().rev().cloned()).collect::<Vec<u8>>().into())
+                }
+                _ => return Err(FetcherError::InternalError("wrong rlp format".into())),
             },
             KeyType::STARKNET => {
                 unimplemented!()
@@ -104,8 +95,8 @@ impl ProofKeys {
                 mmr_path: mmr_proof
                     .siblings_hashes
                     .iter()
-                    .map(|hash| Felt252::from_bytes_be_slice(&Self::normalize_hex(hash).as_bytes()))
-                    .collect::<Vec<Felt252>>()
+                    .map(|hash| Felt252::from_bytes_be_slice(Self::normalize_hex(hash).as_bytes()))
+                    .collect::<Vec<Felt252>>(),
             },
         };
 
@@ -114,7 +105,4 @@ impl ProofKeys {
             headers: vec![header],
         })
     }
-
-
-
 }

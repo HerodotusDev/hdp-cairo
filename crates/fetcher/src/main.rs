@@ -9,14 +9,23 @@ use fetcher::FetcherError;
 use futures::{FutureExt, StreamExt};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use proof_keys::ProofKeys;
-use std::{collections::{HashMap, HashSet}, fs, path::PathBuf};
+use std::{
+    collections::{HashMap, HashSet},
+    fs,
+    path::PathBuf,
+};
 use thiserror as _;
 use types::{
-    proofs::{evm::{account::Account, storage::Storage}, Proofs, header::Header, mmr::MmrMeta, HeaderMmrMeta},
+    proofs::{
+        evm::{account::Account, storage::Storage},
+        header::Header,
+        mmr::MmrMeta,
+        HeaderMmrMeta, Proofs,
+    },
     ChainProofs,
 };
 
-use types::proofs::{evm::Proofs as EvmProofs, starknet::Proofs as StarknetProofs};
+use types::proofs::evm::Proofs as EvmProofs;
 
 mod proof_keys;
 
@@ -64,7 +73,7 @@ async fn main() -> Result<(), FetcherError> {
         match key {
             starknet::DryRunKey::Header(value) => {
                 proof_keys.starknet.header_keys.insert(value);
-            },
+            }
             starknet::DryRunKey::Storage(value) => {
                 proof_keys.starknet.storage_keys.insert(value);
             }
@@ -85,10 +94,14 @@ async fn main() -> Result<(), FetcherError> {
     let mut evm_headers_with_mmr: HashMap<MmrMeta, Vec<Header>> = HashMap::default();
 
     let mut evm_headers_with_mmr_fut = futures::stream::iter(
-        proof_keys.evm.header_keys.iter()
+        proof_keys
+            .evm
+            .header_keys
+            .iter()
             .map(|key| ProofKeys::fetch_header_proof(key.chain_id, key.block_number))
-            .map(|f| f.boxed_local())
-    ).buffer_unordered(BUFFER_UNORDERED);
+            .map(|f| f.boxed_local()),
+    )
+    .buffer_unordered(BUFFER_UNORDERED);
 
     while let Some(Ok(item)) = evm_headers_with_mmr_fut.next().await {
         evm_headers_with_mmr
@@ -159,13 +172,10 @@ async fn main() -> Result<(), FetcherError> {
             storages: storages.into_iter().collect(),
             ..Default::default()
         },
-        starknet: Default::default()
+        starknet: Default::default(),
     };
 
-    let chain_proofs = vec![
-        ChainProofs::EthereumSepolia(proofs.evm),
-        ChainProofs::StarknetSepolia(proofs.starknet),
-    ];
+    let chain_proofs = vec![ChainProofs::EthereumSepolia(proofs.evm), ChainProofs::StarknetSepolia(proofs.starknet)];
     println!("{:?}", chain_proofs);
 
     fs::write(

@@ -1,6 +1,6 @@
 use super::{account, storage, KeyError};
 use crate::cairo::traits::CairoType;
-use alloy::primitives::{BlockNumber, ChainId};
+use alloy::primitives::BlockNumber;
 use cairo_vm::{
     types::relocatable::Relocatable,
     vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
