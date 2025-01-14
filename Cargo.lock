@@ -5733,6 +5733,7 @@ dependencies = [
  "serde_with 3.12.0",
  "starknet-crypto 0.7.3",
  "starknet-gateway-types",
+ "starknet-types-core",
  "strum_macros",
  "thiserror 1.0.69",
 ]
