@@ -8,8 +8,8 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use types::proofs::{evm, header::HeaderMmrMeta};
 use std::collections::HashMap;
+use types::proofs::{evm, header::HeaderMmrMeta};
 
 pub const HINT_SET_HEADER: &str = "header = header_with_mmr.headers[ids.idx - 1]\nsegments.write_arg(ids.rlp, [int(x, 16) for x in header.rlp])";
 
