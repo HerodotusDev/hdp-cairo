@@ -52,6 +52,8 @@ pub fn hint_vm_enter_scope(
     let batch: Box<dyn Any> = match chain_proofs[idx - 1].clone() {
         ChainProofs::EthereumMainnet(proofs) => Box::new(proofs),
         ChainProofs::EthereumSepolia(proofs) => Box::new(proofs),
+        ChainProofs::StarknetMainnet(proofs) => Box::new(proofs),
+        ChainProofs::StarknetSepolia(proofs) => Box::new(proofs),
     };
     let dict_manager: Box<dyn Any> = Box::new(exec_scopes.get_dict_manager()?);
 

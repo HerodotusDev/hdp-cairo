@@ -1,0 +1,72 @@
+name: CI Test Workflow
+
+on:
+  pull_request:
+    branches:
+      - '**'  # This pattern matches all branches
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Scarb
+        uses: software-mansion/setup-scarb@v1
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          
+      - name: Cache Python environment
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pip
+            venv
+          key: ${{ runner.os }}-python-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('tools/make/setup.sh') }}
+          restore-keys: |
+              ${{ runner.os }}-python-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('tools/make/setup.sh') }}
+              ${{ runner.os }}-python-
+
+      - name: Install Dependencies
+        run: make setup
+
+      - name: Check Python formatting
+        run: |
+          source venv/bin/activate
+          ./tools/make/python_format_check.sh
+
+      # - name: Check Python tests
+      #   env:
+      #     RPC_URL_MAINNET: ${{ secrets.RPC_URL_MAINNET }}
+      #     PROVIDER_URL_STARKNET: ${{ secrets.PROVIDER_URL_STARKNET }}
+      #     RPC_URL: ${{ secrets.RPC_URL }}
+      #   run: |
+      #     source venv/bin/activate
+      #     pytest tools/*
+
+      - name: Check Cairo formatting
+        run: |
+          source venv/bin/activate
+          ./tools/make/cairo_format_check.sh
+
+      - name: Compile Cairo files
+        run: |
+          source venv/bin/activate
+          make build
+          
+      - name: Run Unit Cairo tests
+        env:
+          RPC_URL_MAINNET: ${{ secrets.RPC_URL_MAINNET }}
+          PROVIDER_URL_STARKNET: ${{ secrets.PROVIDER_URL_STARKNET_TESTNET }}
+          RPC_URL: ${{ secrets.RPC_URL }}
+        run: |
+          source venv/bin/activate
+          ./tools/make/cairo_tests.sh
+
+      - name: Run Full Flow tests
+        run: |
+          source venv/bin/activate
+          ./tools/make/full_flow_test.sh

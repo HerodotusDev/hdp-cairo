@@ -89,7 +89,8 @@ impl traits::SyscallHandler for CallContractHandlerRelay {
     async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
         let chain_id = <Felt252 as TryInto<u128>>::try_into(*vm.get_integer((request.calldata_start + 2)?)?)
             .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
-        match chain_id {
+
+            match chain_id {
             ETHEREUM_MAINNET_CHAIN_ID | ETHEREUM_TESTNET_CHAIN_ID => self.evm_call_contract_handler.execute(request, vm).await,
             STARKNET_MAINNET_CHAIN_ID | STARKNET_TESTNET_CHAIN_ID => self.starknet_call_contract_handler.execute(request, vm).await,
             _ => Err(SyscallExecutionError::InternalError(Box::from("Unknown chain id"))),

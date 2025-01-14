@@ -109,9 +109,9 @@ impl TryFrom<Felt252> for CallHandlerId {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum DryRunKey {
-    Account(keys::account::Key),
-    Header(keys::header::Key),
-    Storage(keys::storage::Key),
+    Account(keys::evm::account::Key),
+    Header(keys::evm::header::Key),
+    Storage(keys::evm::storage::Key),
 }
 
 impl DryRunKey {

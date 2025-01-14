@@ -1,15 +1,21 @@
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
 use serde::{Deserialize, Serialize};
+use types::cairo::traits::CairoType;
 use std::{collections::HashSet, hash::Hash};
 use strum_macros::FromRepr;
-use syscall_handler::traits::SyscallHandler;
-use syscall_handler::{SyscallExecutionError, SyscallResult, WriteResponseResult};
+use syscall_handler::traits::{CallHandler, SyscallHandler};
+use syscall_handler::{felt_from_ptr, SyscallExecutionError, SyscallResult, WriteResponseResult};
 use types::cairo::new_syscalls::{CallContractRequest, CallContractResponse};
-use types::keys;
+use header::HeaderCallHandler;
+use storage::StorageCallHandler;
+use types::keys::starknet;
+pub mod header;
+pub mod storage;
 
 #[derive(FromRepr)]
 pub enum CallHandlerId {
-    Storage = 0,
+    Header = 0,
+    Storage = 1,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
@@ -25,8 +31,45 @@ impl SyscallHandler for CallContractHandler {
         unreachable!()
     }
 
-    async fn execute(&mut self, _request: Self::Request, _vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
-        unimplemented!()
+    async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
+        let mut calldata = request.calldata_start;
+
+        let call_handler_id = CallHandlerId::try_from(request.contract_address)?;
+        let segment_index = felt_from_ptr(vm, &mut calldata)?;
+        let offset = felt_from_ptr(vm, &mut calldata)?;
+        
+        let _memorizer = Relocatable::from((
+            segment_index
+                .try_into()
+                .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
+            offset
+                .try_into()
+                .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
+        ));
+
+        let retdata_start = vm.add_temporary_segment();
+        let mut retdata_end = retdata_start;
+
+        match call_handler_id {
+            CallHandlerId::Header => {
+                let key = HeaderCallHandler::derive_key(vm, &mut calldata)?;
+                let function_id = HeaderCallHandler::derive_id(request.selector)?;
+                let result = HeaderCallHandler.handle(key.clone(), function_id, vm).await?;
+                self.key_set.insert(DryRunKey::Header(key));
+                result.to_memory(vm, retdata_end)?;
+                retdata_end += <HeaderCallHandler as CallHandler>::CallHandlerResult::n_fields();
+            }
+            CallHandlerId::Storage => {
+                let key = StorageCallHandler::derive_key(vm, &mut calldata)?;
+                let function_id = StorageCallHandler::derive_id(request.selector)?;
+                let result = StorageCallHandler.handle(key.clone(), function_id, vm).await?;
+                self.key_set.insert(DryRunKey::Storage(key));
+                result.to_memory(vm, retdata_end)?;
+                retdata_end += <StorageCallHandler as CallHandler>::CallHandlerResult::n_fields();
+            }
+        }
+
+        Ok(Self::Response { retdata_start, retdata_end })
     }
 
     fn write_response(&mut self, _response: Self::Response, _vm: &mut VirtualMachine, _ptr: &mut Relocatable) -> WriteResponseResult {
@@ -51,7 +94,8 @@ impl TryFrom<Felt252> for CallHandlerId {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum DryRunKey {
-    Storage(keys::storage::Key),
+    Header(starknet::header::Key),
+    Storage(starknet::storage::Key),
 }
 
 impl DryRunKey {

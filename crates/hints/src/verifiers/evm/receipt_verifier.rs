@@ -13,7 +13,7 @@ use cairo_vm::{
 };
 use num_bigint::BigUint;
 use std::collections::HashMap;
-use types::proofs::{receipt::Receipt, Proofs};
+use types::proofs::{evm::receipt::Receipt, evm::Proofs};
 
 pub const HINT_BATCH_RECEIPTS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch.receipts))";
 
