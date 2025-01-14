@@ -34,6 +34,7 @@ serde = "1.0.215"
 serde_json = "1.0.132"
 serde_with = { version = "3.11.0", features = ["hex"] }
 sha3 = "0.10.8"
+starknet = "0.13.0"
 starknet-core = { version = "0.11.1", default-features = false }
 starknet-crypto = { version = "0.7.1", default-features = false }
 starknet-types-core = { version = "0.1.6", default-features = false }
