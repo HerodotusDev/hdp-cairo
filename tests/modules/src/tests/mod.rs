@@ -10,7 +10,10 @@ use futures::{FutureExt, StreamExt};
 use hints::vars;
 use std::{collections::HashSet, env, path::PathBuf};
 use types::{
-    proofs::{account::Account, storage::Storage, HeaderMmrMeta, Proofs},
+    proofs::{
+        evm::{account::Account, storage::Storage, Proofs},
+        HeaderMmrMeta,
+    },
     ChainProofs, HDPDryRunInput, HDPInput,
 };
 

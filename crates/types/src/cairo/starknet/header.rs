@@ -1,6 +1,6 @@
 use cairo_vm::Felt252;
-use strum_macros::FromRepr;
 pub use pathfinder_gateway_types::reply::Block;
+use strum_macros::FromRepr;
 
 use crate::cairo::structs::Felt;
 
@@ -22,7 +22,7 @@ pub enum FunctionId {
     L1GasPriceFri = 13,
     L1DataGasPriceWei = 14,
     L1DataGasPriceFri = 15,
-    Version = 16
+    Version = 16,
 }
 
 pub struct CairoHeader(Block);
@@ -61,11 +61,8 @@ impl CairoHeader {
     }
 
     pub fn event_count(&self) -> Felt {
-        let total_events: usize = self.0.transaction_receipts
-            .iter()
-            .map(|(_, events)| events.len())
-            .sum();
-        
+        let total_events: usize = self.0.transaction_receipts.iter().map(|(_, events)| events.len()).sum();
+
         Felt252::from(total_events).into()
     }
 
@@ -75,7 +72,9 @@ impl CairoHeader {
 
     // v0.13.2+ specific fields
     pub fn state_diff_commitment(&self) -> Option<Felt> {
-        self.0.state_diff_commitment.map(|f| Felt252::from_bytes_be(&f.as_inner().to_be_bytes()).into())
+        self.0
+            .state_diff_commitment
+            .map(|f| Felt252::from_bytes_be(&f.as_inner().to_be_bytes()).into())
     }
 
     pub fn state_diff_length(&self) -> Option<Felt> {
@@ -83,7 +82,9 @@ impl CairoHeader {
     }
 
     pub fn receipt_commitment(&self) -> Option<Felt> {
-        self.0.receipt_commitment.map(|f| Felt252::from_bytes_be(&f.as_inner().to_be_bytes()).into())
+        self.0
+            .receipt_commitment
+            .map(|f| Felt252::from_bytes_be(&f.as_inner().to_be_bytes()).into())
     }
 
     pub fn l1_gas_price_wei(&self) -> Felt {

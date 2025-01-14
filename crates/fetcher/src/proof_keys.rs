@@ -13,10 +13,10 @@ use types::{
     keys,
     proofs::{
         evm::account::Account,
+        evm::storage::Storage,
         header::{Header, HeaderProof},
         mmr::MmrMeta,
         mpt::MPTProof,
-        evm::storage::Storage,
         HeaderMmrMeta,
     },
     ETH_RPC,
