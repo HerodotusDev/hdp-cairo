@@ -10,7 +10,7 @@ use cairo_vm::{
     Felt252,
 };
 use std::{any::Any, cell::RefCell, collections::HashMap, rc::Rc};
-use types::proofs::{header::Header, HeaderMmrMeta, evm::Proofs};
+use types::proofs::{evm::Proofs, header::{Header, HeaderPayload}, HeaderMmrMeta};
 
 pub const HINT_VM_ENTER_SCOPE: &str = "vm_enter_scope({'header_with_mmr': batch.headers_with_mmr[ids.idx - 1], '__dict_manager': __dict_manager})";
 
@@ -62,11 +62,13 @@ pub fn hint_set_header(
         .unwrap();
 
     let header = headers_with_mmr.headers[idx - 1].clone();
-    let rlp_le_chunks: Vec<MaybeRelocatable> = header
-        .rlp
-        .chunks(8)
-        .map(|chunk| MaybeRelocatable::from(Felt252::from_bytes_be_slice(&chunk.iter().rev().copied().collect::<Vec<_>>())))
-        .collect();
+    let rlp_le_chunks: Vec<MaybeRelocatable> = match &header.payload {
+        HeaderPayload::Evm(ref bytes) => bytes
+            .chunks(8)
+            .map(|chunk| MaybeRelocatable::from(Felt252::from_bytes_be_slice(&chunk.iter().rev().copied().collect::<Vec<_>>())))
+            .collect(),
+        _ => return Err(HintError::CustomHint("Expected EVM header payload".into())),
+    };
 
     exec_scopes.insert_value::<Header>(vars::scopes::HEADER, header);
 
@@ -85,9 +87,12 @@ pub fn hint_rlp_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let header = exec_scopes.get::<Header>(vars::scopes::HEADER)?;
+    let header_len = match exec_scopes.get::<Header>(vars::scopes::HEADER)?.payload {
+        HeaderPayload::Evm(ref bytes) => bytes.chunks(8).count(),
+         _ => return Err(HintError::CustomHint("Expected EVM header payload".into()))
+    };
 
-    insert_value_into_ap(vm, Felt252::from(header.rlp.chunks(8).count()))
+    insert_value_into_ap(vm, Felt252::from(header_len))
 }
 
 pub const HINT_LEAF_IDX: &str = "memory[ap] = to_felt_or_relocatable(len(header.proof.leaf_idx))";
@@ -130,7 +135,6 @@ pub fn hint_mmr_path(
         .proof
         .mmr_path
         .into_iter()
-        .map(|f| Felt252::from_bytes_be_slice(&f))
         .map(MaybeRelocatable::from)
         .collect();
 

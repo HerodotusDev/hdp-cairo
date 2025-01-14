@@ -1,13 +1,11 @@
+use super::HeaderMmrMeta;
 use serde::{Deserialize, Serialize};
 
 mod storage;
-mod header;
-
 use storage::GetProofOutput;
-use header::Header;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub struct Proofs {
-    pub headers: Vec<Header>,
+    pub headers_with_mmr: Vec<HeaderMmrMeta>,
     pub storages: Vec<GetProofOutput>,
 }

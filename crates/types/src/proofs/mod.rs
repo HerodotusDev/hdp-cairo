@@ -13,3 +13,9 @@ pub struct HeaderMmrMeta {
     pub headers: Vec<Header>,
     pub mmr_meta: MmrMeta,
 }
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default)]
+pub struct Proofs {
+    pub evm: evm::Proofs,
+    pub starknet: starknet::Proofs,
+}

@@ -55,7 +55,7 @@ impl CairoType for CairoKey {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Key {
-    pub chain_id: ChainId,
+    pub chain_id: u128,
     pub block_number: BlockNumber,
     pub address: Address,
     pub storage_slot: StorageKey,

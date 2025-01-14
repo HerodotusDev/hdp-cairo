@@ -1,4 +1,4 @@
-use alloy::primitives::{BlockNumber, ChainId};
+use alloy::primitives::BlockNumber;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 use std::collections::HashMap;
@@ -49,8 +49,8 @@ pub enum IndexerError {
 /// Query parameters for the indexer
 #[derive(Debug, Serialize)]
 pub struct IndexerQuery {
-    pub deployed_on_chain: ChainId,
-    pub accumulates_chain: ChainId,
+    pub deployed_on_chain: u128,
+    pub accumulates_chain: u128,
     pub hashing_function: HashingFunction,
     pub contract_type: ContractType,
     pub from_block_number_inclusive: BlockNumber,
@@ -63,7 +63,7 @@ pub struct IndexerQuery {
 }
 
 impl IndexerQuery {
-    pub fn new(chain_id: ChainId, from_block: BlockNumber, to_block: BlockNumber) -> Self {
+    pub fn new(chain_id: u128, from_block: BlockNumber, to_block: BlockNumber) -> Self {
         Self {
             deployed_on_chain: chain_id,
             accumulates_chain: chain_id,

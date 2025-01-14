@@ -11,7 +11,8 @@ members = [
     "crates/indexer",
     "crates/syscall_handler",
     "crates/types",
-    "tests/modules",
+    "tests/modules", 
+    "crates/config",
 ]
 
 [workspace.dependencies]
@@ -54,3 +55,4 @@ sound_hint_processor = { path = "crates/sound_hint_processor" }
 syscall_handler = { path = "crates/syscall_handler" }
 types = { path = "crates/types" }
 pathfinder_gateway_types = { git = "https://github.com/eqlabs/pathfinder", package = "starknet-gateway-types" }
+config = { path = "crates/config" }
