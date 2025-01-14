@@ -184,7 +184,8 @@ func traverse{pedersen_ptr: HashBuiltin*, bitwise_ptr: BitwiseBuiltin*, pow2_arr
 ) -> (root: felt, value: felt) {
     alloc_locals;
 
-    %{ memory[ap] = nodes_types[ids.n_nodes - 1] %}
+    let leaf = nodes[n_nodes - 1];
+    %{ memory[ap] = Node(ids.leaf).is_edge() %}
     jmp edge_leaf if [ap] != 0, ap++;
     return traverse_binary_leaf(nodes, n_nodes, expected_path);
 
