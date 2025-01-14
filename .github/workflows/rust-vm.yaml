@@ -69,5 +69,5 @@ jobs:
 
       - name: Run Nextest Tests
         env:
-            RPC: ${{ secrets.RPC_URL }}
+            RPC: ${{ secrets.RPC_URL_ETHEREUM_SEPOLIA }}
         run: cargo nextest run
