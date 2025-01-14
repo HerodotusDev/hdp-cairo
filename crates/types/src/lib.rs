@@ -13,7 +13,9 @@ use param::Param;
 use proofs::{evm, starknet};
 use serde::{Deserialize, Serialize};
 
-pub const RPC: &str = "RPC";
+pub const ETH_RPC: &str = "ETH_RPC";
+pub const STARKNET_RPC: &str = "STARKNET_RPC";
+pub const FEEDER_GATEWAY: &str = "FEEDER_GATEWAY";
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct HDPDryRunInput {

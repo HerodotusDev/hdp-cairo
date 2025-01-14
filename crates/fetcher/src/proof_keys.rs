@@ -19,7 +19,7 @@ use types::{
         evm::storage::Storage,
         HeaderMmrMeta,
     },
-    RPC,
+    ETH_RPC,
 };
 
 use crate::FetcherError;
@@ -97,7 +97,7 @@ impl ProofKeys {
     }
 
     pub async fn fetch_account_proof(key: &keys::evm::account::Key) -> Result<(HeaderMmrMeta, Account), FetcherError> {
-        let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
+        let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(ETH_RPC).unwrap()).unwrap());
         let value = provider
             .get_proof(key.address, vec![])
             .block_id(key.block_number.into())
@@ -110,7 +110,7 @@ impl ProofKeys {
     }
 
     pub async fn fetch_storage_proof(key: &keys::evm::storage::Key) -> Result<(HeaderMmrMeta, Account, Storage), FetcherError> {
-        let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
+        let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(ETH_RPC).unwrap()).unwrap());
         let value = provider
             .get_proof(key.address, vec![key.storage_slot])
             .block_id(key.block_number.into())

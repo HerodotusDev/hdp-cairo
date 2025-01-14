@@ -2105,6 +2105,7 @@ dependencies = [
  "cairo-lang-starknet-classes",
  "cairo-vm",
  "hints",
+ "reqwest",
  "serde",
  "starknet-types-core",
  "strum_macros",

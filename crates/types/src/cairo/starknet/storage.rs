@@ -1,31 +1,32 @@
-use cairo_vm::Felt252;
 use strum_macros::FromRepr;
+
+use crate::cairo::structs::Felt;
 
 #[derive(FromRepr, Debug)]
 pub enum FunctionId {
     Storage = 0,
 }
 
-pub struct CairoStorage(Felt252);
+pub struct CairoStorage(Felt);
 
 impl CairoStorage {
-    pub fn new(value: Felt252) -> Self {
+    pub fn new(value: Felt) -> Self {
         Self(value)
     }
 
-    pub fn storage(&self) -> Felt252 {
-        self.0
+    pub fn storage(&self) -> Felt {
+        self.0.clone()
     }
 
-    pub fn handler(&self, function_id: FunctionId) -> Felt252 {
+    pub fn handler(&self, function_id: FunctionId) -> Felt {
         match function_id {
             FunctionId::Storage => self.storage(),
         }
     }
 }
 
-impl From<Felt252> for CairoStorage {
-    fn from(value: Felt252) -> Self {
+impl From<Felt> for CairoStorage {
+    fn from(value: Felt) -> Self {
         Self(value)
     }
 }
