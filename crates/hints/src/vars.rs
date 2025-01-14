@@ -17,6 +17,7 @@ pub mod scopes {
 }
 
 pub mod ids {
+    pub const FIELDS: &str = "fields";
     pub const PEAKS: &str = "peaks";
     pub const CHAIN_PROOFS_LEN: &str = "chain_proofs_len";
     pub const RLP_LEN: &str = "rlp_len";

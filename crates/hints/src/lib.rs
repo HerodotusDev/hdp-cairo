@@ -64,14 +64,14 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(verifiers::evm::account_verifier::HINT_BATCH_ACCOUNTS_LEN.into(), verifiers::evm::account_verifier::hint_batch_accounts_len);
     hints.insert(verifiers::evm::account_verifier::HINT_GET_ACCOUNT_ADDRESS.into(), verifiers::evm::account_verifier::hint_get_account_address);
     hints.insert(verifiers::evm::account_verifier::HINT_GET_MPT_PROOF.into(), verifiers::evm::account_verifier::hint_get_mpt_proof);
-    hints.insert(verifiers::evm::header_verifier::HINT_HEADERS_WITH_MMR_HEADERS_LEN.into(), verifiers::evm::header_verifier::hint_headers_with_mmr_headers_len);
+    hints.insert(verifiers::header_verifier::HINT_HEADERS_WITH_MMR_HEADERS_LEN.into(), verifiers::header_verifier::hint_headers_with_mmr_headers_len);
     hints.insert(verifiers::evm::header_verifier::HINT_LEAF_IDX.into(), verifiers::evm::header_verifier::hint_leaf_idx);
     hints.insert(verifiers::evm::header_verifier::HINT_MMR_PATH_LEN.into(), verifiers::evm::header_verifier::hint_mmr_path_len);
     hints.insert(verifiers::evm::header_verifier::HINT_MMR_PATH.into(), verifiers::evm::header_verifier::hint_mmr_path);
     hints.insert(verifiers::evm::header_verifier::HINT_RLP_LEN.into(), verifiers::evm::header_verifier::hint_rlp_len);
     hints.insert(verifiers::evm::header_verifier::HINT_SET_HEADER.into(), verifiers::evm::header_verifier::hint_set_header);
-    hints.insert(verifiers::evm::header_verifier::HINT_VM_ENTER_SCOPE.into(), verifiers::evm::header_verifier::hint_vm_enter_scope);
-    hints.insert(verifiers::evm::HINT_HEADERS_WITH_MMR_LEN.into(), verifiers::evm::hint_headers_with_mmr_headers_len);
+    hints.insert(verifiers::header_verifier::HINT_VM_ENTER_SCOPE.into(), verifiers::header_verifier::hint_vm_enter_scope);
+    hints.insert(verifiers::header_verifier::HINT_HEADERS_WITH_MMR_LEN.into(), verifiers::header_verifier::hint_headers_with_mmr_len);
     hints.insert(verifiers::evm::receipt_verifier::HINT_BATCH_RECEIPTS_LEN.into(), verifiers::evm::receipt_verifier::hint_batch_receipts_len);
     hints.insert(verifiers::evm::receipt_verifier::HINT_RECEIPT_BLOCK_NUMBER.into(), verifiers::evm::receipt_verifier::hint_receipt_block_number);
     hints.insert(verifiers::evm::receipt_verifier::HINT_RECEIPT_KEY_LEADING_ZEROS.into(), verifiers::evm::receipt_verifier::hint_receipt_key_leading_zeros);

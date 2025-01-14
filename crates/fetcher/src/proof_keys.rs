@@ -12,12 +12,10 @@ use std::{collections::HashSet, env};
 use types::{
     keys,
     proofs::{
-        evm::account::Account,
-        evm::storage::Storage,
-        header::{Header, HeaderProof},
+        evm,
+        header::{HeaderMmrMeta, HeaderProof},
         mmr::MmrMeta,
         mpt::MPTProof,
-        HeaderMmrMeta,
     },
     ETH_RPC,
 };
@@ -37,7 +35,7 @@ impl ProofKeys {
         format!("{:0>width$}", hex_str, width = (hex_str.len() + 1) / 2 * 2)
     }
 
-    pub async fn fetch_header_proof(key: &keys::evm::header::Key) -> Result<HeaderMmrMeta, FetcherError> {
+    pub async fn fetch_header_proof(key: &keys::evm::header::Key) -> Result<HeaderMmrMeta<evm::header::Header>, FetcherError> {
         let provider = Indexer::default();
 
         // Fetch proof response
@@ -78,7 +76,7 @@ impl ProofKeys {
         };
 
         // Construct Header
-        let header = Header {
+        let header = evm::header::Header {
             rlp,
             proof: HeaderProof {
                 leaf_idx: mmr_proof.element_index,
@@ -96,7 +94,9 @@ impl ProofKeys {
         })
     }
 
-    pub async fn fetch_account_proof(key: &keys::evm::account::Key) -> Result<(HeaderMmrMeta, Account), FetcherError> {
+    pub async fn fetch_account_proof(
+        key: &keys::evm::account::Key,
+    ) -> Result<(HeaderMmrMeta<evm::header::Header>, evm::account::Account), FetcherError> {
         let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(ETH_RPC).unwrap()).unwrap());
         let value = provider
             .get_proof(key.address, vec![])
@@ -105,11 +105,13 @@ impl ProofKeys {
             .map_err(|e| FetcherError::InternalError(e.to_string()))?;
         Ok((
             Self::fetch_header_proof(&key.to_owned().into()).await?,
-            Account::new(value.address, vec![MPTProof::new(key.block_number, value.account_proof)]),
+            evm::account::Account::new(value.address, vec![MPTProof::new(key.block_number, value.account_proof)]),
         ))
     }
 
-    pub async fn fetch_storage_proof(key: &keys::evm::storage::Key) -> Result<(HeaderMmrMeta, Account, Storage), FetcherError> {
+    pub async fn fetch_storage_proof(
+        key: &keys::evm::storage::Key,
+    ) -> Result<(HeaderMmrMeta<evm::header::Header>, evm::account::Account, evm::storage::Storage), FetcherError> {
         let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(ETH_RPC).unwrap()).unwrap());
         let value = provider
             .get_proof(key.address, vec![key.storage_slot])
@@ -118,8 +120,8 @@ impl ProofKeys {
             .map_err(|e| FetcherError::InternalError(e.to_string()))?;
         Ok((
             Self::fetch_header_proof(&key.to_owned().into()).await?,
-            Account::new(value.address, vec![MPTProof::new(key.block_number, value.account_proof)]),
-            Storage::new(
+            evm::account::Account::new(value.address, vec![MPTProof::new(key.block_number, value.account_proof)]),
+            evm::storage::Storage::new(
                 value.address,
                 key.storage_slot,
                 vec![MPTProof::new(
