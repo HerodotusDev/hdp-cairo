@@ -12,7 +12,7 @@ use proof_keys::ProofKeys;
 use std::{collections::HashSet, fs, path::PathBuf};
 use thiserror as _;
 use types::{
-    proofs::{evm::account::Account, evm::storage::Storage, HeaderMmrMeta, evm::Proofs},
+    proofs::{evm::account::Account, evm::storage::Storage, evm::Proofs, HeaderMmrMeta},
     ChainProofs,
 };
 

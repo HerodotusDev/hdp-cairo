@@ -90,13 +90,13 @@ pub struct Felt {
 
 impl From<Felt252> for Felt {
     fn from(value: Felt252) -> Self {
-        Self{value}
+        Self { value }
     }
 }
 
 impl From<u64> for Felt {
     fn from(value: u64) -> Self {
-        Self{value: Felt252::from(value)}
+        Self { value: Felt252::from(value) }
     }
 }
 

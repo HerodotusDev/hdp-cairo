@@ -13,7 +13,7 @@ use cairo_vm::{
 };
 use num_bigint::BigUint;
 use std::collections::HashMap;
-use types::proofs::{mpt::MPTProof, evm::storage::Storage, evm::Proofs};
+use types::proofs::{evm::storage::Storage, evm::Proofs, mpt::MPTProof};
 
 pub const HINT_BATCH_STORAGES_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch.storages))";
 

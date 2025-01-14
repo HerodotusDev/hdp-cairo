@@ -11,7 +11,7 @@ from starkware.cairo.common.cairo_builtins import (
 )
 
 from src.types import MMRMeta, ChainInfo
-from src.utils.chain_info import fetch_chain_info
+from src.utils.chain_info import fetch_chain_info, Layout
 
 func run_state_verification{
     range_check_ptr,
@@ -49,7 +49,11 @@ func run_state_verification_inner{
 
     %{ vm_enter_scope({'batch': chain_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
     with chain_info {
-        let (mmr_meta_idx) = evm_run_state_verification(mmr_meta_idx);
+        if (chain_info.layout == Layout.EVM) {
+                let (mmr_meta_idx) = evm_run_state_verification(mmr_meta_idx);
+        } else {
+                let (mmr_meta_idx) = starknet_run_state_verification(mmr_meta_idx);
+        }
     }
     %{ vm_exit_scope() %}
 

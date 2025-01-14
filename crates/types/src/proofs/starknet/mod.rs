@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
 
-mod storage;
 mod header;
+mod storage;
 
-use storage::GetProofOutput;
 use header::Header;
+use storage::GetProofOutput;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub struct Proofs {

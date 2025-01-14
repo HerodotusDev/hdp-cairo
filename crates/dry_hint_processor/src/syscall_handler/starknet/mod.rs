@@ -1,13 +1,13 @@
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
+use header::HeaderCallHandler;
 use serde::{Deserialize, Serialize};
-use types::cairo::traits::CairoType;
 use std::{collections::HashSet, hash::Hash};
+use storage::StorageCallHandler;
 use strum_macros::FromRepr;
 use syscall_handler::traits::{CallHandler, SyscallHandler};
 use syscall_handler::{felt_from_ptr, SyscallExecutionError, SyscallResult, WriteResponseResult};
 use types::cairo::new_syscalls::{CallContractRequest, CallContractResponse};
-use header::HeaderCallHandler;
-use storage::StorageCallHandler;
+use types::cairo::traits::CairoType;
 use types::keys::starknet;
 pub mod header;
 pub mod storage;
@@ -37,7 +37,7 @@ impl SyscallHandler for CallContractHandler {
         let call_handler_id = CallHandlerId::try_from(request.contract_address)?;
         let segment_index = felt_from_ptr(vm, &mut calldata)?;
         let offset = felt_from_ptr(vm, &mut calldata)?;
-        
+
         let _memorizer = Relocatable::from((
             segment_index
                 .try_into()
