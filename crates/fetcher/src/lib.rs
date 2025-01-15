@@ -4,6 +4,8 @@ use starknet_types_core::felt::FromStrError;
 use std::num::ParseIntError;
 use thiserror::Error;
 
+pub mod proof_keys;
+
 #[derive(Error, Debug)]
 pub enum FetcherError {
     #[error(transparent)]

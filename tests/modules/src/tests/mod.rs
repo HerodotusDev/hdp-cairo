@@ -5,7 +5,7 @@ use cairo_vm::{
     vm::runners::cairo_runner::{CairoRunner, RunnerMode},
 };
 use dry_hint_processor::syscall_handler::{evm, SyscallHandler, SyscallHandlerWrapper};
-use fetcher::proof_keys::ProofKeys;
+use fetcher::proof_keys::{evm::ProofKeys as EvmProofKeys, ProofKeys};
 use futures::{FutureExt, StreamExt};
 use hints::vars;
 use std::{collections::HashSet, env, path::PathBuf};
@@ -83,21 +83,28 @@ async fn run(compiled_class: CasmContractClass) {
     for key in syscall_handler.call_contract_handler.evm_call_contract_handler.key_set {
         match key {
             evm::DryRunKey::Account(value) => {
-                proof_keys.account_keys.insert(value);
+                proof_keys.evm.account_keys.insert(value);
             }
             evm::DryRunKey::Header(value) => {
-                proof_keys.header_keys.insert(value);
+                proof_keys.evm.header_keys.insert(value);
             }
             evm::DryRunKey::Storage(value) => {
-                proof_keys.storage_keys.insert(value);
+                proof_keys.evm.storage_keys.insert(value);
             }
         }
     }
 
     let mut headers_with_mmr: HashSet<HeaderMmrMeta> = HashSet::default();
 
-    let mut headers_with_mmr_fut = futures::stream::iter(proof_keys.header_keys.iter().map(ProofKeys::fetch_header_proof).map(|f| f.boxed_local()))
-        .buffer_unordered(BUFFER_UNORDERED);
+    let mut headers_with_mmr_fut = futures::stream::iter(
+        proof_keys
+            .evm
+            .header_keys
+            .iter()
+            .map(|key| ProofKeys::fetch_header_proof(key.chain_id, key.block_number))
+            .map(|f| f.boxed_local()),
+    )
+    .buffer_unordered(BUFFER_UNORDERED);
 
     while let Some(Ok(item)) = headers_with_mmr_fut.next().await {
         headers_with_mmr.insert(item);
@@ -107,9 +114,10 @@ async fn run(compiled_class: CasmContractClass) {
 
     let mut accounts_fut = futures::stream::iter(
         proof_keys
+            .evm
             .account_keys
             .iter()
-            .map(ProofKeys::fetch_account_proof)
+            .map(EvmProofKeys::fetch_account_proof)
             .map(|f| f.boxed_local()),
     )
     .buffer_unordered(BUFFER_UNORDERED);
@@ -123,9 +131,10 @@ async fn run(compiled_class: CasmContractClass) {
 
     let mut storages_fut = futures::stream::iter(
         proof_keys
+            .evm
             .storage_keys
             .iter()
-            .map(ProofKeys::fetch_storage_proof)
+            .map(EvmProofKeys::fetch_storage_proof)
             .map(|f| f.boxed_local()),
     )
     .buffer_unordered(BUFFER_UNORDERED);
