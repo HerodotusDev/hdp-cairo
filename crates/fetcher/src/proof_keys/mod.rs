@@ -94,8 +94,8 @@ impl ProofKeys {
                 mmr_path: mmr_proof
                     .siblings_hashes
                     .iter()
-                    .map(|hash| Felt252::from_bytes_be_slice(Self::normalize_hex(hash).as_bytes()))
-                    .collect::<Vec<Felt252>>(),
+                    .map(|hash| Felt252::from_hex(Self::normalize_hex(hash).as_str()))
+                    .collect::<Result<Vec<Felt252>, FromStrError>>()?
             },
         };
 
