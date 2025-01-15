@@ -8,7 +8,6 @@ use dry_hint_processor::syscall_handler::{evm, starknet, SyscallHandler};
 use fetcher::FetcherError;
 use futures::{FutureExt, StreamExt};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use proof_keys::ProofKeys;
 use std::{
     collections::{HashMap, HashSet},
     fs,
@@ -30,8 +29,8 @@ use types::proofs::evm::Proofs as EvmProofs;
 use types::proofs::starknet::Proofs as StarknetProofs;
 mod proof_keys;
 
-use proof_keys::evm::ProofKeys as EvmProofKeys;
 use proof_keys::starknet::ProofKeys as StarknetProofKeys;
+use proof_keys::{evm::ProofKeys as EvmProofKeys, ProofKeys};
 const BUFFER_UNORDERED: usize = 50;
 
 #[derive(Parser, Debug)]

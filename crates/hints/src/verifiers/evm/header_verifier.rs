@@ -15,6 +15,7 @@ use types::proofs::{
     header::{Header, HeaderPayload},
     HeaderMmrMeta,
 };
+// use types::proofs::{evm::Proofs, header::Header, HeaderMmrMeta};
 
 pub const HINT_VM_ENTER_SCOPE: &str = "vm_enter_scope({'header_with_mmr': batch.headers_with_mmr[ids.idx - 1], '__dict_manager': __dict_manager})";
 

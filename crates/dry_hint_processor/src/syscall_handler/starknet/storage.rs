@@ -13,6 +13,7 @@ use syscall_handler::{SyscallExecutionError, SyscallResult};
 use types::{
     cairo::{evm::storage::FunctionId, structs::Felt, traits::CairoType},
     keys::starknet::storage::{CairoKey, Key},
+    STARKNET_RPC,
 };
 
 #[derive(Debug, Default)]
@@ -42,7 +43,7 @@ impl CallHandler for StorageCallHandler {
     }
 
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
-        let provider = JsonRpcClient::new(HttpTransport::new(Url::parse(&env::var("STARKNET_RPC").unwrap()).unwrap()));
+        let provider = JsonRpcClient::new(HttpTransport::new(Url::parse(&env::var(STARKNET_RPC).unwrap()).unwrap()));
         let block_id = BlockId::Number(key.block_number);
         let value = match function_id {
             FunctionId::Storage => provider

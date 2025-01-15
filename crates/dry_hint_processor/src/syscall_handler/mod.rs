@@ -17,8 +17,8 @@ use tokio::{sync::RwLock, task};
 use types::cairo::new_syscalls::{CallContractRequest, CallContractResponse};
 use types::cairo::traits::CairoType;
 
-pub const ETHEREUM_MAINNET_CHAIN_ID: u128 = 1;
-pub const ETHEREUM_TESTNET_CHAIN_ID: u128 = 11155111;
+pub const ETHEREUM_MAINNET_CHAIN_ID: u128 = 0x1;
+pub const ETHEREUM_TESTNET_CHAIN_ID: u128 = 0xaa36a7;
 pub const STARKNET_MAINNET_CHAIN_ID: u128 = 0x534e5f4d41494e;
 pub const STARKNET_TESTNET_CHAIN_ID: u128 = 0x534e5f5345504f4c4941;
 
