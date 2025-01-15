@@ -17,14 +17,11 @@ use std::{
 use thiserror as _;
 use types::{
     proofs::{
-        header::Header, 
-        mmr::MmrMeta, 
+        evm::{account::Account, storage::Storage},
+        header::Header,
+        mmr::MmrMeta,
+        starknet::GetProofOutput,
         HeaderMmrMeta,
-        evm::{
-            account::Account,
-            storage::Storage
-        },
-        starknet::GetProofOutput
     },
     ChainProofs,
 };
@@ -66,7 +63,8 @@ impl ProofProgress {
             (proof_keys.evm.storage_keys.len(), "evm_storage_keys"),
             (proof_keys.starknet.header_keys.len(), "starknet_header_keys"),
             (proof_keys.starknet.storage_keys.len(), "starknet_storage_keys"),
-        ].map(|(len, msg)| {
+        ]
+        .map(|(len, msg)| {
             let pb = multi_progress.add(ProgressBar::new(len as u64));
             pb.set_style(style.clone());
             pb.set_message(msg);
@@ -74,7 +72,6 @@ impl ProofProgress {
         });
 
         Self {
-            multi_progress,
             evm_header: bars[0].clone(),
             evm_account: bars[1].clone(),
             evm_storage: bars[2].clone(),
@@ -92,20 +89,20 @@ impl ProofProgress {
     }
 }
 
-async fn collect_evm_proofs(
-    proof_keys: &EvmProofKeys,
-    progress: &ProofProgress,
-) -> Result<EvmProofs, FetcherError> {
+async fn collect_evm_proofs(proof_keys: &EvmProofKeys, progress: &ProofProgress) -> Result<EvmProofs, FetcherError> {
     let mut headers_with_mmr = HashMap::default();
     let mut accounts: HashSet<Account> = HashSet::default();
     let mut storages: HashSet<Storage> = HashSet::default();
 
     // Collect header proofs
     let mut header_fut = futures::stream::iter(
-        proof_keys.header_keys.iter()
+        proof_keys
+            .header_keys
+            .iter()
             .map(|key| ProofKeys::fetch_header_proof(key.chain_id, key.block_number))
             .map(|f| f.boxed_local()),
-    ).buffer_unordered(BUFFER_UNORDERED);
+    )
+    .buffer_unordered(BUFFER_UNORDERED);
 
     while let Some(result) = header_fut.next().await {
         let item = result?;
@@ -118,10 +115,13 @@ async fn collect_evm_proofs(
 
     // Collect account proofs
     let mut account_fut = futures::stream::iter(
-        proof_keys.account_keys.iter()
+        proof_keys
+            .account_keys
+            .iter()
             .map(EvmProofKeys::fetch_account_proof)
             .map(|f| f.boxed_local()),
-    ).buffer_unordered(BUFFER_UNORDERED);
+    )
+    .buffer_unordered(BUFFER_UNORDERED);
 
     while let Some(result) = account_fut.next().await {
         let (header_with_mmr, account) = result?;
@@ -135,10 +135,13 @@ async fn collect_evm_proofs(
 
     // Collect storage proofs
     let mut storage_fut = futures::stream::iter(
-        proof_keys.storage_keys.iter()
+        proof_keys
+            .storage_keys
+            .iter()
             .map(EvmProofKeys::fetch_storage_proof)
             .map(|f| f.boxed_local()),
-    ).buffer_unordered(BUFFER_UNORDERED);
+    )
+    .buffer_unordered(BUFFER_UNORDERED);
 
     while let Some(result) = storage_fut.next().await {
         let (header_with_mmr, account, storage) = result?;
@@ -159,19 +162,19 @@ async fn collect_evm_proofs(
     })
 }
 
-async fn collect_starknet_proofs(
-    proof_keys: &StarknetProofKeys,
-    progress: &ProofProgress,
-) -> Result<StarknetProofs, FetcherError> {
+async fn collect_starknet_proofs(proof_keys: &StarknetProofKeys, progress: &ProofProgress) -> Result<StarknetProofs, FetcherError> {
     let mut headers_with_mmr = HashMap::default();
     let mut storages: HashSet<GetProofOutput> = HashSet::default();
 
     // Collect header proofs
     let mut header_fut = futures::stream::iter(
-        proof_keys.header_keys.iter()
+        proof_keys
+            .header_keys
+            .iter()
             .map(|key| ProofKeys::fetch_header_proof(key.chain_id, key.block_number))
             .map(|f| f.boxed_local()),
-    ).buffer_unordered(BUFFER_UNORDERED);
+    )
+    .buffer_unordered(BUFFER_UNORDERED);
 
     while let Some(result) = header_fut.next().await {
         let item = result?;
@@ -184,10 +187,13 @@ async fn collect_starknet_proofs(
 
     // Collect storage proofs
     let mut storage_fut = futures::stream::iter(
-        proof_keys.storage_keys.iter()
+        proof_keys
+            .storage_keys
+            .iter()
             .map(StarknetProofKeys::fetch_storage_proof)
             .map(|f| f.boxed_local()),
-    ).buffer_unordered(BUFFER_UNORDERED);
+    )
+    .buffer_unordered(BUFFER_UNORDERED);
 
     while let Some(result) = storage_fut.next().await {
         let (header_with_mmr, storage) = result?;
@@ -247,24 +253,23 @@ async fn main() -> Result<(), FetcherError> {
     let args = Args::try_parse_from(std::env::args()).map_err(FetcherError::Args)?;
     let input_file = fs::read(&args.filename)?;
     let proof_keys = parse_syscall_handler(&input_file)?;
-    
+
     let progress = ProofProgress::new(&proof_keys);
-    
+
     let (evm_proofs, starknet_proofs) = tokio::try_join!(
         collect_evm_proofs(&proof_keys.evm, &progress),
         collect_starknet_proofs(&proof_keys.starknet, &progress)
     )?;
 
-    let chain_proofs = vec![
-        ChainProofs::EthereumSepolia(evm_proofs),
-        ChainProofs::StarknetSepolia(starknet_proofs)
-    ];
+    let chain_proofs = vec![ChainProofs::EthereumSepolia(evm_proofs), ChainProofs::StarknetSepolia(starknet_proofs)];
 
     progress.finish();
 
     fs::write(
         args.program_output,
-        serde_json::to_string_pretty(&chain_proofs).map_err(|e| FetcherError::IO(e.into()))?.as_bytes(),
+        serde_json::to_string_pretty(&chain_proofs)
+            .map_err(|e| FetcherError::IO(e.into()))?
+            .as_bytes(),
     )?;
 
     Ok(())

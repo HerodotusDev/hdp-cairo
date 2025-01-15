@@ -1,8 +1,8 @@
 use alloy::hex::FromHexError;
 use indexer::types::IndexerError;
+use starknet_types_core::felt::FromStrError;
 use std::num::ParseIntError;
 use thiserror::Error;
-use starknet_types_core::felt::FromStrError;
 
 pub mod proof_keys;
 

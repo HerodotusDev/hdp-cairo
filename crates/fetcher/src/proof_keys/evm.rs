@@ -5,12 +5,7 @@ use alloy::{
 use std::{collections::HashSet, env};
 use types::{
     keys,
-    proofs::{
-        evm::account::Account,
-        evm::storage::Storage,
-        mpt::MPTProof,
-        HeaderMmrMeta,
-    },
+    proofs::{evm::account::Account, evm::storage::Storage, mpt::MPTProof, HeaderMmrMeta},
     ETH_RPC,
 };
 

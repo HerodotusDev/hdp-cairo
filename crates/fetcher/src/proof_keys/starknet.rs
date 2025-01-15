@@ -1,6 +1,10 @@
-use std::{collections::HashSet, env};
 use reqwest::Url;
-use types::{keys, proofs::{starknet::GetProofOutput, HeaderMmrMeta}, STARKNET_RPC};
+use std::{collections::HashSet, env};
+use types::{
+    keys,
+    proofs::{starknet::GetProofOutput, HeaderMmrMeta},
+    STARKNET_RPC,
+};
 
 use crate::FetcherError;
 
@@ -26,21 +30,17 @@ impl ProofKeys {
             }))
             .send()
             .await?;
-        
+
         let response_text = response.text().await?;
 
-        let json_rpc_response: serde_json::Value = serde_json::from_str(&response_text)
-            .map_err(|e| FetcherError::JsonDeserializationError(e.to_string()))?;
-        
-        let proof = serde_json::from_value::<GetProofOutput>(json_rpc_response["result"].clone())
-            .map_err(|e| {
-                println!("Deserialization error: {}", e);
-                FetcherError::JsonDeserializationError(e.to_string())
-            })?;
+        let json_rpc_response: serde_json::Value =
+            serde_json::from_str(&response_text).map_err(|e| FetcherError::JsonDeserializationError(e.to_string()))?;
 
-        Ok((
-            super::ProofKeys::fetch_header_proof(key.chain_id, key.block_number).await?,
-            proof
-        ))
+        let proof = serde_json::from_value::<GetProofOutput>(json_rpc_response["result"].clone()).map_err(|e| {
+            println!("Deserialization error: {}", e);
+            FetcherError::JsonDeserializationError(e.to_string())
+        })?;
+
+        Ok((super::ProofKeys::fetch_header_proof(key.chain_id, key.block_number).await?, proof))
     }
 }

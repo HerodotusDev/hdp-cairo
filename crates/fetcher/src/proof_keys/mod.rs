@@ -1,7 +1,4 @@
-use alloy::{
-    hex::FromHexError,
-    primitives::Bytes,
-};
+use alloy::{hex::FromHexError, primitives::Bytes};
 use indexer::{
     types::{BlockHeader, IndexerQuery},
     Indexer,
@@ -43,7 +40,6 @@ impl ProofKeys {
             .get_headers_proof(IndexerQuery::new(chain_id, block_number, block_number))
             .await?;
 
-
         // Extract MMR metadata
         let mmr_meta = MmrMeta {
             id: u64::from_str_radix(&response.mmr_meta.mmr_id[2..], 16)?,
@@ -80,16 +76,14 @@ impl ProofKeys {
             },
             KeyType::STARKNET => match &mmr_proof.block_header {
                 BlockHeader::Fields(fields) => {
-                    
                     let felts = fields
                         .iter()
-                        .map(|field| {
-                            Felt252::from_hex(&field)
-                        }).collect::<Result<Vec<Felt252>, FromStrError>>()?.into();
+                        .map(|field| Felt252::from_hex(field))
+                        .collect::<Result<Vec<Felt252>, FromStrError>>()?;
                     HeaderPayload::Starknet(felts)
                 }
                 _ => return Err(FetcherError::InternalError("wrong starknet header format".into())),
-            }
+            },
         };
 
         // Construct Header

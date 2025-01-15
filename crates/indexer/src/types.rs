@@ -44,7 +44,6 @@ pub enum IndexerError {
     /// Failed to get headers proof with a detailed message.
     #[error("Failed to get headers proof: {0}")]
     GetHeadersProofError(String),
-
 }
 
 /// Query parameters for the indexer
