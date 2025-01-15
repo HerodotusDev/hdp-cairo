@@ -31,7 +31,7 @@ func verify_proofs{
 }() {
     alloc_locals;
 
-    tempvar n_storage_items: felt = nondet %{ len(batch.storages) %};
+    tempvar n_storage_items: felt = nondet %{ len(batch_starknet.storages) %};
     verify_proofs_loop(n_storage_items, 0);
 
     return ();
@@ -53,9 +53,9 @@ func verify_proofs_loop{
         return ();
     }
 
-    %{ storage = batch.storages[ids.idx] %}
+    %{ storage_starknet = batch_starknet.storages[ids.idx] %}
 
-    tempvar block_number: felt = nondet %{ storage.block_number %};
+    tempvar block_number: felt = nondet %{ storage_starknet.block_number %};
 
     let memorizer_key = StarknetHashParams.header(
         chain_id=chain_info.id, block_number=block_number
@@ -81,11 +81,11 @@ func verify_proofs_inner{
 }(state_root: felt, block_number: felt, index: felt) {
     alloc_locals;
 
-    tempvar storage_count: felt = nondet %{ len(storage.storage_addresses) %};
-    tempvar contract_address: felt = nondet %{ storage.contract_address %};
+    tempvar storage_count: felt = nondet %{ len(storage_starknet.storage_addresses) %};
+    tempvar contract_address: felt = nondet %{ storage_starknet.contract_address %};
 
     let (storage_addresses: felt*) = alloc();
-    %{ segments.write_arg(ids.storage_addresses, [int(x, 16) for x in storage.storage_addresses])) %}
+    %{ segments.write_arg(ids.storage_addresses, [int(x, 16) for x in storage_starknet.storage_addresses])) %}
 
     // Compute contract_root and write values to memorizer
     with contract_address, storage_addresses, block_number {
@@ -93,9 +93,9 @@ func verify_proofs_inner{
     }
 
     // Compute contract_state_hash
-    tempvar class_hash: felt = nondet %{ storage.proof.contract_data.class_hash) %};
-    tempvar nonce: felt = nondet %{ storage.proof.contract_data.nonce) %};
-    tempvar contract_state_hash_version: felt = nondet %{ storage.proof.contract_data.contract_state_hash_version) %};
+    tempvar class_hash: felt = nondet %{ storage_starknet.proof.contract_data.class_hash) %};
+    tempvar nonce: felt = nondet %{ storage_starknet.proof.contract_data.nonce) %};
+    tempvar contract_state_hash_version: felt = nondet %{ storage_starknet.proof.contract_data.contract_state_hash_version) %};
 
     let (hash_value) = hash2{hash_ptr=pedersen_ptr}(class_hash, contract_root);
     let (hash_value) = hash2{hash_ptr=pedersen_ptr}(hash_value, nonce);
@@ -104,9 +104,9 @@ func verify_proofs_inner{
     );
 
     // Compute contract_state_hash
-    tempvar contract_nodes_len: felt = nondet %{ len(storage.proof.contract_proof) %};
+    tempvar contract_nodes_len: felt = nondet %{ len(storage_starknet.proof.contract_proof) %};
     let (contract_nodes: felt**) = alloc();
-    %{ segments.write_arg(ids.contract_nodes, storage.proof.contract_proof) %}
+    %{ segments.write_arg(ids.contract_nodes, storage_starknet.proof.contract_proof) %}
 
     let (contract_tree_root, expected_contract_state_hash) = traverse(
         contract_nodes, contract_nodes_len, contract_address
@@ -118,7 +118,7 @@ func verify_proofs_inner{
     let (hash_chain: felt*) = alloc();
     assert hash_chain[0] = STARKNET_STATE_V0;
     assert hash_chain[1] = contract_tree_root;
-    assert hash_chain[2] = nondet %{ storage.proof.class_commitment) %};
+    assert hash_chain[2] = nondet %{ storage_starknet.proof.class_commitment) %};
 
     let (computed_state_root) = poseidon_hash_many(3, hash_chain);
     assert state_root = computed_state_root;
@@ -147,9 +147,9 @@ func validate_storage_proofs{
     }
 
     // Compute contract_root
-    tempvar contract_state_nodes_len: felt = nondet %{ len(storage.proof.contract_data.storage_proofs[ids.idx]) %};
+    tempvar contract_state_nodes_len: felt = nondet %{ len(storage_starknet.proof.contract_data.storage_proofs[ids.idx]) %};
     let (contract_state_nodes: felt**) = alloc();
-    %{ segments.write_arg(ids.contract_state_nodes, storage.proof.contract_data.storage_proofs[ids.idx]) %}
+    %{ segments.write_arg(ids.contract_state_nodes, storage_starknet.proof.contract_data.storage_proofs[ids.idx]) %}
 
     let (new_contract_root, value) = traverse(
         contract_state_nodes, contract_state_nodes_len, storage_addresses[idx]

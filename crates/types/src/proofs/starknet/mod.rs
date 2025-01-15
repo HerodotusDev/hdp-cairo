@@ -8,6 +8,6 @@ pub mod storage;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub struct Proofs {
-    pub headers: Vec<HeaderMmrMeta<Header>>,
+    pub headers_with_mmr: Vec<HeaderMmrMeta<Header>>,
     pub storages: Vec<GetProofOutput>,
 }

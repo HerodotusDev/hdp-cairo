@@ -4,7 +4,12 @@ from src.verifiers.evm.header_verifier import verify_mmr_batches
 from src.verifiers.evm.block_tx_verifier import verify_block_tx_proofs
 from src.verifiers.evm.receipt_verifier import verify_block_receipt_proofs
 from starkware.cairo.common.dict_access import DictAccess
-from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, KeccakBuiltin, HashBuiltin
+from starkware.cairo.common.cairo_builtins import (
+    PoseidonBuiltin,
+    BitwiseBuiltin,
+    KeccakBuiltin,
+    HashBuiltin,
+)
 from src.types import MMRMeta, ChainInfo
 from src.utils.chain_info import fetch_chain_info
 
@@ -23,7 +28,7 @@ func run_state_verification{
     alloc_locals;
 
     // Step 1: Verify MMR and headers inclusion
-    tempvar n_proofs: felt = nondet %{ len(batch.headers_with_mmr) %};
+    tempvar n_proofs: felt = nondet %{ len(batch_evm.headers_with_mmr_evm) %};
     let (mmr_meta_idx) = verify_mmr_batches(n_proofs, mmr_meta_idx);
     // Step 2: Verify the accounts
     verify_accounts();
