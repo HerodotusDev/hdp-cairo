@@ -95,7 +95,7 @@ impl ProofKeys {
                     .siblings_hashes
                     .iter()
                     .map(|hash| Felt252::from_hex(Self::normalize_hex(hash).as_str()))
-                    .collect::<Result<Vec<Felt252>, FromStrError>>()?
+                    .collect::<Result<Vec<Felt252>, FromStrError>>()?,
             },
         };
 
