@@ -6,8 +6,10 @@ use indexer::{
     types::{BlockHeader, IndexerQuery},
     Indexer,
 };
+
+use starknet_types_core::felt::FromStrError;
 use types::{
-    keys::{KeyType},
+    keys::KeyType,
     proofs::{
         header::{Header, HeaderPayload, HeaderProof},
         mmr::MmrMeta,
@@ -40,6 +42,7 @@ impl ProofKeys {
         let response = provider
             .get_headers_proof(IndexerQuery::new(chain_id, block_number, block_number))
             .await?;
+
 
         // Extract MMR metadata
         let mmr_meta = MmrMeta {
@@ -75,8 +78,17 @@ impl ProofKeys {
                 }
                 _ => return Err(FetcherError::InternalError("wrong rlp format".into())),
             },
-            KeyType::STARKNET => {
-                unimplemented!()
+            KeyType::STARKNET => match &mmr_proof.block_header {
+                BlockHeader::Fields(fields) => {
+                    
+                    let felts = fields
+                        .iter()
+                        .map(|field| {
+                            Felt252::from_hex(&field)
+                        }).collect::<Result<Vec<Felt252>, FromStrError>>()?.into();
+                    HeaderPayload::Starknet(felts)
+                }
+                _ => return Err(FetcherError::InternalError("wrong starknet header format".into())),
             }
         };
 

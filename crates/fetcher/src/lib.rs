@@ -2,6 +2,7 @@ use alloy::hex::FromHexError;
 use indexer::types::IndexerError;
 use std::num::ParseIntError;
 use thiserror::Error;
+use starknet_types_core::felt::FromStrError;
 
 pub mod proof_keys;
 
@@ -25,4 +26,12 @@ pub enum FetcherError {
     InternalError(String),
     #[error("HTTP request failed: {0}")]
     RequestError(#[from] reqwest::Error),
+    #[error("JSON deserialization error: {0}")]
+    JsonDeserializationError(String),
+}
+
+impl From<FromStrError> for FetcherError {
+    fn from(e: FromStrError) -> Self {
+        FetcherError::InternalError(e.to_string())
+    }
 }

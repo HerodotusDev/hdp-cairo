@@ -44,6 +44,7 @@ pub enum IndexerError {
     /// Failed to get headers proof with a detailed message.
     #[error("Failed to get headers proof: {0}")]
     GetHeadersProofError(String),
+
 }
 
 /// Query parameters for the indexer
@@ -65,7 +66,7 @@ pub struct IndexerQuery {
 impl IndexerQuery {
     pub fn new(chain_id: u128, from_block: BlockNumber, to_block: BlockNumber) -> Self {
         Self {
-            deployed_on_chain: chain_id,
+            deployed_on_chain: 11155111, // For now this is the only thing that is supported
             accumulates_chain: chain_id,
             hashing_function: HashingFunction::Poseidon,
             contract_type: ContractType::Aggregator,

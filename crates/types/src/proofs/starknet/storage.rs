@@ -15,7 +15,7 @@ use starknet_types_core::hash::StarkHash;
 
 /// Holds the membership/non-membership of a contract and its associated
 /// contract contract if the contract exists.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash, Default)]
 #[skip_serializing_none]
 pub struct GetProofOutput {
     /// The global state commitment for Starknet 0.11.0 blocks onwards, if

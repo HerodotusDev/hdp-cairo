@@ -14,6 +14,6 @@ thiserror.workspace = true
 tokio.workspace = true
 cairo-vm.workspace = true
 reqwest.workspace = true
-
+starknet-types-core.workspace = true
 indexer.workspace = true
 types.workspace = true
