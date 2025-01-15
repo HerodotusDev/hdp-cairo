@@ -93,9 +93,9 @@ func verify_proofs_inner{
     }
 
     // Compute contract_state_hash
-    tempvar class_hash: felt = nondet %{ storage_starknet.proof.contract_data.class_hash) %};
-    tempvar nonce: felt = nondet %{ storage_starknet.proof.contract_data.nonce) %};
-    tempvar contract_state_hash_version: felt = nondet %{ storage_starknet.proof.contract_data.contract_state_hash_version) %};
+    tempvar class_hash: felt = nondet %{ storage_starknet.proof.contract_data.class_hash %};
+    tempvar nonce: felt = nondet %{ storage_starknet.proof.contract_data.nonce %};
+    tempvar contract_state_hash_version: felt = nondet %{ storage_starknet.proof.contract_data.contract_state_hash_version %};
 
     let (hash_value) = hash2{hash_ptr=pedersen_ptr}(class_hash, contract_root);
     let (hash_value) = hash2{hash_ptr=pedersen_ptr}(hash_value, nonce);
@@ -118,7 +118,7 @@ func verify_proofs_inner{
     let (hash_chain: felt*) = alloc();
     assert hash_chain[0] = STARKNET_STATE_V0;
     assert hash_chain[1] = contract_tree_root;
-    assert hash_chain[2] = nondet %{ storage_starknet.proof.class_commitment) %};
+    assert hash_chain[2] = nondet %{ storage_starknet.proof.class_commitment %};
 
     let (computed_state_root) = poseidon_hash_many(3, hash_chain);
     assert state_root = computed_state_root;

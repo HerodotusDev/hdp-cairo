@@ -1,6 +1,6 @@
 pub mod header_verifier;
 pub mod mmr_verifier;
-// pub mod storage_verifier;
+pub mod storage_verifier;
 
 use crate::vars;
 use cairo_vm::hint_processor::builtin_hint_processor::builtin_hint_processor_definition::HintProcessorData;
