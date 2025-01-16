@@ -5,7 +5,7 @@ use syscall_handler::{SyscallExecutionError, SyscallResult};
 use std::env;
 use types::{
     cairo::{
-        starknet::header::{CairoHeader, FunctionId},
+        starknet::header::{StarknetBlock, FunctionId},
         structs::Felt,
         traits::CairoType,
     },
@@ -74,6 +74,6 @@ impl CallHandler for HeaderCallHandler {
         }
         .map_err(|e| SyscallExecutionError::InternalError(format!("Failed to parse block data: {}", e).into()))?;
 
-        Ok(CairoHeader::new(block_data).handle(function_id))
+        Ok(StarknetBlock::from_hash_fields(block_data).handle(function_id))
     }
 }

@@ -8,7 +8,7 @@ pub mod types;
 use reqwest::Client;
 use types::{IndexerError, IndexerHeadersProofResponse, IndexerQuery, MMRResponse};
 
-pub const HERODOTUS_RS_INDEXER_URL: &str = "https://rs-indexer.api.herodotus.cloud/accumulators/proofs";
+pub const HERODOTUS_RS_INDEXER_URL: &str = "https://staging.rs-indexer.api.herodotus.cloud/accumulators/proofs";
 
 #[derive(Clone)]
 pub struct Indexer {
