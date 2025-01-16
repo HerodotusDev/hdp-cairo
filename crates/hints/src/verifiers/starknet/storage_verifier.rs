@@ -275,7 +275,7 @@ pub fn hint_set_eval_depth(
             (0..n_nodes)
                 .map(|idx| CairoTrieNode::from_memory(vm, (nodes_ptr + CairoTrieNode::n_fields() * idx).unwrap()).unwrap())
                 .map(|node| match node.0 {
-                    TrieNode::Binary { left: _, right: _ } => 0_u64,
+                    TrieNode::Binary { left: _, right: _ } => 1_u64,
                     TrieNode::Edge { child: _, path } => path.len,
                 })
                 .sum::<u64>(),
