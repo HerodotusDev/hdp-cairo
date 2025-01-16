@@ -21,6 +21,10 @@ pub mod scopes {
 }
 
 pub mod ids {
+    pub const NODES: &str = "nodes";
+    pub const NODE: &str = "node";
+    pub const N_NODES: &str = "n_nodes";
+    pub const LEAF: &str = "leaf";
     pub const CONTRACT_STATE_NODES: &str = "contract_state_nodes";
     pub const CONTRACT_NODES: &str = "contract_nodes";
     pub const STORAGE_ADDRESSES: &str = "storage_addresses";

@@ -184,8 +184,8 @@ func traverse{pedersen_ptr: HashBuiltin*, bitwise_ptr: BitwiseBuiltin*, pow2_arr
 ) -> (root: felt, value: felt) {
     alloc_locals;
 
-    let leaf = nodes[n_nodes - 1];
-    %{ memory[ap] = CairoTrieNode(ids.leaf).is_edge() %}
+    let node = nodes[n_nodes - 1];
+    %{ memory[ap] = CairoTrieNode(ids.node).is_edge() %}
     jmp edge_leaf if [ap] != 0, ap++;
     return traverse_binary_leaf(nodes, n_nodes, expected_path);
 
@@ -207,7 +207,7 @@ func traverse_edge_leaf{
     // First we precompute the eval depth of the proof via hint.
     // In case of non-inclusion, we dont nececcary need to traverse the entire depth of the tree.
     // The eval depth is how many bits we went down the binary tree from the root for the proof.
-    tempvar eval_depth: felt = nondet %{ [ if CairoTrieNode(ids.nodes[i]).is_edge() CairoTrieNode(ids.nodes[i]).path_len else 1 for i in ids.n_nodes ] %};
+    tempvar eval_depth: felt = nondet %{ [ if CairoTrieNode(ids.nodes[i]).is_edge() CairoTrieNode(ids.nodes[i]).path_len else 1 for i in ids.n_nodes ].sum() %};
 
     // If the eval_depth is not 251, we no we are dealing with a non-inclusion proof. (we can also have non-inclusion proofs with eval depth 251 though)
     // To verify these proofs correctly, we need to shift the traversed path, so it matches the length of the expected path (251 bits).

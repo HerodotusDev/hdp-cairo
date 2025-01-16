@@ -9,7 +9,13 @@ use cairo_vm::{
     Felt252,
 };
 use std::collections::HashMap;
-use types::proofs::starknet::{storage::Storage, Proofs};
+use types::{
+    cairo::{starknet::storage::CairoTrieNode, traits::CairoType},
+    proofs::starknet::{
+        storage::{Storage, TrieNode},
+        Proofs,
+    },
+};
 
 pub const HINT_BATCH_STORAGES_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch_starknet.storages))";
 
@@ -155,20 +161,26 @@ pub fn hint_set_storage_starknet_proof_contract_proof_len(
 pub const HINT_SET_CONTRACT_NODES: &str = "segments.write_arg(ids.contract_nodes, storage_starknet.proof.contract_proof)";
 
 pub fn hint_set_contract_nodes(
-    _vm: &mut VirtualMachine,
-    _exec_scopes: &mut ExecutionScopes,
-    _hint_data: &HintProcessorData,
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    // let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_STARKNET)?;
+    let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_STARKNET)?;
+    let contract_nodes_ptr = get_ptr_from_var_name(vars::ids::CONTRACT_NODES, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    // let contract_nodes_ptr = get_ptr_from_var_name(vars::ids::CONTRACT_NODES, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    vm.load_data(
+        contract_nodes_ptr,
+        &storage
+            .proof
+            .contract_proof
+            .into_iter()
+            .flat_map(|node| CairoTrieNode(node).into_iter())
+            .map(MaybeRelocatable::from)
+            .collect::<Vec<MaybeRelocatable>>(),
+    )?;
 
-    // unimplemented!();
-
-    // Ok(())
-
-    todo!()
+    Ok(())
 }
 
 pub const HINT_SET_STORAGE_STARKNET_PROOF_CLASS_COMMITMENT: &str = "memory[ap] = to_felt_or_relocatable(storage_starknet.proof.class_commitment)";
@@ -205,18 +217,68 @@ pub const HINT_SET_STORAGE_STARKNET_PROOF_CONTRACT_DATA_STORAGE_PROOF: &str =
     "segments.write_arg(ids.contract_state_nodes, storage_starknet.proof.contract_data.storage_proofs[ids.idx])";
 
 pub fn hint_set_storage_starknet_proof_contract_data_storage_proof(
-    _vm: &mut VirtualMachine,
-    _exec_scopes: &mut ExecutionScopes,
-    _hint_data: &HintProcessorData,
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    // let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_STARKNET)?;
+    let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_STARKNET)?;
+    let contract_state_nodes_ptr = get_ptr_from_var_name(vars::ids::CONTRACT_STATE_NODES, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    // let contract_state_nodes_ptr = get_ptr_from_var_name(vars::ids::CONTRACT_STATE_NODES, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    vm.load_data(
+        contract_state_nodes_ptr,
+        &storage
+            .proof
+            .contract_data
+            .ok_or(HintError::WrongHintData)?
+            .storage_proofs
+            .into_iter()
+            .flat_map(|nodes| nodes.into_iter())
+            .flat_map(|node| CairoTrieNode(node).into_iter())
+            .map(MaybeRelocatable::from)
+            .collect::<Vec<MaybeRelocatable>>(),
+    )?;
 
-    // unimplemented!();
+    Ok(())
+}
 
-    // Ok(())
+pub const HINT_NODE_IS_EDGE: &str = "memory[ap] = CairoTrieNode(ids.node).is_edge()";
 
-    todo!()
+pub fn hint_node_is_edge(
+    vm: &mut VirtualMachine,
+    _exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let leaf_ptr = get_ptr_from_var_name(vars::ids::NODE, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+
+    insert_value_into_ap(vm, Felt252::from(CairoTrieNode::from_memory(vm, leaf_ptr)?.is_edge()))
+}
+
+pub const HINT_SET_EVAL_DEPTH: &str =
+    "memory[ap] = to_felt_or_relocatable([ if CairoTrieNode(ids.nodes[i]).is_edge() CairoTrieNode(ids.nodes[i]).path_len else 1 for i in ids.n_nodes ].sum())";
+
+pub fn hint_set_eval_depth(
+    vm: &mut VirtualMachine,
+    _exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let nodes_ptr = get_ptr_from_var_name(vars::ids::NODES, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let n_nodes: usize = get_integer_from_var_name(vars::ids::N_NODES, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
+        .try_into()
+        .unwrap();
+
+    insert_value_into_ap(
+        vm,
+        Felt252::from(
+            (0..n_nodes)
+                .map(|idx| CairoTrieNode::from_memory(vm, (nodes_ptr + CairoTrieNode::n_fields() * idx).unwrap()).unwrap())
+                .map(|node| match node.0 {
+                    TrieNode::Binary { left: _, right: _ } => 0_u64,
+                    TrieNode::Edge { child: _, path } => path.len,
+                })
+                .sum::<u64>(),
+        ),
+    )
 }

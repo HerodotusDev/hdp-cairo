@@ -68,8 +68,8 @@ pub enum TrieNode {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
 pub struct Path {
-    len: u64,
-    value: String,
+    pub len: u64,
+    pub value: String,
 }
 
 impl TrieNode {
