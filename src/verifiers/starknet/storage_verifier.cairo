@@ -317,11 +317,14 @@ func traverse_inner{
     }
 
     let node = nodes[n_nodes - 1];
+    %{ print(f"node: {hex(memory[ids.node])}") %}
     %{ memory[ap] = nodes_types[ids.n_nodes - 1] %}
     jmp edge_node if [ap] != 0, ap++;
 
     // binary_node:
+    %{ print("In Binary node") %}
     let (result) = bitwise_and(expected_path, path_length_pow2);
+    %{ print(f"bitwise_and result: {hex(ids.result)}") %}
     local new_path: felt;
     if (result == 0) {
         assert hash_value = node[0];
@@ -330,9 +333,12 @@ func traverse_inner{
         assert hash_value = node[1];
         new_path = traversed_path + path_length_pow2;
     }
+
+    %{ print(f"next_path: {hex(ids.new_path)}") %}
     let next_path_length_pow2 = path_length_pow2 * 2;
     let next_hash = hash_binary_node(node);
-
+    %{ print(f"next_hash: {hex(ids.next_hash)}") %}
+    %{ print("_______________________________")%}
     return traverse_inner(
         n_nodes - 1,
         expected_path,
@@ -343,10 +349,14 @@ func traverse_inner{
     );
 
     edge_node:
+    %{ print("In Edge node") %}
     assert hash_value = node[0];
     let next_path = traversed_path + node[1] * path_length_pow2;
+    %{ print(f"next_path: {hex(ids.next_path)}") %}
     let next_path_length_pow2 = path_length_pow2 * pow2_array[node[2]];
     let next_hash = hash_edge_node(node);
+    %{ print(f"next_hash: {hex(ids.next_hash)}") %}
+    %{ print("_______________________________")%}
 
     return traverse_inner(
         n_nodes - 1,
