@@ -8,7 +8,7 @@ use cairo_vm::{
     Felt252,
 };
 use std::collections::HashMap;
-use types::proofs::evm;
+use types::proofs::starknet;
 use types::proofs::header::HeaderMmrMeta;
 
 pub const HINT_HEADERS_WITH_MMR_META_PEAKS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(header_with_mmr_starknet.mmr_meta.peaks))";
@@ -19,7 +19,7 @@ pub fn hint_headers_with_mmr_meta_peaks_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let header_with_mmr = exec_scopes.get::<HeaderMmrMeta<evm::header::Header>>(vars::scopes::HEADER_WITH_MMR_STARKNET)?;
+    let header_with_mmr = exec_scopes.get::<HeaderMmrMeta<starknet::header::Header>>(vars::scopes::HEADER_WITH_MMR_STARKNET)?;
 
     insert_value_into_ap(vm, Felt252::from(header_with_mmr.mmr_meta.peaks.len()))
 }
@@ -32,7 +32,7 @@ pub fn hint_headers_with_mmr_meta_id(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let header_with_mmr = exec_scopes.get::<HeaderMmrMeta<evm::header::Header>>(vars::scopes::HEADER_WITH_MMR_STARKNET)?;
+    let header_with_mmr = exec_scopes.get::<HeaderMmrMeta<starknet::header::Header>>(vars::scopes::HEADER_WITH_MMR_STARKNET)?;
 
     insert_value_into_ap(vm, Felt252::from(header_with_mmr.mmr_meta.id))
 }
@@ -45,7 +45,7 @@ pub fn hint_headers_with_mmr_meta_root(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let header_with_mmr = exec_scopes.get::<HeaderMmrMeta<evm::header::Header>>(vars::scopes::HEADER_WITH_MMR_STARKNET)?;
+    let header_with_mmr = exec_scopes.get::<HeaderMmrMeta<starknet::header::Header>>(vars::scopes::HEADER_WITH_MMR_STARKNET)?;
 
     insert_value_into_ap(vm, Felt252::from_bytes_be_slice(&header_with_mmr.mmr_meta.root))
 }
@@ -58,7 +58,7 @@ pub fn hint_headers_with_mmr_meta_size(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let header_with_mmr = exec_scopes.get::<HeaderMmrMeta<evm::header::Header>>(vars::scopes::HEADER_WITH_MMR_STARKNET)?;
+    let header_with_mmr = exec_scopes.get::<HeaderMmrMeta<starknet::header::Header>>(vars::scopes::HEADER_WITH_MMR_STARKNET)?;
 
     insert_value_into_ap(vm, Felt252::from(header_with_mmr.mmr_meta.size))
 }
@@ -71,7 +71,7 @@ pub fn hint_headers_with_mmr_peaks(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let header_with_mmr = exec_scopes.get::<HeaderMmrMeta<evm::header::Header>>(vars::scopes::HEADER_WITH_MMR_STARKNET)?;
+    let header_with_mmr = exec_scopes.get::<HeaderMmrMeta<starknet::header::Header>>(vars::scopes::HEADER_WITH_MMR_STARKNET)?;
     let peaks_ptr = get_ptr_from_var_name(vars::ids::PEAKS, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     vm.load_data(
