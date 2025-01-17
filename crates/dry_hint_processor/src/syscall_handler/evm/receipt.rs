@@ -12,7 +12,7 @@ use types::{
         structs::Uint256,
         traits::CairoType,
     },
-    keys::receipt::CairoKey,
+    keys::receipt::{CairoKey, Key},
     RPC,
 };
 
@@ -20,7 +20,7 @@ use types::{
 pub struct ReceiptCallHandler;
 
 impl CallHandler for ReceiptCallHandler {
-    type Key = CairoKey;
+    type Key = Key;
     type Id = FunctionId;
     type CallHandlerResult = Uint256;
 

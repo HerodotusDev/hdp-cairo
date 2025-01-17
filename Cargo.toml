@@ -17,11 +17,17 @@ members = [
 [workspace.dependencies]
 alloy = { version = "0.7.2", features = ["full"] }
 alloy-rlp = { version = "0.3.5", features = ["derive"] }
-bincode = { version = "2.0.0-rc.3", default-features = false, features = ["serde"] }
+bincode = { version = "2.0.0-rc.3", default-features = false, features = [
+    "serde",
+] }
 cairo-lang-casm = { version = "2.9.0-dev.0", default-features = false }
 cairo-lang-starknet-classes = "2.9.2"
 cairo-type-derive = { git = "https://github.com/keep-starknet-strange/snos.git", rev = "35a300a10d2107482ada440b5025ee2f651afbd4" }
-cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", rev = "388a4e51001377717b7e4c902c35f8e271c92ad7", features = ["extensive_hints", "clap", "cairo-1-hints"] }
+cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", rev = "388a4e51001377717b7e4c902c35f8e271c92ad7", features = [
+    "extensive_hints",
+    "clap",
+    "cairo-1-hints",
+] }
 clap = { version = "4.3.10", features = ["derive"] }
 futures = "0.3.31"
 hex = "0.4.3"
@@ -45,7 +51,7 @@ tracing = "0.1"
 tracing-subscriber = "0.3"
 
 dry_hint_processor = { path = "crates/dry_hint_processor" }
-eth_essentials_cairo_vm_hints = { path = "packages/eth_essentials/cairo_vm_hints"}
+eth_essentials_cairo_vm_hints = { path = "packages/eth_essentials/cairo_vm_hints" }
 fetcher = { path = "crates/fetcher" }
 hints = { path = "crates/hints" }
 indexer = { path = "crates/indexer" }

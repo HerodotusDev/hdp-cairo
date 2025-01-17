@@ -11,8 +11,9 @@ use strum_macros::FromRepr;
 #[derive(FromRepr, Debug)]
 pub enum FunctionId {
     Status = 0,
-    Bloom = 1,
-    CumulativeGasUsed = 2,
+    CumulativeGasUsed = 1,
+    Bloom = 2,
+    Logs = 3,
 }
 
 #[derive(Debug)]
@@ -30,6 +31,14 @@ impl CairoReceiptWithBloom {
         }
     }
 
+    pub fn cumulative_gas_used(&self) -> Uint256 {
+        Uint256::from(self.0.receipt.cumulative_gas_used)
+    }
+
+    pub fn bloom(&self) -> Uint256 {
+        Uint256::from(self.0.logs_bloom)
+    }
+
     pub fn hash(&self) -> Uint256 {
         keccak256(self.rlp_encode()).into()
     }
@@ -40,15 +49,16 @@ impl CairoReceiptWithBloom {
         buffer
     }
 
-    pub fn rlp_decode(rlp: &[u8]) -> Self {
-        Self(ReceiptWithBloom::decode(&mut &*rlp).unwrap())
+    pub fn rlp_decode(mut rlp: &[u8]) -> Self {
+        Self(<ReceiptWithBloom>::decode(&mut rlp).unwrap())
     }
 
     pub fn handle(&self, function_id: FunctionId) -> Uint256 {
         match function_id {
             FunctionId::Status => self.status(),
-            FunctionId::Bloom => Uint256::from(self.0.logs_bloom),
-            FunctionId::CumulativeGasUsed => Uint256::from(self.0.receipt.cumulative_gas_used),
+            FunctionId::CumulativeGasUsed => self.cumulative_gas_used(),
+            FunctionId::Bloom => panic!("Bloom function id is not supported"),
+            FunctionId::Logs => panic!("Logs function id is not supported"),
         }
     }
 }

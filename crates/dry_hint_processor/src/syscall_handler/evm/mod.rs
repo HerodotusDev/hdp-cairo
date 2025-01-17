@@ -135,6 +135,14 @@ impl traits::SyscallHandler for CallContractHandler {
                 result.to_memory(vm, retdata_end)?;
                 retdata_end += <storage::StorageCallHandler as CallHandler>::CallHandlerResult::n_fields();
             }
+            CallHandlerId::Receipt => {
+                let key = receipt::ReceiptCallHandler::derive_key(vm, &mut calldata)?;
+                let function_id = receipt::ReceiptCallHandler::derive_id(request.selector)?;
+                let result = receipt::ReceiptCallHandler.handle(key.clone(), function_id, vm).await?;
+                self.key_set.insert(DryRunKey::Receipt(key));
+                result.to_memory(vm, retdata_end)?;
+                retdata_end += <receipt::ReceiptCallHandler as CallHandler>::CallHandlerResult::n_fields();
+            }
             _ => {}
         }
 
@@ -168,6 +176,7 @@ pub enum DryRunKey {
     Account(keys::account::Key),
     Header(keys::header::Key),
     Storage(keys::storage::Key),
+    Receipt(keys::receipt::Key),
 }
 
 impl DryRunKey {
@@ -181,6 +190,10 @@ impl DryRunKey {
 
     pub fn is_storage(&self) -> bool {
         matches!(self, Self::Storage(_))
+    }
+
+    pub fn is_receipt(&self) -> bool {
+        matches!(self, Self::Receipt(_))
     }
 }
 

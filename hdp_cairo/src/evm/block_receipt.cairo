@@ -13,7 +13,7 @@ const BLOCK_RECEIPT_GET_LOGS: felt252 = 3;
 pub struct BlockReceiptKey {
     pub chain_id: felt252,
     pub block_number: felt252,
-    pub index: felt252,
+    pub transaction_index: felt252,
 }
 
 #[generate_trait]
@@ -25,7 +25,7 @@ pub impl BlockReceiptImpl of BlockReceiptTrait {
         self.call_memorizer(BLOCK_RECEIPT_GET_CUMULATIVE_GAS_USED, key)
     }
     fn block_receipt_get_bloom(self: @EvmMemorizer, key: BlockReceiptKey) -> u256 {
-        self.call_memorizer(BLOCK_RECEIPT_GET_BLOOM, key)
+        self.call_memorizer(BLOCK_RECEIPT_GET_BLOOM, key) 
     }
     fn block_receipt_get_logs(self: @EvmMemorizer, key: BlockReceiptKey) -> u256 {
         self.call_memorizer(BLOCK_RECEIPT_GET_LOGS, key)
@@ -40,7 +40,7 @@ pub impl BlockReceiptImpl of BlockReceiptTrait {
                 *self.dict.offset,
                 key.chain_id,
                 key.block_number,
-                key.index,
+                key.transaction_index,
             ]
                 .span()
         )

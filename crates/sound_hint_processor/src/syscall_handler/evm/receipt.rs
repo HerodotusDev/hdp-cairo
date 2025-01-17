@@ -10,7 +10,6 @@ use types::{
     cairo::{evm::receipt::FunctionId, structs::Uint256, traits::CairoType},
     keys::receipt::CairoKey,
 };
-
 #[derive(Debug)]
 pub struct ReceiptCallHandler {
     pub memorizer: Memorizer,
@@ -48,10 +47,22 @@ impl CallHandler for ReceiptCallHandler {
 
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
         let ptr = self.memorizer.read_key(key.hash(), self.dict_manager.clone())?;
+
+        // data is the rlp-encoded receipt (injected by the verified mpt proof Cairo0 memorizer)
         let mut data = vm.get_integer(ptr)?.to_bytes_le().to_vec();
+
+        let tx_type = data[0];
+        let mut extra_len = 0;
+        // If not a legacy tx, remove the tx type from the receipt
+        if tx_type > 0 && tx_type < 4 {
+            // Pop the tx type from the receipt, rest will be valid rlp
+            data.remove(0);
+            extra_len = 1;
+        }
+
         data.resize(1024, 0);
         let header = alloy_rlp::Header::decode(&mut data.as_slice()).map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?;
-        let length = header.length_with_payload();
+        let length = header.length_with_payload() + extra_len;
         let rlp = vm
             .get_integer_range(ptr, (length + 7) / 8)?
             .into_iter()
@@ -59,6 +70,10 @@ impl CallHandler for ReceiptCallHandler {
             .take(length)
             .collect::<Vec<u8>>();
 
-        Ok(CairoReceiptWithBloom::rlp_decode(&rlp).handle(function_id))
+        if extra_len != 0 {
+            Ok(CairoReceiptWithBloom::rlp_decode(&rlp[1..]).handle(function_id))
+        } else {
+            Ok(CairoReceiptWithBloom::rlp_decode(&rlp).handle(function_id))
+        }
     }
 }

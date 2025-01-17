@@ -1,6 +1,6 @@
 use super::KeyError;
 use crate::cairo::traits::CairoType;
-use alloy::primitives::{BlockNumber, ChainId};
+use alloy::primitives::{BlockNumber, ChainId, TxNumber};
 use cairo_vm::{
     types::relocatable::Relocatable,
     vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
@@ -11,9 +11,9 @@ use starknet_crypto::poseidon_hash_many;
 
 #[derive(Debug, Clone)]
 pub struct CairoKey {
-    pub chain_id: Felt252,
-    pub block_number: Felt252,
-    pub transaction_index: Felt252,
+    chain_id: Felt252,
+    block_number: Felt252,
+    transaction_index: Felt252,
 }
 
 impl CairoKey {
@@ -25,7 +25,7 @@ impl CairoKey {
 impl CairoType for CairoKey {
     fn from_memory(vm: &VirtualMachine, ptr: Relocatable) -> Result<Self, MemoryError> {
         Ok(Self {
-            chain_id: *vm.get_integer(ptr)?,
+            chain_id: *vm.get_integer((ptr + 0)?)?,
             block_number: *vm.get_integer((ptr + 1)?)?,
             transaction_index: *vm.get_integer((ptr + 2)?)?,
         })
@@ -47,7 +47,7 @@ impl CairoType for CairoKey {
 pub struct Key {
     pub chain_id: ChainId,
     pub block_number: BlockNumber,
-    pub transaction_index: u64,
+    pub transaction_index: TxNumber,
 }
 
 impl TryFrom<CairoKey> for Key {
