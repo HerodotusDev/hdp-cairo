@@ -154,21 +154,6 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::utils::divmod::HINT_VALUE_8.into(), eth_essentials_cairo_vm_hints::hints::lib::utils::divmod::hint_value_8);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::utils::divmod::HINT_VALUE_DIV.into(), eth_essentials_cairo_vm_hints::hints::lib::utils::divmod::hint_value_div);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::utils::trailing_zeroes::HINT_TRAILING_ZEROES_BYTES.into(), eth_essentials_cairo_vm_hints::hints::lib::utils::trailing_zeroes::hint_trailing_zeroes_bytes);
-    hints.insert(verifiers::starknet::storage_verifier::HINT_BATCH_STORAGES_LEN.into(), verifiers::starknet::storage_verifier::hint_batch_storages_len);
-    hints.insert(verifiers::starknet::storage_verifier::HINT_SET_BATCH_STORAGES.into(), verifiers::starknet::storage_verifier::hint_set_batch_storages);
-    hints.insert(verifiers::starknet::storage_verifier::HINT_SET_STORAGE_ADDRESSES_LEN.into(), verifiers::starknet::storage_verifier::hint_set_storage_addresses_len);
-    hints.insert(verifiers::starknet::storage_verifier::HINT_SET_CONTRACT_ADDRESS.into(), verifiers::starknet::storage_verifier::hint_set_contract_address);
-    hints.insert(verifiers::starknet::storage_verifier::HINT_SET_STORAGE_ADDRESSES.into(), verifiers::starknet::storage_verifier::hint_set_storage_addresses);
-    hints.insert(verifiers::starknet::storage_verifier::HINT_SET_STORAGE_STARKNET_PROOF_CONTRACT_DATA_CLASS_HASH.into(), verifiers::starknet::storage_verifier::hint_set_storage_starknet_proof_contract_data_class_hash);
-    hints.insert(verifiers::starknet::storage_verifier::HINT_SET_STORAGE_STARKNET_PROOF_CONTRACT_DATA_NONCE.into(), verifiers::starknet::storage_verifier::hint_set_storage_starknet_proof_contract_data_nonce);
-    hints.insert(verifiers::starknet::storage_verifier::HINT_SET_STORAGE_STARKNET_PROOF_CONTRACT_DATA_CONTRACT_STATE_HASH_VERSION.into(), verifiers::starknet::storage_verifier::hint_set_storage_starknet_proof_contract_data_contract_state_hash_version);
-    hints.insert(verifiers::starknet::storage_verifier::HINT_SET_STORAGE_STARKNET_PROOF_CONTRACT_PROOF_LEN.into(), verifiers::starknet::storage_verifier::hint_set_storage_starknet_proof_contract_proof_len);
-    hints.insert(verifiers::starknet::storage_verifier::HINT_SET_CONTRACT_NODES.into(), verifiers::starknet::storage_verifier::hint_set_contract_nodes);
-    hints.insert(verifiers::starknet::storage_verifier::HINT_SET_STORAGE_STARKNET_PROOF_CLASS_COMMITMENT.into(), verifiers::starknet::storage_verifier::hint_set_storage_starknet_proof_class_commitment);
-    hints.insert(verifiers::starknet::storage_verifier::HINT_SET_STORAGE_STARKNET_PROOF_CONTRACT_DATA_STORAGE_PROOFS_LEN.into(), verifiers::starknet::storage_verifier::hint_set_storage_starknet_proof_contract_data_storage_proofs_len);
-    hints.insert(verifiers::starknet::storage_verifier::HINT_SET_STORAGE_STARKNET_PROOF_CONTRACT_DATA_STORAGE_PROOF.into(), verifiers::starknet::storage_verifier::hint_set_storage_starknet_proof_contract_data_storage_proof);
-    hints.insert(verifiers::starknet::storage_verifier::HINT_NODE_IS_EDGE.into(), verifiers::starknet::storage_verifier::hint_node_is_edge);
-    hints.insert(verifiers::starknet::storage_verifier::HINT_SET_EVAL_DEPTH.into(), verifiers::starknet::storage_verifier::hint_set_eval_depth);
 
     hints
 }
