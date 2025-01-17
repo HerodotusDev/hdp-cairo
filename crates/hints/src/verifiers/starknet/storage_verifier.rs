@@ -282,3 +282,16 @@ pub fn hint_set_eval_depth(
         ),
     )
 }
+
+pub const HINT_SET_STORAGE_BLOCK_NUMBER: &str = "memory[ap] = to_felt_or_relocatable(storage_starknet.block_number)";
+
+pub fn hint_set_storage_block_number(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    _hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_STARKNET)?;
+
+    insert_value_into_ap(vm, Felt252::from(storage.block_number))
+}
