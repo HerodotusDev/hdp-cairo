@@ -109,9 +109,16 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(verifiers::verify::HINT_CHAIN_PROOFS_CHAIN_ID.into(), verifiers::verify::hint_chain_proofs_chain_id);
     hints.insert(verifiers::evm::HINT_VM_ENTER_SCOPE.into(), verifiers::evm::hint_vm_enter_scope);
     hints.insert(verifiers::evm::HINT_HEADERS_WITH_MMR_LEN.into(), verifiers::evm::hint_headers_with_mmr_len);
+    hints.insert(verifiers::starknet::header_verifier::HINT_VM_ENTER_SCOPE.into(), verifiers::starknet::header_verifier::hint_vm_enter_scope);
+    hints.insert(verifiers::starknet::header_verifier::HINT_HEADERS_WITH_MMR_LEN.into(), verifiers::starknet::header_verifier::hint_headers_with_mmr_len);
+    hints.insert(verifiers::starknet::header_verifier::HINT_HEADERS_WITH_MMR_HEADERS_LEN.into(), verifiers::starknet::header_verifier::hint_headers_with_mmr_headers_len);
+    hints.insert(verifiers::starknet::header_verifier::HINT_SET_HEADER.into(), verifiers::starknet::header_verifier::hint_set_header);
+    hints.insert(verifiers::starknet::header_verifier::HINT_FIELDS_LEN.into(), verifiers::starknet::header_verifier::hint_rlp_len);
+    hints.insert(verifiers::starknet::header_verifier::HINT_LEAF_IDX.into(), verifiers::starknet::header_verifier::hint_leaf_idx);
+    hints.insert(verifiers::starknet::header_verifier::HINT_MMR_PATH_LEN.into(), verifiers::starknet::header_verifier::hint_mmr_path_len);
+    hints.insert(verifiers::starknet::header_verifier::HINT_MMR_PATH.into(), verifiers::starknet::header_verifier::hint_mmr_path);
     hints.insert(verifiers::starknet::HINT_VM_ENTER_SCOPE.into(), verifiers::starknet::hint_vm_enter_scope);
     hints.insert(verifiers::starknet::HINT_HEADERS_WITH_MMR_LEN.into(), verifiers::starknet::hint_headers_with_mmr_len);
-
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::bit_length::HINT_BIT_LENGTH.into(), eth_essentials_cairo_vm_hints::hints::lib::bit_length::hint_bit_length);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::mmr::bit_length::MMR_BIT_LENGTH.into(), eth_essentials_cairo_vm_hints::hints::lib::mmr::bit_length::mmr_bit_length);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::mmr::left_child::MMR_LEFT_CHILD.into(), eth_essentials_cairo_vm_hints::hints::lib::mmr::left_child::mmr_left_child);
