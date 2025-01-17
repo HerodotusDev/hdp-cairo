@@ -8,8 +8,8 @@ use cairo_vm::{
     Felt252,
 };
 use std::collections::HashMap;
-use types::proofs::starknet;
 use types::proofs::header::HeaderMmrMeta;
+use types::proofs::starknet;
 
 pub const HINT_HEADERS_WITH_MMR_META_PEAKS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(header_with_mmr_starknet.mmr_meta.peaks))";
 
