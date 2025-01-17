@@ -35,6 +35,7 @@ impl From<Felt> for CairoStorage {
     }
 }
 
+#[derive(Debug)]
 pub struct CairoTrieNode(pub TrieNode);
 
 impl CairoTrieNode {
