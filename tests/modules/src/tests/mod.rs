@@ -10,10 +10,7 @@ use futures::{FutureExt, StreamExt};
 use hints::vars;
 use std::{collections::HashSet, env, path::PathBuf};
 use types::{
-    proofs::{
-        evm::{account::Account, storage::Storage, Proofs},
-        HeaderMmrMeta,
-    },
+    proofs::{self, header::HeaderMmrMeta},
     ChainProofs, HDPDryRunInput, HDPInput,
 };
 
@@ -94,7 +91,7 @@ async fn run(compiled_class: CasmContractClass) {
         }
     }
 
-    let mut headers_with_mmr: HashSet<HeaderMmrMeta> = HashSet::default();
+    let mut headers_with_mmr: HashSet<HeaderMmrMeta<proofs::evm::header::Header>> = HashSet::default();
 
     let mut headers_with_mmr_fut = futures::stream::iter(
         proof_keys
@@ -110,7 +107,7 @@ async fn run(compiled_class: CasmContractClass) {
         headers_with_mmr.insert(item);
     }
 
-    let mut accounts: HashSet<Account> = HashSet::default();
+    let mut accounts: HashSet<proofs::evm::account::Account> = HashSet::default();
 
     let mut accounts_fut = futures::stream::iter(
         proof_keys
@@ -127,7 +124,7 @@ async fn run(compiled_class: CasmContractClass) {
         accounts.insert(account);
     }
 
-    let mut storages: HashSet<Storage> = HashSet::default();
+    let mut storages: HashSet<proofs::evm::storage::Storage> = HashSet::default();
 
     let mut storages_fut = futures::stream::iter(
         proof_keys
@@ -145,7 +142,7 @@ async fn run(compiled_class: CasmContractClass) {
         storages.insert(storage);
     }
 
-    let proofs = Proofs {
+    let proofs = proofs::evm::Proofs {
         headers_with_mmr: headers_with_mmr.into_iter().collect(),
         accounts: accounts.into_iter().collect(),
         storages: storages.into_iter().collect(),

@@ -1,30 +1,17 @@
-use alloy::primitives::Bytes;
-use cairo_vm::Felt252;
+use super::mmr::MmrMeta;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
+use cairo_vm::Felt252;
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default, Hash)]
+pub struct HeaderMmrMeta<T> {
+    pub headers: Vec<T>,
+    pub mmr_meta: MmrMeta,
+}
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash, Default)]
 #[serde_as]
 pub struct HeaderProof {
     pub leaf_idx: u64,
     pub mmr_path: Vec<Felt252>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash, Default)]
-pub struct Header {
-    pub payload: HeaderPayload,
-    pub proof: HeaderProof,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
-#[serde(untagged)]
-pub enum HeaderPayload {
-    Evm(Bytes),
-    Starknet(Vec<Felt252>),
-}
-
-impl Default for HeaderPayload {
-    fn default() -> Self {
-        Self::Evm(Bytes::default())
-    }
 }

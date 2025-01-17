@@ -25,7 +25,7 @@ func run_state_verification{
     alloc_locals;
 
     // Step 1: Verify MMR and headers inclusion
-    tempvar n_proofs: felt = nondet %{ len(batch.headers_with_mmr) %};
+    tempvar n_proofs: felt = nondet %{ len(batch_starknet.headers_with_mmr_starknet) %};
     let (mmr_meta_idx) = verify_mmr_batches(n_proofs, mmr_meta_idx);
     // Step 2: Verify storage slots
     verify_proofs();

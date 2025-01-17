@@ -28,7 +28,7 @@ func verify_storage_items{
 }() {
     alloc_locals;
 
-    tempvar n_storage_items: felt = nondet %{ len(batch.storages) %};
+    tempvar n_storage_items: felt = nondet %{ len(batch_evm.storages) %};
     verify_storage_items_inner(n_storage_items, 0);
 
     return ();
@@ -51,21 +51,21 @@ func verify_storage_items_inner{
 
     let (address: felt*) = alloc();
     %{
-        storage = batch.storages[ids.idx]
-        segments.write_arg(ids.address, [int(x, 16) for x in storage.address]))
+        storage_evm = batch_evm.storages[ids.idx]
+        segments.write_arg(ids.address, [int(x, 16) for x in storage_evm.address]))
     %}
 
     let (slot: felt*) = alloc();
-    %{ segments.write_arg(ids.slot, [int(x, 16) for x in storage.slot])) %}
+    %{ segments.write_arg(ids.slot, [int(x, 16) for x in storage_evm.slot])) %}
 
     local key: Uint256;
     %{
         from tools.py.utils import split_128
-        (ids.key.low, ids.key.high) = split_128(int(storage.storage_key, 16))
+        (ids.key.low, ids.key.high) = split_128(int(storage_evm.storage_key, 16))
     %}
 
     local key_leading_zeros: felt;
-    %{ ids.key_leading_zeros = len(storage.storage_key.lstrip("0x")) - len(storage.storage_key.lstrip("0x").lstrip("0")) %}
+    %{ ids.key_leading_zeros = len(storage_evm.storage_key.lstrip("0x")) - len(storage_evm.storage_key.lstrip("0x").lstrip("0")) %}
 
     // ensure that slot matches the key
     let (hash: Uint256) = keccak_bigend(slot, 32);
@@ -78,7 +78,7 @@ func verify_storage_items_inner{
 
     let (felt_address) = le_address_chunks_to_felt(address);
 
-    tempvar n_proofs: felt = nondet %{ len(storage.proofs) %};
+    tempvar n_proofs: felt = nondet %{ len(storage_evm.proofs) %};
     verify_storage_item(
         address=felt_address,
         slot=slot_be,
@@ -106,7 +106,7 @@ func verify_storage_item{
         return ();
     }
 
-    %{ proof = storage.proofs[ids.idx] %}
+    %{ proof = storage_evm.proofs[ids.idx] %}
     tempvar proof_len: felt = nondet %{ len(proof.proof) %};
     tempvar block_number: felt = nondet %{ proof.block_number %};
 

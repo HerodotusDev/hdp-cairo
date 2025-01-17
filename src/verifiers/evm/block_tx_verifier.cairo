@@ -29,7 +29,7 @@ func verify_block_tx_proofs{
 }() {
     alloc_locals;
 
-    tempvar n_tx_proofs: felt = nondet %{ len(batch.transactions) %};
+    tempvar n_tx_proofs: felt = nondet %{ len(batch_evm.transactions) %};
     verify_block_tx_proofs_inner(n_tx_proofs, 0);
 
     return ();

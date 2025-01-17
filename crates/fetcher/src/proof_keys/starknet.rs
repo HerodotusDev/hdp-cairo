@@ -1,8 +1,12 @@
+use cairo_vm::Felt252;
+use indexer::types::BlockHeader;
+use starknet_types_core::felt::FromStrError;
+
 use reqwest::Url;
 use std::{collections::HashSet, env};
 use types::{
     keys,
-    proofs::{starknet::GetProofOutput, HeaderMmrMeta},
+    proofs::{header::{HeaderMmrMeta, HeaderProof}, starknet::{header::Header, storage::{GetProofOutput, Storage}}},
     STARKNET_RPC,
 };
 
@@ -15,7 +19,35 @@ pub struct ProofKeys {
 }
 
 impl ProofKeys {
-    pub async fn fetch_storage_proof(key: &keys::starknet::storage::Key) -> Result<(HeaderMmrMeta, GetProofOutput), FetcherError> {
+    pub async fn fetch_header_proof(chain_id: u128, block_number: u64) -> Result<HeaderMmrMeta<Header>, FetcherError> {
+        let (mmr_proof, meta) = super::ProofKeys::fetch_mmr_proof(chain_id, block_number).await?;
+
+        let proof = HeaderProof {
+            leaf_idx: mmr_proof.element_index,
+            mmr_path: mmr_proof
+                .siblings_hashes
+                .iter()
+                .map(|hash| Felt252::from_hex(hash.as_str()))
+                .collect::<Result<Vec<Felt252>, FromStrError>>()?,
+        };
+
+        match &mmr_proof.block_header {
+            BlockHeader::Fields(fields) => {
+                let fields = fields.iter()
+                    .map(|field| Felt252::from_hex(field))
+                    .collect::<Result<Vec<Felt252>, FromStrError>>()?;
+
+                Ok(HeaderMmrMeta {
+                    mmr_meta: meta,
+                    headers: vec![Header { fields, proof }]
+                })
+            }
+            _ => Err(FetcherError::InternalError("wrong starknet header format".into())),
+        }
+
+    }
+
+    pub async fn fetch_storage_proof(key: &keys::starknet::storage::Key) -> Result<(HeaderMmrMeta<Header>, Storage), FetcherError> {
         let response = reqwest::Client::new()
             .post(Url::parse(&env::var(STARKNET_RPC).unwrap()).unwrap())
             .json(&serde_json::json!({
@@ -41,6 +73,8 @@ impl ProofKeys {
             FetcherError::JsonDeserializationError(e.to_string())
         })?;
 
-        Ok((super::ProofKeys::fetch_header_proof(key.chain_id, key.block_number).await?, proof))
+        let storage = Storage::new(key.block_number, key.address, vec![key.storage_slot], proof);
+
+        Ok((ProofKeys::fetch_header_proof(key.chain_id, key.block_number).await?, storage))
     }
 }

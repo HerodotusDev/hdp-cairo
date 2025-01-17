@@ -15,7 +15,7 @@ use num_bigint::BigUint;
 use std::collections::HashMap;
 use types::proofs::{evm::storage::Storage, evm::Proofs, mpt::MPTProof};
 
-pub const HINT_BATCH_STORAGES_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch.storages))";
+pub const HINT_BATCH_STORAGES_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch_evm.storages))";
 
 pub fn hint_batch_storages_len(
     vm: &mut VirtualMachine,
@@ -23,13 +23,13 @@ pub fn hint_batch_storages_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH)?;
+    let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH_EVM)?;
 
     insert_value_into_ap(vm, Felt252::from(batch.storages.len()))
 }
 
 pub const HINT_SET_BATCH_STORAGES: &str =
-    "storage = batch.storages[ids.idx]\nsegments.write_arg(ids.address, [int(x, 16) for x in storage.address]))";
+    "storage_evm = batch_evm.storages[ids.idx]\nsegments.write_arg(ids.address, [int(x, 16) for x in storage_evm.address]))";
 
 pub fn hint_set_batch_storages(
     vm: &mut VirtualMachine,
@@ -37,7 +37,7 @@ pub fn hint_set_batch_storages(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH)?;
+    let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH_EVM)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
         .unwrap();
@@ -48,7 +48,7 @@ pub fn hint_set_batch_storages(
         .map(|chunk| MaybeRelocatable::from(Felt252::from_bytes_be_slice(&chunk.iter().rev().copied().collect::<Vec<_>>())))
         .collect();
 
-    exec_scopes.insert_value::<Storage>(vars::scopes::STORAGE, storage);
+    exec_scopes.insert_value::<Storage>(vars::scopes::STORAGE_EVM, storage);
 
     let address_ptr = get_ptr_from_var_name(vars::ids::ADDRESS, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
@@ -57,7 +57,7 @@ pub fn hint_set_batch_storages(
     Ok(())
 }
 
-pub const HINT_SET_STORAGE_SLOT: &str = "segments.write_arg(ids.slot, [int(x, 16) for x in storage.slot]))";
+pub const HINT_SET_STORAGE_SLOT: &str = "segments.write_arg(ids.slot, [int(x, 16) for x in storage_evm.slot]))";
 
 pub fn hint_set_storage_slot(
     vm: &mut VirtualMachine,
@@ -65,7 +65,7 @@ pub fn hint_set_storage_slot(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE)?;
+    let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_EVM)?;
     let slot_le_chunks: Vec<MaybeRelocatable> = storage
         .slot
         .chunks(8)
@@ -79,7 +79,8 @@ pub fn hint_set_storage_slot(
     Ok(())
 }
 
-pub const HINT_SET_STORAGE_KEY: &str = "from tools.py.utils import split_128\n(ids.key.low, ids.key.high) = split_128(int(storage.storage_key, 16))";
+pub const HINT_SET_STORAGE_KEY: &str =
+    "from tools.py.utils import split_128\n(ids.key.low, ids.key.high) = split_128(int(storage_evm.storage_key, 16))";
 
 pub fn hint_set_storage_key(
     vm: &mut VirtualMachine,
@@ -87,7 +88,7 @@ pub fn hint_set_storage_key(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE)?;
+    let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_EVM)?;
 
     let (key_low, key_high) = split_128(&BigUint::from_bytes_be(storage.storage_key.as_slice()));
 
@@ -99,7 +100,7 @@ pub fn hint_set_storage_key(
 }
 
 pub const HINT_SET_STORAGE_KEY_LEADING_ZEROS: &str =
-    "ids.key_leading_zeros = len(storage.storage_key.lstrip(\"0x\")) - len(storage.storage_key.lstrip(\"0x\").lstrip(\"0\"))";
+    "ids.key_leading_zeros = len(storage_evm.storage_key.lstrip(\"0x\")) - len(storage_evm.storage_key.lstrip(\"0x\").lstrip(\"0\"))";
 
 pub fn hint_set_storage_key_leading_zeros(
     vm: &mut VirtualMachine,
@@ -107,7 +108,7 @@ pub fn hint_set_storage_key_leading_zeros(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE)?;
+    let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_EVM)?;
     let key_leading_zeros = count_leading_zero_nibbles_from_hex(&storage.storage_key.to_string());
 
     insert_value_from_var_name(
@@ -121,7 +122,7 @@ pub fn hint_set_storage_key_leading_zeros(
     Ok(())
 }
 
-pub const HINT_SET_STORAGE_PROOFS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(storage.proofs))";
+pub const HINT_SET_STORAGE_PROOFS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(storage_evm.proofs))";
 
 pub fn hint_set_storage_proofs_len(
     vm: &mut VirtualMachine,
@@ -129,12 +130,12 @@ pub fn hint_set_storage_proofs_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE)?;
+    let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_EVM)?;
 
     insert_value_into_ap(vm, Felt252::from(storage.proofs.len()))
 }
 
-pub const HINT_SET_STORAGE_PROOF_AT: &str = "proof = storage.proofs[ids.idx]";
+pub const HINT_SET_STORAGE_PROOF_AT: &str = "proof = storage_evm.proofs[ids.idx]";
 
 pub fn hint_set_storage_proof_at(
     vm: &mut VirtualMachine,
@@ -142,7 +143,7 @@ pub fn hint_set_storage_proof_at(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE)?;
+    let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_EVM)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
         .unwrap();

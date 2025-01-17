@@ -16,11 +16,11 @@ use std::{
 use thiserror as _;
 use types::{
     proofs::{
-        evm::{account::Account, storage::Storage},
-        header::Header,
+        evm::{account::Account, storage::Storage, header::Header as EvmHeader},
         mmr::MmrMeta,
-        starknet::GetProofOutput,
-        HeaderMmrMeta,
+        starknet::{storage::Storage as StarknetStorage, header::Header as StarknetHeader},
+        header::HeaderMmrMeta,
+        self,
     },
     ChainProofs,
 };
@@ -98,7 +98,7 @@ async fn collect_evm_proofs(proof_keys: &EvmProofKeys, progress: &ProofProgress)
         proof_keys
             .header_keys
             .iter()
-            .map(|key| ProofKeys::fetch_header_proof(key.chain_id, key.block_number))
+            .map(|key| EvmProofKeys::fetch_header_proof(key.chain_id, key.block_number))
             .map(|f| f.boxed_local()),
     )
     .buffer_unordered(BUFFER_UNORDERED);
@@ -107,7 +107,7 @@ async fn collect_evm_proofs(proof_keys: &EvmProofKeys, progress: &ProofProgress)
         let item = result?;
         headers_with_mmr
             .entry(item.mmr_meta)
-            .and_modify(|headers: &mut Vec<Header>| headers.extend(item.headers.clone()))
+            .and_modify(|headers: &mut Vec<EvmHeader>| headers.extend(item.headers.clone()))
             .or_insert(item.headers);
         progress.evm_header.inc(1);
     }
@@ -126,7 +126,7 @@ async fn collect_evm_proofs(proof_keys: &EvmProofKeys, progress: &ProofProgress)
         let (header_with_mmr, account) = result?;
         headers_with_mmr
             .entry(header_with_mmr.mmr_meta)
-            .and_modify(|headers: &mut Vec<Header>| headers.extend(header_with_mmr.headers.clone()))
+            .and_modify(|headers: &mut Vec<EvmHeader>| headers.extend(header_with_mmr.headers.clone()))
             .or_insert(header_with_mmr.headers);
         accounts.insert(account);
         progress.evm_account.inc(1);
@@ -146,7 +146,7 @@ async fn collect_evm_proofs(proof_keys: &EvmProofKeys, progress: &ProofProgress)
         let (header_with_mmr, account, storage) = result?;
         headers_with_mmr
             .entry(header_with_mmr.mmr_meta)
-            .and_modify(|headers: &mut Vec<Header>| headers.extend(header_with_mmr.headers.clone()))
+            .and_modify(|headers: &mut Vec<EvmHeader>| headers.extend(header_with_mmr.headers.clone()))
             .or_insert(header_with_mmr.headers);
         accounts.insert(account);
         storages.insert(storage);
@@ -163,14 +163,14 @@ async fn collect_evm_proofs(proof_keys: &EvmProofKeys, progress: &ProofProgress)
 
 async fn collect_starknet_proofs(proof_keys: &StarknetProofKeys, progress: &ProofProgress) -> Result<StarknetProofs, FetcherError> {
     let mut headers_with_mmr = HashMap::default();
-    let mut storages: HashSet<GetProofOutput> = HashSet::default();
+    let mut storages: HashSet<StarknetStorage> = HashSet::default();
 
     // Collect header proofs
     let mut header_fut = futures::stream::iter(
         proof_keys
             .header_keys
             .iter()
-            .map(|key| ProofKeys::fetch_header_proof(key.chain_id, key.block_number))
+            .map(|key| StarknetProofKeys::fetch_header_proof(key.chain_id, key.block_number))
             .map(|f| f.boxed_local()),
     )
     .buffer_unordered(BUFFER_UNORDERED);
@@ -179,7 +179,7 @@ async fn collect_starknet_proofs(proof_keys: &StarknetProofKeys, progress: &Proo
         let item = result?;
         headers_with_mmr
             .entry(item.mmr_meta)
-            .and_modify(|headers: &mut Vec<Header>| headers.extend(item.headers.clone()))
+            .and_modify(|headers: &mut Vec<StarknetHeader>| headers.extend(item.headers.clone()))
             .or_insert(item.headers);
         progress.starknet_header.inc(1);
     }
@@ -198,7 +198,7 @@ async fn collect_starknet_proofs(proof_keys: &StarknetProofKeys, progress: &Proo
         let (header_with_mmr, storage) = result?;
         headers_with_mmr
             .entry(header_with_mmr.mmr_meta)
-            .and_modify(|headers: &mut Vec<Header>| headers.extend(header_with_mmr.headers.clone()))
+            .and_modify(|headers: &mut Vec<StarknetHeader>| headers.extend(header_with_mmr.headers.clone()))
             .or_insert(header_with_mmr.headers);
         storages.insert(storage);
         progress.starknet_storage.inc(1);
@@ -210,7 +210,10 @@ async fn collect_starknet_proofs(proof_keys: &StarknetProofKeys, progress: &Proo
     })
 }
 
-fn process_headers(headers_with_mmr: HashMap<MmrMeta, Vec<Header>>) -> Vec<HeaderMmrMeta> {
+fn process_headers<H>(headers_with_mmr: HashMap<MmrMeta, Vec<H>>) -> Vec<HeaderMmrMeta<H>>
+where
+    H: Eq + std::hash::Hash + Clone,
+{
     headers_with_mmr
         .into_iter()
         .map(|(mmr_meta, headers)| {

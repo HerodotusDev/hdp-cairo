@@ -1,3 +1,24 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
+pub struct Storage {
+    pub block_number: u64,
+    pub contract_address: Felt252,
+    pub storage_addresses: Vec<Felt252>,
+    pub proof: GetProofOutput,
+}
+
+impl Storage {
+    pub fn new(block_number: u64, contract_address: Felt252, storage_addresses: Vec<Felt252>, proof: GetProofOutput) -> Self {
+        Self {
+            block_number,
+            contract_address,
+            storage_addresses,
+            proof,
+        }
+    }
+}
+
 // Diclaimers:
 // Currently, there is no good way of importing this type from an external crate. We have found the following implementations:
 // - https://github.com/keep-starknet-strange/snos/tree/main/crates/rpc-client/src/pathfinder
@@ -7,7 +28,6 @@
 // This is a temporary solution that we should aim to replace.
 
 use cairo_vm::Felt252;
-use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use starknet_types_core::hash::StarkHash;
 
@@ -48,8 +68,8 @@ pub enum TrieNode {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
 pub struct Path {
-    len: u64,
-    value: String,
+    pub len: u64,
+    pub value: String,
 }
 
 impl TrieNode {
@@ -74,16 +94,16 @@ impl TrieNode {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
 pub struct ContractData {
     /// Required to verify the contract state hash to contract root calculation.
-    class_hash: Felt252,
+    pub class_hash: Felt252,
     /// Required to verify the contract state hash to contract root calculation.
-    nonce: Felt252,
+    pub nonce: Felt252,
 
     /// Root of the Contract state tree
-    root: Felt252,
+    pub root: Felt252,
 
     /// This is currently just a constant = 0, however it might change in the
     /// future.
-    contract_state_hash_version: Felt252,
+    pub contract_state_hash_version: Felt252,
 
     /// The proofs associated with the queried storage values
     pub storage_proofs: Vec<Vec<TrieNode>>,
