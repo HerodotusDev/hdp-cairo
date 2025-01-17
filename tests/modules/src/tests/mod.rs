@@ -98,7 +98,7 @@ async fn run(compiled_class: CasmContractClass) {
             .evm
             .header_keys
             .iter()
-            .map(|key| ProofKeys::fetch_header_proof(key.chain_id, key.block_number))
+            .map(|key| EvmProofKeys::fetch_header_proof(key.chain_id, key.block_number))
             .map(|f| f.boxed_local()),
     )
     .buffer_unordered(BUFFER_UNORDERED);
