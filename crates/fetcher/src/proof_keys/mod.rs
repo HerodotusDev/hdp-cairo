@@ -1,25 +1,12 @@
 use alloy::{hex::FromHexError, primitives::Bytes};
 use indexer::{
-    types::{BlockHeader, IndexerQuery, MMRProof},
+    types::{IndexerQuery, MMRProof},
     Indexer,
 };
 
-use starknet_types_core::felt::FromStrError;
-use types::{
-    keys::{self, KeyType},
-    proofs::{
-        evm::header::Header as EvmHeader,
-        header::{HeaderMmrMeta, HeaderProof},
-        mmr::MmrMeta,
-        mpt::MPTProof,
-        starknet::header::Header as StarknetHeader,
-    },
-
-    ETH_RPC,
-};
+use types::proofs::mmr::MmrMeta;
 
 use crate::FetcherError;
-use cairo_vm::Felt252;
 
 pub mod evm;
 pub mod starknet;
@@ -63,51 +50,5 @@ impl ProofKeys {
             .ok_or_else(|| FetcherError::InternalError("block not found".into()))?;
 
         Ok((proof.clone(), meta))
-
-        // let proof = HeaderProof {
-        //     leaf_idx: mmr_proof.element_index,
-        //     mmr_path: mmr_proof
-        //         .siblings_hashes
-        //         .iter()
-        //         .map(|hash| Felt252::from_hex(Self::normalize_hex(hash).as_str()))
-        //         .collect::<Result<Vec<Felt252>, FromStrError>>()?,
-        // };
-
-        // match KeyType::from(chain_id) {
-        //     KeyType::EVM => {
-        //         let rlp = match &mmr_proof.block_header {
-        //             BlockHeader::RlpString(rlp) => {
-        //                 let bytes: Bytes = rlp.parse()?;
-        //                 bytes
-        //             }
-        //             BlockHeader::RlpLittleEndian8ByteChunks(rlp) => {
-        //                 let rlp_chunks: Vec<Bytes> = rlp
-        //                     .clone()
-        //                     .iter()
-        //                     .map(|x| Self::normalize_hex(x).parse())
-        //                     .collect::<Result<Vec<Bytes>, FromHexError>>()?;
-        //                 rlp_chunks.iter().flat_map(|x| x.iter().rev().cloned()).collect::<Vec<u8>>().into()
-        //             }
-        //             _ => return Err(FetcherError::InternalError("wrong rlp format".into())),
-        //         };
-        //         Ok(HeaderMmrMeta {
-        //             mmr_meta,
-        //             headers: vec![EvmHeader { rlp, proof }]
-        //         })
-        //     }
-        //     KeyType::STARKNET => match &mmr_proof.block_header {
-        //         BlockHeader::Fields(fields) => {
-        //             let fields = fields.iter()
-        //                 .map(|field| Felt252::from_hex(field))
-        //                 .collect::<Result<Vec<Felt252>, FromStrError>>()?;
-
-        //             Ok(HeaderMmrMeta {
-        //                 mmr_meta,
-        //                 headers: vec![StarknetHeader { fields, proof }]
-        //             })
-        //         }
-        //         _ => Err(FetcherError::InternalError("wrong starknet header format".into())),
-        //     }
-        // }
     }
 }

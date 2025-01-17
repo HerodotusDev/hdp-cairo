@@ -6,7 +6,13 @@ use reqwest::Url;
 use std::{collections::HashSet, env};
 use types::{
     keys,
-    proofs::{header::{HeaderMmrMeta, HeaderProof}, starknet::{header::Header, storage::{GetProofOutput, Storage}}},
+    proofs::{
+        header::{HeaderMmrMeta, HeaderProof},
+        starknet::{
+            header::Header,
+            storage::{GetProofOutput, Storage},
+        },
+    },
     STARKNET_RPC,
 };
 
@@ -33,18 +39,18 @@ impl ProofKeys {
 
         match &mmr_proof.block_header {
             BlockHeader::Fields(fields) => {
-                let fields = fields.iter()
+                let fields = fields
+                    .iter()
                     .map(|field| Felt252::from_hex(field))
                     .collect::<Result<Vec<Felt252>, FromStrError>>()?;
 
                 Ok(HeaderMmrMeta {
                     mmr_meta: meta,
-                    headers: vec![Header { fields, proof }]
+                    headers: vec![Header { fields, proof }],
                 })
             }
             _ => Err(FetcherError::InternalError("wrong starknet header format".into())),
         }
-
     }
 
     pub async fn fetch_storage_proof(key: &keys::starknet::storage::Key) -> Result<(HeaderMmrMeta<Header>, Storage), FetcherError> {

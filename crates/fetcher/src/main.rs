@@ -16,11 +16,10 @@ use std::{
 use thiserror as _;
 use types::{
     proofs::{
-        evm::{account::Account, storage::Storage, header::Header as EvmHeader},
-        mmr::MmrMeta,
-        starknet::{storage::Storage as StarknetStorage, header::Header as StarknetHeader},
+        evm::{account::Account, header::Header as EvmHeader, storage::Storage},
         header::HeaderMmrMeta,
-        self,
+        mmr::MmrMeta,
+        starknet::{header::Header as StarknetHeader, storage::Storage as StarknetStorage},
     },
     ChainProofs,
 };

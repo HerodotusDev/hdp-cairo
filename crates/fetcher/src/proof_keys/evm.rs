@@ -1,5 +1,8 @@
 use alloy::{
-    hex::FromHexError, primitives::Bytes, providers::{Provider, RootProvider}, transports::http::{reqwest::Url, Client, Http}
+    hex::FromHexError,
+    primitives::Bytes,
+    providers::{Provider, RootProvider},
+    transports::http::{reqwest::Url, Client, Http},
 };
 use cairo_vm::Felt252;
 use indexer::types::BlockHeader;
@@ -7,7 +10,11 @@ use starknet_types_core::felt::FromStrError;
 use std::{collections::HashSet, env};
 use types::{
     keys,
-    proofs::{evm::{account::Account, header::Header, storage::Storage}, header::{HeaderMmrMeta, HeaderProof}, mpt::MPTProof},
+    proofs::{
+        evm::{account::Account, header::Header, storage::Storage},
+        header::{HeaderMmrMeta, HeaderProof},
+        mpt::MPTProof,
+    },
     ETH_RPC,
 };
 
@@ -55,9 +62,8 @@ impl ProofKeys {
         };
         Ok(HeaderMmrMeta {
             mmr_meta: meta,
-            headers: vec![Header { rlp, proof }]
+            headers: vec![Header { rlp, proof }],
         })
-
     }
 
     pub async fn fetch_account_proof(key: &keys::evm::account::Key) -> Result<(HeaderMmrMeta<Header>, Account), FetcherError> {
