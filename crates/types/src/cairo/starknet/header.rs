@@ -33,16 +33,16 @@ impl From<Block> for StarknetBlock {
         let binding = value.starknet_version.to_string();
         let version = Version::from(&binding).unwrap();
         match version.compare(&Version::from("0.13.2").unwrap()) {
-            CompOp::Gt | CompOp::Eq => StarknetBlock::V0_13_2(StarknetBlock0_13_2::from_block(&value)),
-            _ => StarknetBlock::Legacy(StarknetBlockLegacy::from_block(&value)),
+            CompOp::Gt | CompOp::Eq => StarknetBlock::V0_13_2(Box::new(StarknetBlock0_13_2::from_block(&value))),
+            _ => StarknetBlock::Legacy(Box::new(StarknetBlockLegacy::from_block(&value))),
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum StarknetBlock {
-    Legacy(StarknetBlockLegacy),
-    V0_13_2(StarknetBlock0_13_2),
+    Legacy(Box<StarknetBlockLegacy>),
+    V0_13_2(Box<StarknetBlock0_13_2>),
 }
 
 impl StarknetBlock {
@@ -64,16 +64,16 @@ impl StarknetBlock {
 
     pub fn from_memorizer(fields: Vec<Felt252>) -> Self {
         match fields.len() {
-            n if n == StarknetBlockLegacy::n_fields() => StarknetBlock::Legacy(StarknetBlockLegacy::from_memorizer(fields)),
-            n if n == StarknetBlock0_13_2::n_fields() => StarknetBlock::V0_13_2(StarknetBlock0_13_2::from_memorizer(fields)),
+            n if n == StarknetBlockLegacy::n_fields() => StarknetBlock::Legacy(Box::new(StarknetBlockLegacy::from_memorizer(fields))),
+            n if n == StarknetBlock0_13_2::n_fields() => StarknetBlock::V0_13_2(Box::new(StarknetBlock0_13_2::from_memorizer(fields))),
             _ => panic!("Invalid number of fields"),
         }
     }
 
     pub fn from_hash_fields(fields: Vec<Felt252>) -> Self {
         match fields.len() {
-            n if n == StarknetBlockLegacy::n_hash_fields() => StarknetBlock::Legacy(StarknetBlockLegacy::from_hash_fields(fields)),
-            n if n == StarknetBlock0_13_2::n_hash_fields() => StarknetBlock::V0_13_2(StarknetBlock0_13_2::from_hash_fields(fields)),
+            n if n == StarknetBlockLegacy::n_hash_fields() => StarknetBlock::Legacy(Box::new(StarknetBlockLegacy::from_hash_fields(fields))),
+            n if n == StarknetBlock0_13_2::n_hash_fields() => StarknetBlock::V0_13_2(Box::new(StarknetBlock0_13_2::from_hash_fields(fields))),
             _ => panic!("Invalid number of fields"),
         }
     }
@@ -397,12 +397,7 @@ impl StarknetBlock0_13_2 {
         bytes[24] & 0b10000000 != 0
     }
 
-    fn calculate_concatenated_counts(
-        transaction_count: u64,
-        event_count: u64,
-        state_diff_length: u64,
-        is_blob_mode: bool,
-    ) -> Felt252 {
+    fn calculate_concatenated_counts(transaction_count: u64, event_count: u64, state_diff_length: u64, is_blob_mode: bool) -> Felt252 {
         let mut concat_counts = [0u8; 32];
         concat_counts[0..8].copy_from_slice(&transaction_count.to_be_bytes());
         concat_counts[8..16].copy_from_slice(&event_count.to_be_bytes());
@@ -414,9 +409,7 @@ impl StarknetBlock0_13_2 {
     }
 
     pub fn from_block(block: &Block) -> Self {
-        let total_events: usize = block.transaction_receipts.iter()
-            .map(|(_, events)| events.len())
-            .sum();
+        let total_events: usize = block.transaction_receipts.iter().map(|(_, events)| events.len()).sum();
         let total_transactions = block.transactions.len();
         let is_blob_mode = block.l1_da_mode == L1DataAvailabilityMode::Blob;
 

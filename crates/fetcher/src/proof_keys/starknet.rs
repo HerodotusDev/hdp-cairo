@@ -1,5 +1,5 @@
 use cairo_vm::Felt252;
-use indexer::types::BlockHeader;
+use indexer::models::BlockHeader;
 use starknet_types_core::felt::FromStrError;
 
 use reqwest::Url;

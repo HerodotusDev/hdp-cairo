@@ -16,6 +16,7 @@ use serde::{Deserialize, Serialize};
 pub const ETH_RPC: &str = "ETH_RPC";
 pub const STARKNET_RPC: &str = "STARKNET_RPC";
 pub const FEEDER_GATEWAY: &str = "FEEDER_GATEWAY";
+pub const HERODOTUS_INDEXER_RPC: &str = "HERODOTUS_INDEXER_RPC";
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct HDPDryRunInput {

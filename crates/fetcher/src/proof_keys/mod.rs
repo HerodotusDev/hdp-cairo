@@ -1,6 +1,6 @@
 use alloy::{hex::FromHexError, primitives::Bytes};
 use indexer::{
-    types::{IndexerQuery, MMRProof},
+    models::{IndexerQuery, MMRProof},
     Indexer,
 };
 
