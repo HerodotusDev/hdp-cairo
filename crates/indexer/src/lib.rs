@@ -8,7 +8,7 @@ pub mod models;
 use models::{IndexerError, IndexerHeadersProofResponse, IndexerQuery, MMRResponse};
 use reqwest::Client;
 use std::env;
-use types::HERODOTUS_INDEXER_RPC;
+use types::RPC_URL_HERODOTUS_INDEXER;
 
 #[derive(Clone)]
 pub struct Indexer {
@@ -31,7 +31,7 @@ impl Indexer {
         let response = self
             .client
             .get(
-                env::var(HERODOTUS_INDEXER_RPC)
+                env::var(RPC_URL_HERODOTUS_INDEXER)
                     .map_err(|e| IndexerError::GetHeadersProofError(format!("Missing HERODOTUS_INDEXER_RPC env var: {}", e)))?,
             )
             .query(&query)

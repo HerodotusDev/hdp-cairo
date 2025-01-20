@@ -1773,10 +1773,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "config"
-version = "0.1.0"
-
-[[package]]
 name = "console"
 version = "0.15.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6204,7 +6200,6 @@ dependencies = [
  "cairo-lang-starknet-classes",
  "cairo-type-derive",
  "cairo-vm",
- "config",
  "serde",
  "serde_json",
  "serde_with 3.12.0",

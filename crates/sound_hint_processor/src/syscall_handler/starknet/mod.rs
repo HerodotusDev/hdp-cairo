@@ -26,15 +26,11 @@ pub enum CallHandlerId {
 pub struct CallContractHandler {
     #[serde(skip)]
     pub dict_manager: Rc<RefCell<DictManager>>,
-    pub key_set: HashSet<DryRunKey>,
 }
 
 impl CallContractHandler {
     pub fn new(dict_manager: Rc<RefCell<DictManager>>) -> Self {
-        Self {
-            dict_manager,
-            ..Default::default()
-        }
+        Self { dict_manager }
     }
 }
 
@@ -65,10 +61,6 @@ impl traits::SyscallHandler for CallContractHandler {
                 let result = header::HeaderCallHandler::new(memorizer, self.dict_manager.clone())
                     .handle(key.clone(), function_id, vm)
                     .await?;
-                self.key_set.insert(DryRunKey::Header(
-                    key.try_into()
-                        .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
-                ));
                 result.to_memory(vm, retdata_end)?;
                 retdata_end += <header::HeaderCallHandler as CallHandler>::CallHandlerResult::n_fields();
             }
@@ -78,10 +70,6 @@ impl traits::SyscallHandler for CallContractHandler {
                 let result = storage::StorageCallHandler::new(memorizer, self.dict_manager.clone())
                     .handle(key.clone(), function_id, vm)
                     .await?;
-                self.key_set.insert(DryRunKey::Storage(
-                    key.try_into()
-                        .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
-                ));
                 result.to_memory(vm, retdata_end)?;
                 retdata_end += <storage::StorageCallHandler as CallHandler>::CallHandlerResult::n_fields();
             }

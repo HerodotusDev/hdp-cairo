@@ -13,7 +13,7 @@ use types::{
             storage::{GetProofOutput, Storage},
         },
     },
-    STARKNET_RPC,
+    RPC_URL_STARKNET,
 };
 
 use crate::FetcherError;
@@ -55,7 +55,7 @@ impl ProofKeys {
 
     pub async fn fetch_storage_proof(key: &keys::starknet::storage::Key) -> Result<(HeaderMmrMeta<Header>, Storage), FetcherError> {
         let response = reqwest::Client::new()
-            .post(Url::parse(&env::var(STARKNET_RPC).unwrap()).unwrap())
+            .post(Url::parse(&env::var(RPC_URL_STARKNET).unwrap()).unwrap())
             .json(&serde_json::json!({
                 "jsonrpc": "2.0",
                 "method": "pathfinder_getProof",
