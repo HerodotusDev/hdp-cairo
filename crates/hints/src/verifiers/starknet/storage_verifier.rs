@@ -85,7 +85,7 @@ pub fn hint_set_contract_address(
 ) -> Result<(), HintError> {
     let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_STARKNET)?;
 
-    insert_value_into_ap(vm, Felt252::from(storage.storage_addresses.len()))
+    insert_value_into_ap(vm, Felt252::from(storage.contract_address))
 }
 
 pub const HINT_SET_STORAGE_ADDRESSES: &str = "segments.write_arg(ids.storage_addresses, [int(x, 16) for x in storage_starknet.storage_addresses]))";
@@ -286,7 +286,6 @@ pub fn hint_node_is_edge(
     let leaf_ptr = get_ptr_from_var_name(vars::ids::NODE, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     let node = CairoTrieNode::from_memory(vm, leaf_ptr)?;
-    println!("{:?}", node);
     insert_value_into_ap(vm, Felt252::from(node.is_edge()))
 }
 
