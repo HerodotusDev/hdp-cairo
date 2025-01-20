@@ -17,5 +17,6 @@ strum_macros.workspace = true
 thiserror.workspace = true
 pathfinder_gateway_types.workspace = true
 starknet-types-core.workspace = true
+version-compare.workspace = true
 
 config.workspace = true

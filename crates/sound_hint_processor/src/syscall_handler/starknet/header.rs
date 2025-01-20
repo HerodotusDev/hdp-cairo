@@ -5,7 +5,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use syscall_handler::traits::CallHandler;
 use syscall_handler::{SyscallExecutionError, SyscallResult};
-use types::cairo::starknet::header::CairoHeader;
+use types::cairo::starknet::header::StarknetBlock;
 use types::{
     cairo::{starknet::header::FunctionId, structs::Felt, traits::CairoType},
     keys::starknet::header::CairoKey,
@@ -47,16 +47,19 @@ impl CallHandler for HeaderCallHandler {
     }
 
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
-        let ptr = self.memorizer.read_key(key.hash(), self.dict_manager.clone())?;
+        let mut ptr = self.memorizer.read_key(key.hash(), self.dict_manager.clone())?;
         let field_len: usize = vm.get_integer(ptr)?.as_ref().clone().try_into().unwrap();
+        println!("Field length: {:?}", field_len);
+
+        ptr = (ptr + 1)?; // Increment ptr by 1, handling potential overflow
         let fields = vm
             .get_integer_range(ptr, field_len)?
             .into_iter()
             .map(|f| f.as_ref().clone().into())
-            .collect::<Vec<Felt>>();
+            .collect::<Vec<Felt252>>();
         // data.resize(1024, 0);
+        println!("Fields: {:?}", fields);
 
-        println!("Data: {:?}", field_len);
-        Ok(CairoHeader::new(fields).handle(function_id))
+        Ok(StarknetBlock::from_fields(fields).handle(function_id))
     }
 }
