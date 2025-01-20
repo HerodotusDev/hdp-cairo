@@ -90,6 +90,7 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(verifiers::evm::storage_item_verifier::HINT_SET_STORAGE_SLOT.into(), verifiers::evm::storage_item_verifier::hint_set_storage_slot);
     hints.insert(verifiers::evm::transaction_verifier::HINT_BATCH_TRANSACTIONS_LEN.into(), verifiers::evm::transaction_verifier::hint_batch_transactions_len);
     hints.insert(verifiers::evm::transaction_verifier::HINT_PROOF_BYTES_LEN.into(), verifiers::evm::transaction_verifier::hint_proof_bytes_len);
+    hints.insert(verifiers::evm::receipt_verifier::HINT_RECEIPT_MPT_PROOF.into(), verifiers::evm::receipt_verifier::hint_receipt_mpt_proof);
     hints.insert(verifiers::evm::transaction_verifier::HINT_SET_TX_BLOCK_NUMBER.into(), verifiers::evm::transaction_verifier::hint_set_tx_block_number);
     hints.insert(verifiers::evm::transaction_verifier::HINT_SET_TX_KEY_LEADING_ZEROS.into(), verifiers::evm::transaction_verifier::hint_set_tx_key_leading_zeros);
     hints.insert(verifiers::evm::transaction_verifier::HINT_SET_TX_KEY.into(), verifiers::evm::transaction_verifier::hint_set_tx_key);
@@ -112,7 +113,9 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::mpt::HINT_LONG_SHORT_LIST.into(), eth_essentials_cairo_vm_hints::hints::lib::mpt::hint_long_short_list);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::mpt::HINT_SECOND_ITEM_TYPE.into(), eth_essentials_cairo_vm_hints::hints::lib::mpt::hint_second_item_type);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::rlp_little::assert::HINT_EXPECTED_NIBBLE.into(), eth_essentials_cairo_vm_hints::hints::lib::rlp_little::assert::hint_expected_nibble);
+    hints.insert(eth_essentials_cairo_vm_hints::hints::lib::rlp_little::assert::HINT_EXPECTED_LEADING_ZEROES.into(), eth_essentials_cairo_vm_hints::hints::lib::rlp_little::assert::hint_expected_leading_zeroes);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::rlp_little::divmod::HINT_POW_CUT.into(), eth_essentials_cairo_vm_hints::hints::lib::rlp_little::divmod::hint_pow_cut);
+    hints.insert(eth_essentials_cairo_vm_hints::hints::lib::rlp_little::leading_zeros::HINT_EXPECTED_LEADING_ZEROES.into(), eth_essentials_cairo_vm_hints::hints::lib::rlp_little::leading_zeros::hint_expected_leading_zeroes);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::rlp_little::leading_zeros::HINT_EXPECTED_NIBBLE.into(), eth_essentials_cairo_vm_hints::hints::lib::rlp_little::leading_zeros::hint_expected_nibble);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::rlp_little::nibbles::HINT_IS_ZERO.into(), eth_essentials_cairo_vm_hints::hints::lib::rlp_little::nibbles::hint_is_zero);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::rlp_little::nibbles::HINT_NEEDS_NEXT_WORD_ENDING.into(), eth_essentials_cairo_vm_hints::hints::lib::rlp_little::nibbles::hint_needs_next_word_ending);

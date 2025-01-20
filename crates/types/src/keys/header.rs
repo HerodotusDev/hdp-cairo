@@ -1,4 +1,4 @@
-use super::{account, storage, KeyError};
+use super::{account, receipt, storage, KeyError};
 use crate::cairo::traits::CairoType;
 use alloy::primitives::{BlockNumber, ChainId};
 use cairo_vm::{
@@ -55,6 +55,15 @@ impl From<account::Key> for Key {
 
 impl From<storage::Key> for Key {
     fn from(value: storage::Key) -> Self {
+        Self {
+            chain_id: value.chain_id,
+            block_number: value.block_number,
+        }
+    }
+}
+
+impl From<receipt::Key> for Key {
+    fn from(value: receipt::Key) -> Self {
         Self {
             chain_id: value.chain_id,
             block_number: value.block_number,

@@ -1,5 +1,5 @@
 use crate::cairo::traits::CairoType;
-use alloy::primitives::{Address, B256, B64, U256};
+use alloy::primitives::{Address, Bloom, B256, B64, U256};
 use cairo_type_derive::{CairoType, FieldOffsetGetters};
 use cairo_vm::{
     types::relocatable::Relocatable,
@@ -18,6 +18,24 @@ impl From<u64> for Uint256 {
         Self {
             low: Felt252::from(value),
             high: Felt252::ZERO,
+        }
+    }
+}
+
+impl From<u128> for Uint256 {
+    fn from(value: u128) -> Self {
+        Self {
+            low: Felt252::from(value),
+            high: Felt252::ZERO,
+        }
+    }
+}
+
+impl From<Bloom> for Uint256 {
+    fn from(value: Bloom) -> Self {
+        Self {
+            low: Felt252::from_bytes_be_slice(&value[16..32]),
+            high: Felt252::from_bytes_be_slice(&value[0..16]),
         }
     }
 }

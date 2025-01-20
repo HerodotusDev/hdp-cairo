@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 alloy.workspace = true
+alloy-rlp.workspace = true
 clap.workspace = true
 dry_hint_processor.workspace = true
 futures.workspace = true
@@ -12,6 +13,7 @@ indicatif.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
+eth-trie-proofs = { git = "https://github.com/HerodotusDev/eth-trie-proofs.git", branch = "main" }
 
 indexer.workspace = true
 types.workspace = true
