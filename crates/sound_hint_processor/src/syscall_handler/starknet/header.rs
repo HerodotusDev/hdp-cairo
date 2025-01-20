@@ -49,7 +49,7 @@ impl CallHandler for HeaderCallHandler {
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
         let ptr = self.memorizer.read_key(key.hash(), self.dict_manager.clone())?;
         let field_len: usize = vm.get_integer(ptr)?.as_ref().clone().try_into().unwrap();
-        let fields =  vm
+        let fields = vm
             .get_integer_range(ptr, field_len)?
             .into_iter()
             .map(|f| f.as_ref().clone().into())
@@ -57,6 +57,6 @@ impl CallHandler for HeaderCallHandler {
         // data.resize(1024, 0);
 
         println!("Data: {:?}", field_len);
-        Ok(CairoHeader::new(fields).handler(function_id))
+        Ok(CairoHeader::new(fields).handle(function_id))
     }
 }

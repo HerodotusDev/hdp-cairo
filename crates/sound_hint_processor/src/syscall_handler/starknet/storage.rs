@@ -1,12 +1,12 @@
 use crate::syscall_handler::Memorizer;
 use cairo_vm::hint_processor::builtin_hint_processor::dict_manager::DictManager;
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
-use types::cairo::structs::Felt;
 use std::cell::RefCell;
 use std::rc::Rc;
 use syscall_handler::traits::CallHandler;
 use syscall_handler::{SyscallExecutionError, SyscallResult};
 use types::cairo::starknet::storage::CairoStorage;
+use types::cairo::structs::Felt;
 use types::{
     cairo::{starknet::storage::FunctionId, structs::Uint256, traits::CairoType},
     keys::starknet::storage::CairoKey,

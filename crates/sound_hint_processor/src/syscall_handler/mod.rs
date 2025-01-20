@@ -1,3 +1,5 @@
+use crate::syscall_handler::evm::CallContractHandler as EvmCallContractHandler;
+use crate::syscall_handler::starknet::CallContractHandler as StarknetCallContractHandler;
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData, dict_manager::DictManager, hint_utils::get_ptr_from_var_name,
@@ -12,15 +14,16 @@ use cairo_vm::{
     },
     Felt252,
 };
-use serde::{Serialize, Deserialize};
-use tokio::{sync::RwLock, task};
 use hints::vars;
+use serde::{Deserialize, Serialize};
 use std::{any::Any, cell::RefCell, collections::HashMap, rc::Rc};
-use syscall_handler::{felt_from_ptr, run_handler, SyscallExecutionError, SyscallResult, SyscallSelector, WriteResponseResult};
-use types::cairo::{new_syscalls::{CallContractRequest, CallContractResponse}, traits::CairoType};
-use crate::syscall_handler::evm::CallContractHandler as EvmCallContractHandler;
-use crate::syscall_handler::starknet::CallContractHandler as StarknetCallContractHandler;
 use syscall_handler::traits;
+use syscall_handler::{felt_from_ptr, run_handler, SyscallExecutionError, SyscallResult, SyscallSelector, WriteResponseResult};
+use tokio::{sync::RwLock, task};
+use types::cairo::{
+    new_syscalls::{CallContractRequest, CallContractResponse},
+    traits::CairoType,
+};
 pub const ETHEREUM_MAINNET_CHAIN_ID: u128 = 0x1;
 pub const ETHEREUM_TESTNET_CHAIN_ID: u128 = 0xaa36a7;
 pub const STARKNET_MAINNET_CHAIN_ID: u128 = 0x534e5f4d41494e;
@@ -83,7 +86,10 @@ pub struct CallContractHandlerRelay {
 
 impl CallContractHandlerRelay {
     pub fn new(dict_manager: Rc<RefCell<DictManager>>) -> Self {
-        Self { evm_call_contract_handler: EvmCallContractHandler::new(dict_manager.clone()), starknet_call_contract_handler: StarknetCallContractHandler::new(dict_manager) }
+        Self {
+            evm_call_contract_handler: EvmCallContractHandler::new(dict_manager.clone()),
+            starknet_call_contract_handler: StarknetCallContractHandler::new(dict_manager),
+        }
     }
 }
 
