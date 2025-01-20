@@ -8,7 +8,7 @@ use syscall_handler::{SyscallExecutionError, SyscallResult};
 use types::cairo::starknet::storage::CairoStorage;
 use types::cairo::structs::Felt;
 use types::{
-    cairo::{starknet::storage::FunctionId, structs::Uint256, traits::CairoType},
+    cairo::{starknet::storage::FunctionId, traits::CairoType},
     keys::starknet::storage::CairoKey,
 };
 
@@ -50,6 +50,6 @@ impl CallHandler for StorageCallHandler {
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
         let ptr = self.memorizer.read_key(key.hash(), self.dict_manager.clone())?;
         let data = vm.get_integer(ptr)?;
-        Ok(CairoStorage::new(Felt::from(data.as_ref().clone())).handler(function_id))
+        Ok(CairoStorage::new(Felt::from(*data.as_ref())).handler(function_id))
     }
 }

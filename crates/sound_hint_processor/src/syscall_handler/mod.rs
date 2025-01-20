@@ -107,8 +107,6 @@ impl traits::SyscallHandler for CallContractHandlerRelay {
         let chain_id = <Felt252 as TryInto<u128>>::try_into(*vm.get_integer((request.calldata_start + 2)?)?)
             .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
 
-        println!("chain_id: {:?}", chain_id);
-
         match chain_id {
             ETHEREUM_MAINNET_CHAIN_ID | ETHEREUM_TESTNET_CHAIN_ID => self.evm_call_contract_handler.execute(request, vm).await,
             STARKNET_MAINNET_CHAIN_ID | STARKNET_TESTNET_CHAIN_ID => self.starknet_call_contract_handler.execute(request, vm).await,
@@ -163,7 +161,6 @@ impl SyscallHandlerWrapper {
     }
 
     pub async fn execute_syscall(&mut self, vm: &mut VirtualMachine, syscall_ptr: Relocatable) -> Result<(), HintError> {
-        println!("execute_syscall");
         let mut syscall_handler = self.syscall_handler.write().await;
         let ptr = &mut syscall_handler
             .syscall_ptr
@@ -220,7 +217,6 @@ pub fn enter_scope_syscall_handler(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    println!("enter_scope_syscall_handler");
     let syscall_handler: Box<dyn Any> = Box::new(exec_scopes.get::<SyscallHandlerWrapper>(vars::scopes::SYSCALL_HANDLER)?);
     exec_scopes.enter_scope(HashMap::from_iter([(vars::scopes::SYSCALL_HANDLER.to_string(), syscall_handler)]));
 

@@ -48,17 +48,14 @@ impl CallHandler for HeaderCallHandler {
 
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
         let mut ptr = self.memorizer.read_key(key.hash(), self.dict_manager.clone())?;
-        let field_len: usize = vm.get_integer(ptr)?.as_ref().clone().try_into().unwrap();
-        println!("Field length: {:?}", field_len);
+        let field_len: usize = (*vm.get_integer(ptr)?.as_ref()).try_into().unwrap();
 
         ptr = (ptr + 1)?; // Increment ptr by 1, handling potential overflow
         let fields = vm
             .get_integer_range(ptr, field_len)?
             .into_iter()
-            .map(|f| f.as_ref().clone().into())
+            .map(|f| (*f.as_ref()))
             .collect::<Vec<Felt252>>();
-        // data.resize(1024, 0);
-        println!("Fields: {:?}", fields);
 
         Ok(StarknetBlock::from_fields(fields).handle(function_id))
     }

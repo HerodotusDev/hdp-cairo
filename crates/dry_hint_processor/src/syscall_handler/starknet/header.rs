@@ -74,7 +74,7 @@ impl CallHandler for HeaderCallHandler {
         }
         .map_err(|e| SyscallExecutionError::InternalError(format!("Failed to parse block data: {}", e).into()))?;
 
-        let sn_block: StarknetBlock = Block::from(block_data).into();
+        let sn_block: StarknetBlock = block_data.into();
 
         let field = sn_block.handle(function_id);
         println!("Field: {:?}", field);

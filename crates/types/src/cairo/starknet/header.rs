@@ -223,14 +223,14 @@ impl StarknetBlock {
             FunctionId::TransactionCommitment => self.transaction_commitment().into(),
             FunctionId::EventCount => self.event_count().into(),
             FunctionId::EventCommitment => self.event_commitment().into(),
-            FunctionId::StateDiffCommitment => self.state_diff_commitment().unwrap_or_else(|| Felt252::ZERO.into()).into(),
-            FunctionId::StateDiffLength => self.state_diff_length().unwrap_or_else(|| Felt252::ZERO.into()).into(),
-            FunctionId::ReceiptCommitment => self.receipt_commitment().unwrap_or_else(|| Felt252::ZERO.into()).into(),
-            FunctionId::L1GasPriceWei => self.l1_gas_price_wei().unwrap_or_else(|| Felt252::ZERO.into()).into(),
-            FunctionId::L1GasPriceFri => self.l1_gas_price_fri().unwrap_or_else(|| Felt252::ZERO.into()).into(),
-            FunctionId::L1DataGasPriceWei => self.l1_data_gas_price_wei().unwrap_or_else(|| Felt252::ZERO.into()).into(),
-            FunctionId::L1DataGasPriceFri => self.l1_data_gas_price_fri().unwrap_or_else(|| Felt252::ZERO.into()).into(),
-            FunctionId::Version => self.version().unwrap_or_else(|| Felt252::ZERO.into()).into(),
+            FunctionId::StateDiffCommitment => self.state_diff_commitment().unwrap_or(Felt252::ZERO).into(),
+            FunctionId::StateDiffLength => self.state_diff_length().unwrap_or(Felt252::ZERO).into(),
+            FunctionId::ReceiptCommitment => self.receipt_commitment().unwrap_or(Felt252::ZERO).into(),
+            FunctionId::L1GasPriceWei => self.l1_gas_price_wei().unwrap_or(Felt252::ZERO).into(),
+            FunctionId::L1GasPriceFri => self.l1_gas_price_fri().unwrap_or(Felt252::ZERO).into(),
+            FunctionId::L1DataGasPriceWei => self.l1_data_gas_price_wei().unwrap_or(Felt252::ZERO).into(),
+            FunctionId::L1DataGasPriceFri => self.l1_data_gas_price_fri().unwrap_or(Felt252::ZERO).into(),
+            FunctionId::Version => self.version().unwrap_or(Felt252::ZERO).into(),
         }
     }
 }
@@ -283,15 +283,15 @@ impl StarknetBlockLegacy {
         let total_events: usize = block.transaction_receipts.iter().map(|(_, events)| events.len()).sum();
         let total_transactions: usize = block.transactions.len();
         Self {
-            block_number: Felt252::from(block.block_number.get()).into(),
-            state_root: Felt252::from_bytes_be(&block.state_commitment.as_inner().to_be_bytes()).into(),
-            sequencer_address: Felt252::from_bytes_be(&block.sequencer_address.ok_or(Felt252::ZERO).unwrap().as_inner().to_be_bytes()).into(),
-            block_timestamp: Felt252::from(block.timestamp.get()).into(),
-            transaction_count: Felt252::from(total_transactions).into(),
-            transaction_commitment: Felt252::from_bytes_be(&block.transaction_commitment.as_inner().to_be_bytes()).into(),
-            event_count: Felt252::from(total_events).into(),
-            event_commitment: Felt252::from_bytes_be(&block.event_commitment.as_inner().to_be_bytes()).into(),
-            parent_block_hash: Felt252::from_bytes_be(&block.parent_block_hash.as_inner().to_be_bytes()).into(),
+            block_number: Felt252::from(block.block_number.get()),
+            state_root: Felt252::from_bytes_be(&block.state_commitment.as_inner().to_be_bytes()),
+            sequencer_address: Felt252::from_bytes_be(&block.sequencer_address.ok_or(Felt252::ZERO).unwrap().as_inner().to_be_bytes()),
+            block_timestamp: Felt252::from(block.timestamp.get()),
+            transaction_count: Felt252::from(total_transactions),
+            transaction_commitment: Felt252::from_bytes_be(&block.transaction_commitment.as_inner().to_be_bytes()),
+            event_count: Felt252::from(total_events),
+            event_commitment: Felt252::from_bytes_be(&block.event_commitment.as_inner().to_be_bytes()),
+            parent_block_hash: Felt252::from_bytes_be(&block.parent_block_hash.as_inner().to_be_bytes()),
         }
     }
 
@@ -395,7 +395,7 @@ impl StarknetBlock0_13_2 {
         // Event count (8 bytes)
         concat_counts[8..16].copy_from_slice(&(total_events as u64).to_be_bytes());
         // State diff length (8 bytes)
-        concat_counts[16..24].copy_from_slice(&(block.state_diff_length.unwrap_or(0) as u64).to_be_bytes());
+        concat_counts[16..24].copy_from_slice(&block.state_diff_length.unwrap_or(0).to_be_bytes());
         // L1 DA mode (1 byte)
         concat_counts[24] = if block.l1_da_mode == L1DataAvailabilityMode::Blob {
             0b10000000
@@ -414,10 +414,10 @@ impl StarknetBlock0_13_2 {
             transaction_commitment: Felt252::from_bytes_be(&block.transaction_commitment.as_inner().to_be_bytes()),
             event_commitment: Felt252::from_bytes_be(&block.event_commitment.as_inner().to_be_bytes()),
             receipt_commitment: Felt252::from_bytes_be(&block.receipt_commitment.unwrap().as_inner().to_be_bytes()),
-            l1_gas_price_wei: Felt252::from(block.l1_gas_price.price_in_wei.0).into(),
-            l1_gas_price_fri: Felt252::from(block.l1_gas_price.price_in_fri.0).into(),
-            l1_data_gas_price_wei: Felt252::from(block.l1_data_gas_price.price_in_wei.0).into(),
-            l1_data_gas_price_fri: Felt252::from(block.l1_data_gas_price.price_in_fri.0).into(),
+            l1_gas_price_wei: Felt252::from(block.l1_gas_price.price_in_wei.0),
+            l1_gas_price_fri: Felt252::from(block.l1_gas_price.price_in_fri.0),
+            l1_data_gas_price_wei: Felt252::from(block.l1_data_gas_price.price_in_wei.0),
+            l1_data_gas_price_fri: Felt252::from(block.l1_data_gas_price.price_in_fri.0),
             protocol_version: Felt252::from_bytes_be_slice(block.starknet_version.to_string().as_bytes()),
             parent_block_hash: Felt252::from_bytes_be(&block.parent_block_hash.as_inner().to_be_bytes()),
         }

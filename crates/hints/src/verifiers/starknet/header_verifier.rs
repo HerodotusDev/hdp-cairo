@@ -41,7 +41,6 @@ pub fn hint_vm_enter_scope(
 
     let headers_with_mmr: Box<dyn Any> = Box::new(proofs.headers_with_mmr[idx - 1].clone());
     let dict_manager: Box<dyn Any> = Box::new(exec_scopes.get::<Rc<RefCell<DictManager>>>(vars::scopes::DICT_MANAGER)?);
-    println!("in SN scope");
     exec_scopes.enter_scope(HashMap::from([
         (String::from(vars::scopes::HEADER_WITH_MMR_STARKNET), headers_with_mmr),
         (String::from(vars::scopes::DICT_MANAGER), dict_manager),
