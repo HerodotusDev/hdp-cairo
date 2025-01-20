@@ -62,10 +62,10 @@ impl StarknetBlock {
         }
     }
 
-    pub fn from_fields(fields: Vec<Felt252>) -> Self {
+    pub fn from_memorizer(fields: Vec<Felt252>) -> Self {
         match fields.len() {
-            n if n == StarknetBlockLegacy::n_fields() => StarknetBlock::Legacy(StarknetBlockLegacy::from_fields(fields)),
-            n if n == StarknetBlock0_13_2::n_fields() => StarknetBlock::V0_13_2(StarknetBlock0_13_2::from_fields(fields)),
+            n if n == StarknetBlockLegacy::n_fields() => StarknetBlock::Legacy(StarknetBlockLegacy::from_memorizer(fields)),
+            n if n == StarknetBlock0_13_2::n_fields() => StarknetBlock::V0_13_2(StarknetBlock0_13_2::from_memorizer(fields)),
             _ => panic!("Invalid number of fields"),
         }
     }
@@ -116,11 +116,7 @@ impl StarknetBlock {
     pub fn transaction_count(&self) -> Felt252 {
         match self {
             StarknetBlock::Legacy(block) => block.transaction_count,
-            StarknetBlock::V0_13_2(block) => {
-                // In v0.13.2, transaction count is part of concatenated_counts
-                // You might need to implement logic to extract it from concatenated_counts
-                block.concatenated_counts // This might need adjustment based on how counts are concatenated
-            }
+            StarknetBlock::V0_13_2(block) => block.get_transaction_count(),
         }
     }
 
@@ -134,10 +130,7 @@ impl StarknetBlock {
     pub fn event_count(&self) -> Felt252 {
         match self {
             StarknetBlock::Legacy(block) => block.event_count,
-            StarknetBlock::V0_13_2(block) => {
-                // Similar to transaction_count, this might need to be extracted from concatenated_counts
-                block.concatenated_counts // This might need adjustment
-            }
+            StarknetBlock::V0_13_2(block) => block.get_event_count(),
         }
     }
 
@@ -187,7 +180,7 @@ impl StarknetBlock {
     pub fn state_diff_length(&self) -> Option<Felt252> {
         match self {
             StarknetBlock::Legacy(_) => None,
-            StarknetBlock::V0_13_2(block) => Some(block.concatenated_counts),
+            StarknetBlock::V0_13_2(block) => Some(block.get_state_diff_length()),
         }
     }
 
@@ -249,17 +242,17 @@ pub struct StarknetBlockLegacy {
 }
 
 impl StarknetBlockLegacy {
-    pub fn from_fields(fields: Vec<Felt252>) -> Self {
+    pub fn from_memorizer(fields: Vec<Felt252>) -> Self {
         Self {
-            block_number: fields[0],
-            state_root: fields[1],
-            sequencer_address: fields[2],
-            block_timestamp: fields[3],
-            transaction_count: fields[4],
-            transaction_commitment: fields[5],
-            event_count: fields[6],
-            event_commitment: fields[7],
-            parent_block_hash: fields[8],
+            block_number: fields[1],
+            state_root: fields[2],
+            sequencer_address: fields[3],
+            block_timestamp: fields[4],
+            transaction_count: fields[5],
+            transaction_commitment: fields[6],
+            event_count: fields[7],
+            event_commitment: fields[8],
+            parent_block_hash: fields[11],
         }
     }
 
@@ -296,7 +289,7 @@ impl StarknetBlockLegacy {
     }
 
     pub fn n_fields() -> usize {
-        11
+        12
     }
 
     pub fn n_hash_fields() -> usize {
@@ -362,54 +355,85 @@ impl StarknetBlock0_13_2 {
         }
     }
 
-    pub fn from_fields(fields: Vec<Felt252>) -> Self {
+    // we offset by 1, as the lenght is the first element
+    pub fn from_memorizer(fields: Vec<Felt252>) -> Self {
         Self {
-            block_hash_version: fields[0],
-            block_number: fields[1],
-            state_root: fields[2],
-            sequencer_address: fields[3],
-            block_timestamp: fields[4],
-            concatenated_counts: fields[5],
-            state_diff_commitment: fields[6],
-            transaction_commitment: fields[7],
-            event_commitment: fields[8],
-            receipt_commitment: fields[9],
-            l1_gas_price_wei: fields[10],
-            l1_gas_price_fri: fields[11],
-            l1_data_gas_price_wei: fields[12],
-            l1_data_gas_price_fri: fields[13],
-            protocol_version: fields[14],
-            parent_block_hash: fields[15],
+            block_hash_version: fields[1],
+            block_number: fields[2],
+            state_root: fields[3],
+            sequencer_address: fields[4],
+            block_timestamp: fields[5],
+            concatenated_counts: fields[6],
+            state_diff_commitment: fields[7],
+            transaction_commitment: fields[8],
+            event_commitment: fields[9],
+            receipt_commitment: fields[10],
+            l1_gas_price_wei: fields[11],
+            l1_gas_price_fri: fields[12],
+            l1_data_gas_price_wei: fields[13],
+            l1_data_gas_price_fri: fields[14],
+            protocol_version: fields[15],
+            parent_block_hash: fields[17],
         }
     }
 
-    pub fn from_block(block: &Block) -> Self {
-        // Calculate total events and transactions
-        let total_events: usize = block.transaction_receipts.iter().map(|(_, events)| events.len()).sum();
-        let total_transactions: usize = block.transactions.len();
+    pub fn get_transaction_count(&self) -> Felt252 {
+        let bytes = self.concatenated_counts.to_bytes_be();
+        Felt252::from_bytes_be_slice(&bytes[0..8])
+    }
 
-        // Create concatenated counts similar to Python's concat_counts()
+    pub fn get_event_count(&self) -> Felt252 {
+        let bytes = self.concatenated_counts.to_bytes_be();
+        Felt252::from_bytes_be_slice(&bytes[8..16])
+    }
+
+    pub fn get_state_diff_length(&self) -> Felt252 {
+        let bytes = self.concatenated_counts.to_bytes_be();
+        Felt252::from_bytes_be_slice(&bytes[16..24])
+    }
+
+    pub fn is_blob_mode(&self) -> bool {
+        let bytes = self.concatenated_counts.to_bytes_be();
+        bytes[24] & 0b10000000 != 0
+    }
+
+    fn calculate_concatenated_counts(
+        transaction_count: u64,
+        event_count: u64,
+        state_diff_length: u64,
+        is_blob_mode: bool,
+    ) -> Felt252 {
         let mut concat_counts = [0u8; 32];
-        // Transaction count (8 bytes)
-        concat_counts[0..8].copy_from_slice(&(total_transactions as u64).to_be_bytes());
-        // Event count (8 bytes)
-        concat_counts[8..16].copy_from_slice(&(total_events as u64).to_be_bytes());
-        // State diff length (8 bytes)
-        concat_counts[16..24].copy_from_slice(&block.state_diff_length.unwrap_or(0).to_be_bytes());
-        // L1 DA mode (1 byte)
-        concat_counts[24] = if block.l1_da_mode == L1DataAvailabilityMode::Blob {
-            0b10000000
-        } else {
-            0
-        };
+        concat_counts[0..8].copy_from_slice(&transaction_count.to_be_bytes());
+        concat_counts[8..16].copy_from_slice(&event_count.to_be_bytes());
+        concat_counts[16..24].copy_from_slice(&state_diff_length.to_be_bytes());
+        if is_blob_mode {
+            concat_counts[24] = 0b10000000;
+        }
+        Felt252::from_bytes_be(&concat_counts)
+    }
+
+    pub fn from_block(block: &Block) -> Self {
+        let total_events: usize = block.transaction_receipts.iter()
+            .map(|(_, events)| events.len())
+            .sum();
+        let total_transactions = block.transactions.len();
+        let is_blob_mode = block.l1_da_mode == L1DataAvailabilityMode::Blob;
+
+        let concatenated_counts = Self::calculate_concatenated_counts(
+            total_transactions as u64,
+            total_events as u64,
+            block.state_diff_length.unwrap_or(0),
+            is_blob_mode,
+        );
 
         Self {
-            block_hash_version: Felt252::from_hex("0x535441524b4e45545f424c4f434b5f4841534830").unwrap(), // "STARKNET_BLOCK_HASH0"
+            block_hash_version: Felt252::from_hex("0x535441524b4e45545f424c4f434b5f4841534830").unwrap(),
             block_number: Felt252::from(block.block_number.get()),
             state_root: Felt252::from_bytes_be(&block.state_commitment.as_inner().to_be_bytes()),
             sequencer_address: Felt252::from_bytes_be(&block.sequencer_address.ok_or(Felt252::ZERO).unwrap().as_inner().to_be_bytes()),
             block_timestamp: Felt252::from(block.timestamp.get()),
-            concatenated_counts: Felt252::from_bytes_be(&concat_counts),
+            concatenated_counts,
             state_diff_commitment: Felt252::from_bytes_be(&block.state_diff_commitment.unwrap().as_inner().to_be_bytes()),
             transaction_commitment: Felt252::from_bytes_be(&block.transaction_commitment.as_inner().to_be_bytes()),
             event_commitment: Felt252::from_bytes_be(&block.event_commitment.as_inner().to_be_bytes()),
@@ -424,7 +448,7 @@ impl StarknetBlock0_13_2 {
     }
 
     pub fn n_fields() -> usize {
-        17
+        18
     }
 
     pub fn n_hash_fields() -> usize {
