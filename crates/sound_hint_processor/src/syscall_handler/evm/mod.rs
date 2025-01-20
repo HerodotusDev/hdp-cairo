@@ -14,36 +14,11 @@ use std::{collections::HashSet, hash::Hash};
 use strum_macros::FromRepr;
 use syscall_handler::traits::CallHandler;
 use syscall_handler::{felt_from_ptr, run_handler, traits, SyscallExecutionError, SyscallResult, SyscallSelector, WriteResponseResult};
-use tokio::sync::RwLock;
-use tokio::task;
 use types::cairo::new_syscalls::{CallContractRequest, CallContractResponse};
 use types::cairo::traits::CairoType;
 use types::keys;
 
 use super::Memorizer;
-
-#[derive(Debug, Default, Serialize, Deserialize)]
-pub struct SyscallHandler {
-    #[serde(skip)]
-    pub syscall_ptr: Option<Relocatable>,
-    pub call_contract_handler: CallContractHandler,
-}
-
-impl SyscallHandler {
-    pub fn new(dict_manager: Rc<RefCell<DictManager>>) -> Self {
-        Self {
-            call_contract_handler: CallContractHandler::new(dict_manager),
-            ..Default::default()
-        }
-    }
-}
-
-/// SyscallHandler is wrapped in Rc<RefCell<_>> in order
-/// to clone the reference when entering and exiting vm scopes
-#[derive(Debug, Clone, Default)]
-pub struct SyscallHandlerWrapper {
-    pub syscall_handler: Rc<RwLock<SyscallHandler>>,
-}
 
 #[derive(FromRepr)]
 pub enum CallHandlerId {
@@ -54,7 +29,7 @@ pub enum CallHandlerId {
     Receipt = 4,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct CallContractHandler {
     #[serde(skip)]
     pub dict_manager: Rc<RefCell<DictManager>>,
@@ -67,40 +42,6 @@ impl CallContractHandler {
             dict_manager,
             ..Default::default()
         }
-    }
-}
-
-impl SyscallHandlerWrapper {
-    pub fn new(dict_manager: Rc<RefCell<DictManager>>) -> Self {
-        Self {
-            syscall_handler: Rc::new(RwLock::new(SyscallHandler::new(dict_manager))),
-        }
-    }
-    pub fn set_syscall_ptr(&self, syscall_ptr: Relocatable) {
-        let mut syscall_handler = task::block_in_place(|| self.syscall_handler.blocking_write());
-        syscall_handler.syscall_ptr = Some(syscall_ptr);
-    }
-
-    pub fn syscall_ptr(&self) -> Option<Relocatable> {
-        let syscall_handler = task::block_in_place(|| self.syscall_handler.blocking_read());
-        syscall_handler.syscall_ptr
-    }
-
-    pub async fn execute_syscall(&mut self, vm: &mut VirtualMachine, syscall_ptr: Relocatable) -> Result<(), HintError> {
-        let mut syscall_handler = self.syscall_handler.write().await;
-        let ptr = &mut syscall_handler
-            .syscall_ptr
-            .ok_or(HintError::CustomHint(Box::from("syscall_ptr is None")))?;
-
-        assert_eq!(*ptr, syscall_ptr);
-
-        match SyscallSelector::try_from(felt_from_ptr(vm, ptr)?)? {
-            SyscallSelector::CallContract => run_handler(&mut syscall_handler.call_contract_handler, ptr, vm).await,
-        }?;
-
-        syscall_handler.syscall_ptr = Some(*ptr);
-
-        Ok(())
     }
 }
 
@@ -191,7 +132,7 @@ impl TryFrom<Felt252> for CallHandlerId {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum DryRunKey {
     Account(keys::evm::account::Key),
