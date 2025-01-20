@@ -56,11 +56,11 @@ impl ProofProgress {
             .progress_chars("=> ");
 
         let bars = [
-            (proof_keys.evm.header_keys.len(), "evm_header_keys"),
-            (proof_keys.evm.account_keys.len(), "evm_account_keys"),
-            (proof_keys.evm.storage_keys.len(), "evm_storage_keys"),
-            (proof_keys.starknet.header_keys.len(), "starknet_header_keys"),
-            (proof_keys.starknet.storage_keys.len(), "starknet_storage_keys"),
+            (proof_keys.evm.header_keys.len(), "ethereum header keys - fetching"),
+            (proof_keys.evm.account_keys.len(), "ethereum account key - fetching"),
+            (proof_keys.evm.storage_keys.len(), "ethereum storage keys - fetching"),
+            (proof_keys.starknet.header_keys.len(), "starknet header keys - fetching"),
+            (proof_keys.starknet.storage_keys.len(), "starknet storage keys - fetching"),
         ]
         .map(|(len, msg)| {
             let pb = multi_progress.add(ProgressBar::new(len as u64));
@@ -76,14 +76,6 @@ impl ProofProgress {
             starknet_header: bars[3].clone(),
             starknet_storage: bars[4].clone(),
         }
-    }
-
-    fn finish(self) {
-        self.evm_header.finish_with_message("EVM Header Keys - Done!");
-        self.evm_account.finish_with_message("EVM Account Keys - Done!");
-        self.evm_storage.finish_with_message("EVM Storage Keys - Done!");
-        self.starknet_header.finish_with_message("Starknet Header Keys - Done!");
-        self.starknet_storage.finish_with_message("Starknet Storage Keys - Done!");
     }
 }
 
@@ -111,6 +103,8 @@ async fn collect_evm_proofs(proof_keys: &EvmProofKeys, progress: &ProofProgress)
         progress.evm_header.inc(1);
     }
 
+    progress.evm_header.finish_with_message("ethereum header keys - finished");
+
     // Collect account proofs
     let mut account_fut = futures::stream::iter(
         proof_keys
@@ -130,6 +124,8 @@ async fn collect_evm_proofs(proof_keys: &EvmProofKeys, progress: &ProofProgress)
         accounts.insert(account);
         progress.evm_account.inc(1);
     }
+
+    progress.evm_account.finish_with_message("ethereum account keys - finished");
 
     // Collect storage proofs
     let mut storage_fut = futures::stream::iter(
@@ -151,6 +147,8 @@ async fn collect_evm_proofs(proof_keys: &EvmProofKeys, progress: &ProofProgress)
         storages.insert(storage);
         progress.evm_storage.inc(1);
     }
+
+    progress.evm_storage.finish_with_message("ethereum storage keys - finished");
 
     Ok(EvmProofs {
         headers_with_mmr: process_headers(headers_with_mmr),
@@ -183,6 +181,8 @@ async fn collect_starknet_proofs(proof_keys: &StarknetProofKeys, progress: &Proo
         progress.starknet_header.inc(1);
     }
 
+    progress.starknet_header.finish_with_message("starknet header keys - finished");
+
     // Collect storage proofs
     let mut storage_fut = futures::stream::iter(
         proof_keys
@@ -202,6 +202,8 @@ async fn collect_starknet_proofs(proof_keys: &StarknetProofKeys, progress: &Proo
         storages.insert(storage);
         progress.starknet_storage.inc(1);
     }
+
+    progress.starknet_storage.finish_with_message("starknet storage keys - finished");
 
     Ok(StarknetProofs {
         headers_with_mmr: process_headers(headers_with_mmr),
@@ -263,8 +265,6 @@ async fn main() -> Result<(), FetcherError> {
     )?;
 
     let chain_proofs = vec![ChainProofs::EthereumSepolia(evm_proofs), ChainProofs::StarknetSepolia(starknet_proofs)];
-
-    progress.finish();
 
     fs::write(
         args.program_output,
