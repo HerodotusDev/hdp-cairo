@@ -134,6 +134,7 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(verifiers::starknet::storage_verifier::HINT_SET_STORAGE_STARKNET_PROOF_CONTRACT_PROOF_LEN.into(), verifiers::starknet::storage_verifier::hint_set_storage_starknet_proof_contract_proof_len);
     hints.insert(verifiers::starknet::storage_verifier::HINT_SET_CONTRACT_NODES.into(), verifiers::starknet::storage_verifier::hint_set_contract_nodes);
     hints.insert(verifiers::starknet::storage_verifier::HINT_SET_EVAL_DEPTH.into(), verifiers::starknet::storage_verifier::hint_set_eval_depth);
+    hints.insert(verifiers::starknet::storage_verifier::HINT_SET_STORAGE_STARKNET_PROOF_CLASS_COMMITMENT.into(), verifiers::starknet::storage_verifier::hint_set_storage_starknet_proof_class_commitment);
 
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::bit_length::HINT_BIT_LENGTH.into(), eth_essentials_cairo_vm_hints::hints::lib::bit_length::hint_bit_length);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::mmr::bit_length::MMR_BIT_LENGTH.into(), eth_essentials_cairo_vm_hints::hints::lib::mmr::bit_length::mmr_bit_length);
@@ -155,6 +156,10 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::utils::divmod::HINT_VALUE_DIV.into(), eth_essentials_cairo_vm_hints::hints::lib::utils::divmod::hint_value_div);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::utils::trailing_zeroes::HINT_TRAILING_ZEROES_BYTES.into(), eth_essentials_cairo_vm_hints::hints::lib::utils::trailing_zeroes::hint_trailing_zeroes_bytes);
 
+
+    hints.insert(utils::debug::PRINT_FELT.into(), utils::debug::print_felt);
+    hints.insert(utils::debug::PRINT_STRING.into(), utils::debug::print_string);
+    hints.insert(utils::debug::PRINT_FELT_HEX.into(), utils::debug::print_felt_hex);
     hints
 }
 
