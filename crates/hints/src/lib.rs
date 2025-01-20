@@ -126,6 +126,11 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::utils::divmod::HINT_VALUE_8.into(), eth_essentials_cairo_vm_hints::hints::lib::utils::divmod::hint_value_8);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::utils::divmod::HINT_VALUE_DIV.into(), eth_essentials_cairo_vm_hints::hints::lib::utils::divmod::hint_value_div);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::utils::trailing_zeroes::HINT_TRAILING_ZEROES_BYTES.into(), eth_essentials_cairo_vm_hints::hints::lib::utils::trailing_zeroes::hint_trailing_zeroes_bytes);
+
+
+    hints.insert(utils::debug::PRINT_FELT.into(), utils::debug::print_felt);
+    hints.insert(utils::debug::PRINT_STRING.into(), utils::debug::print_string);
+    hints.insert(utils::debug::PRINT_FELT_HEX.into(), utils::debug::print_felt_hex);
     hints
 }
 
