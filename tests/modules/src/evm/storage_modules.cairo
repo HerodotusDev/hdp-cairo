@@ -1,5 +1,5 @@
 #[starknet::contract]
-mod storage_get_slot {
+mod  evm_storage_get_slot {
     use hdp_cairo::evm::storage::StorageTrait;
     use hdp_cairo::{HDP, evm::storage::{StorageKey, StorageImpl}};
 
