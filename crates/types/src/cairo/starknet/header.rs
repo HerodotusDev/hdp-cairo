@@ -397,12 +397,7 @@ impl StarknetBlock0_13_2 {
         bytes[24] & 0b10000000 != 0
     }
 
-    fn calculate_concatenated_counts(
-        transaction_count: u64,
-        event_count: u64,
-        state_diff_length: u64,
-        is_blob_mode: bool,
-    ) -> Felt252 {
+    fn calculate_concatenated_counts(transaction_count: u64, event_count: u64, state_diff_length: u64, is_blob_mode: bool) -> Felt252 {
         let mut concat_counts = [0u8; 32];
         concat_counts[0..8].copy_from_slice(&transaction_count.to_be_bytes());
         concat_counts[8..16].copy_from_slice(&event_count.to_be_bytes());
@@ -414,9 +409,7 @@ impl StarknetBlock0_13_2 {
     }
 
     pub fn from_block(block: &Block) -> Self {
-        let total_events: usize = block.transaction_receipts.iter()
-            .map(|(_, events)| events.len())
-            .sum();
+        let total_events: usize = block.transaction_receipts.iter().map(|(_, events)| events.len()).sum();
         let total_transactions = block.transactions.len();
         let is_blob_mode = block.l1_da_mode == L1DataAvailabilityMode::Blob;
 
