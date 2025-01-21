@@ -33,8 +33,10 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+            ~/.scarb
+          key: ${{ runner.os }}-cargo-scarb-${{ hashFiles('**/Cargo.lock', '**/Scarb.toml') }}
           restore-keys: |
+            ${{ runner.os }}-cargo-scarb-
             ${{ runner.os }}-cargo-
 
       - name: Set up Scarb
@@ -42,19 +44,6 @@ jobs:
 
       - name: Set up Cairo
         run: make setup
-
-      - name: Cache Cargo
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
 
       - name: Run fmt check
         run: cargo fmt --all -- --check
@@ -80,19 +69,6 @@ jobs:
       - name: Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
 
-      - name: Cargo Cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
-
       - name: Set up Scarb
         uses: software-mansion/setup-scarb@v1
 
@@ -104,19 +80,6 @@ jobs:
 
       - name: Build Test Contracts
         run: scarb build
-
-      - name: Cache Cargo
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
 
       - name: Run Nextest Tests
         env:
