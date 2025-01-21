@@ -1,8 +1,7 @@
 use clap::{Parser, ValueHint};
+use fetcher::{parse_syscall_handler, Fetcher};
 use std::{fs, path::PathBuf};
 use types::ChainProofs;
-
-use fetcher::{collect_evm_proofs, collect_starknet_proofs, parse_syscall_handler, ProofProgress};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -19,13 +18,8 @@ async fn main() -> Result<(), fetcher::FetcherError> {
     let input_file = fs::read(&args.filename)?;
     let proof_keys = parse_syscall_handler(&input_file)?;
 
-    let progress = ProofProgress::new(&proof_keys, true);
-
-    let (evm_proofs, starknet_proofs) = tokio::try_join!(
-        collect_evm_proofs(&proof_keys.evm, &progress),
-        collect_starknet_proofs(&proof_keys.starknet, &progress)
-    )?;
-
+    let fetcher = Fetcher::new(&proof_keys);
+    let (evm_proofs, starknet_proofs) = tokio::try_join!(fetcher.collect_evm_proofs(), fetcher.collect_starknet_proofs())?;
     let chain_proofs = vec![ChainProofs::EthereumSepolia(evm_proofs), ChainProofs::StarknetSepolia(starknet_proofs)];
 
     fs::write(

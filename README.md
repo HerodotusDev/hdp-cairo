@@ -29,7 +29,7 @@ Before running the program, prepare the input data. The inputs are provided via 
 
 2. **Fetch On-Chain Proofs Needed for the HDP Run:**
    ```bash
-   cargo run --release --bin fetcher -- hdp_keys.json --program_output hdp_proofs.json
+   cargo run --release --bin fetcher --features progress_bars -- hdp_keys.json --program_output hdp_proofs.json
    ```
 
 3. **Run Cairo1 Module with Verified On-Chain Data:**

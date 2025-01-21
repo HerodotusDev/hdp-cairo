@@ -17,3 +17,7 @@ starknet-types-core.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 types.workspace = true
+
+[features]
+default = []
+progress_bars = []

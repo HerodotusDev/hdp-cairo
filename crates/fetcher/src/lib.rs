@@ -3,23 +3,20 @@ use dry_hint_processor::syscall_handler::{evm, starknet, SyscallHandler};
 use futures::{FutureExt, StreamExt};
 use indexer::models::IndexerError;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use proof_keys::starknet::ProofKeys as StarknetProofKeys;
+use proof_keys::{evm::ProofKeys as EvmProofKeys, ProofKeys};
 use starknet_types_core::felt::FromStrError;
 use std::collections::{HashMap, HashSet};
 use std::num::ParseIntError;
-use thiserror as _;
 use thiserror::Error;
+use types::proofs::evm::Proofs as EvmProofs;
+use types::proofs::starknet::Proofs as StarknetProofs;
 use types::proofs::{
     evm::{account::Account, header::Header as EvmHeader, storage::Storage},
     header::HeaderMmrMeta,
     mmr::MmrMeta,
     starknet::{header::Header as StarknetHeader, storage::Storage as StarknetStorage},
 };
-
-use types::proofs::evm::Proofs as EvmProofs;
-use types::proofs::starknet::Proofs as StarknetProofs;
-
-use proof_keys::starknet::ProofKeys as StarknetProofKeys;
-use proof_keys::{evm::ProofKeys as EvmProofKeys, ProofKeys};
 
 pub mod proof_keys;
 
@@ -55,7 +52,7 @@ impl From<FromStrError> for FetcherError {
 
 const BUFFER_UNORDERED: usize = 50;
 
-pub struct ProofProgress {
+pub struct ProgressBars {
     pub evm_header: Option<ProgressBar>,
     pub evm_account: Option<ProgressBar>,
     pub evm_storage: Option<ProgressBar>,
@@ -63,18 +60,8 @@ pub struct ProofProgress {
     pub starknet_storage: Option<ProgressBar>,
 }
 
-impl ProofProgress {
-    pub fn new(proof_keys: &ProofKeys, show_progress: bool) -> Self {
-        if !show_progress {
-            return Self {
-                evm_header: None,
-                evm_account: None,
-                evm_storage: None,
-                starknet_header: None,
-                starknet_storage: None,
-            };
-        }
-
+impl ProgressBars {
+    pub fn new(proof_keys: &ProofKeys) -> Self {
         let multi_progress = MultiProgress::new();
         let style = ProgressStyle::with_template("[{elapsed_precise}] [{bar:40}] {pos}/{len} {msg}")
             .unwrap()
@@ -104,12 +91,14 @@ impl ProofProgress {
     }
 }
 
+#[cfg(feature = "progress_bars")]
 // Helper trait to safely increment progress
 trait ProgressExt {
     fn safe_inc(&self);
     fn safe_finish_with_message(&self, msg: &'static str);
 }
 
+#[cfg(feature = "progress_bars")]
 impl ProgressExt for Option<ProgressBar> {
     fn safe_inc(&self) {
         if let Some(pb) = self {
@@ -124,136 +113,180 @@ impl ProgressExt for Option<ProgressBar> {
     }
 }
 
-pub async fn collect_evm_proofs(proof_keys: &EvmProofKeys, progress: &ProofProgress) -> Result<EvmProofs, FetcherError> {
-    let mut headers_with_mmr = HashMap::default();
-    let mut accounts: HashSet<Account> = HashSet::default();
-    let mut storages: HashSet<Storage> = HashSet::default();
-
-    // Collect header proofs
-    let mut header_fut = futures::stream::iter(
-        proof_keys
-            .header_keys
-            .iter()
-            .map(|key| EvmProofKeys::fetch_header_proof(key.chain_id, key.block_number))
-            .map(|f| f.boxed_local()),
-    )
-    .buffer_unordered(BUFFER_UNORDERED);
-
-    while let Some(result) = header_fut.next().await {
-        let item = result?;
-        headers_with_mmr
-            .entry(item.mmr_meta)
-            .and_modify(|headers: &mut Vec<EvmHeader>| headers.extend(item.headers.clone()))
-            .or_insert(item.headers);
-        progress.evm_header.safe_inc();
-    }
-
-    progress.evm_header.safe_finish_with_message("ethereum header keys - finished");
-
-    // Collect account proofs
-    let mut account_fut = futures::stream::iter(
-        proof_keys
-            .account_keys
-            .iter()
-            .map(EvmProofKeys::fetch_account_proof)
-            .map(|f| f.boxed_local()),
-    )
-    .buffer_unordered(BUFFER_UNORDERED);
-
-    while let Some(result) = account_fut.next().await {
-        let (header_with_mmr, account) = result?;
-        headers_with_mmr
-            .entry(header_with_mmr.mmr_meta)
-            .and_modify(|headers: &mut Vec<EvmHeader>| headers.extend(header_with_mmr.headers.clone()))
-            .or_insert(header_with_mmr.headers);
-        accounts.insert(account);
-        progress.evm_account.safe_inc();
-    }
-
-    progress.evm_account.safe_finish_with_message("ethereum account keys - finished");
-
-    // Collect storage proofs
-    let mut storage_fut = futures::stream::iter(
-        proof_keys
-            .storage_keys
-            .iter()
-            .map(EvmProofKeys::fetch_storage_proof)
-            .map(|f| f.boxed_local()),
-    )
-    .buffer_unordered(BUFFER_UNORDERED);
-
-    while let Some(result) = storage_fut.next().await {
-        let (header_with_mmr, account, storage) = result?;
-        headers_with_mmr
-            .entry(header_with_mmr.mmr_meta)
-            .and_modify(|headers: &mut Vec<EvmHeader>| headers.extend(header_with_mmr.headers.clone()))
-            .or_insert(header_with_mmr.headers);
-        accounts.insert(account);
-        storages.insert(storage);
-        progress.evm_storage.safe_inc();
-    }
-
-    progress.evm_storage.safe_finish_with_message("ethereum storage keys - finished");
-
-    Ok(EvmProofs {
-        headers_with_mmr: process_headers(headers_with_mmr),
-        accounts: accounts.into_iter().collect(),
-        storages: storages.into_iter().collect(),
-        ..Default::default()
-    })
+pub struct Fetcher<'a> {
+    proof_keys: &'a ProofKeys,
+    #[cfg(feature = "progress_bars")]
+    progress_bars: ProgressBars,
 }
 
-pub async fn collect_starknet_proofs(proof_keys: &StarknetProofKeys, progress: &ProofProgress) -> Result<StarknetProofs, FetcherError> {
-    let mut headers_with_mmr = HashMap::default();
-    let mut storages: HashSet<StarknetStorage> = HashSet::default();
-
-    // Collect header proofs
-    let mut header_fut = futures::stream::iter(
-        proof_keys
-            .header_keys
-            .iter()
-            .map(|key| StarknetProofKeys::fetch_header_proof(key.chain_id, key.block_number))
-            .map(|f| f.boxed_local()),
-    )
-    .buffer_unordered(BUFFER_UNORDERED);
-
-    while let Some(result) = header_fut.next().await {
-        let item = result?;
-        headers_with_mmr
-            .entry(item.mmr_meta)
-            .and_modify(|headers: &mut Vec<StarknetHeader>| headers.extend(item.headers.clone()))
-            .or_insert(item.headers);
-        progress.starknet_header.safe_inc();
+impl<'a> Fetcher<'a> {
+    pub fn new(proof_keys: &'a ProofKeys) -> Self {
+        Self {
+            proof_keys,
+            #[cfg(feature = "progress_bars")]
+            progress_bars: ProgressBars::new(proof_keys),
+        }
     }
 
-    progress.starknet_header.safe_finish_with_message("starknet header keys - finished");
+    pub async fn collect_evm_proofs(&self) -> Result<EvmProofs, FetcherError> {
+        let mut headers_with_mmr = HashMap::default();
+        let mut accounts: HashSet<Account> = HashSet::default();
+        let mut storages: HashSet<Storage> = HashSet::default();
 
-    // Collect storage proofs
-    let mut storage_fut = futures::stream::iter(
-        proof_keys
-            .storage_keys
-            .iter()
-            .map(StarknetProofKeys::fetch_storage_proof)
-            .map(|f| f.boxed_local()),
-    )
-    .buffer_unordered(BUFFER_UNORDERED);
+        // Collect header proofs
+        let mut header_fut = futures::stream::iter(
+            self.proof_keys
+                .evm
+                .header_keys
+                .iter()
+                .map(|key| EvmProofKeys::fetch_header_proof(key.chain_id, key.block_number))
+                .map(|f| f.boxed_local()),
+        )
+        .buffer_unordered(BUFFER_UNORDERED);
 
-    while let Some(result) = storage_fut.next().await {
-        let (header_with_mmr, storage) = result?;
-        headers_with_mmr
-            .entry(header_with_mmr.mmr_meta)
-            .and_modify(|headers: &mut Vec<StarknetHeader>| headers.extend(header_with_mmr.headers.clone()))
-            .or_insert(header_with_mmr.headers);
-        storages.insert(storage);
-        progress.starknet_storage.safe_inc();
+        while let Some(result) = header_fut.next().await {
+            let item = result?;
+            headers_with_mmr
+                .entry(item.mmr_meta)
+                .and_modify(|headers: &mut Vec<EvmHeader>| headers.extend(item.headers.clone()))
+                .or_insert(item.headers);
+
+            #[cfg(feature = "progress_bars")]
+            self.progress_bars.evm_header.safe_inc();
+        }
+
+        #[cfg(feature = "progress_bars")]
+        self.progress_bars.evm_header.safe_finish_with_message("ethereum header keys - finished");
+
+        // Collect account proofs
+        let mut account_fut = futures::stream::iter(
+            self.proof_keys
+                .evm
+                .account_keys
+                .iter()
+                .map(EvmProofKeys::fetch_account_proof)
+                .map(|f| f.boxed_local()),
+        )
+        .buffer_unordered(BUFFER_UNORDERED);
+
+        while let Some(result) = account_fut.next().await {
+            let (header_with_mmr, account) = result?;
+            headers_with_mmr
+                .entry(header_with_mmr.mmr_meta)
+                .and_modify(|headers: &mut Vec<EvmHeader>| headers.extend(header_with_mmr.headers.clone()))
+                .or_insert(header_with_mmr.headers);
+            accounts.insert(account);
+
+            #[cfg(feature = "progress_bars")]
+            self.progress_bars.evm_account.safe_inc();
+        }
+
+        #[cfg(feature = "progress_bars")]
+        self.progress_bars
+            .evm_account
+            .safe_finish_with_message("ethereum account keys - finished");
+
+        // Collect storage proofs
+        let mut storage_fut = futures::stream::iter(
+            self.proof_keys
+                .evm
+                .storage_keys
+                .iter()
+                .map(EvmProofKeys::fetch_storage_proof)
+                .map(|f| f.boxed_local()),
+        )
+        .buffer_unordered(BUFFER_UNORDERED);
+
+        while let Some(result) = storage_fut.next().await {
+            let (header_with_mmr, account, storage) = result?;
+            headers_with_mmr
+                .entry(header_with_mmr.mmr_meta)
+                .and_modify(|headers: &mut Vec<EvmHeader>| headers.extend(header_with_mmr.headers.clone()))
+                .or_insert(header_with_mmr.headers);
+            accounts.insert(account);
+            storages.insert(storage);
+
+            #[cfg(feature = "progress_bars")]
+            self.progress_bars.evm_storage.safe_inc();
+        }
+
+        #[cfg(feature = "progress_bars")]
+        self.progress_bars
+            .evm_storage
+            .safe_finish_with_message("ethereum storage keys - finished");
+
+        Ok(EvmProofs {
+            headers_with_mmr: process_headers(headers_with_mmr),
+            accounts: accounts.into_iter().collect(),
+            storages: storages.into_iter().collect(),
+            ..Default::default()
+        })
     }
 
-    progress.starknet_storage.safe_finish_with_message("starknet storage keys - finished");
+    pub async fn collect_starknet_proofs(&self) -> Result<StarknetProofs, FetcherError> {
+        let mut headers_with_mmr = HashMap::default();
+        let mut storages: HashSet<StarknetStorage> = HashSet::default();
 
-    Ok(StarknetProofs {
-        headers_with_mmr: process_headers(headers_with_mmr),
-        storages: storages.into_iter().collect(),
-    })
+        // Collect header proofs
+        let mut header_fut = futures::stream::iter(
+            self.proof_keys
+                .starknet
+                .header_keys
+                .iter()
+                .map(|key| StarknetProofKeys::fetch_header_proof(key.chain_id, key.block_number))
+                .map(|f| f.boxed_local()),
+        )
+        .buffer_unordered(BUFFER_UNORDERED);
+
+        while let Some(result) = header_fut.next().await {
+            let item = result?;
+            headers_with_mmr
+                .entry(item.mmr_meta)
+                .and_modify(|headers: &mut Vec<StarknetHeader>| headers.extend(item.headers.clone()))
+                .or_insert(item.headers);
+
+            #[cfg(feature = "progress_bars")]
+            self.progress_bars.starknet_header.safe_inc();
+        }
+
+        #[cfg(feature = "progress_bars")]
+        self.progress_bars
+            .starknet_header
+            .safe_finish_with_message("starknet header keys - finished");
+
+        // Collect storage proofs
+        let mut storage_fut = futures::stream::iter(
+            self.proof_keys
+                .starknet
+                .storage_keys
+                .iter()
+                .map(StarknetProofKeys::fetch_storage_proof)
+                .map(|f| f.boxed_local()),
+        )
+        .buffer_unordered(BUFFER_UNORDERED);
+
+        while let Some(result) = storage_fut.next().await {
+            let (header_with_mmr, storage) = result?;
+            headers_with_mmr
+                .entry(header_with_mmr.mmr_meta)
+                .and_modify(|headers: &mut Vec<StarknetHeader>| headers.extend(header_with_mmr.headers.clone()))
+                .or_insert(header_with_mmr.headers);
+            storages.insert(storage);
+
+            #[cfg(feature = "progress_bars")]
+            self.progress_bars.starknet_storage.safe_inc();
+        }
+
+        #[cfg(feature = "progress_bars")]
+        self.progress_bars
+            .starknet_storage
+            .safe_finish_with_message("starknet storage keys - finished");
+
+        Ok(StarknetProofs {
+            headers_with_mmr: process_headers(headers_with_mmr),
+            storages: storages.into_iter().collect(),
+        })
+    }
 }
 
 pub fn process_headers<H>(headers_with_mmr: HashMap<MmrMeta, Vec<H>>) -> Vec<HeaderMmrMeta<H>>

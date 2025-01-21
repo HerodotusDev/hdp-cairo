@@ -16,7 +16,7 @@ mod test_utils {
         vm::runners::cairo_runner::{CairoRunner, RunnerMode},
     };
     use dry_hint_processor::syscall_handler::{evm, starknet, SyscallHandler, SyscallHandlerWrapper};
-    use fetcher::{collect_evm_proofs, collect_starknet_proofs, proof_keys::ProofKeys, ProofProgress};
+    use fetcher::{proof_keys::ProofKeys, Fetcher};
     use hints::vars;
     use std::{env, path::PathBuf};
     use types::{ChainProofs, HDPDryRunInput, HDPInput};
@@ -100,14 +100,8 @@ mod test_utils {
             };
         }
 
-        let progress = ProofProgress::new(&proof_keys, false);
-
-        // Collect proofs using fetcher functions
-        let (evm_proofs, starknet_proofs) = tokio::try_join!(
-            collect_evm_proofs(&proof_keys.evm, &progress),
-            collect_starknet_proofs(&proof_keys.starknet, &progress)
-        )
-        .unwrap();
+        let fetcher = Fetcher::new(&proof_keys);
+        let (evm_proofs, starknet_proofs) = tokio::try_join!(fetcher.collect_evm_proofs(), fetcher.collect_starknet_proofs()).unwrap();
 
         let program_inputs = HDPInput {
             chain_proofs: vec![ChainProofs::EthereumSepolia(evm_proofs), ChainProofs::StarknetSepolia(starknet_proofs)],
