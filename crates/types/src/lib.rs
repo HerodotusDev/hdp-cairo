@@ -4,6 +4,7 @@
 #![forbid(unsafe_code)]
 
 pub mod cairo;
+pub mod error;
 pub mod keys;
 pub mod param;
 pub mod proofs;

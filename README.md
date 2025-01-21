@@ -24,7 +24,7 @@ Before running the program, prepare the input data. The inputs are provided via 
 
 1. **Simulate Cairo1 Module and Collect Proofs Information:**
    ```bash
-   cargo run --release --bin dry_run -- --program_input examples/hdp_input.json --program_output hdp_keys.json --layout starknet_with_keccak
+   cargo run --release --bin dry_run -- --program_input examples/hdp_input.json --program_output hdp_keys.json --layout starknet_with_keccak --secure_run false
    ```
 
 2. **Fetch On-Chain Proofs Needed for the HDP Run:**
@@ -34,7 +34,7 @@ Before running the program, prepare the input data. The inputs are provided via 
 
 3. **Run Cairo1 Module with Verified On-Chain Data:**
    ```bash
-   cargo run --release --bin sound_run -- --program_input examples/hdp_input.json --program_proofs hdp_proofs.json --program_output hdp_output.json --layout starknet_with_keccak
+   cargo run --release --bin sound_run -- --program_input examples/hdp_input.json --program_proofs hdp_proofs.json --print_output --layout starknet_with_keccak --secure_run false --cairo_pie_output pie.zip
    ```
 
 The program will output the results root and tasks root. These roots can be used to extract the results from the on-chain contract.
