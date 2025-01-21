@@ -116,3 +116,48 @@ async fn test_modules_starknet_get_receipts_commitment() {
     .unwrap())
     .await
 }
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn test_modules_starknet_get_transaction_count() {
+    run(serde_json::from_slice(include_bytes!(
+        "../../../../target/dev/modules_starknet_get_transaction_count.compiled_contract_class.json"
+    ))
+    .unwrap())
+    .await
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn test_modules_starknet_get_event_count() {
+    run(serde_json::from_slice(include_bytes!(
+        "../../../../target/dev/modules_starknet_get_event_count.compiled_contract_class.json"
+    ))
+    .unwrap())
+    .await
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn test_modules_starknet_get_state_diff_length() {
+    run(serde_json::from_slice(include_bytes!(
+        "../../../../target/dev/modules_starknet_get_state_diff_length.compiled_contract_class.json"
+    ))
+    .unwrap())
+    .await
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn test_modules_starknet_get_l1_data_mode() {
+    run(serde_json::from_slice(include_bytes!(
+        "../../../../target/dev/modules_starknet_get_l1_data_mode.compiled_contract_class.json"
+    ))
+    .unwrap())
+    .await
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn test_modules_starknet_get_protocol_version() {
+    run(serde_json::from_slice(include_bytes!(
+        "../../../../target/dev/modules_starknet_get_protocol_version.compiled_contract_class.json"
+    ))
+    .unwrap())
+    .await
+}
