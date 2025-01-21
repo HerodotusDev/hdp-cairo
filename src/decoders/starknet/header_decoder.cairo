@@ -68,14 +68,12 @@ namespace StarknetHeaderDecoder {
 
         if (field == StarknetHeaderFields.TRANSACTION_COUNT) {
             let (value, _) = bitwise_divmod(value_concat, pow2_array[192]);
-            print_felt(value);
             return (value=value);
         }
 
         if (field == StarknetHeaderFields.EVENT_COUNT) {
             let (_, remainder) = bitwise_divmod(value_concat, pow2_array[192]);
             let (value, _) = bitwise_divmod(remainder, pow2_array[128]);
-            print_felt(value);
             return (value=value);
         }
 

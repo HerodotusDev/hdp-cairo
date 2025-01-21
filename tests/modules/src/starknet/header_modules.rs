@@ -117,7 +117,6 @@ async fn test_modules_starknet_get_receipts_commitment() {
     .await
 }
 
-
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_modules_starknet_get_transaction_count() {
     run(serde_json::from_slice(include_bytes!(
