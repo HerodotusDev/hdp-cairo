@@ -120,7 +120,9 @@ jobs:
 
       - name: Run Nextest Tests
         env:
-          ETH_RPC: ${{ secrets.RPC_URL_ETHEREUM_SEPOLIA }}
-          STARKNET_RPC: ${{ secrets.RPC_URL_STARKNET_SEPOLIA }}
+          RPC_URL_ETHEREUM: ${{ secrets.RPC_URL_ETHEREUM_SEPOLIA }}
+          RPC_URL_FEEDER_GATEWAY: ${{ secrets.RPC_URL_FEEDER_GATEWAY }}
+          RPC_URL_HERODOTUS_INDEXER: ${{ secrets.RPC_URL_HERODOTUS_INDEXER }}
+          RPC_URL_STARKNET: ${{ secrets.RPC_URL_STARKNET_SEPOLIA }}
         run: cargo nextest run
 

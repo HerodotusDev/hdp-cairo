@@ -14,13 +14,11 @@ use starknet::CallContractHandler as StarknetCallContractHandler;
 use std::{any::Any, collections::HashMap, rc::Rc};
 use syscall_handler::{felt_from_ptr, run_handler, traits, SyscallExecutionError, SyscallResult, SyscallSelector, WriteResponseResult};
 use tokio::{sync::RwLock, task};
-use types::cairo::new_syscalls::{CallContractRequest, CallContractResponse};
 use types::cairo::traits::CairoType;
-
-pub const ETHEREUM_MAINNET_CHAIN_ID: u128 = 0x1;
-pub const ETHEREUM_TESTNET_CHAIN_ID: u128 = 0xaa36a7;
-pub const STARKNET_MAINNET_CHAIN_ID: u128 = 0x534e5f4d41494e;
-pub const STARKNET_TESTNET_CHAIN_ID: u128 = 0x534e5f5345504f4c4941;
+use types::{
+    cairo::new_syscalls::{CallContractRequest, CallContractResponse},
+    ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
+};
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct SyscallHandler {

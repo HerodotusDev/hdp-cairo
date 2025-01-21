@@ -20,14 +20,13 @@ use std::{any::Any, cell::RefCell, collections::HashMap, rc::Rc};
 use syscall_handler::traits;
 use syscall_handler::{felt_from_ptr, run_handler, SyscallExecutionError, SyscallResult, SyscallSelector, WriteResponseResult};
 use tokio::{sync::RwLock, task};
-use types::cairo::{
-    new_syscalls::{CallContractRequest, CallContractResponse},
-    traits::CairoType,
+use types::{
+    cairo::{
+        new_syscalls::{CallContractRequest, CallContractResponse},
+        traits::CairoType,
+    },
+    ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
 };
-pub const ETHEREUM_MAINNET_CHAIN_ID: u128 = 0x1;
-pub const ETHEREUM_TESTNET_CHAIN_ID: u128 = 0xaa36a7;
-pub const STARKNET_MAINNET_CHAIN_ID: u128 = 0x534e5f4d41494e;
-pub const STARKNET_TESTNET_CHAIN_ID: u128 = 0x534e5f5345504f4c4941;
 
 pub mod evm;
 pub mod starknet;

@@ -33,16 +33,16 @@ impl From<Block> for StarknetBlock {
         let binding = value.starknet_version.to_string();
         let version = Version::from(&binding).unwrap();
         match version.compare(&Version::from("0.13.2").unwrap()) {
-            CompOp::Gt | CompOp::Eq => StarknetBlock::V0_13_2(StarknetBlock0_13_2::from_block(&value)),
-            _ => StarknetBlock::Legacy(StarknetBlockLegacy::from_block(&value)),
+            CompOp::Gt | CompOp::Eq => StarknetBlock::V0_13_2(Box::new(StarknetBlock0_13_2::from_block(&value))),
+            _ => StarknetBlock::Legacy(Box::new(StarknetBlockLegacy::from_block(&value))),
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum StarknetBlock {
-    Legacy(StarknetBlockLegacy),
-    V0_13_2(StarknetBlock0_13_2),
+    Legacy(Box<StarknetBlockLegacy>),
+    V0_13_2(Box<StarknetBlock0_13_2>),
 }
 
 impl StarknetBlock {
@@ -64,16 +64,16 @@ impl StarknetBlock {
 
     pub fn from_memorizer(fields: Vec<Felt252>) -> Self {
         match fields.len() {
-            n if n == StarknetBlockLegacy::n_fields() => StarknetBlock::Legacy(StarknetBlockLegacy::from_memorizer(fields)),
-            n if n == StarknetBlock0_13_2::n_fields() => StarknetBlock::V0_13_2(StarknetBlock0_13_2::from_memorizer(fields)),
+            n if n == StarknetBlockLegacy::n_fields() => StarknetBlock::Legacy(Box::new(StarknetBlockLegacy::from_memorizer(fields))),
+            n if n == StarknetBlock0_13_2::n_fields() => StarknetBlock::V0_13_2(Box::new(StarknetBlock0_13_2::from_memorizer(fields))),
             _ => panic!("Invalid number of fields"),
         }
     }
 
     pub fn from_hash_fields(fields: Vec<Felt252>) -> Self {
         match fields.len() {
-            n if n == StarknetBlockLegacy::n_hash_fields() => StarknetBlock::Legacy(StarknetBlockLegacy::from_hash_fields(fields)),
-            n if n == StarknetBlock0_13_2::n_hash_fields() => StarknetBlock::V0_13_2(StarknetBlock0_13_2::from_hash_fields(fields)),
+            n if n == StarknetBlockLegacy::n_hash_fields() => StarknetBlock::Legacy(Box::new(StarknetBlockLegacy::from_hash_fields(fields))),
+            n if n == StarknetBlock0_13_2::n_hash_fields() => StarknetBlock::V0_13_2(Box::new(StarknetBlock0_13_2::from_hash_fields(fields))),
             _ => panic!("Invalid number of fields"),
         }
     }
