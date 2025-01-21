@@ -34,8 +34,10 @@ jobs:
             ~/.cargo/git/db/
             target/
             ~/.scarb
-          key: ${{ runner.os }}-cargo-scarb-${{ hashFiles('**/Cargo.lock', '**/Scarb.toml') }}
+            ~/.cache/nextest
+          key: ${{ runner.os }}-cargo-scarb-nextest-${{ hashFiles('**/Cargo.lock', '**/Scarb.toml') }}
           restore-keys: |
+            ${{ runner.os }}-cargo-scarb-nextest-
             ${{ runner.os }}-cargo-scarb-
             ${{ runner.os }}-cargo-
 
@@ -68,6 +70,23 @@ jobs:
 
       - name: Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Cargo Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+            ~/.scarb
+            ~/.cache/nextest
+          key: ${{ runner.os }}-cargo-scarb-nextest-${{ hashFiles('**/Cargo.lock', '**/Scarb.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-scarb-nextest-
+            ${{ runner.os }}-cargo-scarb-
+            ${{ runner.os }}-cargo-
 
       - name: Set up Scarb
         uses: software-mansion/setup-scarb@v1
