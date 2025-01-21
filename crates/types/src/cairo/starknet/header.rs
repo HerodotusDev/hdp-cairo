@@ -25,7 +25,8 @@ pub enum FunctionId {
     L1DataGasPriceWei = 13,
     L1DataGasPriceFri = 14,
     ReceiptCommitment = 15,
-    Version = 16,
+    L1DataMode = 16,
+    Version = 17,
 }
 
 impl From<Block> for StarknetBlock {
@@ -198,10 +199,10 @@ impl StarknetBlock {
         }
     }
 
-    pub fn version(&self) -> Option<Felt252> {
+    pub fn l1_data_mode(&self) -> Option<Felt252> {
         match self {
             StarknetBlock::Legacy(_) => None,
-            StarknetBlock::V0_13_2(block) => Some(block.protocol_version),
+            StarknetBlock::V0_13_2(block) => Some(block.is_blob_mode()),
         }
     }
 
@@ -223,7 +224,8 @@ impl StarknetBlock {
             FunctionId::L1GasPriceFri => self.l1_gas_price_fri().unwrap_or(Felt252::ZERO).into(),
             FunctionId::L1DataGasPriceWei => self.l1_data_gas_price_wei().unwrap_or(Felt252::ZERO).into(),
             FunctionId::L1DataGasPriceFri => self.l1_data_gas_price_fri().unwrap_or(Felt252::ZERO).into(),
-            FunctionId::Version => self.version().unwrap_or(Felt252::ZERO).into(),
+            FunctionId::L1DataMode => self.l1_data_mode().unwrap_or(Felt252::ZERO).into(),
+            FunctionId::Version => self.protocol_version().unwrap_or(Felt252::ZERO).into(),
         }
     }
 }
@@ -392,9 +394,13 @@ impl StarknetBlock0_13_2 {
         Felt252::from_bytes_be_slice(&bytes[16..24])
     }
 
-    pub fn is_blob_mode(&self) -> bool {
+    pub fn is_blob_mode(&self) -> Felt252 {
         let bytes = self.concatenated_counts.to_bytes_be();
-        bytes[24] & 0b10000000 != 0
+        if bytes[24] & 0b10000000 != 0 {
+            Felt252::ONE
+        } else {
+            Felt252::ZERO
+        }
     }
 
     fn calculate_concatenated_counts(transaction_count: u64, event_count: u64, state_diff_length: u64, is_blob_mode: bool) -> Felt252 {
