@@ -18,7 +18,8 @@ source venv/bin/activate
 
 ## Running
 
-Before running the program, prepare the input data. The inputs are provided via the `hdp_input.json` file located in the root directory of the HDP project.
+Before running the program, prepare the input data. The inputs are provided via the [hdp_input.json](examples/hdp_input.json).
+Runtime require chain nodes RPC calls, ensure an environment variables [.env.example](.env.example) are set.
 
 ### Steps to Execute:
 
@@ -60,7 +61,7 @@ The overall program is split into two main parts:
 
 ## Testing
 
-Some tests require chain nodes RPC calls. Ensure an environment variable named `ETH_RPC` and `STARKNET_RPC` is set.
+Tests require chain nodes RPC calls. Ensure an environment variables [.env.example](.env.example) are set.
 
 1. **Build Cairo1 Modules:**
    ```bash
