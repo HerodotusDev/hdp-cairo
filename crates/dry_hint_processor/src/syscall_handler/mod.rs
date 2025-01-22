@@ -102,7 +102,8 @@ impl traits::SyscallHandler for CallContractHandlerRelay {
     }
 }
 
-pub const SYSCALL_HANDLER_CREATE_MOCK: &str = "if 'syscall_handler' not in globals():\n    from contract_bootloader.syscall_handler import SyscallHandler\n    syscall_handler = SyscallHandler(segments=segments, dict_manager=__dict_manager)";
+pub const SYSCALL_HANDLER_CREATE_MOCK: &str =
+    "if 'syscall_handler' not in globals():\n    syscall_handler = SyscallHandler(segments=segments, dict_manager=__dict_manager)";
 
 pub fn syscall_handler_create_mock(
     _vm: &mut VirtualMachine,
@@ -114,7 +115,7 @@ pub fn syscall_handler_create_mock(
     Ok(())
 }
 
-pub const SYSCALL_HANDLER_CREATE: &str = "from contract_bootloader.dryrun_syscall_handler import DryRunSyscallHandler\nsyscall_handler = DryRunSyscallHandler(segments=segments, dict_manager=__dict_manager)";
+pub const SYSCALL_HANDLER_CREATE: &str = "syscall_handler = DryRunSyscallHandler(segments=segments, dict_manager=__dict_manager)";
 
 pub fn syscall_handler_create(
     _vm: &mut VirtualMachine,

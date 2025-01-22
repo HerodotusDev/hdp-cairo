@@ -47,7 +47,7 @@ pub fn hint_set_tx(
     Ok(())
 }
 
-pub const HINT_SET_TX_KEY: &str = "from tools.py.utils import split_128\n(ids.key.low, ids.key.high) = split_128(int(transaction.key, 16))";
+pub const HINT_SET_TX_KEY: &str = "(ids.key.low, ids.key.high) = split_128(int(transaction.key, 16))";
 
 pub fn hint_set_tx_key(
     vm: &mut VirtualMachine,

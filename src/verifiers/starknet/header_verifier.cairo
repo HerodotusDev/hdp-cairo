@@ -140,7 +140,7 @@ func verify_headers_with_mmr_peaks{
 func compute_blockhash{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    pedersen_ptr: HashBuiltin*,         
+    pedersen_ptr: HashBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
 }(blockhash_preimage: felt*) -> (res: felt) {
     if (blockhash_preimage[0] == 0x535441524B4E45545F424C4F434B5F4841534830) {
@@ -150,7 +150,9 @@ func compute_blockhash{
         let initial_hash = [blockhash_preimage];
         let hash_ptr = pedersen_ptr;
         with hash_ptr {
-            let (blockhash) = hash_felts_no_padding(data_ptr=blockhash_preimage + 1, data_length=12, initial_hash=initial_hash);
+            let (blockhash) = hash_felts_no_padding(
+                data_ptr=blockhash_preimage + 1, data_length=12, initial_hash=initial_hash
+            );
         }
         let pedersen_ptr = hash_ptr;
         return (res=blockhash);

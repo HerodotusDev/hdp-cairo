@@ -49,10 +49,7 @@ func verify_accounts_inner{
     %}
 
     local key: Uint256;
-    %{
-        from tools.py.utils import split_128
-        (ids.key.low, ids.key.high) = split_128(int(account_evm.account_key, 16))
-    %}
+    %{ (ids.key.low, ids.key.high) = split_128(int(account_evm.account_key, 16)) %}
 
     local key_leading_zeros: felt;
     %{ ids.key_leading_zeros = len(account_evm.account_key.lstrip("0x")) - len(account_evm.account_key.lstrip("0x").lstrip("0")) %}

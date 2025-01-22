@@ -13,7 +13,7 @@ use std::collections::HashMap;
 
 const COMPILED_CLASS_V1: Felt252 = Felt252::from_hex_unchecked("0x434f4d50494c45445f434c4153535f5631");
 
-pub const LOAD_CONTRACT_CLASS: &str = "from contract_bootloader.contract_class.compiled_class_hash_utils import get_compiled_class_struct\nids.compiled_class = segments.gen_arg(get_compiled_class_struct(compiled_class=compiled_class))";
+pub const LOAD_CONTRACT_CLASS: &str = "ids.compiled_class = segments.gen_arg(get_compiled_class_struct(compiled_class=compiled_class))";
 
 pub fn load_contract_class(
     vm: &mut VirtualMachine,

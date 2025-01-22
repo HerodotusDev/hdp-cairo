@@ -40,8 +40,9 @@ namespace StarknetHeaderDecoder {
         return StarknetHeaderVersion.VERSION_1;
     }
 
-    func get_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(fields: felt*, field: felt) -> (value: felt) {
-
+    func get_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+        fields: felt*, field: felt
+    ) -> (value: felt) {
         let version = derive_header_version(fields);
         let index = get_header_field_index(version, field);
 
@@ -64,8 +65,9 @@ namespace StarknetHeaderDecoder {
         return (value=fields[index]);
     }
 
-    func decode_concat_counts{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(value_concat: felt, field: felt) -> (value: felt) {
-
+    func decode_concat_counts{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+        value_concat: felt, field: felt
+    ) -> (value: felt) {
         if (field == StarknetHeaderFields.TRANSACTION_COUNT) {
             let (value, _) = bitwise_divmod(value_concat, pow2_array[192]);
             return (value=value);
@@ -88,9 +90,9 @@ namespace StarknetHeaderDecoder {
 
             let (msb_check, _) = bitwise_divmod(remainder, 2 ** 7);
             if (msb_check == 1) {
-                return (value=0x1); // BLOB mode
+                return (value=0x1);  // BLOB mode
             }
-            return (value=0); // CALLDATA mode
+            return (value=0);  // CALLDATA mode
         }
 
         // Should never reach here

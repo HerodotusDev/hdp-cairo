@@ -59,10 +59,7 @@ func verify_storage_items_inner{
     %{ segments.write_arg(ids.slot, [int(x, 16) for x in storage_evm.slot])) %}
 
     local key: Uint256;
-    %{
-        from tools.py.utils import split_128
-        (ids.key.low, ids.key.high) = split_128(int(storage_evm.storage_key, 16))
-    %}
+    %{ (ids.key.low, ids.key.high) = split_128(int(storage_evm.storage_key, 16)) %}
 
     local key_leading_zeros: felt;
     %{ ids.key_leading_zeros = len(storage_evm.storage_key.lstrip("0x")) - len(storage_evm.storage_key.lstrip("0x").lstrip("0")) %}

@@ -7,8 +7,7 @@ use cairo_vm::{
 };
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-pub const DICT_MANAGER_CREATE: &str =
-    "if '__dict_manager' not in globals():\n    from starkware.cairo.common.dict import DictManager\n    __dict_manager = DictManager()";
+pub const DICT_MANAGER_CREATE: &str = "if '__dict_manager' not in globals():\n    __dict_manager = DictManager()";
 
 pub fn dict_manager_create(
     _vm: &mut VirtualMachine,

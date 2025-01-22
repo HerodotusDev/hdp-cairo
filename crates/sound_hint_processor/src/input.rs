@@ -10,7 +10,7 @@ use hints::vars;
 use std::collections::HashMap;
 use types::{param::Param, ChainProofs};
 
-pub const HINT_INPUT: &str = "from tools.py.schema import HDPInput\nrun_input = HDPInput.Schema().load(program_input)\nchain_proofs = run_input.proofs\nparams = run_input.params\ncompiled_class = run_input.compiled_class";
+pub const HINT_INPUT: &str = "run_input = HDPInput.Schema().load(program_input)\nchain_proofs = run_input.proofs\nparams = run_input.params\ncompiled_class = run_input.compiled_class";
 
 impl CustomHintProcessor {
     pub fn hint_input(

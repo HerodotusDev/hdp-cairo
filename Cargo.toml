@@ -11,7 +11,7 @@ members = [
     "crates/indexer",
     "crates/syscall_handler",
     "crates/types",
-    "tests/modules",
+    "tests",
 ]
 
 [workspace.dependencies]

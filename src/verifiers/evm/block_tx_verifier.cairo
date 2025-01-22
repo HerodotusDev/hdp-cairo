@@ -53,10 +53,7 @@ func verify_block_tx_proofs_inner{
     %{ transaction = transactions[ids.idx] %}
 
     local key: Uint256;
-    %{
-        from tools.py.utils import split_128
-        (ids.key.low, ids.key.high) = split_128(int(transaction.key, 16))
-    %}
+    %{ (ids.key.low, ids.key.high) = split_128(int(transaction.key, 16)) %}
 
     local key_leading_zeros: felt;
     %{ ids.key_leading_zeros = len(transaction.key.lstrip("0x")) - len(transaction.key.lstrip("0x").lstrip("0")) %}

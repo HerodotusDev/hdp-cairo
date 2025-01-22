@@ -69,7 +69,6 @@ func run{
     alloc_locals;
 
     %{
-        from tools.py.schema import HDPInput
         run_input = HDPInput.Schema().load(program_input)
         chain_proofs = run_input.proofs
         params = run_input.params
