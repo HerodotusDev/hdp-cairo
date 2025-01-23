@@ -46,6 +46,10 @@ func write_output_ptr{output_ptr: felt*}(
     jmp loop;
 
     end_loop:
+
+    // ensure we finish the loop
+    assert counter = mmr_metas_len;
+    
     let output_ptr = output_ptr + mmr_metas_len * 4;
 
     return ();
