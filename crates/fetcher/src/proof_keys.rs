@@ -152,7 +152,7 @@ impl ProofKeys {
             .verify_proof(tx_index, trie_proof.clone())
             .map_err(|e| FetcherError::InternalError(e.to_string()))?;
 
-        let proof = trie_proof.into_iter().map(|v| Bytes::from(v)).collect::<Vec<Bytes>>();
+        let proof = trie_proof.into_iter().map(Bytes::from).collect::<Vec<Bytes>>();
         Ok(MPTProof { block_number, proof })
     }
 

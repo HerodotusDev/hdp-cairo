@@ -50,7 +50,6 @@ impl CallHandler for ReceiptCallHandler {
 
         // data is the rlp-encoded receipt (injected by the verified mpt proof Cairo0 memorizer)
         let mut data = vm.get_integer(ptr)?.to_bytes_le().to_vec();
-
         let tx_type = data[0];
         let mut extra_len = 0;
         // If not a legacy tx, remove the tx type from the receipt

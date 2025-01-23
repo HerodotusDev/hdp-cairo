@@ -45,7 +45,7 @@ impl CallHandler for ReceiptCallHandler {
         let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
 
         let receipts = provider
-            .get_block_receipts(BlockId::Number(BlockNumberOrTag::Number(key.block_number.try_into().unwrap())))
+            .get_block_receipts(BlockId::Number(BlockNumberOrTag::Number(key.block_number)))
             .await
             .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?
             .unwrap();
