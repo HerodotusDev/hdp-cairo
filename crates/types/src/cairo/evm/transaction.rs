@@ -78,7 +78,6 @@ impl CairoTransaction {
 
         match function_id {
             FunctionId::ChainId => fields.chain_id.into(),
-            FunctionId::AccessList => panic!("Unsupported field `AccessList`"),
             FunctionId::Nonce => fields.nonce.into(),
             FunctionId::GasPrice => fields.gas_price.into(),
             FunctionId::GasLimit => fields.gas_limit.into(),
@@ -91,6 +90,7 @@ impl CairoTransaction {
             FunctionId::Hash => self.hash().into(),
             FunctionId::SignatureHash => self.signature_hash().into(),
             FunctionId::TxType => (self.0.tx_type() as u64).into(),
+            FunctionId::AccessList => panic!("Unsupported field `AccessList`"),
             FunctionId::Data => panic!("Unsupported field `Data`"),
             _ => panic!("Unexpected tx field"),
         }
@@ -103,7 +103,6 @@ impl CairoTransaction {
             FunctionId::ChainId => fields.chain_id.into(),
             FunctionId::MaxPriorityFeePerGas => fields.max_priority_fee_per_gas.into(),
             FunctionId::MaxFeePerGas => fields.max_fee_per_gas.into(),
-            FunctionId::AccessList => panic!("Unsupported field `AccessList`"),
             FunctionId::Nonce => fields.nonce.into(),
             FunctionId::GasLimit => fields.gas_limit.into(),
             FunctionId::Receiver => (*fields.to.to().unwrap()).into(),
@@ -115,6 +114,7 @@ impl CairoTransaction {
             FunctionId::Hash => self.hash().into(),
             FunctionId::SignatureHash => self.signature_hash().into(),
             FunctionId::TxType => (self.0.tx_type() as u64).into(),
+            FunctionId::AccessList => panic!("Unsupported field `AccessList`"),
             FunctionId::Data => panic!("Unsupported field `Data`"),
             _ => panic!("Unexpected tx field"),
         }
@@ -128,8 +128,6 @@ impl CairoTransaction {
             FunctionId::MaxPriorityFeePerGas => fields.tx().max_priority_fee_per_gas.into(),
             FunctionId::MaxFeePerGas => fields.tx().max_fee_per_gas.into(),
             FunctionId::MaxFeePerBlobGas => fields.tx().max_fee_per_blob_gas.into(),
-            FunctionId::BlobVersionedHashes => panic!("Unsupported field `BlobVersionedHashes`"),
-            FunctionId::AccessList => panic!("Unsupported field `AccessList`"),
             FunctionId::Nonce => fields.tx().nonce.into(),
             FunctionId::GasLimit => fields.tx().gas_limit.into(),
             FunctionId::Receiver => fields.tx().to.into(),
@@ -141,6 +139,8 @@ impl CairoTransaction {
             FunctionId::Hash => self.hash().into(),
             FunctionId::SignatureHash => self.signature_hash().into(),
             FunctionId::TxType => (self.0.tx_type() as u64).into(),
+            FunctionId::BlobVersionedHashes => panic!("Unsupported field `BlobVersionedHashes`"),
+            FunctionId::AccessList => panic!("Unsupported field `AccessList`"),
             FunctionId::Data => panic!("Unsupported field `Data`"),
             _ => panic!("Unexpected tx field"),
         }
