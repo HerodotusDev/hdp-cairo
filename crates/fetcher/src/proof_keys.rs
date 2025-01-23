@@ -6,7 +6,7 @@ use alloy::{
     providers::{Provider, RootProvider},
     transports::http::{reqwest::Url, Client, Http},
 };
-use eth_trie_proofs::tx_receipt_trie::TxReceiptsMptHandler;
+use eth_trie_proofs::{tx_receipt_trie::TxReceiptsMptHandler, tx_trie::TxsMptHandler};
 use indexer::{
     types::{BlockHeader, IndexerQuery},
     Indexer,
@@ -21,6 +21,7 @@ use types::{
         mpt::MPTProof,
         receipt::Receipt,
         storage::Storage,
+        transaction::Transaction,
         HeaderMmrMeta,
     },
     RPC,
@@ -32,6 +33,7 @@ pub struct ProofKeys {
     pub account_keys: HashSet<keys::account::Key>,
     pub storage_keys: HashSet<keys::storage::Key>,
     pub receipt_keys: HashSet<keys::receipt::Key>,
+    pub tx_keys: HashSet<keys::transaction::Key>,
 }
 
 impl ProofKeys {
@@ -163,5 +165,34 @@ impl ProofKeys {
 
         let rlp_encoded_key = alloy_rlp::encode(U256::from(key.transaction_index));
         Ok((header, Receipt::new(U256::from_be_slice(&rlp_encoded_key), receipt_mpt_proof)))
+    }
+
+    async fn generate_block_tx_proof(tx_trie_handler: &mut TxsMptHandler, block_number: u64, tx_index: u64) -> Result<MPTProof, FetcherError> {
+        tx_trie_handler
+            .build_tx_tree_from_block(block_number)
+            .await
+            .map_err(|e| FetcherError::InternalError(e.to_string()))?;
+        let trie_proof = tx_trie_handler
+            .get_proof(tx_index)
+            .map_err(|e| FetcherError::InternalError(e.to_string()))?;
+
+        tx_trie_handler
+            .verify_proof(tx_index, trie_proof.clone())
+            .map_err(|e| FetcherError::InternalError(e.to_string()))?;
+
+        let proof = trie_proof.into_iter().map(|v| Bytes::from(v)).collect::<Vec<Bytes>>();
+        Ok(MPTProof { block_number, proof })
+    }
+
+    pub async fn fetch_transaction_proof(key: &keys::transaction::Key) -> Result<(HeaderMmrMeta, Transaction), FetcherError> {
+        let mut tx_trie_handler =
+            TxsMptHandler::new(Url::parse(&env::var(RPC).unwrap()).unwrap()).map_err(|e| FetcherError::InternalError(e.to_string()))?;
+
+        let header = Self::fetch_header_proof(&key.to_owned().into()).await?;
+        let tx_proof = Self::generate_block_tx_proof(&mut tx_trie_handler, key.block_number, key.transaction_index).await?;
+
+        let rlp_encoded_key = alloy_rlp::encode(U256::from(key.transaction_index));
+
+        Ok((header, Transaction::new(U256::from_be_slice(&rlp_encoded_key), tx_proof)))
     }
 }

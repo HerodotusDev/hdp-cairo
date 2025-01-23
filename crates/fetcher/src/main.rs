@@ -12,7 +12,7 @@ use proof_keys::ProofKeys;
 use std::{collections::HashSet, fs, path::PathBuf};
 use thiserror as _;
 use types::{
-    proofs::{account::Account, receipt::Receipt, storage::Storage, HeaderMmrMeta, Proofs},
+    proofs::{account::Account, receipt::Receipt, storage::Storage, transaction::Transaction, HeaderMmrMeta, Proofs},
     ChainProofs,
 };
 
@@ -56,6 +56,9 @@ async fn main() -> Result<(), FetcherError> {
             evm::DryRunKey::Receipt(value) => {
                 proof_keys.receipt_keys.insert(value);
             }
+            evm::DryRunKey::Tx(value) => {
+                proof_keys.tx_keys.insert(value);
+            }
         }
     }
 
@@ -63,14 +66,18 @@ async fn main() -> Result<(), FetcherError> {
     let pb_account_keys = multi_progress.add(ProgressBar::new(proof_keys.account_keys.len() as u64));
     let pb_storage_keys = multi_progress.add(ProgressBar::new(proof_keys.storage_keys.len() as u64));
     let pb_transaction_receipts = multi_progress.add(ProgressBar::new(proof_keys.receipt_keys.len() as u64));
+    let pb_transaction_keys = multi_progress.add(ProgressBar::new(proof_keys.tx_keys.len() as u64));
+
     pb_header_keys.set_style(progress_style.clone());
     pb_header_keys.set_message("header_keys");
     pb_account_keys.set_style(progress_style.clone());
     pb_account_keys.set_message("account_keys");
     pb_storage_keys.set_style(progress_style.clone());
     pb_storage_keys.set_message("storage_keys");
-    pb_transaction_receipts.set_style(progress_style);
+    pb_transaction_receipts.set_style(progress_style.clone());
     pb_transaction_receipts.set_message("transaction_receipts");
+    pb_transaction_keys.set_style(progress_style);
+    pb_transaction_keys.set_message("transaction_keys");
 
     let mut headers_with_mmr: HashSet<HeaderMmrMeta> = HashSet::default();
 
@@ -134,12 +141,23 @@ async fn main() -> Result<(), FetcherError> {
         pb_transaction_receipts.inc(1);
     }
 
+    let mut transaction_keys: HashSet<Transaction> = HashSet::default();
+
+    let mut transaction_keys_fut = futures::stream::iter(proof_keys.tx_keys.iter().map(ProofKeys::fetch_transaction_proof).map(|f| f.boxed_local()))
+        .buffer_unordered(BUFFER_UNORDERED);
+
+    while let Some(Ok((header_with_mmr, transaction))) = transaction_keys_fut.next().await {
+        headers_with_mmr.insert(header_with_mmr);
+        transaction_keys.insert(transaction);
+        pb_transaction_keys.inc(1);
+    }
+
     let proofs = Proofs {
         headers_with_mmr: headers_with_mmr.into_iter().collect(),
         accounts: accounts.into_iter().collect(),
         storages: storages.into_iter().collect(),
         transaction_receipts: transaction_receipts.into_iter().collect(),
-        ..Default::default()
+        transactions: transaction_keys.into_iter().collect(),
     };
 
     fs::write(
