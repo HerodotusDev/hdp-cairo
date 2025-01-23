@@ -36,6 +36,8 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(decoder::evm::has_type_prefix::HINT_HAS_TYPE_PREFIX.into(), decoder::evm::has_type_prefix::hint_has_type_prefix);
     hints.insert(decoder::evm::is_byzantium::HINT_IS_BYZANTIUM.into(), decoder::evm::is_byzantium::hint_is_byzantium);
     hints.insert(decoder::evm::v_is_encoded::HINT_V_IS_ENCODED.into(), decoder::evm::v_is_encoded::hint_v_is_encoded);
+    hints.insert(decoder::evm::normalize_v::HINT_IS_EIP155.into(), decoder::evm::normalize_v::hint_is_eip155);
+    hints.insert(decoder::evm::normalize_v::HINT_IS_SHORT.into(), decoder::evm::normalize_v::hint_is_short);
     hints.insert(merkle::HINT_IS_LEFT_SMALLER.into(), merkle::hint_is_left_smaller);
     hints.insert(merkle::HINT_TARGET_TASK_HASH.into(), merkle::hint_target_task_hash);
     hints.insert(print::HINT_PRINT_TASK_RESULT.into(), print::hint_print_task_result);
@@ -127,6 +129,12 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::utils::divmod::HINT_VALUE_8.into(), eth_essentials_cairo_vm_hints::hints::lib::utils::divmod::hint_value_8);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::utils::divmod::HINT_VALUE_DIV.into(), eth_essentials_cairo_vm_hints::hints::lib::utils::divmod::hint_value_div);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::utils::trailing_zeroes::HINT_TRAILING_ZEROES_BYTES.into(), eth_essentials_cairo_vm_hints::hints::lib::utils::trailing_zeroes::hint_trailing_zeroes_bytes);
+    hints.insert(eth_essentials_cairo_vm_hints::hints::lib::utils::write::HINT_WRITE_2.into(), eth_essentials_cairo_vm_hints::hints::lib::utils::write::hint_write_2);
+    hints.insert(eth_essentials_cairo_vm_hints::hints::lib::utils::write::HINT_WRITE_3.into(), eth_essentials_cairo_vm_hints::hints::lib::utils::write::hint_write_3);
+    hints.insert(eth_essentials_cairo_vm_hints::hints::lib::utils::write::HINT_WRITE_4.into(), eth_essentials_cairo_vm_hints::hints::lib::utils::write::hint_write_4);
+    hints.insert(eth_essentials_cairo_vm_hints::hints::lib::utils::write::HINT_WRITE_5.into(), eth_essentials_cairo_vm_hints::hints::lib::utils::write::hint_write_5);
+    hints.insert(eth_essentials_cairo_vm_hints::hints::lib::utils::write::HINT_WRITE_6.into(), eth_essentials_cairo_vm_hints::hints::lib::utils::write::hint_write_6);
+    hints.insert(eth_essentials_cairo_vm_hints::hints::lib::utils::write::HINT_WRITE_7.into(), eth_essentials_cairo_vm_hints::hints::lib::utils::write::hint_write_7);
 
 
     hints.insert(utils::debug::PRINT_FELT.into(), utils::debug::print_felt);

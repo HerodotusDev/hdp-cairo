@@ -180,7 +180,7 @@ impl ProofKeys {
             .verify_proof(tx_index, trie_proof.clone())
             .map_err(|e| FetcherError::InternalError(e.to_string()))?;
 
-        let proof = trie_proof.into_iter().map(|v| Bytes::from(v)).collect::<Vec<Bytes>>();
+        let proof = trie_proof.into_iter().map(Bytes::from).collect::<Vec<Bytes>>();
         Ok(MPTProof { block_number, proof })
     }
 
@@ -192,7 +192,6 @@ impl ProofKeys {
         let tx_proof = Self::generate_block_tx_proof(&mut tx_trie_handler, key.block_number, key.transaction_index).await?;
 
         let rlp_encoded_key = alloy_rlp::encode(U256::from(key.transaction_index));
-
         Ok((header, Transaction::new(U256::from_be_slice(&rlp_encoded_key), tx_proof)))
     }
 }

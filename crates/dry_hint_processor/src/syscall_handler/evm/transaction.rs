@@ -46,10 +46,7 @@ impl CallHandler for TransactionCallHandler {
         let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
 
         let block = provider
-            .get_block(
-                BlockId::Number(BlockNumberOrTag::Number(key.block_number.try_into().unwrap())),
-                BlockTransactionsKind::Full,
-            )
+            .get_block(BlockId::Number(BlockNumberOrTag::Number(key.block_number)), BlockTransactionsKind::Full)
             .await
             .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?
             .unwrap();

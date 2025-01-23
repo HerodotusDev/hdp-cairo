@@ -12,7 +12,6 @@ pub fn count_leading_zero_nibbles_from_hex(hex_str: &str) -> u32 {
     }
 
     count
-
 }
 
 pub fn split_128(a: &BigUint) -> (BigUint, BigUint) {
