@@ -1,4 +1,3 @@
-from src.types import ChainInfo, TrieNode, TrieNodeBinary, TrieNodeEdge
 from starkware.cairo.common.uint256 import Uint256
 
 func print_felt(value: felt) {
