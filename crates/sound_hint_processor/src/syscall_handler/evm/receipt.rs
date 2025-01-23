@@ -50,7 +50,6 @@ impl CallHandler for ReceiptCallHandler {
 
         // data is the rlp-encoded receipt (injected by the verified mpt proof Cairo0 memorizer)
         let mut data = vm.get_integer(ptr)?.to_bytes_le().to_vec();
-
         let tx_type = data[0];
         let mut extra_len = 0;
         // If not a legacy tx, remove the tx type from the receipt
@@ -59,8 +58,7 @@ impl CallHandler for ReceiptCallHandler {
             data.remove(0);
             extra_len = 1;
         }
-
-        data.resize(1024, 0);
+        data.resize(128000, 0); // 128kb is max tx size
         let header = alloy_rlp::Header::decode(&mut data.as_slice()).map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?;
         let length = header.length_with_payload() + extra_len;
         let rlp = vm

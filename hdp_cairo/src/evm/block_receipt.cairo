@@ -25,7 +25,7 @@ pub impl BlockReceiptImpl of BlockReceiptTrait {
         self.call_memorizer(BLOCK_RECEIPT_GET_CUMULATIVE_GAS_USED, key)
     }
     fn block_receipt_get_bloom(self: @EvmMemorizer, key: BlockReceiptKey) -> u256 {
-        self.call_memorizer(BLOCK_RECEIPT_GET_BLOOM, key) 
+        self.call_memorizer(BLOCK_RECEIPT_GET_BLOOM, key)
     }
     fn block_receipt_get_logs(self: @EvmMemorizer, key: BlockReceiptKey) -> u256 {
         self.call_memorizer(BLOCK_RECEIPT_GET_LOGS, key)
