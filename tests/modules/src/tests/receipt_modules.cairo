@@ -38,23 +38,25 @@ mod receipts_get_status {
             0xc0,
             0xd0,
             0xe0,
-            0xe9 
+            0xe9
         ];
-        
+
         let mut i: usize = 0;
         loop {
             if i >= tx_indexes.len() {
                 break;
             }
-            
-            hdp.evm.block_receipt_get_status(
-                BlockReceiptKey {
-                    chain_id: 11155111,
-                    block_number: 5382809,
-                    transaction_index: *tx_indexes.at(i),
-                }
-            );
-            
+
+            hdp
+                .evm
+                .block_receipt_get_status(
+                    BlockReceiptKey {
+                        chain_id: 11155111,
+                        block_number: 5382809,
+                        transaction_index: *tx_indexes.at(i),
+                    }
+                );
+
             i += 1;
         };
     }
