@@ -125,6 +125,7 @@ pub struct SyscallHandler {
     #[serde(skip)]
     pub syscall_ptr: Option<Relocatable>,
     pub call_contract_handler: CallContractHandlerRelay,
+    // pub debug_handler: DebugHandler,
 }
 
 impl SyscallHandler {
@@ -169,6 +170,7 @@ impl SyscallHandlerWrapper {
 
         match SyscallSelector::try_from(felt_from_ptr(vm, ptr)?)? {
             SyscallSelector::CallContract => run_handler(&mut syscall_handler.call_contract_handler, ptr, vm).await,
+            SyscallSelector::CallDebugger => unimplemented!(),
         }?;
 
         syscall_handler.syscall_ptr = Some(*ptr);

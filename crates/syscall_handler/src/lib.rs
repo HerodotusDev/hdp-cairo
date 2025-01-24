@@ -22,6 +22,7 @@ use traits::SyscallHandler;
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SyscallSelector {
     CallContract,
+    CallDebugger
 }
 
 impl TryFrom<Felt252> for SyscallSelector {
@@ -33,6 +34,7 @@ impl TryFrom<Felt252> for SyscallSelector {
 
         match &selector_bytes[first_non_zero..] {
             b"CallContract" => Ok(Self::CallContract),
+            b"CallDebugger" => Ok(Self::CallDebugger),
             _ => Err(HintError::CustomHint(format!("Unknown syscall selector: {}", raw_selector).into())),
         }
     }
