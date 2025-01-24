@@ -1,6 +1,6 @@
 use hdp_cairo::EvmMemorizer;
 use starknet::syscalls::call_contract_syscall;
-use starknet::{SyscallResult, SyscallResultTrait};
+use starknet::{SyscallResultTrait};
 
 const BLOCK_RECEIPT: felt252 = 4;
 
@@ -42,7 +42,7 @@ pub impl BlockReceiptImpl of BlockReceiptTrait {
                 key.block_number,
                 key.index,
             ]
-                .span()
+                .span(),
         )
             .unwrap_syscall();
         u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }

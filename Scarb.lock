@@ -2,6 +2,14 @@
 version = 1
 
 [[package]]
+name = "examples"
+version = "0.1.0"
+dependencies = [
+ "hdp_cairo",
+ "snforge_std",
+]
+
+[[package]]
 name = "hdp_cairo"
 version = "0.1.0"
 
