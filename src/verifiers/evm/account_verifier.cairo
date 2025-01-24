@@ -22,7 +22,7 @@ func verify_accounts{
 }() {
     alloc_locals;
 
-    tempvar n_accounts: felt = nondet %{ len(batch.accounts) %};
+    tempvar n_accounts: felt = nondet %{ len(batch_evm.accounts) %};
     verify_accounts_inner(n_accounts, 0);
 
     return ();
@@ -44,18 +44,18 @@ func verify_accounts_inner{
 
     let (address: felt*) = alloc();
     %{
-        account = batch.accounts[ids.idx]
-        segments.write_arg(ids.address, [int(x, 16) for x in account.address]))
+        account_evm = batch_evm.accounts[ids.idx]
+        segments.write_arg(ids.address, [int(x, 16) for x in account_evm.address]))
     %}
 
     local key: Uint256;
     %{
         from tools.py.utils import split_128
-        (ids.key.low, ids.key.high) = split_128(int(account.account_key, 16))
+        (ids.key.low, ids.key.high) = split_128(int(account_evm.account_key, 16))
     %}
 
     local key_leading_zeros: felt;
-    %{ ids.key_leading_zeros = len(account.account_key.lstrip("0x")) - len(account.account_key.lstrip("0x").lstrip("0")) %}
+    %{ ids.key_leading_zeros = len(account_evm.account_key.lstrip("0x")) - len(account_evm.account_key.lstrip("0x").lstrip("0")) %}
 
     // Validate MPT key matches address
     let (hash: Uint256) = keccak_bigend(address, 20);
@@ -64,7 +64,7 @@ func verify_accounts_inner{
 
     let (felt_address) = le_address_chunks_to_felt(address);
 
-    tempvar n_proofs: felt = nondet %{ len(account.proofs) %};
+    tempvar n_proofs: felt = nondet %{ len(account_evm.proofs) %};
     verify_account(
         address=felt_address, key=key, key_leading_zeros=key_leading_zeros, n_proofs=n_proofs, idx=0
     );
@@ -86,7 +86,7 @@ func verify_account{
         return ();
     }
 
-    %{ proof = account.proofs[ids.idx] %}
+    %{ proof = account_evm.proofs[ids.idx] %}
     tempvar proof_len: felt = nondet %{ len(proof.proof) %};
     tempvar block_number: felt = nondet %{ proof.block_number %};
 

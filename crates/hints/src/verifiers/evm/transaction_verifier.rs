@@ -13,9 +13,9 @@ use cairo_vm::{
 };
 use num_bigint::BigUint;
 use std::collections::HashMap;
-use types::proofs::{transaction::Transaction, Proofs};
+use types::proofs::{evm::transaction::Transaction, evm::Proofs};
 
-pub const HINT_BATCH_TRANSACTIONS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch.transactions))";
+pub const HINT_BATCH_TRANSACTIONS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch_evm.transactions))";
 
 pub fn hint_batch_transactions_len(
     vm: &mut VirtualMachine,
@@ -23,7 +23,7 @@ pub fn hint_batch_transactions_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH)?;
+    let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH_EVM)?;
 
     insert_value_into_ap(vm, Felt252::from(batch.transactions.len()))
 }
@@ -36,7 +36,7 @@ pub fn hint_set_tx(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH)?;
+    let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH_EVM)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
         .unwrap();

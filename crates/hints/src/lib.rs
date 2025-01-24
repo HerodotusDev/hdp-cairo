@@ -71,7 +71,7 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(verifiers::evm::header_verifier::HINT_RLP_LEN.into(), verifiers::evm::header_verifier::hint_rlp_len);
     hints.insert(verifiers::evm::header_verifier::HINT_SET_HEADER.into(), verifiers::evm::header_verifier::hint_set_header);
     hints.insert(verifiers::evm::header_verifier::HINT_VM_ENTER_SCOPE.into(), verifiers::evm::header_verifier::hint_vm_enter_scope);
-    hints.insert(verifiers::evm::HINT_HEADERS_WITH_MMR_LEN.into(), verifiers::evm::hint_headers_with_mmr_headers_len);
+    hints.insert(verifiers::evm::header_verifier::HINT_HEADERS_WITH_MMR_LEN.into(), verifiers::evm::header_verifier::hint_headers_with_mmr_len);
     hints.insert(verifiers::evm::receipt_verifier::HINT_BATCH_RECEIPTS_LEN.into(), verifiers::evm::receipt_verifier::hint_batch_receipts_len);
     hints.insert(verifiers::evm::receipt_verifier::HINT_RECEIPT_BLOCK_NUMBER.into(), verifiers::evm::receipt_verifier::hint_receipt_block_number);
     hints.insert(verifiers::evm::receipt_verifier::HINT_RECEIPT_KEY_LEADING_ZEROS.into(), verifiers::evm::receipt_verifier::hint_receipt_key_leading_zeros);
@@ -95,14 +95,22 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(verifiers::evm::transaction_verifier::HINT_SET_TX_KEY.into(), verifiers::evm::transaction_verifier::hint_set_tx_key);
     hints.insert(verifiers::evm::transaction_verifier::HINT_SET_TX_PROOF_LEN.into(), verifiers::evm::transaction_verifier::hint_set_tx_proof_len);
     hints.insert(verifiers::evm::transaction_verifier::HINT_SET_TX.into(), verifiers::evm::transaction_verifier::hint_set_tx);
-    hints.insert(verifiers::mmr_verifier::HINT_HEADERS_WITH_MMR_META_ID.into(), verifiers::mmr_verifier::hint_headers_with_mmr_meta_id);
-    hints.insert(verifiers::mmr_verifier::HINT_HEADERS_WITH_MMR_META_PEAKS_LEN.into(), verifiers::mmr_verifier::hint_headers_with_mmr_meta_peaks_len);
-    hints.insert(verifiers::mmr_verifier::HINT_HEADERS_WITH_MMR_META_ROOT.into(), verifiers::mmr_verifier::hint_headers_with_mmr_meta_root);
-    hints.insert(verifiers::mmr_verifier::HINT_HEADERS_WITH_MMR_META_SIZE.into(), verifiers::mmr_verifier::hint_headers_with_mmr_meta_size);
-    hints.insert(verifiers::mmr_verifier::HINT_HEADERS_WITH_MMR_PEAKS.into(), verifiers::mmr_verifier::hint_headers_with_mmr_peaks);
+    hints.insert(verifiers::evm::mmr_verifier::HINT_HEADERS_WITH_MMR_META_ID.into(), verifiers::evm::mmr_verifier::hint_headers_with_mmr_meta_id);
+    hints.insert(verifiers::evm::mmr_verifier::HINT_HEADERS_WITH_MMR_META_PEAKS_LEN.into(), verifiers::evm::mmr_verifier::hint_headers_with_mmr_meta_peaks_len);
+    hints.insert(verifiers::evm::mmr_verifier::HINT_HEADERS_WITH_MMR_META_ROOT.into(), verifiers::evm::mmr_verifier::hint_headers_with_mmr_meta_root);
+    hints.insert(verifiers::evm::mmr_verifier::HINT_HEADERS_WITH_MMR_META_SIZE.into(), verifiers::evm::mmr_verifier::hint_headers_with_mmr_meta_size);
+    hints.insert(verifiers::evm::mmr_verifier::HINT_HEADERS_WITH_MMR_PEAKS.into(), verifiers::evm::mmr_verifier::hint_headers_with_mmr_peaks);
+    hints.insert(verifiers::starknet::mmr_verifier::HINT_HEADERS_WITH_MMR_META_ID.into(), verifiers::starknet::mmr_verifier::hint_headers_with_mmr_meta_id);
+    hints.insert(verifiers::starknet::mmr_verifier::HINT_HEADERS_WITH_MMR_META_PEAKS_LEN.into(), verifiers::starknet::mmr_verifier::hint_headers_with_mmr_meta_peaks_len);
+    hints.insert(verifiers::starknet::mmr_verifier::HINT_HEADERS_WITH_MMR_META_ROOT.into(), verifiers::starknet::mmr_verifier::hint_headers_with_mmr_meta_root);
+    hints.insert(verifiers::starknet::mmr_verifier::HINT_HEADERS_WITH_MMR_META_SIZE.into(), verifiers::starknet::mmr_verifier::hint_headers_with_mmr_meta_size);
+    hints.insert(verifiers::starknet::mmr_verifier::HINT_HEADERS_WITH_MMR_PEAKS.into(), verifiers::starknet::mmr_verifier::hint_headers_with_mmr_peaks);
     hints.insert(verifiers::verify::HINT_CHAIN_PROOFS_LEN.into(), verifiers::verify::hint_chain_proofs_len);
     hints.insert(verifiers::verify::HINT_CHAIN_PROOFS_CHAIN_ID.into(), verifiers::verify::hint_chain_proofs_chain_id);
-    hints.insert(verifiers::verify::HINT_VM_ENTER_SCOPE.into(), verifiers::verify::hint_vm_enter_scope);
+    hints.insert(verifiers::evm::HINT_VM_ENTER_SCOPE.into(), verifiers::evm::hint_vm_enter_scope);
+    hints.insert(verifiers::evm::HINT_HEADERS_WITH_MMR_LEN.into(), verifiers::evm::hint_headers_with_mmr_len);
+    hints.insert(verifiers::starknet::HINT_VM_ENTER_SCOPE.into(), verifiers::starknet::hint_vm_enter_scope);
+    hints.insert(verifiers::starknet::HINT_HEADERS_WITH_MMR_LEN.into(), verifiers::starknet::hint_headers_with_mmr_len);
 
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::bit_length::HINT_BIT_LENGTH.into(), eth_essentials_cairo_vm_hints::hints::lib::bit_length::hint_bit_length);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::mmr::bit_length::MMR_BIT_LENGTH.into(), eth_essentials_cairo_vm_hints::hints::lib::mmr::bit_length::mmr_bit_length);

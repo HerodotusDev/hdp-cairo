@@ -60,7 +60,7 @@ The overall program is split into two main parts:
 
 ## Testing
 
-Some tests require Ethereum Sepolia RPC calls. Ensure an environment variable named `RPC` is set.
+Some tests require chain nodes RPC calls. Ensure an environment variable named `ETH_RPC` and `STARKNET_RPC` is set.
 
 1. **Build Cairo1 Modules:**
    ```bash

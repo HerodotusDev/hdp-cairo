@@ -15,3 +15,5 @@ serde.workspace = true
 starknet-crypto.workspace = true
 strum_macros.workspace = true
 thiserror.workspace = true
+pathfinder_gateway_types.workspace = true
+starknet-types-core.workspace = true

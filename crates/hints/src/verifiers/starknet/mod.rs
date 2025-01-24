@@ -1,9 +1,6 @@
-pub mod account_verifier;
 pub mod header_verifier;
 pub mod mmr_verifier;
-pub mod receipt_verifier;
-pub mod storage_item_verifier;
-pub mod transaction_verifier;
+pub mod storage_verifier;
 
 use crate::vars;
 use cairo_vm::hint_processor::builtin_hint_processor::builtin_hint_processor_definition::HintProcessorData;
@@ -14,10 +11,10 @@ use cairo_vm::{
     Felt252,
 };
 use std::{any::Any, collections::HashMap};
-use types::proofs::evm;
+use types::proofs::starknet;
 use types::ChainProofs;
 
-pub const HINT_HEADERS_WITH_MMR_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch_evm.headers_with_mmr_evm))";
+pub const HINT_HEADERS_WITH_MMR_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch_starknet.headers_with_mmr_starknet))";
 
 pub fn hint_headers_with_mmr_len(
     vm: &mut VirtualMachine,
@@ -25,12 +22,12 @@ pub fn hint_headers_with_mmr_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let proofs = exec_scopes.get::<evm::Proofs>(vars::scopes::BATCH_EVM)?;
+    let proofs = exec_scopes.get::<starknet::Proofs>(vars::scopes::BATCH_STARKNET)?;
 
     insert_value_into_ap(vm, Felt252::from(proofs.headers_with_mmr.len()))
 }
 
-pub const HINT_VM_ENTER_SCOPE: &str = "vm_enter_scope({'batch_evm': chain_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager})";
+pub const HINT_VM_ENTER_SCOPE: &str = "vm_enter_scope({'batch_starknet': chain_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager})";
 
 pub fn hint_vm_enter_scope(
     vm: &mut VirtualMachine,
@@ -52,7 +49,7 @@ pub fn hint_vm_enter_scope(
     let dict_manager: Box<dyn Any> = Box::new(exec_scopes.get_dict_manager()?);
 
     exec_scopes.enter_scope(HashMap::from([
-        (String::from(vars::scopes::BATCH_EVM), batch),
+        (String::from(vars::scopes::BATCH_STARKNET), batch),
         (String::from(vars::scopes::DICT_MANAGER), dict_manager),
     ]));
 

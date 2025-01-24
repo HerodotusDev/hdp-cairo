@@ -1,6 +1,5 @@
 use super::KeyError;
 use crate::cairo::traits::CairoType;
-use alloy::primitives::{BlockNumber, ChainId};
 use cairo_vm::{
     types::relocatable::Relocatable,
     vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
@@ -40,8 +39,8 @@ impl CairoType for CairoKey {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Key {
-    pub chain_id: ChainId,
-    pub block_number: BlockNumber,
+    pub chain_id: u128,
+    pub block_number: u64,
 }
 
 impl TryFrom<CairoKey> for Key {

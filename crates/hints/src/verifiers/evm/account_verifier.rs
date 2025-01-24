@@ -16,9 +16,9 @@ use cairo_vm::{
 };
 use num_bigint::BigUint;
 use std::collections::HashMap;
-use types::proofs::{account::Account, mpt::MPTProof, Proofs};
+use types::proofs::{evm::account::Account, evm::Proofs, mpt::MPTProof};
 
-pub const HINT_BATCH_ACCOUNTS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch.accounts))";
+pub const HINT_BATCH_ACCOUNTS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch_evm.accounts))";
 
 pub fn hint_batch_accounts_len(
     vm: &mut VirtualMachine,
@@ -26,13 +26,13 @@ pub fn hint_batch_accounts_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH)?;
+    let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH_EVM)?;
 
     insert_value_into_ap(vm, Felt252::from(batch.accounts.len()))
 }
 
 pub const HINT_GET_ACCOUNT_ADDRESS: &str =
-    "account = batch.accounts[ids.idx]\nsegments.write_arg(ids.address, [int(x, 16) for x in account.address]))";
+    "account_evm = batch_evm.accounts[ids.idx]\nsegments.write_arg(ids.address, [int(x, 16) for x in account_evm.address]))";
 
 pub fn hint_get_account_address(
     vm: &mut VirtualMachine,
@@ -40,7 +40,7 @@ pub fn hint_get_account_address(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH)?;
+    let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH_EVM)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
         .unwrap();
@@ -51,7 +51,7 @@ pub fn hint_get_account_address(
         .map(|chunk| MaybeRelocatable::from(Felt252::from_bytes_be_slice(&chunk.iter().rev().copied().collect::<Vec<_>>())))
         .collect();
 
-    exec_scopes.insert_value::<Account>(vars::scopes::ACCOUNT, account);
+    exec_scopes.insert_value::<Account>(vars::scopes::ACCOUNT_EVM, account);
 
     let address_ptr = get_ptr_from_var_name(vars::ids::ADDRESS, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
@@ -60,7 +60,7 @@ pub fn hint_get_account_address(
     Ok(())
 }
 
-pub const HINT_ACCOUNT_KEY: &str = "from tools.py.utils import split_128\n(ids.key.low, ids.key.high) = split_128(int(account.account_key, 16))";
+pub const HINT_ACCOUNT_KEY: &str = "from tools.py.utils import split_128\n(ids.key.low, ids.key.high) = split_128(int(account_evm.account_key, 16))";
 
 pub fn hint_account_key(
     vm: &mut VirtualMachine,
@@ -68,7 +68,7 @@ pub fn hint_account_key(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let account = exec_scopes.get::<Account>(vars::scopes::ACCOUNT)?;
+    let account = exec_scopes.get::<Account>(vars::scopes::ACCOUNT_EVM)?;
 
     let (key_low, key_high) = split_128(&BigUint::from_bytes_be(account.account_key.as_slice()));
 
@@ -80,7 +80,7 @@ pub fn hint_account_key(
 }
 
 pub const HINT_ACCOUNT_KEY_LEADING_ZEROS: &str =
-    "ids.key_leading_zeros = len(account.account_key.lstrip(\"0x\")) - len(account.account_key.lstrip(\"0x\").lstrip(\"0\"))";
+    "ids.key_leading_zeros = len(account_evm.account_key.lstrip(\"0x\")) - len(account_evm.account_key.lstrip(\"0x\").lstrip(\"0\"))";
 
 pub fn hint_account_key_leading_zeros(
     vm: &mut VirtualMachine,
@@ -88,7 +88,7 @@ pub fn hint_account_key_leading_zeros(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let account = exec_scopes.get::<Account>(vars::scopes::ACCOUNT)?;
+    let account = exec_scopes.get::<Account>(vars::scopes::ACCOUNT_EVM)?;
     let key_leading_zeros = count_leading_zero_nibbles_from_hex(&account.account_key.to_string());
 
     insert_value_from_var_name(
@@ -100,7 +100,7 @@ pub fn hint_account_key_leading_zeros(
     )
 }
 
-pub const HINT_ACCOUNT_PROOFS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(account.proofs))";
+pub const HINT_ACCOUNT_PROOFS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(account_evm.proofs))";
 
 pub fn hint_account_proofs_len(
     vm: &mut VirtualMachine,
@@ -108,12 +108,12 @@ pub fn hint_account_proofs_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let account = exec_scopes.get::<Account>(vars::scopes::ACCOUNT)?;
+    let account = exec_scopes.get::<Account>(vars::scopes::ACCOUNT_EVM)?;
 
     insert_value_into_ap(vm, Felt252::from(account.proofs.len()))
 }
 
-pub const HINT_ACCOUNT_PROOF_AT: &str = "proof = account.proofs[ids.idx]";
+pub const HINT_ACCOUNT_PROOF_AT: &str = "proof = account_evm.proofs[ids.idx]";
 
 pub fn hint_account_proof_at(
     vm: &mut VirtualMachine,
@@ -121,7 +121,7 @@ pub fn hint_account_proof_at(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let account = exec_scopes.get::<Account>(vars::scopes::ACCOUNT)?;
+    let account = exec_scopes.get::<Account>(vars::scopes::ACCOUNT_EVM)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
         .unwrap();

@@ -9,9 +9,11 @@ cairo-lang-casm.workspace = true
 cairo-lang-starknet-classes.workspace = true
 cairo-vm.workspace = true
 serde.workspace = true
+starknet.workspace = true
 starknet-types-core.workspace = true
 strum_macros.workspace = true
 tokio.workspace = true
+reqwest.workspace = true
 
 hints.workspace = true
 syscall_handler.workspace = true

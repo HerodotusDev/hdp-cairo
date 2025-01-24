@@ -82,3 +82,26 @@ pub struct BuiltinParams {
     builtin_encodings: Felt252,
     builtin_instance_sizes: Felt252,
 }
+
+#[derive(FieldOffsetGetters, CairoType, Default, Debug, Clone)]
+pub struct Felt {
+    value: Felt252,
+}
+
+impl From<Felt252> for Felt {
+    fn from(value: Felt252) -> Self {
+        Self { value }
+    }
+}
+
+impl From<u64> for Felt {
+    fn from(value: u64) -> Self {
+        Self { value: Felt252::from(value) }
+    }
+}
+
+impl From<Felt> for Felt252 {
+    fn from(felt: Felt) -> Self {
+        felt.value
+    }
+}

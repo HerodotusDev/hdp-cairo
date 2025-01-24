@@ -1,4 +1,4 @@
-use super::mpt::MPTProof;
+use crate::proofs::mpt::MPTProof;
 use alloy::primitives::{keccak256, Address, StorageKey, B256};
 use serde::{Deserialize, Serialize};
 

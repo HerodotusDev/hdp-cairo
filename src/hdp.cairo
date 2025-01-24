@@ -88,6 +88,7 @@ func run{
 
     let (mmr_metas_len) = run_state_verification{
         range_check_ptr=range_check_ptr,
+        pedersen_ptr=pedersen_ptr,
         poseidon_ptr=poseidon_ptr,
         keccak_ptr=keccak_ptr,
         bitwise_ptr=bitwise_ptr,

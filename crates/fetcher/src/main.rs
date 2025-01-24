@@ -12,7 +12,11 @@ use proof_keys::ProofKeys;
 use std::{collections::HashSet, fs, path::PathBuf};
 use thiserror as _;
 use types::{
-    proofs::{account::Account, storage::Storage, HeaderMmrMeta, Proofs},
+    proofs::{
+        self,
+        evm::{account::Account, storage::Storage, Proofs},
+        header::HeaderMmrMeta,
+    },
     ChainProofs,
 };
 
@@ -66,7 +70,7 @@ async fn main() -> Result<(), FetcherError> {
     pb_storage_keys.set_style(progress_style);
     pb_storage_keys.set_message("storage_keys");
 
-    let mut headers_with_mmr: HashSet<HeaderMmrMeta> = HashSet::default();
+    let mut headers_with_mmr: HashSet<HeaderMmrMeta<proofs::evm::header::Header>> = HashSet::default();
 
     let mut headers_with_mmr_fut = futures::stream::iter(proof_keys.header_keys.iter().map(ProofKeys::fetch_header_proof).map(|f| f.boxed_local()))
         .buffer_unordered(BUFFER_UNORDERED);

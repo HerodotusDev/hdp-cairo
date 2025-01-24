@@ -1,10 +1,19 @@
+use std::env;
 
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
+use starknet::{
+    core::types::BlockId,
+    providers::{
+        jsonrpc::{HttpTransport, JsonRpcClient},
+        Provider, Url,
+    },
+};
 use syscall_handler::traits::CallHandler;
 use syscall_handler::{SyscallExecutionError, SyscallResult};
 use types::{
-    cairo::{evm::storage::FunctionId, structs::Uint256, traits::CairoType},
+    cairo::{evm::storage::FunctionId, structs::Felt, traits::CairoType},
     keys::starknet::storage::{CairoKey, Key},
+    STARKNET_RPC,
 };
 
 #[derive(Debug, Default)]
@@ -14,7 +23,7 @@ pub struct StorageCallHandler;
 impl CallHandler for StorageCallHandler {
     type Key = Key;
     type Id = FunctionId;
-    type CallHandlerResult = Uint256;
+    type CallHandlerResult = Felt;
 
     fn derive_key(vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Key> {
         let ret = CairoKey::from_memory(vm, *ptr)?;
@@ -33,7 +42,17 @@ impl CallHandler for StorageCallHandler {
         })
     }
 
-    async fn handle(&mut self, _key: Self::Key, _function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
-        unimplemented!()
+    async fn handle(&mut self, key: Self::Key, function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
+        let provider = JsonRpcClient::new(HttpTransport::new(Url::parse(&env::var(STARKNET_RPC).unwrap()).unwrap()));
+        let block_id = BlockId::Number(key.block_number);
+        let value = match function_id {
+            FunctionId::Storage => provider
+                .get_storage_at::<Felt252, Felt252, BlockId>(key.address, key.storage_slot, block_id)
+                .await
+                .map(Felt::from),
+        }
+        .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
+
+        Ok(value)
     }
 }

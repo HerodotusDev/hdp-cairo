@@ -28,7 +28,7 @@ func verify_block_receipt_proofs{
 }() {
     alloc_locals;
 
-    tempvar n_receipts: felt = nondet %{ len(batch.receipts) %};
+    tempvar n_receipts: felt = nondet %{ len(batch_evm.receipts) %};
     verify_block_receipt_proofs_inner(n_receipts, 0);
 
     return ();
