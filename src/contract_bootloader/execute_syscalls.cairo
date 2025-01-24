@@ -102,6 +102,11 @@ func execute_call_contract{
     let state_access_type = call_contract_request.contract_address;
     let field = call_contract_request.selector;
 
+    // Debug Contract does not need to be executed
+    if (call_contract_request.contract_address == 99) {
+        return ();
+    }
+
     let layout = chain_id_to_layout(call_contract_request.calldata_start[2]);
     let output_ptr = call_contract_response.retdata_start;
 

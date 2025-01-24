@@ -5237,6 +5237,7 @@ dependencies = [
  "cairo-vm",
  "hints",
  "serde",
+ "shared_syscall_handlers",
  "starknet-types-core",
  "strum_macros",
  "syscall_handler",

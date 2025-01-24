@@ -1,7 +1,7 @@
 #[starknet::contract]
-mod evm_test_print {
-    use hdp_cairo::evm::storage::StorageTrait;
-    use hdp_cairo::{HDP, evm::storage::{StorageKey, StorageImpl}};
+mod test_debug_print {
+    use hdp_cairo::evm::account::AccountTrait;
+    use hdp_cairo::{HDP, evm::account::{AccountKey, AccountImpl}};
     use hdp_cairo::debug::{print, print_array};
     use core::fmt::{Display, Formatter, Error};
 
@@ -25,8 +25,11 @@ mod evm_test_print {
     #[external(v0)]
     pub fn main(ref self: ContractState, hdp: HDP) {
         let p = Point { x: 1, y: 3 };
+        
         print(p);
         print(1);
         print_array(array![1, 2, 3]);
+
+
     }
 }

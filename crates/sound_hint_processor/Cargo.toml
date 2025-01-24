@@ -15,3 +15,4 @@ strum_macros.workspace = true
 syscall_handler.workspace = true
 tokio.workspace = true
 types.workspace = true
+shared_syscall_handlers.workspace = true

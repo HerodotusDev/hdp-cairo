@@ -16,6 +16,7 @@ use cairo_vm::{
 };
 use hints::vars;
 use serde::{Deserialize, Serialize};
+use shared_syscall_handlers::debug_handler::DebugHandler;
 use std::{any::Any, cell::RefCell, collections::HashMap, rc::Rc};
 use syscall_handler::traits;
 use syscall_handler::{felt_from_ptr, run_handler, SyscallExecutionError, SyscallResult, SyscallSelector, WriteResponseResult};
@@ -81,6 +82,7 @@ impl CairoType for Memorizer {
 pub struct CallContractHandlerRelay {
     pub evm_call_contract_handler: EvmCallContractHandler,
     pub starknet_call_contract_handler: StarknetCallContractHandler,
+    pub debug_handler: DebugHandler,
 }
 
 impl CallContractHandlerRelay {
@@ -88,6 +90,7 @@ impl CallContractHandlerRelay {
         Self {
             evm_call_contract_handler: EvmCallContractHandler::new(dict_manager.clone()),
             starknet_call_contract_handler: StarknetCallContractHandler::new(dict_manager),
+            debug_handler: DebugHandler::default(),
         }
     }
 }
@@ -103,13 +106,17 @@ impl traits::SyscallHandler for CallContractHandlerRelay {
     }
 
     async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
-        let chain_id = <Felt252 as TryInto<u128>>::try_into(*vm.get_integer((request.calldata_start + 2)?)?)
-            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
+         if request.contract_address == Felt252::from(99) {
+            self.debug_handler.execute(request, vm).await
+        } else {
+            let chain_id = <Felt252 as TryInto<u128>>::try_into(*vm.get_integer((request.calldata_start + 2)?)?)
+                .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
 
-        match chain_id {
-            ETHEREUM_MAINNET_CHAIN_ID | ETHEREUM_TESTNET_CHAIN_ID => self.evm_call_contract_handler.execute(request, vm).await,
-            STARKNET_MAINNET_CHAIN_ID | STARKNET_TESTNET_CHAIN_ID => self.starknet_call_contract_handler.execute(request, vm).await,
-            _ => Err(SyscallExecutionError::InternalError(Box::from("Unknown chain id"))),
+            match chain_id {
+                ETHEREUM_MAINNET_CHAIN_ID | ETHEREUM_TESTNET_CHAIN_ID => self.evm_call_contract_handler.execute(request, vm).await,
+                STARKNET_MAINNET_CHAIN_ID | STARKNET_TESTNET_CHAIN_ID => self.starknet_call_contract_handler.execute(request, vm).await,
+                _ => Err(SyscallExecutionError::InternalError(Box::from("Unknown chain id"))),
+            }
         }
     }
 
