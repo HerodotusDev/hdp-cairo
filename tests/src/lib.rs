@@ -8,6 +8,9 @@ pub mod evm;
 pub mod starknet;
 
 #[cfg(test)]
+pub mod utils;
+
+#[cfg(test)]
 mod test_utils {
     use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
     use cairo_vm::{
