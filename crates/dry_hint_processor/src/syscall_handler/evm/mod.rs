@@ -53,7 +53,7 @@ impl SyscallHandler for CallContractHandler {
                 .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
         ));
 
-        let retdata_start = vm.add_temporary_segment();
+        let retdata_start = vm.add_memory_segment();
         let mut retdata_end = retdata_start;
 
         match call_handler_id {
