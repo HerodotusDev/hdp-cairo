@@ -22,7 +22,6 @@ const BLOCK_TX_GET_BLOB_VERSIONED_HASHES: felt252 = 14;
 const BLOCK_TX_GET_TX_TYPE: felt252 = 15;
 const BLOCK_TX_GET_SENDER: felt252 = 16;
 const BLOCK_TX_GET_HASH: felt252 = 17;
-const BLOCK_TX_GET_SIGNATURE_HASH: felt252 = 18;
 
 #[derive(Serde, Drop)]
 pub struct BlockTxKey {
@@ -100,10 +99,6 @@ pub impl BlockTxImpl of BlockTxTrait {
 
     fn block_tx_get_hash(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
         self.call_memorizer(BLOCK_TX_GET_HASH, key)
-    }
-
-    fn block_tx_get_signature_hash(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
-        self.call_memorizer(BLOCK_TX_GET_SIGNATURE_HASH, key)
     }
 
     fn call_memorizer(self: @EvmMemorizer, selector: felt252, key: BlockTxKey) -> u256 {

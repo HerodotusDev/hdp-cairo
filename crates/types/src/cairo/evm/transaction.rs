@@ -26,7 +26,6 @@ pub enum FunctionId {
     TxType = 15,
     Sender = 16,
     Hash = 17,
-    SignatureHash = 18,
 }
 
 pub struct CairoTransaction(TxEnvelope);
@@ -58,7 +57,6 @@ impl CairoTransaction {
             FunctionId::S => signature.s().into(),
             FunctionId::Sender => self.0.recover_signer().unwrap().into(),
             FunctionId::Hash => self.hash(),
-            FunctionId::SignatureHash => self.signature_hash(),
             FunctionId::TxType => (self.0.tx_type() as u64).into(),
             FunctionId::Data => panic!("Unsupported field `Data`"),
             _ => panic!("Unexpected tx field"),
@@ -88,7 +86,6 @@ impl CairoTransaction {
             FunctionId::S => signature.s().into(),
             FunctionId::Sender => self.0.recover_signer().unwrap().into(),
             FunctionId::Hash => self.hash(),
-            FunctionId::SignatureHash => self.signature_hash(),
             FunctionId::TxType => (self.0.tx_type() as u64).into(),
             FunctionId::AccessList => panic!("Unsupported field `AccessList`"),
             FunctionId::Data => panic!("Unsupported field `Data`"),
@@ -112,7 +109,6 @@ impl CairoTransaction {
             FunctionId::S => signature.s().into(),
             FunctionId::Sender => self.0.recover_signer().unwrap().into(),
             FunctionId::Hash => self.hash(),
-            FunctionId::SignatureHash => self.signature_hash(),
             FunctionId::TxType => (self.0.tx_type() as u64).into(),
             FunctionId::AccessList => panic!("Unsupported field `AccessList`"),
             FunctionId::Data => panic!("Unsupported field `Data`"),
@@ -137,7 +133,6 @@ impl CairoTransaction {
             FunctionId::S => signature.s().into(),
             FunctionId::Sender => self.0.recover_signer().unwrap().into(),
             FunctionId::Hash => self.hash(),
-            FunctionId::SignatureHash => self.signature_hash(),
             FunctionId::TxType => (self.0.tx_type() as u64).into(),
             FunctionId::BlobVersionedHashes => panic!("Unsupported field `BlobVersionedHashes`"),
             FunctionId::AccessList => panic!("Unsupported field `AccessList`"),

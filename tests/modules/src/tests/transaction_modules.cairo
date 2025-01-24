@@ -16,6 +16,24 @@ mod transaction_get_nonce {
                     },
                 ) == u256 { low: 0x3, high: 0x0 },
         );
+
+        let mut i: usize = 0;
+        let max_tx_idx = 10;
+        loop {
+            if i >= max_tx_idx {
+                break;
+            }
+
+            let tx_idx = i;
+            hdp
+                .evm
+                .block_tx_get_nonce(
+                    BlockTxKey {
+                        chain_id: 11155111, block_number: 5382809, transaction_index: tx_idx.into(),
+                    },
+                );
+            i += 1;
+        };
     }
 }
 
@@ -323,5 +341,4 @@ mod transaction_get_hash {
         );
     }
 }
-
 
