@@ -11,6 +11,7 @@ members = [
     "crates/indexer",
     "crates/syscall_handler",
     "crates/types",
+    "crates/shared_syscall_handlers",
     "tests",
 ]
 
@@ -56,3 +57,4 @@ pathfinder_gateway_types = { git = "https://github.com/eqlabs/pathfinder", packa
 sound_hint_processor = { path = "crates/sound_hint_processor" }
 syscall_handler = { path = "crates/syscall_handler" }
 types = { path = "crates/types" }
+shared_syscall_handlers = { path = "crates/shared_syscall_handlers" }

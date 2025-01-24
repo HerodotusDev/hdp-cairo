@@ -1,0 +1,11 @@
+[package]
+name = "shared_syscall_handlers"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cairo-vm.workspace = true
+serde.workspace = true
+strum_macros.workspace = true
+syscall_handler.workspace = true
+types.workspace = true

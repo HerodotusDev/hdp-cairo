@@ -1,6 +1,5 @@
 pub mod evm;
 pub mod starknet;
-pub mod debug_handler;
 
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{builtin_hint_processor_definition::HintProcessorData, hint_utils::get_ptr_from_var_name},
@@ -8,10 +7,10 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use debug_handler::DebugHandler;
 use evm::CallContractHandler as EvmCallContractHandler;
 use hints::vars;
 use serde::{Deserialize, Serialize};
+use shared_syscall_handlers::debug_handler::DebugHandler;
 use starknet::CallContractHandler as StarknetCallContractHandler;
 use std::{any::Any, collections::HashMap, rc::Rc};
 use syscall_handler::{felt_from_ptr, run_handler, traits, SyscallExecutionError, SyscallResult, SyscallSelector, WriteResponseResult};
@@ -93,14 +92,13 @@ impl traits::SyscallHandler for CallContractHandlerRelay {
         } else {
             let chain_id = <Felt252 as TryInto<u128>>::try_into(*vm.get_integer((request.calldata_start + 2)?)?)
                 .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
-    
+
             match chain_id {
                 ETHEREUM_MAINNET_CHAIN_ID | ETHEREUM_TESTNET_CHAIN_ID => self.evm_call_contract_handler.execute(request, vm).await,
                 STARKNET_MAINNET_CHAIN_ID | STARKNET_TESTNET_CHAIN_ID => self.starknet_call_contract_handler.execute(request, vm).await,
                 _ => Err(SyscallExecutionError::InternalError(Box::from("Unknown chain id"))),
             }
         }
-
     }
 
     fn write_response(&mut self, response: Self::Response, vm: &mut VirtualMachine, ptr: &mut Relocatable) -> WriteResponseResult {
