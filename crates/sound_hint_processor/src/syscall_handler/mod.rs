@@ -90,7 +90,7 @@ impl CallContractHandlerRelay {
         Self {
             evm_call_contract_handler: EvmCallContractHandler::new(dict_manager.clone()),
             starknet_call_contract_handler: StarknetCallContractHandler::new(dict_manager),
-            debug_handler: DebugHandler::default(),
+            debug_handler: DebugHandler,
         }
     }
 }
@@ -106,7 +106,7 @@ impl traits::SyscallHandler for CallContractHandlerRelay {
     }
 
     async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
-         if request.contract_address == Felt252::from(99) {
+        if request.contract_address == Felt252::from(99) {
             self.debug_handler.execute(request, vm).await
         } else {
             let chain_id = <Felt252 as TryInto<u128>>::try_into(*vm.get_integer((request.calldata_start + 2)?)?)

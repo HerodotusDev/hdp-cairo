@@ -1,8 +1,4 @@
-use cairo_vm::{
-    types::relocatable::Relocatable,
-    vm::vm_core::VirtualMachine,
-    Felt252,
-};
+use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
 
 use serde::{Deserialize, Serialize};
 use strum_macros::FromRepr;
@@ -82,17 +78,22 @@ fn decode_byte_array_felts(felts: Vec<Felt252>) -> String {
     for i in 0..n_full {
         let chunk = &felts[1 + i];
         let chunk_be: Vec<u8> = chunk.to_bytes_be().to_vec();
-        // Pad or trim so that we end up with exactly 31 bytes
-        if chunk_be.len() < 31 {
-            // Prepend leading zeros if needed
-            let mut padded = vec![0u8; 31 - chunk_be.len()];
-            padded.extend_from_slice(&chunk_be);
-            bytes.extend_from_slice(&padded);
-        } else if chunk_be.len() > 31 {
-            // If somehow bigger, take the last 31 bytes
-            bytes.extend_from_slice(&chunk_be[chunk_be.len() - 31..]);
-        } else {
-            bytes.extend_from_slice(&chunk_be);
+
+        // Convert if chain to match
+        match chunk_be.len().cmp(&31) {
+            std::cmp::Ordering::Less => {
+                // Prepend leading zeros if needed
+                let mut padded = vec![0u8; 31 - chunk_be.len()];
+                padded.extend_from_slice(&chunk_be);
+                bytes.extend_from_slice(&padded);
+            }
+            std::cmp::Ordering::Greater => {
+                // If somehow bigger, take the last 31 bytes
+                bytes.extend_from_slice(&chunk_be[chunk_be.len() - 31..]);
+            }
+            std::cmp::Ordering::Equal => {
+                bytes.extend_from_slice(&chunk_be);
+            }
         }
     }
 
@@ -102,23 +103,26 @@ fn decode_byte_array_felts(felts: Vec<Felt252>) -> String {
 
     if pending_len > 0 {
         let pending_be: Vec<u8> = pending_word.to_bytes_be().to_vec();
-        // We only need the last `pending_len` bytes from `pending_word`.
-        if pending_be.len() < pending_len {
-            // Again pad if needed
-            let mut padded = vec![0u8; pending_len - pending_be.len()];
-            padded.extend_from_slice(&pending_be);
-            bytes.extend_from_slice(&padded);
-        } else if pending_be.len() > pending_len {
-            bytes.extend_from_slice(&pending_be[pending_be.len() - pending_len..]);
-        } else {
-            bytes.extend_from_slice(&pending_be);
+        // Convert if chain to match
+        match pending_be.len().cmp(&pending_len) {
+            std::cmp::Ordering::Less => {
+                // Again pad if needed
+                let mut padded = vec![0u8; pending_len - pending_be.len()];
+                padded.extend_from_slice(&pending_be);
+                bytes.extend_from_slice(&padded);
+            }
+            std::cmp::Ordering::Greater => {
+                bytes.extend_from_slice(&pending_be[pending_be.len() - pending_len..]);
+            }
+            std::cmp::Ordering::Equal => {
+                bytes.extend_from_slice(&pending_be);
+            }
         }
     }
 
     // 4) Convert raw bytes to a UTF-8 string (or ASCII if you know it is ASCII).
     String::from_utf8(bytes).expect("Invalid UTF-8")
 }
-
 
 impl TryFrom<Felt252> for CallHandlerId {
     type Error = SyscallExecutionError;
