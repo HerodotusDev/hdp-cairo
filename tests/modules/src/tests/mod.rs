@@ -10,7 +10,7 @@ use futures::{FutureExt, StreamExt};
 use hints::vars;
 use std::{collections::HashSet, env, path::PathBuf};
 use types::{
-    proofs::{account::Account, receipt::Receipt, storage::Storage, HeaderMmrMeta, Proofs},
+    proofs::{account::Account, receipt::Receipt, storage::Storage, transaction::Transaction, HeaderMmrMeta, Proofs},
     ChainProofs, HDPDryRunInput, HDPInput,
 };
 
@@ -18,6 +18,7 @@ pub mod account_modules;
 pub mod header_modules;
 pub mod receipt_modules;
 pub mod storage_modules;
+pub mod transaction_modules;
 
 const BUFFER_UNORDERED: usize = 50;
 
@@ -92,6 +93,9 @@ async fn run(compiled_class: CasmContractClass) {
             evm::DryRunKey::Receipt(value) => {
                 proof_keys.receipt_keys.insert(value);
             }
+            evm::DryRunKey::Tx(value) => {
+                proof_keys.tx_keys.insert(value);
+            }
         }
     }
 
@@ -153,12 +157,22 @@ async fn run(compiled_class: CasmContractClass) {
         transaction_receipts.insert(transaction_receipt);
     }
 
+    let mut transactions: HashSet<Transaction> = HashSet::default();
+
+    let mut transactions_fut = futures::stream::iter(proof_keys.tx_keys.iter().map(ProofKeys::fetch_transaction_proof).map(|f| f.boxed_local()))
+        .buffer_unordered(BUFFER_UNORDERED);
+
+    while let Some(Ok((header_with_mmr, transaction))) = transactions_fut.next().await {
+        headers_with_mmr.insert(header_with_mmr);
+        transactions.insert(transaction);
+    }
+
     let proofs = Proofs {
         headers_with_mmr: headers_with_mmr.into_iter().collect(),
         accounts: accounts.into_iter().collect(),
         storages: storages.into_iter().collect(),
         transaction_receipts: transaction_receipts.into_iter().collect(),
-        ..Default::default()
+        transactions: transactions.into_iter().collect(),
     };
 
     let program_inputs = HDPInput {

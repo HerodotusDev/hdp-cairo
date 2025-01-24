@@ -109,7 +109,6 @@ impl traits::SyscallHandler for CallContractHandler {
 
         let retdata_start = vm.add_temporary_segment();
         let mut retdata_end = retdata_start;
-
         match call_handler_id {
             CallHandlerId::Header => {
                 let key = header::HeaderCallHandler::derive_key(vm, &mut calldata)?;
@@ -135,6 +134,14 @@ impl traits::SyscallHandler for CallContractHandler {
                 result.to_memory(vm, retdata_end)?;
                 retdata_end += <storage::StorageCallHandler as CallHandler>::CallHandlerResult::n_fields();
             }
+            CallHandlerId::Transaction => {
+                let key = transaction::TransactionCallHandler::derive_key(vm, &mut calldata)?;
+                let function_id = transaction::TransactionCallHandler::derive_id(request.selector)?;
+                let result = transaction::TransactionCallHandler.handle(key.clone(), function_id, vm).await?;
+                self.key_set.insert(DryRunKey::Tx(key));
+                result.to_memory(vm, retdata_end)?;
+                retdata_end += <transaction::TransactionCallHandler as CallHandler>::CallHandlerResult::n_fields();
+            }
             CallHandlerId::Receipt => {
                 let key = receipt::ReceiptCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = receipt::ReceiptCallHandler::derive_id(request.selector)?;
@@ -143,7 +150,6 @@ impl traits::SyscallHandler for CallContractHandler {
                 result.to_memory(vm, retdata_end)?;
                 retdata_end += <receipt::ReceiptCallHandler as CallHandler>::CallHandlerResult::n_fields();
             }
-            _ => {}
         }
 
         Ok(Self::Response { retdata_start, retdata_end })
@@ -176,6 +182,7 @@ pub enum DryRunKey {
     Account(keys::account::Key),
     Header(keys::header::Key),
     Storage(keys::storage::Key),
+    Tx(keys::transaction::Key),
     Receipt(keys::receipt::Key),
 }
 
@@ -194,6 +201,10 @@ impl DryRunKey {
 
     pub fn is_receipt(&self) -> bool {
         matches!(self, Self::Receipt(_))
+    }
+
+    pub fn is_tx(&self) -> bool {
+        matches!(self, Self::Tx(_))
     }
 }
 

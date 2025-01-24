@@ -164,6 +164,19 @@ impl traits::SyscallHandler for CallContractHandler {
                 result.to_memory(vm, retdata_end)?;
                 retdata_end += <storage::StorageCallHandler as CallHandler>::CallHandlerResult::n_fields();
             }
+            CallHandlerId::Transaction => {
+                let key = transaction::TransactionCallHandler::derive_key(vm, &mut calldata)?;
+                let function_id = transaction::TransactionCallHandler::derive_id(request.selector)?;
+                let result = transaction::TransactionCallHandler::new(memorizer, self.dict_manager.clone())
+                    .handle(key.clone(), function_id, vm)
+                    .await?;
+                self.key_set.insert(DryRunKey::Tx(
+                    key.try_into()
+                        .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
+                ));
+                result.to_memory(vm, retdata_end)?;
+                retdata_end += <transaction::TransactionCallHandler as CallHandler>::CallHandlerResult::n_fields();
+            }
             CallHandlerId::Receipt => {
                 let key = receipt::ReceiptCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = receipt::ReceiptCallHandler::derive_id(request.selector)?;
@@ -177,7 +190,6 @@ impl traits::SyscallHandler for CallContractHandler {
                 result.to_memory(vm, retdata_end)?;
                 retdata_end += <receipt::ReceiptCallHandler as CallHandler>::CallHandlerResult::n_fields();
             }
-            _ => {}
         }
 
         Ok(Self::Response { retdata_start, retdata_end })
@@ -211,6 +223,7 @@ pub enum DryRunKey {
     Header(keys::header::Key),
     Storage(keys::storage::Key),
     Receipt(keys::receipt::Key),
+    Tx(keys::transaction::Key),
 }
 
 impl DryRunKey {
@@ -228,6 +241,10 @@ impl DryRunKey {
 
     pub fn is_receipt(&self) -> bool {
         matches!(self, Self::Receipt(_))
+    }
+
+    pub fn is_tx(&self) -> bool {
+        matches!(self, Self::Tx(_))
     }
 }
 

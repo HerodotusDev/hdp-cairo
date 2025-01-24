@@ -80,6 +80,15 @@ impl From<Address> for Uint256 {
     }
 }
 
+impl From<bool> for Uint256 {
+    fn from(value: bool) -> Self {
+        Self {
+            low: Felt252::from(if value { 1 } else { 0 }),
+            high: Felt252::ZERO,
+        }
+    }
+}
+
 #[allow(unused)]
 #[derive(FieldOffsetGetters)]
 pub struct CompiledClass {

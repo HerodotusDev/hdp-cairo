@@ -58,6 +58,7 @@ impl CallHandler for ReceiptCallHandler {
             data.remove(0);
             extra_len = 1;
         }
+
         data.resize(128000, 0); // 128kb is max tx size
         let header = alloy_rlp::Header::decode(&mut data.as_slice()).map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?;
         let length = header.length_with_payload() + extra_len;
