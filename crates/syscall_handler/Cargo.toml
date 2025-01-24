@@ -6,5 +6,4 @@ edition = "2021"
 [dependencies]
 cairo-vm.workspace = true
 thiserror.workspace = true
-
 types.workspace = true

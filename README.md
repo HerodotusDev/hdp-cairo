@@ -18,7 +18,8 @@ source venv/bin/activate
 
 ## Running
 
-Before running the program, prepare the input data. The inputs are provided via the `hdp_input.json` file located in the root directory of the HDP project.
+Before running the program, prepare the input data. The inputs are provided via the [hdp_input.json](examples/hdp_input.json).
+Runtime require chain nodes RPC calls, ensure an environment variables [.env.example](.env.example) are set.
 
 ### Steps to Execute:
 
@@ -29,12 +30,12 @@ Before running the program, prepare the input data. The inputs are provided via 
 
 2. **Fetch On-Chain Proofs Needed for the HDP Run:**
    ```bash
-   cargo run --release --bin fetcher -- hdp_keys.json --program_output hdp_proofs.json
+   cargo run --release --bin fetcher --features progress_bars -- hdp_keys.json --program_output hdp_proofs.json
    ```
 
 3. **Run Cairo1 Module with Verified On-Chain Data:**
    ```bash
-   cargo run --release --bin sound_run -- --program_input examples/hdp_input.json --program_proofs hdp_proofs.json --program_output hdp_output.json --layout starknet_with_keccak
+   cargo run --release --bin sound_run -- --program_input examples/hdp_input.json --program_proofs hdp_proofs.json --print_output --layout starknet_with_keccak --cairo_pie_output pie.zip
    ```
 
 The program will output the results root and tasks root. These roots can be used to extract the results from the on-chain contract.
@@ -60,7 +61,7 @@ The overall program is split into two main parts:
 
 ## Testing
 
-Some tests require chain nodes RPC calls. Ensure an environment variable named `ETH_RPC` and `STARKNET_RPC` is set.
+Tests require chain nodes RPC calls. Ensure an environment variables [.env.example](.env.example) are set.
 
 1. **Build Cairo1 Modules:**
    ```bash

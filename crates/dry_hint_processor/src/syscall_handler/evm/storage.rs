@@ -8,7 +8,7 @@ use syscall_handler::{SyscallExecutionError, SyscallResult};
 use types::{
     cairo::{evm::storage::FunctionId, structs::Uint256, traits::CairoType},
     keys::evm::storage::{CairoKey, Key},
-    ETH_RPC,
+    RPC_URL_ETHEREUM,
 };
 
 #[derive(Debug, Default)]
@@ -38,7 +38,7 @@ impl CallHandler for StorageCallHandler {
     }
 
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
-        let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(ETH_RPC).unwrap()).unwrap());
+        let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap());
         let value = match function_id {
             FunctionId::Storage => provider
                 .get_storage_at(key.address, key.storage_slot.into())

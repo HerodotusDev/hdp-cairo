@@ -1,19 +1,18 @@
+use crate::syscall_handler::{STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID};
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
+use reqwest::Url;
+use std::env;
 use syscall_handler::traits::CallHandler;
 use syscall_handler::{SyscallExecutionError, SyscallResult};
-
-use std::env;
 use types::{
     cairo::{
-        starknet::header::{CairoHeader, FunctionId},
+        starknet::header::{Block, FunctionId, StarknetBlock},
         structs::Felt,
         traits::CairoType,
     },
     keys::starknet::header::{CairoKey, Key},
-    FEEDER_GATEWAY,
+    RPC_URL_FEEDER_GATEWAY,
 };
-
-use crate::syscall_handler::{STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID};
 
 #[derive(Debug, Default)]
 pub struct HeaderCallHandler;
@@ -42,8 +41,7 @@ impl CallHandler for HeaderCallHandler {
     }
 
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
-        let base_url =
-            env::var(FEEDER_GATEWAY).map_err(|e| SyscallExecutionError::InternalError(format!("Missing FEEDER_GATEWAY env var: {}", e).into()))?;
+        let base_url = Url::parse(&env::var(RPC_URL_FEEDER_GATEWAY).unwrap()).unwrap();
 
         // Feeder Gateway rejects the requests if this header is not set
         let host_header = match key.chain_id {
@@ -62,7 +60,7 @@ impl CallHandler for HeaderCallHandler {
             .await
             .map_err(|e| SyscallExecutionError::InternalError(format!("Network request failed: {}", e).into()))?;
 
-        let block_data = match response.status().is_success() {
+        let block_data: Block = match response.status().is_success() {
             true => response.json().await,
             false => {
                 let status = response.status();
@@ -74,6 +72,8 @@ impl CallHandler for HeaderCallHandler {
         }
         .map_err(|e| SyscallExecutionError::InternalError(format!("Failed to parse block data: {}", e).into()))?;
 
-        Ok(CairoHeader::new(block_data).handle(function_id))
+        let sn_block: StarknetBlock = block_data.into();
+
+        Ok(sn_block.handle(function_id))
     }
 }

@@ -49,6 +49,19 @@ pub fn hint_set_batch_storages(
     Ok(())
 }
 
+pub const HINT_SET_STORAGE_BLOCK_NUMBER: &str = "memory[ap] = to_felt_or_relocatable(storage_starknet.block_number)";
+
+pub fn hint_set_storage_block_number(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    _hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_STARKNET)?;
+
+    insert_value_into_ap(vm, Felt252::from(storage.block_number))
+}
+
 pub const HINT_SET_STORAGE_ADDRESSES_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(storage_starknet.storage_addresses))";
 
 pub fn hint_set_storage_addresses_len(
@@ -72,7 +85,7 @@ pub fn hint_set_contract_address(
 ) -> Result<(), HintError> {
     let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_STARKNET)?;
 
-    insert_value_into_ap(vm, Felt252::from(storage.storage_addresses.len()))
+    insert_value_into_ap(vm, storage.contract_address)
 }
 
 pub const HINT_SET_STORAGE_ADDRESSES: &str = "segments.write_arg(ids.storage_addresses, [int(x, 16) for x in storage_starknet.storage_addresses]))";
@@ -169,16 +182,26 @@ pub fn hint_set_contract_nodes(
     let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_STARKNET)?;
     let contract_nodes_ptr = get_ptr_from_var_name(vars::ids::CONTRACT_NODES, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    vm.load_data(
-        contract_nodes_ptr,
-        &storage
-            .proof
-            .contract_proof
-            .into_iter()
-            .flat_map(|node| CairoTrieNode(node).into_iter())
-            .map(MaybeRelocatable::from)
-            .collect::<Vec<MaybeRelocatable>>(),
-    )?;
+    let data = storage
+        .proof
+        .contract_proof
+        .into_iter()
+        .map(|node| {
+            let segment = vm.add_memory_segment();
+            vm.load_data(
+                segment,
+                &CairoTrieNode(node)
+                    .into_iter()
+                    .map(MaybeRelocatable::from)
+                    .collect::<Vec<MaybeRelocatable>>(),
+            )
+            .unwrap();
+            segment
+        })
+        .map(MaybeRelocatable::from)
+        .collect::<Vec<MaybeRelocatable>>();
+
+    vm.load_data(contract_nodes_ptr, &data)?;
 
     Ok(())
 }
@@ -225,19 +248,29 @@ pub fn hint_set_storage_starknet_proof_contract_data_storage_proof(
     let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_STARKNET)?;
     let contract_state_nodes_ptr = get_ptr_from_var_name(vars::ids::CONTRACT_STATE_NODES, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    vm.load_data(
-        contract_state_nodes_ptr,
-        &storage
-            .proof
-            .contract_data
-            .ok_or(HintError::WrongHintData)?
-            .storage_proofs
-            .into_iter()
-            .flat_map(|nodes| nodes.into_iter())
-            .flat_map(|node| CairoTrieNode(node).into_iter())
-            .map(MaybeRelocatable::from)
-            .collect::<Vec<MaybeRelocatable>>(),
-    )?;
+    let data = storage
+        .proof
+        .contract_data
+        .ok_or(HintError::WrongHintData)?
+        .storage_proofs
+        .into_iter()
+        .flat_map(|nodes| nodes.into_iter())
+        .map(|node| {
+            let segment = vm.add_memory_segment();
+            vm.load_data(
+                segment,
+                &CairoTrieNode(node)
+                    .into_iter()
+                    .map(MaybeRelocatable::from)
+                    .collect::<Vec<MaybeRelocatable>>(),
+            )
+            .unwrap();
+            segment
+        })
+        .map(MaybeRelocatable::from)
+        .collect::<Vec<MaybeRelocatable>>();
+
+    vm.load_data(contract_state_nodes_ptr, &data)?;
 
     Ok(())
 }
@@ -252,7 +285,8 @@ pub fn hint_node_is_edge(
 ) -> Result<(), HintError> {
     let leaf_ptr = get_ptr_from_var_name(vars::ids::NODE, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    insert_value_into_ap(vm, Felt252::from(CairoTrieNode::from_memory(vm, leaf_ptr)?.is_edge()))
+    let node = CairoTrieNode::from_memory(vm, leaf_ptr)?;
+    insert_value_into_ap(vm, Felt252::from(node.is_edge()))
 }
 
 pub const HINT_SET_EVAL_DEPTH: &str =
@@ -269,16 +303,15 @@ pub fn hint_set_eval_depth(
         .try_into()
         .unwrap();
 
-    insert_value_into_ap(
-        vm,
-        Felt252::from(
-            (0..n_nodes)
-                .map(|idx| CairoTrieNode::from_memory(vm, (nodes_ptr + CairoTrieNode::n_fields() * idx).unwrap()).unwrap())
-                .map(|node| match node.0 {
-                    TrieNode::Binary { left: _, right: _ } => 1_u64,
-                    TrieNode::Edge { child: _, path } => path.len,
-                })
-                .sum::<u64>(),
-        ),
-    )
+    let sum = Felt252::from(
+        (0..n_nodes)
+            .map(|idx| CairoTrieNode::from_memory(vm, (vm.get_relocatable((nodes_ptr + idx).unwrap())).unwrap()).unwrap())
+            .map(|node| match node.0 {
+                TrieNode::Binary { left: _, right: _ } => 1_u64,
+                TrieNode::Edge { child: _, path } => path.len,
+            })
+            .sum::<u64>(),
+    );
+
+    insert_value_into_ap(vm, sum)
 }

@@ -37,16 +37,19 @@ func write_output_ptr{output_ptr: felt*}(
     %{ memory[ap] = 1 if (ids.mmr_metas_len == ids.counter) else 0 %}
     jmp end_loop if [ap] != 0, ap++;
 
-    assert [output_ptr + counter * 4] = mmr_metas[counter].id;
-    assert [output_ptr + counter * 4 + 1] = mmr_metas[counter].size;
-    assert [output_ptr + counter * 4 + 3] = mmr_metas[counter].root;
+    assert [output_ptr + counter * 3] = mmr_metas[counter].id;
+    assert [output_ptr + counter * 3 + 1] = mmr_metas[counter].size;
+    assert [output_ptr + counter * 3 + 2] = mmr_metas[counter].root;
 
     [ap] = counter + 1, ap++;
 
     jmp loop;
 
     end_loop:
-    let output_ptr = output_ptr + mmr_metas_len * 4;
+
+    // ensure we finish the loop
+    assert counter = mmr_metas_len;
+    let output_ptr = output_ptr + mmr_metas_len * 3;
 
     return ();
 }

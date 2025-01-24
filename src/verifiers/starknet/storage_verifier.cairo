@@ -169,7 +169,7 @@ func validate_storage_proofs{
         storage_address=storage_addresses[idx],
     );
 
-    local data: felt*;
+    let (data) = alloc();
     assert [data] = value;
     StarknetMemorizer.add(key=memorizer_key, data=data);
 
@@ -184,7 +184,7 @@ func traverse{pedersen_ptr: HashBuiltin*, bitwise_ptr: BitwiseBuiltin*, pow2_arr
 ) -> (root: felt, value: felt) {
     alloc_locals;
 
-    let node = nodes[n_nodes - 1];
+    local node: TrieNode* = nodes[n_nodes - 1];
     %{ memory[ap] = CairoTrieNode(ids.node).is_edge() %}
     jmp edge_leaf if [ap] != 0, ap++;
     return traverse_binary_leaf(nodes, n_nodes, expected_path);
@@ -310,7 +310,7 @@ func traverse_inner{
         );
     }
 
-    let node: TrieNode* = nodes[n_nodes - 1];
+    local node: TrieNode* = nodes[n_nodes - 1];
     %{ memory[ap] = CairoTrieNode(ids.node).is_edge() %}
     jmp edge_node if [ap] != 0, ap++;
 

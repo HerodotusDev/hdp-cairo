@@ -11,6 +11,7 @@ cairo-lang-casm.workspace = true
 cairo-lang-starknet-classes.workspace = true
 cairo-type-derive.workspace = true
 cairo-vm.workspace = true
+eth_essentials_cairo_vm_hints.workspace = true
 hex.workspace = true
 num-bigint.workspace = true
 num-traits.workspace = true
@@ -26,6 +27,4 @@ strum_macros.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 tracing.workspace = true
-
-eth_essentials_cairo_vm_hints.workspace = true
 types.workspace = true

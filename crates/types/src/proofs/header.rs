@@ -1,5 +1,5 @@
 use super::mmr::MmrMeta;
-use alloy::primitives::Bytes;
+use cairo_vm::Felt252;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
@@ -13,5 +13,5 @@ pub struct HeaderMmrMeta<T> {
 #[serde_as]
 pub struct HeaderProof {
     pub leaf_idx: u64,
-    pub mmr_path: Vec<Bytes>,
+    pub mmr_path: Vec<Felt252>,
 }

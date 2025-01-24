@@ -1,6 +1,7 @@
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.registers import get_label_location
 from starkware.cairo.common.uint256 import Uint256, felt_to_uint256
-from packages.eth_essentials.lib.utils import felt_divmod
+from packages.eth_essentials.lib.utils import bitwise_divmod
 from starkware.cairo.common.bitwise import bitwise_and
 
 namespace StarknetHeaderVersion {
@@ -39,71 +40,63 @@ namespace StarknetHeaderDecoder {
         return StarknetHeaderVersion.VERSION_1;
     }
 
-    func get_field{range_check_ptr}(fields: felt*, field: felt) -> (value: felt) {
-        // %{
-        //     i = 0
-        //     while i < 18:
-        //         print("Field ", i, ": ", hex(memory[ids.fields + i]))
-        //         i += 1
-
-        // %}
-
-        if (field == StarknetHeaderFields.TRANSACTION_COUNT) {
-            assert 1 = 0;
-            return (value=0);
-        }
-
-        if (field == StarknetHeaderFields.EVENT_COUNT) {
-            assert 1 = 0;
-            return (value=0);
-        }
-
-        if (field == StarknetHeaderFields.STATE_DIFF_LENGTH) {
-            assert 1 = 0;
-            return (value=0);
-        }
-
-        if (field == StarknetHeaderFields.L1_DATA_MODE) {
-            assert 1 = 0;
-            return (value=0);
-        }
+    func get_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(fields: felt*, field: felt) -> (value: felt) {
 
         let version = derive_header_version(fields);
         let index = get_header_field_index(version, field);
 
-        // todo: handle len decoding for v2 headers
+        if (field == StarknetHeaderFields.TRANSACTION_COUNT) {
+            return decode_concat_counts(fields[index], field);
+        }
+
+        if (field == StarknetHeaderFields.EVENT_COUNT) {
+            return decode_concat_counts(fields[index], field);
+        }
+
+        if (field == StarknetHeaderFields.STATE_DIFF_LENGTH) {
+            return decode_concat_counts(fields[index], field);
+        }
+
+        if (field == StarknetHeaderFields.L1_DATA_MODE) {
+            return decode_concat_counts(fields[index], field);
+        }
+
         return (value=fields[index]);
     }
 
-    // func decode_concat_counts{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(value_concat: felt, field: felt) -> (value: felt) {
-    //     if (field == StarknetHeaderFields.TRANSACTION_COUNT) {
-    //         // Extract using TRANSACTION_COUNT_MASK and get first 64 bits
-    //         let (masked) = bitwise_and(value_concat, TRANSACTION_COUNT_MASK);
-    //         let (value, _) = felt_divmod(masked, 2**192);
-    //         return (value=value);
-    //     }
+    func decode_concat_counts{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(value_concat: felt, field: felt) -> (value: felt) {
 
-    // if (field == StarknetHeaderFields.EVENT_COUNT) {
-    //         // Extract using EVENT_COUNT_MASK and get middle 64 bits
-    //         let (masked) = bitwise_and(value_concat, EVENT_COUNT_MASK);
-    //         let (value, _) = felt_divmod(masked, 2**128);
-    //         return (value=value);
-    //     }
+        if (field == StarknetHeaderFields.TRANSACTION_COUNT) {
+            let (value, _) = bitwise_divmod(value_concat, pow2_array[192]);
+            return (value=value);
+        }
 
-    // if (field == StarknetHeaderFields.STATE_DIFF_LENGTH) {
-    //         // Extract using STATE_DIFF_LENGTH_MASK and get next 64 bits
-    //         let (masked) = bitwise_and(value_concat, STATE_DIFF_LENGTH_MASK);
-    //         let (value, _) = felt_divmod(masked, 2**64);
-    //         return (value=value);
-    //     }
+        if (field == StarknetHeaderFields.EVENT_COUNT) {
+            let (_, remainder) = bitwise_divmod(value_concat, pow2_array[192]);
+            let (value, _) = bitwise_divmod(remainder, pow2_array[128]);
+            return (value=value);
+        }
 
-    // if (field == StarknetHeaderFields.L1_DATA_MODE) {
-    //         // Extract using L1_DA_MODE_MASK and get last byte
-    //         let (masked) = bitwise_and(value_concat, L1_DA_MODE_MASK);
-    //         let (value, _) = felt_divmod(masked, 2**56);
-    //         return (value=value);
-    //     }
-    // }
+        if (field == StarknetHeaderFields.STATE_DIFF_LENGTH) {
+            let (_, remainder) = bitwise_divmod(value_concat, pow2_array[128]);
+            let (value, _) = bitwise_divmod(remainder, pow2_array[64]);
+            return (value=value);
+        }
+
+        if (field == StarknetHeaderFields.L1_DATA_MODE) {
+            let (_, remainder) = bitwise_divmod(value_concat, pow2_array[64]);
+
+            let (msb_check, _) = bitwise_divmod(remainder, 2 ** 7);
+            if (msb_check == 1) {
+                return (value=0x1); // BLOB mode
+            }
+            return (value=0); // CALLDATA mode
+        }
+
+        // Should never reach here
+        assert 1 = 0;
+        return (value=0);
+    }
 
     func get_field_uint256{range_check_ptr}(fields: felt*, field: felt) -> Uint256 {
         let (felt_value) = get_field(fields, field);
