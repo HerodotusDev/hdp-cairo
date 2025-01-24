@@ -8,7 +8,10 @@ use cairo_vm::{
         hint_utils::{get_address_from_var_name, get_integer_from_var_name, get_ptr_from_var_name, insert_value_from_var_name, insert_value_into_ap},
     },
     types::{exec_scope::ExecutionScopes, relocatable::MaybeRelocatable},
-    vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
+    vm::{
+        errors::{hint_errors::HintError, memory_errors::MemoryError},
+        vm_core::VirtualMachine,
+    },
     Felt252,
 };
 use num_bigint::BigUint;
@@ -28,7 +31,7 @@ pub fn hint_batch_receipts_len(
     insert_value_into_ap(vm, Felt252::from(batch.transaction_receipts.len()))
 }
 
-pub const HINT_SET_RECEIPT: &str = "receipt = receipts[ids.idx]";
+pub const HINT_SET_RECEIPT: &str = "receipt = batch.receipts[ids.idx]";
 
 pub fn hint_set_receipt(
     vm: &mut VirtualMachine,
@@ -122,14 +125,11 @@ pub fn hint_receipt_proof_bytes_len(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let receipt = exec_scopes.get::<Receipt>(vars::scopes::RECEIPT)?;
+    let proof_bytes_len_ptr = get_ptr_from_var_name(vars::ids::PROOF_BYTES_LEN, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let proof_len: Vec<MaybeRelocatable> = receipt.proof.proof.into_iter().map(|f| f.len().into()).collect();
 
-    insert_value_from_var_name(
-        vars::ids::PROOF_BYTES_LEN,
-        MaybeRelocatable::Int(Felt252::from(receipt.proof.proof.len())),
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
-    )
+    vm.load_data(proof_bytes_len_ptr, &proof_len)?;
+    Ok(())
 }
 
 pub const HINT_RECEIPT_MPT_PROOF: &str = "segments.write_arg(ids.mpt_proof, [int(x, 16) for x in receipt.proof])";
@@ -142,18 +142,23 @@ pub fn hint_receipt_mpt_proof(
 ) -> Result<(), HintError> {
     let receipt = exec_scopes.get::<Receipt>(vars::scopes::RECEIPT)?;
     let mpt_proof_ptr = get_ptr_from_var_name(vars::ids::MPT_PROOF, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let proof_le_chunks: Vec<Vec<MaybeRelocatable>> = receipt
+
+    let proof_le_chunks: Result<Vec<MaybeRelocatable>, MemoryError> = receipt
         .proof
         .proof
         .into_iter()
         .map(|p| {
             p.chunks(8)
                 .map(|chunk| MaybeRelocatable::from(Felt252::from_bytes_be_slice(&chunk.iter().rev().copied().collect::<Vec<_>>())))
-                .collect()
+                .collect::<Vec<MaybeRelocatable>>()
+        })
+        .map(|f| {
+            let segment = vm.add_memory_segment();
+            vm.load_data(segment, &f).map(|_| MaybeRelocatable::from(segment))
         })
         .collect();
 
-    vm.write_arg(mpt_proof_ptr, &proof_le_chunks)?;
+    vm.load_data(mpt_proof_ptr, &proof_le_chunks?)?;
 
     Ok(())
 }

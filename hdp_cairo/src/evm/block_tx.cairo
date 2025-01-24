@@ -21,12 +21,13 @@ const BLOCK_TX_GET_MAX_FEE_PER_BLOB_GAS: felt252 = 13;
 const BLOCK_TX_GET_BLOB_VERSIONED_HASHES: felt252 = 14;
 const BLOCK_TX_GET_TX_TYPE: felt252 = 15;
 const BLOCK_TX_GET_SENDER: felt252 = 16;
+const BLOCK_TX_GET_HASH: felt252 = 17;
 
 #[derive(Serde, Drop)]
 pub struct BlockTxKey {
     pub chain_id: felt252,
     pub block_number: felt252,
-    pub index: felt252,
+    pub transaction_index: felt252,
 }
 
 pub enum TxType {
@@ -35,6 +36,7 @@ pub enum TxType {
     Eip2930,
     Eip1559,
     Eip4844,
+    Eip7702
 }
 
 #[generate_trait]
@@ -42,53 +44,61 @@ pub impl BlockTxImpl of BlockTxTrait {
     fn block_tx_get_nonce(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
         self.call_memorizer(BLOCK_TX_GET_NONCE, key)
     }
+
     fn block_tx_get_gas_price(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
         self.call_memorizer(BLOCK_TX_GET_GAS_PRICE, key)
     }
+
     fn block_tx_get_gas_limit(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
         self.call_memorizer(BLOCK_TX_GET_GAS_LIMIT, key)
     }
+
     fn block_tx_get_receiver(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
         self.call_memorizer(BLOCK_TX_GET_RECEIVER, key)
     }
+
     fn block_tx_get_value(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
         self.call_memorizer(BLOCK_TX_GET_VALUE, key)
     }
-    // fn block_tx_get_input(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
-    //     self.call_memorizer(BLOCK_TX_GET_INPUT, key)
-    // }
+
     fn block_tx_get_v(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
         self.call_memorizer(BLOCK_TX_GET_V, key)
     }
+
     fn block_tx_get_r(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
         self.call_memorizer(BLOCK_TX_GET_R, key)
     }
+
     fn block_tx_get_s(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
         self.call_memorizer(BLOCK_TX_GET_S, key)
     }
+
     fn block_tx_get_chain_id(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
         self.call_memorizer(BLOCK_TX_GET_CHAIN_ID, key)
     }
-    // fn block_tx_get_access_list(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
-    //     self.call_memorizer(BLOCK_TX_GET_ACCESS_LIST, key)
-    // }
+
     fn block_tx_get_max_fee_per_gas(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
         self.call_memorizer(BLOCK_TX_GET_MAX_FEE_PER_GAS, key)
     }
+
     fn block_tx_get_max_priority_fee_per_gas(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
         self.call_memorizer(BLOCK_TX_GET_MAX_PRIORITY_FEE_PER_GAS, key)
     }
-    // fn block_tx_get_blob_versioned_hashes(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
-    //     self.call_memorizer(BLOCK_TX_GET_BLOB_VERSIONED_HASHES, key)
-    // }
+
     fn block_tx_get_max_fee_per_blob_gas(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
         self.call_memorizer(BLOCK_TX_GET_MAX_FEE_PER_BLOB_GAS, key)
     }
+
     fn block_tx_get_tx_type(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
         self.call_memorizer(BLOCK_TX_GET_TX_TYPE, key)
     }
+
     fn block_tx_get_sender(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
         self.call_memorizer(BLOCK_TX_GET_SENDER, key)
+    }
+
+    fn block_tx_get_hash(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
+        self.call_memorizer(BLOCK_TX_GET_HASH, key)
     }
 
     fn call_memorizer(self: @EvmMemorizer, selector: felt252, key: BlockTxKey) -> u256 {
@@ -100,7 +110,7 @@ pub impl BlockTxImpl of BlockTxTrait {
                 *self.dict.offset,
                 key.chain_id,
                 key.block_number,
-                key.index,
+                key.transaction_index,
             ]
                 .span()
         )
