@@ -170,7 +170,7 @@ impl SyscallHandlerWrapper {
 
         match SyscallSelector::try_from(felt_from_ptr(vm, ptr)?)? {
             SyscallSelector::CallContract => run_handler(&mut syscall_handler.call_contract_handler, ptr, vm).await,
-            SyscallSelector::CallDebugger => unimplemented!(),
+            // SyscallSelector::CallDebugger => unimplemented!(),
         }?;
 
         syscall_handler.syscall_ptr = Some(*ptr);

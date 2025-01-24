@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use strum_macros::FromRepr;
 use syscall_handler::{felt_from_ptr, run_handler, traits, SyscallExecutionError, SyscallResult, SyscallSelector, WriteResponseResult};
 use tokio::{sync::RwLock, task};
-use types::cairo::{new_syscalls::CallDebuggerRequest, traits::CairoType};
+use types::cairo::{new_syscalls::{CallContractRequest, CallContractResponse}, traits::CairoType};
 
 #[derive(FromRepr)]
 pub enum CallHandlerId {
@@ -20,9 +20,8 @@ pub enum CallHandlerId {
 pub struct DebugHandler;
 
 impl traits::SyscallHandler for DebugHandler {
-    type Request = CallDebuggerRequest;
-
-    type Response = ();
+    type Request = CallContractRequest;
+    type Response = CallContractResponse;
 
     fn read_request(&mut self, vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Request> {
         let ret = Self::Request::from_memory(vm, *ptr)?;
@@ -31,22 +30,23 @@ impl traits::SyscallHandler for DebugHandler {
     }
 
     async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
-        let calldata_ptr = request.calldata_start;
-
         let call_handler_id = CallHandlerId::try_from(request.selector)?;
-        let calldata_length = request.calldata_length;
-
         match call_handler_id {
             CallHandlerId::Print => {
+                let field_len = (request.calldata_end - request.calldata_start)?;
                 let fields = vm
-                    .get_integer_range(calldata_ptr, calldata_length.try_into().unwrap())?
+                    .get_integer_range(request.calldata_start, field_len)?
                     .into_iter()
                     .map(|f| (*f.as_ref()))
                     .collect::<Vec<Felt252>>();
-                for (i, field) in fields.iter().enumerate() {
-                    println!("[{}]: {}", i, field);
+                
+                // Print single value without array notation if length is 1
+                if fields.len() == 1 {
+                    println!("{}", fields[0]);
+                } else {
+                    println!("{:?}", fields);
                 }
-                Ok(())
+                Ok(Self::Response { retdata_start: request.calldata_end, retdata_end: request.calldata_end })
             }
         }
     }
