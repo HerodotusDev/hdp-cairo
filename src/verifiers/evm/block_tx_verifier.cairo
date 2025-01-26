@@ -50,7 +50,7 @@ func verify_block_tx_proofs_inner{
         return ();
     }
 
-    %{ transaction = transactions[ids.idx] %}
+    %{ transaction = batch.transactions[ids.idx] %}
 
     local key: Uint256;
     %{ (ids.key.low, ids.key.high) = split_128(int(transaction.key, 16)) %}

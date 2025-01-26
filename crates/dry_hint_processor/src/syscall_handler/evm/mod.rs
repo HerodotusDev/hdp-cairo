@@ -12,7 +12,7 @@ use syscall_handler::traits::{CallHandler, SyscallHandler};
 use syscall_handler::{felt_from_ptr, SyscallExecutionError, SyscallResult, WriteResponseResult};
 use types::cairo::new_syscalls::{CallContractRequest, CallContractResponse};
 use types::cairo::traits::CairoType;
-use types::keys;
+use types::keys::evm;
 
 #[derive(FromRepr)]
 pub enum CallHandlerId {
@@ -55,7 +55,6 @@ impl SyscallHandler for CallContractHandler {
 
         let retdata_start = vm.add_memory_segment();
         let mut retdata_end = retdata_start;
-
         match call_handler_id {
             CallHandlerId::Header => {
                 let key = header::HeaderCallHandler::derive_key(vm, &mut calldata)?;
@@ -81,7 +80,22 @@ impl SyscallHandler for CallContractHandler {
                 result.to_memory(vm, retdata_end)?;
                 retdata_end += <storage::StorageCallHandler as CallHandler>::CallHandlerResult::n_fields();
             }
-            _ => {}
+            CallHandlerId::Transaction => {
+                let key = transaction::TransactionCallHandler::derive_key(vm, &mut calldata)?;
+                let function_id = transaction::TransactionCallHandler::derive_id(request.selector)?;
+                let result = transaction::TransactionCallHandler.handle(key.clone(), function_id, vm).await?;
+                self.key_set.insert(DryRunKey::Tx(key));
+                result.to_memory(vm, retdata_end)?;
+                retdata_end += <transaction::TransactionCallHandler as CallHandler>::CallHandlerResult::n_fields();
+            }
+            CallHandlerId::Receipt => {
+                let key = receipt::ReceiptCallHandler::derive_key(vm, &mut calldata)?;
+                let function_id = receipt::ReceiptCallHandler::derive_id(request.selector)?;
+                let result = receipt::ReceiptCallHandler.handle(key.clone(), function_id, vm).await?;
+                self.key_set.insert(DryRunKey::Receipt(key));
+                result.to_memory(vm, retdata_end)?;
+                retdata_end += <receipt::ReceiptCallHandler as CallHandler>::CallHandlerResult::n_fields();
+            }
         }
 
         Ok(Self::Response { retdata_start, retdata_end })
@@ -109,9 +123,11 @@ impl TryFrom<Felt252> for CallHandlerId {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum DryRunKey {
-    Account(keys::evm::account::Key),
-    Header(keys::evm::header::Key),
-    Storage(keys::evm::storage::Key),
+    Account(evm::account::Key),
+    Header(evm::header::Key),
+    Storage(evm::storage::Key),
+    Receipt(evm::receipt::Key),
+    Tx(evm::transaction::Key),
 }
 
 impl DryRunKey {
@@ -125,5 +141,13 @@ impl DryRunKey {
 
     pub fn is_storage(&self) -> bool {
         matches!(self, Self::Storage(_))
+    }
+
+    pub fn is_receipt(&self) -> bool {
+        matches!(self, Self::Receipt(_))
+    }
+
+    pub fn is_tx(&self) -> bool {
+        matches!(self, Self::Tx(_))
     }
 }
