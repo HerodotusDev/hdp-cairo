@@ -8,8 +8,7 @@ use starknet::{
         Provider, Url,
     },
 };
-use syscall_handler::traits::CallHandler;
-use syscall_handler::{SyscallExecutionError, SyscallResult};
+use syscall_handler::{traits::CallHandler, SyscallExecutionError, SyscallResult};
 use types::{
     cairo::{evm::storage::FunctionId, structs::Felt, traits::CairoType},
     keys::starknet::storage::{CairoKey, Key},
@@ -28,7 +27,8 @@ impl CallHandler for StorageCallHandler {
     fn derive_key(vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Key> {
         let ret = CairoKey::from_memory(vm, *ptr)?;
         *ptr = (*ptr + CairoKey::n_fields())?;
-        ret.try_into().map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))
+        ret.try_into()
+            .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))
     }
 
     fn derive_id(selector: Felt252) -> SyscallResult<Self::Id> {

@@ -1,5 +1,5 @@
-use crate::syscall_handler::evm::CallContractHandler as EvmCallContractHandler;
-use crate::syscall_handler::starknet::CallContractHandler as StarknetCallContractHandler;
+use std::{any::Any, cell::RefCell, collections::HashMap, rc::Rc};
+
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData, dict_manager::DictManager, hint_utils::get_ptr_from_var_name,
@@ -16,9 +16,7 @@ use cairo_vm::{
 };
 use hints::vars;
 use serde::{Deserialize, Serialize};
-use std::{any::Any, cell::RefCell, collections::HashMap, rc::Rc};
-use syscall_handler::traits;
-use syscall_handler::{felt_from_ptr, run_handler, SyscallExecutionError, SyscallResult, SyscallSelector, WriteResponseResult};
+use syscall_handler::{felt_from_ptr, run_handler, traits, SyscallExecutionError, SyscallResult, SyscallSelector, WriteResponseResult};
 use tokio::{sync::RwLock, task};
 use types::{
     cairo::{
@@ -26,6 +24,10 @@ use types::{
         traits::CairoType,
     },
     ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
+};
+
+use crate::syscall_handler::{
+    evm::CallContractHandler as EvmCallContractHandler, starknet::CallContractHandler as StarknetCallContractHandler,
 };
 
 pub mod evm;

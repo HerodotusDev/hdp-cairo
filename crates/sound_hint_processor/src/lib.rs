@@ -7,6 +7,8 @@ pub mod input;
 pub mod output;
 pub mod syscall_handler;
 
+use std::{any::Any, collections::HashMap};
+
 use cairo_lang_casm::{
     hints::{Hint, StarknetHint},
     operand::{BinOpOperand, DerefOrImmediate, Operation, Register, ResOperand},
@@ -23,7 +25,6 @@ use cairo_vm::{
 };
 use hints::{extensive_hints, hints, vars, ExtensiveHintImpl, HintImpl};
 use starknet_types_core::felt::Felt;
-use std::{any::Any, collections::HashMap};
 use syscall_handler::SyscallHandlerWrapper;
 use tokio::{runtime::Handle, task};
 use types::HDPInput;
@@ -114,7 +115,12 @@ impl HintProcessorLogic for CustomHintProcessor {
                 let syscall_ptr = get_ptr_from_res_operand(vm, system)?;
                 let syscall_handler = exec_scopes.get_mut_ref::<SyscallHandlerWrapper>(vars::scopes::SYSCALL_HANDLER)?;
                 return task::block_in_place(|| {
-                    Handle::current().block_on(async { syscall_handler.execute_syscall(vm, syscall_ptr).await.map(|_| HintExtension::default()) })
+                    Handle::current().block_on(async {
+                        syscall_handler
+                            .execute_syscall(vm, syscall_ptr)
+                            .await
+                            .map(|_| HintExtension::default())
+                    })
                 });
             } else {
                 return self

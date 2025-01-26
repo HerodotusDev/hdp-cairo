@@ -1,15 +1,20 @@
-use crate::syscall_handler::Memorizer;
-use cairo_vm::hint_processor::builtin_hint_processor::dict_manager::DictManager;
-use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
-use std::cell::RefCell;
-use std::rc::Rc;
-use syscall_handler::traits::CallHandler;
-use syscall_handler::{SyscallExecutionError, SyscallResult};
-use types::cairo::evm::receipt::CairoReceiptWithBloom;
+use std::{cell::RefCell, rc::Rc};
+
+use cairo_vm::{
+    hint_processor::builtin_hint_processor::dict_manager::DictManager, types::relocatable::Relocatable, vm::vm_core::VirtualMachine,
+    Felt252,
+};
+use syscall_handler::{traits::CallHandler, SyscallExecutionError, SyscallResult};
 use types::{
-    cairo::{evm::receipt::FunctionId, structs::Uint256, traits::CairoType},
+    cairo::{
+        evm::receipt::{CairoReceiptWithBloom, FunctionId},
+        structs::Uint256,
+        traits::CairoType,
+    },
     keys::evm::receipt::CairoKey,
 };
+
+use crate::syscall_handler::Memorizer;
 #[derive(Debug)]
 pub struct ReceiptCallHandler {
     pub memorizer: Memorizer,
@@ -60,7 +65,8 @@ impl CallHandler for ReceiptCallHandler {
         }
 
         data.resize(128000, 0); // 128kb is max tx size
-        let header = alloy_rlp::Header::decode(&mut data.as_slice()).map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?;
+        let header =
+            alloy_rlp::Header::decode(&mut data.as_slice()).map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?;
         let length = header.length_with_payload() + extra_len;
         let rlp = vm
             .get_integer_range(ptr, (length + 7) / 8)?

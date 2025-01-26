@@ -9,6 +9,8 @@ pub mod starknet;
 
 #[cfg(test)]
 mod test_utils {
+    use std::{env, path::PathBuf};
+
     use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
     use cairo_vm::{
         cairo_run::CairoRunConfig,
@@ -18,7 +20,6 @@ mod test_utils {
     use dry_hint_processor::syscall_handler::{evm, starknet, SyscallHandler, SyscallHandlerWrapper};
     use fetcher::{proof_keys::ProofKeys, Fetcher};
     use hints::vars;
-    use std::{env, path::PathBuf};
     use types::{ChainProofs, HDPDryRunInput, HDPInput};
 
     pub async fn run(compiled_class: CasmContractClass) {
@@ -62,7 +63,9 @@ mod test_utils {
         .unwrap();
 
         // Init the Cairo VM
-        let end = cairo_runner.initialize(cairo_run_config.allow_missing_builtins.unwrap_or(false)).unwrap();
+        let end = cairo_runner
+            .initialize(cairo_run_config.allow_missing_builtins.unwrap_or(false))
+            .unwrap();
 
         // Run the Cairo VM
         let mut hint_processor = dry_hint_processor::CustomHintProcessor::new(program_inputs);
@@ -110,7 +113,10 @@ mod test_utils {
         let (evm_proofs, starknet_proofs) = tokio::try_join!(fetcher.collect_evm_proofs(), fetcher.collect_starknet_proofs()).unwrap();
 
         let program_inputs = HDPInput {
-            chain_proofs: vec![ChainProofs::EthereumSepolia(evm_proofs), ChainProofs::StarknetSepolia(starknet_proofs)],
+            chain_proofs: vec![
+                ChainProofs::EthereumSepolia(evm_proofs),
+                ChainProofs::StarknetSepolia(starknet_proofs),
+            ],
             params: vec![],
             compiled_class,
         };
@@ -123,10 +129,13 @@ mod test_utils {
         .unwrap();
 
         // Init cairo runner
-        let mut cairo_runner = CairoRunner::new_v2(&program, cairo_run_config.layout, None, runner_mode, cairo_run_config.trace_enabled).unwrap();
+        let mut cairo_runner =
+            CairoRunner::new_v2(&program, cairo_run_config.layout, None, runner_mode, cairo_run_config.trace_enabled).unwrap();
 
         // Init the Cairo VM
-        let end = cairo_runner.initialize(cairo_run_config.allow_missing_builtins.unwrap_or(false)).unwrap();
+        let end = cairo_runner
+            .initialize(cairo_run_config.allow_missing_builtins.unwrap_or(false))
+            .unwrap();
 
         // Run the Cairo VM
         let mut hint_processor = sound_hint_processor::CustomHintProcessor::new(program_inputs);

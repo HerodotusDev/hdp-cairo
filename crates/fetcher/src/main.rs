@@ -1,6 +1,7 @@
+use std::{fs, path::PathBuf};
+
 use clap::{Parser, ValueHint};
 use fetcher::{parse_syscall_handler, Fetcher};
-use std::{fs, path::PathBuf};
 use types::ChainProofs;
 
 #[derive(Parser, Debug)]
@@ -20,7 +21,10 @@ async fn main() -> Result<(), fetcher::FetcherError> {
 
     let fetcher = Fetcher::new(&proof_keys);
     let (evm_proofs, starknet_proofs) = tokio::try_join!(fetcher.collect_evm_proofs(), fetcher.collect_starknet_proofs())?;
-    let chain_proofs = vec![ChainProofs::EthereumSepolia(evm_proofs), ChainProofs::StarknetSepolia(starknet_proofs)];
+    let chain_proofs = vec![
+        ChainProofs::EthereumSepolia(evm_proofs),
+        ChainProofs::StarknetSepolia(starknet_proofs),
+    ];
 
     fs::write(
         args.program_output,

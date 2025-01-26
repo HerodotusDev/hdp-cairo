@@ -1,15 +1,17 @@
-use crate::vars;
-use cairo_vm::hint_processor::builtin_hint_processor::builtin_hint_processor_definition::HintProcessorData;
-use cairo_vm::hint_processor::builtin_hint_processor::hint_utils::{get_ptr_from_var_name, insert_value_into_ap};
-use cairo_vm::types::relocatable::MaybeRelocatable;
+use std::collections::HashMap;
+
 use cairo_vm::{
-    types::exec_scope::ExecutionScopes,
+    hint_processor::builtin_hint_processor::{
+        builtin_hint_processor_definition::HintProcessorData,
+        hint_utils::{get_ptr_from_var_name, insert_value_into_ap},
+    },
+    types::{exec_scope::ExecutionScopes, relocatable::MaybeRelocatable},
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use std::collections::HashMap;
-use types::proofs::evm;
-use types::proofs::header::HeaderMmrMeta;
+use types::proofs::{evm, header::HeaderMmrMeta};
+
+use crate::vars;
 
 pub const HINT_HEADERS_WITH_MMR_META_PEAKS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(header_with_mmr_evm.mmr_meta.peaks))";
 

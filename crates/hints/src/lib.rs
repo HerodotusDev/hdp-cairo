@@ -1,10 +1,13 @@
+use std::collections::HashMap;
+
 use cairo_vm::{
-    hint_processor::{builtin_hint_processor::builtin_hint_processor_definition::HintProcessorData, hint_processor_definition::HintExtension},
+    hint_processor::{
+        builtin_hint_processor::builtin_hint_processor_definition::HintProcessorData, hint_processor_definition::HintExtension,
+    },
     types::exec_scope::ExecutionScopes,
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use std::collections::HashMap;
 
 pub mod contract_bootloader;
 pub mod decoder;

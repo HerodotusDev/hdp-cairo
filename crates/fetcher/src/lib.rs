@@ -1,21 +1,23 @@
+use std::{
+    collections::{HashMap, HashSet},
+    num::ParseIntError,
+};
+
 use alloy::hex::FromHexError;
 use dry_hint_processor::syscall_handler::{evm, starknet, SyscallHandler};
 use futures::{FutureExt, StreamExt};
 use indexer::models::IndexerError;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use proof_keys::starknet::ProofKeys as StarknetProofKeys;
-use proof_keys::{evm::ProofKeys as EvmProofKeys, ProofKeys};
+use proof_keys::{evm::ProofKeys as EvmProofKeys, starknet::ProofKeys as StarknetProofKeys, ProofKeys};
 use starknet_types_core::felt::FromStrError;
-use std::collections::{HashMap, HashSet};
-use std::num::ParseIntError;
 use thiserror::Error;
-use types::proofs::evm::Proofs as EvmProofs;
-use types::proofs::starknet::Proofs as StarknetProofs;
 use types::proofs::{
-    evm::{account::Account, header::Header as EvmHeader, receipt::Receipt, storage::Storage, transaction::Transaction},
+    evm::{
+        account::Account, header::Header as EvmHeader, receipt::Receipt, storage::Storage, transaction::Transaction, Proofs as EvmProofs,
+    },
     header::HeaderMmrMeta,
     mmr::MmrMeta,
-    starknet::{header::Header as StarknetHeader, storage::Storage as StarknetStorage},
+    starknet::{header::Header as StarknetHeader, storage::Storage as StarknetStorage, Proofs as StarknetProofs},
 };
 
 pub mod proof_keys;
@@ -65,6 +67,7 @@ pub struct ProgressBars {
 impl ProgressBars {
     pub fn new(proof_keys: &ProofKeys) -> Self {
         let multi_progress = MultiProgress::new();
+        #[allow(clippy::literal_string_with_formatting_args)]
         let style = ProgressStyle::with_template("[{elapsed_precise}] [{bar:40}] {pos}/{len} {msg}")
             .unwrap()
             .progress_chars("=> ");
@@ -164,7 +167,9 @@ impl<'a> Fetcher<'a> {
         }
 
         #[cfg(feature = "progress_bars")]
-        self.progress_bars.evm_header.safe_finish_with_message("ethereum header keys - finished");
+        self.progress_bars
+            .evm_header
+            .safe_finish_with_message("ethereum header keys - finished");
 
         // Collect account proofs
         let mut account_fut = futures::stream::iter(

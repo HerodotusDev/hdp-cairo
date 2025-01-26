@@ -1,4 +1,5 @@
-use crate::vars;
+use std::collections::HashMap;
+
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use cairo_vm::{
     any_box,
@@ -10,8 +11,9 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use std::collections::HashMap;
 use types::cairo::structs::CompiledClass;
+
+use crate::vars;
 
 pub const LOAD_PROGRAM: &str =
     "vm_load_program(\n    compiled_class.get_runnable_program(entrypoint_builtins=[]),\n    ids.compiled_class.bytecode_ptr\n)";

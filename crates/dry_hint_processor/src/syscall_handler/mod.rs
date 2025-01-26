@@ -1,6 +1,8 @@
 pub mod evm;
 pub mod starknet;
 
+use std::{any::Any, collections::HashMap, rc::Rc};
+
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{builtin_hint_processor_definition::HintProcessorData, hint_utils::get_ptr_from_var_name},
     types::{exec_scope::ExecutionScopes, relocatable::Relocatable},
@@ -11,12 +13,13 @@ use evm::CallContractHandler as EvmCallContractHandler;
 use hints::vars;
 use serde::{Deserialize, Serialize};
 use starknet::CallContractHandler as StarknetCallContractHandler;
-use std::{any::Any, collections::HashMap, rc::Rc};
 use syscall_handler::{felt_from_ptr, run_handler, traits, SyscallExecutionError, SyscallResult, SyscallSelector, WriteResponseResult};
 use tokio::{sync::RwLock, task};
-use types::cairo::traits::CairoType;
 use types::{
-    cairo::new_syscalls::{CallContractRequest, CallContractResponse},
+    cairo::{
+        new_syscalls::{CallContractRequest, CallContractResponse},
+        traits::CairoType,
+    },
     ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
 };
 

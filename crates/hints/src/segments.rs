@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData,
@@ -7,7 +9,6 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use std::collections::HashMap;
 
 pub const SEGMENTS_ADD: &str = "memory[ap] = to_felt_or_relocatable(segments.add())";
 
@@ -57,7 +58,8 @@ pub fn segments_add_evm_memorizer_offset(
     insert_value_into_ap(vm, Felt252::from(memorizer.offset))
 }
 
-pub const SEGMENTS_ADD_EVM_STARKNET_MEMORIZER_INDEX: &str = "memory[ap] = to_felt_or_relocatable(ids.starknet_memorizer.address_.segment_index)";
+pub const SEGMENTS_ADD_EVM_STARKNET_MEMORIZER_INDEX: &str =
+    "memory[ap] = to_felt_or_relocatable(ids.starknet_memorizer.address_.segment_index)";
 
 pub fn segments_add_evm_starknet_memorizer_index(
     vm: &mut VirtualMachine,

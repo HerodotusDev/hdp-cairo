@@ -55,7 +55,8 @@ impl StarknetBlock {
     }
 
     pub fn n_fields_from_first_word(first_word: Felt252) -> usize {
-        // 0x535441524b4e45545f424c4f434b5f4841534830 = int.from_bytes(b"STARKNET_BLOCK_HASH0", "big"),
+        // 0x535441524b4e45545f424c4f434b5f4841534830 = int.from_bytes(b"STARKNET_BLOCK_HASH0",
+        // "big"),
         if first_word == Felt252::from_hex("0x535441524b4e45545f424c4f434b5f4841534830").unwrap() {
             StarknetBlock0_13_2::n_fields()
         } else {
@@ -73,8 +74,12 @@ impl StarknetBlock {
 
     pub fn from_hash_fields(fields: Vec<Felt252>) -> Self {
         match fields.len() {
-            n if n == StarknetBlockLegacy::n_hash_fields() => StarknetBlock::Legacy(Box::new(StarknetBlockLegacy::from_hash_fields(fields))),
-            n if n == StarknetBlock0_13_2::n_hash_fields() => StarknetBlock::V0_13_2(Box::new(StarknetBlock0_13_2::from_hash_fields(fields))),
+            n if n == StarknetBlockLegacy::n_hash_fields() => {
+                StarknetBlock::Legacy(Box::new(StarknetBlockLegacy::from_hash_fields(fields)))
+            }
+            n if n == StarknetBlock0_13_2::n_hash_fields() => {
+                StarknetBlock::V0_13_2(Box::new(StarknetBlock0_13_2::from_hash_fields(fields)))
+            }
             _ => panic!("Invalid number of fields"),
         }
     }

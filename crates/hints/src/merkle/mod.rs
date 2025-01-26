@@ -1,14 +1,17 @@
-use crate::vars;
-use cairo_vm::hint_processor::builtin_hint_processor::builtin_hint_processor_definition::HintProcessorData;
-use cairo_vm::hint_processor::builtin_hint_processor::hint_utils::{get_relocatable_from_var_name, insert_value_from_var_name};
-use cairo_vm::types::relocatable::MaybeRelocatable;
+use std::collections::HashMap;
+
 use cairo_vm::{
-    types::exec_scope::ExecutionScopes,
+    hint_processor::builtin_hint_processor::{
+        builtin_hint_processor_definition::HintProcessorData,
+        hint_utils::{get_relocatable_from_var_name, insert_value_from_var_name},
+    },
+    types::{exec_scope::ExecutionScopes, relocatable::MaybeRelocatable},
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
 use num_bigint::BigUint;
-use std::collections::HashMap;
+
+use crate::vars;
 
 const FELT_TWO_POW_128: Felt252 = Felt252::from_hex_unchecked("0x0100000000000000000000000000000000");
 
@@ -69,7 +72,11 @@ pub fn hint_is_left_smaller(
     let right_flipped =
         BigUint::from_bytes_le(&right[1].to_bytes_be()) * FELT_TWO_POW_128.to_biguint() + BigUint::from_bytes_le(&right[1].to_bytes_be());
 
-    let insert = if left_flipped < right_flipped { Felt252::ONE } else { Felt252::ZERO };
+    let insert = if left_flipped < right_flipped {
+        Felt252::ONE
+    } else {
+        Felt252::ZERO
+    };
 
     insert_value_from_var_name(
         vars::ids::IS_LEFT_SMALLER,

@@ -1,10 +1,11 @@
-use super::header::HeaderMmrMeta;
 use account::Account;
 use header::Header;
 use receipt::Receipt;
 use serde::{Deserialize, Serialize};
 use storage::Storage;
 use transaction::Transaction;
+
+use super::header::HeaderMmrMeta;
 
 pub mod account;
 pub mod header;

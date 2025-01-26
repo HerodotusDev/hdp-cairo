@@ -1,12 +1,12 @@
-use crate::cairo::structs::Uint256;
 use alloy::{
     consensus::{Eip658Value, Receipt, ReceiptWithBloom},
     primitives::keccak256,
     rpc::types::Log,
 };
-
 use alloy_rlp::{Decodable, Encodable};
 use strum_macros::FromRepr;
+
+use crate::cairo::structs::Uint256;
 
 #[derive(FromRepr, Debug)]
 pub enum FunctionId {
