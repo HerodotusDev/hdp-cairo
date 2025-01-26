@@ -32,7 +32,6 @@ pub fn hint_target_task_hash(
 
     let target_task_hash = task_hash[0].to_biguint() + FELT_TWO_POW_128.to_biguint() * task_hash[1].to_biguint();
 
-    // TODO: add appropriate logger
     println!("Task Hash: 0x{:x}", target_task_hash);
 
     Ok(())

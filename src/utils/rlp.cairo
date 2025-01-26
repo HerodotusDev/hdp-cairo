@@ -514,8 +514,8 @@ func prepend_le_chunks{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array
 
     let (local result: felt*) = alloc();
 
-    let shifter = pow2_array[item_bytes_len * 8];
-    let devisor = pow2_array[(8 - item_bytes_len) * 8];
+    local shifter = pow2_array[item_bytes_len * 8];
+    local devisor = pow2_array[(8 - item_bytes_len) * 8];
 
     tempvar current_word = item;
     tempvar n_processed_words = 0;

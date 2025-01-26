@@ -135,10 +135,13 @@ func get_entry_point{range_check_ptr}(
 // block_context - a global context that is fixed throughout the block.
 // execution_context - The context for the current execution.
 func execute_entry_point{
+    pedersen_ptr: HashBuiltin*,
     range_check_ptr,
+    ecdsa_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    poseidon_ptr: PoseidonBuiltin*,
+    ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
     builtin_ptrs: BuiltinPointers*,
     builtin_params: BuiltinParams*,
     pow2_array: felt*,

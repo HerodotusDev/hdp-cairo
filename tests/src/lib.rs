@@ -89,6 +89,12 @@ mod test_utils {
                 evm::DryRunKey::Storage(value) => {
                     proof_keys.evm.storage_keys.insert(value);
                 }
+                evm::DryRunKey::Receipt(value) => {
+                    proof_keys.evm.receipt_keys.insert(value);
+                }
+                evm::DryRunKey::Tx(value) => {
+                    proof_keys.evm.transaction_keys.insert(value);
+                }
             }
         }
 

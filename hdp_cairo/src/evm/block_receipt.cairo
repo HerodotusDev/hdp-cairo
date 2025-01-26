@@ -13,7 +13,7 @@ const BLOCK_RECEIPT_GET_LOGS: felt252 = 3;
 pub struct BlockReceiptKey {
     pub chain_id: felt252,
     pub block_number: felt252,
-    pub index: felt252,
+    pub transaction_index: felt252,
 }
 
 #[generate_trait]
@@ -40,7 +40,7 @@ pub impl BlockReceiptImpl of BlockReceiptTrait {
                 *self.dict.offset,
                 key.chain_id,
                 key.block_number,
-                key.index,
+                key.transaction_index,
             ]
                 .span(),
         )
