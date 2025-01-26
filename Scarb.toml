@@ -1,5 +1,4 @@
 [workspace]
-name = "hdp_cairo"
 version = "0.1.0"
 edition = "2023_11"
 

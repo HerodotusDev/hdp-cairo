@@ -242,12 +242,12 @@ impl<'a> Fetcher<'a> {
             receipts.insert(transaction_receipt);
 
             #[cfg(feature = "progress_bars")]
-            self.progress_bars.evm_receipt.safe_inc();
+            self.progress_bars.evm_receipts.safe_inc();
         }
 
         #[cfg(feature = "progress_bars")]
         self.progress_bars
-            .evm_receipt
+            .evm_receipts
             .safe_finish_with_message("ethereum receipt keys - finished");
 
         // Collect storage proofs
@@ -269,12 +269,12 @@ impl<'a> Fetcher<'a> {
             transactions.insert(transaction);
 
             #[cfg(feature = "progress_bars")]
-            self.progress_bars.evm_transaction.safe_inc();
+            self.progress_bars.evm_transactions.safe_inc();
         }
 
         #[cfg(feature = "progress_bars")]
         self.progress_bars
-            .evm_transaction
+            .evm_transactions
             .safe_finish_with_message("ethereum storage keys - finished");
 
         Ok(EvmProofs {
