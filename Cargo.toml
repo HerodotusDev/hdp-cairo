@@ -11,15 +11,13 @@ members = [
     "crates/indexer",
     "crates/syscall_handler",
     "crates/types",
-    "tests/modules",
+    "tests",
 ]
 
 [workspace.dependencies]
 alloy = { version = "0.7.2", features = ["full"] }
 alloy-rlp = { version = "0.3.5", features = ["derive"] }
-bincode = { version = "2.0.0-rc.3", default-features = false, features = [
-    "serde",
-] }
+bincode = { version = "2.0.0-rc.3", default-features = false, features = ["serde"]}
 cairo-lang-casm = { version = "2.10.0-rc.1", default-features = false }
 cairo-lang-starknet-classes = "2.10.0-rc.1"
 cairo-type-derive = { git = "https://github.com/keep-starknet-strange/snos.git", rev = "35a300a10d2107482ada440b5025ee2f651afbd4" }
@@ -40,21 +38,26 @@ serde = "1.0.215"
 serde_json = "1.0.132"
 serde_with = { version = "3.11.0", features = ["hex"] }
 sha3 = "0.10.8"
+starknet = "0.13.0"
 starknet-core = { version = "0.11.1", default-features = false }
 starknet-crypto = { version = "0.7.1", default-features = false }
-starknet-types-core = { version = "0.1.5", default-features = false }
+starknet-types-core = { version = "0.1.6", default-features = false }
 strum_macros = "0.26.4"
 thiserror = "1.0.64"
 tiny-keccak = { version = "2.0.2", features = ["keccak"] }
 tokio = { version = "1.41.1", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
+version-compare = "=0.0.11"
+eth-trie-proofs = { git = "https://github.com/HerodotusDev/eth-trie-proofs.git", branch = "main" }
 
+config = { path = "crates/config" }
 dry_hint_processor = { path = "crates/dry_hint_processor" }
 eth_essentials_cairo_vm_hints = { path = "packages/eth_essentials/cairo_vm_hints" }
 fetcher = { path = "crates/fetcher" }
 hints = { path = "crates/hints" }
 indexer = { path = "crates/indexer" }
+pathfinder_gateway_types = { git = "https://github.com/eqlabs/pathfinder", package = "starknet-gateway-types" }
 sound_hint_processor = { path = "crates/sound_hint_processor" }
 syscall_handler = { path = "crates/syscall_handler" }
 types = { path = "crates/types" }

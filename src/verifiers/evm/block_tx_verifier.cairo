@@ -29,7 +29,7 @@ func verify_block_tx_proofs{
 }() {
     alloc_locals;
 
-    tempvar n_tx_proofs: felt = nondet %{ len(batch.transactions) %};
+    tempvar n_tx_proofs: felt = nondet %{ len(batch_evm.transactions) %};
     verify_block_tx_proofs_inner(n_tx_proofs, 0);
 
     return ();
@@ -53,10 +53,7 @@ func verify_block_tx_proofs_inner{
     %{ transaction = batch.transactions[ids.idx] %}
 
     local key: Uint256;
-    %{
-        from tools.py.utils import split_128
-        (ids.key.low, ids.key.high) = split_128(int(transaction.key, 16))
-    %}
+    %{ (ids.key.low, ids.key.high) = split_128(int(transaction.key, 16)) %}
 
     local key_leading_zeros: felt;
     %{ ids.key_leading_zeros = len(transaction.key.lstrip("0x")) - len(transaction.key.lstrip("0x").lstrip("0")) %}

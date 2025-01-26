@@ -38,7 +38,6 @@ func main{
     alloc_locals;
 
     %{
-        from tools.py.schema import HDPDryRunInput
         dry_run_input = HDPDryRunInput.Schema().load(program_input)
         params = dry_run_input.params
         compiled_class = dry_run_input.compiled_class
@@ -48,10 +47,7 @@ func main{
     let (params) = alloc();
     local compiled_class: CompiledClass*;
 
-    %{
-        from contract_bootloader.contract_class.compiled_class_hash_utils import get_compiled_class_struct
-        ids.compiled_class = segments.gen_arg(get_compiled_class_struct(compiled_class=compiled_class))
-    %}
+    %{ ids.compiled_class = segments.gen_arg(get_compiled_class_struct(compiled_class=compiled_class)) %}
 
     %{
         ids.params_len = len(params)
@@ -87,14 +83,10 @@ func main{
 
     %{
         if '__dict_manager' not in globals():
-            from starkware.cairo.common.dict import DictManager
             __dict_manager = DictManager()
     %}
 
-    %{
-        from contract_bootloader.dryrun_syscall_handler import DryRunSyscallHandler
-        syscall_handler = DryRunSyscallHandler(segments=segments, dict_manager=__dict_manager)
-    %}
+    %{ syscall_handler = DryRunSyscallHandler(segments=segments, dict_manager=__dict_manager) %}
 
     tempvar calldata: felt* = nondet %{ segments.add() %};
 

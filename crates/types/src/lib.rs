@@ -4,17 +4,25 @@
 #![forbid(unsafe_code)]
 
 pub mod cairo;
+pub mod error;
 pub mod keys;
 pub mod param;
 pub mod proofs;
 
-use alloy::primitives::ChainId;
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use param::Param;
-use proofs::Proofs;
+use proofs::{evm, starknet};
 use serde::{Deserialize, Serialize};
 
-pub const RPC: &str = "RPC";
+pub const RPC_URL_ETHEREUM: &str = "RPC_URL_ETHEREUM";
+pub const RPC_URL_FEEDER_GATEWAY: &str = "RPC_URL_FEEDER_GATEWAY";
+pub const RPC_URL_HERODOTUS_INDEXER: &str = "RPC_URL_HERODOTUS_INDEXER";
+pub const RPC_URL_STARKNET: &str = "RPC_URL_STARKNET";
+
+pub const ETHEREUM_MAINNET_CHAIN_ID: u128 = 0x1;
+pub const ETHEREUM_TESTNET_CHAIN_ID: u128 = 0xaa36a7;
+pub const STARKNET_MAINNET_CHAIN_ID: u128 = 0x534e5f4d41494e;
+pub const STARKNET_TESTNET_CHAIN_ID: u128 = 0x534e5f5345504f4c4941;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct HDPDryRunInput {
@@ -31,15 +39,19 @@ pub struct HDPInput {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ChainProofs {
-    EthereumMainnet(Proofs),
-    EthereumSepolia(Proofs),
+    EthereumMainnet(evm::Proofs),
+    EthereumSepolia(evm::Proofs),
+    StarknetMainnet(starknet::Proofs),
+    StarknetSepolia(starknet::Proofs),
 }
 
 impl ChainProofs {
-    pub fn chain_id(&self) -> ChainId {
+    pub fn chain_id(&self) -> u128 {
         match self {
-            ChainProofs::EthereumMainnet(_) => 1,
-            ChainProofs::EthereumSepolia(_) => 11155111,
+            ChainProofs::EthereumMainnet(_) => 0x1,
+            ChainProofs::EthereumSepolia(_) => 0xaa36a7,
+            ChainProofs::StarknetMainnet(_) => 0x534e5f4d41494e,
+            ChainProofs::StarknetSepolia(_) => 0x534e5f5345504f4c4941,
         }
     }
 }

@@ -16,7 +16,9 @@ from starkware.cairo.common.builtin_poseidon.poseidon import (
 from packages.eth_essentials.lib.utils import bitwise_divmod
 from src.memorizers.starknet.memorizer import StarknetMemorizer, StarknetHashParams
 from src.decoders.starknet.header_decoder import StarknetHeaderDecoder, StarknetHeaderFields
-from src.types import ChainInfo
+from src.types import ChainInfo, TrieNode, TrieNodeBinary, TrieNodeEdge
+
+const STARKNET_STATE_V0 = 28355430774503553497671514844211693180464;
 
 func verify_proofs{
     range_check_ptr,
@@ -29,7 +31,7 @@ func verify_proofs{
 }() {
     alloc_locals;
 
-    tempvar n_storage_items: felt = nondet %{ len(batch.storages) %};
+    tempvar n_storage_items: felt = nondet %{ len(batch_starknet.storages) %};
     verify_proofs_loop(n_storage_items, 0);
 
     return ();
@@ -44,14 +46,16 @@ func verify_proofs_loop{
     starknet_memorizer: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
-}(n_storage_items: felt, index: felt) {
+}(n_storage_items: felt, idx: felt) {
     alloc_locals;
 
-    if (n_storage_items == index) {
+    if (n_storage_items == idx) {
         return ();
     }
-    local block_number: felt;
-    %{ ids.block_number = batch["storages"][ids.index]["block_number"] %}
+
+    %{ storage_starknet = batch_starknet.storages[ids.idx] %}
+
+    tempvar block_number: felt = nondet %{ storage_starknet.block_number %};
 
     let memorizer_key = StarknetHashParams.header(
         chain_id=chain_info.id, block_number=block_number
@@ -61,9 +65,9 @@ func verify_proofs_loop{
         header_data, StarknetHeaderFields.STATE_ROOT
     );
 
-    verify_proofs_inner(state_root, block_number, index);
+    verify_proofs_inner(state_root, block_number, idx);
 
-    return verify_proofs_loop(n_storage_items, index + 1);
+    return verify_proofs_loop(n_storage_items, idx + 1);
 }
 
 func verify_proofs_inner{
@@ -77,16 +81,11 @@ func verify_proofs_inner{
 }(state_root: felt, block_number: felt, index: felt) {
     alloc_locals;
 
-    let storage_addresses: felt* = alloc();
-    local state_root: felt;
-    local storage_count: felt;
-    local contract_address: felt;
-    %{
-        storage_proof = batch["storages"][ids.index]
-        segments.write_arg(ids.storage_addresses, [int(key, 16) for key in storage_proof["storage_addresses"]])
-        ids.storage_count = len(storage_proof["storage_addresses"])
-        ids.contract_address = int(storage_proof["contract_address"], 16)
-    %}
+    tempvar storage_count: felt = nondet %{ len(storage_starknet.storage_addresses) %};
+    tempvar contract_address: felt = nondet %{ storage_starknet.contract_address %};
+
+    let (storage_addresses: felt*) = alloc();
+    %{ segments.write_arg(ids.storage_addresses, [int(x, 16) for x in storage_starknet.storage_addresses])) %}
 
     // Compute contract_root and write values to memorizer
     with contract_address, storage_addresses, block_number {
@@ -94,14 +93,9 @@ func verify_proofs_inner{
     }
 
     // Compute contract_state_hash
-    local class_hash: felt;
-    local nonce: felt;
-    local contract_state_hash_version: felt;
-    %{
-        ids.class_hash = int(storage_proof["proof"]["contract_data"]["class_hash"], 16) 
-        ids.nonce = int(storage_proof["proof"]["contract_data"]["nonce"], 16)
-        ids.contract_state_hash_version = int(storage_proof["proof"]["contract_data"]["contract_state_hash_version"], 16)
-    %}
+    tempvar class_hash: felt = nondet %{ storage_starknet.proof.contract_data.class_hash %};
+    tempvar nonce: felt = nondet %{ storage_starknet.proof.contract_data.nonce %};
+    tempvar contract_state_hash_version: felt = nondet %{ storage_starknet.proof.contract_data.contract_state_hash_version %};
 
     let (hash_value) = hash2{hash_ptr=pedersen_ptr}(class_hash, contract_root);
     let (hash_value) = hash2{hash_ptr=pedersen_ptr}(hash_value, nonce);
@@ -110,23 +104,21 @@ func verify_proofs_inner{
     );
 
     // Compute contract_state_hash
-    %{ vm_enter_scope(dict(nodes=storage_proof["proof"]["contract_proof"])) %}
-    let (contract_nodes, contract_nodes_len) = load_nodes();
+    tempvar contract_nodes_len: felt = nondet %{ len(storage_starknet.proof.contract_proof) %};
+    let (contract_nodes: felt**) = alloc();
+    %{ segments.write_arg(ids.contract_nodes, storage_starknet.proof.contract_proof) %}
+
     let (contract_tree_root, expected_contract_state_hash) = traverse(
-        contract_nodes, contract_nodes_len, contract_address
+        cast(contract_nodes, TrieNode**), contract_nodes_len, contract_address
     );
-    %{ vm_exit_scope() %}
 
     // Assert Validity
     assert contract_state_hash = expected_contract_state_hash;
 
-    local class_commitment: felt;
-    %{ ids.class_commitment = int(storage_proof["proof"]["class_commitment"], 16) %}
-
     let (hash_chain: felt*) = alloc();
-    assert hash_chain[0] = 28355430774503553497671514844211693180464;  // STARKNET_STATE_V0
+    assert hash_chain[0] = STARKNET_STATE_V0;
     assert hash_chain[1] = contract_tree_root;
-    assert hash_chain[2] = class_commitment;
+    assert hash_chain[2] = nondet %{ storage_starknet.proof.class_commitment %};
 
     let (computed_state_root) = poseidon_hash_many(3, hash_chain);
     assert state_root = computed_state_root;
@@ -147,55 +139,53 @@ func validate_storage_proofs{
     contract_address: felt,
     storage_addresses: felt*,
     block_number: felt,
-}(contract_root: felt, storage_count: felt, index: felt) -> (root: felt) {
+}(contract_root: felt, storage_count: felt, idx: felt) -> (root: felt) {
     alloc_locals;
-    if (index == storage_count) {
+
+    if (storage_count == idx) {
         return (root=contract_root);
     }
 
     // Compute contract_root
-    %{
-        vm_enter_scope({
-            'nodes': storage_proof["proof"]["contract_data"]["storage_proofs"][ids.index],
-        })
-    %}
-    let (contract_state_nodes, contract_state_nodes_len) = load_nodes();
+    tempvar contract_state_nodes_len: felt = nondet %{ len(storage_starknet.proof.contract_data.storage_proofs[ids.idx]) %};
+    let (contract_state_nodes: felt**) = alloc();
+    %{ segments.write_arg(ids.contract_state_nodes, storage_starknet.proof.contract_data.storage_proofs[ids.idx]) %}
+
     let (new_contract_root, value) = traverse(
-        contract_state_nodes, contract_state_nodes_len, storage_addresses[index]
+        cast(contract_state_nodes, TrieNode**), contract_state_nodes_len, storage_addresses[idx]
     );
-    %{ vm_exit_scope() %}
 
     // Assert that the contract root is consistent between storage slots
-    if (index != 0) {
+    if (idx != 0) {
         with_attr error_message("Contract Root Mismatch!") {
             assert contract_root = new_contract_root;
         }
     }
+
     let memorizer_key = StarknetHashParams.storage(
         chain_id=chain_info.id,
         block_number=block_number,
         contract_address=contract_address,
-        storage_address=storage_addresses[index],
+        storage_address=storage_addresses[idx],
     );
 
-    // ideally we could cast this somehow, but this is a quick fix
     let (data) = alloc();
     assert [data] = value;
-
-    // We need to cast the value to a felt* to match the expected input type.
     StarknetMemorizer.add(key=memorizer_key, data=data);
-    return validate_storage_proofs(new_contract_root, storage_count, index + 1);
+
+    return validate_storage_proofs(new_contract_root, storage_count, idx + 1);
 }
 
 // Function used to traverse the passed nodes. The nodes are hashed from the leaf to the root.
 // This function can be used for inclusion or non-inclusion proofs. In case of non-inclusion,
 // the function will return the root and a zero value.
 func traverse{pedersen_ptr: HashBuiltin*, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
-    nodes: felt**, n_nodes: felt, expected_path: felt
+    nodes: TrieNode**, n_nodes: felt, expected_path: felt
 ) -> (root: felt, value: felt) {
     alloc_locals;
 
-    %{ memory[ap] = nodes_types[ids.n_nodes - 1] %}
+    local node: TrieNode* = nodes[n_nodes - 1];
+    %{ memory[ap] = CairoTrieNode(ids.node).is_edge() %}
     jmp edge_leaf if [ap] != 0, ap++;
     return traverse_binary_leaf(nodes, n_nodes, expected_path);
 
@@ -207,25 +197,17 @@ func traverse{pedersen_ptr: HashBuiltin*, bitwise_ptr: BitwiseBuiltin*, pow2_arr
 // This could be an inclusion or non-inclusion proof.
 func traverse_edge_leaf{
     pedersen_ptr: HashBuiltin*, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
-}(nodes: felt**, n_nodes: felt, expected_path: felt) -> (root: felt, value: felt) {
+}(nodes: TrieNode**, n_nodes: felt, expected_path: felt) -> (root: felt, value: felt) {
     alloc_locals;
 
-    let leaf = nodes[n_nodes - 1];
+    let leaf: TrieNodeEdge* = cast(nodes[n_nodes - 1], TrieNodeEdge*);
     let leaf_hash = hash_edge_node(leaf);
-    let node_path = leaf[1];
+    let node_path = leaf.value;
+
     // First we precompute the eval depth of the proof via hint.
     // In case of non-inclusion, we dont nececcary need to traverse the entire depth of the tree.
     // The eval depth is how many bits we went down the binary tree from the root for the proof.
-    local eval_depth: felt;
-    %{
-        eval_depth = 0
-        for i, node in enumerate(nodes_types):
-            if node == 0:
-                eval_depth += 1
-            else:
-                eval_depth += nodes[i][2]
-        ids.eval_depth = eval_depth
-    %}
+    tempvar eval_depth: felt = nondet %{ [ if CairoTrieNode(ids.nodes[i]).is_edge() CairoTrieNode(ids.nodes[i]).path_len else 1 for i in ids.n_nodes ].sum() %};
 
     // If the eval_depth is not 251, we no we are dealing with a non-inclusion proof. (we can also have non-inclusion proofs with eval depth 251 though)
     // To verify these proofs correctly, we need to shift the traversed path, so it matches the length of the expected path (251 bits).
@@ -241,7 +223,8 @@ func traverse_edge_leaf{
     //                          _____|   |_____
     //                         |               |
     //             eval_depth - leaf_len       eval_depth
-    local edge_node_shift = 251 - (eval_depth - leaf[2]);
+    local edge_node_shift = 251 - (eval_depth - leaf.len);
+
     // Since devisions are impractical in Cairo, we traverse the proof from the bottom up.
     // To track where we are in the tree, we use this variable: path_length_pow2
     // We initializer it with the shifted index we computed above (pow of 2)
@@ -250,17 +233,17 @@ func traverse_edge_leaf{
 
     with nodes {
         let (root, traversed_path, traversed_eval_depth) = traverse_inner(
-            n_nodes - 1, expected_path, leaf_hash, node_path, edge_node_start_position, leaf[2]
+            n_nodes - 1, expected_path, leaf_hash, node_path, edge_node_start_position, leaf.len
         );
     }
 
     // As we precomputed the eval depth, we need to validate the hint here.
     assert traversed_eval_depth = eval_depth;
 
-    let (proof_mode) = derive_proof_mode(leaf[1], edge_node_start_position, expected_path);
+    let (proof_mode) = derive_proof_mode(leaf.value, edge_node_start_position, expected_path);
     if (proof_mode == 1) {
         assert traversed_path = expected_path;
-        return (root=root, value=leaf[0]);
+        return (root=root, value=leaf.child);
     } else {
         // If we have a valid non-inclusion proof, we return 0 as value.
         assert_subpath(traversed_path, expected_path, edge_node_start_position);
@@ -272,10 +255,10 @@ func traverse_edge_leaf{
 // This is always an inclusion proof.
 func traverse_binary_leaf{
     pedersen_ptr: HashBuiltin*, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
-}(nodes: felt**, n_nodes: felt, expected_path: felt) -> (root: felt, value: felt) {
+}(nodes: TrieNode**, n_nodes: felt, expected_path: felt) -> (root: felt, value: felt) {
     alloc_locals;
 
-    let leaf = nodes[n_nodes - 1];
+    let leaf: TrieNodeBinary* = cast(nodes[n_nodes - 1], TrieNodeBinary*);
     let leaf_hash = hash_binary_node(leaf);
 
     // In this case, the initial path is the least signficant bit of the expected path.
@@ -291,13 +274,24 @@ func traverse_binary_leaf{
 
     // If the leaf node is a binary node, we always have inclusion.
     assert traversed_path = expected_path;
-    return (root=root, value=leaf[node_path]);
+
+    if (node_path == 0) {
+        return (root=root, value=leaf.left);
+    }
+
+    if (node_path == 1) {
+        return (root=root, value=leaf.right);
+    }
+
+    assert 0 = 1;
+
+    return (root=0, value=0);
 }
 
 // Inner traverse function used to traverse the nodes.
 // This function will return the path is took through the tree, along with the computed root.
 func traverse_inner{
-    pedersen_ptr: HashBuiltin*, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, nodes: felt**
+    pedersen_ptr: HashBuiltin*, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, nodes: TrieNode**
 }(
     n_nodes: felt,
     expected_path: felt,
@@ -307,6 +301,7 @@ func traverse_inner{
     traversed_eval_depth: felt,
 ) -> (root: felt, traversed_path: felt, traversed_eval_depth: felt) {
     alloc_locals;
+
     if (n_nodes == 0) {
         return (
             root=hash_value,
@@ -315,22 +310,23 @@ func traverse_inner{
         );
     }
 
-    let node = nodes[n_nodes - 1];
-    %{ memory[ap] = nodes_types[ids.n_nodes - 1] %}
+    local node: TrieNode* = nodes[n_nodes - 1];
+    %{ memory[ap] = CairoTrieNode(ids.node).is_edge() %}
     jmp edge_node if [ap] != 0, ap++;
 
     // binary_node:
+    let node_binary = cast(node, TrieNodeBinary*);
     let (result) = bitwise_and(expected_path, path_length_pow2);
     local new_path: felt;
     if (result == 0) {
-        assert hash_value = node[0];
+        assert hash_value = node_binary.left;
         new_path = traversed_path;
     } else {
-        assert hash_value = node[1];
+        assert hash_value = node_binary.right;
         new_path = traversed_path + path_length_pow2;
     }
     let next_path_length_pow2 = path_length_pow2 * 2;
-    let next_hash = hash_binary_node(node);
+    let next_hash = hash_binary_node(node_binary);
 
     return traverse_inner(
         n_nodes - 1,
@@ -342,10 +338,11 @@ func traverse_inner{
     );
 
     edge_node:
-    assert hash_value = node[0];
-    let next_path = traversed_path + node[1] * path_length_pow2;
-    let next_path_length_pow2 = path_length_pow2 * pow2_array[node[2]];
-    let next_hash = hash_edge_node(node);
+    let node_edge = cast(node, TrieNodeEdge*);
+    assert hash_value = node_edge.child;
+    let next_path = traversed_path + node_edge.value * path_length_pow2;
+    let next_path_length_pow2 = path_length_pow2 * pow2_array[node_edge.len];
+    let next_hash = hash_edge_node(node_edge);
 
     return traverse_inner(
         n_nodes - 1,
@@ -353,20 +350,20 @@ func traverse_inner{
         next_hash,
         next_path,
         next_path_length_pow2,
-        traversed_eval_depth + node[2],
+        traversed_eval_depth + node_edge.len,
     );
 }
 
 // Hash function for binary nodes.
-func hash_binary_node{pedersen_ptr: HashBuiltin*}(node: felt*) -> felt {
-    let (node_hash) = hash2{hash_ptr=pedersen_ptr}(node[0], node[1]);
+func hash_binary_node{pedersen_ptr: HashBuiltin*}(node: TrieNodeBinary*) -> felt {
+    let (node_hash) = hash2{hash_ptr=pedersen_ptr}(node.left, node.right);
     return node_hash;
 }
 
 // Hash function for edge nodes.
-func hash_edge_node{pedersen_ptr: HashBuiltin*}(node: felt*) -> felt {
-    let (node_hash) = hash2{hash_ptr=pedersen_ptr}(node[0], node[1]);
-    return node_hash + node[2];
+func hash_edge_node{pedersen_ptr: HashBuiltin*}(node: TrieNodeEdge*) -> felt {
+    let (node_hash) = hash2{hash_ptr=pedersen_ptr}(node.child, node.value);
+    return node_hash + node.len;
 }
 
 // If the leaf node is an edge node, there are two cases:
@@ -416,26 +413,4 @@ func assert_subpath{bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
     }
 
     return ();
-}
-
-// Loads the proof nodes into memory.
-func load_nodes() -> (nodes: felt**, len: felt) {
-    alloc_locals;
-    let (nodes: felt**) = alloc();
-    local len: felt;
-    %{
-        nodes_types = []
-        parsed_nodes = []
-        for node in nodes:
-            if "binary" in node:
-                nodes_types.append(0)
-                parsed_nodes.append([int(node["binary"]["left"], 16), int(node["binary"]["right"], 16)])
-            else:
-                nodes_types.append(1)
-                parsed_nodes.append([int(node["edge"]["child"], 16), int(node["edge"]["path"]["value"], 16), node["edge"]["path"]["len"]])
-        ids.len = len(parsed_nodes)
-        nodes = parsed_nodes
-        segments.write_arg(ids.nodes, parsed_nodes)
-    %}
-    return (nodes=nodes, len=len);
 }

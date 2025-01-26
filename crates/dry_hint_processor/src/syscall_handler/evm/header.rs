@@ -12,8 +12,8 @@ use types::{
         structs::Uint256,
         traits::CairoType,
     },
-    keys::header::{CairoKey, Key},
-    RPC,
+    keys::evm::header::{CairoKey, Key},
+    RPC_URL_ETHEREUM,
 };
 
 #[derive(Debug, Default)]
@@ -43,7 +43,7 @@ impl CallHandler for HeaderCallHandler {
     }
 
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
-        let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC).unwrap()).unwrap());
+        let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap());
         let value = provider
             .get_block_by_number(key.block_number.into(), BlockTransactionsKind::Hashes)
             .await

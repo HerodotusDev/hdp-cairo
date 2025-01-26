@@ -1,0 +1,110 @@
+name: rust-vm-CI
+
+on:
+  push:
+    branches:
+      - "**"
+
+jobs:
+  check:
+    name: Format and Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Cargo Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+            ~/.scarb
+            ~/.cache/nextest
+          key: ${{ runner.os }}-cargo-scarb-nextest-${{ hashFiles('**/Cargo.lock', '**/Scarb.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-scarb-nextest-
+            ${{ runner.os }}-cargo-scarb-
+            ${{ runner.os }}-cargo-
+
+      - name: Set up Scarb
+        uses: software-mansion/setup-scarb@v1
+
+      - name: Set up Cairo
+        run: make setup
+
+      - name: Run fmt check
+        run: cargo fmt --all -- --check
+
+      - name: Run clippy check
+        run: cargo clippy -- -D warnings
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Cargo Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+            ~/.scarb
+            ~/.cache/nextest
+          key: ${{ runner.os }}-cargo-scarb-nextest-${{ hashFiles('**/Cargo.lock', '**/Scarb.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-scarb-nextest-
+            ${{ runner.os }}-cargo-scarb-
+            ${{ runner.os }}-cargo-
+
+      - name: Set up Scarb
+        uses: software-mansion/setup-scarb@v1
+
+      - name: Set up Cairo
+        run: make setup
+
+      - name: Install Nextest
+        uses: taiki-e/install-action@nextest
+
+      - name: Build Test Contracts
+        run: scarb build
+
+      - name: Run Nextest Tests
+        env:
+          RPC_URL_ETHEREUM: ${{ secrets.RPC_URL_ETHEREUM_SEPOLIA }}
+          RPC_URL_FEEDER_GATEWAY: ${{ secrets.RPC_URL_FEEDER_GATEWAY }}
+          RPC_URL_HERODOTUS_INDEXER: ${{ secrets.RPC_URL_HERODOTUS_INDEXER }}
+          RPC_URL_STARKNET: ${{ secrets.RPC_URL_STARKNET_SEPOLIA }}
+        run: cargo nextest run
+

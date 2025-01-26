@@ -8,7 +8,7 @@ use syscall_handler::{SyscallExecutionError, SyscallResult};
 use types::cairo::evm::receipt::CairoReceiptWithBloom;
 use types::{
     cairo::{evm::receipt::FunctionId, structs::Uint256, traits::CairoType},
-    keys::receipt::CairoKey,
+    keys::evm::receipt::CairoKey,
 };
 #[derive(Debug)]
 pub struct ReceiptCallHandler {

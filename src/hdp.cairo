@@ -69,7 +69,6 @@ func run{
     alloc_locals;
 
     %{
-        from tools.py.schema import HDPInput
         run_input = HDPInput.Schema().load(program_input)
         chain_proofs = run_input.proofs
         params = run_input.params
@@ -88,6 +87,7 @@ func run{
 
     let (mmr_metas_len) = run_state_verification{
         range_check_ptr=range_check_ptr,
+        pedersen_ptr=pedersen_ptr,
         poseidon_ptr=poseidon_ptr,
         keccak_ptr=keccak_ptr,
         bitwise_ptr=bitwise_ptr,

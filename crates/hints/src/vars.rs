@@ -1,22 +1,34 @@
 pub mod scopes {
-    pub const ACCOUNT: &str = "account";
-    pub const BATCH: &str = "batch";
+    pub const ACCOUNT_EVM: &str = "account_evm";
+    pub const BATCH_EVM: &str = "batch_evm";
+    pub const BATCH_STARKNET: &str = "batch_starknet";
     pub const COMPILED_CLASS: &str = "compiled_class";
     pub const DICT_MANAGER: &str = "dict_manager";
-    pub const HEADER: &str = "header";
+    pub const HEADER_EVM: &str = "header_evm";
+    pub const HEADER_STARKNET: &str = "header_starknet";
     pub const N_SELECTED_BUILTINS: &str = "n_selected_builtins";
     pub const PARAMS: &str = "params";
     pub const PROOF: &str = "proof";
     pub const PROOFS: &str = "proofs";
     pub const CHAIN_PROOFS: &str = "chain_proofs";
     pub const RECEIPT: &str = "receipt";
-    pub const STORAGE: &str = "storage";
+    pub const STORAGE_EVM: &str = "storage_evm";
+    pub const STORAGE_STARKNET: &str = "storage_starknet";
     pub const SYSCALL_HANDLER: &str = "syscall_handler";
     pub const TRANSACTION: &str = "transaction";
-    pub const HEADER_WITH_MMR: &str = "header_with_mmr";
+    pub const HEADER_WITH_MMR_EVM: &str = "header_with_mmr";
+    pub const HEADER_WITH_MMR_STARKNET: &str = "header_with_mmr_starknet";
 }
 
 pub mod ids {
+    pub const NODES: &str = "nodes";
+    pub const NODE: &str = "node";
+    pub const N_NODES: &str = "n_nodes";
+    pub const LEAF: &str = "leaf";
+    pub const CONTRACT_STATE_NODES: &str = "contract_state_nodes";
+    pub const CONTRACT_NODES: &str = "contract_nodes";
+    pub const STORAGE_ADDRESSES: &str = "storage_addresses";
+    pub const FIELDS: &str = "fields";
     pub const PEAKS: &str = "peaks";
     pub const CHAIN_PROOFS_LEN: &str = "chain_proofs_len";
     pub const RLP_LEN: &str = "rlp_len";

@@ -16,9 +16,9 @@ use cairo_vm::{
 };
 use num_bigint::BigUint;
 use std::collections::HashMap;
-use types::proofs::{receipt::Receipt, Proofs};
+use types::proofs::{evm::receipt::Receipt, evm::Proofs};
 
-pub const HINT_BATCH_RECEIPTS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch.receipts))";
+pub const HINT_BATCH_RECEIPTS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch_evm.receipts))";
 
 pub fn hint_batch_receipts_len(
     vm: &mut VirtualMachine,
@@ -26,7 +26,7 @@ pub fn hint_batch_receipts_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH)?;
+    let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH_EVM)?;
 
     insert_value_into_ap(vm, Felt252::from(batch.transaction_receipts.len()))
 }
@@ -39,7 +39,7 @@ pub fn hint_set_receipt(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH)?;
+    let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH_EVM)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
         .unwrap();
@@ -50,7 +50,7 @@ pub fn hint_set_receipt(
     Ok(())
 }
 
-pub const HINT_RECEIPT_KEY: &str = "from tools.py.utils import split_128\n(ids.key.low, ids.key.high) = split_128(int(receipt.key, 16))";
+pub const HINT_RECEIPT_KEY: &str = "(ids.key.low, ids.key.high) = split_128(int(receipt.key, 16))";
 
 pub fn hint_receipt_key(
     vm: &mut VirtualMachine,

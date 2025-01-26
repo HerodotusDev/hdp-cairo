@@ -4,33 +4,15 @@ pub mod receipt;
 pub mod storage;
 pub mod transaction;
 
-use cairo_vm::vm::errors::hint_errors::HintError;
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
 use serde::{Deserialize, Serialize};
-use std::rc::Rc;
 use std::{collections::HashSet, hash::Hash};
 use strum_macros::FromRepr;
-use syscall_handler::traits::CallHandler;
-use syscall_handler::{felt_from_ptr, run_handler, traits, SyscallExecutionError, SyscallResult, SyscallSelector, WriteResponseResult};
-use tokio::sync::RwLock;
-use tokio::task;
+use syscall_handler::traits::{CallHandler, SyscallHandler};
+use syscall_handler::{felt_from_ptr, SyscallExecutionError, SyscallResult, WriteResponseResult};
 use types::cairo::new_syscalls::{CallContractRequest, CallContractResponse};
 use types::cairo::traits::CairoType;
-use types::keys;
-
-#[derive(Debug, Default, Serialize, Deserialize, Clone)]
-pub struct SyscallHandler {
-    #[serde(skip)]
-    pub syscall_ptr: Option<Relocatable>,
-    pub call_contract_handler: CallContractHandler,
-}
-
-/// SyscallHandler is wrapped in Rc<RefCell<_>> in order
-/// to clone the reference when entering and exiting vm scopes
-#[derive(Debug, Clone, Default)]
-pub struct SyscallHandlerWrapper {
-    pub syscall_handler: Rc<RwLock<SyscallHandler>>,
-}
+use types::keys::evm;
 
 #[derive(FromRepr)]
 pub enum CallHandlerId {
@@ -46,48 +28,12 @@ pub struct CallContractHandler {
     pub key_set: HashSet<DryRunKey>,
 }
 
-impl SyscallHandlerWrapper {
-    pub fn new() -> Self {
-        Self {
-            syscall_handler: Rc::new(RwLock::new(SyscallHandler::default())),
-        }
-    }
-    pub fn set_syscall_ptr(&self, syscall_ptr: Relocatable) {
-        let mut syscall_handler = task::block_in_place(|| self.syscall_handler.blocking_write());
-        syscall_handler.syscall_ptr = Some(syscall_ptr);
-    }
-
-    pub fn syscall_ptr(&self) -> Option<Relocatable> {
-        let syscall_handler = task::block_in_place(|| self.syscall_handler.blocking_read());
-        syscall_handler.syscall_ptr
-    }
-
-    pub async fn execute_syscall(&mut self, vm: &mut VirtualMachine, syscall_ptr: Relocatable) -> Result<(), HintError> {
-        let mut syscall_handler = self.syscall_handler.write().await;
-        let ptr = &mut syscall_handler
-            .syscall_ptr
-            .ok_or(HintError::CustomHint(Box::from("syscall_ptr is None")))?;
-
-        assert_eq!(*ptr, syscall_ptr);
-
-        match SyscallSelector::try_from(felt_from_ptr(vm, ptr)?)? {
-            SyscallSelector::CallContract => run_handler(&mut syscall_handler.call_contract_handler, ptr, vm).await,
-        }?;
-
-        syscall_handler.syscall_ptr = Some(*ptr);
-
-        Ok(())
-    }
-}
-
-impl traits::SyscallHandler for CallContractHandler {
+impl SyscallHandler for CallContractHandler {
     type Request = CallContractRequest;
     type Response = CallContractResponse;
 
-    fn read_request(&mut self, vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Request> {
-        let ret = Self::Request::from_memory(vm, *ptr)?;
-        *ptr = (*ptr + Self::Request::cairo_size())?;
-        Ok(ret)
+    fn read_request(&mut self, _vm: &VirtualMachine, _ptr: &mut Relocatable) -> SyscallResult<Self::Request> {
+        unreachable!()
     }
 
     async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
@@ -107,7 +53,7 @@ impl traits::SyscallHandler for CallContractHandler {
                 .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?,
         ));
 
-        let retdata_start = vm.add_temporary_segment();
+        let retdata_start = vm.add_memory_segment();
         let mut retdata_end = retdata_start;
         match call_handler_id {
             CallHandlerId::Header => {
@@ -155,10 +101,8 @@ impl traits::SyscallHandler for CallContractHandler {
         Ok(Self::Response { retdata_start, retdata_end })
     }
 
-    fn write_response(&mut self, response: Self::Response, vm: &mut VirtualMachine, ptr: &mut Relocatable) -> WriteResponseResult {
-        response.to_memory(vm, *ptr)?;
-        *ptr = (*ptr + Self::Response::cairo_size())?;
-        Ok(())
+    fn write_response(&mut self, _response: Self::Response, _vm: &mut VirtualMachine, _ptr: &mut Relocatable) -> WriteResponseResult {
+        unreachable!()
     }
 }
 
@@ -179,11 +123,11 @@ impl TryFrom<Felt252> for CallHandlerId {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum DryRunKey {
-    Account(keys::account::Key),
-    Header(keys::header::Key),
-    Storage(keys::storage::Key),
-    Tx(keys::transaction::Key),
-    Receipt(keys::receipt::Key),
+    Account(evm::account::Key),
+    Header(evm::header::Key),
+    Storage(evm::storage::Key),
+    Receipt(evm::receipt::Key),
+    Tx(evm::transaction::Key),
 }
 
 impl DryRunKey {
@@ -207,6 +151,3 @@ impl DryRunKey {
         matches!(self, Self::Tx(_))
     }
 }
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct DryRunKeySet(HashSet<DryRunKey>);

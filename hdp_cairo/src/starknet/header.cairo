@@ -1,6 +1,6 @@
 use hdp_cairo::StarknetMemorizer;
 use starknet::syscalls::call_contract_syscall;
-use starknet::{SyscallResult, SyscallResultTrait};
+use starknet::{SyscallResultTrait};
 
 const HEADER: felt252 = 0;
 
@@ -48,17 +48,17 @@ pub impl HeaderImpl of HeaderTrait {
         self.call_memorizer(HEADER_GET_BLOCK_TIMESTAMP, key)
     }
 
-    // fn header_get_transaction_count(self: @StarknetMemorizer, key: HeaderKey) -> felt252 {
-    //     self.call_memorizer(HEADER_GET_TRANSACTION_COUNT, key)
-    // }
+    fn header_get_transaction_count(self: @StarknetMemorizer, key: HeaderKey) -> felt252 {
+        self.call_memorizer(HEADER_GET_TRANSACTION_COUNT, key)
+    }
 
     fn header_get_transaction_commitment(self: @StarknetMemorizer, key: HeaderKey) -> felt252 {
         self.call_memorizer(HEADER_GET_TRANSACTION_COMMITMENT, key)
     }
 
-    // fn header_get_event_count(self: @StarknetMemorizer, key: HeaderKey) -> felt252 {
-    //     self.call_memorizer(HEADER_GET_EVENT_COUNT, key)
-    // }
+    fn header_get_event_count(self: @StarknetMemorizer, key: HeaderKey) -> felt252 {
+        self.call_memorizer(HEADER_GET_EVENT_COUNT, key)
+    }
 
     fn header_get_event_commitment(self: @StarknetMemorizer, key: HeaderKey) -> felt252 {
         self.call_memorizer(HEADER_GET_EVENT_COMMITMENT, key)
@@ -72,9 +72,9 @@ pub impl HeaderImpl of HeaderTrait {
         self.call_memorizer(HEADER_GET_STATE_DIFF_COMMITMENT, key)
     }
 
-    // fn header_get_state_diff_length(self: @StarknetMemorizer, key: HeaderKey) -> felt252 {
-    //     self.call_memorizer(HEADER_GET_STATE_DIFF_LENGTH, key)
-    // }
+    fn header_get_state_diff_length(self: @StarknetMemorizer, key: HeaderKey) -> felt252 {
+        self.call_memorizer(HEADER_GET_STATE_DIFF_LENGTH, key)
+    }
 
     fn header_get_l1_gas_price_in_wei(self: @StarknetMemorizer, key: HeaderKey) -> felt252 {
         self.call_memorizer(HEADER_GET_L1_GAS_PRICE_IN_WEI, key)
@@ -96,20 +96,20 @@ pub impl HeaderImpl of HeaderTrait {
         self.call_memorizer(HEADER_GET_RECEIPTS_COMMITMENT, key)
     }
 
-    // fn header_get_l1_data_mode(self: @StarknetMemorizer, key: HeaderKey) -> felt252 {
-    //     self.call_memorizer(HEADER_GET_L1_DATA_MODE, key)
-    // }
+    fn header_get_l1_data_mode(self: @StarknetMemorizer, key: HeaderKey) -> felt252 {
+        self.call_memorizer(HEADER_GET_L1_DATA_MODE, key)
+    }
 
-    // fn header_get_protocol_version(self: @StarknetMemorizer, key: HeaderKey) -> felt252 {
-    //     self.call_memorizer(HEADER_GET_PROTOCOL_VERSION, key)
-    // }
+    fn header_get_protocol_version(self: @StarknetMemorizer, key: HeaderKey) -> felt252 {
+        self.call_memorizer(HEADER_GET_PROTOCOL_VERSION, key)
+    }
 
     fn call_memorizer(self: @StarknetMemorizer, selector: felt252, key: HeaderKey) -> felt252 {
         let value = call_contract_syscall(
             HEADER.try_into().unwrap(),
             selector,
             array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number]
-                .span()
+                .span(),
         )
             .unwrap_syscall();
         (*value[0]).try_into().unwrap()

@@ -3,12 +3,12 @@
 #![warn(unused_crate_dependencies)]
 #![forbid(unsafe_code)]
 
-pub mod types;
+pub mod models;
 
+use models::{IndexerError, IndexerHeadersProofResponse, IndexerQuery, MMRResponse};
 use reqwest::Client;
-use types::{IndexerError, IndexerHeadersProofResponse, IndexerQuery, MMRResponse};
-
-pub const HERODOTUS_RS_INDEXER_URL: &str = "https://rs-indexer.api.herodotus.cloud/accumulators/proofs";
+use std::env;
+use types::RPC_URL_HERODOTUS_INDEXER;
 
 #[derive(Clone)]
 pub struct Indexer {
@@ -30,7 +30,10 @@ impl Indexer {
     pub async fn get_headers_proof(&self, query: IndexerQuery) -> Result<IndexerHeadersProofResponse, IndexerError> {
         let response = self
             .client
-            .get(HERODOTUS_RS_INDEXER_URL)
+            .get(
+                env::var(RPC_URL_HERODOTUS_INDEXER)
+                    .map_err(|e| IndexerError::GetHeadersProofError(format!("Missing HERODOTUS_INDEXER_RPC env var: {}", e)))?,
+            )
             .query(&query)
             .send()
             .await
@@ -68,7 +71,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_headers_proof() {
-        let response = Indexer::default().get_headers_proof(IndexerQuery::new(11155111, 1, 1)).await.unwrap();
+        let response = Indexer::default()
+            .get_headers_proof(IndexerQuery::new(11155111, 5000000, 5000000))
+            .await
+            .unwrap();
         assert_eq!(response.headers.len(), 1);
     }
 

@@ -1,13 +1,21 @@
-pub mod account;
-pub mod header;
-pub mod receipt;
-pub mod storage;
-pub mod transaction;
+use crate::{ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID};
 
-use thiserror::Error;
+pub mod evm;
+pub mod starknet;
 
-#[derive(Error, Debug)]
-pub enum KeyError {
-    #[error("Conversion Error: {0}")]
-    ConversionError(String),
+pub enum KeyType {
+    EVM,
+    STARKNET,
+}
+
+impl From<u128> for KeyType {
+    fn from(chain_id: u128) -> Self {
+        match chain_id {
+            STARKNET_MAINNET_CHAIN_ID => Self::STARKNET,
+            STARKNET_TESTNET_CHAIN_ID => Self::STARKNET,
+            ETHEREUM_MAINNET_CHAIN_ID => Self::EVM,
+            ETHEREUM_TESTNET_CHAIN_ID => Self::EVM,
+            _ => panic!("Unknown chain id: {}", chain_id),
+        }
+    }
 }

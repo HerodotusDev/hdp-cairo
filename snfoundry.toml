@@ -1,4 +1,0 @@
-[sncast.testnet]
-account = "testnet-sepolia"
-accounts-file = "~/.starknet_accounts/starknet_open_zeppelin_accounts.json"
-url = "https://pathfinder.sepolia.iosis.tech/"

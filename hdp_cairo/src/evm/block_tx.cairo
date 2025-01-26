@@ -1,6 +1,6 @@
 use hdp_cairo::EvmMemorizer;
 use starknet::syscalls::call_contract_syscall;
-use starknet::{SyscallResult, SyscallResultTrait};
+use starknet::{SyscallResultTrait};
 
 const BLOCK_TX: felt252 = 3;
 
@@ -36,7 +36,7 @@ pub enum TxType {
     Eip2930,
     Eip1559,
     Eip4844,
-    Eip7702
+    Eip7702,
 }
 
 #[generate_trait]
@@ -112,7 +112,7 @@ pub impl BlockTxImpl of BlockTxTrait {
                 key.block_number,
                 key.transaction_index,
             ]
-                .span()
+                .span(),
         )
             .unwrap_syscall();
         u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }

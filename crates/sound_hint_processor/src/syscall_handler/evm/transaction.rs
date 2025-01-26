@@ -8,7 +8,7 @@ use syscall_handler::{SyscallExecutionError, SyscallResult};
 use types::cairo::evm::transaction::CairoTransaction;
 use types::{
     cairo::{evm::transaction::FunctionId, structs::Uint256, traits::CairoType},
-    keys::transaction::CairoKey,
+    keys::evm::transaction::CairoKey,
 };
 
 #[derive(Debug)]

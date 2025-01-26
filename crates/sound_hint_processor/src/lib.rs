@@ -24,7 +24,7 @@ use cairo_vm::{
 use hints::{extensive_hints, hints, vars, ExtensiveHintImpl, HintImpl};
 use starknet_types_core::felt::Felt;
 use std::{any::Any, collections::HashMap};
-use syscall_handler::evm::SyscallHandlerWrapper;
+use syscall_handler::SyscallHandlerWrapper;
 use tokio::{runtime::Handle, task};
 use types::HDPInput;
 
