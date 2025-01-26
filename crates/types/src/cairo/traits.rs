@@ -1,6 +1,7 @@
-use cairo_vm::types::relocatable::Relocatable;
-use cairo_vm::vm::errors::memory_errors::MemoryError;
-use cairo_vm::vm::vm_core::VirtualMachine;
+use cairo_vm::{
+    types::relocatable::Relocatable,
+    vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
+};
 
 pub trait CairoType: Sized {
     fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError>;

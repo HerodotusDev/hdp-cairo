@@ -1,7 +1,10 @@
-use crate::vars;
+use std::collections::HashMap;
+
 use cairo_lang_starknet_classes::casm_contract_class::{CasmContractClass, CasmContractEntryPoint};
 use cairo_vm::{
-    hint_processor::builtin_hint_processor::{builtin_hint_processor_definition::HintProcessorData, hint_utils::insert_value_from_var_name},
+    hint_processor::builtin_hint_processor::{
+        builtin_hint_processor_definition::HintProcessorData, hint_utils::insert_value_from_var_name,
+    },
     types::{
         exec_scope::ExecutionScopes,
         relocatable::{MaybeRelocatable, Relocatable},
@@ -9,7 +12,8 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use std::collections::HashMap;
+
+use crate::vars;
 
 const COMPILED_CLASS_V1: Felt252 = Felt252::from_hex_unchecked("0x434f4d50494c45445f434c4153535f5631");
 
@@ -24,7 +28,13 @@ pub fn load_contract_class(
     let contract_class = exec_scopes.get::<CasmContractClass>(vars::scopes::COMPILED_CLASS)?;
     let class_base = vm.add_memory_segment();
     write_class(vm, class_base, contract_class)?;
-    insert_value_from_var_name(vars::ids::COMPILED_CLASS, class_base, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    insert_value_from_var_name(
+        vars::ids::COMPILED_CLASS,
+        class_base,
+        vm,
+        &hint_data.ids_data,
+        &hint_data.ap_tracking,
+    )?;
 
     Ok(())
 }

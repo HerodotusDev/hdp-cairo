@@ -3,7 +3,6 @@ use indexer::{
     models::{IndexerQuery, MMRProof},
     Indexer,
 };
-
 use types::proofs::mmr::MmrMeta;
 
 use crate::FetcherError;

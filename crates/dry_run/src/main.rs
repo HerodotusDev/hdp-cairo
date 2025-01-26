@@ -3,6 +3,8 @@
 #![warn(unused_crate_dependencies)]
 #![forbid(unsafe_code)]
 
+use std::{env, path::PathBuf};
+
 use cairo_vm::{
     cairo_run::{self, cairo_run_program},
     types::{layout::CairoLayoutParams, layout_name::LayoutName, program::Program},
@@ -13,7 +15,6 @@ use dry_hint_processor::{
     CustomHintProcessor,
 };
 use hints::vars;
-use std::{env, path::PathBuf};
 use tracing::debug;
 use types::{error::Error, HDPDryRunInput};
 

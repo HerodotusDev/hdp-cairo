@@ -4,15 +4,23 @@ pub mod receipt;
 pub mod storage;
 pub mod transaction;
 
+use std::{collections::HashSet, hash::Hash};
+
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
 use serde::{Deserialize, Serialize};
-use std::{collections::HashSet, hash::Hash};
 use strum_macros::FromRepr;
-use syscall_handler::traits::{CallHandler, SyscallHandler};
-use syscall_handler::{felt_from_ptr, SyscallExecutionError, SyscallResult, WriteResponseResult};
-use types::cairo::new_syscalls::{CallContractRequest, CallContractResponse};
-use types::cairo::traits::CairoType;
-use types::keys::evm;
+use syscall_handler::{
+    felt_from_ptr,
+    traits::{CallHandler, SyscallHandler},
+    SyscallExecutionError, SyscallResult, WriteResponseResult,
+};
+use types::{
+    cairo::{
+        new_syscalls::{CallContractRequest, CallContractResponse},
+        traits::CairoType,
+    },
+    keys::evm,
+};
 
 #[derive(FromRepr)]
 pub enum CallHandlerId {
@@ -98,7 +106,10 @@ impl SyscallHandler for CallContractHandler {
             }
         }
 
-        Ok(Self::Response { retdata_start, retdata_end })
+        Ok(Self::Response {
+            retdata_start,
+            retdata_end,
+        })
     }
 
     fn write_response(&mut self, _response: Self::Response, _vm: &mut VirtualMachine, _ptr: &mut Relocatable) -> WriteResponseResult {

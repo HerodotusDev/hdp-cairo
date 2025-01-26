@@ -1,7 +1,8 @@
-use super::header::HeaderMmrMeta;
 use header::Header;
 use serde::{Deserialize, Serialize};
 use storage::Storage;
+
+use super::header::HeaderMmrMeta;
 
 pub mod header;
 pub mod storage;

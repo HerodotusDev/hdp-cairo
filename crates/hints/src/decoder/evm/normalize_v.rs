@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData,
@@ -7,7 +9,6 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use std::collections::HashMap;
 
 const FELT_35: Felt252 = Felt252::from_hex_unchecked("0x23");
 const FELT_36: Felt252 = Felt252::from_hex_unchecked("0x24");
@@ -57,7 +58,17 @@ pub fn hint_is_short(
 ) -> Result<(), HintError> {
     let tx_payload_bytes_len = get_integer_from_var_name("tx_payload_bytes_len", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    let insert = if tx_payload_bytes_len <= FELT_55 { Felt252::ONE } else { Felt252::ZERO };
+    let insert = if tx_payload_bytes_len <= FELT_55 {
+        Felt252::ONE
+    } else {
+        Felt252::ZERO
+    };
 
-    insert_value_from_var_name("is_short", MaybeRelocatable::Int(insert), vm, &hint_data.ids_data, &hint_data.ap_tracking)
+    insert_value_from_var_name(
+        "is_short",
+        MaybeRelocatable::Int(insert),
+        vm,
+        &hint_data.ids_data,
+        &hint_data.ap_tracking,
+    )
 }

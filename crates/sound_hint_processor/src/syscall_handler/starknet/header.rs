@@ -1,15 +1,20 @@
-use crate::syscall_handler::Memorizer;
-use cairo_vm::hint_processor::builtin_hint_processor::dict_manager::DictManager;
-use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
-use std::cell::RefCell;
-use std::rc::Rc;
-use syscall_handler::traits::CallHandler;
-use syscall_handler::{SyscallExecutionError, SyscallResult};
-use types::cairo::starknet::header::StarknetBlock;
+use std::{cell::RefCell, rc::Rc};
+
+use cairo_vm::{
+    hint_processor::builtin_hint_processor::dict_manager::DictManager, types::relocatable::Relocatable, vm::vm_core::VirtualMachine,
+    Felt252,
+};
+use syscall_handler::{traits::CallHandler, SyscallExecutionError, SyscallResult};
 use types::{
-    cairo::{starknet::header::FunctionId, structs::Felt, traits::CairoType},
+    cairo::{
+        starknet::header::{FunctionId, StarknetBlock},
+        structs::Felt,
+        traits::CairoType,
+    },
     keys::starknet::header::CairoKey,
 };
+
+use crate::syscall_handler::Memorizer;
 
 #[derive(Debug)]
 pub struct HeaderCallHandler {

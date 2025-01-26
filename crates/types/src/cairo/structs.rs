@@ -1,4 +1,3 @@
-use crate::cairo::traits::CairoType;
 use alloy::primitives::{Address, Bloom, B256, B64, U256};
 use cairo_type_derive::{CairoType, FieldOffsetGetters};
 use cairo_vm::{
@@ -6,6 +5,8 @@ use cairo_vm::{
     vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
     Felt252,
 };
+
+use crate::cairo::traits::CairoType;
 
 #[derive(FieldOffsetGetters, CairoType, Default, Debug)]
 pub struct Uint256 {
@@ -123,7 +124,9 @@ impl From<Felt252> for Felt {
 
 impl From<u64> for Felt {
     fn from(value: u64) -> Self {
-        Self { value: Felt252::from(value) }
+        Self {
+            value: Felt252::from(value),
+        }
     }
 }
 

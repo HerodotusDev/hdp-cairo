@@ -1,4 +1,5 @@
-use super::CustomHintProcessor;
+use std::collections::HashMap;
+
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use cairo_vm::{
     hint_processor::builtin_hint_processor::builtin_hint_processor_definition::HintProcessorData,
@@ -7,8 +8,9 @@ use cairo_vm::{
     Felt252,
 };
 use hints::vars;
-use std::collections::HashMap;
 use types::param::Param;
+
+use super::CustomHintProcessor;
 
 pub const HINT_INPUT: &str =
     "dry_run_input = HDPDryRunInput.Schema().load(program_input)\nparams = dry_run_input.params\ncompiled_class = dry_run_input.compiled_class";

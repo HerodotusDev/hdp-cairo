@@ -1,19 +1,26 @@
-use crate::{
-    utils::{count_leading_zero_nibbles_from_hex, split_128},
-    vars,
-};
+use std::collections::HashMap;
+
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData,
-        hint_utils::{get_address_from_var_name, get_integer_from_var_name, get_ptr_from_var_name, insert_value_from_var_name, insert_value_into_ap},
+        hint_utils::{
+            get_address_from_var_name, get_integer_from_var_name, get_ptr_from_var_name, insert_value_from_var_name, insert_value_into_ap,
+        },
     },
     types::{exec_scope::ExecutionScopes, relocatable::MaybeRelocatable},
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
 use num_bigint::BigUint;
-use std::collections::HashMap;
-use types::proofs::{evm::storage::Storage, evm::Proofs, mpt::MPTProof};
+use types::proofs::{
+    evm::{storage::Storage, Proofs},
+    mpt::MPTProof,
+};
+
+use crate::{
+    utils::{count_leading_zero_nibbles_from_hex, split_128},
+    vars,
+};
 
 pub const HINT_BATCH_STORAGES_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch_evm.storages))";
 
@@ -92,8 +99,14 @@ pub fn hint_set_storage_key(
     let (key_low, key_high) = split_128(&BigUint::from_bytes_be(storage.storage_key.as_slice()));
 
     let key_ptr = get_address_from_var_name(vars::ids::KEY, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    vm.insert_value((key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 0)?, Felt252::from(key_low))?;
-    vm.insert_value((key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 1)?, Felt252::from(key_high))?;
+    vm.insert_value(
+        (key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 0)?,
+        Felt252::from(key_low),
+    )?;
+    vm.insert_value(
+        (key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 1)?,
+        Felt252::from(key_high),
+    )?;
 
     Ok(())
 }

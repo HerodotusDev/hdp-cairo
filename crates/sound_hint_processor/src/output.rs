@@ -1,12 +1,16 @@
-use super::CustomHintProcessor;
+use std::collections::HashMap;
+
 use cairo_vm::{
-    hint_processor::builtin_hint_processor::{builtin_hint_processor_definition::HintProcessorData, hint_utils::get_relocatable_from_var_name},
+    hint_processor::builtin_hint_processor::{
+        builtin_hint_processor_definition::HintProcessorData, hint_utils::get_relocatable_from_var_name,
+    },
     types::exec_scope::ExecutionScopes,
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
 use hints::vars;
-use std::collections::HashMap;
+
+use super::CustomHintProcessor;
 
 pub const HINT_OUTPUT: &str = "print(\"result\", [hex(ids.result.low), hex(ids.result.high)])";
 

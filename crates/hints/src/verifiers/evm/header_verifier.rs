@@ -1,4 +1,5 @@
-use crate::vars;
+use std::{any::Any, cell::RefCell, collections::HashMap, rc::Rc};
+
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData,
@@ -9,8 +10,9 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use std::{any::Any, cell::RefCell, collections::HashMap, rc::Rc};
 use types::proofs::{evm, header::HeaderMmrMeta};
+
+use crate::vars;
 
 pub const HINT_HEADERS_WITH_MMR_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch_evm.headers_with_mmr))";
 

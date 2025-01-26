@@ -1,7 +1,8 @@
+use std::collections::HashMap;
+
 use alloy::primitives::BlockNumber;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
-use std::collections::HashMap;
 use thiserror::Error;
 
 /// Enum for available hashing functions

@@ -1,9 +1,8 @@
-use crate::syscall_handler::{STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID};
+use std::env;
+
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
 use reqwest::Url;
-use std::env;
-use syscall_handler::traits::CallHandler;
-use syscall_handler::{SyscallExecutionError, SyscallResult};
+use syscall_handler::{traits::CallHandler, SyscallExecutionError, SyscallResult};
 use types::{
     cairo::{
         starknet::header::{Block, FunctionId, StarknetBlock},
@@ -13,6 +12,8 @@ use types::{
     keys::starknet::header::{CairoKey, Key},
     RPC_URL_FEEDER_GATEWAY,
 };
+
+use crate::syscall_handler::{STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID};
 
 #[derive(Debug, Default)]
 pub struct HeaderCallHandler;
@@ -26,7 +27,8 @@ impl CallHandler for HeaderCallHandler {
     fn derive_key(vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Key> {
         let ret = CairoKey::from_memory(vm, *ptr)?;
         *ptr = (*ptr + CairoKey::n_fields())?;
-        ret.try_into().map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))
+        ret.try_into()
+            .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))
     }
 
     fn derive_id(selector: Felt252) -> SyscallResult<Self::Id> {
@@ -47,7 +49,11 @@ impl CallHandler for HeaderCallHandler {
         let host_header = match key.chain_id {
             STARKNET_MAINNET_CHAIN_ID => "alpha-mainnet.starknet.io",
             STARKNET_TESTNET_CHAIN_ID => "alpha-sepolia.starknet.io",
-            _ => return Err(SyscallExecutionError::InternalError(format!("Unknown chain id: {}", key.chain_id).into())),
+            _ => {
+                return Err(SyscallExecutionError::InternalError(
+                    format!("Unknown chain id: {}", key.chain_id).into(),
+                ))
+            }
         };
 
         let request = reqwest::Client::new()

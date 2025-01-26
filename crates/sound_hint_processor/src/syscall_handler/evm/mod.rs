@@ -4,18 +4,22 @@ pub mod receipt;
 pub mod storage;
 pub mod transaction;
 
-use cairo_vm::hint_processor::builtin_hint_processor::dict_manager::DictManager;
-use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
+use std::{cell::RefCell, hash::Hash, rc::Rc};
+
+use cairo_vm::{
+    hint_processor::builtin_hint_processor::dict_manager::DictManager, types::relocatable::Relocatable, vm::vm_core::VirtualMachine,
+    Felt252,
+};
 use serde::{Deserialize, Serialize};
-use std::cell::RefCell;
-use std::hash::Hash;
-use std::rc::Rc;
 use strum_macros::FromRepr;
-use syscall_handler::traits::CallHandler;
-use syscall_handler::{traits, SyscallExecutionError, SyscallResult, WriteResponseResult};
-use types::cairo::new_syscalls::{CallContractRequest, CallContractResponse};
-use types::cairo::traits::CairoType;
-use types::keys::evm;
+use syscall_handler::{traits, traits::CallHandler, SyscallExecutionError, SyscallResult, WriteResponseResult};
+use types::{
+    cairo::{
+        new_syscalls::{CallContractRequest, CallContractResponse},
+        traits::CairoType,
+    },
+    keys::evm,
+};
 
 use super::Memorizer;
 
@@ -108,7 +112,10 @@ impl traits::SyscallHandler for CallContractHandler {
             }
         }
 
-        Ok(Self::Response { retdata_start, retdata_end })
+        Ok(Self::Response {
+            retdata_start,
+            retdata_end,
+        })
     }
 
     fn write_response(&mut self, response: Self::Response, vm: &mut VirtualMachine, ptr: &mut Relocatable) -> WriteResponseResult {

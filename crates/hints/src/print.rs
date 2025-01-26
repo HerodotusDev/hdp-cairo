@@ -1,4 +1,5 @@
-use crate::vars;
+use std::collections::HashMap;
+
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData,
@@ -9,8 +10,9 @@ use cairo_vm::{
     Felt252,
 };
 use num_bigint::BigUint;
-use std::collections::HashMap;
 use tracing::debug;
+
+use crate::vars;
 
 pub const PROGRAM_HASH: &str = "print(\"program_hash\", hex(ids.program_hash))";
 

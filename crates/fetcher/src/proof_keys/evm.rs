@@ -1,3 +1,5 @@
+use std::{collections::HashSet, env};
+
 use alloy::{
     hex::FromHexError,
     primitives::{Bytes, U256},
@@ -8,7 +10,6 @@ use cairo_vm::Felt252;
 use eth_trie_proofs::{tx_receipt_trie::TxReceiptsMptHandler, tx_trie::TxsMptHandler};
 use indexer::models::BlockHeader;
 use starknet_types_core::felt::FromStrError;
-use std::{collections::HashSet, env};
 use types::{
     keys,
     proofs::{
@@ -129,13 +130,18 @@ impl ProofKeys {
             .map_err(|e| FetcherError::InternalError(e.to_string()))?;
 
         let header = Self::fetch_header_proof(key.chain_id, key.block_number).await?;
-        let receipt_mpt_proof = Self::generate_block_tx_receipt_proof(&mut tx_receipts_mpt_handler, key.block_number, key.transaction_index).await?;
+        let receipt_mpt_proof =
+            Self::generate_block_tx_receipt_proof(&mut tx_receipts_mpt_handler, key.block_number, key.transaction_index).await?;
 
         let rlp_encoded_key = alloy_rlp::encode(U256::from(key.transaction_index));
         Ok((header, Receipt::new(U256::from_be_slice(&rlp_encoded_key), receipt_mpt_proof)))
     }
 
-    async fn generate_block_tx_proof(tx_trie_handler: &mut TxsMptHandler, block_number: u64, tx_index: u64) -> Result<MPTProof, FetcherError> {
+    async fn generate_block_tx_proof(
+        tx_trie_handler: &mut TxsMptHandler,
+        block_number: u64,
+        tx_index: u64,
+    ) -> Result<MPTProof, FetcherError> {
         tx_trie_handler
             .build_tx_tree_from_block(block_number)
             .await
@@ -153,8 +159,8 @@ impl ProofKeys {
     }
 
     pub async fn fetch_transaction_proof(key: &keys::evm::transaction::Key) -> Result<(HeaderMmrMeta<Header>, Transaction), FetcherError> {
-        let mut tx_trie_handler =
-            TxsMptHandler::new(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap()).map_err(|e| FetcherError::InternalError(e.to_string()))?;
+        let mut tx_trie_handler = TxsMptHandler::new(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap())
+            .map_err(|e| FetcherError::InternalError(e.to_string()))?;
 
         let header = Self::fetch_header_proof(key.chain_id, key.block_number).await?;
         let tx_proof = Self::generate_block_tx_proof(&mut tx_trie_handler, key.block_number, key.transaction_index).await?;

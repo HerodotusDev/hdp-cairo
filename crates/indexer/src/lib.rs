@@ -5,9 +5,10 @@
 
 pub mod models;
 
+use std::env;
+
 use models::{IndexerError, IndexerHeadersProofResponse, IndexerQuery, MMRResponse};
 use reqwest::Client;
-use std::env;
 use types::RPC_URL_HERODOTUS_INDEXER;
 
 #[derive(Clone)]

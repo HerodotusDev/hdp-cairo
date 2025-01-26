@@ -1,10 +1,11 @@
-use crate::cairo::structs::Uint256;
 use alloy::{
     consensus::{transaction::TxEnvelope, TxType},
     rpc::types::Transaction,
 };
 use alloy_rlp::{Decodable, Encodable};
 use strum_macros::FromRepr;
+
+use crate::cairo::structs::Uint256;
 
 #[derive(FromRepr, Debug, PartialEq, Eq)]
 pub enum FunctionId {
