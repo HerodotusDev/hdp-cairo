@@ -10,4 +10,5 @@ members = [
 ]
 
 [workspace.dependencies]
+starknet = "2.9.2"
 hdp_cairo = { path = "hdp_cairo" }
