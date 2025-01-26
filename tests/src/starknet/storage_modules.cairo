@@ -1,10 +1,7 @@
-
 #[starknet::contract]
 mod starknet_get_storage {
     use hdp_cairo::starknet::storage::StorageTrait;
     use hdp_cairo::{HDP, starknet::storage::{StorageKey, StorageImpl}};
-    use starknet::syscalls::call_contract_syscall;
-    use starknet::{ContractAddress, SyscallResult, SyscallResultTrait};
 
     #[storage]
     struct Storage {}

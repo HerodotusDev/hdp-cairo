@@ -1,6 +1,6 @@
 use hdp_cairo::StarknetMemorizer;
 use starknet::syscalls::call_contract_syscall;
-use starknet::{SyscallResult, SyscallResultTrait};
+use starknet::{SyscallResultTrait};
 
 const HEADER: felt252 = 0;
 
@@ -109,7 +109,7 @@ pub impl HeaderImpl of HeaderTrait {
             HEADER.try_into().unwrap(),
             selector,
             array![*self.dict.segment_index, *self.dict.offset, key.chain_id, key.block_number]
-                .span()
+                .span(),
         )
             .unwrap_syscall();
         (*value[0]).try_into().unwrap()
