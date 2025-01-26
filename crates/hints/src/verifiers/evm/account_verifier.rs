@@ -60,7 +60,7 @@ pub fn hint_get_account_address(
     Ok(())
 }
 
-pub const HINT_ACCOUNT_KEY: &str = "from tools.py.utils import split_128\n(ids.key.low, ids.key.high) = split_128(int(account_evm.account_key, 16))";
+pub const HINT_ACCOUNT_KEY: &str = "(ids.key.low, ids.key.high) = split_128(int(account_evm.account_key, 16))";
 
 pub fn hint_account_key(
     vm: &mut VirtualMachine,

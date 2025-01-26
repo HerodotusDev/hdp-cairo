@@ -79,8 +79,7 @@ pub fn hint_set_storage_slot(
     Ok(())
 }
 
-pub const HINT_SET_STORAGE_KEY: &str =
-    "from tools.py.utils import split_128\n(ids.key.low, ids.key.high) = split_128(int(storage_evm.storage_key, 16))";
+pub const HINT_SET_STORAGE_KEY: &str = "(ids.key.low, ids.key.high) = split_128(int(storage_evm.storage_key, 16))";
 
 pub fn hint_set_storage_key(
     vm: &mut VirtualMachine,

@@ -52,10 +52,7 @@ func verify_block_receipt_proofs_inner{
     %{ receipt = batch.receipts[ids.idx] %}
 
     local key: Uint256;
-    %{
-        from tools.py.utils import split_128
-        (ids.key.low, ids.key.high) = split_128(int(receipt.key, 16))
-    %}
+    %{ (ids.key.low, ids.key.high) = split_128(int(receipt.key, 16)) %}
 
     local key_leading_zeros: felt;
     %{ ids.key_leading_zeros = len(receipt.key.lstrip("0x")) - len(receipt.key.lstrip("0x").lstrip("0")) %}

@@ -50,7 +50,7 @@ pub fn hint_set_receipt(
     Ok(())
 }
 
-pub const HINT_RECEIPT_KEY: &str = "from tools.py.utils import split_128\n(ids.key.low, ids.key.high) = split_128(int(receipt.key, 16))";
+pub const HINT_RECEIPT_KEY: &str = "(ids.key.low, ids.key.high) = split_128(int(receipt.key, 16))";
 
 pub fn hint_receipt_key(
     vm: &mut VirtualMachine,

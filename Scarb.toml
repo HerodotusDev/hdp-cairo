@@ -5,7 +5,7 @@ edition = "2023_11"
 
 members = [
     "hdp_cairo",
-    "tests/modules",
+    "tests",
 ]
 
 [workspace.dependencies]

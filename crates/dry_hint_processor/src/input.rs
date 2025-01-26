@@ -10,7 +10,8 @@ use hints::vars;
 use std::collections::HashMap;
 use types::param::Param;
 
-pub const HINT_INPUT: &str = "from tools.py.schema import HDPDryRunInput\ndry_run_input = HDPDryRunInput.Schema().load(program_input)\nparams = dry_run_input.params\ncompiled_class = dry_run_input.compiled_class";
+pub const HINT_INPUT: &str =
+    "dry_run_input = HDPDryRunInput.Schema().load(program_input)\nparams = dry_run_input.params\ncompiled_class = dry_run_input.compiled_class";
 
 impl CustomHintProcessor {
     pub fn hint_input(

@@ -45,9 +45,15 @@ namespace StarknetDecoder {
     // - as_be: Whether to return the result as big endian
     // Returns:
     // - The length of the result in felts
-    func decode{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, starknet_decoder_ptr: felt***, output_ptr: felt*}(
-        data: felt*, state_access_type: felt, field: felt, decoder_target: felt, as_be: felt
-    ) -> (result_len: felt) {
+    func decode{
+        range_check_ptr,
+        bitwise_ptr: BitwiseBuiltin*,
+        pow2_array: felt*,
+        starknet_decoder_ptr: felt***,
+        output_ptr: felt*,
+    }(data: felt*, state_access_type: felt, field: felt, decoder_target: felt, as_be: felt) -> (
+        result_len: felt
+    ) {
         alloc_locals;  // ToDo: solve output_ptr revoke and remove this
 
         let func_ptr = starknet_decoder_ptr[decoder_target][state_access_type];
@@ -87,11 +93,15 @@ namespace StarknetDecoder {
     ) -> (invoke_params: felt*, param_len: felt) {
         // Since we use the passthrough decoder for storage, we only need to pass the data
         if (state_access_type == StarknetStateAccessType.STORAGE) {
-            tempvar invoke_params = cast(new (range_check_ptr, bitwise_ptr, pow2_array, data), felt*);
+            tempvar invoke_params = cast(
+                new (range_check_ptr, bitwise_ptr, pow2_array, data), felt*
+            );
             return (invoke_params=invoke_params, param_len=4);
         }
 
-        tempvar invoke_params = cast(new (range_check_ptr, bitwise_ptr, pow2_array, data, field), felt*);
+        tempvar invoke_params = cast(
+            new (range_check_ptr, bitwise_ptr, pow2_array, data, field), felt*
+        );
         return (invoke_params=invoke_params, param_len=5);
     }
 }
@@ -165,6 +175,8 @@ namespace StarknetStateAccess {
 
 // Storage slots always return a single felt, so we dont need to decode anything.
 // To keep the interface uniform, we will call this function when decoding
-func _decoder_passthrough{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(data: felt*) -> (result: felt) {
+func _decoder_passthrough{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    data: felt*
+) -> (result: felt) {
     return (result=data[0]);
 }
