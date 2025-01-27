@@ -2,6 +2,7 @@
 #![warn(unused_extern_crates)]
 #![warn(unused_crate_dependencies)]
 #![forbid(unsafe_code)]
+#![allow(unused_variables)]
 
 use std::time::Duration;
 
