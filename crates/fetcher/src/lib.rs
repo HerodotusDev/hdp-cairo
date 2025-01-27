@@ -373,8 +373,7 @@ where
         .collect()
 }
 
-pub fn parse_syscall_handler(input_file: &[u8]) -> Result<ProofKeys, FetcherError> {
-    let syscall_handler = serde_json::from_slice::<SyscallHandler>(input_file)?;
+pub fn parse_syscall_handler(syscall_handler: SyscallHandler) -> Result<ProofKeys, FetcherError> {
     let mut proof_keys = ProofKeys::default();
 
     // Process EVM keys

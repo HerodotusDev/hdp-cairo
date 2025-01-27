@@ -12,6 +12,7 @@ use tower_http::{timeout::TimeoutLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 pub mod dry_run;
+pub mod error;
 pub mod fetch_proofs;
 pub mod sound_run;
 

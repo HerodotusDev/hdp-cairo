@@ -5541,9 +5541,14 @@ dependencies = [
 name = "server"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "axum",
  "cairo-vm",
  "dry_hint_processor",
+ "fetcher",
+ "hints",
+ "serde",
+ "sound_hint_processor",
  "tokio",
  "tower-http",
  "tracing-subscriber",
