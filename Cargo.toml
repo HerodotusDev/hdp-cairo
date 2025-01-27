@@ -3,15 +3,16 @@ resolver = "2"
 
 members = [
     "crates/dry_hint_processor",
-    "crates/sound_hint_processor",
     "crates/dry_run",
-    "crates/sound_run",
     "crates/fetcher",
     "crates/hints",
     "crates/indexer",
+    "crates/server",
+    "crates/sound_hint_processor",
+    "crates/sound_run",
     "crates/syscall_handler",
     "crates/types",
-    "tests", "crates/server",
+    "tests",
 ]
 
 [workspace.dependencies]
