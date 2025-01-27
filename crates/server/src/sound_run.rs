@@ -34,7 +34,7 @@ pub async fn root(Json(value): Json<SoundRunRequest>) -> Result<Json<CairoPie>, 
 
     // Locate the compiled program file in the `OUT_DIR` folder.
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR is not set"));
-    let program_file_path = out_dir.join("cairo").join("compiled.json");
+    let program_file_path = out_dir.join("cairo").join("sound_run_compiled.json");
 
     let program_file = std::fs::read(program_file_path).map_err(Error::IO)?;
 
