@@ -33,7 +33,7 @@ impl Indexer {
             .client
             .get(
                 env::var(RPC_URL_HERODOTUS_INDEXER)
-                    .map_err(|e| IndexerError::GetHeadersProofError(format!("Missing HERODOTUS_INDEXER_RPC env var: {}", e)))?,
+                    .map_err(|e| IndexerError::GetHeadersProofError(format!("Missing RPC_URL_HERODOTUS_INDEXER env var: {}", e)))?,
             )
             .query(&query)
             .send()
