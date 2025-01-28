@@ -16,3 +16,7 @@ tower-http.workspace = true
 tracing-subscriber.workspace = true
 types.workspace = true
 hints.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+tower = "0.5.2"
