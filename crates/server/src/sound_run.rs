@@ -19,6 +19,11 @@ pub struct SoundRunRequest {
     input: HDPInput,
 }
 
+#[utoipa::path(
+    get,
+    path = "/sound_run",
+    request_body = ref("SoundRunRequest") // TODO implement ToSchema (big and tedious task impl when explicitly needed)
+)]
 pub async fn root(Json(value): Json<SoundRunRequest>) -> Result<Json<CairoPie>, AppError> {
     // Init CairoRunConfig
     let cairo_run_config = cairo_run::CairoRunConfig {
