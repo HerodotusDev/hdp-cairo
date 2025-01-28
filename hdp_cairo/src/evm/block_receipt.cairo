@@ -1,6 +1,6 @@
 use hdp_cairo::EvmMemorizer;
 use starknet::syscalls::call_contract_syscall;
-use starknet::{SyscallResult, SyscallResultTrait};
+use starknet::{SyscallResultTrait};
 
 const BLOCK_RECEIPT: felt252 = 4;
 
@@ -13,7 +13,7 @@ const BLOCK_RECEIPT_GET_LOGS: felt252 = 3;
 pub struct BlockReceiptKey {
     pub chain_id: felt252,
     pub block_number: felt252,
-    pub index: felt252,
+    pub transaction_index: felt252,
 }
 
 #[generate_trait]
@@ -40,9 +40,9 @@ pub impl BlockReceiptImpl of BlockReceiptTrait {
                 *self.dict.offset,
                 key.chain_id,
                 key.block_number,
-                key.index,
+                key.transaction_index,
             ]
-                .span()
+                .span(),
         )
             .unwrap_syscall();
         u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }

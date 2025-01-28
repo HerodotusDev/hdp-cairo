@@ -1,11 +1,12 @@
-use crate::cairo::traits::CairoType;
-use alloy::primitives::{Address, B256, B64, U256};
+use alloy::primitives::{Address, Bloom, B256, B64, U256};
 use cairo_type_derive::{CairoType, FieldOffsetGetters};
 use cairo_vm::{
     types::relocatable::Relocatable,
     vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
     Felt252,
 };
+
+use crate::cairo::traits::CairoType;
 
 #[derive(FieldOffsetGetters, CairoType, Default, Debug)]
 pub struct Uint256 {
@@ -18,6 +19,24 @@ impl From<u64> for Uint256 {
         Self {
             low: Felt252::from(value),
             high: Felt252::ZERO,
+        }
+    }
+}
+
+impl From<u128> for Uint256 {
+    fn from(value: u128) -> Self {
+        Self {
+            low: Felt252::from(value),
+            high: Felt252::ZERO,
+        }
+    }
+}
+
+impl From<Bloom> for Uint256 {
+    fn from(value: Bloom) -> Self {
+        Self {
+            low: Felt252::from_bytes_be_slice(&value[16..32]),
+            high: Felt252::from_bytes_be_slice(&value[0..16]),
         }
     }
 }
@@ -62,6 +81,15 @@ impl From<Address> for Uint256 {
     }
 }
 
+impl From<bool> for Uint256 {
+    fn from(value: bool) -> Self {
+        Self {
+            low: Felt252::from(if value { 1 } else { 0 }),
+            high: Felt252::ZERO,
+        }
+    }
+}
+
 #[allow(unused)]
 #[derive(FieldOffsetGetters)]
 pub struct CompiledClass {
@@ -96,7 +124,9 @@ impl From<Felt252> for Felt {
 
 impl From<u64> for Felt {
     fn from(value: u64) -> Self {
-        Self { value: Felt252::from(value) }
+        Self {
+            value: Felt252::from(value),
+        }
     }
 }
 

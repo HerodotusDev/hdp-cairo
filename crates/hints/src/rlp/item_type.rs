@@ -1,5 +1,5 @@
-use super::*;
-use crate::vars;
+use std::collections::HashMap;
+
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData,
@@ -9,7 +9,9 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use std::collections::HashMap;
+
+use super::*;
+use crate::vars;
 
 pub const HINT_IS_LONG: &str =
     "if 0xc0 <= ids.first_byte <= 0xf6:\n    ids.is_long = 0 # short list\nelif 0xf7 <= ids.first_byte <= 0xff:\n    ids.is_long = 1 # long list\nelse:\n    assert False, \"Invalid RLP list\"";

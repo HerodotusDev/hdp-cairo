@@ -1,19 +1,26 @@
+use std::collections::HashMap;
+
+use cairo_vm::{
+    hint_processor::builtin_hint_processor::{
+        builtin_hint_processor_definition::HintProcessorData,
+        hint_utils::{
+            get_address_from_var_name, get_integer_from_var_name, get_ptr_from_var_name, insert_value_from_var_name, insert_value_into_ap,
+        },
+    },
+    types::{exec_scope::ExecutionScopes, relocatable::MaybeRelocatable},
+    vm::{
+        errors::{hint_errors::HintError, memory_errors::MemoryError},
+        vm_core::VirtualMachine,
+    },
+    Felt252,
+};
+use num_bigint::BigUint;
+use types::proofs::evm::{transaction::Transaction, Proofs};
+
 use crate::{
     utils::{count_leading_zero_nibbles_from_hex, split_128},
     vars,
 };
-use cairo_vm::{
-    hint_processor::builtin_hint_processor::{
-        builtin_hint_processor_definition::HintProcessorData,
-        hint_utils::{get_address_from_var_name, get_integer_from_var_name, get_ptr_from_var_name, insert_value_from_var_name, insert_value_into_ap},
-    },
-    types::{exec_scope::ExecutionScopes, relocatable::MaybeRelocatable},
-    vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
-    Felt252,
-};
-use num_bigint::BigUint;
-use std::collections::HashMap;
-use types::proofs::{evm::transaction::Transaction, evm::Proofs};
 
 pub const HINT_BATCH_TRANSACTIONS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch_evm.transactions))";
 
@@ -28,7 +35,7 @@ pub fn hint_batch_transactions_len(
     insert_value_into_ap(vm, Felt252::from(batch.transactions.len()))
 }
 
-pub const HINT_SET_TX: &str = "transaction = transactions[ids.idx]";
+pub const HINT_SET_TX: &str = "transaction = batch.transactions[ids.idx]";
 
 pub fn hint_set_tx(
     vm: &mut VirtualMachine,
@@ -60,8 +67,14 @@ pub fn hint_set_tx_key(
     let (key_low, key_high) = split_128(&BigUint::from_bytes_be(&transaction.key.to_be_bytes_vec()));
 
     let key_ptr = get_address_from_var_name(vars::ids::KEY, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    vm.insert_value((key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 0)?, Felt252::from(key_low))?;
-    vm.insert_value((key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 1)?, Felt252::from(key_high))?;
+    vm.insert_value(
+        (key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 0)?,
+        Felt252::from(key_low),
+    )?;
+    vm.insert_value(
+        (key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 1)?,
+        Felt252::from(key_high),
+    )?;
 
     Ok(())
 }
@@ -80,7 +93,7 @@ pub fn hint_set_tx_key_leading_zeros(
 
     insert_value_from_var_name(
         vars::ids::KEY_LEADING_ZEROS,
-        Felt252::from(key_leading_zeros),
+        MaybeRelocatable::Int(Felt252::from(key_leading_zeros)),
         vm,
         &hint_data.ids_data,
         &hint_data.ap_tracking,
@@ -123,9 +136,9 @@ pub fn hint_proof_bytes_len(
 ) -> Result<(), HintError> {
     let transaction = exec_scopes.get::<Transaction>(vars::scopes::TRANSACTION)?;
     let proof_bytes_len_ptr = get_ptr_from_var_name(vars::ids::PROOF_BYTES_LEN, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let proof_len: Vec<MaybeRelocatable> = transaction.proof.proof.into_iter().map(|f| f.len().into()).collect();
 
-    vm.insert_value(proof_bytes_len_ptr, Felt252::from(transaction.proof.proof.len()))?;
-
+    vm.load_data(proof_bytes_len_ptr, &proof_len)?;
     Ok(())
 }
 
@@ -139,18 +152,22 @@ pub fn hint_mpt_proof(
 ) -> Result<(), HintError> {
     let transaction = exec_scopes.get::<Transaction>(vars::scopes::TRANSACTION)?;
     let mpt_proof_ptr = get_ptr_from_var_name(vars::ids::MPT_PROOF, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let proof_le_chunks: Vec<Vec<MaybeRelocatable>> = transaction
+    let proof_le_chunks: Result<Vec<MaybeRelocatable>, MemoryError> = transaction
         .proof
         .proof
         .into_iter()
         .map(|p| {
             p.chunks(8)
                 .map(|chunk| MaybeRelocatable::from(Felt252::from_bytes_be_slice(&chunk.iter().rev().copied().collect::<Vec<_>>())))
-                .collect()
+                .collect::<Vec<MaybeRelocatable>>()
+        })
+        .map(|f| {
+            let segment = vm.add_memory_segment();
+            vm.load_data(segment, &f).map(|_| MaybeRelocatable::from(segment))
         })
         .collect();
 
-    vm.write_arg(mpt_proof_ptr, &proof_le_chunks)?;
+    vm.load_data(mpt_proof_ptr, &proof_le_chunks?)?;
 
     Ok(())
 }

@@ -1,9 +1,9 @@
+use std::{collections::HashSet, env};
+
 use cairo_vm::Felt252;
 use indexer::models::BlockHeader;
-use starknet_types_core::felt::FromStrError;
-
 use reqwest::Url;
-use std::{collections::HashSet, env};
+use starknet_types_core::felt::FromStrError;
 use types::{
     keys,
     proofs::{

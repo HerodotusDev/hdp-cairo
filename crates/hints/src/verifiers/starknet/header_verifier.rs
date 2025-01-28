@@ -1,4 +1,5 @@
-use crate::vars;
+use std::{any::Any, cell::RefCell, collections::HashMap, rc::Rc};
+
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData,
@@ -9,8 +10,9 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use std::{any::Any, cell::RefCell, collections::HashMap, rc::Rc};
 use types::proofs::{header::HeaderMmrMeta, starknet};
+
+use crate::vars;
 
 pub const HINT_HEADERS_WITH_MMR_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch_starknet.headers_with_mmr))";
 
@@ -84,7 +86,11 @@ pub fn hint_set_header(
 
     vm.load_data(
         fields_ptr,
-        &header.fields.into_iter().map(MaybeRelocatable::from).collect::<Vec<MaybeRelocatable>>(),
+        &header
+            .fields
+            .into_iter()
+            .map(MaybeRelocatable::from)
+            .collect::<Vec<MaybeRelocatable>>(),
     )?;
 
     Ok(())

@@ -85,7 +85,11 @@ pub fn write_felt(vm: &mut VirtualMachine, ptr: &mut Relocatable, felt: Felt252)
     write_maybe_relocatable(vm, ptr, felt)
 }
 
-pub fn write_maybe_relocatable<T: Into<MaybeRelocatable>>(vm: &mut VirtualMachine, ptr: &mut Relocatable, value: T) -> Result<(), MemoryError> {
+pub fn write_maybe_relocatable<T: Into<MaybeRelocatable>>(
+    vm: &mut VirtualMachine,
+    ptr: &mut Relocatable,
+    value: T,
+) -> Result<(), MemoryError> {
     vm.insert_value(*ptr, value.into())?;
     *ptr = (*ptr + 1)?;
     Ok(())
@@ -152,7 +156,11 @@ fn write_failure(gas_counter: Felt252, error_data: Vec<Felt252>, vm: &mut Virtua
     Ok(())
 }
 
-pub async fn run_handler(syscall_handler: &mut impl SyscallHandler, syscall_ptr: &mut Relocatable, vm: &mut VirtualMachine) -> Result<(), HintError> {
+pub async fn run_handler(
+    syscall_handler: &mut impl SyscallHandler,
+    syscall_ptr: &mut Relocatable,
+    vm: &mut VirtualMachine,
+) -> Result<(), HintError> {
     let remaining_gas = felt_from_ptr(vm, syscall_ptr)?;
     let request = syscall_handler.read_request(vm, syscall_ptr)?;
     let syscall_result = syscall_handler.execute(request, vm).await;

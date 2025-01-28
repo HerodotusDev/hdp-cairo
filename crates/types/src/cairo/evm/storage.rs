@@ -1,7 +1,8 @@
-use crate::cairo::structs::Uint256;
 use alloy::primitives::{keccak256, StorageValue};
 use alloy_rlp::{Decodable, Encodable};
 use strum_macros::FromRepr;
+
+use crate::cairo::structs::Uint256;
 
 #[derive(FromRepr, Debug)]
 pub enum FunctionId {

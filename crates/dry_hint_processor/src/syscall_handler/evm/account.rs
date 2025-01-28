@@ -1,14 +1,15 @@
-use alloy::providers::{Provider, RootProvider};
-use alloy::transports::http::reqwest::Url;
-use alloy::transports::http::{Client, Http};
-use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
 use std::env;
-use syscall_handler::traits::CallHandler;
-use syscall_handler::{SyscallExecutionError, SyscallResult};
-use types::RPC_URL_ETHEREUM;
+
+use alloy::{
+    providers::{Provider, RootProvider},
+    transports::http::{reqwest::Url, Client, Http},
+};
+use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
+use syscall_handler::{traits::CallHandler, SyscallExecutionError, SyscallResult};
 use types::{
     cairo::{evm::account::FunctionId, structs::Uint256, traits::CairoType},
     keys::evm::account::{CairoKey, Key},
+    RPC_URL_ETHEREUM,
 };
 
 #[derive(Debug, Default)]
@@ -23,7 +24,8 @@ impl CallHandler for AccountCallHandler {
     fn derive_key(vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Key> {
         let ret = CairoKey::from_memory(vm, *ptr)?;
         *ptr = (*ptr + CairoKey::n_fields())?;
-        ret.try_into().map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))
+        ret.try_into()
+            .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))
     }
 
     fn derive_id(selector: Felt252) -> SyscallResult<Self::Id> {

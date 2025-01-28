@@ -4,18 +4,22 @@ pub mod receipt;
 pub mod storage;
 pub mod transaction;
 
-use cairo_vm::hint_processor::builtin_hint_processor::dict_manager::DictManager;
-use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
+use std::{cell::RefCell, hash::Hash, rc::Rc};
+
+use cairo_vm::{
+    hint_processor::builtin_hint_processor::dict_manager::DictManager, types::relocatable::Relocatable, vm::vm_core::VirtualMachine,
+    Felt252,
+};
 use serde::{Deserialize, Serialize};
-use std::cell::RefCell;
-use std::rc::Rc;
-use std::{collections::HashSet, hash::Hash};
 use strum_macros::FromRepr;
-use syscall_handler::traits::CallHandler;
-use syscall_handler::{traits, SyscallExecutionError, SyscallResult, WriteResponseResult};
-use types::cairo::new_syscalls::{CallContractRequest, CallContractResponse};
-use types::cairo::traits::CairoType;
-use types::keys;
+use syscall_handler::{traits, traits::CallHandler, SyscallExecutionError, SyscallResult, WriteResponseResult};
+use types::{
+    cairo::{
+        new_syscalls::{CallContractRequest, CallContractResponse},
+        traits::CairoType,
+    },
+    keys::evm,
+};
 
 use super::Memorizer;
 
@@ -88,10 +92,30 @@ impl traits::SyscallHandler for CallContractHandler {
                 result.to_memory(vm, retdata_end)?;
                 retdata_end += <storage::StorageCallHandler as CallHandler>::CallHandlerResult::n_fields();
             }
-            _ => {}
+            CallHandlerId::Transaction => {
+                let key = transaction::TransactionCallHandler::derive_key(vm, &mut calldata)?;
+                let function_id = transaction::TransactionCallHandler::derive_id(request.selector)?;
+                let result = transaction::TransactionCallHandler::new(memorizer, self.dict_manager.clone())
+                    .handle(key.clone(), function_id, vm)
+                    .await?;
+                result.to_memory(vm, retdata_end)?;
+                retdata_end += <transaction::TransactionCallHandler as CallHandler>::CallHandlerResult::n_fields();
+            }
+            CallHandlerId::Receipt => {
+                let key = receipt::ReceiptCallHandler::derive_key(vm, &mut calldata)?;
+                let function_id = receipt::ReceiptCallHandler::derive_id(request.selector)?;
+                let result = receipt::ReceiptCallHandler::new(memorizer, self.dict_manager.clone())
+                    .handle(key.clone(), function_id, vm)
+                    .await?;
+                result.to_memory(vm, retdata_end)?;
+                retdata_end += <receipt::ReceiptCallHandler as CallHandler>::CallHandlerResult::n_fields();
+            }
         }
 
-        Ok(Self::Response { retdata_start, retdata_end })
+        Ok(Self::Response {
+            retdata_start,
+            retdata_end,
+        })
     }
 
     fn write_response(&mut self, response: Self::Response, vm: &mut VirtualMachine, ptr: &mut Relocatable) -> WriteResponseResult {
@@ -118,9 +142,11 @@ impl TryFrom<Felt252> for CallHandlerId {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum DryRunKey {
-    Account(keys::evm::account::Key),
-    Header(keys::evm::header::Key),
-    Storage(keys::evm::storage::Key),
+    Account(evm::account::Key),
+    Header(evm::header::Key),
+    Storage(evm::storage::Key),
+    Receipt(evm::receipt::Key),
+    Tx(evm::transaction::Key),
 }
 
 impl DryRunKey {
@@ -135,7 +161,12 @@ impl DryRunKey {
     pub fn is_storage(&self) -> bool {
         matches!(self, Self::Storage(_))
     }
-}
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct DryRunKeySet(HashSet<DryRunKey>);
+    pub fn is_receipt(&self) -> bool {
+        matches!(self, Self::Receipt(_))
+    }
+
+    pub fn is_tx(&self) -> bool {
+        matches!(self, Self::Tx(_))
+    }
+}

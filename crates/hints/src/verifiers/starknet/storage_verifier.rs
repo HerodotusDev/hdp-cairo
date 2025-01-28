@@ -1,4 +1,5 @@
-use crate::vars;
+use std::collections::HashMap;
+
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData,
@@ -8,7 +9,6 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use std::collections::HashMap;
 use types::{
     cairo::{starknet::storage::CairoTrieNode, traits::CairoType},
     proofs::starknet::{
@@ -16,6 +16,8 @@ use types::{
         Proofs,
     },
 };
+
+use crate::vars;
 
 pub const HINT_BATCH_STORAGES_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch_starknet.storages))";
 
@@ -88,7 +90,8 @@ pub fn hint_set_contract_address(
     insert_value_into_ap(vm, storage.contract_address)
 }
 
-pub const HINT_SET_STORAGE_ADDRESSES: &str = "segments.write_arg(ids.storage_addresses, [int(x, 16) for x in storage_starknet.storage_addresses]))";
+pub const HINT_SET_STORAGE_ADDRESSES: &str =
+    "segments.write_arg(ids.storage_addresses, [int(x, 16) for x in storage_starknet.storage_addresses]))";
 
 pub fn hint_set_storage_addresses(
     vm: &mut VirtualMachine,
@@ -153,7 +156,11 @@ pub fn hint_set_storage_starknet_proof_contract_data_contract_state_hash_version
 
     insert_value_into_ap(
         vm,
-        storage.proof.contract_data.ok_or(HintError::WrongHintData)?.contract_state_hash_version,
+        storage
+            .proof
+            .contract_data
+            .ok_or(HintError::WrongHintData)?
+            .contract_state_hash_version,
     )
 }
 
@@ -206,7 +213,8 @@ pub fn hint_set_contract_nodes(
     Ok(())
 }
 
-pub const HINT_SET_STORAGE_STARKNET_PROOF_CLASS_COMMITMENT: &str = "memory[ap] = to_felt_or_relocatable(storage_starknet.proof.class_commitment)";
+pub const HINT_SET_STORAGE_STARKNET_PROOF_CLASS_COMMITMENT: &str =
+    "memory[ap] = to_felt_or_relocatable(storage_starknet.proof.class_commitment)";
 
 pub fn hint_set_storage_starknet_proof_class_commitment(
     vm: &mut VirtualMachine,
@@ -233,7 +241,10 @@ pub fn hint_set_storage_starknet_proof_contract_data_storage_proofs_len(
         .try_into()
         .unwrap();
 
-    insert_value_into_ap(vm, storage.proof.contract_data.ok_or(HintError::WrongHintData)?.storage_proofs[idx].len())
+    insert_value_into_ap(
+        vm,
+        storage.proof.contract_data.ok_or(HintError::WrongHintData)?.storage_proofs[idx].len(),
+    )
 }
 
 pub const HINT_SET_STORAGE_STARKNET_PROOF_CONTRACT_DATA_STORAGE_PROOF: &str =

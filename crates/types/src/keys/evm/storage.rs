@@ -1,5 +1,3 @@
-use super::KeyError;
-use crate::cairo::traits::CairoType;
 use alloy::primitives::{Address, BlockNumber, StorageKey};
 use cairo_vm::{
     types::relocatable::Relocatable,
@@ -8,6 +6,9 @@ use cairo_vm::{
 };
 use serde::{Deserialize, Serialize};
 use starknet_crypto::poseidon_hash_many;
+
+use super::KeyError;
+use crate::cairo::traits::CairoType;
 
 #[derive(Debug, Clone)]
 pub struct CairoKey {
@@ -66,7 +67,10 @@ impl TryFrom<CairoKey> for Key {
     fn try_from(value: CairoKey) -> Result<Self, Self::Error> {
         Ok(Self {
             chain_id: value.chain_id.try_into().map_err(|e| KeyError::ConversionError(format!("{}", e)))?,
-            block_number: value.block_number.try_into().map_err(|e| KeyError::ConversionError(format!("{}", e)))?,
+            block_number: value
+                .block_number
+                .try_into()
+                .map_err(|e| KeyError::ConversionError(format!("{}", e)))?,
             address: Address::try_from(value.address.to_biguint().to_bytes_be().as_slice())
                 .map_err(|e| KeyError::ConversionError(format!("{}", e)))?,
             storage_slot: StorageKey::from(

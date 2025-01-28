@@ -1,11 +1,12 @@
-use alloy::providers::{Provider, RootProvider};
-use alloy::rpc::types::BlockTransactionsKind;
-use alloy::transports::http::reqwest::Url;
-use alloy::transports::http::{Client, Http};
-use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
 use std::env;
-use syscall_handler::traits::CallHandler;
-use syscall_handler::{SyscallExecutionError, SyscallResult};
+
+use alloy::{
+    providers::{Provider, RootProvider},
+    rpc::types::BlockTransactionsKind,
+    transports::http::{reqwest::Url, Client, Http},
+};
+use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
+use syscall_handler::{traits::CallHandler, SyscallExecutionError, SyscallResult};
 use types::{
     cairo::{
         evm::header::{CairoHeader, FunctionId},
@@ -28,7 +29,8 @@ impl CallHandler for HeaderCallHandler {
     fn derive_key(vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Key> {
         let ret = CairoKey::from_memory(vm, *ptr)?;
         *ptr = (*ptr + CairoKey::n_fields())?;
-        ret.try_into().map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))
+        ret.try_into()
+            .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))
     }
 
     fn derive_id(selector: Felt252) -> SyscallResult<Self::Id> {

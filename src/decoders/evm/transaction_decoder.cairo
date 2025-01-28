@@ -22,6 +22,7 @@ from src.utils.rlp import (
     get_rlp_list_meta,
     get_rlp_list_bytes_len,
     le_chunks_to_be_uint256,
+    get_rlp_len,
 )
 from src.types import ChainInfo
 from src.utils.utils import get_felt_bytes_len, reverse_chunk_endianess
@@ -46,6 +47,7 @@ namespace TransactionField {
     const BLOB_VERSIONED_HASHES = 14;
     const TX_TYPE = 15;
     const SENDER = 16;
+    const HASH = 17;
 }
 
 namespace TransactionType {
@@ -70,6 +72,12 @@ namespace TransactionDecoder {
             let sender_felt = TransactionSender.derive(rlp, rlp_start_offset, tx_type, chain_id);
             let result = felt_to_uint256(sender_felt);
             return result;
+        }
+
+        if (field == TransactionField.HASH) {
+            let rlp_len = get_rlp_len(rlp, rlp_start_offset);
+            let (tx_hash) = keccak_bigend(rlp, rlp_len + rlp_start_offset);
+            return tx_hash;
         }
 
         if (field == TransactionField.INPUT) {

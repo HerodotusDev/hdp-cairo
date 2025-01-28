@@ -5,17 +5,20 @@ pub mod receipt_verifier;
 pub mod storage_item_verifier;
 pub mod transaction_verifier;
 
-use crate::vars;
-use cairo_vm::hint_processor::builtin_hint_processor::builtin_hint_processor_definition::HintProcessorData;
-use cairo_vm::hint_processor::builtin_hint_processor::hint_utils::{get_integer_from_var_name, insert_value_into_ap};
+use std::{any::Any, collections::HashMap};
+
 use cairo_vm::{
+    hint_processor::builtin_hint_processor::{
+        builtin_hint_processor_definition::HintProcessorData,
+        hint_utils::{get_integer_from_var_name, insert_value_into_ap},
+    },
     types::exec_scope::ExecutionScopes,
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use std::{any::Any, collections::HashMap};
-use types::proofs::evm;
-use types::ChainProofs;
+use types::{proofs::evm, ChainProofs};
+
+use crate::vars;
 
 pub const HINT_HEADERS_WITH_MMR_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch_evm.headers_with_mmr_evm))";
 

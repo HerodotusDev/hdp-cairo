@@ -49,7 +49,7 @@ func verify_block_receipt_proofs_inner{
         return ();
     }
 
-    %{ receipt = receipts[ids.idx] %}
+    %{ receipt = batch.receipts[ids.idx] %}
 
     local key: Uint256;
     %{ (ids.key.low, ids.key.high) = split_128(int(receipt.key, 16)) %}

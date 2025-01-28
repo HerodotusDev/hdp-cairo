@@ -1,11 +1,13 @@
-use crate::vars;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
+
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{builtin_hint_processor_definition::HintProcessorData, dict_manager::DictManager},
     types::exec_scope::ExecutionScopes,
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+
+use crate::vars;
 
 pub const DICT_MANAGER_CREATE: &str = "if '__dict_manager' not in globals():\n    __dict_manager = DictManager()";
 

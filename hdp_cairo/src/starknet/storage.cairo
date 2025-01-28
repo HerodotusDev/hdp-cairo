@@ -1,6 +1,6 @@
 use hdp_cairo::StarknetMemorizer;
 use starknet::syscalls::call_contract_syscall;
-use starknet::{SyscallResult, SyscallResultTrait};
+use starknet::{SyscallResultTrait};
 
 const STORAGE: felt252 = 1;
 const STORAGE_GET_SLOT: felt252 = 0;
@@ -27,7 +27,7 @@ pub impl StorageImpl of StorageTrait {
                 key.address,
                 key.storage_slot,
             ]
-                .span()
+                .span(),
         )
             .unwrap_syscall();
         (*value[0]).try_into().unwrap()

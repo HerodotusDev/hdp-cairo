@@ -56,13 +56,18 @@ impl IntoIterator for CairoTrieNode {
     fn into_iter(self) -> Self::IntoIter {
         match self.0 {
             TrieNode::Binary { left, right } => vec![FELT_0, left, right, FELT_0].into_iter(),
-            TrieNode::Edge { child, path } => vec![FELT_1, child, Felt252::from_hex(&path.value).unwrap(), Felt252::from(path.len)].into_iter(),
+            TrieNode::Edge { child, path } => {
+                vec![FELT_1, child, Felt252::from_hex(&path.value).unwrap(), Felt252::from(path.len)].into_iter()
+            }
         }
     }
 }
 
 impl CairoType for CairoTrieNode {
-    fn from_memory(vm: &cairo_vm::vm::vm_core::VirtualMachine, address: cairo_vm::types::relocatable::Relocatable) -> Result<Self, MemoryError> {
+    fn from_memory(
+        vm: &cairo_vm::vm::vm_core::VirtualMachine,
+        address: cairo_vm::types::relocatable::Relocatable,
+    ) -> Result<Self, MemoryError> {
         let node_type: u8 = (*vm.get_integer((address + 0)?)?).try_into().unwrap();
         match node_type {
             0 => Ok(Self(TrieNode::Binary {

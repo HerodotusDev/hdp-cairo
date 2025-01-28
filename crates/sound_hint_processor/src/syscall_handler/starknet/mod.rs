@@ -1,18 +1,22 @@
 pub mod header;
 pub mod storage;
 
-use cairo_vm::hint_processor::builtin_hint_processor::dict_manager::DictManager;
-use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
+use std::{cell::RefCell, hash::Hash, rc::Rc};
+
+use cairo_vm::{
+    hint_processor::builtin_hint_processor::dict_manager::DictManager, types::relocatable::Relocatable, vm::vm_core::VirtualMachine,
+    Felt252,
+};
 use serde::{Deserialize, Serialize};
-use std::cell::RefCell;
-use std::rc::Rc;
-use std::{collections::HashSet, hash::Hash};
 use strum_macros::FromRepr;
-use syscall_handler::traits::CallHandler;
-use syscall_handler::{traits, SyscallExecutionError, SyscallResult, WriteResponseResult};
-use types::cairo::new_syscalls::{CallContractRequest, CallContractResponse};
-use types::cairo::traits::CairoType;
-use types::keys;
+use syscall_handler::{traits, traits::CallHandler, SyscallExecutionError, SyscallResult, WriteResponseResult};
+use types::{
+    cairo::{
+        new_syscalls::{CallContractRequest, CallContractResponse},
+        traits::CairoType,
+    },
+    keys::starknet,
+};
 
 use super::Memorizer;
 
@@ -75,7 +79,10 @@ impl traits::SyscallHandler for CallContractHandler {
             }
         }
 
-        Ok(Self::Response { retdata_start, retdata_end })
+        Ok(Self::Response {
+            retdata_start,
+            retdata_end,
+        })
     }
 
     fn write_response(&mut self, response: Self::Response, vm: &mut VirtualMachine, ptr: &mut Relocatable) -> WriteResponseResult {
@@ -102,8 +109,8 @@ impl TryFrom<Felt252> for CallHandlerId {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum DryRunKey {
-    Header(keys::starknet::header::Key),
-    Storage(keys::starknet::storage::Key),
+    Header(starknet::header::Key),
+    Storage(starknet::storage::Key),
 }
 
 impl DryRunKey {
@@ -115,6 +122,3 @@ impl DryRunKey {
         matches!(self, Self::Storage(_))
     }
 }
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct DryRunKeySet(HashSet<DryRunKey>);

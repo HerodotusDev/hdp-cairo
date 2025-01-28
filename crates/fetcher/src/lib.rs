@@ -1,21 +1,23 @@
+use std::{
+    collections::{HashMap, HashSet},
+    num::ParseIntError,
+};
+
 use alloy::hex::FromHexError;
 use dry_hint_processor::syscall_handler::{evm, starknet, SyscallHandler};
 use futures::{FutureExt, StreamExt};
 use indexer::models::IndexerError;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use proof_keys::starknet::ProofKeys as StarknetProofKeys;
-use proof_keys::{evm::ProofKeys as EvmProofKeys, ProofKeys};
+use proof_keys::{evm::ProofKeys as EvmProofKeys, starknet::ProofKeys as StarknetProofKeys, ProofKeys};
 use starknet_types_core::felt::FromStrError;
-use std::collections::{HashMap, HashSet};
-use std::num::ParseIntError;
 use thiserror::Error;
-use types::proofs::evm::Proofs as EvmProofs;
-use types::proofs::starknet::Proofs as StarknetProofs;
 use types::proofs::{
-    evm::{account::Account, header::Header as EvmHeader, storage::Storage},
+    evm::{
+        account::Account, header::Header as EvmHeader, receipt::Receipt, storage::Storage, transaction::Transaction, Proofs as EvmProofs,
+    },
     header::HeaderMmrMeta,
     mmr::MmrMeta,
-    starknet::{header::Header as StarknetHeader, storage::Storage as StarknetStorage},
+    starknet::{header::Header as StarknetHeader, storage::Storage as StarknetStorage, Proofs as StarknetProofs},
 };
 
 pub mod proof_keys;
@@ -56,6 +58,8 @@ pub struct ProgressBars {
     pub evm_header: Option<ProgressBar>,
     pub evm_account: Option<ProgressBar>,
     pub evm_storage: Option<ProgressBar>,
+    pub evm_receipts: Option<ProgressBar>,
+    pub evm_transactions: Option<ProgressBar>,
     pub starknet_header: Option<ProgressBar>,
     pub starknet_storage: Option<ProgressBar>,
 }
@@ -63,6 +67,7 @@ pub struct ProgressBars {
 impl ProgressBars {
     pub fn new(proof_keys: &ProofKeys) -> Self {
         let multi_progress = MultiProgress::new();
+        #[allow(clippy::literal_string_with_formatting_args)]
         let style = ProgressStyle::with_template("[{elapsed_precise}] [{bar:40}] {pos}/{len} {msg}")
             .unwrap()
             .progress_chars("=> ");
@@ -71,6 +76,8 @@ impl ProgressBars {
             (proof_keys.evm.header_keys.len(), "ethereum header keys - fetching"),
             (proof_keys.evm.account_keys.len(), "ethereum account key - fetching"),
             (proof_keys.evm.storage_keys.len(), "ethereum storage keys - fetching"),
+            (proof_keys.evm.receipt_keys.len(), "ethereum receipts keys - fetching"),
+            (proof_keys.evm.transaction_keys.len(), "ethereum transactions keys - fetching"),
             (proof_keys.starknet.header_keys.len(), "starknet header keys - fetching"),
             (proof_keys.starknet.storage_keys.len(), "starknet storage keys - fetching"),
         ]
@@ -85,8 +92,10 @@ impl ProgressBars {
             evm_header: bars[0].clone(),
             evm_account: bars[1].clone(),
             evm_storage: bars[2].clone(),
-            starknet_header: bars[3].clone(),
-            starknet_storage: bars[4].clone(),
+            evm_receipts: bars[3].clone(),
+            evm_transactions: bars[4].clone(),
+            starknet_header: bars[5].clone(),
+            starknet_storage: bars[6].clone(),
         }
     }
 }
@@ -132,6 +141,8 @@ impl<'a> Fetcher<'a> {
         let mut headers_with_mmr = HashMap::default();
         let mut accounts: HashSet<Account> = HashSet::default();
         let mut storages: HashSet<Storage> = HashSet::default();
+        let mut receipts: HashSet<Receipt> = HashSet::default();
+        let mut transactions: HashSet<Transaction> = HashSet::default();
 
         // Collect header proofs
         let mut header_fut = futures::stream::iter(
@@ -156,7 +167,9 @@ impl<'a> Fetcher<'a> {
         }
 
         #[cfg(feature = "progress_bars")]
-        self.progress_bars.evm_header.safe_finish_with_message("ethereum header keys - finished");
+        self.progress_bars
+            .evm_header
+            .safe_finish_with_message("ethereum header keys - finished");
 
         // Collect account proofs
         let mut account_fut = futures::stream::iter(
@@ -215,11 +228,66 @@ impl<'a> Fetcher<'a> {
             .evm_storage
             .safe_finish_with_message("ethereum storage keys - finished");
 
+        // Collect ransaction receipts proofs
+        let mut transaction_receipts_fut = futures::stream::iter(
+            self.proof_keys
+                .evm
+                .receipt_keys
+                .iter()
+                .map(EvmProofKeys::fetch_receipt_proof)
+                .map(|f| f.boxed_local()),
+        )
+        .buffer_unordered(BUFFER_UNORDERED);
+
+        while let Some(Ok((header_with_mmr, transaction_receipt))) = transaction_receipts_fut.next().await {
+            headers_with_mmr
+                .entry(header_with_mmr.mmr_meta)
+                .and_modify(|headers: &mut Vec<EvmHeader>| headers.extend(header_with_mmr.headers.clone()))
+                .or_insert(header_with_mmr.headers);
+            receipts.insert(transaction_receipt);
+
+            #[cfg(feature = "progress_bars")]
+            self.progress_bars.evm_receipts.safe_inc();
+        }
+
+        #[cfg(feature = "progress_bars")]
+        self.progress_bars
+            .evm_receipts
+            .safe_finish_with_message("ethereum receipt keys - finished");
+
+        // Collect storage proofs
+        let mut transaction_keys_fut = futures::stream::iter(
+            self.proof_keys
+                .evm
+                .transaction_keys
+                .iter()
+                .map(EvmProofKeys::fetch_transaction_proof)
+                .map(|f| f.boxed_local()),
+        )
+        .buffer_unordered(BUFFER_UNORDERED);
+
+        while let Some(Ok((header_with_mmr, transaction))) = transaction_keys_fut.next().await {
+            headers_with_mmr
+                .entry(header_with_mmr.mmr_meta)
+                .and_modify(|headers: &mut Vec<EvmHeader>| headers.extend(header_with_mmr.headers.clone()))
+                .or_insert(header_with_mmr.headers);
+            transactions.insert(transaction);
+
+            #[cfg(feature = "progress_bars")]
+            self.progress_bars.evm_transactions.safe_inc();
+        }
+
+        #[cfg(feature = "progress_bars")]
+        self.progress_bars
+            .evm_transactions
+            .safe_finish_with_message("ethereum storage keys - finished");
+
         Ok(EvmProofs {
             headers_with_mmr: process_headers(headers_with_mmr),
             accounts: accounts.into_iter().collect(),
             storages: storages.into_iter().collect(),
-            ..Default::default()
+            transaction_receipts: receipts.into_iter().collect(),
+            transactions: transactions.into_iter().collect(),
         })
     }
 
@@ -315,6 +383,8 @@ pub fn parse_syscall_handler(input_file: &[u8]) -> Result<ProofKeys, FetcherErro
             evm::DryRunKey::Account(value) => proof_keys.evm.account_keys.insert(value),
             evm::DryRunKey::Header(value) => proof_keys.evm.header_keys.insert(value),
             evm::DryRunKey::Storage(value) => proof_keys.evm.storage_keys.insert(value),
+            evm::DryRunKey::Receipt(value) => proof_keys.evm.receipt_keys.insert(value),
+            evm::DryRunKey::Tx(value) => proof_keys.evm.transaction_keys.insert(value),
         };
     }
 

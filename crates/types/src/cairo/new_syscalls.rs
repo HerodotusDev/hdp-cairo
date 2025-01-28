@@ -1,10 +1,11 @@
-use super::traits::CairoType;
 use cairo_type_derive::FieldOffsetGetters;
 use cairo_vm::{
     types::relocatable::Relocatable,
     vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
     Felt252,
 };
+
+use super::traits::CairoType;
 
 #[derive(FieldOffsetGetters, Debug)]
 pub struct CallContractRequest {
@@ -52,7 +53,10 @@ impl CairoType for CallContractResponse {
     fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
         let retdata_start = vm.get_relocatable((address + 0)?)?;
         let retdata_end = vm.get_relocatable((address + 1)?)?;
-        Ok(Self { retdata_start, retdata_end })
+        Ok(Self {
+            retdata_start,
+            retdata_end,
+        })
     }
     fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<(), MemoryError> {
         vm.insert_value((address + 0)?, self.retdata_start)?;

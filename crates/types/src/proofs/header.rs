@@ -1,7 +1,8 @@
-use super::mmr::MmrMeta;
 use cairo_vm::Felt252;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
+
+use super::mmr::MmrMeta;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default, Hash)]
 pub struct HeaderMmrMeta<T> {

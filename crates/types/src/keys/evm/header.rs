@@ -1,5 +1,3 @@
-use super::{account, storage, KeyError};
-use crate::cairo::traits::CairoType;
 use alloy::primitives::BlockNumber;
 use cairo_vm::{
     types::relocatable::Relocatable,
@@ -8,6 +6,9 @@ use cairo_vm::{
 };
 use serde::{Deserialize, Serialize};
 use starknet_crypto::poseidon_hash_many;
+
+use super::{account, receipt, storage, transaction, KeyError};
+use crate::cairo::traits::CairoType;
 
 #[derive(Debug, Clone)]
 pub struct CairoKey {
@@ -62,12 +63,33 @@ impl From<storage::Key> for Key {
     }
 }
 
+impl From<receipt::Key> for Key {
+    fn from(value: receipt::Key) -> Self {
+        Self {
+            chain_id: value.chain_id,
+            block_number: value.block_number,
+        }
+    }
+}
+
+impl From<transaction::Key> for Key {
+    fn from(value: transaction::Key) -> Self {
+        Self {
+            chain_id: value.chain_id,
+            block_number: value.block_number,
+        }
+    }
+}
+
 impl TryFrom<CairoKey> for Key {
     type Error = KeyError;
     fn try_from(value: CairoKey) -> Result<Self, Self::Error> {
         Ok(Self {
             chain_id: value.chain_id.try_into().map_err(|e| KeyError::ConversionError(format!("{}", e)))?,
-            block_number: value.block_number.try_into().map_err(|e| KeyError::ConversionError(format!("{}", e)))?,
+            block_number: value
+                .block_number
+                .try_into()
+                .map_err(|e| KeyError::ConversionError(format!("{}", e)))?,
         })
     }
 }
