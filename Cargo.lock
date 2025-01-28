@@ -5618,6 +5618,7 @@ dependencies = [
  "fetcher",
  "hints",
  "serde",
+ "serde_json",
  "sound_hint_processor",
  "tokio",
  "tower-http",

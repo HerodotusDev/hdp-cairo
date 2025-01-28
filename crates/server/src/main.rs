@@ -5,7 +5,11 @@
 
 use std::time::Duration;
 
-use axum::{Router, routing::post};
+use axum::{
+    Json, Router,
+    routing::{get, post},
+};
+use serde_json::{Value, json};
 use tokio::{net::TcpListener, signal};
 use tower_http::{timeout::TimeoutLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -34,6 +38,7 @@ async fn main() {
 
     // Create a regular axum app.
     let app = Router::new()
+        .route("/alive", get(alive))
         .route("/dry_run", post(dry_run::root))
         .route("/fetch_proofs", post(fetch_proofs::root))
         .route("/sound_run", post(sound_run::root))
@@ -50,6 +55,10 @@ async fn main() {
 
     // Run the server with graceful shutdown
     axum::serve(listener, app).with_graceful_shutdown(shutdown_signal()).await.unwrap();
+}
+
+async fn alive() -> Json<Value> {
+    Json(json!({ "status": "alive" }))
 }
 
 async fn shutdown_signal() {
