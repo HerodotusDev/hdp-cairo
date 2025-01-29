@@ -5957,6 +5957,11 @@ name = "syscall_handler"
 version = "0.1.0"
 dependencies = [
  "cairo-vm",
+ "keccak",
+ "num-bigint",
+ "num-integer",
+ "num-traits",
+ "serde",
  "thiserror 1.0.69",
  "types",
 ]
