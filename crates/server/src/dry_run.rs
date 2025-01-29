@@ -22,6 +22,11 @@ pub struct DryRunRequest {
     input: HDPDryRunInput,
 }
 
+#[utoipa::path(
+    get,
+    path = "/dry_run",
+    request_body = ref("DryRunRequest") // TODO implement ToSchema (big and tedious task impl when explicitly needed)
+)]
 pub async fn root(Json(value): Json<DryRunRequest>) -> Result<Json<SyscallHandler>, AppError> {
     // Init CairoRunConfig
     let cairo_run_config = cairo_run::CairoRunConfig {

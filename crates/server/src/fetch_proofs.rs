@@ -5,6 +5,11 @@ use types::ChainProofs;
 
 use crate::error::AppError;
 
+#[utoipa::path(
+    get,
+    path = "/fetch_proofs",
+    request_body = ref("SyscallHandler") // TODO implement ToSchema (big and tedious task impl when explicitly needed)
+)]
 pub async fn root(Json(value): Json<SyscallHandler>) -> Result<Json<Vec<ChainProofs>>, AppError> {
     let proof_keys = parse_syscall_handler(value)?;
 
