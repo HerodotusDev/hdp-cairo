@@ -5,7 +5,7 @@ use std::{
 
 use alloy::hex::FromHexError;
 use dry_hint_processor::syscall_handler::{evm, starknet, SyscallHandler};
-use futures::{FutureExt, StreamExt};
+use futures::StreamExt;
 use indexer::models::IndexerError;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use proof_keys::{evm::ProofKeys as EvmProofKeys, starknet::ProofKeys as StarknetProofKeys, ProofKeys};
@@ -150,10 +150,10 @@ impl<'a> Fetcher<'a> {
                 .evm
                 .header_keys
                 .iter()
-                .map(|key| EvmProofKeys::fetch_header_proof(key.chain_id, key.block_number))
-                .map(|f| f.boxed_local()),
+                .map(|key| EvmProofKeys::fetch_header_proof(key.chain_id, key.block_number)),
         )
-        .buffer_unordered(BUFFER_UNORDERED);
+        .buffer_unordered(BUFFER_UNORDERED)
+        .boxed();
 
         while let Some(result) = header_fut.next().await {
             let item = result?;
@@ -172,15 +172,9 @@ impl<'a> Fetcher<'a> {
             .safe_finish_with_message("ethereum header keys - finished");
 
         // Collect account proofs
-        let mut account_fut = futures::stream::iter(
-            self.proof_keys
-                .evm
-                .account_keys
-                .iter()
-                .map(EvmProofKeys::fetch_account_proof)
-                .map(|f| f.boxed_local()),
-        )
-        .buffer_unordered(BUFFER_UNORDERED);
+        let mut account_fut = futures::stream::iter(self.proof_keys.evm.account_keys.iter().map(EvmProofKeys::fetch_account_proof))
+            .buffer_unordered(BUFFER_UNORDERED)
+            .boxed();
 
         while let Some(result) = account_fut.next().await {
             let (header_with_mmr, account) = result?;
@@ -200,15 +194,9 @@ impl<'a> Fetcher<'a> {
             .safe_finish_with_message("ethereum account keys - finished");
 
         // Collect storage proofs
-        let mut storage_fut = futures::stream::iter(
-            self.proof_keys
-                .evm
-                .storage_keys
-                .iter()
-                .map(EvmProofKeys::fetch_storage_proof)
-                .map(|f| f.boxed_local()),
-        )
-        .buffer_unordered(BUFFER_UNORDERED);
+        let mut storage_fut = futures::stream::iter(self.proof_keys.evm.storage_keys.iter().map(EvmProofKeys::fetch_storage_proof))
+            .buffer_unordered(BUFFER_UNORDERED)
+            .boxed();
 
         while let Some(result) = storage_fut.next().await {
             let (header_with_mmr, account, storage) = result?;
@@ -229,15 +217,10 @@ impl<'a> Fetcher<'a> {
             .safe_finish_with_message("ethereum storage keys - finished");
 
         // Collect ransaction receipts proofs
-        let mut transaction_receipts_fut = futures::stream::iter(
-            self.proof_keys
-                .evm
-                .receipt_keys
-                .iter()
-                .map(EvmProofKeys::fetch_receipt_proof)
-                .map(|f| f.boxed_local()),
-        )
-        .buffer_unordered(BUFFER_UNORDERED);
+        let mut transaction_receipts_fut =
+            futures::stream::iter(self.proof_keys.evm.receipt_keys.iter().map(EvmProofKeys::fetch_receipt_proof))
+                .buffer_unordered(BUFFER_UNORDERED)
+                .boxed();
 
         while let Some(Ok((header_with_mmr, transaction_receipt))) = transaction_receipts_fut.next().await {
             headers_with_mmr
@@ -261,10 +244,10 @@ impl<'a> Fetcher<'a> {
                 .evm
                 .transaction_keys
                 .iter()
-                .map(EvmProofKeys::fetch_transaction_proof)
-                .map(|f| f.boxed_local()),
+                .map(EvmProofKeys::fetch_transaction_proof),
         )
-        .buffer_unordered(BUFFER_UNORDERED);
+        .buffer_unordered(BUFFER_UNORDERED)
+        .boxed();
 
         while let Some(Ok((header_with_mmr, transaction))) = transaction_keys_fut.next().await {
             headers_with_mmr
@@ -301,10 +284,10 @@ impl<'a> Fetcher<'a> {
                 .starknet
                 .header_keys
                 .iter()
-                .map(|key| StarknetProofKeys::fetch_header_proof(key.chain_id, key.block_number))
-                .map(|f| f.boxed_local()),
+                .map(|key| StarknetProofKeys::fetch_header_proof(key.chain_id, key.block_number)),
         )
-        .buffer_unordered(BUFFER_UNORDERED);
+        .buffer_unordered(BUFFER_UNORDERED)
+        .boxed();
 
         while let Some(result) = header_fut.next().await {
             let item = result?;
@@ -328,10 +311,10 @@ impl<'a> Fetcher<'a> {
                 .starknet
                 .storage_keys
                 .iter()
-                .map(StarknetProofKeys::fetch_storage_proof)
-                .map(|f| f.boxed_local()),
+                .map(StarknetProofKeys::fetch_storage_proof),
         )
-        .buffer_unordered(BUFFER_UNORDERED);
+        .buffer_unordered(BUFFER_UNORDERED)
+        .boxed();
 
         while let Some(result) = storage_fut.next().await {
             let (header_with_mmr, storage) = result?;
@@ -373,8 +356,7 @@ where
         .collect()
 }
 
-pub fn parse_syscall_handler(input_file: &[u8]) -> Result<ProofKeys, FetcherError> {
-    let syscall_handler = serde_json::from_slice::<SyscallHandler>(input_file)?;
+pub fn parse_syscall_handler(syscall_handler: SyscallHandler) -> Result<ProofKeys, FetcherError> {
     let mut proof_keys = ProofKeys::default();
 
     // Process EVM keys
