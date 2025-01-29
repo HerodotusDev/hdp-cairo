@@ -13,7 +13,9 @@ use evm::CallContractHandler as EvmCallContractHandler;
 use hints::vars;
 use serde::{Deserialize, Serialize};
 use starknet::CallContractHandler as StarknetCallContractHandler;
-use syscall_handler::{felt_from_ptr, run_handler, traits, SyscallExecutionError, SyscallResult, SyscallSelector, WriteResponseResult};
+use syscall_handler::{
+    felt_from_ptr, keccak::KeccakHandler, run_handler, traits, SyscallExecutionError, SyscallResult, SyscallSelector, WriteResponseResult,
+};
 use tokio::{sync::RwLock, task};
 use types::{
     cairo::{
@@ -28,6 +30,8 @@ pub struct SyscallHandler {
     #[serde(skip)]
     pub syscall_ptr: Option<Relocatable>,
     pub call_contract_handler: CallContractHandlerRelay,
+    #[serde(skip)]
+    pub keccak_handler: KeccakHandler,
 }
 
 /// SyscallHandler is wrapped in Rc<RefCell<_>> in order
@@ -63,6 +67,7 @@ impl SyscallHandlerWrapper {
 
         match SyscallSelector::try_from(felt_from_ptr(vm, ptr)?)? {
             SyscallSelector::CallContract => run_handler(&mut syscall_handler.call_contract_handler, ptr, vm).await,
+            SyscallSelector::Keccak => run_handler(&mut syscall_handler.keccak_handler, ptr, vm).await,
         }?;
 
         syscall_handler.syscall_ptr = Some(*ptr);

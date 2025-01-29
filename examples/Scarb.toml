@@ -8,6 +8,7 @@ edition = "2023_11"
 [dependencies]
 starknet = { workspace = true }
 hdp_cairo = { workspace = true }
+alexandria_bytes = { git = "https://github.com/keep-starknet-strange/alexandria.git" }
 
 [[target.starknet-contract]]
 sierra = true
