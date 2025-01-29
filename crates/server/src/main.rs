@@ -137,7 +137,7 @@ mod tests {
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn test_fetch_proofs_endpoint() {
         let app = build_test_app();
-        let input = serde_json::from_str::<SyscallHandler>(&std::fs::read_to_string("../../hdp_keys.json").unwrap()).unwrap();
+        let input = serde_json::from_str::<SyscallHandler>(&std::fs::read_to_string("tests/input_hdp_keys.json").unwrap()).unwrap();
 
         let response = app
             .oneshot(
@@ -169,7 +169,7 @@ mod tests {
             "layout": "starknet_with_keccak",
             "input": HDPInput {
                 chain_proofs: serde_json::from_str::<Vec<ChainProofs>>(
-                    &std::fs::read_to_string("../../hdp_proofs.json").unwrap()
+                    &std::fs::read_to_string("tests/input_hdp_proofs.json").unwrap()
                 ).unwrap(),
                 params: sub_input.params,
                 compiled_class: sub_input.compiled_class,
@@ -217,7 +217,7 @@ mod tests {
         assert_eq!(dry_run_response.status(), StatusCode::OK);
 
         // 2. Then fetch proofs
-        let fetch_input = serde_json::from_str::<SyscallHandler>(&std::fs::read_to_string("../../hdp_keys.json").unwrap()).unwrap();
+        let fetch_input = serde_json::from_str::<SyscallHandler>(&std::fs::read_to_string("tests/input_hdp_keys.json").unwrap()).unwrap();
         let fetch_response = app
             .clone()
             .oneshot(
@@ -238,7 +238,7 @@ mod tests {
             "layout": "starknet_with_keccak",
             "input": HDPInput {
                 chain_proofs: serde_json::from_str::<Vec<ChainProofs>>(
-                    &std::fs::read_to_string("../../hdp_proofs.json").unwrap()
+                    &std::fs::read_to_string("tests/input_hdp_proofs.json").unwrap()
                 ).unwrap(),
                 params: sub_input.params,
                 compiled_class: sub_input.compiled_class,
