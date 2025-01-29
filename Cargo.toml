@@ -29,6 +29,7 @@ clap = { version = "4.3.10", features = ["derive"] }
 eth-trie-proofs = { git = "https://github.com/HerodotusDev/eth-trie-proofs.git" }
 futures = "0.3.31"
 hex = "0.4.3"
+http-body-util = "=0.1.0"
 indicatif = "0.17.9"
 num-bigint = "0.4.6"
 num-traits = "0.2.19"

@@ -90,6 +90,7 @@ mod tests {
         http::{Request, StatusCode},
     };
     use dry_hint_processor::syscall_handler::SyscallHandler;
+    use http_body_util::BodyExt;
     use tower::ServiceExt;
     use types::{ChainProofs, HDPDryRunInput, HDPInput};
 
@@ -109,7 +110,7 @@ mod tests {
             "params": Option::<()>::None,
             "layout": "starknet_with_keccak",
             "input": serde_json::from_str::<HDPDryRunInput>(
-                &std::fs::read_to_string("../../examples/hdp_input.json").unwrap()
+                &std::fs::read_to_string("tests/hdp_input.json").unwrap()
             ).unwrap()
         });
 
@@ -130,14 +131,14 @@ mod tests {
         let output: serde_json::Value = serde_json::from_slice(&body).unwrap();
         assert_eq!(
             output,
-            serde_json::from_str::<serde_json::Value>(&std::fs::read_to_string("tests/expected_hdp_keys.json").unwrap()).unwrap()
+            serde_json::from_str::<serde_json::Value>(&std::fs::read_to_string("tests/hdp_keys.json").unwrap()).unwrap()
         );
     }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn test_fetch_proofs_endpoint() {
         let app = build_test_app();
-        let input = serde_json::from_str::<SyscallHandler>(&std::fs::read_to_string("tests/input_hdp_keys.json").unwrap()).unwrap();
+        let input = serde_json::from_str::<SyscallHandler>(&std::fs::read_to_string("tests/hdp_keys.json").unwrap()).unwrap();
 
         let response = app
             .oneshot(
@@ -156,20 +157,20 @@ mod tests {
         let output: serde_json::Value = serde_json::from_slice(&body).unwrap();
         assert_eq!(
             output,
-            serde_json::from_str::<serde_json::Value>(&std::fs::read_to_string("tests/expected_hdp_proofs.json").unwrap()).unwrap()
+            serde_json::from_str::<serde_json::Value>(&std::fs::read_to_string("tests/hdp_proofs.json").unwrap()).unwrap()
         );
     }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn test_sound_run_endpoint() {
         let app = build_test_app();
-        let sub_input = serde_json::from_str::<HDPDryRunInput>(&std::fs::read_to_string("../../examples/hdp_input.json").unwrap()).unwrap();
+        let sub_input = serde_json::from_str::<HDPDryRunInput>(&std::fs::read_to_string("tests/hdp_input.json").unwrap()).unwrap();
         let input = serde_json::json!({
             "params": Option::<()>::None,
             "layout": "starknet_with_keccak",
             "input": HDPInput {
                 chain_proofs: serde_json::from_str::<Vec<ChainProofs>>(
-                    &std::fs::read_to_string("tests/input_hdp_proofs.json").unwrap()
+                    &std::fs::read_to_string("tests/hdp_proofs.json").unwrap()
                 ).unwrap(),
                 params: sub_input.params,
                 compiled_class: sub_input.compiled_class,
@@ -196,7 +197,7 @@ mod tests {
         let app = build_test_app();
 
         // 1. First dry run
-        let sub_input = serde_json::from_str::<HDPDryRunInput>(&std::fs::read_to_string("../../examples/hdp_input.json").unwrap()).unwrap();
+        let sub_input = serde_json::from_str::<HDPDryRunInput>(&std::fs::read_to_string("tests/hdp_input.json").unwrap()).unwrap();
         let dry_run_input = serde_json::json!({
             "params": Option::<()>::None,
             "layout": "starknet_with_keccak",
@@ -217,7 +218,8 @@ mod tests {
         assert_eq!(dry_run_response.status(), StatusCode::OK);
 
         // 2. Then fetch proofs
-        let fetch_input = serde_json::from_str::<SyscallHandler>(&std::fs::read_to_string("tests/input_hdp_keys.json").unwrap()).unwrap();
+        let fetch_input =
+            serde_json::from_slice::<SyscallHandler>(&dry_run_response.into_body().collect().await.unwrap().to_bytes()).unwrap();
         let fetch_response = app
             .clone()
             .oneshot(
@@ -237,8 +239,8 @@ mod tests {
             "params": Option::<()>::None,
             "layout": "starknet_with_keccak",
             "input": HDPInput {
-                chain_proofs: serde_json::from_str::<Vec<ChainProofs>>(
-                    &std::fs::read_to_string("tests/input_hdp_proofs.json").unwrap()
+                chain_proofs: serde_json::from_slice::<Vec<ChainProofs>>(
+                    &fetch_response.into_body().collect().await.unwrap().to_bytes()
                 ).unwrap(),
                 params: sub_input.params,
                 compiled_class: sub_input.compiled_class,

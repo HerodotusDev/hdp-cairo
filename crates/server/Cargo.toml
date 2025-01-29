@@ -21,6 +21,7 @@ utoipa.workspace = true
 utoipa-swagger-ui.workspace = true
 
 [dev-dependencies]
+http-body-util.workspace = true
 serde_json.workspace = true
 tower = "0.5.2"
 utoipa.workspace = true
