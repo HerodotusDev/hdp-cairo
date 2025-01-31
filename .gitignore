@@ -38,3 +38,4 @@ target
 .cargo
 
 !examples/*.json
+!crates/server/tests/*.json

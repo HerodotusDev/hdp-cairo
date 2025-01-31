@@ -3,6 +3,7 @@
 #![warn(unused_crate_dependencies)]
 #![forbid(unsafe_code)]
 
+pub mod keccak;
 pub mod traits;
 
 use cairo_vm::{
@@ -22,6 +23,7 @@ use traits::SyscallHandler;
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SyscallSelector {
     CallContract,
+    Keccak,
 }
 
 impl TryFrom<Felt252> for SyscallSelector {
@@ -33,6 +35,7 @@ impl TryFrom<Felt252> for SyscallSelector {
 
         match &selector_bytes[first_non_zero..] {
             b"CallContract" => Ok(Self::CallContract),
+            b"Keccak" => Ok(Self::Keccak),
             _ => Err(HintError::CustomHint(format!("Unknown syscall selector: {}", raw_selector).into())),
         }
     }

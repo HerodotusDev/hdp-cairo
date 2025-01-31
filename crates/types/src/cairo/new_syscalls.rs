@@ -67,3 +67,47 @@ impl CairoType for CallContractResponse {
         2
     }
 }
+
+#[derive(FieldOffsetGetters, Debug)]
+pub struct KeccakRequest {
+    pub input_start: Relocatable,
+    pub input_end: Relocatable,
+}
+
+impl CairoType for KeccakRequest {
+    fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
+        let input_start = vm.get_relocatable((address + 0)?)?;
+        let input_end = vm.get_relocatable((address + 1)?)?;
+        Ok(Self { input_start, input_end })
+    }
+    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<(), MemoryError> {
+        vm.insert_value((address + 0)?, self.input_start)?;
+        vm.insert_value((address + 1)?, self.input_end)?;
+        Ok(())
+    }
+    fn n_fields() -> usize {
+        2
+    }
+}
+
+#[derive(FieldOffsetGetters, Debug)]
+pub struct KeccakResponse {
+    pub result_low: Felt252,
+    pub result_high: Felt252,
+}
+
+impl CairoType for KeccakResponse {
+    fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
+        let result_low = *vm.get_integer((address + 0)?)?;
+        let result_high = *vm.get_integer((address + 1)?)?;
+        Ok(Self { result_low, result_high })
+    }
+    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<(), MemoryError> {
+        vm.insert_value((address + 0)?, self.result_low)?;
+        vm.insert_value((address + 1)?, self.result_high)?;
+        Ok(())
+    }
+    fn n_fields() -> usize {
+        2
+    }
+}
