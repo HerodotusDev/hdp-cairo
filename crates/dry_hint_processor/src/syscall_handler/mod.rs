@@ -14,7 +14,8 @@ use hints::vars;
 use serde::{Deserialize, Serialize};
 use starknet::CallContractHandler as StarknetCallContractHandler;
 use syscall_handler::{
-    felt_from_ptr, keccak::KeccakHandler, debug::DebugHandler, run_handler, traits, SyscallExecutionError, SyscallResult, SyscallSelector, WriteResponseResult,
+    debug::DebugHandler, felt_from_ptr, keccak::KeccakHandler, run_handler, traits, SyscallExecutionError, SyscallResult, SyscallSelector,
+    WriteResponseResult,
 };
 use tokio::{sync::RwLock, task};
 use types::{

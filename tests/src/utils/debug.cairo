@@ -1,7 +1,5 @@
 #[starknet::contract]
 mod test_debug_print {
-    use hdp_cairo::evm::account::AccountTrait;
-    use hdp_cairo::{HDP, evm::account::{AccountKey, AccountImpl}};
     use hdp_cairo::debug::{print, print_array};
     use core::fmt::{Display, Formatter, Error};
 

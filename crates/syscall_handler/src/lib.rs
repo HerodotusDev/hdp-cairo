@@ -3,9 +3,9 @@
 #![warn(unused_crate_dependencies)]
 #![forbid(unsafe_code)]
 
+pub mod debug;
 pub mod keccak;
 pub mod traits;
-pub mod debug;
 
 use cairo_vm::{
     types::{

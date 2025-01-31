@@ -1,11 +1,12 @@
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
 use serde::{Deserialize, Serialize};
 use strum_macros::FromRepr;
-use crate::{traits, SyscallExecutionError, SyscallResult, WriteResponseResult};
 use types::cairo::{
     new_syscalls::{CallContractRequest, CallContractResponse},
     traits::CairoType,
 };
+
+use crate::{traits, SyscallExecutionError, SyscallResult, WriteResponseResult};
 
 #[derive(FromRepr)]
 pub enum CallHandlerId {
