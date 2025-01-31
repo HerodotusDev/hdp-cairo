@@ -228,7 +228,7 @@ impl<'a> Fetcher<'a> {
         let mut tx_receipts_mpt_handlers: HashMap<u64, Box<TxReceiptsMptHandler>> = HashMap::default();
 
         for key in self.proof_keys.evm.receipt_keys.iter() {
-            if !tx_receipts_mpt_handlers.contains_key(&key.block_number) {
+            if let std::collections::hash_map::Entry::Vacant(e) = tx_receipts_mpt_handlers.entry(key.block_number) {
                 let tx_receipts_mpt_handler = TxReceiptsMptHandler::new(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap())
                     .map_err(|e| FetcherError::InternalError(e.to_string()))?;
 
@@ -240,7 +240,7 @@ impl<'a> Fetcher<'a> {
                     .await
                     .map_err(|e| FetcherError::InternalError(e.to_string()))?;
 
-                tx_receipts_mpt_handlers.insert(key.block_number, boxed_handler);
+                e.insert(boxed_handler);
             }
         }
 
@@ -277,7 +277,7 @@ impl<'a> Fetcher<'a> {
         let mut tx_trie_handlers: HashMap<u64, Box<TxsMptHandler>> = HashMap::default();
 
         for key in self.proof_keys.evm.transaction_keys.iter() {
-            if !tx_trie_handlers.contains_key(&key.block_number) {
+            if let std::collections::hash_map::Entry::Vacant(e) = tx_trie_handlers.entry(key.block_number) {
                 let tx_trie_handler = TxsMptHandler::new(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap())
                     .map_err(|e| FetcherError::InternalError(e.to_string()))?;
 
@@ -288,7 +288,7 @@ impl<'a> Fetcher<'a> {
                     .await
                     .map_err(|e| FetcherError::InternalError(e.to_string()))?;
 
-                tx_trie_handlers.insert(key.block_number, boxed_handler);
+                e.insert(boxed_handler);
             }
         }
 
