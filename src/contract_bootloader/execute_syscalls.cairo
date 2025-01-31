@@ -127,12 +127,12 @@ func execute_call_contract{
     let field = request.selector;
 
     // Debug Contract does not need to be executed
-    if (call_contract_request.contract_address == 99) {
+    if (request.contract_address == 99) {
         return ();
     }
 
-    let layout = chain_id_to_layout(call_contract_request.calldata_start[2]);
-    let output_ptr = call_contract_response.retdata_start;
+    let layout = chain_id_to_layout(request.calldata_start[2]);
+    let output_ptr = response.retdata_start;
 
     if (layout == Layout.EVM) {
         with output_ptr {

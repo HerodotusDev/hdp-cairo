@@ -17,9 +17,9 @@ use cairo_vm::{
 use hints::vars;
 use serde::{Deserialize, Serialize};
 use shared_syscall_handlers::debug_handler::DebugHandler;
-use std::{any::Any, cell::RefCell, collections::HashMap, rc::Rc};
-use syscall_handler::traits;
-use syscall_handler::{felt_from_ptr, run_handler, SyscallExecutionError, SyscallResult, SyscallSelector, WriteResponseResult};
+use syscall_handler::{
+    felt_from_ptr, keccak::KeccakHandler, run_handler, traits, SyscallExecutionError, SyscallResult, SyscallSelector, WriteResponseResult,
+};
 use tokio::{sync::RwLock, task};
 use types::{
     cairo::{

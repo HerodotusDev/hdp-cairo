@@ -81,6 +81,7 @@ impl SyscallHandlerWrapper {
 pub struct CallContractHandlerRelay {
     pub evm_call_contract_handler: EvmCallContractHandler,
     pub starknet_call_contract_handler: StarknetCallContractHandler,
+    #[serde(skip)]
     pub debug_handler: DebugHandler,
 }
 

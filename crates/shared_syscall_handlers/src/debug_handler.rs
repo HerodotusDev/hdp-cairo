@@ -1,5 +1,4 @@
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
-
 use serde::{Deserialize, Serialize};
 use strum_macros::FromRepr;
 use syscall_handler::{traits, SyscallExecutionError, SyscallResult, WriteResponseResult};
