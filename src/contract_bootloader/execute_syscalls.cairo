@@ -127,7 +127,7 @@ func execute_call_contract{
     let field = request.selector;
 
     // Debug Contract does not need to be executed
-    if (request.contract_address == 99) {
+    if (request.contract_address == 'debug') {
         return ();
     }
 

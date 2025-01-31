@@ -5,6 +5,7 @@
 
 pub mod keccak;
 pub mod traits;
+pub mod debug;
 
 use cairo_vm::{
     types::{
