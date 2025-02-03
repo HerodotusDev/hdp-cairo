@@ -8,6 +8,9 @@ pub mod evm;
 pub mod starknet;
 
 #[cfg(test)]
+pub mod utils;
+
+#[cfg(test)]
 mod test_utils {
     use std::{env, path::PathBuf};
 

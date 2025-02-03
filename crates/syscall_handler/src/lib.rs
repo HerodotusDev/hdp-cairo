@@ -3,6 +3,7 @@
 #![warn(unused_crate_dependencies)]
 #![forbid(unsafe_code)]
 
+pub mod call_contract;
 pub mod keccak;
 pub mod traits;
 
