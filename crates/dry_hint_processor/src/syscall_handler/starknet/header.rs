@@ -2,6 +2,7 @@ use std::env;
 
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
 use reqwest::Url;
+use serde_json::Value;
 use syscall_handler::{traits::CallHandler, SyscallExecutionError, SyscallResult};
 use types::{
     cairo::{
@@ -12,7 +13,6 @@ use types::{
     keys::starknet::header::{CairoKey, Key},
     HERODOTUS_STAGING_INDEXER,
 };
-use serde_json::Value;
 
 #[derive(Debug, Default)]
 pub struct HeaderCallHandler;
