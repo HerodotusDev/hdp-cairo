@@ -5,15 +5,13 @@ use reqwest::Url;
 use syscall_handler::{traits::CallHandler, SyscallExecutionError, SyscallResult};
 use types::{
     cairo::{
-        starknet::header::{Block, FunctionId, StarknetBlock},
+        starknet::header::{FunctionId, StarknetBlock},
         structs::Felt,
         traits::CairoType,
     },
     keys::starknet::header::{CairoKey, Key},
-    RPC_URL_FEEDER_GATEWAY,
+    HERODOTUS_STAGING_INDEXER,
 };
-
-use crate::syscall_handler::{STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID};
 
 #[derive(Debug, Default)]
 pub struct HeaderCallHandler;
@@ -43,43 +41,45 @@ impl CallHandler for HeaderCallHandler {
     }
 
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
-        let base_url = Url::parse(&env::var(RPC_URL_FEEDER_GATEWAY).unwrap()).unwrap();
+        // Parse base URL from environment variable
+        let base_url = Url::parse(&env::var(HERODOTUS_STAGING_INDEXER).unwrap()).unwrap();
 
-        // Feeder Gateway rejects the requests if this header is not set
-        let host_header = match key.chain_id {
-            STARKNET_MAINNET_CHAIN_ID => "alpha-mainnet.starknet.io",
-            STARKNET_TESTNET_CHAIN_ID => "alpha-sepolia.starknet.io",
-            _ => {
-                return Err(SyscallExecutionError::InternalError(
-                    format!("Unknown chain id: {}", key.chain_id).into(),
-                ))
-            }
-        };
-
-        let request = reqwest::Client::new()
-            .get(format!("{}get_block", base_url))
-            .header("Host", host_header)
-            .query(&[("blockNumber", key.block_number.to_string())]);
-
-        let response = request
+        // Build and execute request
+        let response = reqwest::Client::new()
+            .get(format!("{}blocks", base_url))
+            .query(&[
+                ("chain_id", key.chain_id.to_string()),
+                ("from_block_number_inclusive", key.block_number.to_string()),
+                ("to_block_number_inclusive", key.block_number.to_string()),
+                ("hashing_function", "poseidon".to_string()),
+            ])
             .send()
             .await
             .map_err(|e| SyscallExecutionError::InternalError(format!("Network request failed: {}", e).into()))?;
 
-        let block_data: Block = match response.status().is_success() {
-            true => response.json().await,
-            false => {
-                let status = response.status();
-                let error_body = response.text().await.unwrap_or_default();
-                return Err(SyscallExecutionError::InternalError(
-                    format!("Request failed ({}): {}", status, error_body).into(),
-                ));
-            }
-        }
-        .map_err(|e| SyscallExecutionError::InternalError(format!("Failed to parse block data: {}", e).into()))?;
+        // Parse JSON response and extract fields
+        let blocks: serde_json::Value = response
+            .json()
+            .await
+            .map_err(|e| SyscallExecutionError::InternalError(format!("Failed to parse JSON response: {}", e).into()))?;
 
-        let sn_block: StarknetBlock = block_data.into();
+        // Extract and convert block fields
+        let fields = blocks["data"]
+            .get(0)
+            .and_then(|block| block["block_header"]["Fields"].as_array())
+            .ok_or_else(|| SyscallExecutionError::InternalError("Invalid response format".into()))?
+            .iter()
+            .map(|v| {
+                v.as_str()
+                    .ok_or_else(|| SyscallExecutionError::InternalError("Invalid field format".into()))
+                    .and_then(|hex_str| {
+                        Felt252::from_hex(hex_str)
+                            .map_err(|e| SyscallExecutionError::InternalError(format!("Invalid field value: {}", e).into()))
+                    })
+            })
+            .collect::<Result<Vec<Felt252>, SyscallExecutionError>>()?;
 
-        Ok(sn_block.handle(function_id))
+        // Create block and handle function
+        Ok(StarknetBlock::from_hash_fields(fields).handle(function_id))
     }
 }

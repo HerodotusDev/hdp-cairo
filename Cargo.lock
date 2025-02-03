@@ -2502,6 +2502,7 @@ dependencies = [
  "hints",
  "reqwest 0.12.12",
  "serde",
+ "serde_json",
  "starknet",
  "starknet-types-core",
  "strum_macros",
