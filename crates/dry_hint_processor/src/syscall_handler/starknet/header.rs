@@ -12,6 +12,7 @@ use types::{
     keys::starknet::header::{CairoKey, Key},
     HERODOTUS_STAGING_INDEXER,
 };
+use serde_json::Value;
 
 #[derive(Debug, Default)]
 pub struct HeaderCallHandler;
@@ -58,7 +59,7 @@ impl CallHandler for HeaderCallHandler {
             .map_err(|e| SyscallExecutionError::InternalError(format!("Network request failed: {}", e).into()))?;
 
         // Parse JSON response and extract fields
-        let blocks: serde_json::Value = response
+        let blocks: Value = response
             .json()
             .await
             .map_err(|e| SyscallExecutionError::InternalError(format!("Failed to parse JSON response: {}", e).into()))?;

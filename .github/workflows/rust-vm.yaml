@@ -106,5 +106,6 @@ jobs:
           RPC_URL_FEEDER_GATEWAY: ${{ secrets.RPC_URL_FEEDER_GATEWAY }}
           RPC_URL_HERODOTUS_INDEXER: ${{ secrets.RPC_URL_HERODOTUS_INDEXER }}
           RPC_URL_STARKNET: ${{ secrets.RPC_URL_STARKNET_SEPOLIA }}
+          HERODOTUS_STAGING_INDEXER: ${{ secrets.HERODOTUS_STAGING_INDEXER }}
         run: cargo nextest run
 
