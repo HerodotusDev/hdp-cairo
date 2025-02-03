@@ -31,7 +31,10 @@ futures = "0.3.31"
 hex = "0.4.3"
 http-body-util = "=0.1.0"
 indicatif = "0.17.9"
+keccak = "0.1.5"
+lazy_static = "1.5.0"
 num-bigint = "0.4.6"
+num-integer = "0.1.46"
 num-traits = "0.2.19"
 rand = "0.8"
 reqwest = "0.12.9"
@@ -53,8 +56,6 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 utoipa = { version = "5.3.1", features = ["axum_extras"] }
 utoipa-swagger-ui = { version = "9", features = ["axum"] }
 version-compare = "=0.0.11"
-num-integer = "0.1.46"
-keccak = "0.1.5"
 
 dry_hint_processor = { path = "crates/dry_hint_processor" }
 eth_essentials_cairo_vm_hints = { path = "packages/eth_essentials/cairo_vm_hints" }

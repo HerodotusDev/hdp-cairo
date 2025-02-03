@@ -8,6 +8,8 @@ use types::cairo::{
 
 use crate::{traits, SyscallExecutionError, SyscallResult, WriteResponseResult};
 
+pub const CONTRACT_ADDRESS: Felt252 = Felt252::from_hex_unchecked("0x6465627567"); // 'debug' in hex
+
 #[derive(FromRepr)]
 pub enum CallHandlerId {
     Print = 0,
@@ -15,9 +17,9 @@ pub enum CallHandlerId {
 }
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
-pub struct DebugHandler;
+pub struct DebugCallContractHandler;
 
-impl traits::SyscallHandler for DebugHandler {
+impl traits::SyscallHandler for DebugCallContractHandler {
     type Request = CallContractRequest;
     type Response = CallContractResponse;
 

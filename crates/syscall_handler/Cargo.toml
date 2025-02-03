@@ -5,11 +5,11 @@ edition = "2021"
 
 [dependencies]
 cairo-vm.workspace = true
-thiserror.workspace = true
-types.workspace = true
-num-integer.workspace = true
 keccak.workspace = true
 num-bigint.workspace = true
+num-integer.workspace = true
 num-traits.workspace = true
 serde.workspace = true
 strum_macros.workspace = true
+thiserror.workspace = true
+types.workspace = true
