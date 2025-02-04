@@ -85,6 +85,7 @@ pub struct CallContractHandlerRelay {
     pub starknet_call_contract_handler: StarknetCallContractHandler,
     #[serde(skip)]
     pub debug_call_contract_handler: DebugCallContractHandler,
+    #[serde(skip)]
     pub any_type_call_contract_handler: AnyTypeCallContractHandler,
 }
 

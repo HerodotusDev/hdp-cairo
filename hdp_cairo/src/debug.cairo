@@ -1,2 +1,2 @@
 mod printer;
-pub use printer::{print, print_array}; 
+pub use printer::{print, print_array};
