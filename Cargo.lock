@@ -2520,6 +2520,7 @@ dependencies = [
  "hints",
  "serde_json",
  "sha2",
+ "syscall_handler",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -2771,6 +2772,7 @@ dependencies = [
  "reqwest 0.12.12",
  "serde_json",
  "starknet-types-core",
+ "syscall_handler",
  "thiserror 1.0.69",
  "tokio",
  "types",
@@ -5621,6 +5623,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sound_hint_processor",
+ "syscall_handler",
  "tokio",
  "tower",
  "tower-http",
@@ -6158,6 +6161,7 @@ dependencies = [
  "serde",
  "strum_macros",
  "thiserror 1.0.69",
+ "tokio",
  "types",
 ]
 
@@ -6264,6 +6268,7 @@ dependencies = [
  "hints",
  "serde_json",
  "sound_hint_processor",
+ "syscall_handler",
  "tokio",
  "types",
 ]

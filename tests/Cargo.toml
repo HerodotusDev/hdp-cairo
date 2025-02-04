@@ -16,3 +16,4 @@ serde_json.workspace = true
 sound_hint_processor.workspace = true
 tokio.workspace = true
 types.workspace = true
+syscall_handler.workspace = true

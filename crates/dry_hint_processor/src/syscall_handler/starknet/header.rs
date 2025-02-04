@@ -10,10 +10,8 @@ use types::{
         traits::CairoType,
     },
     keys::starknet::header::{CairoKey, Key},
-    RPC_URL_FEEDER_GATEWAY,
+    RPC_URL_FEEDER_GATEWAY, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
 };
-
-use crate::syscall_handler::{STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID};
 
 #[derive(Debug, Default)]
 pub struct HeaderCallHandler;

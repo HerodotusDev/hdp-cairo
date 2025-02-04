@@ -19,6 +19,7 @@ tracing-subscriber.workspace = true
 types.workspace = true
 utoipa.workspace = true
 utoipa-swagger-ui.workspace = true
+syscall_handler.workspace = true
 
 [dev-dependencies]
 http-body-util.workspace = true

@@ -19,6 +19,7 @@ thiserror.workspace = true
 tokio.workspace = true
 types.workspace = true
 eth-trie-proofs.workspace = true
+syscall_handler.workspace = true
 
 [features]
 default = []

@@ -9,6 +9,7 @@ pub mod syscall_handler;
 
 use std::{any::Any, collections::HashMap};
 
+use ::syscall_handler::SyscallHandlerWrapper;
 use cairo_lang_casm::{
     hints::{Hint, StarknetHint},
     operand::{BinOpOperand, DerefOrImmediate, Operation, Register, ResOperand},
@@ -25,7 +26,7 @@ use cairo_vm::{
 };
 use hints::{extensive_hints, hints, vars, ExtensiveHintImpl, HintImpl};
 use starknet_types_core::felt::Felt;
-use syscall_handler::SyscallHandlerWrapper;
+use syscall_handler::{evm, starknet};
 use tokio::{runtime::Handle, task};
 use types::HDPInput;
 
@@ -113,7 +114,10 @@ impl HintProcessorLogic for CustomHintProcessor {
         if let Some(hint) = hint_data.downcast_ref::<Hint>() {
             if let Hint::Starknet(StarknetHint::SystemCall { system }) = hint {
                 let syscall_ptr = get_ptr_from_res_operand(vm, system)?;
-                let syscall_handler = exec_scopes.get_mut_ref::<SyscallHandlerWrapper>(vars::scopes::SYSCALL_HANDLER)?;
+                let syscall_handler = exec_scopes
+                    .get_mut_ref::<SyscallHandlerWrapper<evm::CallContractHandler, starknet::CallContractHandler>>(
+                        vars::scopes::SYSCALL_HANDLER,
+                    )?;
                 return task::block_in_place(|| {
                     Handle::current().block_on(async {
                         syscall_handler

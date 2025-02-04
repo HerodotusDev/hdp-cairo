@@ -4,12 +4,13 @@ use std::{
 };
 
 use alloy::hex::FromHexError;
-use dry_hint_processor::syscall_handler::{evm, starknet, SyscallHandler};
+use dry_hint_processor::syscall_handler::{evm, starknet};
 use futures::StreamExt;
 use indexer::models::IndexerError;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use proof_keys::{evm::ProofKeys as EvmProofKeys, starknet::ProofKeys as StarknetProofKeys, ProofKeys};
 use starknet_types_core::felt::FromStrError;
+use syscall_handler::SyscallHandler;
 use thiserror::Error;
 use types::proofs::{
     evm::{
@@ -356,7 +357,9 @@ where
         .collect()
 }
 
-pub fn parse_syscall_handler(syscall_handler: SyscallHandler) -> Result<ProofKeys, FetcherError> {
+pub fn parse_syscall_handler(
+    syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler>,
+) -> Result<ProofKeys, FetcherError> {
     let mut proof_keys = ProofKeys::default();
 
     // Process EVM keys
