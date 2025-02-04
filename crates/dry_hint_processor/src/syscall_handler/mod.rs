@@ -14,8 +14,10 @@ use hints::vars;
 use serde::{Deserialize, Serialize};
 use starknet::CallContractHandler as StarknetCallContractHandler;
 use syscall_handler::{
-    call_contract, call_contract::debug::DebugCallContractHandler, felt_from_ptr, keccak::KeccakHandler, run_handler, traits,
-    SyscallExecutionError, SyscallResult, SyscallSelector, WriteResponseResult,
+    call_contract::{self, any_type::AnyTypeCallContractHandler, debug::DebugCallContractHandler},
+    felt_from_ptr,
+    keccak::KeccakHandler,
+    run_handler, traits, SyscallExecutionError, SyscallResult, SyscallSelector, WriteResponseResult,
 };
 use tokio::{sync::RwLock, task};
 use types::{
@@ -83,6 +85,7 @@ pub struct CallContractHandlerRelay {
     pub starknet_call_contract_handler: StarknetCallContractHandler,
     #[serde(skip)]
     pub debug_call_contract_handler: DebugCallContractHandler,
+    pub any_type_call_contract_handler: AnyTypeCallContractHandler,
 }
 
 impl traits::SyscallHandler for CallContractHandlerRelay {
@@ -98,6 +101,7 @@ impl traits::SyscallHandler for CallContractHandlerRelay {
     async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
         match request.contract_address {
             v if v == call_contract::debug::CONTRACT_ADDRESS => self.debug_call_contract_handler.execute(request, vm).await,
+            v if v == call_contract::any_type::CONTRACT_ADDRESS => self.any_type_call_contract_handler.execute(request, vm).await,
             _ => {
                 let chain_id = <Felt252 as TryInto<u128>>::try_into(*vm.get_integer((request.calldata_start + 2)?)?)
                     .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
