@@ -14,7 +14,8 @@ use hints::vars;
 use serde::{Deserialize, Serialize};
 use starknet::CallContractHandler as StarknetCallContractHandler;
 use syscall_handler::{
-    felt_from_ptr, keccak::KeccakHandler, run_handler, traits, SyscallExecutionError, SyscallResult, SyscallSelector, WriteResponseResult,
+    call_contract, call_contract::debug::DebugCallContractHandler, felt_from_ptr, keccak::KeccakHandler, run_handler, traits,
+    SyscallExecutionError, SyscallResult, SyscallSelector, WriteResponseResult,
 };
 use tokio::{sync::RwLock, task};
 use types::{
@@ -80,6 +81,8 @@ impl SyscallHandlerWrapper {
 pub struct CallContractHandlerRelay {
     pub evm_call_contract_handler: EvmCallContractHandler,
     pub starknet_call_contract_handler: StarknetCallContractHandler,
+    #[serde(skip)]
+    pub debug_call_contract_handler: DebugCallContractHandler,
 }
 
 impl traits::SyscallHandler for CallContractHandlerRelay {
@@ -93,13 +96,18 @@ impl traits::SyscallHandler for CallContractHandlerRelay {
     }
 
     async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
-        let chain_id = <Felt252 as TryInto<u128>>::try_into(*vm.get_integer((request.calldata_start + 2)?)?)
-            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
+        match request.contract_address {
+            v if v == call_contract::debug::CONTRACT_ADDRESS => self.debug_call_contract_handler.execute(request, vm).await,
+            _ => {
+                let chain_id = <Felt252 as TryInto<u128>>::try_into(*vm.get_integer((request.calldata_start + 2)?)?)
+                    .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
 
-        match chain_id {
-            ETHEREUM_MAINNET_CHAIN_ID | ETHEREUM_TESTNET_CHAIN_ID => self.evm_call_contract_handler.execute(request, vm).await,
-            STARKNET_MAINNET_CHAIN_ID | STARKNET_TESTNET_CHAIN_ID => self.starknet_call_contract_handler.execute(request, vm).await,
-            _ => Err(SyscallExecutionError::InternalError(Box::from("Unknown chain id"))),
+                match chain_id {
+                    ETHEREUM_MAINNET_CHAIN_ID | ETHEREUM_TESTNET_CHAIN_ID => self.evm_call_contract_handler.execute(request, vm).await,
+                    STARKNET_MAINNET_CHAIN_ID | STARKNET_TESTNET_CHAIN_ID => self.starknet_call_contract_handler.execute(request, vm).await,
+                    _ => Err(SyscallExecutionError::InternalError(Box::from("Unknown chain id"))),
+                }
+            }
         }
     }
 

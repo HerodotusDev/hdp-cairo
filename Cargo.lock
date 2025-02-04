@@ -6156,6 +6156,7 @@ dependencies = [
  "num-integer",
  "num-traits",
  "serde",
+ "strum_macros",
  "thiserror 1.0.69",
  "types",
 ]
