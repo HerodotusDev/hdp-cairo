@@ -48,7 +48,8 @@ namespace EvmPackParams {
         return (params=params, params_len=5);
     }
 
-    const BLOCK_TX_PARAMS_LEN = 3;
+    const BLOCK_TX_LABEL = 'block_tx';
+    const BLOCK_TX_PARAMS_LEN = 4;
     func block_tx(chain_id: felt, block_number: felt, index: felt) -> (
         params: felt*, params_len: felt
     ) {
@@ -56,24 +57,27 @@ namespace EvmPackParams {
 
         local params: felt* = nondet %{ segments.add() %};
         assert params[0] = chain_id;
-        assert params[1] = block_number;
-        assert params[2] = index;
+        assert params[1] = BLOCK_TX_LABEL;
+        assert params[2] = block_number;
+        assert params[3] = index;
 
-        return (params=params, params_len=3);
+        return (params=params, params_len=4);
     }
 
-    const BLOCK_RECEIPT_PARAMS_LEN = 3;
-    func block_receipt{poseidon_ptr: PoseidonBuiltin*}(
-        chain_id: felt, block_number: felt, index: felt
-    ) -> (params: felt*, params_len: felt) {
+    const BLOCK_RECEIPT_LABEL = 'block_receipt';
+    const BLOCK_RECEIPT_PARAMS_LEN = 4;
+    func block_receipt(chain_id: felt, block_number: felt, index: felt) -> (
+        params: felt*, params_len: felt
+    ) {
         alloc_locals;
 
         local params: felt* = nondet %{ segments.add() %};
         assert params[0] = chain_id;
-        assert params[1] = block_number;
-        assert params[2] = index;
+        assert params[1] = BLOCK_RECEIPT_LABEL;
+        assert params[2] = block_number;
+        assert params[3] = index;
 
-        return (params=params, params_len=3);
+        return (params=params, params_len=4);
     }
 }
 
