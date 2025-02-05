@@ -15,7 +15,11 @@ mod test_debug_print {
 
     impl PointDisplay of Display<Point> {
         fn fmt(self: @Point, ref f: Formatter) -> Result<(), Error> {
-            let str: ByteArray = format!("PointThatIAmMakingQuiteABitLongerToEnsureWeHaveMoreFelts ({}, {})", *self.x, *self.y);
+            let str: ByteArray = format!(
+                "PointThatIAmMakingQuiteABitLongerToEnsureWeHaveMoreFelts ({}, {})",
+                *self.x,
+                *self.y,
+            );
             f.buffer.append(@str);
             Result::Ok(())
         }
@@ -24,11 +28,9 @@ mod test_debug_print {
     #[external(v0)]
     pub fn main(ref self: ContractState, hdp: HDP) {
         let p = Point { x: 1, y: 3 };
-        
+
         print(p);
         print(1);
         print_array(array![1, 2, 3]);
-
-
     }
 }
