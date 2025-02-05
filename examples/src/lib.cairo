@@ -2,11 +2,9 @@
 mod example {
     use hdp_cairo::{
         HDP, evm::block_receipt::{BlockReceiptTrait, BlockReceiptKey, BlockReceiptImpl},
-        evm::block_tx::{BlockTxTrait, BlockTxKey, BlockTxImpl}
+        evm::block_tx::{BlockTxTrait, BlockTxKey, BlockTxImpl},
     };
-
-    use hdp_cairo::debug::{print, print_array};
-    use core::fmt::{Display, Formatter, Error};
+    use hdp_cairo::debug::print;
 
     #[storage]
     struct Storage {}

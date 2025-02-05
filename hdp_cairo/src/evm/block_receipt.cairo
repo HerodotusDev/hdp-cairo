@@ -9,6 +9,8 @@ const BLOCK_RECEIPT_GET_CUMULATIVE_GAS_USED: felt252 = 1;
 const BLOCK_RECEIPT_GET_BLOOM: felt252 = 2;
 const BLOCK_RECEIPT_GET_LOGS: felt252 = 3;
 
+const BLOCK_RECEIPT_LABEL: felt252 = 'block_receipt';
+
 #[derive(Serde, Drop)]
 pub struct BlockReceiptKey {
     pub chain_id: felt252,
@@ -39,7 +41,7 @@ pub impl BlockReceiptImpl of BlockReceiptTrait {
                 *self.dict.segment_index,
                 *self.dict.offset,
                 key.chain_id,
-                'block_receipt',
+                BLOCK_RECEIPT_LABEL,
                 key.block_number,
                 key.transaction_index,
             ]

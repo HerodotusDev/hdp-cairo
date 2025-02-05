@@ -63,10 +63,10 @@ mod receipts_get_status {
 }
 
 #[starknet::contract]
-mod receipts_get_cumulative_gas_used {
+mod receipts_get_and_tx_get {
     use hdp_cairo::{
         HDP, evm::block_receipt::{BlockReceiptTrait, BlockReceiptKey, BlockReceiptImpl},
-        evm::block_tx::{BlockTxTrait, BlockTxKey, BlockTxImpl}
+        evm::block_tx::{BlockTxTrait, BlockTxKey, BlockTxImpl},
     };
 
     #[storage]
