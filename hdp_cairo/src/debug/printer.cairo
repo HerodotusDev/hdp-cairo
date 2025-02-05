@@ -16,10 +16,6 @@ pub fn print<T, +Display<T>, +Drop<T>>(value: T) {
 }
 
 pub fn print_array(array: Array<felt252>) {
-    call_contract_syscall(
-        DEBUG_CONTRACT_ADDRESS.try_into().unwrap(),
-        PRINT_ARRAY,
-        array.span()
-    )
+    call_contract_syscall(DEBUG_CONTRACT_ADDRESS.try_into().unwrap(), PRINT_ARRAY, array.span())
         .unwrap_syscall();
 }
