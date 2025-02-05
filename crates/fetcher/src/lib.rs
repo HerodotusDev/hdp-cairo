@@ -158,10 +158,12 @@ impl<'a> Fetcher<'a> {
             flattened_keys
                 .iter()
                 .map(|key| EvmProofKeys::fetch_header_proof(key.chain_id, key.block_number)),
-        );
+        )
+        .buffer_unordered(BUFFER_UNORDERED)
+        .boxed();
 
         while let Some(result) = header_fut.next().await {
-            let item = result.await?;
+            let item = result?;
             headers_with_mmr
                 .entry(item.mmr_meta)
                 .and_modify(|headers: &mut Vec<EvmHeader>| headers.extend(item.headers.clone()))
