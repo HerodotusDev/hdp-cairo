@@ -109,6 +109,7 @@ pub impl BlockTxImpl of BlockTxTrait {
                 *self.dict.segment_index,
                 *self.dict.offset,
                 key.chain_id,
+                'block_tx',
                 key.block_number,
                 key.transaction_index,
             ]

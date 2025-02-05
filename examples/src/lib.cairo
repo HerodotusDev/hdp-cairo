@@ -1,7 +1,12 @@
 #[starknet::contract]
 mod example {
-    use hdp_cairo::evm::storage::StorageTrait;
-    use hdp_cairo::{HDP, evm::storage::{StorageKey, StorageImpl}};
+    use hdp_cairo::{
+        HDP, evm::block_receipt::{BlockReceiptTrait, BlockReceiptKey, BlockReceiptImpl},
+        evm::block_tx::{BlockTxTrait, BlockTxKey, BlockTxImpl}
+    };
+
+    use hdp_cairo::debug::{print, print_array};
+    use core::fmt::{Display, Formatter, Error};
 
     #[storage]
     struct Storage {}
@@ -11,14 +16,25 @@ mod example {
         assert!(
             hdp
                 .evm
-                .storage_get_slot(
-                    StorageKey {
-                        chain_id: 11155111,
-                        block_number: 6000000,
-                        address: 0x75cec1db9dceb703200eaa6595f66885c962b920,
-                        storage_slot: 0x1,
+                .block_receipt_get_cumulative_gas_used(
+                    BlockReceiptKey {
+                        chain_id: 11155111, block_number: 5382809, transaction_index: 217,
                     },
-                ) == u256 { low: 0x12309ce54000, high: 0x0 },
-        )
+                ) == u256 { low: 0x1a4bd13, high: 0x0 },
+        );
+
+        print(1);
+
+        assert!(
+            hdp
+                .evm
+                .block_tx_get_nonce(
+                    BlockTxKey {
+                        chain_id: 11155111, block_number: 5382809, transaction_index: 217,
+                    },
+                ) == u256 { low: 0x3, high: 0x0 },
+        );
+
+        print(2);
     }
 }

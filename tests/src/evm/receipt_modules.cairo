@@ -66,6 +66,7 @@ mod receipts_get_status {
 mod receipts_get_cumulative_gas_used {
     use hdp_cairo::{
         HDP, evm::block_receipt::{BlockReceiptTrait, BlockReceiptKey, BlockReceiptImpl},
+        evm::block_tx::{BlockTxTrait, BlockTxKey, BlockTxImpl}
     };
 
     #[storage]
@@ -81,6 +82,16 @@ mod receipts_get_cumulative_gas_used {
                         chain_id: 11155111, block_number: 5382809, transaction_index: 217,
                     },
                 ) == u256 { low: 0x1a4bd13, high: 0x0 },
+        );
+
+        assert!(
+            hdp
+                .evm
+                .block_tx_get_nonce(
+                    BlockTxKey {
+                        chain_id: 11155111, block_number: 5382809, transaction_index: 217,
+                    },
+                ) == u256 { low: 0x3, high: 0x0 },
         );
     }
 }

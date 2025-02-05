@@ -104,12 +104,14 @@ impl traits::SyscallHandler for CallContractHandlerRelay {
     type Response = CallContractResponse;
 
     fn read_request(&mut self, vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Request> {
+        println!("reading request");
         let ret = Self::Request::from_memory(vm, *ptr)?;
         *ptr = (*ptr + Self::Request::cairo_size())?;
         Ok(ret)
     }
 
     async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
+        println!("executing request");
         match request.contract_address {
             v if v == call_contract::debug::CONTRACT_ADDRESS => self.debug_call_contract_handler.execute(request, vm).await,
             _ => {

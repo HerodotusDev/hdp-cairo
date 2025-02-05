@@ -39,6 +39,7 @@ pub impl BlockReceiptImpl of BlockReceiptTrait {
                 *self.dict.segment_index,
                 *self.dict.offset,
                 key.chain_id,
+                'block_receipt',
                 key.block_number,
                 key.transaction_index,
             ]
