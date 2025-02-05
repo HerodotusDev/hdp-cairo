@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use alloy::primitives::{Address, Bloom, B256, B64, U256};
 use cairo_type_derive::{CairoType, FieldOffsetGetters};
 use cairo_vm::{
@@ -112,17 +114,24 @@ pub struct BuiltinParams {
 }
 
 #[derive(FieldOffsetGetters, CairoType, Default, Debug, Clone)]
-pub struct Felt {
+pub struct CairoFelt {
     value: Felt252,
 }
 
-impl From<Felt252> for Felt {
+impl Deref for CairoFelt {
+    type Target = Felt252;
+    fn deref(&self) -> &Self::Target {
+        &self.value
+    }
+}
+
+impl From<Felt252> for CairoFelt {
     fn from(value: Felt252) -> Self {
         Self { value }
     }
 }
 
-impl From<u64> for Felt {
+impl From<u64> for CairoFelt {
     fn from(value: u64) -> Self {
         Self {
             value: Felt252::from(value),
@@ -130,8 +139,8 @@ impl From<u64> for Felt {
     }
 }
 
-impl From<Felt> for Felt252 {
-    fn from(felt: Felt) -> Self {
+impl From<CairoFelt> for Felt252 {
+    fn from(felt: CairoFelt) -> Self {
         felt.value
     }
 }

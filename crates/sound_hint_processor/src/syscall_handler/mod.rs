@@ -33,7 +33,7 @@ impl Memorizer {
 
     pub fn derive(vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Memorizer> {
         let ret = Memorizer::from_memory(vm, *ptr)?;
-        *ptr = (*ptr + Memorizer::n_fields())?;
+        *ptr = (*ptr + Memorizer::n_fields(vm, *ptr)?)?;
         Ok(ret)
     }
 
@@ -57,13 +57,13 @@ impl CairoType for Memorizer {
             dict_ptr: Relocatable::from((segment_index, offset)),
         })
     }
-    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<(), MemoryError> {
+    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
         vm.insert_value((address + 0)?, MaybeRelocatable::from(Felt252::from(self.dict_ptr.segment_index)))?;
         vm.insert_value((address + 1)?, MaybeRelocatable::from(Felt252::from(self.dict_ptr.offset)))?;
-        Ok(())
+        Ok((address + 2)?)
     }
-    fn n_fields() -> usize {
-        2
+    fn n_fields(_vm: &VirtualMachine, _address: Relocatable) -> Result<usize, MemoryError> {
+        Ok(2)
     }
 }
 

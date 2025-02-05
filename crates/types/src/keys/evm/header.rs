@@ -29,13 +29,13 @@ impl CairoType for CairoKey {
             block_number: *vm.get_integer((address + 1)?)?,
         })
     }
-    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<(), MemoryError> {
+    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
         vm.insert_value((address + 0)?, self.chain_id)?;
         vm.insert_value((address + 1)?, self.block_number)?;
-        Ok(())
+        Ok((address + 2)?)
     }
-    fn n_fields() -> usize {
-        2
+    fn n_fields(_vm: &VirtualMachine, _address: Relocatable) -> Result<usize, MemoryError> {
+        Ok(2)
     }
 }
 

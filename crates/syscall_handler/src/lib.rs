@@ -22,7 +22,7 @@ use cairo_vm::{
     },
     Felt252,
 };
-use call_contract::{any_type::AnyTypeCallContractHandler, debug::DebugCallContractHandler};
+use call_contract::{arbitrary_type::ArbitraryTypeCallContractHandler, debug::DebugCallContractHandler};
 use keccak::KeccakHandler;
 use thiserror::Error;
 use tokio::{sync::RwLock, task};
@@ -129,7 +129,7 @@ pub struct CallContractHandlerRelay<EVM: CallContractSyscallHandler, STARKNET: C
     #[serde(skip)]
     pub debug_call_contract_handler: DebugCallContractHandler,
     #[serde(skip)]
-    pub any_type_call_contract_handler: AnyTypeCallContractHandler,
+    pub any_type_call_contract_handler: ArbitraryTypeCallContractHandler,
 }
 
 impl<EVM: CallContractSyscallHandler, STARKNET: CallContractSyscallHandler> CallContractHandlerRelay<EVM, STARKNET> {
@@ -138,7 +138,7 @@ impl<EVM: CallContractSyscallHandler, STARKNET: CallContractSyscallHandler> Call
             evm_call_contract_handler,
             starknet_call_contract_handler,
             debug_call_contract_handler: DebugCallContractHandler,
-            any_type_call_contract_handler: AnyTypeCallContractHandler,
+            any_type_call_contract_handler: ArbitraryTypeCallContractHandler,
         }
     }
 }
@@ -158,7 +158,7 @@ impl<EVM: CallContractSyscallHandler, STARKNET: CallContractSyscallHandler> trai
     async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
         match request.contract_address {
             v if v == call_contract::debug::CONTRACT_ADDRESS => self.debug_call_contract_handler.execute(request, vm).await,
-            v if v == call_contract::any_type::CONTRACT_ADDRESS => self.any_type_call_contract_handler.execute(request, vm).await,
+            v if v == call_contract::arbitrary_type::CONTRACT_ADDRESS => self.any_type_call_contract_handler.execute(request, vm).await,
             _ => {
                 let chain_id = <Felt252 as TryInto<u128>>::try_into(*vm.get_integer((request.calldata_start + 2)?)?)
                     .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;

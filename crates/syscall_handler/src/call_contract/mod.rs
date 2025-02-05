@@ -1,2 +1,2 @@
-pub mod any_type;
+pub mod arbitrary_type;
 pub mod debug;

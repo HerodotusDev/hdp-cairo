@@ -32,15 +32,15 @@ impl CairoType for CairoKey {
         })
     }
 
-    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<(), MemoryError> {
+    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
         vm.insert_value((address + 0)?, self.chain_id)?;
         vm.insert_value((address + 1)?, self.block_number)?;
         vm.insert_value((address + 2)?, self.transaction_index)?;
-        Ok(())
+        Ok((address + 3)?)
     }
 
-    fn n_fields() -> usize {
-        3
+    fn n_fields(_vm: &VirtualMachine, _address: Relocatable) -> Result<usize, MemoryError> {
+        Ok(3)
     }
 }
 
