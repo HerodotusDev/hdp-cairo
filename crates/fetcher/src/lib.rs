@@ -2,7 +2,6 @@ use std::{
     collections::{HashMap, HashSet},
     env,
     num::ParseIntError,
-    sync::Arc,
 };
 
 use alloy::hex::FromHexError;
@@ -19,7 +18,6 @@ use proof_keys::{
 use reqwest::Url;
 use starknet_types_core::felt::FromStrError;
 use thiserror::Error;
-use tokio::sync::Mutex;
 use types::{
     proofs::{
         evm::{
@@ -226,99 +224,66 @@ impl<'a> Fetcher<'a> {
             .evm_storage
             .safe_finish_with_message("evm storage keys - finished");
 
-        // For each receipt block, we need to create a tx_receipts_mpt_handler
-        let mut tx_receipts_mpt_handlers: HashMap<u64, Box<TxReceiptsMptHandler>> = HashMap::default();
+        // For each block, we need to create a mpt_handler
+        let mut receipt_mpt_handlers: HashMap<u64, TxReceiptsMptHandler> = HashMap::default();
 
-        for key in self.proof_keys.evm.receipt_keys.iter() {
-            if let std::collections::hash_map::Entry::Vacant(e) = tx_receipts_mpt_handlers.entry(key.block_number) {
-                let tx_receipts_mpt_handler = TxReceiptsMptHandler::new(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap())
+        for block_number in self.proof_keys.evm.receipt_keys.iter().map(|key| key.block_number) {
+            if let std::collections::hash_map::Entry::Vacant(entry) = receipt_mpt_handlers.entry(block_number) {
+                let mut mpt_handler = TxReceiptsMptHandler::new(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap())
                     .map_err(|e| FetcherError::InternalError(e.to_string()))?;
 
-                let mut boxed_handler = Box::new(tx_receipts_mpt_handler);
-
-                // Build the receipt root for the block
-                boxed_handler
-                    .build_tx_receipts_tree_from_block(key.block_number)
+                mpt_handler
+                    .build_tx_receipts_tree_from_block(block_number)
                     .await
                     .map_err(|e| FetcherError::InternalError(e.to_string()))?;
 
-                e.insert(boxed_handler);
+                entry.insert(mpt_handler);
             }
-        }
-
-        // Convert HashMap to Arc for sharing
-        let tx_receipts_mpt_handlers = Arc::new(Mutex::new(tx_receipts_mpt_handlers));
-        let tx_receipts_mpt_handlers_clone = tx_receipts_mpt_handlers.clone();
-
-        let mut transaction_receipts_fut = futures::stream::iter(self.proof_keys.evm.receipt_keys.iter().map({
-            move |key| {
-                let handlers = tx_receipts_mpt_handlers_clone.clone();
-                async move {
-                    let mut handlers_guard = handlers.lock().await;
-                    let handler = handlers_guard.get_mut(&key.block_number).unwrap();
-
-                    EvmProofKeys::fetch_receipt_proof(key, handler.as_mut()).await
-                }
-            }
-        }))
-        .buffer_unordered(BUFFER_UNORDERED)
-        .boxed();
-
-        while let Some(Ok(transaction_receipt)) = transaction_receipts_fut.next().await {
-            receipts.insert(transaction_receipt);
 
             #[cfg(feature = "progress_bars")]
             self.progress_bars.evm_receipts.safe_inc();
         }
+
+        receipts.extend(
+            self.proof_keys
+                .evm
+                .receipt_keys
+                .iter()
+                .map(|key| EvmProofKeys::compute_receipt_proof(key, receipt_mpt_handlers.get_mut(&key.block_number).unwrap()).unwrap()),
+        );
 
         #[cfg(feature = "progress_bars")]
         self.progress_bars
             .evm_receipts
             .safe_finish_with_message("evm receipt keys - finished");
 
-        let mut tx_trie_handlers: HashMap<u64, Box<TxsMptHandler>> = HashMap::default();
+        // For each tx block, we need to create a mpt_handler
+        let mut tx_mpt_handlers: HashMap<u64, TxsMptHandler> = HashMap::default();
 
         for key in self.proof_keys.evm.transaction_keys.iter() {
-            if let std::collections::hash_map::Entry::Vacant(e) = tx_trie_handlers.entry(key.block_number) {
-                let tx_trie_handler = TxsMptHandler::new(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap())
+            if let std::collections::hash_map::Entry::Vacant(entry) = tx_mpt_handlers.entry(key.block_number) {
+                let mut mpt_handler = TxsMptHandler::new(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap())
                     .map_err(|e| FetcherError::InternalError(e.to_string()))?;
 
-                let mut boxed_handler = Box::new(tx_trie_handler);
-
-                boxed_handler
+                mpt_handler
                     .build_tx_tree_from_block(key.block_number)
                     .await
                     .map_err(|e| FetcherError::InternalError(e.to_string()))?;
 
-                e.insert(boxed_handler);
+                entry.insert(mpt_handler);
             }
-        }
-
-        // Convert HashMap to Arc for sharing
-        let tx_trie_handlers = Arc::new(Mutex::new(tx_trie_handlers));
-        let tx_trie_handlers_clone = tx_trie_handlers.clone();
-
-        // Collect transaction proofs
-        let mut transaction_keys_fut = futures::stream::iter(self.proof_keys.evm.transaction_keys.iter().map({
-            move |key| {
-                let handlers = tx_trie_handlers_clone.clone();
-                async move {
-                    let mut handlers_guard = handlers.lock().await;
-                    let handler = handlers_guard.get_mut(&key.block_number).unwrap();
-
-                    EvmProofKeys::fetch_transaction_proof(key, handler.as_mut()).await
-                }
-            }
-        }))
-        .buffer_unordered(BUFFER_UNORDERED)
-        .boxed();
-
-        while let Some(Ok(transaction)) = transaction_keys_fut.next().await {
-            transactions.insert(transaction);
 
             #[cfg(feature = "progress_bars")]
             self.progress_bars.evm_transactions.safe_inc();
         }
+
+        transactions.extend(
+            self.proof_keys
+                .evm
+                .transaction_keys
+                .iter()
+                .map(|key| EvmProofKeys::compute_transaction_proof(key, tx_mpt_handlers.get_mut(&key.block_number).unwrap()).unwrap()),
+        );
 
         #[cfg(feature = "progress_bars")]
         self.progress_bars

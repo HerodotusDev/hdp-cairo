@@ -109,7 +109,7 @@ impl ProofKeys {
         ))
     }
 
-    async fn generate_block_tx_receipt_proof(
+    fn generate_block_tx_receipt_proof(
         tx_receipts_mpt_handler: &mut TxReceiptsMptHandler,
         block_number: u64,
         tx_index: u64,
@@ -126,22 +126,17 @@ impl ProofKeys {
         Ok(MPTProof { block_number, proof })
     }
 
-    pub async fn fetch_receipt_proof(
+    pub fn compute_receipt_proof(
         key: &keys::evm::receipt::Key,
         tx_receipts_mpt_handler: &mut TxReceiptsMptHandler,
     ) -> Result<Receipt, FetcherError> {
-        let receipt_mpt_proof =
-            Self::generate_block_tx_receipt_proof(tx_receipts_mpt_handler, key.block_number, key.transaction_index).await?;
+        let receipt_mpt_proof = Self::generate_block_tx_receipt_proof(tx_receipts_mpt_handler, key.block_number, key.transaction_index)?;
         let rlp_encoded_key = alloy_rlp::encode(U256::from(key.transaction_index));
 
         Ok(Receipt::new(U256::from_be_slice(&rlp_encoded_key), receipt_mpt_proof))
     }
 
-    async fn generate_block_tx_proof(
-        tx_trie_handler: &mut TxsMptHandler,
-        block_number: u64,
-        tx_index: u64,
-    ) -> Result<MPTProof, FetcherError> {
+    fn generate_block_tx_proof(tx_trie_handler: &mut TxsMptHandler, block_number: u64, tx_index: u64) -> Result<MPTProof, FetcherError> {
         let trie_proof = tx_trie_handler
             .get_proof(tx_index)
             .map_err(|e| FetcherError::InternalError(e.to_string()))?;
@@ -154,11 +149,11 @@ impl ProofKeys {
         Ok(MPTProof { block_number, proof })
     }
 
-    pub async fn fetch_transaction_proof(
+    pub fn compute_transaction_proof(
         key: &keys::evm::transaction::Key,
         tx_trie_handler: &mut TxsMptHandler,
     ) -> Result<Transaction, FetcherError> {
-        let tx_proof = Self::generate_block_tx_proof(tx_trie_handler, key.block_number, key.transaction_index).await?;
+        let tx_proof = Self::generate_block_tx_proof(tx_trie_handler, key.block_number, key.transaction_index)?;
 
         let rlp_encoded_key = alloy_rlp::encode(U256::from(key.transaction_index));
         Ok(Transaction::new(U256::from_be_slice(&rlp_encoded_key), tx_proof))
