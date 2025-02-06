@@ -22,13 +22,12 @@ from src.types import MMRMeta
 // The first 4 words are reserved for the tasks and results root.
 // The rest of the words are reserved for the MMR metas. Each MMR will contain 4 fields, and we can add an arbitrary amount of them.
 func write_output_ptr{output_ptr: felt*}(
-    mmr_metas: MMRMeta*, mmr_metas_len: felt, tasks_root: Uint256, results_root: Uint256
+    mmr_metas: MMRMeta*, mmr_metas_len: felt, program_hash: felt, result: Uint256
 ) {
-    assert [output_ptr] = results_root.low;
-    assert [output_ptr + 1] = results_root.high;
-    assert [output_ptr + 2] = tasks_root.low;
-    assert [output_ptr + 3] = tasks_root.high;
-    let output_ptr = output_ptr + 4;
+    assert [output_ptr + 0] = program_hash;
+    assert [output_ptr + 1] = result.low;
+    assert [output_ptr + 2] = result.high;
+    let output_ptr = output_ptr + 3;
 
     tempvar counter = 0;
 
@@ -38,17 +37,18 @@ func write_output_ptr{output_ptr: felt*}(
     %{ memory[ap] = 1 if (ids.mmr_metas_len == ids.counter) else 0 %}
     jmp end_loop if [ap] != 0, ap++;
 
-    assert [output_ptr + counter * 4] = mmr_metas[counter].id;
-    assert [output_ptr + counter * 4 + 1] = mmr_metas[counter].size;
-    assert [output_ptr + counter * 4 + 2] = mmr_metas[counter].chain_id;
-    assert [output_ptr + counter * 4 + 3] = mmr_metas[counter].root;
+    assert [output_ptr + counter * 3] = mmr_metas[counter].id;
+    assert [output_ptr + counter * 3 + 1] = mmr_metas[counter].size;
+    assert [output_ptr + counter * 3 + 2] = mmr_metas[counter].root;
 
     [ap] = counter + 1, ap++;
 
     jmp loop;
 
     end_loop:
-    let output_ptr = output_ptr + mmr_metas_len * 4;
+    // ensure we finish the loop
+    assert counter = mmr_metas_len;
+    let output_ptr = output_ptr + mmr_metas_len * 3;
 
     return ();
 }

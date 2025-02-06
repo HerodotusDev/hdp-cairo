@@ -20,6 +20,11 @@ from src.contract_bootloader.contract_bootloader import (
 )
 from starkware.cairo.common.memcpy import memcpy
 
+struct DryRunOutput {
+    program_hash: felt,
+    result: Uint256,
+}
+
 func main{
     output_ptr: felt*,
     pedersen_ptr: HashBuiltin*,
@@ -32,48 +37,21 @@ func main{
 }() {
     alloc_locals;
 
-    local inputs_len: felt;
-    let (inputs) = alloc();
-
     %{
-        from tools.py.schema import HDPDryRunInput
-
-        print("Starting Dry Run")
-
-        # Load the dry run input
         dry_run_input = HDPDryRunInput.Schema().load(program_input)
-        dry_run_output_path = dry_run_input.dry_run_output_path
-        # Check if the modules list contains more than one element
-        if len(dry_run_input.modules) > 1:
-            raise ValueError("The modules list contains more than one element, which is not supported.")
-
-        module_input = dry_run_input.modules[0]
-
-        compiled_class = module_input.module_class
-
-        inputs = [input.value for input in module_input.inputs]
-        ids.inputs_len = len(inputs)
-        segments.write_arg(ids.inputs, inputs)
+        params = dry_run_input.params
+        compiled_class = dry_run_input.compiled_class
     %}
 
+    local params_len: felt;
+    let (params) = alloc();
     local compiled_class: CompiledClass*;
 
-    // Fetch contract data form hints.
+    %{ ids.compiled_class = segments.gen_arg(get_compiled_class_struct(compiled_class=compiled_class)) %}
+
     %{
-        from starkware.starknet.core.os.contract_class.compiled_class_hash import create_bytecode_segment_structure
-        from contract_bootloader.contract_class.compiled_class_hash_utils import get_compiled_class_struct
-
-        bytecode_segment_structure = create_bytecode_segment_structure(
-            bytecode=compiled_class.bytecode,
-            bytecode_segment_lengths=compiled_class.bytecode_segment_lengths,
-            visited_pcs=None,
-        )
-
-        cairo_contract = get_compiled_class_struct(
-            compiled_class=compiled_class,
-            bytecode=bytecode_segment_structure.bytecode_with_skipped_segments()
-        )
-        ids.compiled_class = segments.gen_arg(cairo_contract)
+        ids.params_len = len(params)
+        segments.write_arg(ids.params, [param.value for param in params])
     %}
 
     let (builtin_costs: felt*) = alloc();
@@ -101,27 +79,24 @@ func main{
 
     let (local evm_memorizer) = default_dict_new(default_value=7);
     let (local starknet_memorizer) = default_dict_new(default_value=7);
-    local pow2_array: felt* = nondet %{ segments.add() %};
+    tempvar pow2_array: felt* = nondet %{ segments.add() %};
 
     %{
-        from contract_bootloader.dryrun_syscall_handler import DryRunSyscallHandler
-
         if '__dict_manager' not in globals():
-                from starkware.cairo.common.dict import DictManager
-                __dict_manager = DictManager()
-
-        syscall_handler = DryRunSyscallHandler(segments=segments, dict_manager=__dict_manager)
+            __dict_manager = DictManager()
     %}
 
-    local calldata: felt* = nondet %{ segments.add() %};
+    %{ syscall_handler = DryRunSyscallHandler(segments=segments, dict_manager=__dict_manager) %}
+
+    tempvar calldata: felt* = nondet %{ segments.add() %};
 
     assert calldata[0] = nondet %{ ids.evm_memorizer.address_.segment_index %};
     assert calldata[1] = nondet %{ ids.evm_memorizer.address_.offset %};
     assert calldata[2] = nondet %{ ids.starknet_memorizer.address_.segment_index %};
     assert calldata[3] = nondet %{ ids.starknet_memorizer.address_.offset %};
 
-    memcpy(dst=calldata + 4, src=inputs, len=inputs_len);
-    let calldata_size = 4 + inputs_len;
+    memcpy(dst=calldata + 4, src=params, len=params_len);
+    let calldata_size = 4 + params_len;
 
     let (evm_decoder_ptr: felt***) = alloc();
     let (starknet_decoder_ptr: felt***) = alloc();
@@ -134,34 +109,31 @@ func main{
         );
     }
 
-    %{
-        import json
-        list = list()
-        dictionary = dict()
+    tempvar low;
+    tempvar high;
 
-        dictionary["fetch_keys"] = syscall_handler.fetch_keys_dict()
+    if (retdata_size == 0) {
+        low = 0x0;
+        high = 0x0;
+    }
+    if (retdata_size == 1) {
+        low = retdata[0];
+        high = 0x0;
+    }
+    if (retdata_size == 2) {
+        low = retdata[0];
+        high = retdata[1];
+    }
 
-        if ids.retdata_size == 2:
-            dictionary["result"] = {
-                "low": hex(memory[ids.retdata]),
-                "high": hex(memory[ids.retdata + 1])
-            }
-        else:
-            high, low = divmod(memory[ids.retdata], 2**128)
-            dictionary["result"] = {
-                "low": hex(low),
-                "high": hex(high)
-            }
+    local result: Uint256 = Uint256(low=low, high=high);
 
-        dictionary["program_hash"] = hex(ids.program_hash)
+    %{ print(f"Task Result: {hex(ids.result.high * 2 ** 128 + ids.result.low)}") %}
 
-        print("Dry Run Result", dictionary["result"])
-
-        list.append(dictionary)
-
-        with open(dry_run_output_path, 'w') as json_file:
-            json.dump(list, json_file)
-    %}
+    // Write DryRunOutput to output.
+    assert [cast(output_ptr, DryRunOutput*)] = DryRunOutput(
+        program_hash=program_hash, result=result
+    );
+    let output_ptr = output_ptr + DryRunOutput.SIZE;
 
     return ();
 }

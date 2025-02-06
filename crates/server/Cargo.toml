@@ -1,0 +1,28 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow.workspace = true
+axum.workspace = true
+cairo-vm.workspace = true
+dry_hint_processor.workspace = true
+fetcher.workspace = true
+hints.workspace = true
+serde_json.workspace = true
+serde.workspace = true
+sound_hint_processor.workspace = true
+tokio.workspace = true
+tower-http.workspace = true
+tracing-subscriber.workspace = true
+types.workspace = true
+utoipa.workspace = true
+utoipa-swagger-ui.workspace = true
+syscall_handler.workspace = true
+
+[dev-dependencies]
+http-body-util.workspace = true
+serde_json.workspace = true
+tower = "0.5.2"
+utoipa.workspace = true

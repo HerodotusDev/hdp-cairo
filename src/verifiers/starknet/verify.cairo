@@ -14,31 +14,21 @@ func run_state_verification{
     range_check_ptr,
     pedersen_ptr: HashBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
+    evm_memorizer: DictAccess*,
     starknet_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
     chain_info: ChainInfo,
-}(mmr_meta_idx: felt) -> felt {
+}(mmr_meta_idx: felt) -> (mmr_meta_idx: felt) {
     alloc_locals;
 
     // Step 1: Verify MMR and headers inclusion
-    let chain_id = chain_info.id;
-    with chain_id {
-        let (mmr_meta_idx) = verify_mmr_batches(mmr_meta_idx);
-    }
-
-    // Step 2: Storage Slots
+    tempvar n_proofs: felt = nondet %{ len(batch_starknet.headers_with_mmr_starknet) %};
+    let (mmr_meta_idx) = verify_mmr_batches(n_proofs, mmr_meta_idx);
+    // Step 2: Verify storage slots
     verify_proofs();
 
-    // // Step 3: Verify the storage items
-    // verify_storage_items();
-
-    // // Step 4: Verify the block tx proofs
-    // verify_block_tx_proofs();
-
-    // // Step 5: Verify the block receipt proofs
-    // verify_block_receipt_proofs();
-
-    return mmr_meta_idx;
+    return (mmr_meta_idx=mmr_meta_idx);
 }

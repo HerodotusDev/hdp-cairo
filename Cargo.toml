@@ -1,0 +1,69 @@
+[workspace]
+resolver = "2"
+
+members = [
+    "crates/cairo_type_derive",
+    "crates/dry_hint_processor",
+    "crates/dry_run",
+    "crates/fetcher",
+    "crates/hints",
+    "crates/indexer",
+    "crates/server",
+    "crates/sound_hint_processor",
+    "crates/sound_run",
+    "crates/syscall_handler",
+    "crates/types",
+    "tests",
+]
+
+[workspace.dependencies]
+alloy = { version = "0.7.2", features = ["full"] }
+alloy-rlp = { version = "0.3.5", features = ["derive"] }
+anyhow = "1.0.95"
+axum = { version = "0.8", features = ["tracing"] }
+bincode = { version = "2.0.0-rc.3", default-features = false, features = ["serde"]}
+cairo-lang-casm = { version = "2.10.0-rc.1", default-features = false }
+cairo-lang-starknet-classes = "2.10.0-rc.1"
+cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", rev = "62804bcbf58b436a8986e7da0ee80333400b1ffb", features = ["extensive_hints", "clap", "cairo-1-hints"] }
+clap = { version = "4.3.10", features = ["derive"] }
+eth-trie-proofs = { git = "https://github.com/HerodotusDev/eth-trie-proofs.git" }
+futures = "0.3.31"
+hex = "0.4.3"
+http-body-util = "=0.1.0"
+indicatif = "0.17.9"
+keccak = "0.1.5"
+lazy_static = "1.5.0"
+num-bigint = "0.4.6"
+num-integer = "0.1.46"
+num-traits = "0.2.19"
+rand = "0.8"
+reqwest = "0.12.9"
+serde = "1.0.215"
+serde_json = "1.0.132"
+serde_with = { version = "3.11.0", features = ["hex"] }
+sha3 = "0.10.8"
+starknet = "0.13.0"
+starknet-core = { version = "0.11.1", default-features = false }
+starknet-crypto = { version = "0.7.1", default-features = false }
+starknet-types-core = { version = "0.1.6", default-features = false }
+strum_macros = "0.26.4"
+thiserror = "1.0.64"
+tiny-keccak = { version = "2.0.2", features = ["keccak"] }
+tokio = { version = "1.41.1", features = ["full"] }
+tower-http = { version = "0.6.1", features = ["timeout", "trace"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+utoipa = { version = "5.3.1", features = ["axum_extras"] }
+utoipa-swagger-ui = { version = "9", features = ["axum"] }
+version-compare = "=0.0.11"
+
+cairo_type_derive = { path = "crates/cairo_type_derive" }
+dry_hint_processor = { path = "crates/dry_hint_processor" }
+eth_essentials_cairo_vm_hints = { path = "packages/eth_essentials/cairo_vm_hints" }
+fetcher = { path = "crates/fetcher" }
+hints = { path = "crates/hints" }
+indexer = { path = "crates/indexer" }
+pathfinder_gateway_types = { git = "https://github.com/eqlabs/pathfinder", package = "starknet-gateway-types" }
+sound_hint_processor = { path = "crates/sound_hint_processor" }
+syscall_handler = { path = "crates/syscall_handler" }
+types = { path = "crates/types" }

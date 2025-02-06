@@ -1,11 +1,13 @@
 [workspace]
-name = "hdp_cairo"
 version = "0.1.0"
 edition = "2023_11"
 
 members = [
-    "cairo1_syscall_binding"
+    "examples",
+    "hdp_cairo",
+    "tests",
 ]
 
 [workspace.dependencies]
-hdp_cairo = { path = "cairo" }
+starknet = "2.9.2"
+hdp_cairo = { path = "hdp_cairo" }

@@ -115,8 +115,10 @@ func rlp_list_retrieve{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array
     let current_item = extract_byte_at_pos(rlp[item_starts_at_word], item_start_offset, pow2_array);
 
     local item_type: felt;
+    // %{
+    //     #print("current item:", hex(ids.current_item))
+    // %}
     %{
-        #print("current item:", hex(ids.current_item))
         if ids.current_item <= 0x7f:
             ids.item_type = 0 # single byte
         elif 0x80 <= ids.current_item <= 0xb6:
@@ -274,7 +276,7 @@ func chunk_to_felt_be{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array:
     }
 
     let (q, r) = felt_divmod(value, 0x100);  // remove trailing byte
-    %{ print("q:", hex(ids.q), "r:", hex(ids.r)) %}
+    // %{ print("q:", hex(ids.q), "r:", hex(ids.r)) %}
 
     // ensure we have a short string
     assert [range_check_ptr] = 8 - bytes_len;
@@ -328,14 +330,14 @@ func decode_rlp_word_to_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, p
 ) -> Uint256 {
     alloc_locals;
 
-    %{ print("decode_rlp_word_to_uint256") %}
-    %{ print(hex(memory[ids.rlp])) %}
+    // %{ print("decode_rlp_word_to_uint256") %}
+    // %{ print(hex(memory[ids.rlp])) %}
 
     let (value, value_len, value_bytes_len) = rlp_list_retrieve(
         rlp=rlp, field=0, item_starts_at_byte=0, counter=0
     );
 
-    %{ print("value:", hex(memory[ids.value])) %}
+    // %{ print("value:", hex(memory[ids.value])) %}
 
     // convert to uint256
     let result = le_chunks_to_uint256(
@@ -373,17 +375,20 @@ func le_chunks_to_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
     elements: felt*, elements_len: felt, bytes_len: felt
 ) -> Uint256 {
     alloc_locals;
-    local value: Uint256;
 
     if (elements_len == 1) {
         let high = elements[0] * pow2_array[(16 - bytes_len) * 8];
-        assert value = Uint256(low=0, high=high);
+        return (Uint256(low=0, high=high));
     }
 
     if (elements_len == 2) {
-        assert value = Uint256(
-            low=0,
-            high=(elements[1] * pow2_array[64] + elements[0]) * pow2_array[(16 - bytes_len) * 8],
+        return (
+            Uint256(
+                low=0,
+                high=(elements[1] * pow2_array[64] + elements[0]) * pow2_array[
+                    (16 - bytes_len) * 8
+                ],
+            )
         );
     }
 
@@ -392,19 +397,26 @@ func le_chunks_to_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
     let (le_shifted) = right_shift_le_chunks(elements, elements_len, offset);
 
     if (elements_len == 3) {
-        assert value = Uint256(
-            low=le_shifted[0] * pow2_array[64], high=le_shifted[2] * pow2_array[64] + le_shifted[1]
+        return (
+            Uint256(
+                low=le_shifted[0] * pow2_array[64],
+                high=le_shifted[2] * pow2_array[64] + le_shifted[1],
+            )
         );
     }
 
     if (elements_len == 4) {
-        assert value = Uint256(
-            low=le_shifted[1] * pow2_array[64] + le_shifted[0],
-            high=le_shifted[3] * pow2_array[64] + le_shifted[2],
+        return (
+            Uint256(
+                low=le_shifted[1] * pow2_array[64] + le_shifted[0],
+                high=le_shifted[3] * pow2_array[64] + le_shifted[2],
+            )
         );
     }
 
-    return (value);
+    assert 0 = 1;
+
+    return (Uint256(low=0, high=0));
 }
 
 // This function is required when constructing a LE uint256 from LE chunks.
@@ -432,8 +444,8 @@ func right_shift_le_chunks{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_a
     assert [range_check_ptr + 1] = value_len - 1;
     let range_check_ptr = range_check_ptr + 2;
 
-    let devisor = pow2_array[offset * 8];
-    let shifter = pow2_array[(8 - offset) * 8];
+    local devisor = pow2_array[offset * 8];
+    local shifter = pow2_array[(8 - offset) * 8];
 
     tempvar current_word = 0;
     tempvar n_processed_words = 0;
@@ -450,11 +462,11 @@ func right_shift_le_chunks{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_a
     // Inlined felt_divmod (unsigned_div_rem).
     let q = [ap];
     let r = [ap + 1];
-    %{
-        ids.q, ids.r = divmod(memory[ids.value + ids.i], ids.devisor)
-        #print(f"val={memory[ids.value + ids.i]} q={ids.q} r={ids.r} i={ids.i}")
-    %}
+    %{ ids.q, ids.r = divmod(memory[ids.value + ids.i], ids.devisor) %}
     ap += 2;
+    // %{
+    //     #print(f"val={memory[ids.value + ids.i]} q={ids.q} r={ids.r} i={ids.i}")
+    // %}
     tempvar offset = 3 * n_processed_words;
     assert [range_check_ptr + offset] = q;
     assert [range_check_ptr + offset + 1] = r;
@@ -502,8 +514,8 @@ func prepend_le_chunks{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array
 
     let (local result: felt*) = alloc();
 
-    let shifter = pow2_array[item_bytes_len * 8];
-    let devisor = pow2_array[(8 - item_bytes_len) * 8];
+    local shifter = pow2_array[item_bytes_len * 8];
+    local devisor = pow2_array[(8 - item_bytes_len) * 8];
 
     tempvar current_word = item;
     tempvar n_processed_words = 0;
@@ -520,10 +532,10 @@ func prepend_le_chunks{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array
     // Inlined felt_divmod (unsigned_div_rem).
     let q = [ap];
     let r = [ap + 1];
-    %{
-        ids.q, ids.r = divmod(memory[ids.rlp + ids.i], ids.devisor)
-        #print(f"val={hex(memory[ids.rlp + ids.i])} q/cur={hex(ids.q)} r={hex(ids.r)} i={ids.i}")
-    %}
+    %{ ids.q, ids.r = divmod(memory[ids.rlp + ids.i], ids.devisor) %}
+    // %{
+    //     print(f"val={hex(memory[ids.rlp + ids.i])} q/cur={hex(ids.q)} r={hex(ids.r)} i={ids.i}")
+    // %}
     ap += 2;
     tempvar item_bytes_len = 3 * n_processed_words;
     assert [range_check_ptr + item_bytes_len] = q;
@@ -612,8 +624,10 @@ func get_rlp_len{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt
     let current_item = extract_byte_at_pos(rlp[0], item_start_offset, pow2_array);
 
     local item_type: felt;
+    // %{
+    //     #print("current item:", hex(ids.current_item))
+    // %}
     %{
-        #print("current item:", hex(ids.current_item))
         if ids.current_item <= 0x7f:
             ids.item_type = 0 # single byte
         elif 0x80 <= ids.current_item <= 0xb6:

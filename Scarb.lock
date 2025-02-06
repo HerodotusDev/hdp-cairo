@@ -2,5 +2,19 @@
 version = 1
 
 [[package]]
+name = "examples"
+version = "0.1.0"
+dependencies = [
+ "hdp_cairo",
+]
+
+[[package]]
 name = "hdp_cairo"
 version = "0.1.0"
+
+[[package]]
+name = "modules"
+version = "0.1.0"
+dependencies = [
+ "hdp_cairo",
+]

@@ -2,10 +2,18 @@ from starkware.starknet.common.new_syscalls import (
     CALL_CONTRACT_SELECTOR,
     CallContractRequest,
     CallContractResponse,
+    FailureReason,
+    KECCAK_SELECTOR,
+    KeccakRequest,
+    KeccakResponse,
     RequestHeader,
     ResponseHeader,
-    FailureReason,
 )
+from starkware.cairo.common.builtin_keccak.keccak import (
+    KECCAK_FULL_RATE_IN_WORDS,
+    keccak_padded_input,
+)
+from starkware.cairo.common.math import unsigned_div_rem
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin, KeccakBuiltin
 from starkware.starknet.core.os.builtins import BuiltinPointers
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
@@ -58,8 +66,24 @@ func execute_syscalls{
         return ();
     }
 
-    assert [syscall_ptr] = CALL_CONTRACT_SELECTOR;
-    execute_call_contract(caller_execution_context=execution_context);
+    let selector = [syscall_ptr];
+
+    if (selector == CALL_CONTRACT_SELECTOR) {
+        execute_call_contract(caller_execution_context=execution_context);
+        return execute_syscalls(
+            execution_context=execution_context, syscall_ptr_end=syscall_ptr_end
+        );
+    }
+
+    if (selector == KECCAK_SELECTOR) {
+        execute_keccak(caller_execution_context=execution_context);
+        return execute_syscalls(
+            execution_context=execution_context, syscall_ptr_end=syscall_ptr_end
+        );
+    }
+
+    // Unknown selector
+    assert 1 = 0;
 
     return execute_syscalls(execution_context=execution_context, syscall_ptr_end=syscall_ptr_end);
 }
@@ -90,25 +114,35 @@ func execute_call_contract{
     let request_header = cast(syscall_ptr, RequestHeader*);
     let syscall_ptr = syscall_ptr + RequestHeader.SIZE;
 
-    let call_contract_request = cast(syscall_ptr, CallContractRequest*);
+    let request = cast(syscall_ptr, CallContractRequest*);
     let syscall_ptr = syscall_ptr + CallContractRequest.SIZE;
 
     let response_header = cast(syscall_ptr, ResponseHeader*);
     let syscall_ptr = syscall_ptr + ResponseHeader.SIZE;
 
-    let call_contract_response = cast(syscall_ptr, CallContractResponse*);
+    let response = cast(syscall_ptr, CallContractResponse*);
     let syscall_ptr = syscall_ptr + CallContractResponse.SIZE;
 
-    let state_access_type = call_contract_request.contract_address;
-    let field = call_contract_request.selector;
+    let state_access_type = request.contract_address;
+    let field = request.selector;
 
-    let layout = chain_id_to_layout(call_contract_request.calldata_start[2]);
-    let output_ptr = call_contract_response.retdata_start;
+    // Debug Contract does not need to be executed
+    if (request.contract_address == 'debug') {
+        return ();
+    }
+
+    // arbitrary_type Contract does not need to be executed
+    if (request.contract_address == 'arbitrary_type') {
+        return ();
+    }
+
+    let layout = chain_id_to_layout(request.calldata_start[2]);
+    let output_ptr = response.retdata_start;
 
     if (layout == Layout.EVM) {
         with output_ptr {
             let output_len = EvmStateAccess.read_and_decode(
-                params=call_contract_request.calldata_start + 2,
+                params=request.calldata_start + 2,
                 state_access_type=state_access_type,
                 field=field,
                 decoder_target=EvmDecoderTarget.UINT256,
@@ -121,7 +155,7 @@ func execute_call_contract{
     if (layout == Layout.STARKNET) {
         with output_ptr {
             let output_len = StarknetStateAccess.read_and_decode(
-                params=call_contract_request.calldata_start + 2,
+                params=request.calldata_start + 2,
                 state_access_type=state_access_type,
                 field=field,
                 decoder_target=StarknetDecoderTarget.FELT,
@@ -134,6 +168,50 @@ func execute_call_contract{
 
     // Unknown DictId
     assert 1 = 0;
+
+    return ();
+}
+
+// Executes a syscall that calls another contract.
+func execute_keccak{
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
+    syscall_ptr: felt*,
+    builtin_ptrs: BuiltinPointers*,
+    pow2_array: felt*,
+    evm_memorizer: DictAccess*,
+    evm_decoder_ptr: felt***,
+    evm_key_hasher_ptr: felt**,
+    starknet_memorizer: DictAccess*,
+    starknet_decoder_ptr: felt***,
+    starknet_key_hasher_ptr: felt**,
+}(caller_execution_context: ExecutionContext*) {
+    alloc_locals;
+    let request_header = cast(syscall_ptr, RequestHeader*);
+    let syscall_ptr = syscall_ptr + RequestHeader.SIZE;
+
+    let request = cast(syscall_ptr, KeccakRequest*);
+    let syscall_ptr = syscall_ptr + KeccakRequest.SIZE;
+
+    let response_header = cast(syscall_ptr, ResponseHeader*);
+    let syscall_ptr = syscall_ptr + ResponseHeader.SIZE;
+
+    let response = cast(syscall_ptr, KeccakResponse*);
+    let syscall_ptr = syscall_ptr + KeccakResponse.SIZE;
+
+    tempvar input_start = request.input_start;
+    tempvar input_end = request.input_end;
+    let len = input_end - input_start;
+    let (local q, r) = unsigned_div_rem(len, KECCAK_FULL_RATE_IN_WORDS);
+
+    with bitwise_ptr, keccak_ptr {
+        let (res) = keccak_padded_input(inputs=input_start, n_blocks=q);
+    }
+
+    assert response.result_low = res.low;
+    assert response.result_high = res.high;
 
     return ();
 }

@@ -32,26 +32,18 @@ func compute_contract{
     starknet_memorizer: DictAccess*,
     starknet_decoder_ptr: felt***,
     starknet_key_hasher_ptr: felt**,
-}(inputs: felt*, inputs_len: felt) -> (result: Uint256, program_hash: felt) {
+}() -> (result: Uint256, program_hash: felt) {
     alloc_locals;
+
+    local params_len: felt;
+    let (params) = alloc();
     local compiled_class: CompiledClass*;
 
-    // Fetch contract data form hints.
+    %{ ids.compiled_class = segments.gen_arg(get_compiled_class_struct(compiled_class=compiled_class)) %}
+
     %{
-        from starkware.starknet.core.os.contract_class.compiled_class_hash import create_bytecode_segment_structure
-        from contract_bootloader.contract_class.compiled_class_hash_utils import get_compiled_class_struct
-
-        bytecode_segment_structure = create_bytecode_segment_structure(
-            bytecode=compiled_class.bytecode,
-            bytecode_segment_lengths=compiled_class.bytecode_segment_lengths,
-            visited_pcs=None,
-        )
-
-        cairo_contract = get_compiled_class_struct(
-            compiled_class=compiled_class,
-            bytecode=bytecode_segment_structure.bytecode_with_skipped_segments()
-        )
-        ids.compiled_class = segments.gen_arg(cairo_contract)
+        ids.params_len = len(params)
+        segments.write_arg(ids.params, [param.value for param in params])
     %}
 
     let (builtin_costs: felt*) = alloc();
@@ -77,15 +69,15 @@ func compute_contract{
         )
     %}
 
-    local calldata: felt* = nondet %{ segments.add() %};
+    tempvar calldata: felt* = nondet %{ segments.add() %};
 
     assert calldata[0] = nondet %{ ids.evm_memorizer.address_.segment_index %};
     assert calldata[1] = nondet %{ ids.evm_memorizer.address_.offset %};
     assert calldata[2] = nondet %{ ids.starknet_memorizer.address_.segment_index %};
     assert calldata[3] = nondet %{ ids.starknet_memorizer.address_.offset %};
 
-    memcpy(dst=calldata + 4, src=inputs, len=inputs_len);
-    let calldata_size = 4 + inputs_len;
+    memcpy(dst=calldata + 4, src=params, len=params_len);
+    let calldata_size = 4 + params_len;
 
     with evm_memorizer, starknet_memorizer, pow2_array {
         let (retdata_size, retdata) = run_contract_bootloader(
@@ -93,12 +85,25 @@ func compute_contract{
         );
     }
 
-    if (retdata_size == 1) {
-        let result = felt_to_uint256(retdata[0]);
-        return (result=result, program_hash=program_hash);
-    } else {
-        assert retdata_size = 2;
-        let result = Uint256(low=retdata[0], high=retdata[1]);
-        return (result=result, program_hash=program_hash);
+    tempvar low;
+    tempvar high;
+
+    if (retdata_size == 0) {
+        low = 0x0;
+        high = 0x0;
     }
+    if (retdata_size == 1) {
+        low = retdata[0];
+        high = 0x0;
+    }
+    if (retdata_size == 2) {
+        low = retdata[0];
+        high = retdata[1];
+    }
+
+    local result: Uint256 = Uint256(low=low, high=high);
+
+    %{ print(f"Task Result: {hex(ids.result.high * 2 ** 128 + ids.result.low)}") %}
+
+    return (result=result, program_hash=program_hash);
 }

@@ -29,10 +29,9 @@ func verify_block_tx_proofs{
 }() {
     alloc_locals;
 
-    local n_tx_proofs: felt;
-    %{ ids.n_tx_proofs = len(batch["transactions"]) %}
-
+    tempvar n_tx_proofs: felt = nondet %{ len(batch_evm.transactions) %};
     verify_block_tx_proofs_inner(n_tx_proofs, 0);
+
     return ();
 }
 
@@ -44,31 +43,29 @@ func verify_block_tx_proofs_inner{
     evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
-}(n_tx_proofs: felt, index: felt) {
+}(n_tx_proofs: felt, idx: felt) {
     alloc_locals;
 
-    if (n_tx_proofs == index) {
+    if (n_tx_proofs == idx) {
         return ();
     }
 
-    local block_number: felt;
-    local proof_len: felt;
-    let (mpt_proof: felt**) = alloc();
-    let (proof_bytes_len: felt*) = alloc();
+    %{ transaction = batch.transactions[ids.idx] %}
+
     local key: Uint256;
+    %{ (ids.key.low, ids.key.high) = split_128(int(transaction.key, 16)) %}
+
     local key_leading_zeros: felt;
-    %{
-        from tools.py.utils import split_128, count_leading_zero_nibbles_from_hex, hex_to_int_array, nested_hex_to_int_array
-        transaction = batch["transactions"][ids.index]
-        ids.key_leading_zeros = count_leading_zero_nibbles_from_hex(transaction["key"])
-        (key_low, key_high) = split_128(int(transaction["key"], 16))
-        ids.key.low = key_low
-        ids.key.high = key_high
-        ids.block_number = transaction["block_number"]
-        segments.write_arg(ids.mpt_proof, nested_hex_to_int_array(transaction["proof"]))
-        segments.write_arg(ids.proof_bytes_len, transaction["proof_bytes_len"])
-        ids.proof_len = len(transaction["proof"])
-    %}
+    %{ ids.key_leading_zeros = len(transaction.key.lstrip("0x")) - len(transaction.key.lstrip("0x").lstrip("0")) %}
+
+    tempvar proof_len: felt = nondet %{ len(transaction.proof) %};
+    tempvar block_number: felt = nondet %{ transaction.block_number %};
+
+    let (proof_bytes_len: felt*) = alloc();
+    %{ segments.write_arg(ids.proof_bytes_len, transaction.proof_bytes_len) %}
+
+    let (mpt_proof: felt**) = alloc();
+    %{ segments.write_arg(ids.mpt_proof, [int(x, 16) for x in transaction.proof]) %}
 
     let memorizer_key = EvmHashParams.header(chain_id=chain_info.id, block_number=block_number);
     let (header_rlp) = EvmMemorizer.get(key=memorizer_key);
@@ -92,5 +89,5 @@ func verify_block_tx_proofs_inner{
     );
     EvmMemorizer.add(key=memorizer_key, data=rlp);
 
-    return verify_block_tx_proofs_inner(n_tx_proofs=n_tx_proofs, index=index + 1);
+    return verify_block_tx_proofs_inner(n_tx_proofs=n_tx_proofs, idx=idx + 1);
 }
