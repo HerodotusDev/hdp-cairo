@@ -31,6 +31,12 @@ pub struct ProofKeys {
     pub transaction_keys: HashSet<keys::evm::transaction::Key>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct FlattenedKey {
+    pub chain_id: u128,
+    pub block_number: u64,
+}
+
 impl ProofKeys {
     fn normalize_hex(input: &str) -> String {
         let hex_str = input.trim_start_matches("0x");
@@ -70,20 +76,20 @@ impl ProofKeys {
         })
     }
 
-    pub async fn fetch_account_proof(key: &keys::evm::account::Key) -> Result<(HeaderMmrMeta<Header>, Account), FetcherError> {
+    pub async fn fetch_account_proof(key: &keys::evm::account::Key) -> Result<Account, FetcherError> {
         let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap());
         let value = provider
             .get_proof(key.address, vec![])
             .block_id(key.block_number.into())
             .await
             .map_err(|e| FetcherError::InternalError(e.to_string()))?;
-        Ok((
-            Self::fetch_header_proof(key.chain_id, key.block_number).await?,
-            Account::new(value.address, vec![MPTProof::new(key.block_number, value.account_proof)]),
+        Ok(Account::new(
+            value.address,
+            vec![MPTProof::new(key.block_number, value.account_proof)],
         ))
     }
 
-    pub async fn fetch_storage_proof(key: &keys::evm::storage::Key) -> Result<(HeaderMmrMeta<Header>, Account, Storage), FetcherError> {
+    pub async fn fetch_storage_proof(key: &keys::evm::storage::Key) -> Result<(Account, Storage), FetcherError> {
         let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap());
         let value = provider
             .get_proof(key.address, vec![key.storage_slot])
@@ -91,7 +97,6 @@ impl ProofKeys {
             .await
             .map_err(|e| FetcherError::InternalError(e.to_string()))?;
         Ok((
-            Self::fetch_header_proof(key.chain_id, key.block_number).await?,
             Account::new(value.address, vec![MPTProof::new(key.block_number, value.account_proof)]),
             Storage::new(
                 value.address,
@@ -104,15 +109,11 @@ impl ProofKeys {
         ))
     }
 
-    async fn generate_block_tx_receipt_proof(
+    fn generate_block_tx_receipt_proof(
         tx_receipts_mpt_handler: &mut TxReceiptsMptHandler,
         block_number: u64,
         tx_index: u64,
     ) -> Result<MPTProof, FetcherError> {
-        tx_receipts_mpt_handler
-            .build_tx_receipts_tree_from_block(block_number)
-            .await
-            .map_err(|e| FetcherError::InternalError(e.to_string()))?;
         let trie_proof = tx_receipts_mpt_handler
             .get_proof(tx_index)
             .map_err(|e| FetcherError::InternalError(e.to_string()))?;
@@ -125,27 +126,17 @@ impl ProofKeys {
         Ok(MPTProof { block_number, proof })
     }
 
-    pub async fn fetch_receipt_proof(key: &keys::evm::receipt::Key) -> Result<(HeaderMmrMeta<Header>, Receipt), FetcherError> {
-        let mut tx_receipts_mpt_handler = TxReceiptsMptHandler::new(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap())
-            .map_err(|e| FetcherError::InternalError(e.to_string()))?;
-
-        let header = Self::fetch_header_proof(key.chain_id, key.block_number).await?;
-        let receipt_mpt_proof =
-            Self::generate_block_tx_receipt_proof(&mut tx_receipts_mpt_handler, key.block_number, key.transaction_index).await?;
-
+    pub fn compute_receipt_proof(
+        key: &keys::evm::receipt::Key,
+        tx_receipts_mpt_handler: &mut TxReceiptsMptHandler,
+    ) -> Result<Receipt, FetcherError> {
+        let receipt_mpt_proof = Self::generate_block_tx_receipt_proof(tx_receipts_mpt_handler, key.block_number, key.transaction_index)?;
         let rlp_encoded_key = alloy_rlp::encode(U256::from(key.transaction_index));
-        Ok((header, Receipt::new(U256::from_be_slice(&rlp_encoded_key), receipt_mpt_proof)))
+
+        Ok(Receipt::new(U256::from_be_slice(&rlp_encoded_key), receipt_mpt_proof))
     }
 
-    async fn generate_block_tx_proof(
-        tx_trie_handler: &mut TxsMptHandler,
-        block_number: u64,
-        tx_index: u64,
-    ) -> Result<MPTProof, FetcherError> {
-        tx_trie_handler
-            .build_tx_tree_from_block(block_number)
-            .await
-            .map_err(|e| FetcherError::InternalError(e.to_string()))?;
+    fn generate_block_tx_proof(tx_trie_handler: &mut TxsMptHandler, block_number: u64, tx_index: u64) -> Result<MPTProof, FetcherError> {
         let trie_proof = tx_trie_handler
             .get_proof(tx_index)
             .map_err(|e| FetcherError::InternalError(e.to_string()))?;
@@ -158,14 +149,54 @@ impl ProofKeys {
         Ok(MPTProof { block_number, proof })
     }
 
-    pub async fn fetch_transaction_proof(key: &keys::evm::transaction::Key) -> Result<(HeaderMmrMeta<Header>, Transaction), FetcherError> {
-        let mut tx_trie_handler = TxsMptHandler::new(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap())
-            .map_err(|e| FetcherError::InternalError(e.to_string()))?;
-
-        let header = Self::fetch_header_proof(key.chain_id, key.block_number).await?;
-        let tx_proof = Self::generate_block_tx_proof(&mut tx_trie_handler, key.block_number, key.transaction_index).await?;
+    pub fn compute_transaction_proof(
+        key: &keys::evm::transaction::Key,
+        tx_trie_handler: &mut TxsMptHandler,
+    ) -> Result<Transaction, FetcherError> {
+        let tx_proof = Self::generate_block_tx_proof(tx_trie_handler, key.block_number, key.transaction_index)?;
 
         let rlp_encoded_key = alloy_rlp::encode(U256::from(key.transaction_index));
-        Ok((header, Transaction::new(U256::from_be_slice(&rlp_encoded_key), tx_proof)))
+        Ok(Transaction::new(U256::from_be_slice(&rlp_encoded_key), tx_proof))
+    }
+
+    pub fn to_flattened_keys(&self) -> HashSet<FlattenedKey> {
+        let mut flattened = HashSet::new();
+
+        for key in &self.header_keys {
+            flattened.insert(FlattenedKey {
+                chain_id: key.chain_id,
+                block_number: key.block_number,
+            });
+        }
+
+        for key in &self.account_keys {
+            flattened.insert(FlattenedKey {
+                chain_id: key.chain_id,
+                block_number: key.block_number,
+            });
+        }
+
+        for key in &self.storage_keys {
+            flattened.insert(FlattenedKey {
+                chain_id: key.chain_id,
+                block_number: key.block_number,
+            });
+        }
+
+        for key in &self.receipt_keys {
+            flattened.insert(FlattenedKey {
+                chain_id: key.chain_id,
+                block_number: key.block_number,
+            });
+        }
+
+        for key in &self.transaction_keys {
+            flattened.insert(FlattenedKey {
+                chain_id: key.chain_id,
+                block_number: key.block_number,
+            });
+        }
+
+        flattened
     }
 }
