@@ -1,4 +1,4 @@
-pub mod any_type;
+pub mod arbitrary_type;
 pub mod debug;
 pub mod evm;
 pub mod starknet;

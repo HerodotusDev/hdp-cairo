@@ -131,6 +131,11 @@ func execute_call_contract{
         return ();
     }
 
+    // arbitrary_type Contract does not need to be executed
+    if (request.contract_address == 'arbitrary_type') {
+        return ();
+    }
+
     let layout = chain_id_to_layout(request.calldata_start[2]);
     let output_ptr = response.retdata_start;
 

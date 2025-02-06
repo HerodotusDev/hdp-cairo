@@ -9,7 +9,7 @@ use types::cairo::{
 
 use crate::{traits, SyscallResult, WriteResponseResult};
 
-pub const CONTRACT_ADDRESS: Felt252 = Felt252::from_hex_unchecked("0x616e795f74797065"); // 'any_type' in hex
+pub const CONTRACT_ADDRESS: Felt252 = Felt252::from_hex_unchecked("0x6172626974726172795F74797065"); // 'arbitrary_type' in hex
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct ArbitraryTypeCallContractHandler;

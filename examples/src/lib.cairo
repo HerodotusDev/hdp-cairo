@@ -1,6 +1,6 @@
 #[starknet::contract]
 mod example {
-    use hdp_cairo::{HDP, evm::storage::{StorageImpl}, any_type::any_type};
+    use hdp_cairo::{HDP, evm::storage::{StorageImpl}, arbitrary_type::arbitrary_type};
     use hdp_cairo::debug::{print_array};
 
     #[storage]
@@ -27,7 +27,7 @@ mod example {
         s.serialize(ref s_obj_serialized);
         print_array(s_obj_serialized);
 
-        let d: AnyTypeOutput = any_type(s);
+        let d: AnyTypeOutput = arbitrary_type(s);
 
         let mut d_obj_serialized = array![];
         d.serialize(ref d_obj_serialized);
