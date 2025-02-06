@@ -5,6 +5,6 @@ use cairo_vm::{
 
 pub trait CairoType: Sized {
     fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError>;
-    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<(), MemoryError>;
-    fn n_fields() -> usize;
+    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError>;
+    fn n_fields(vm: &VirtualMachine, address: Relocatable) -> Result<usize, MemoryError>;
 }

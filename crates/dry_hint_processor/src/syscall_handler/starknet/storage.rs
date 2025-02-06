@@ -10,7 +10,7 @@ use starknet::{
 };
 use syscall_handler::{traits::CallHandler, SyscallExecutionError, SyscallResult};
 use types::{
-    cairo::{evm::storage::FunctionId, structs::Felt, traits::CairoType},
+    cairo::{evm::storage::FunctionId, structs::CairoFelt, traits::CairoType},
     keys::starknet::storage::{CairoKey, Key},
     RPC_URL_STARKNET,
 };
@@ -22,11 +22,11 @@ pub struct StorageCallHandler;
 impl CallHandler for StorageCallHandler {
     type Key = Key;
     type Id = FunctionId;
-    type CallHandlerResult = Felt;
+    type CallHandlerResult = CairoFelt;
 
     fn derive_key(vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Key> {
         let ret = CairoKey::from_memory(vm, *ptr)?;
-        *ptr = (*ptr + CairoKey::n_fields())?;
+        *ptr = (*ptr + CairoKey::n_fields(vm, *ptr)?)?;
         ret.try_into()
             .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))
     }
@@ -49,7 +49,7 @@ impl CallHandler for StorageCallHandler {
             FunctionId::Storage => provider
                 .get_storage_at::<Felt252, Felt252, BlockId>(key.address, key.storage_slot, block_id)
                 .await
-                .map(Felt::from),
+                .map(CairoFelt::from),
         }
         .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
 

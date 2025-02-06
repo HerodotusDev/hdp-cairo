@@ -1,11 +1,11 @@
 use cairo_type_derive::FieldOffsetGetters;
 use cairo_vm::{
-    types::relocatable::Relocatable,
+    types::relocatable::{MaybeRelocatable, Relocatable},
     vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
     Felt252,
 };
 
-use super::traits::CairoType;
+use super::{traits::CairoType, FELT_1};
 
 #[derive(FieldOffsetGetters, Debug)]
 pub struct CallContractRequest {
@@ -31,15 +31,15 @@ impl CairoType for CallContractRequest {
             calldata_end,
         })
     }
-    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<(), MemoryError> {
+    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
         vm.insert_value((address + 0)?, self.contract_address)?;
         vm.insert_value((address + 1)?, self.selector)?;
         vm.insert_value((address + 2)?, self.calldata_start)?;
         vm.insert_value((address + 3)?, self.calldata_end)?;
-        Ok(())
+        Ok((address + 4)?)
     }
-    fn n_fields() -> usize {
-        4
+    fn n_fields(_vm: &VirtualMachine, _address: Relocatable) -> Result<usize, MemoryError> {
+        Ok(4)
     }
 }
 
@@ -58,13 +58,13 @@ impl CairoType for CallContractResponse {
             retdata_end,
         })
     }
-    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<(), MemoryError> {
+    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
         vm.insert_value((address + 0)?, self.retdata_start)?;
         vm.insert_value((address + 1)?, self.retdata_end)?;
-        Ok(())
+        Ok((address + 2)?)
     }
-    fn n_fields() -> usize {
-        2
+    fn n_fields(_vm: &VirtualMachine, _address: Relocatable) -> Result<usize, MemoryError> {
+        Ok(2)
     }
 }
 
@@ -80,13 +80,13 @@ impl CairoType for KeccakRequest {
         let input_end = vm.get_relocatable((address + 1)?)?;
         Ok(Self { input_start, input_end })
     }
-    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<(), MemoryError> {
+    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
         vm.insert_value((address + 0)?, self.input_start)?;
         vm.insert_value((address + 1)?, self.input_end)?;
-        Ok(())
+        Ok((address + 2)?)
     }
-    fn n_fields() -> usize {
-        2
+    fn n_fields(_vm: &VirtualMachine, _address: Relocatable) -> Result<usize, MemoryError> {
+        Ok(2)
     }
 }
 
@@ -102,12 +102,33 @@ impl CairoType for KeccakResponse {
         let result_high = *vm.get_integer((address + 1)?)?;
         Ok(Self { result_low, result_high })
     }
-    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<(), MemoryError> {
+    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
         vm.insert_value((address + 0)?, self.result_low)?;
         vm.insert_value((address + 1)?, self.result_high)?;
-        Ok(())
+        Ok((address + 2)?)
     }
-    fn n_fields() -> usize {
-        2
+    fn n_fields(_vm: &VirtualMachine, _address: Relocatable) -> Result<usize, MemoryError> {
+        Ok(2)
+    }
+}
+
+impl CairoType for Vec<Felt252> {
+    fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
+        let len = *vm.get_integer((address + 0)?)?;
+        let result = vm
+            .get_integer_range((address + 1)?, len.try_into().unwrap())?
+            .into_iter()
+            .map(|e| *e)
+            .collect();
+        Ok(result)
+    }
+    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
+        vm.insert_value((address + 0)?, self.len())?;
+        vm.load_data((address + 1)?, &self.iter().map(MaybeRelocatable::from).collect::<Vec<_>>())?;
+        Ok((address + (self.len() + 1))?)
+    }
+    fn n_fields(vm: &VirtualMachine, address: Relocatable) -> Result<usize, MemoryError> {
+        let len = *vm.get_integer((address + 0)?)? + FELT_1;
+        Ok(len.try_into().unwrap())
     }
 }

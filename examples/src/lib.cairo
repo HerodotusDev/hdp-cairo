@@ -1,38 +1,36 @@
 #[starknet::contract]
 mod example {
-    use hdp_cairo::{
-        HDP, evm::block_receipt::{BlockReceiptTrait, BlockReceiptKey, BlockReceiptImpl},
-        evm::block_tx::{BlockTxTrait, BlockTxKey, BlockTxImpl},
-    };
-    use hdp_cairo::debug::print;
+    use hdp_cairo::{HDP, evm::storage::{StorageImpl}, arbitrary_type::arbitrary_type};
+    use hdp_cairo::debug::{print_array};
 
     #[storage]
     struct Storage {}
 
+    #[derive(Serde, Drop)]
+    struct AnyTypeInput {
+        pub item_a: felt252,
+        pub item_b: Array<felt252>,
+    }
+
+    #[derive(Serde, Drop)]
+    struct AnyTypeOutput {
+        pub item_a: felt252,
+        pub item_b: Array<felt252>,
+        pub item_c: felt252,
+    }
+
     #[external(v0)]
     pub fn main(ref self: ContractState, hdp: HDP) {
-        assert!(
-            hdp
-                .evm
-                .block_receipt_get_cumulative_gas_used(
-                    BlockReceiptKey {
-                        chain_id: 11155111, block_number: 5382809, transaction_index: 217,
-                    },
-                ) == u256 { low: 0x1a4bd13, high: 0x0 },
-        );
+        let s = AnyTypeInput { item_a: 1, item_b: array![2, 3, 4, 5, 6] };
 
-        print(1);
+        let mut s_obj_serialized = array![];
+        s.serialize(ref s_obj_serialized);
+        print_array(s_obj_serialized);
 
-        assert!(
-            hdp
-                .evm
-                .block_tx_get_nonce(
-                    BlockTxKey {
-                        chain_id: 11155111, block_number: 5382809, transaction_index: 217,
-                    },
-                ) == u256 { low: 0x3, high: 0x0 },
-        );
+        let d: AnyTypeOutput = arbitrary_type(s);
 
-        print(2);
+        let mut d_obj_serialized = array![];
+        d.serialize(ref d_obj_serialized);
+        print_array(d_obj_serialized);
     }
 }

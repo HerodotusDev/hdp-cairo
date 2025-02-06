@@ -11,10 +11,11 @@ use cairo_vm::{
 };
 use clap::Parser;
 use dry_hint_processor::{
-    syscall_handler::{SyscallHandler, SyscallHandlerWrapper},
+    syscall_handler::{evm, starknet},
     CustomHintProcessor,
 };
 use hints::vars;
+use syscall_handler::{SyscallHandler, SyscallHandlerWrapper};
 use tracing::debug;
 use types::{error::Error, HDPDryRunInput};
 
@@ -113,10 +114,10 @@ async fn main() -> Result<(), Error> {
 
     std::fs::write(
         args.program_output,
-        serde_json::to_vec::<SyscallHandler>(
+        serde_json::to_vec::<SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler>>(
             &cairo_runner
                 .exec_scopes
-                .get::<SyscallHandlerWrapper>(vars::scopes::SYSCALL_HANDLER)
+                .get::<SyscallHandlerWrapper<evm::CallContractHandler, starknet::CallContractHandler>>(vars::scopes::SYSCALL_HANDLER)
                 .unwrap()
                 .syscall_handler
                 .try_read()

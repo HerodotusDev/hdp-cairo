@@ -89,8 +89,9 @@ mod tests {
         body::Body,
         http::{Request, StatusCode},
     };
-    use dry_hint_processor::syscall_handler::SyscallHandler;
+    use dry_hint_processor::syscall_handler::{evm, starknet};
     use http_body_util::BodyExt;
+    use syscall_handler::SyscallHandler;
     use tower::ServiceExt;
     use types::{ChainProofs, HDPDryRunInput, HDPInput};
 
@@ -138,7 +139,10 @@ mod tests {
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn test_fetch_proofs_endpoint() {
         let app = build_test_app();
-        let input = serde_json::from_str::<SyscallHandler>(&std::fs::read_to_string("tests/hdp_keys.json").unwrap()).unwrap();
+        let input = serde_json::from_str::<SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler>>(
+            &std::fs::read_to_string("tests/hdp_keys.json").unwrap(),
+        )
+        .unwrap();
 
         let response = app
             .oneshot(
@@ -218,8 +222,10 @@ mod tests {
         assert_eq!(dry_run_response.status(), StatusCode::OK);
 
         // 2. Then fetch proofs
-        let fetch_input =
-            serde_json::from_slice::<SyscallHandler>(&dry_run_response.into_body().collect().await.unwrap().to_bytes()).unwrap();
+        let fetch_input = serde_json::from_slice::<SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler>>(
+            &dry_run_response.into_body().collect().await.unwrap().to_bytes(),
+        )
+        .unwrap();
         let fetch_response = app
             .clone()
             .oneshot(

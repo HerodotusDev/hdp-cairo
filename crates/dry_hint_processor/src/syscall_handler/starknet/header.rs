@@ -6,14 +6,12 @@ use syscall_handler::{traits::CallHandler, SyscallExecutionError, SyscallResult}
 use types::{
     cairo::{
         starknet::header::{Block, FunctionId, StarknetBlock},
-        structs::Felt,
+        structs::CairoFelt,
         traits::CairoType,
     },
     keys::starknet::header::{CairoKey, Key},
-    RPC_URL_FEEDER_GATEWAY,
+    RPC_URL_FEEDER_GATEWAY, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
 };
-
-use crate::syscall_handler::{STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID};
 
 #[derive(Debug, Default)]
 pub struct HeaderCallHandler;
@@ -22,11 +20,11 @@ pub struct HeaderCallHandler;
 impl CallHandler for HeaderCallHandler {
     type Key = Key;
     type Id = FunctionId;
-    type CallHandlerResult = Felt;
+    type CallHandlerResult = CairoFelt;
 
     fn derive_key(vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Key> {
         let ret = CairoKey::from_memory(vm, *ptr)?;
-        *ptr = (*ptr + CairoKey::n_fields())?;
+        *ptr = (*ptr + CairoKey::n_fields(vm, *ptr)?)?;
         ret.try_into()
             .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))
     }

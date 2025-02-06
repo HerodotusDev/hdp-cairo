@@ -12,4 +12,5 @@ num-traits.workspace = true
 serde.workspace = true
 strum_macros.workspace = true
 thiserror.workspace = true
+tokio.workspace = true
 types.workspace = true

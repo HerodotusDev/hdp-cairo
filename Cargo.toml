@@ -2,6 +2,7 @@
 resolver = "2"
 
 members = [
+    "crates/cairo_type_derive",
     "crates/dry_hint_processor",
     "crates/dry_run",
     "crates/fetcher",
@@ -23,7 +24,6 @@ axum = { version = "0.8", features = ["tracing"] }
 bincode = { version = "2.0.0-rc.3", default-features = false, features = ["serde"]}
 cairo-lang-casm = { version = "2.10.0-rc.1", default-features = false }
 cairo-lang-starknet-classes = "2.10.0-rc.1"
-cairo-type-derive = { git = "https://github.com/keep-starknet-strange/snos.git", rev = "35a300a10d2107482ada440b5025ee2f651afbd4" }
 cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", rev = "62804bcbf58b436a8986e7da0ee80333400b1ffb", features = ["extensive_hints", "clap", "cairo-1-hints"] }
 clap = { version = "4.3.10", features = ["derive"] }
 eth-trie-proofs = { git = "https://github.com/HerodotusDev/eth-trie-proofs.git" }
@@ -57,6 +57,7 @@ utoipa = { version = "5.3.1", features = ["axum_extras"] }
 utoipa-swagger-ui = { version = "9", features = ["axum"] }
 version-compare = "=0.0.11"
 
+cairo_type_derive = { path = "crates/cairo_type_derive" }
 dry_hint_processor = { path = "crates/dry_hint_processor" }
 eth_essentials_cairo_vm_hints = { path = "packages/eth_essentials/cairo_vm_hints" }
 fetcher = { path = "crates/fetcher" }
