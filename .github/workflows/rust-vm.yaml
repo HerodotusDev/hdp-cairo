@@ -45,13 +45,16 @@ jobs:
         uses: software-mansion/setup-scarb@v1
 
       - name: Set up Cairo
-        run: make setup
+        run: make
 
       - name: Run fmt check
         run: cargo fmt --all -- --check
 
       - name: Run clippy check
         run: cargo clippy -- -D warnings
+      
+      - name: Run Cairo fmt check
+        run: make format-check
 
   test:
     name: Run Tests
@@ -92,7 +95,7 @@ jobs:
         uses: software-mansion/setup-scarb@v1
 
       - name: Set up Cairo
-        run: make setup
+        run: make
 
       - name: Install Nextest
         uses: taiki-e/install-action@nextest

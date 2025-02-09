@@ -1,19 +1,13 @@
 # HDP Cairo
 
-Cairo HDP is a collection of Cairo0 programs designed to verify inclusion proofs and perform computations on the data. These computations can be verified on-chain, enabling trustless operations on any historical data from Ethereum or integrated EVM chains.
+HDP (Herodotus Data Processor) is a modular framework for validating on-chain data from multiple blockchain RPC sources, executing user-defined logic written in Cairo1, and producing an execution trace that can be used to generate a zero-knowledge proof. The proof attests to the correctness of both the on-chain data and the performed computation.
 
 ## Installation and Setup
 
 To install the required dependencies and set up the Python virtual environment, run:
 
 ```bash
-make setup
-```
-
-Ensure you run the Cairo program from the virtual environment. To activate the virtual environment, execute:
-
-```bash
-source venv/bin/activate
+make
 ```
 
 ## Running
@@ -39,25 +33,6 @@ Runtime require chain nodes RPC calls, ensure an environment variables [.env.exa
    ```
 
 The program will output the results root and tasks root. These roots can be used to extract the results from the on-chain contract.
-
-## How It Works
-
-HDP Cairo is the repository containing the logic for verifying on-chain state via storage proofs and making that state available to custom Cairo1 contract modules. To enable this functionality, a custom syscall was designed, enabling dynamic access to the verified state. The syscalls are defined in `cairo1`, where examples are provided.
-
-### Architecture
-
-The overall program is split into two main parts:
-
-1. **Storage Proof Verification**
-   - In the first stage, we verify the storage proofs found in the `hdp_input.json` file. This file contains all the storage proofs for the state required by the contract's execution.
-   - The `hdp_input.json` file is generated during the Dry Run stage, where execution is mocked, and the state accessed by the contract is extracted.
-   - Once this stage is complete, all the verified state is stored in memorizers, enabling it to be queried via syscall.
-
-2. **Bootloading**
-   - In this stage, we bootload the Cairo1 contract.
-   - The contract's bytecode is read from the `hdp_input.json` file and executed in the HDP bootloader.
-   - The bootloader processes the bytecode and invokes the contained syscalls, which fetch and decode the requested state from the memorizers, loading it into the contract's memory.
-   - This setup allows seamless access to verified on-chain state within contracts.
 
 ## Testing
 
