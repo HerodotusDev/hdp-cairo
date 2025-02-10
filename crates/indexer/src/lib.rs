@@ -85,12 +85,12 @@ impl Indexer {
 
             let block = parsed_mmr.data.first().unwrap();
 
-            let fields = match &block.block_header {
-                models::BlockHeader::Fields(fields) => fields.into_iter().map(|hex| Felt252::from_hex(hex).unwrap()).collect::<Vec<_>>(),
-                _ => panic!("dupa"),
-            };
-
-            Ok(blocks::IndexerBlockResponse { fields })
+            match &block.block_header {
+                models::BlockHeader::Fields(fields) => Ok(blocks::IndexerBlockResponse {
+                    fields: fields.iter().map(|hex| Felt252::from_hex(hex).unwrap()).collect::<Vec<_>>(),
+                }),
+                _ => Err(IndexerError::ValidationError("Invalid block header return type".to_string())),
+            }
         } else {
             Err(IndexerError::GetBlocksProofError(
                 response.text().await.map_err(IndexerError::ReqwestError)?,
