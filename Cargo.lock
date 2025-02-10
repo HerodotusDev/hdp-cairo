@@ -3622,6 +3622,7 @@ name = "indexer"
 version = "0.1.0"
 dependencies = [
  "alloy 0.7.3",
+ "cairo-vm",
  "reqwest 0.12.12",
  "serde",
  "serde_json",

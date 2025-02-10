@@ -1,7 +1,7 @@
 use std::{collections::HashSet, env};
 
 use cairo_vm::Felt252;
-use indexer::models::accumulators::BlockHeader;
+use indexer::models::BlockHeader;
 use reqwest::Url;
 use starknet_types_core::felt::FromStrError;
 use types::{

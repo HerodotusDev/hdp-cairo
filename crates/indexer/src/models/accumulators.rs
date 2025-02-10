@@ -4,14 +4,7 @@ use alloy::primitives::BlockNumber;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
-/// Enum for available hashing functions
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum HashingFunction {
-    Keccak,
-    Poseidon,
-    Pedersen,
-}
+use super::{BlockHeader, HashingFunction};
 
 /// Enum for available contract types
 #[derive(Debug, Serialize)]
@@ -87,20 +80,13 @@ pub struct MMRProof {
     pub siblings_hashes: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum BlockHeader {
-    RlpString(String),
-    RlpLittleEndian8ByteChunks(Vec<String>),
-    Fields(Vec<String>),
-}
-
 #[derive(Debug)]
-pub struct IndexerHeadersProofResponse {
+pub struct IndexerProofResponse {
     pub mmr_meta: MMRMetadata,
     pub headers: HashMap<BlockNumber, MMRProof>,
 }
 
-impl IndexerHeadersProofResponse {
+impl IndexerProofResponse {
     pub fn new(mmr_data: MMRData) -> Self {
         let mmr_meta = mmr_data.meta;
         let headers = mmr_data.proofs.into_iter().map(|block| (block.block_number, block)).collect();

@@ -8,7 +8,7 @@ use alloy::{
 };
 use cairo_vm::Felt252;
 use eth_trie_proofs::{tx_receipt_trie::TxReceiptsMptHandler, tx_trie::TxsMptHandler};
-use indexer::models::accumulators::BlockHeader;
+use indexer::models::BlockHeader;
 use starknet_types_core::felt::FromStrError;
 use types::{
     keys,

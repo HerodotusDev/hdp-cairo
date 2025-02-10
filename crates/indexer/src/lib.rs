@@ -7,9 +7,10 @@ pub mod models;
 
 use std::env;
 
-use models::{accumulators, IndexerError};
+use cairo_vm::Felt252;
+use models::{accumulators, blocks, IndexerError};
 use reqwest::{Client, Url};
-use types::RPC_URL_HERODOTUS_INDEXER_GROWER;
+use types::{RPC_URL_HERODOTUS_INDEXER_GROWER, RPC_URL_HERODOTUS_INDEXER_STAGING};
 
 #[derive(Clone)]
 pub struct Indexer {
@@ -28,10 +29,7 @@ impl Indexer {
     }
 
     /// Fetch MMR and headers proof from Herodotus Indexer
-    pub async fn get_headers_proof(
-        &self,
-        query: accumulators::IndexerQuery,
-    ) -> Result<accumulators::IndexerHeadersProofResponse, IndexerError> {
+    pub async fn get_headers_proof(&self, query: accumulators::IndexerQuery) -> Result<accumulators::IndexerProofResponse, IndexerError> {
         // Parse base URL from environment variable
         let base_url = Url::parse(&env::var(RPC_URL_HERODOTUS_INDEXER_GROWER).unwrap()).unwrap();
 
@@ -58,11 +56,43 @@ impl Indexer {
                         "Indexer didn't return the correct number of headers that were requested".to_string(),
                     ))
                 } else {
-                    Ok(accumulators::IndexerHeadersProofResponse::new(mmr_data))
+                    Ok(accumulators::IndexerProofResponse::new(mmr_data))
                 }
             }
         } else {
             Err(IndexerError::GetHeadersProofError(
+                response.text().await.map_err(IndexerError::ReqwestError)?,
+            ))
+        }
+    }
+
+    /// Fetch MMR and headers proof from Herodotus Indexer
+    pub async fn get_blocks(&self, query: blocks::IndexerQuery) -> Result<blocks::IndexerBlockResponse, IndexerError> {
+        // Parse base URL from environment variable
+        let base_url = Url::parse(&env::var(RPC_URL_HERODOTUS_INDEXER_STAGING).unwrap()).unwrap();
+
+        let response = self
+            .client
+            .get(base_url.join("/blocks").unwrap())
+            .query(&query)
+            .send()
+            .await
+            .map_err(IndexerError::ReqwestError)?;
+
+        if response.status().is_success() {
+            let parsed_mmr: blocks::BlocksResponse =
+                serde_json::from_value(response.json().await.map_err(IndexerError::ReqwestError)?).map_err(IndexerError::SerdeJsonError)?;
+
+            let block = parsed_mmr.data.first().unwrap();
+
+            let fields = match &block.block_header {
+                models::BlockHeader::Fields(fields) => fields.into_iter().map(|hex| Felt252::from_hex(&hex).unwrap()).collect::<Vec<_>>(),
+                _ => panic!("dupa"),
+            };
+
+            Ok(blocks::IndexerBlockResponse { fields })
+        } else {
+            Err(IndexerError::GetBlocksProofError(
                 response.text().await.map_err(IndexerError::ReqwestError)?,
             ))
         }
