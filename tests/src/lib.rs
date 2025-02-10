@@ -11,6 +11,9 @@ pub mod starknet;
 pub mod utils;
 
 #[cfg(test)]
+pub mod hashers;
+
+#[cfg(test)]
 mod test_utils {
     use std::{env, path::PathBuf};
 
