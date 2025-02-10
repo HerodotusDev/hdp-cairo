@@ -86,7 +86,7 @@ impl Indexer {
             let block = parsed_mmr.data.first().unwrap();
 
             let fields = match &block.block_header {
-                models::BlockHeader::Fields(fields) => fields.into_iter().map(|hex| Felt252::from_hex(&hex).unwrap()).collect::<Vec<_>>(),
+                models::BlockHeader::Fields(fields) => fields.into_iter().map(|hex| Felt252::from_hex(hex).unwrap()).collect::<Vec<_>>(),
                 _ => panic!("dupa"),
             };
 
