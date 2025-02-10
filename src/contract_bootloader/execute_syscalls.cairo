@@ -126,6 +126,16 @@ func execute_call_contract{
     let state_access_type = request.contract_address;
     let field = request.selector;
 
+    // Debug Contract does not need to be executed
+    if (request.contract_address == 'debug') {
+        return ();
+    }
+
+    // arbitrary_type Contract does not need to be executed
+    if (request.contract_address == 'arbitrary_type') {
+        return ();
+    }
+
     let layout = chain_id_to_layout(request.calldata_start[2]);
     let output_ptr = response.retdata_start;
 

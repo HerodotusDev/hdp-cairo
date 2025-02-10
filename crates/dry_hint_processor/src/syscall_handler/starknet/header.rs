@@ -7,11 +7,11 @@ use syscall_handler::{traits::CallHandler, SyscallExecutionError, SyscallResult}
 use types::{
     cairo::{
         starknet::header::{FunctionId, StarknetBlock},
-        structs::Felt,
+        structs::CairoFelt,
         traits::CairoType,
     },
     keys::starknet::header::{CairoKey, Key},
-    HERODOTUS_STAGING_INDEXER,
+    RPC_URL_HERODOTUS_INDEXER_STAGING,
 };
 
 #[derive(Debug, Default)]
@@ -21,11 +21,11 @@ pub struct HeaderCallHandler;
 impl CallHandler for HeaderCallHandler {
     type Key = Key;
     type Id = FunctionId;
-    type CallHandlerResult = Felt;
+    type CallHandlerResult = CairoFelt;
 
     fn derive_key(vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Key> {
         let ret = CairoKey::from_memory(vm, *ptr)?;
-        *ptr = (*ptr + CairoKey::n_fields())?;
+        *ptr = (*ptr + CairoKey::n_fields(vm, *ptr)?)?;
         ret.try_into()
             .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))
     }
@@ -43,7 +43,7 @@ impl CallHandler for HeaderCallHandler {
 
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
         // Parse base URL from environment variable
-        let base_url = Url::parse(&env::var(HERODOTUS_STAGING_INDEXER).unwrap()).unwrap();
+        let base_url = Url::parse(&env::var(RPC_URL_HERODOTUS_INDEXER_STAGING).unwrap()).unwrap();
 
         // Build and execute request
         let response = reqwest::Client::new()

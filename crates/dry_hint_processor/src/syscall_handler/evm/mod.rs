@@ -70,7 +70,7 @@ impl SyscallHandler for CallContractHandler {
                 let result = header::HeaderCallHandler.handle(key.clone(), function_id, vm).await?;
                 self.key_set.insert(DryRunKey::Header(key));
                 result.to_memory(vm, retdata_end)?;
-                retdata_end += <header::HeaderCallHandler as CallHandler>::CallHandlerResult::n_fields();
+                retdata_end += <header::HeaderCallHandler as CallHandler>::CallHandlerResult::n_fields(vm, retdata_end)?;
             }
             CallHandlerId::Account => {
                 let key = account::AccountCallHandler::derive_key(vm, &mut calldata)?;
@@ -78,7 +78,7 @@ impl SyscallHandler for CallContractHandler {
                 let result = account::AccountCallHandler.handle(key.clone(), function_id, vm).await?;
                 self.key_set.insert(DryRunKey::Account(key));
                 result.to_memory(vm, retdata_end)?;
-                retdata_end += <account::AccountCallHandler as CallHandler>::CallHandlerResult::n_fields();
+                retdata_end += <account::AccountCallHandler as CallHandler>::CallHandlerResult::n_fields(vm, retdata_end)?;
             }
             CallHandlerId::Storage => {
                 let key = storage::StorageCallHandler::derive_key(vm, &mut calldata)?;
@@ -86,7 +86,7 @@ impl SyscallHandler for CallContractHandler {
                 let result = storage::StorageCallHandler.handle(key.clone(), function_id, vm).await?;
                 self.key_set.insert(DryRunKey::Storage(key));
                 result.to_memory(vm, retdata_end)?;
-                retdata_end += <storage::StorageCallHandler as CallHandler>::CallHandlerResult::n_fields();
+                retdata_end += <storage::StorageCallHandler as CallHandler>::CallHandlerResult::n_fields(vm, retdata_end)?;
             }
             CallHandlerId::Transaction => {
                 let key = transaction::TransactionCallHandler::derive_key(vm, &mut calldata)?;
@@ -94,7 +94,7 @@ impl SyscallHandler for CallContractHandler {
                 let result = transaction::TransactionCallHandler.handle(key.clone(), function_id, vm).await?;
                 self.key_set.insert(DryRunKey::Tx(key));
                 result.to_memory(vm, retdata_end)?;
-                retdata_end += <transaction::TransactionCallHandler as CallHandler>::CallHandlerResult::n_fields();
+                retdata_end += <transaction::TransactionCallHandler as CallHandler>::CallHandlerResult::n_fields(vm, retdata_end)?;
             }
             CallHandlerId::Receipt => {
                 let key = receipt::ReceiptCallHandler::derive_key(vm, &mut calldata)?;
@@ -102,7 +102,7 @@ impl SyscallHandler for CallContractHandler {
                 let result = receipt::ReceiptCallHandler.handle(key.clone(), function_id, vm).await?;
                 self.key_set.insert(DryRunKey::Receipt(key));
                 result.to_memory(vm, retdata_end)?;
-                retdata_end += <receipt::ReceiptCallHandler as CallHandler>::CallHandlerResult::n_fields();
+                retdata_end += <receipt::ReceiptCallHandler as CallHandler>::CallHandlerResult::n_fields(vm, retdata_end)?;
             }
         }
 

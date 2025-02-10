@@ -1,8 +1,9 @@
 use std::{fs, path::PathBuf};
 
 use clap::{Parser, ValueHint};
-use dry_hint_processor::syscall_handler::SyscallHandler;
+use dry_hint_processor::syscall_handler::{evm, starknet};
 use fetcher::{parse_syscall_handler, Fetcher};
+use syscall_handler::SyscallHandler;
 use types::ChainProofs;
 
 #[derive(Parser, Debug)]
@@ -19,7 +20,7 @@ async fn main() -> Result<(), fetcher::FetcherError> {
     let args = Args::try_parse_from(std::env::args()).map_err(fetcher::FetcherError::Args)?;
     let input_file = fs::read(&args.filename)?;
 
-    let syscall_handler: SyscallHandler = serde_json::from_slice(&input_file)?;
+    let syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler> = serde_json::from_slice(&input_file)?;
     let proof_keys = parse_syscall_handler(syscall_handler)?;
 
     let fetcher = Fetcher::new(&proof_keys);

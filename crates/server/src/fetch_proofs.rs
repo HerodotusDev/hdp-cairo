@@ -1,6 +1,7 @@
 use axum::Json;
-use dry_hint_processor::syscall_handler::SyscallHandler;
+use dry_hint_processor::syscall_handler::{evm, starknet};
 use fetcher::{Fetcher, parse_syscall_handler};
+use syscall_handler::SyscallHandler;
 use types::ChainProofs;
 
 use crate::error::AppError;
@@ -10,7 +11,9 @@ use crate::error::AppError;
     path = "/fetch_proofs",
     request_body = ref("SyscallHandler") // TODO implement ToSchema (big and tedious task impl when explicitly needed)
 )]
-pub async fn root(Json(value): Json<SyscallHandler>) -> Result<Json<Vec<ChainProofs>>, AppError> {
+pub async fn root(
+    Json(value): Json<SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler>>,
+) -> Result<Json<Vec<ChainProofs>>, AppError> {
     let proof_keys = parse_syscall_handler(value)?;
 
     let fetcher = Fetcher::new(&proof_keys);

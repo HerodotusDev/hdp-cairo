@@ -66,7 +66,7 @@ impl traits::SyscallHandler for CallContractHandler {
                     .handle(key.clone(), function_id, vm)
                     .await?;
                 result.to_memory(vm, retdata_end)?;
-                retdata_end += <header::HeaderCallHandler as CallHandler>::CallHandlerResult::n_fields();
+                retdata_end += <header::HeaderCallHandler as CallHandler>::CallHandlerResult::n_fields(vm, retdata_end)?;
             }
             CallHandlerId::Storage => {
                 let key = storage::StorageCallHandler::derive_key(vm, &mut calldata)?;
@@ -75,7 +75,7 @@ impl traits::SyscallHandler for CallContractHandler {
                     .handle(key.clone(), function_id, vm)
                     .await?;
                 result.to_memory(vm, retdata_end)?;
-                retdata_end += <storage::StorageCallHandler as CallHandler>::CallHandlerResult::n_fields();
+                retdata_end += <storage::StorageCallHandler as CallHandler>::CallHandlerResult::n_fields(vm, retdata_end)?;
             }
         }
 

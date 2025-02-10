@@ -8,7 +8,7 @@ use syscall_handler::{traits::CallHandler, SyscallExecutionError, SyscallResult}
 use types::{
     cairo::{
         starknet::header::{FunctionId, StarknetBlock},
-        structs::Felt,
+        structs::CairoFelt,
         traits::CairoType,
     },
     keys::starknet::header::CairoKey,
@@ -32,11 +32,11 @@ impl HeaderCallHandler {
 impl CallHandler for HeaderCallHandler {
     type Key = CairoKey;
     type Id = FunctionId;
-    type CallHandlerResult = Felt;
+    type CallHandlerResult = CairoFelt;
 
     fn derive_key(vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Key> {
         let ret = CairoKey::from_memory(vm, *ptr)?;
-        *ptr = (*ptr + CairoKey::n_fields())?;
+        *ptr = (*ptr + CairoKey::n_fields(vm, *ptr)?)?;
         Ok(ret)
     }
 

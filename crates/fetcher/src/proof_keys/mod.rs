@@ -1,6 +1,6 @@
 use alloy::{hex::FromHexError, primitives::Bytes};
 use indexer::{
-    models::{IndexerQuery, MMRProof},
+    models::accumulators::{IndexerQuery, MMRProof},
     Indexer,
 };
 use types::proofs::mmr::MmrMeta;
@@ -9,6 +9,12 @@ use crate::FetcherError;
 
 pub mod evm;
 pub mod starknet;
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct FlattenedKey {
+    pub chain_id: u128,
+    pub block_number: u64,
+}
 
 #[derive(Debug, Default)]
 pub struct ProofKeys {

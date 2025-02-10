@@ -6,8 +6,8 @@ edition = "2021"
 [dependencies]
 alloy-rlp.workspace = true
 alloy.workspace = true
+cairo_type_derive.workspace = true
 cairo-lang-starknet-classes.workspace = true
-cairo-type-derive.workspace = true
 cairo-vm.workspace = true
 clap.workspace = true
 pathfinder_gateway_types.workspace = true

@@ -1,11 +1,16 @@
 #![allow(async_fn_in_trait)]
-#![warn(unused_extern_crates)]
-#![warn(unused_crate_dependencies)]
+#![feature(trait_alias)]
 #![forbid(unsafe_code)]
+#![warn(unused_crate_dependencies)]
+#![warn(unused_extern_crates)]
 
+pub mod call_contract;
 pub mod keccak;
 pub mod traits;
 
+use std::{fmt::Debug, rc::Rc};
+
+use ::serde::{Deserialize, Serialize};
 use cairo_vm::{
     types::{
         errors::math_errors::MathError,
@@ -17,8 +22,18 @@ use cairo_vm::{
     },
     Felt252,
 };
+use call_contract::{arbitrary_type::ArbitraryTypeCallContractHandler, debug::DebugCallContractHandler};
+use keccak::KeccakHandler;
 use thiserror::Error;
-use traits::SyscallHandler;
+use tokio::{sync::RwLock, task};
+use traits::CallContractSyscallHandler;
+use types::{
+    cairo::{
+        new_syscalls::{CallContractRequest, CallContractResponse},
+        traits::CairoType,
+    },
+    ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
+};
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SyscallSelector {
@@ -38,6 +53,129 @@ impl TryFrom<Felt252> for SyscallSelector {
             b"Keccak" => Ok(Self::Keccak),
             _ => Err(HintError::CustomHint(format!("Unknown syscall selector: {}", raw_selector).into())),
         }
+    }
+}
+
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
+pub struct SyscallHandler<EVM: CallContractSyscallHandler, STARKNET: CallContractSyscallHandler> {
+    #[serde(skip)]
+    pub syscall_ptr: Option<Relocatable>,
+    pub call_contract_handler: CallContractHandlerRelay<EVM, STARKNET>,
+    #[serde(skip)]
+    pub keccak_handler: KeccakHandler,
+}
+
+impl<EVM: Default + CallContractSyscallHandler, STARKNET: Default + CallContractSyscallHandler> SyscallHandler<EVM, STARKNET> {
+    pub fn new(evm_call_contract_handler: EVM, starknet_call_contract_handler: STARKNET) -> Self {
+        Self {
+            syscall_ptr: Option::default(),
+            call_contract_handler: CallContractHandlerRelay::new(evm_call_contract_handler, starknet_call_contract_handler),
+            keccak_handler: KeccakHandler::default(),
+        }
+    }
+}
+
+/// SyscallHandler is wrapped in Rc<RefCell<_>> in order
+/// to clone the reference when entering and exiting vm scopes
+#[derive(Debug, Default, Clone)]
+pub struct SyscallHandlerWrapper<EVM: CallContractSyscallHandler, STARKNET: CallContractSyscallHandler> {
+    pub syscall_handler: Rc<RwLock<SyscallHandler<EVM, STARKNET>>>,
+}
+
+impl<EVM: Default + CallContractSyscallHandler, STARKNET: Default + CallContractSyscallHandler> SyscallHandlerWrapper<EVM, STARKNET> {
+    pub fn new(evm_call_contract_handler: EVM, starknet_call_contract_handler: STARKNET) -> Self {
+        Self {
+            syscall_handler: Rc::new(RwLock::new(SyscallHandler::new(
+                evm_call_contract_handler,
+                starknet_call_contract_handler,
+            ))),
+        }
+    }
+    pub fn set_syscall_ptr(&self, syscall_ptr: Relocatable) {
+        let mut syscall_handler = task::block_in_place(|| self.syscall_handler.blocking_write());
+        syscall_handler.syscall_ptr = Some(syscall_ptr);
+    }
+
+    pub fn syscall_ptr(&self) -> Option<Relocatable> {
+        let syscall_handler = task::block_in_place(|| self.syscall_handler.blocking_read());
+        syscall_handler.syscall_ptr
+    }
+
+    pub async fn execute_syscall(&mut self, vm: &mut VirtualMachine, syscall_ptr: Relocatable) -> Result<(), HintError> {
+        let mut syscall_handler = self.syscall_handler.write().await;
+        let ptr = &mut syscall_handler
+            .syscall_ptr
+            .ok_or(HintError::CustomHint(Box::from("syscall_ptr is None")))?;
+
+        assert_eq!(*ptr, syscall_ptr);
+
+        match SyscallSelector::try_from(felt_from_ptr(vm, ptr)?)? {
+            SyscallSelector::CallContract => run_handler(&mut syscall_handler.call_contract_handler, ptr, vm).await,
+            SyscallSelector::Keccak => run_handler(&mut syscall_handler.keccak_handler, ptr, vm).await,
+        }?;
+
+        syscall_handler.syscall_ptr = Some(*ptr);
+
+        Ok(())
+    }
+}
+
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
+pub struct CallContractHandlerRelay<EVM: CallContractSyscallHandler, STARKNET: CallContractSyscallHandler> {
+    #[serde(bound(serialize = "EVM: Serialize", deserialize = "EVM: Deserialize<'de>"))]
+    pub evm_call_contract_handler: EVM,
+    #[serde(bound(serialize = "STARKNET: Serialize", deserialize = "STARKNET: Deserialize<'de>"))]
+    pub starknet_call_contract_handler: STARKNET,
+    #[serde(skip)]
+    pub debug_call_contract_handler: DebugCallContractHandler,
+    #[serde(skip)]
+    pub any_type_call_contract_handler: ArbitraryTypeCallContractHandler,
+}
+
+impl<EVM: CallContractSyscallHandler, STARKNET: CallContractSyscallHandler> CallContractHandlerRelay<EVM, STARKNET> {
+    pub fn new(evm_call_contract_handler: EVM, starknet_call_contract_handler: STARKNET) -> Self {
+        Self {
+            evm_call_contract_handler,
+            starknet_call_contract_handler,
+            debug_call_contract_handler: DebugCallContractHandler,
+            any_type_call_contract_handler: ArbitraryTypeCallContractHandler,
+        }
+    }
+}
+
+impl<EVM: CallContractSyscallHandler, STARKNET: CallContractSyscallHandler> traits::SyscallHandler
+    for CallContractHandlerRelay<EVM, STARKNET>
+{
+    type Request = CallContractRequest;
+    type Response = CallContractResponse;
+
+    fn read_request(&mut self, vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Request> {
+        let ret = Self::Request::from_memory(vm, *ptr)?;
+        *ptr = (*ptr + Self::Request::cairo_size())?;
+        Ok(ret)
+    }
+
+    async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
+        match request.contract_address {
+            v if v == call_contract::debug::CONTRACT_ADDRESS => self.debug_call_contract_handler.execute(request, vm).await,
+            v if v == call_contract::arbitrary_type::CONTRACT_ADDRESS => self.any_type_call_contract_handler.execute(request, vm).await,
+            _ => {
+                let chain_id = <Felt252 as TryInto<u128>>::try_into(*vm.get_integer((request.calldata_start + 2)?)?)
+                    .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
+
+                match chain_id {
+                    ETHEREUM_MAINNET_CHAIN_ID | ETHEREUM_TESTNET_CHAIN_ID => self.evm_call_contract_handler.execute(request, vm).await,
+                    STARKNET_MAINNET_CHAIN_ID | STARKNET_TESTNET_CHAIN_ID => self.starknet_call_contract_handler.execute(request, vm).await,
+                    _ => Err(SyscallExecutionError::InternalError(Box::from("Unknown chain id"))),
+                }
+            }
+        }
+    }
+
+    fn write_response(&mut self, response: Self::Response, vm: &mut VirtualMachine, ptr: &mut Relocatable) -> WriteResponseResult {
+        response.to_memory(vm, *ptr)?;
+        *ptr = (*ptr + Self::Response::cairo_size())?;
+        Ok(())
     }
 }
 
@@ -160,7 +298,7 @@ fn write_failure(gas_counter: Felt252, error_data: Vec<Felt252>, vm: &mut Virtua
 }
 
 pub async fn run_handler(
-    syscall_handler: &mut impl SyscallHandler,
+    syscall_handler: &mut impl traits::SyscallHandler,
     syscall_ptr: &mut Relocatable,
     vm: &mut VirtualMachine,
 ) -> Result<(), HintError> {

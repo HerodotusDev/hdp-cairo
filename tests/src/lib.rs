@@ -8,6 +8,9 @@ pub mod evm;
 pub mod starknet;
 
 #[cfg(test)]
+pub mod utils;
+
+#[cfg(test)]
 mod test_utils {
     use std::{env, path::PathBuf};
 
@@ -17,9 +20,10 @@ mod test_utils {
         types::{layout_name::LayoutName, program::Program},
         vm::runners::cairo_runner::{CairoRunner, RunnerMode},
     };
-    use dry_hint_processor::syscall_handler::{evm, starknet, SyscallHandler, SyscallHandlerWrapper};
+    use dry_hint_processor::syscall_handler::{evm, starknet};
     use fetcher::{proof_keys::ProofKeys, Fetcher};
     use hints::vars;
+    use syscall_handler::{SyscallHandler, SyscallHandlerWrapper};
     use types::{ChainProofs, HDPDryRunInput, HDPInput};
 
     pub async fn run(compiled_class: CasmContractClass) {
@@ -71,9 +75,9 @@ mod test_utils {
         let mut hint_processor = dry_hint_processor::CustomHintProcessor::new(program_inputs);
         cairo_runner.run_until_pc(end, &mut hint_processor).unwrap();
 
-        let syscall_handler: SyscallHandler = cairo_runner
+        let syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler> = cairo_runner
             .exec_scopes
-            .get::<SyscallHandlerWrapper>(vars::scopes::SYSCALL_HANDLER)
+            .get::<SyscallHandlerWrapper<evm::CallContractHandler, starknet::CallContractHandler>>(vars::scopes::SYSCALL_HANDLER)
             .unwrap()
             .syscall_handler
             .try_read()
