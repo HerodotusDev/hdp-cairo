@@ -35,7 +35,7 @@ impl Indexer {
 
         let response = self
             .client
-            .get(base_url.join("/accumulator/proofs").unwrap())
+            .get(base_url.join("/accumulators/proofs").unwrap())
             .query(&query)
             .send()
             .await
