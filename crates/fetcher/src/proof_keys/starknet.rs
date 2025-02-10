@@ -16,6 +16,7 @@ use types::{
     RPC_URL_STARKNET,
 };
 
+use super::FlattenedKey;
 use crate::FetcherError;
 
 #[derive(Debug, Default)]
@@ -53,7 +54,7 @@ impl ProofKeys {
         }
     }
 
-    pub async fn fetch_storage_proof(key: &keys::starknet::storage::Key) -> Result<(HeaderMmrMeta<Header>, Storage), FetcherError> {
+    pub async fn fetch_storage_proof(key: &keys::starknet::storage::Key) -> Result<Storage, FetcherError> {
         let response = reqwest::Client::new()
             .post(Url::parse(&env::var(RPC_URL_STARKNET).unwrap()).unwrap())
             .json(&serde_json::json!({
@@ -81,6 +82,26 @@ impl ProofKeys {
 
         let storage = Storage::new(key.block_number, key.address, vec![key.storage_slot], proof);
 
-        Ok((ProofKeys::fetch_header_proof(key.chain_id, key.block_number).await?, storage))
+        Ok(storage)
+    }
+
+    pub fn to_flattened_keys(&self) -> HashSet<FlattenedKey> {
+        let mut flattened = HashSet::new();
+
+        for key in &self.header_keys {
+            flattened.insert(FlattenedKey {
+                chain_id: key.chain_id,
+                block_number: key.block_number,
+            });
+        }
+
+        for key in &self.storage_keys {
+            flattened.insert(FlattenedKey {
+                chain_id: key.chain_id,
+                block_number: key.block_number,
+            });
+        }
+
+        flattened
     }
 }

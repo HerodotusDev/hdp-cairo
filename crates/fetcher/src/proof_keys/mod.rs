@@ -10,6 +10,12 @@ use crate::FetcherError;
 pub mod evm;
 pub mod starknet;
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct FlattenedKey {
+    pub chain_id: u128,
+    pub block_number: u64,
+}
+
 #[derive(Debug, Default)]
 pub struct ProofKeys {
     pub evm: evm::ProofKeys,
