@@ -1,16 +1,13 @@
-use std::env;
-
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
-use reqwest::Url;
+use indexer::{models::blocks, Indexer};
 use syscall_handler::{traits::CallHandler, SyscallExecutionError, SyscallResult};
 use types::{
     cairo::{
-        starknet::header::{Block, FunctionId, StarknetBlock},
+        starknet::header::{FunctionId, StarknetBlock},
         structs::CairoFelt,
         traits::CairoType,
     },
     keys::starknet::header::{CairoKey, Key},
-    RPC_URL_FEEDER_GATEWAY, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
 };
 
 #[derive(Debug, Default)]
@@ -41,43 +38,19 @@ impl CallHandler for HeaderCallHandler {
     }
 
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
-        let base_url = Url::parse(&env::var(RPC_URL_FEEDER_GATEWAY).unwrap()).unwrap();
+        let provider = Indexer::default();
 
-        // Feeder Gateway rejects the requests if this header is not set
-        let host_header = match key.chain_id {
-            STARKNET_MAINNET_CHAIN_ID => "alpha-mainnet.starknet.io",
-            STARKNET_TESTNET_CHAIN_ID => "alpha-sepolia.starknet.io",
-            _ => {
-                return Err(SyscallExecutionError::InternalError(
-                    format!("Unknown chain id: {}", key.chain_id).into(),
-                ))
-            }
-        };
-
-        let request = reqwest::Client::new()
-            .get(format!("{}get_block", base_url))
-            .header("Host", host_header)
-            .query(&[("blockNumber", key.block_number.to_string())]);
-
-        let response = request
-            .send()
+        // Fetch proof response
+        let response = provider
+            .get_blocks(blocks::IndexerQuery::new(
+                key.chain_id,
+                key.block_number.into(),
+                key.block_number.into(),
+            ))
             .await
             .map_err(|e| SyscallExecutionError::InternalError(format!("Network request failed: {}", e).into()))?;
 
-        let block_data: Block = match response.status().is_success() {
-            true => response.json().await,
-            false => {
-                let status = response.status();
-                let error_body = response.text().await.unwrap_or_default();
-                return Err(SyscallExecutionError::InternalError(
-                    format!("Request failed ({}): {}", status, error_body).into(),
-                ));
-            }
-        }
-        .map_err(|e| SyscallExecutionError::InternalError(format!("Failed to parse block data: {}", e).into()))?;
-
-        let sn_block: StarknetBlock = block_data.into();
-
-        Ok(sn_block.handle(function_id))
+        // Create block and handle function
+        Ok(StarknetBlock::from_hash_fields(response.fields).handle(function_id))
     }
 }
