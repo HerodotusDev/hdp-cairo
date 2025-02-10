@@ -20,6 +20,7 @@ use types::{
     RPC_URL_ETHEREUM,
 };
 
+use super::FlattenedKey;
 use crate::FetcherError;
 
 #[derive(Debug, Default)]
@@ -29,12 +30,6 @@ pub struct ProofKeys {
     pub storage_keys: HashSet<keys::evm::storage::Key>,
     pub receipt_keys: HashSet<keys::evm::receipt::Key>,
     pub transaction_keys: HashSet<keys::evm::transaction::Key>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct FlattenedKey {
-    pub chain_id: u128,
-    pub block_number: u64,
 }
 
 impl ProofKeys {

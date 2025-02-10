@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 
 [dev-dependencies]
+alloy.workspace = true
 cairo-lang-starknet-classes.workspace = true
 cairo-vm.workspace = true
 dry_hint_processor.workspace = true
@@ -14,6 +15,7 @@ futures.workspace = true
 hints.workspace = true
 serde_json.workspace = true
 sound_hint_processor.workspace = true
+starknet-crypto.workspace = true
 tokio.workspace = true
 types.workspace = true
 syscall_handler.workspace = true

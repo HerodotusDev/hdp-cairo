@@ -3,16 +3,8 @@ use std::collections::HashMap;
 use alloy::primitives::BlockNumber;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
-use thiserror::Error;
 
-/// Enum for available hashing functions
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum HashingFunction {
-    Keccak,
-    Poseidon,
-    Pedersen,
-}
+use super::{BlockHeader, HashingFunction};
 
 /// Enum for available contract types
 #[derive(Debug, Serialize)]
@@ -21,30 +13,6 @@ pub enum ContractType {
     Aggregator,
     Accumulator,
     Remapper,
-}
-
-/// Error from [`Indexer`]
-#[derive(Error, Debug)]
-pub enum IndexerError {
-    /// The block range provided is invalid.
-    #[error("Invalid block range")]
-    InvalidBlockRange,
-
-    /// Failed to send a request using [`reqwest`].
-    #[error("Failed to send request")]
-    ReqwestError(#[from] reqwest::Error),
-
-    /// Failed to parse the response using [`serde_json`].
-    #[error("Failed to parse response")]
-    SerdeJsonError(#[from] serde_json::Error),
-
-    /// Validation error with a detailed message.
-    #[error("Validation error: {0}")]
-    ValidationError(String),
-
-    /// Failed to get headers proof with a detailed message.
-    #[error("Failed to get headers proof: {0}")]
-    GetHeadersProofError(String),
 }
 
 /// Query parameters for the indexer
@@ -112,20 +80,13 @@ pub struct MMRProof {
     pub siblings_hashes: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum BlockHeader {
-    RlpString(String),
-    RlpLittleEndian8ByteChunks(Vec<String>),
-    Fields(Vec<String>),
-}
-
 #[derive(Debug)]
-pub struct IndexerHeadersProofResponse {
+pub struct IndexerProofResponse {
     pub mmr_meta: MMRMetadata,
     pub headers: HashMap<BlockNumber, MMRProof>,
 }
 
-impl IndexerHeadersProofResponse {
+impl IndexerProofResponse {
     pub fn new(mmr_data: MMRData) -> Self {
         let mmr_meta = mmr_data.meta;
         let headers = mmr_data.proofs.into_iter().map(|block| (block.block_number, block)).collect();

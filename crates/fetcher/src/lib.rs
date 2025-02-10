@@ -10,11 +10,7 @@ use eth_trie_proofs::{tx_receipt_trie::TxReceiptsMptHandler, tx_trie::TxsMptHand
 use futures::StreamExt;
 use indexer::models::IndexerError;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use proof_keys::{
-    evm::{FlattenedKey, ProofKeys as EvmProofKeys},
-    starknet::ProofKeys as StarknetProofKeys,
-    ProofKeys,
-};
+use proof_keys::{evm::ProofKeys as EvmProofKeys, starknet::ProofKeys as StarknetProofKeys, FlattenedKey, ProofKeys};
 use reqwest::Url;
 use starknet_types_core::felt::FromStrError;
 use syscall_handler::SyscallHandler;
@@ -300,15 +296,13 @@ impl<'a> Fetcher<'a> {
         })
     }
 
-    pub async fn collect_starknet_proofs(&self) -> Result<StarknetProofs, FetcherError> {
+    async fn collect_starknet_headers_proofs(
+        &self,
+        flattened_keys: &HashSet<FlattenedKey>,
+    ) -> Result<HashMap<MmrMeta, Vec<StarknetHeader>>, FetcherError> {
         let mut headers_with_mmr = HashMap::default();
-        let mut storages: HashSet<StarknetStorage> = HashSet::default();
-
-        // Collect header proofs
         let mut header_fut = futures::stream::iter(
-            self.proof_keys
-                .starknet
-                .header_keys
+            flattened_keys
                 .iter()
                 .map(|key| StarknetProofKeys::fetch_header_proof(key.chain_id, key.block_number)),
         )
@@ -325,6 +319,16 @@ impl<'a> Fetcher<'a> {
             #[cfg(feature = "progress_bars")]
             self.progress_bars.starknet_header.safe_inc();
         }
+
+        Ok(headers_with_mmr)
+    }
+
+    pub async fn collect_starknet_proofs(&self) -> Result<StarknetProofs, FetcherError> {
+        let mut storages: HashSet<StarknetStorage> = HashSet::default();
+
+        let flattened_keys = self.proof_keys.starknet.to_flattened_keys();
+
+        let headers_with_mmr = self.collect_starknet_headers_proofs(&flattened_keys).await?;
 
         #[cfg(feature = "progress_bars")]
         self.progress_bars
@@ -343,13 +347,7 @@ impl<'a> Fetcher<'a> {
         .boxed();
 
         while let Some(result) = storage_fut.next().await {
-            let (header_with_mmr, storage) = result?;
-            headers_with_mmr
-                .entry(header_with_mmr.mmr_meta)
-                .and_modify(|headers: &mut Vec<StarknetHeader>| headers.extend(header_with_mmr.headers.clone()))
-                .or_insert(header_with_mmr.headers);
-            storages.insert(storage);
-
+            storages.insert(result?);
             #[cfg(feature = "progress_bars")]
             self.progress_bars.starknet_storage.safe_inc();
         }
