@@ -6259,6 +6259,7 @@ dependencies = [
 name = "tests_modules"
 version = "0.1.0"
 dependencies = [
+ "alloy 0.7.3",
  "cairo-lang-starknet-classes",
  "cairo-vm",
  "dry_hint_processor",
@@ -6267,6 +6268,7 @@ dependencies = [
  "hints",
  "serde_json",
  "sound_hint_processor",
+ "starknet-crypto",
  "syscall_handler",
  "tokio",
  "types",
