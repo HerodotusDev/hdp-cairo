@@ -13,6 +13,7 @@ use clap::Parser;
 use sound_hint_processor::CustomHintProcessor;
 use tracing::debug;
 use types::{error::Error, ChainProofs, HDPDryRunInput, HDPInput};
+use sound_run::HDP_COMPILED_JSON;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
