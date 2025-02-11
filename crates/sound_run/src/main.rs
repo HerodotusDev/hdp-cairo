@@ -80,16 +80,12 @@ async fn main() -> Result<(), Error> {
         ..Default::default()
     };
 
-    // Locate the compiled program file in the `OUT_DIR` folder.
-    let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR is not set"));
-    let program_file_path = out_dir.join("cairo").join("compiled.json");
-
-    let program_file = std::fs::read(program_file_path.as_path()).map_err(Error::IO)?;
+    // Load the Program
+    let program_file = std::fs::read(HDP_COMPILED_JSON).map_err(Error::IO)?;
+    let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))?;
+   
     let program_inputs: HDPDryRunInput = serde_json::from_slice(&std::fs::read(args.program_input).map_err(Error::IO)?)?;
     let program_proofs: Vec<ChainProofs> = serde_json::from_slice(&std::fs::read(args.program_proofs).map_err(Error::IO)?)?;
-
-    // Load the Program
-    let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))?;
 
     let mut hint_processor = CustomHintProcessor::new(HDPInput {
         chain_proofs: program_proofs,
