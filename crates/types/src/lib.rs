@@ -12,7 +12,8 @@ pub mod proofs;
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use param::Param;
 use proofs::{evm, starknet};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
+use serde_json::Value;
 
 pub const RPC_URL_ETHEREUM: &str = "RPC_URL_ETHEREUM";
 pub const RPC_URL_HERODOTUS_INDEXER_GROWER: &str = "RPC_URL_HERODOTUS_INDEXER_GROWER";
@@ -52,6 +53,63 @@ impl ChainProofs {
             ChainProofs::EthereumSepolia(_) => 0xaa36a7,
             ChainProofs::StarknetMainnet(_) => 0x534e5f4d41494e,
             ChainProofs::StarknetSepolia(_) => 0x534e5f5345504f4c4941,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Clone, PartialEq, Eq)]
+pub enum ChainIds {
+    EthereumMainnet,
+    EthereumSepolia,
+    StarknetMainnet,
+    StarknetSepolia,
+}
+
+impl ChainIds {
+    pub fn from_str(chain_id: &str) -> Option<Self> {
+        match chain_id.to_lowercase().as_str() {
+            "ethereum-mainnet" | "ethereum_mainnet" | "ethereummainnet" => Some(Self::EthereumMainnet),
+            "ethereum-sepolia" | "ethereum_sepolia" | "ethereumsepolia" => Some(Self::EthereumSepolia),
+            "starknet-mainnet" | "starknet_mainnet" | "starknetmainnet" => Some(Self::StarknetMainnet),
+            "starknet-sepolia" | "starknet_sepolia" | "starknetsepolia" => Some(Self::StarknetSepolia),
+            _ => None,
+        }
+    }
+
+    pub fn from_u128(chain_id: u128) -> Option<Self> {
+        match chain_id {
+            ETHEREUM_MAINNET_CHAIN_ID => Some(Self::EthereumMainnet),
+            ETHEREUM_TESTNET_CHAIN_ID => Some(Self::EthereumSepolia),
+            STARKNET_MAINNET_CHAIN_ID => Some(Self::StarknetMainnet),
+            STARKNET_TESTNET_CHAIN_ID => Some(Self::StarknetSepolia),
+            _ => None,
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for ChainIds {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value = Value::deserialize(deserializer)?;
+        
+        match value {
+            Value::String(s) => {
+                ChainIds::from_str(&s).ok_or_else(|| {
+                    serde::de::Error::custom(format!("invalid chain ID string: {}", s))
+                })
+            }
+            Value::Number(n) => {
+                if let Some(num) = n.as_u64() {
+                    ChainIds::from_u128(num as u128).ok_or_else(|| {
+                        serde::de::Error::custom(format!("invalid chain ID number: {}", num))
+                    })
+                } else {
+                    Err(serde::de::Error::custom("chain ID number out of range"))
+                }
+            }
+            _ => Err(serde::de::Error::custom("chain ID must be a string or number")),
         }
     }
 }

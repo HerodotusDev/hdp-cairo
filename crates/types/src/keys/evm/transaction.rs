@@ -26,7 +26,6 @@ impl CairoKey {
 
 impl CairoType for CairoKey {
     fn from_memory(vm: &VirtualMachine, ptr: Relocatable) -> Result<Self, MemoryError> {
-        println!("tx key from memory: {:?}", ptr);
         Ok(Self {
             chain_id: *vm.get_integer((ptr + 0)?)?,
             domain: *vm.get_integer((ptr + 1)?)?,
