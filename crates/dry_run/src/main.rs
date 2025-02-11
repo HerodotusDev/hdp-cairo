@@ -3,7 +3,7 @@
 #![warn(unused_crate_dependencies)]
 #![forbid(unsafe_code)]
 
-use std::{env, path::PathBuf};
+use std::path::PathBuf;
 
 use cairo_vm::{
     cairo_run::{self, cairo_run_program},
@@ -18,6 +18,7 @@ use hints::vars;
 use syscall_handler::{SyscallHandler, SyscallHandlerWrapper};
 use tracing::debug;
 use types::{error::Error, HDPDryRunInput};
+use dry_run::DRY_RUN_COMPILED_JSON;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -84,15 +85,11 @@ async fn main() -> Result<(), Error> {
         ..Default::default()
     };
 
-    // Locate the compiled program file in the `OUT_DIR` folder.
-    let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR is not set"));
-    let program_file_path = out_dir.join("cairo").join("compiled.json");
-
-    let program_file = std::fs::read(program_file_path).map_err(Error::IO)?;
-    let program_inputs: HDPDryRunInput = serde_json::from_slice(&std::fs::read(args.program_input).map_err(Error::IO)?)?;
-
     // Load the Program
+    let program_file = std::fs::read(DRY_RUN_COMPILED_JSON).map_err(Error::IO)?;
     let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))?;
+
+    let program_inputs: HDPDryRunInput = serde_json::from_slice(&std::fs::read(args.program_input).map_err(Error::IO)?)?;
 
     let mut hint_processor = CustomHintProcessor::new(program_inputs);
     let mut cairo_runner = cairo_run_program(&program, &cairo_run_config, &mut hint_processor).unwrap();
