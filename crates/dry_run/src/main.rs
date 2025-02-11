@@ -14,11 +14,11 @@ use dry_hint_processor::{
     syscall_handler::{evm, starknet},
     CustomHintProcessor,
 };
+use dry_run::DRY_RUN_COMPILED_JSON;
 use hints::vars;
 use syscall_handler::{SyscallHandler, SyscallHandlerWrapper};
 use tracing::debug;
 use types::{error::Error, HDPDryRunInput};
-use dry_run::DRY_RUN_COMPILED_JSON;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]

@@ -3,7 +3,7 @@ use std::{
     env,
     num::ParseIntError,
 };
-use types::RPC_URL_ETHEREUM;
+
 use alloy::hex::FromHexError;
 use dry_hint_processor::syscall_handler::{evm, starknet};
 use eth_trie_proofs::{tx_receipt_trie::TxReceiptsMptHandler, tx_trie::TxsMptHandler};
@@ -18,13 +18,14 @@ use thiserror::Error;
 use types::{
     proofs::{
         evm::{
-            account::Account, header::Header as EvmHeader, receipt::Receipt, storage::Storage, transaction::Transaction, Proofs as EvmProofs,
+            account::Account, header::Header as EvmHeader, receipt::Receipt, storage::Storage, transaction::Transaction,
+            Proofs as EvmProofs,
         },
         header::HeaderMmrMeta,
         mmr::MmrMeta,
         starknet::{header::Header as StarknetHeader, storage::Storage as StarknetStorage, Proofs as StarknetProofs},
-    }, 
-    ChainProofs
+    },
+    ChainProofs, RPC_URL_ETHEREUM,
 };
 
 pub mod proof_keys;
@@ -363,7 +364,9 @@ impl<'a> Fetcher<'a> {
     }
 }
 
-pub async fn run_fetcher(syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler>) -> Result<Vec<ChainProofs>, FetcherError> {
+pub async fn run_fetcher(
+    syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler>,
+) -> Result<Vec<ChainProofs>, FetcherError> {
     let proof_keys = parse_syscall_handler(syscall_handler)?;
     let fetcher = Fetcher::new(&proof_keys);
     let (evm_proofs, starknet_proofs) = tokio::try_join!(fetcher.collect_evm_proofs(), fetcher.collect_starknet_proofs())?;

@@ -1,22 +1,20 @@
 #![allow(async_fn_in_trait)]
 #![warn(unused_extern_crates)]
-#![warn(unused_crate_dependencies)]
 #![forbid(unsafe_code)]
 
 use std::env;
 
 use cairo_vm::{
     cairo_run::{self, cairo_run_program},
-    types::{layout_name::LayoutName, program::Program}, vm::runners::cairo_pie::CairoPie,
+    types::{layout_name::LayoutName, program::Program},
+    vm::runners::cairo_pie::CairoPie,
 };
-
 use sound_hint_processor::CustomHintProcessor;
 use types::{error::Error, HDPInput};
 
 pub const HDP_COMPILED_JSON: &str = env!("HDP_COMPILED_JSON");
 
 pub fn exec(input: HDPInput) -> Result<CairoPie, Error> {
-
     let cairo_run_config = cairo_run::CairoRunConfig {
         layout: LayoutName::starknet_with_keccak,
         secure_run: Some(true),

@@ -93,18 +93,12 @@ impl<'de> Deserialize<'de> for ChainIds {
         D: Deserializer<'de>,
     {
         let value = Value::deserialize(deserializer)?;
-        
+
         match value {
-            Value::String(s) => {
-                ChainIds::from_str(&s).ok_or_else(|| {
-                    serde::de::Error::custom(format!("invalid chain ID string: {}", s))
-                })
-            }
+            Value::String(s) => ChainIds::from_str(&s).ok_or_else(|| serde::de::Error::custom(format!("invalid chain ID string: {}", s))),
             Value::Number(n) => {
                 if let Some(num) = n.as_u64() {
-                    ChainIds::from_u128(num as u128).ok_or_else(|| {
-                        serde::de::Error::custom(format!("invalid chain ID number: {}", num))
-                    })
+                    ChainIds::from_u128(num as u128).ok_or_else(|| serde::de::Error::custom(format!("invalid chain ID number: {}", num)))
                 } else {
                     Err(serde::de::Error::custom("chain ID number out of range"))
                 }

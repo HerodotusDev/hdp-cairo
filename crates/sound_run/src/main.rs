@@ -3,7 +3,7 @@
 #![warn(unused_crate_dependencies)]
 #![forbid(unsafe_code)]
 
-use std::{env, path::PathBuf};
+use std::path::PathBuf;
 
 use cairo_vm::{
     cairo_run::{self, cairo_run_program},
@@ -11,9 +11,9 @@ use cairo_vm::{
 };
 use clap::Parser;
 use sound_hint_processor::CustomHintProcessor;
+use sound_run::HDP_COMPILED_JSON;
 use tracing::debug;
 use types::{error::Error, ChainProofs, HDPDryRunInput, HDPInput};
-use sound_run::HDP_COMPILED_JSON;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -83,7 +83,7 @@ async fn main() -> Result<(), Error> {
     // Load the Program
     let program_file = std::fs::read(HDP_COMPILED_JSON).map_err(Error::IO)?;
     let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))?;
-   
+
     let program_inputs: HDPDryRunInput = serde_json::from_slice(&std::fs::read(args.program_input).map_err(Error::IO)?)?;
     let program_proofs: Vec<ChainProofs> = serde_json::from_slice(&std::fs::read(args.program_proofs).map_err(Error::IO)?)?;
 
