@@ -9,11 +9,16 @@ pub mod keys;
 pub mod param;
 pub mod proofs;
 
-use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
+pub use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use param::Param;
 use proofs::{evm, starknet};
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
+use std::fmt;
+use std::str::FromStr;
+
+pub use cairo_vm::vm::runners::cairo_pie::CairoPie;
+pub use cairo_vm::Felt252;
 
 pub const RPC_URL_ETHEREUM: &str = "RPC_URL_ETHEREUM";
 pub const RPC_URL_HERODOTUS_INDEXER_GROWER: &str = "RPC_URL_HERODOTUS_INDEXER_GROWER";
@@ -65,17 +70,32 @@ pub enum ChainIds {
     StarknetSepolia,
 }
 
-impl ChainIds {
-    pub fn from_str(chain_id: &str) -> Option<Self> {
-        match chain_id.to_lowercase().as_str() {
-            "ethereum-mainnet" | "ethereum_mainnet" | "ethereummainnet" => Some(Self::EthereumMainnet),
-            "ethereum-sepolia" | "ethereum_sepolia" | "ethereumsepolia" => Some(Self::EthereumSepolia),
-            "starknet-mainnet" | "starknet_mainnet" | "starknetmainnet" => Some(Self::StarknetMainnet),
-            "starknet-sepolia" | "starknet_sepolia" | "starknetsepolia" => Some(Self::StarknetSepolia),
-            _ => None,
+impl fmt::Display for ChainIds {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ChainIds::EthereumMainnet => write!(f, "ethereum-mainnet"),
+            ChainIds::EthereumSepolia => write!(f, "ethereum-sepolia"),
+            ChainIds::StarknetMainnet => write!(f, "starknet-mainnet"),
+            ChainIds::StarknetSepolia => write!(f, "starknet-sepolia"),
         }
     }
+}
 
+impl FromStr for ChainIds {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "ethereum-mainnet" | "ethereum_mainnet" | "ethereummainnet" => Ok(Self::EthereumMainnet),
+            "ethereum-sepolia" | "ethereum_sepolia" | "ethereumsepolia" => Ok(Self::EthereumSepolia),
+            "starknet-mainnet" | "starknet_mainnet" | "starknetmainnet" => Ok(Self::StarknetMainnet),
+            "starknet-sepolia" | "starknet_sepolia" | "starknetsepolia" => Ok(Self::StarknetSepolia),
+            _ => Err(format!("Invalid chain ID: {}", s)),
+        }
+    }
+}
+
+impl ChainIds {
     pub fn from_u128(chain_id: u128) -> Option<Self> {
         match chain_id {
             ETHEREUM_MAINNET_CHAIN_ID => Some(Self::EthereumMainnet),
@@ -95,7 +115,7 @@ impl<'de> Deserialize<'de> for ChainIds {
         let value = Value::deserialize(deserializer)?;
 
         match value {
-            Value::String(s) => ChainIds::from_str(&s).ok_or_else(|| serde::de::Error::custom(format!("invalid chain ID string: {}", s))),
+            Value::String(s) => ChainIds::from_str(&s).map_err(|e| serde::de::Error::custom(e)),
             Value::Number(n) => {
                 if let Some(num) = n.as_u64() {
                     ChainIds::from_u128(num as u128).ok_or_else(|| serde::de::Error::custom(format!("invalid chain ID number: {}", num)))

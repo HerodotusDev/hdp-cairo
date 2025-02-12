@@ -2,19 +2,19 @@
 #![warn(unused_extern_crates)]
 #![forbid(unsafe_code)]
 
-use std::env;
+use std::{env, str::FromStr};
 
 use cairo_vm::{
     cairo_run::{self, cairo_run_program},
     types::{layout_name::LayoutName, program::Program},
-    vm::runners::cairo_pie::CairoPie,
+    vm::runners::cairo_pie::CairoPie, Felt252,
 };
 use sound_hint_processor::CustomHintProcessor;
 use types::{error::Error, HDPInput};
 
 pub const HDP_COMPILED_JSON: &str = env!("HDP_COMPILED_JSON");
 
-pub fn exec(input: HDPInput) -> Result<CairoPie, Error> {
+pub fn exec(input: HDPInput) -> Result<(CairoPie, Vec<Felt252>), Error> {
     let cairo_run_config = cairo_run::CairoRunConfig {
         layout: LayoutName::starknet_with_keccak,
         secure_run: Some(true),
@@ -26,9 +26,18 @@ pub fn exec(input: HDPInput) -> Result<CairoPie, Error> {
     let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))?;
 
     let mut hint_processor = CustomHintProcessor::new(input);
-    let cairo_runner = cairo_run_program(&program, &cairo_run_config, &mut hint_processor)?;
+    let mut cairo_runner = cairo_run_program(&program, &cairo_run_config, &mut hint_processor)?;
 
     let pie = cairo_runner.get_cairo_pie().map_err(|e| Error::CairoPie(e.to_string()))?;
 
-    Ok(pie)
+    let mut output_buffer = String::new();
+    cairo_runner.vm.write_output(&mut output_buffer)?;
+    
+    // Parse the output into separate lines, skipping the "Program Output:" header
+    let outputs: Vec<Felt252> = output_buffer
+        .lines()
+        .map(|s| Felt252::from_str(s).unwrap())
+        .collect();
+
+    Ok((pie, outputs))
 }
