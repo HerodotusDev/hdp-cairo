@@ -65,7 +65,7 @@ impl SyscallHandler for CallContractHandler {
                 let result = HeaderCallHandler.handle(key.clone(), function_id, vm).await?;
                 self.key_set.insert(DryRunKey::Header(key));
                 result.to_memory(vm, retdata_end)?;
-                retdata_end += <HeaderCallHandler as CallHandler>::CallHandlerResult::n_fields();
+                retdata_end += <HeaderCallHandler as CallHandler>::CallHandlerResult::n_fields(vm, retdata_end)?;
             }
             CallHandlerId::Storage => {
                 let key = StorageCallHandler::derive_key(vm, &mut calldata)?;
@@ -73,7 +73,7 @@ impl SyscallHandler for CallContractHandler {
                 let result = StorageCallHandler.handle(key.clone(), function_id, vm).await?;
                 self.key_set.insert(DryRunKey::Storage(key));
                 result.to_memory(vm, retdata_end)?;
-                retdata_end += <StorageCallHandler as CallHandler>::CallHandlerResult::n_fields();
+                retdata_end += <StorageCallHandler as CallHandler>::CallHandlerResult::n_fields(vm, retdata_end)?;
             }
         }
 

@@ -1,14 +1,17 @@
 use alloy::{hex::FromHexError, primitives::Bytes};
-use indexer::{
-    models::{IndexerQuery, MMRProof},
-    Indexer,
-};
+use indexer::{models::accumulators, Indexer};
 use types::proofs::mmr::MmrMeta;
 
 use crate::FetcherError;
 
 pub mod evm;
 pub mod starknet;
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct FlattenedKey {
+    pub chain_id: u128,
+    pub block_number: u64,
+}
 
 #[derive(Debug, Default)]
 pub struct ProofKeys {
@@ -22,12 +25,12 @@ impl ProofKeys {
         format!("{:0>width$}", hex_str, width = (hex_str.len() + 1) / 2 * 2)
     }
 
-    pub async fn fetch_mmr_proof(chain_id: u128, block_number: u64) -> Result<(MMRProof, MmrMeta), FetcherError> {
+    pub async fn fetch_mmr_proof(chain_id: u128, block_number: u64) -> Result<(accumulators::MMRProof, MmrMeta), FetcherError> {
         let provider = Indexer::default();
 
         // Fetch proof response
         let response = provider
-            .get_headers_proof(IndexerQuery::new(chain_id, block_number, block_number))
+            .get_headers_proof(accumulators::IndexerQuery::new(chain_id, block_number, block_number))
             .await?;
 
         // Extract MMR metadata

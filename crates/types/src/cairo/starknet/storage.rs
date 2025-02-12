@@ -1,8 +1,12 @@
-use cairo_vm::{vm::errors::memory_errors::MemoryError, Felt252};
+use cairo_vm::{
+    types::relocatable::Relocatable,
+    vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
+    Felt252,
+};
 use strum_macros::FromRepr;
 
 use crate::{
-    cairo::{structs::Felt, traits::CairoType, FELT_0, FELT_1},
+    cairo::{structs::CairoFelt, traits::CairoType, FELT_0, FELT_1},
     proofs::starknet::storage::{Path, TrieNode},
 };
 
@@ -11,26 +15,26 @@ pub enum FunctionId {
     Storage = 0,
 }
 
-pub struct CairoStorage(Felt);
+pub struct CairoStorage(CairoFelt);
 
 impl CairoStorage {
-    pub fn new(value: Felt) -> Self {
+    pub fn new(value: CairoFelt) -> Self {
         Self(value)
     }
 
-    pub fn storage(&self) -> Felt {
+    pub fn storage(&self) -> CairoFelt {
         self.0.clone()
     }
 
-    pub fn handler(&self, function_id: FunctionId) -> Felt {
+    pub fn handler(&self, function_id: FunctionId) -> CairoFelt {
         match function_id {
             FunctionId::Storage => self.storage(),
         }
     }
 }
 
-impl From<Felt> for CairoStorage {
-    fn from(value: Felt) -> Self {
+impl From<CairoFelt> for CairoStorage {
+    fn from(value: CairoFelt) -> Self {
         Self(value)
     }
 }
@@ -88,7 +92,7 @@ impl CairoType for CairoTrieNode {
         &self,
         vm: &mut cairo_vm::vm::vm_core::VirtualMachine,
         address: cairo_vm::types::relocatable::Relocatable,
-    ) -> Result<(), MemoryError> {
+    ) -> Result<Relocatable, MemoryError> {
         match &self.0 {
             TrieNode::Binary { left, right } => {
                 vm.insert_value((address + 0)?, FELT_0)?;
@@ -103,9 +107,9 @@ impl CairoType for CairoTrieNode {
                 vm.insert_value((address + 3)?, Felt252::from(path.len))?;
             }
         };
-        Ok(())
+        Ok((address + 4)?)
     }
-    fn n_fields() -> usize {
-        4
+    fn n_fields(_vm: &VirtualMachine, _address: Relocatable) -> Result<usize, MemoryError> {
+        Ok(4)
     }
 }

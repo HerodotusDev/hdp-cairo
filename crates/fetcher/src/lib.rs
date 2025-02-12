@@ -1,23 +1,31 @@
 use std::{
     collections::{HashMap, HashSet},
+    env,
     num::ParseIntError,
 };
 
 use alloy::hex::FromHexError;
-use dry_hint_processor::syscall_handler::{evm, starknet, SyscallHandler};
+use dry_hint_processor::syscall_handler::{evm, starknet};
+use eth_trie_proofs::{tx_receipt_trie::TxReceiptsMptHandler, tx_trie::TxsMptHandler};
 use futures::StreamExt;
 use indexer::models::IndexerError;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use proof_keys::{evm::ProofKeys as EvmProofKeys, starknet::ProofKeys as StarknetProofKeys, ProofKeys};
+use proof_keys::{evm::ProofKeys as EvmProofKeys, starknet::ProofKeys as StarknetProofKeys, FlattenedKey, ProofKeys};
+use reqwest::Url;
 use starknet_types_core::felt::FromStrError;
+use syscall_handler::SyscallHandler;
 use thiserror::Error;
-use types::proofs::{
-    evm::{
-        account::Account, header::Header as EvmHeader, receipt::Receipt, storage::Storage, transaction::Transaction, Proofs as EvmProofs,
+use types::{
+    proofs::{
+        evm::{
+            account::Account, header::Header as EvmHeader, receipt::Receipt, storage::Storage, transaction::Transaction,
+            Proofs as EvmProofs,
+        },
+        header::HeaderMmrMeta,
+        mmr::MmrMeta,
+        starknet::{header::Header as StarknetHeader, storage::Storage as StarknetStorage, Proofs as StarknetProofs},
     },
-    header::HeaderMmrMeta,
-    mmr::MmrMeta,
-    starknet::{header::Header as StarknetHeader, storage::Storage as StarknetStorage, Proofs as StarknetProofs},
+    RPC_URL_ETHEREUM,
 };
 
 pub mod proof_keys;
@@ -127,7 +135,6 @@ pub struct Fetcher<'a> {
     #[cfg(feature = "progress_bars")]
     progress_bars: ProgressBars,
 }
-
 impl<'a> Fetcher<'a> {
     pub fn new(proof_keys: &'a ProofKeys) -> Self {
         Self {
@@ -137,18 +144,13 @@ impl<'a> Fetcher<'a> {
         }
     }
 
-    pub async fn collect_evm_proofs(&self) -> Result<EvmProofs, FetcherError> {
+    async fn collect_evm_headers_proofs(
+        &self,
+        flattened_keys: &HashSet<FlattenedKey>,
+    ) -> Result<HashMap<MmrMeta, Vec<EvmHeader>>, FetcherError> {
         let mut headers_with_mmr = HashMap::default();
-        let mut accounts: HashSet<Account> = HashSet::default();
-        let mut storages: HashSet<Storage> = HashSet::default();
-        let mut receipts: HashSet<Receipt> = HashSet::default();
-        let mut transactions: HashSet<Transaction> = HashSet::default();
-
-        // Collect header proofs
         let mut header_fut = futures::stream::iter(
-            self.proof_keys
-                .evm
-                .header_keys
+            flattened_keys
                 .iter()
                 .map(|key| EvmProofKeys::fetch_header_proof(key.chain_id, key.block_number)),
         )
@@ -166,10 +168,22 @@ impl<'a> Fetcher<'a> {
             self.progress_bars.evm_header.safe_inc();
         }
 
+        Ok(headers_with_mmr)
+    }
+
+    pub async fn collect_evm_proofs(&self) -> Result<EvmProofs, FetcherError> {
+        let mut accounts: HashSet<Account> = HashSet::default();
+        let mut storages: HashSet<Storage> = HashSet::default();
+        let mut receipts: HashSet<Receipt> = HashSet::default();
+        let mut transactions: HashSet<Transaction> = HashSet::default();
+
+        let flattened_keys = self.proof_keys.evm.to_flattened_keys();
+
+        // Collect required header proofs for all keys
+        let headers_with_mmr = self.collect_evm_headers_proofs(&flattened_keys).await?;
+
         #[cfg(feature = "progress_bars")]
-        self.progress_bars
-            .evm_header
-            .safe_finish_with_message("ethereum header keys - finished");
+        self.progress_bars.evm_header.safe_finish_with_message("evm header keys - finished");
 
         // Collect account proofs
         let mut account_fut = futures::stream::iter(self.proof_keys.evm.account_keys.iter().map(EvmProofKeys::fetch_account_proof))
@@ -177,12 +191,7 @@ impl<'a> Fetcher<'a> {
             .boxed();
 
         while let Some(result) = account_fut.next().await {
-            let (header_with_mmr, account) = result?;
-            headers_with_mmr
-                .entry(header_with_mmr.mmr_meta)
-                .and_modify(|headers: &mut Vec<EvmHeader>| headers.extend(header_with_mmr.headers.clone()))
-                .or_insert(header_with_mmr.headers);
-            accounts.insert(account);
+            accounts.insert(result?);
 
             #[cfg(feature = "progress_bars")]
             self.progress_bars.evm_account.safe_inc();
@@ -191,7 +200,7 @@ impl<'a> Fetcher<'a> {
         #[cfg(feature = "progress_bars")]
         self.progress_bars
             .evm_account
-            .safe_finish_with_message("ethereum account keys - finished");
+            .safe_finish_with_message("evm account keys - finished");
 
         // Collect storage proofs
         let mut storage_fut = futures::stream::iter(self.proof_keys.evm.storage_keys.iter().map(EvmProofKeys::fetch_storage_proof))
@@ -199,11 +208,7 @@ impl<'a> Fetcher<'a> {
             .boxed();
 
         while let Some(result) = storage_fut.next().await {
-            let (header_with_mmr, account, storage) = result?;
-            headers_with_mmr
-                .entry(header_with_mmr.mmr_meta)
-                .and_modify(|headers: &mut Vec<EvmHeader>| headers.extend(header_with_mmr.headers.clone()))
-                .or_insert(header_with_mmr.headers);
+            let (account, storage) = result?;
             accounts.insert(account);
             storages.insert(storage);
 
@@ -214,56 +219,73 @@ impl<'a> Fetcher<'a> {
         #[cfg(feature = "progress_bars")]
         self.progress_bars
             .evm_storage
-            .safe_finish_with_message("ethereum storage keys - finished");
+            .safe_finish_with_message("evm storage keys - finished");
 
-        // Collect ransaction receipts proofs
-        let mut transaction_receipts_fut =
-            futures::stream::iter(self.proof_keys.evm.receipt_keys.iter().map(EvmProofKeys::fetch_receipt_proof))
-                .buffer_unordered(BUFFER_UNORDERED)
-                .boxed();
+        // For each block, we need to create a mpt_handler
+        let mut receipt_mpt_handlers: HashMap<u64, TxReceiptsMptHandler> = HashMap::default();
 
-        while let Some(Ok((header_with_mmr, transaction_receipt))) = transaction_receipts_fut.next().await {
-            headers_with_mmr
-                .entry(header_with_mmr.mmr_meta)
-                .and_modify(|headers: &mut Vec<EvmHeader>| headers.extend(header_with_mmr.headers.clone()))
-                .or_insert(header_with_mmr.headers);
-            receipts.insert(transaction_receipt);
+        for block_number in self.proof_keys.evm.receipt_keys.iter().map(|key| key.block_number) {
+            if let std::collections::hash_map::Entry::Vacant(entry) = receipt_mpt_handlers.entry(block_number) {
+                let mut mpt_handler = TxReceiptsMptHandler::new(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap())
+                    .map_err(|e| FetcherError::InternalError(e.to_string()))?;
+
+                mpt_handler
+                    .build_tx_receipts_tree_from_block(block_number)
+                    .await
+                    .map_err(|e| FetcherError::InternalError(e.to_string()))?;
+
+                entry.insert(mpt_handler);
+            }
 
             #[cfg(feature = "progress_bars")]
             self.progress_bars.evm_receipts.safe_inc();
         }
 
+        receipts.extend(
+            self.proof_keys
+                .evm
+                .receipt_keys
+                .iter()
+                .map(|key| EvmProofKeys::compute_receipt_proof(key, receipt_mpt_handlers.get_mut(&key.block_number).unwrap()).unwrap()),
+        );
+
         #[cfg(feature = "progress_bars")]
         self.progress_bars
             .evm_receipts
-            .safe_finish_with_message("ethereum receipt keys - finished");
+            .safe_finish_with_message("evm receipt keys - finished");
 
-        // Collect storage proofs
-        let mut transaction_keys_fut = futures::stream::iter(
-            self.proof_keys
-                .evm
-                .transaction_keys
-                .iter()
-                .map(EvmProofKeys::fetch_transaction_proof),
-        )
-        .buffer_unordered(BUFFER_UNORDERED)
-        .boxed();
+        // For each tx block, we need to create a mpt_handler
+        let mut tx_mpt_handlers: HashMap<u64, TxsMptHandler> = HashMap::default();
 
-        while let Some(Ok((header_with_mmr, transaction))) = transaction_keys_fut.next().await {
-            headers_with_mmr
-                .entry(header_with_mmr.mmr_meta)
-                .and_modify(|headers: &mut Vec<EvmHeader>| headers.extend(header_with_mmr.headers.clone()))
-                .or_insert(header_with_mmr.headers);
-            transactions.insert(transaction);
+        for key in self.proof_keys.evm.transaction_keys.iter() {
+            if let std::collections::hash_map::Entry::Vacant(entry) = tx_mpt_handlers.entry(key.block_number) {
+                let mut mpt_handler = TxsMptHandler::new(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap())
+                    .map_err(|e| FetcherError::InternalError(e.to_string()))?;
+
+                mpt_handler
+                    .build_tx_tree_from_block(key.block_number)
+                    .await
+                    .map_err(|e| FetcherError::InternalError(e.to_string()))?;
+
+                entry.insert(mpt_handler);
+            }
 
             #[cfg(feature = "progress_bars")]
             self.progress_bars.evm_transactions.safe_inc();
         }
 
+        transactions.extend(
+            self.proof_keys
+                .evm
+                .transaction_keys
+                .iter()
+                .map(|key| EvmProofKeys::compute_transaction_proof(key, tx_mpt_handlers.get_mut(&key.block_number).unwrap()).unwrap()),
+        );
+
         #[cfg(feature = "progress_bars")]
         self.progress_bars
             .evm_transactions
-            .safe_finish_with_message("ethereum storage keys - finished");
+            .safe_finish_with_message("evm storage keys - finished");
 
         Ok(EvmProofs {
             headers_with_mmr: process_headers(headers_with_mmr),
@@ -274,15 +296,13 @@ impl<'a> Fetcher<'a> {
         })
     }
 
-    pub async fn collect_starknet_proofs(&self) -> Result<StarknetProofs, FetcherError> {
+    async fn collect_starknet_headers_proofs(
+        &self,
+        flattened_keys: &HashSet<FlattenedKey>,
+    ) -> Result<HashMap<MmrMeta, Vec<StarknetHeader>>, FetcherError> {
         let mut headers_with_mmr = HashMap::default();
-        let mut storages: HashSet<StarknetStorage> = HashSet::default();
-
-        // Collect header proofs
         let mut header_fut = futures::stream::iter(
-            self.proof_keys
-                .starknet
-                .header_keys
+            flattened_keys
                 .iter()
                 .map(|key| StarknetProofKeys::fetch_header_proof(key.chain_id, key.block_number)),
         )
@@ -299,6 +319,16 @@ impl<'a> Fetcher<'a> {
             #[cfg(feature = "progress_bars")]
             self.progress_bars.starknet_header.safe_inc();
         }
+
+        Ok(headers_with_mmr)
+    }
+
+    pub async fn collect_starknet_proofs(&self) -> Result<StarknetProofs, FetcherError> {
+        let mut storages: HashSet<StarknetStorage> = HashSet::default();
+
+        let flattened_keys = self.proof_keys.starknet.to_flattened_keys();
+
+        let headers_with_mmr = self.collect_starknet_headers_proofs(&flattened_keys).await?;
 
         #[cfg(feature = "progress_bars")]
         self.progress_bars
@@ -317,13 +347,7 @@ impl<'a> Fetcher<'a> {
         .boxed();
 
         while let Some(result) = storage_fut.next().await {
-            let (header_with_mmr, storage) = result?;
-            headers_with_mmr
-                .entry(header_with_mmr.mmr_meta)
-                .and_modify(|headers: &mut Vec<StarknetHeader>| headers.extend(header_with_mmr.headers.clone()))
-                .or_insert(header_with_mmr.headers);
-            storages.insert(storage);
-
+            storages.insert(result?);
             #[cfg(feature = "progress_bars")]
             self.progress_bars.starknet_storage.safe_inc();
         }
@@ -356,7 +380,9 @@ where
         .collect()
 }
 
-pub fn parse_syscall_handler(syscall_handler: SyscallHandler) -> Result<ProofKeys, FetcherError> {
+pub fn parse_syscall_handler(
+    syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler>,
+) -> Result<ProofKeys, FetcherError> {
     let mut proof_keys = ProofKeys::default();
 
     // Process EVM keys

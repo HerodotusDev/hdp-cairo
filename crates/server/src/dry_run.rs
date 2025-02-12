@@ -7,10 +7,11 @@ use cairo_vm::{
 };
 use dry_hint_processor::{
     CustomHintProcessor,
-    syscall_handler::{SyscallHandler, SyscallHandlerWrapper},
+    syscall_handler::{evm, starknet},
 };
 use hints::vars;
 use serde::Deserialize;
+use syscall_handler::{SyscallHandler, SyscallHandlerWrapper};
 use types::{HDPDryRunInput, error::Error};
 
 use crate::error::AppError;
@@ -27,7 +28,9 @@ pub struct DryRunRequest {
     path = "/dry_run",
     request_body = ref("DryRunRequest") // TODO implement ToSchema (big and tedious task impl when explicitly needed)
 )]
-pub async fn root(Json(value): Json<DryRunRequest>) -> Result<Json<SyscallHandler>, AppError> {
+pub async fn root(
+    Json(value): Json<DryRunRequest>,
+) -> Result<Json<SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler>>, AppError> {
     // Init CairoRunConfig
     let cairo_run_config = cairo_run::CairoRunConfig {
         trace_enabled: false,
@@ -55,7 +58,7 @@ pub async fn root(Json(value): Json<DryRunRequest>) -> Result<Json<SyscallHandle
     Ok(Json(
         cairo_runner
             .exec_scopes
-            .get::<SyscallHandlerWrapper>(vars::scopes::SYSCALL_HANDLER)?
+            .get::<SyscallHandlerWrapper<evm::CallContractHandler, starknet::CallContractHandler>>(vars::scopes::SYSCALL_HANDLER)?
             .syscall_handler
             .try_read()?
             .clone(),

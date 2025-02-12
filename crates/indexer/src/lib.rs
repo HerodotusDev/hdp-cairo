@@ -7,9 +7,10 @@ pub mod models;
 
 use std::env;
 
-use models::{IndexerError, IndexerHeadersProofResponse, IndexerQuery, MMRResponse};
-use reqwest::Client;
-use types::RPC_URL_HERODOTUS_INDEXER;
+use cairo_vm::Felt252;
+use models::{accumulators, blocks, IndexerError};
+use reqwest::{Client, Url};
+use types::{RPC_URL_HERODOTUS_INDEXER_GROWER, RPC_URL_HERODOTUS_INDEXER_STAGING};
 
 #[derive(Clone)]
 pub struct Indexer {
@@ -28,20 +29,20 @@ impl Indexer {
     }
 
     /// Fetch MMR and headers proof from Herodotus Indexer
-    pub async fn get_headers_proof(&self, query: IndexerQuery) -> Result<IndexerHeadersProofResponse, IndexerError> {
+    pub async fn get_headers_proof(&self, query: accumulators::IndexerQuery) -> Result<accumulators::IndexerProofResponse, IndexerError> {
+        // Parse base URL from environment variable
+        let base_url = Url::parse(&env::var(RPC_URL_HERODOTUS_INDEXER_GROWER).unwrap()).unwrap();
+
         let response = self
             .client
-            .get(
-                env::var(RPC_URL_HERODOTUS_INDEXER)
-                    .map_err(|e| IndexerError::GetHeadersProofError(format!("Missing RPC_URL_HERODOTUS_INDEXER env var: {}", e)))?,
-            )
+            .get(base_url.join("/accumulators/proofs").unwrap())
             .query(&query)
             .send()
             .await
             .map_err(IndexerError::ReqwestError)?;
 
         if response.status().is_success() {
-            let parsed_mmr: MMRResponse =
+            let parsed_mmr: accumulators::MMRResponse =
                 serde_json::from_value(response.json().await.map_err(IndexerError::ReqwestError)?).map_err(IndexerError::SerdeJsonError)?;
 
             if parsed_mmr.data.is_empty() {
@@ -55,11 +56,43 @@ impl Indexer {
                         "Indexer didn't return the correct number of headers that were requested".to_string(),
                     ))
                 } else {
-                    Ok(IndexerHeadersProofResponse::new(mmr_data))
+                    Ok(accumulators::IndexerProofResponse::new(mmr_data))
                 }
             }
         } else {
             Err(IndexerError::GetHeadersProofError(
+                response.text().await.map_err(IndexerError::ReqwestError)?,
+            ))
+        }
+    }
+
+    /// Fetch MMR and headers proof from Herodotus Indexer
+    pub async fn get_blocks(&self, query: blocks::IndexerQuery) -> Result<blocks::IndexerBlockResponse, IndexerError> {
+        // Parse base URL from environment variable
+        let base_url = Url::parse(&env::var(RPC_URL_HERODOTUS_INDEXER_STAGING).unwrap()).unwrap();
+
+        let response = self
+            .client
+            .get(base_url.join("/blocks").unwrap())
+            .query(&query)
+            .send()
+            .await
+            .map_err(IndexerError::ReqwestError)?;
+
+        if response.status().is_success() {
+            let parsed_mmr: blocks::BlocksResponse =
+                serde_json::from_value(response.json().await.map_err(IndexerError::ReqwestError)?).map_err(IndexerError::SerdeJsonError)?;
+
+            let block = parsed_mmr.data.first().unwrap();
+
+            match &block.block_header {
+                models::BlockHeader::Fields(fields) => Ok(blocks::IndexerBlockResponse {
+                    fields: fields.iter().map(|hex| Felt252::from_hex(hex).unwrap()).collect::<Vec<_>>(),
+                }),
+                _ => Err(IndexerError::ValidationError("Invalid block header return type".to_string())),
+            }
+        } else {
+            Err(IndexerError::GetBlocksProofError(
                 response.text().await.map_err(IndexerError::ReqwestError)?,
             ))
         }
@@ -73,7 +106,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_headers_proof() {
         let response = Indexer::default()
-            .get_headers_proof(IndexerQuery::new(11155111, 5000000, 5000000))
+            .get_headers_proof(accumulators::IndexerQuery::new(11155111, 5000000, 5000000))
             .await
             .unwrap();
         assert_eq!(response.headers.len(), 1);
@@ -82,7 +115,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_headers_proof_multiple_blocks() {
         let response = Indexer::default()
-            .get_headers_proof(IndexerQuery::new(11155111, 5800000, 5800010))
+            .get_headers_proof(accumulators::IndexerQuery::new(11155111, 5800000, 5800010))
             .await
             .unwrap();
         assert_eq!(response.headers.len(), 11);

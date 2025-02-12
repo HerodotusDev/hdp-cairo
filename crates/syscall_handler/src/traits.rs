@@ -1,5 +1,8 @@
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
-use types::cairo::traits::CairoType;
+use types::cairo::{
+    new_syscalls::{CallContractRequest, CallContractResponse},
+    traits::CairoType,
+};
 
 use crate::{SyscallResult, WriteResponseResult};
 
@@ -20,3 +23,5 @@ pub trait CallHandler {
     fn derive_id(selector: Felt252) -> SyscallResult<Self::Id>;
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult>;
 }
+
+pub trait CallContractSyscallHandler = SyscallHandler<Request = CallContractRequest, Response = CallContractResponse>;

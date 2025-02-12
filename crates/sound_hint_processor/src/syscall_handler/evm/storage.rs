@@ -36,7 +36,7 @@ impl CallHandler for StorageCallHandler {
 
     fn derive_key(vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Key> {
         let ret = CairoKey::from_memory(vm, *ptr)?;
-        *ptr = (*ptr + CairoKey::n_fields())?;
+        *ptr = (*ptr + CairoKey::n_fields(vm, *ptr)?)?;
         Ok(ret)
     }
 

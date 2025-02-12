@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use strum_macros::FromRepr;
 use version_compare::{CompOp, Version};
 
-use crate::cairo::structs::Felt;
+use crate::cairo::structs::CairoFelt;
 
 #[derive(FromRepr, Debug)]
 pub enum FunctionId {
@@ -211,7 +211,7 @@ impl StarknetBlock {
         }
     }
 
-    pub fn handle(&self, function_id: FunctionId) -> Felt {
+    pub fn handle(&self, function_id: FunctionId) -> CairoFelt {
         match function_id {
             FunctionId::Parent => self.parent_block_hash().into(),
             FunctionId::BlockNumber => self.block_number().into(),
