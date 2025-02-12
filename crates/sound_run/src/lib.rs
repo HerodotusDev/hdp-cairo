@@ -13,6 +13,7 @@ use sound_hint_processor::CustomHintProcessor;
 use types::{error::Error, HDPInput};
 
 pub const HDP_COMPILED_JSON: &str = env!("HDP_COMPILED_JSON");
+pub const HDP_PROGRAM_HASH: &str = env!("HDP_PROGRAM_HASH");
 
 pub fn exec(input: HDPInput) -> Result<(CairoPie, Vec<Felt252>), Error> {
     let cairo_run_config = cairo_run::CairoRunConfig {
