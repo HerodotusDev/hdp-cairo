@@ -39,7 +39,7 @@
 
 ---
 
-## Running an Example Contract
+## Running an Example Module
 
 ### Overview
 
