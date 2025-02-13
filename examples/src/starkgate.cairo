@@ -9,17 +9,21 @@ mod example_starkgate {
 
     #[external(v0)]
     pub fn main(ref self: ContractState, hdp: HDP) -> u128 {
+
+        // official l1 l2 bridge token addresses
+        // https://github.com/starknet-io/starknet-addresses/blob/master/bridged_tokens/sepolia.json#L2-L10
+
         let starkgate_evm_account_key = AccountKey {
             chain_id: ETHEREUM_TESTNET_CHAIN_ID,
             block_number: 7692344,
-            address: 0x8453FC6Cd1bCfE8D4dFC069C400B433054d47bDc,
+            address: 0x8453FC6Cd1bCfE8D4dFC069C400B433054d47bDc, // l1_bridge_address
         };
 
         let starkgate_starknet_storage_key = StorageKey {
             chain_id: STARKNET_TESTNET_CHAIN_ID,
             block_number: 517902,
-            address: 0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7,
-            storage_slot: 0x0110e2f729c9c2b988559994a3daccd838cf52faf88e18101373e67dd061455a,
+            address: 0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7, // l2_token_address
+            storage_slot: 0x0110e2f729c9c2b988559994a3daccd838cf52faf88e18101373e67dd061455a, // ERC20_total_supply storage key
         };
 
         let starkgate_balance_ethereum: u256 = hdp
