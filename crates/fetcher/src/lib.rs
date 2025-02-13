@@ -285,7 +285,7 @@ impl<'a> Fetcher<'a> {
         #[cfg(feature = "progress_bars")]
         self.progress_bars
             .evm_transactions
-            .safe_finish_with_message("evm storage keys - finished");
+            .safe_finish_with_message("evm transaction keys - finished");
 
         Ok(EvmProofs {
             headers_with_mmr: process_headers(headers_with_mmr),

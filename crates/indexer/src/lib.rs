@@ -106,7 +106,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_headers_proof() {
         let response = Indexer::default()
-            .get_headers_proof(accumulators::IndexerQuery::new(11155111, 5000000, 5000000))
+            .get_headers_proof(accumulators::IndexerQuery::new(11155111, 7692344, 7692344))
             .await
             .unwrap();
         assert_eq!(response.headers.len(), 1);
@@ -115,9 +115,9 @@ mod tests {
     #[tokio::test]
     async fn test_get_headers_proof_multiple_blocks() {
         let response = Indexer::default()
-            .get_headers_proof(accumulators::IndexerQuery::new(11155111, 5800000, 5800010))
+            .get_headers_proof(accumulators::IndexerQuery::new(11155111, 7692144, 7692344))
             .await
             .unwrap();
-        assert_eq!(response.headers.len(), 11);
+        assert_eq!(response.headers.len(), 201);
     }
 }
