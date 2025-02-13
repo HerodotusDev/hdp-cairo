@@ -10,7 +10,7 @@ curl -X POST \
     "params": [
         "0x75cec1db9dceb703200eaa6595f66885c962b920", 
         "0x1", 
-        "0x5B8D80"
+        "0x756038"
     ],
     "id": 1
   }'

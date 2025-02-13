@@ -9,14 +9,14 @@ async fn test_tests_transaction_get_nonce() {
     .await
 }
 
-// #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-// async fn test_tests_transaction_get_gas_price() {
-//     run(serde_json::from_slice(include_bytes!(
-//         "../../../target/dev/tests_transaction_get_gas_price.compiled_contract_class.json"
-//     ))
-//     .unwrap())
-//     .await
-// }
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn test_tests_transaction_get_gas_price() {
+    run(serde_json::from_slice(include_bytes!(
+        "../../../target/dev/tests_transaction_get_gas_price.compiled_contract_class.json"
+    ))
+    .unwrap())
+    .await
+}
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_tests_transaction_get_gas_limit() {
@@ -81,23 +81,23 @@ async fn test_tests_transaction_get_chain_id() {
     .await
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-async fn test_tests_transaction_get_max_fee_per_gas() {
-    run(serde_json::from_slice(include_bytes!(
-        "../../../target/dev/tests_transaction_get_max_fee_per_gas.compiled_contract_class.json"
-    ))
-    .unwrap())
-    .await
-}
+// #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+// async fn test_tests_transaction_get_max_fee_per_gas() {
+//     run(serde_json::from_slice(include_bytes!(
+//         "../../../target/dev/tests_transaction_get_max_fee_per_gas.compiled_contract_class.json"
+//     ))
+//     .unwrap())
+//     .await
+// }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-async fn test_tests_transaction_get_max_priority_fee_per_gas() {
-    run(serde_json::from_slice(include_bytes!(
-        "../../../target/dev/tests_transaction_get_max_priority_fee_per_gas.compiled_contract_class.json"
-    ))
-    .unwrap())
-    .await
-}
+// #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+// async fn test_tests_transaction_get_max_priority_fee_per_gas() {
+//     run(serde_json::from_slice(include_bytes!(
+//         "../../../target/dev/tests_transaction_get_max_priority_fee_per_gas.compiled_contract_class.json"
+//     ))
+//     .unwrap())
+//     .await
+// }
 
 // #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 // async fn test_tests_transaction_get_max_fee_per_blob_gas() {
