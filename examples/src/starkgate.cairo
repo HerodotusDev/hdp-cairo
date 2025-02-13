@@ -8,16 +8,16 @@ mod example_starkgate {
     struct Storage {}
 
     #[external(v0)]
-    pub fn main(ref self: ContractState, hdp: HDP) {
+    pub fn main(ref self: ContractState, hdp: HDP) -> u128 {
         let starkgate_evm_account_key = AccountKey {
             chain_id: ETHEREUM_TESTNET_CHAIN_ID,
-            block_number: 7692851,
+            block_number: 7692344,
             address: 0x8453FC6Cd1bCfE8D4dFC069C400B433054d47bDc,
         };
 
         let starkgate_starknet_storage_key = StorageKey {
             chain_id: STARKNET_TESTNET_CHAIN_ID,
-            block_number: 519340,
+            block_number: 517902,
             address: 0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7,
             storage_slot: 0x0110e2f729c9c2b988559994a3daccd838cf52faf88e18101373e67dd061455a,
         };
@@ -43,5 +43,7 @@ mod example_starkgate {
             starkgate_balance_ethereum
                 - starkgate_balance_ethereum_accuracy < starkgate_balance_starknet,
         );
+
+        starkgate_balance_ethereum
     }
 }

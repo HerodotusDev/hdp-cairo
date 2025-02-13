@@ -36,7 +36,7 @@ pub fn hint_headers_with_mmr_meta_id(
 ) -> Result<(), HintError> {
     let header_with_mmr = exec_scopes.get::<HeaderMmrMeta<evm::header::Header>>(vars::scopes::HEADER_WITH_MMR_EVM)?;
 
-    insert_value_into_ap(vm, Felt252::from(header_with_mmr.mmr_meta.id))
+    insert_value_into_ap(vm, Felt252::from_bytes_be_slice(&header_with_mmr.mmr_meta.id.0))
 }
 
 pub const HINT_HEADERS_WITH_MMR_META_ROOT: &str = "memory[ap] = to_felt_or_relocatable(header_with_mmr_evm.mmr_meta.root)";

@@ -35,7 +35,7 @@ impl ProofKeys {
 
         // Extract MMR metadata
         let meta = MmrMeta {
-            id: u64::from_str_radix(&response.mmr_meta.mmr_id[2..], 16)?,
+            id: Self::normalize_hex(&response.mmr_meta.mmr_id).parse()?,
             size: response.mmr_meta.mmr_size,
             root: Self::normalize_hex(&response.mmr_meta.mmr_root).parse()?,
             peaks: response
