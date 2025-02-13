@@ -22,10 +22,11 @@ mod example_starkgate {
             storage_slot: 0x0110e2f729c9c2b988559994a3daccd838cf52faf88e18101373e67dd061455a,
         };
 
-        let starkgate_balance_ethereum: u128 = hdp
+        let starkgate_balance_ethereum: u256 = hdp
             .evm
-            .account_get_balance(starkgate_evm_account_key)
-            .low;
+            .account_get_balance(starkgate_evm_account_key);
+
+        assert!(starkgate_balance_ethereum.high == 0x0);
 
         let starkgate_balance_starknet: u128 = hdp
             .starknet
@@ -33,17 +34,17 @@ mod example_starkgate {
             .try_into()
             .unwrap();
 
-        let starkgate_balance_ethereum_accuracy: u128 = starkgate_balance_ethereum / 1000;
+        let starkgate_balance_ethereum_accuracy: u128 = starkgate_balance_ethereum.low / 1000;
 
         assert!(
-            starkgate_balance_ethereum
+            starkgate_balance_ethereum.low
                 + starkgate_balance_ethereum_accuracy > starkgate_balance_starknet,
         );
         assert!(
-            starkgate_balance_ethereum
+            starkgate_balance_ethereum.low
                 - starkgate_balance_ethereum_accuracy < starkgate_balance_starknet,
         );
 
-        starkgate_balance_ethereum
+        starkgate_balance_ethereum.low
     }
 }
