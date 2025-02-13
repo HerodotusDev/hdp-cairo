@@ -143,8 +143,6 @@ mod example_starkgate {
 
 ## Testing
 
-To ensure each component of the HDP pipeline is working as expected, perform the following tests:
-
 1. **Build the Cairo1 Modules:**
 
    ```bash

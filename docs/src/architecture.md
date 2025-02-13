@@ -1,6 +1,6 @@
 ## Architecture
 
-The HDP system is composed of several interlocking modules, each responsible for a specific part of the data processing pipeline.
+The HDP system is composed of several interlocking parts, each responsible for a specific piece of the data processing pipeline.
 
 ### 1. Verifiers
 
@@ -37,7 +37,4 @@ The HDP system is composed of several interlocking modules, each responsible for
   - **Syscall Handling:** Invokes system calls (e.g., cryptographic hash functions provided by Cairo0) as required.
   - **Final Checks:** Validates the outputs of syscalls and ensures the integrity of the execution trace.
 
-### 5. Proof computing
-
-- **Purpose:**  
-  After execution, the produced trace can be used in a zero-knowledge proving pipeline. The resulting proof attests that the data used was valid and that the user-defined logic was executed correctly.
+After execution, the produced trace can be used in a zero-knowledge proving pipeline. The resulting proof attests that the data used was valid and that the user-defined logic was executed correctly.
