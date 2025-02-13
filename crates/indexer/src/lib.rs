@@ -10,7 +10,7 @@ use std::env;
 use cairo_vm::Felt252;
 use models::{accumulators, blocks, IndexerError};
 use reqwest::{Client, Url};
-use types::RPC_URL_HERODOTUS_INDEXER_STAGING;
+use types::RPC_URL_HERODOTUS_INDEXER;
 
 #[derive(Clone)]
 pub struct Indexer {
@@ -31,7 +31,7 @@ impl Indexer {
     /// Fetch MMR and headers proof from Herodotus Indexer
     pub async fn get_headers_proof(&self, query: accumulators::IndexerQuery) -> Result<accumulators::IndexerProofResponse, IndexerError> {
         // Parse base URL from environment variable
-        let base_url = Url::parse(&env::var(RPC_URL_HERODOTUS_INDEXER_STAGING).unwrap()).unwrap();
+        let base_url = Url::parse(&env::var(RPC_URL_HERODOTUS_INDEXER).unwrap()).unwrap();
 
         let response = self
             .client
@@ -69,7 +69,7 @@ impl Indexer {
     /// Fetch MMR and headers proof from Herodotus Indexer
     pub async fn get_blocks(&self, query: blocks::IndexerQuery) -> Result<blocks::IndexerBlockResponse, IndexerError> {
         // Parse base URL from environment variable
-        let base_url = Url::parse(&env::var(RPC_URL_HERODOTUS_INDEXER_STAGING).unwrap()).unwrap();
+        let base_url = Url::parse(&env::var(RPC_URL_HERODOTUS_INDEXER).unwrap()).unwrap();
 
         let response = self
             .client
