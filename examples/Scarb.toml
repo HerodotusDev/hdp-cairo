@@ -13,6 +13,7 @@ hdp_cairo = { workspace = true }
 sierra = true
 casm = true
 casm-add-pythonic-hints = true
+allowed-libfuncs = false
 
 [scripts]
 test = "snforge test"
