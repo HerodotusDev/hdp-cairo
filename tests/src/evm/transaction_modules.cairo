@@ -127,8 +127,8 @@ mod transaction_get_v {
             hdp
                 .evm
                 .block_tx_get_v(
-                    BlockTxKey { chain_id: 11155111, block_number: 7692344, transaction_index: 0 },
-                ) == u256 { low: 0x0, high: 0x0 },
+                    BlockTxKey { chain_id: 11155111, block_number: 7692344, transaction_index: 14 },
+                ) == u256 { low: 0x1, high: 0x0 },
         );
     }
 }

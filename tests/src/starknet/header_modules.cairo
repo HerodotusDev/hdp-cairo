@@ -11,7 +11,7 @@ mod starknet_get_block_number {
         hdp
             .starknet
             .header_get_block_number(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 155555 },
+                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -29,7 +29,7 @@ mod starknet_get_state_root {
         hdp
             .starknet
             .header_get_state_root(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 155555 },
+                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -47,7 +47,7 @@ mod starknet_get_sequencer_address {
         hdp
             .starknet
             .header_get_sequencer_address(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 155555 },
+                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -65,7 +65,7 @@ mod starknet_get_block_timestamp {
         hdp
             .starknet
             .header_get_block_timestamp(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 155555 },
+                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -83,7 +83,7 @@ mod starknet_get_transaction_count {
         hdp
             .starknet
             .header_get_transaction_count(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 155555 },
+                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -101,7 +101,7 @@ mod starknet_get_transaction_commitment {
         hdp
             .starknet
             .header_get_transaction_commitment(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 155555 },
+                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -119,7 +119,7 @@ mod starknet_get_event_count {
         hdp
             .starknet
             .header_get_event_count(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 155555 },
+                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -137,7 +137,7 @@ mod starknet_get_event_commitment {
         hdp
             .starknet
             .header_get_event_commitment(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 155555 },
+                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -155,7 +155,7 @@ mod starknet_get_parent_block_hash {
         hdp
             .starknet
             .header_get_parent_block_hash(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 155555 },
+                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -173,7 +173,7 @@ mod starknet_get_state_diff_commitment {
         hdp
             .starknet
             .header_get_state_diff_commitment(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 155555 },
+                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -191,7 +191,7 @@ mod starknet_get_state_diff_length {
         hdp
             .starknet
             .header_get_state_diff_length(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 155555 },
+                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -209,7 +209,7 @@ mod starknet_get_l1_gas_price_in_wei {
         hdp
             .starknet
             .header_get_l1_gas_price_in_wei(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 155555 },
+                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -227,7 +227,7 @@ mod starknet_get_l1_gas_price_in_fri {
         hdp
             .starknet
             .header_get_l1_gas_price_in_fri(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 155555 },
+                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -245,7 +245,7 @@ mod starknet_get_l1_data_gas_price_in_wei {
         hdp
             .starknet
             .header_get_l1_data_gas_price_in_wei(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 155555 },
+                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -263,7 +263,7 @@ mod starknet_get_l1_data_gas_price_in_fri {
         hdp
             .starknet
             .header_get_l1_data_gas_price_in_fri(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 155555 },
+                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -281,7 +281,7 @@ mod starknet_get_receipts_commitment {
         hdp
             .starknet
             .header_get_receipts_commitment(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 155555 },
+                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -299,7 +299,7 @@ mod starknet_get_l1_data_mode {
         hdp
             .starknet
             .header_get_l1_data_mode(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 155555 },
+                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -317,7 +317,7 @@ mod starknet_get_protocol_version {
         hdp
             .starknet
             .header_get_protocol_version(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 155555 },
+                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
