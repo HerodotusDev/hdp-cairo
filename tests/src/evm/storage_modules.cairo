@@ -14,7 +14,7 @@ mod evm_storage_get_slot {
                 .storage_get_slot(
                     StorageKey {
                         chain_id: 11155111,
-                        block_number: 6000000,
+                        block_number: 7692344,
                         address: 0x75cec1db9dceb703200eaa6595f66885c962b920,
                         storage_slot: 0x1,
                     },

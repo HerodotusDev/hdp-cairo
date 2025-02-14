@@ -14,7 +14,7 @@ mod evm_account_get_nonce {
                 .account_get_nonce(
                     AccountKey {
                         chain_id: 11155111,
-                        block_number: 6000000,
+                        block_number: 7692344,
                         address: 0xc6e2459991BfE27cca6d86722F35da23A1E4Cb97,
                     },
                 ) == u256 { low: 0x1, high: 0x0 },
@@ -38,10 +38,10 @@ mod evm_account_get_balance {
                 .account_get_balance(
                     AccountKey {
                         chain_id: 11155111,
-                        block_number: 6000000,
+                        block_number: 7692344,
                         address: 0xc6e2459991BfE27cca6d86722F35da23A1E4Cb97,
                     },
-                ) == u256 { low: 0x1c4b9ada4bf56c21940, high: 0x0 },
+                ) == u256 { low: 0x2cbf225c6d700b89b34, high: 0x0 },
         );
     }
 }
@@ -62,7 +62,7 @@ mod evm_account_get_state_root {
                 .account_get_state_root(
                     AccountKey {
                         chain_id: 11155111,
-                        block_number: 6000000,
+                        block_number: 7692344,
                         address: 0xc6e2459991BfE27cca6d86722F35da23A1E4Cb97,
                     },
                 ) == u256 {
@@ -89,7 +89,7 @@ mod evm_account_get_code_hash {
                 .account_get_code_hash(
                     AccountKey {
                         chain_id: 11155111,
-                        block_number: 6000000,
+                        block_number: 7692344,
                         address: 0xc6e2459991BfE27cca6d86722F35da23A1E4Cb97,
                     },
                 ) == u256 {

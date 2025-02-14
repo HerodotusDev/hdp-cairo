@@ -35,7 +35,7 @@ broadcast/
 # Scarb & snfoundry
 target
 .snfoundry_cache/
-.cargo
+.cargo/config.toml
 
 !examples/*.json
 !crates/server/tests/*.json

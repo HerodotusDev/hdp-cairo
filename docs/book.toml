@@ -1,0 +1,6 @@
+[book]
+authors = ["Okm165"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Herodotus Data Processor Documentation"

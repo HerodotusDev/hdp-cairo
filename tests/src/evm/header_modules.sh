@@ -7,6 +7,6 @@ curl -X POST \
   --data '{
     "jsonrpc": "2.0",
     "method": "eth_getBlockByNumber",
-    "params": ["0x5B8D80", false],
+    "params": ["0x756038", false],
     "id": 1
   }'

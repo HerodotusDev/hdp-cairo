@@ -10,7 +10,7 @@ use std::env;
 use cairo_vm::Felt252;
 use models::{accumulators, blocks, IndexerError};
 use reqwest::{Client, Url};
-use types::{RPC_URL_HERODOTUS_INDEXER_GROWER, RPC_URL_HERODOTUS_INDEXER_STAGING};
+use types::RPC_URL_HERODOTUS_INDEXER;
 
 #[derive(Clone)]
 pub struct Indexer {
@@ -31,7 +31,7 @@ impl Indexer {
     /// Fetch MMR and headers proof from Herodotus Indexer
     pub async fn get_headers_proof(&self, query: accumulators::IndexerQuery) -> Result<accumulators::IndexerProofResponse, IndexerError> {
         // Parse base URL from environment variable
-        let base_url = Url::parse(&env::var(RPC_URL_HERODOTUS_INDEXER_GROWER).unwrap()).unwrap();
+        let base_url = Url::parse(&env::var(RPC_URL_HERODOTUS_INDEXER).unwrap()).unwrap();
 
         let response = self
             .client
@@ -69,7 +69,7 @@ impl Indexer {
     /// Fetch MMR and headers proof from Herodotus Indexer
     pub async fn get_blocks(&self, query: blocks::IndexerQuery) -> Result<blocks::IndexerBlockResponse, IndexerError> {
         // Parse base URL from environment variable
-        let base_url = Url::parse(&env::var(RPC_URL_HERODOTUS_INDEXER_STAGING).unwrap()).unwrap();
+        let base_url = Url::parse(&env::var(RPC_URL_HERODOTUS_INDEXER).unwrap()).unwrap();
 
         let response = self
             .client
@@ -106,7 +106,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_headers_proof() {
         let response = Indexer::default()
-            .get_headers_proof(accumulators::IndexerQuery::new(11155111, 5000000, 5000000))
+            .get_headers_proof(accumulators::IndexerQuery::new(11155111, 7692344, 7692344))
             .await
             .unwrap();
         assert_eq!(response.headers.len(), 1);
@@ -115,9 +115,9 @@ mod tests {
     #[tokio::test]
     async fn test_get_headers_proof_multiple_blocks() {
         let response = Indexer::default()
-            .get_headers_proof(accumulators::IndexerQuery::new(11155111, 5800000, 5800010))
+            .get_headers_proof(accumulators::IndexerQuery::new(11155111, 7692144, 7692344))
             .await
             .unwrap();
-        assert_eq!(response.headers.len(), 11);
+        assert_eq!(response.headers.len(), 201);
     }
 }

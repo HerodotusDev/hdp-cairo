@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Resolve the absolute path of the compiled class file
-compiled_class_path=$(realpath ../target/dev/examples_example.compiled_contract_class.json)
+compiled_class_path=$(realpath ../target/dev/examples_example_starkgate.compiled_contract_class.json)
 
 # Check if the file exists
 if [ ! -f "$compiled_class_path" ]; then

@@ -1,6 +1,6 @@
 # Makefile
 
-.PHONY: all setup format
+.PHONY: all setup format format-check
 
 # Default target
 all: setup
@@ -9,6 +9,10 @@ all: setup
 setup:
 	bash setup.sh
 
-# Run format.sh
+# Run cairo-format inplace
 format:
-	bash format.sh
+	./venv/bin/cairo-format -i src/*.cairo
+
+# Run cairo-format check
+format-check:
+	./venv/bin/cairo-format -c src/*.cairo
