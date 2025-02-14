@@ -1,5 +1,5 @@
 #[starknet::contract]
-mod contract {
+mod example_hello_world {
     use hdp_cairo::{HDP};
 
     #[storage]
