@@ -2,12 +2,12 @@
 
 ## Overview
 
-This directory contains the Cairo 1 syscall bindings for the HDP framework. It enables simple access to the verified on-chain data from Cairo 1 contracts. These contract are a scarb project. 
+This directory contains the Cairo 1 interface for the HDP framework. It enables simple access to the verified on-chain data from Cairo 1 contracts.
 
 ## Features
 
 - Perform complex computations on blockchain data
-- Access on-chain data from Cairo 1 contracts
+- Access multi-chain data from Cairo 1 contracts
 - Efficient data retrieval through specialized syscalls
 
 ## Installation
