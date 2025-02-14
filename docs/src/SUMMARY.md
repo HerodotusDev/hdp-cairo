@@ -1,4 +1,4 @@
 - [Introduction](./introduction.md)
-- [Architecture](./architecture.md)
 - [Getting Started](./getting_started.md)
+- [Architecture](./architecture.md)
 - [Debugging](./debugging.md)

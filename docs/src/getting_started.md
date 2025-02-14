@@ -35,7 +35,6 @@
      ```
      
    - Edit the `.cargo/config.toml` file to provide the correct RPC endpoints and configuration details.
-   - Ensure the environment variables are exported to your PATH.
 
 ---
 
