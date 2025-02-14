@@ -55,6 +55,8 @@ mod example_starkgate {
                 - starkgate_balance_ethereum_accuracy < starkgate_balance_starknet,
         );
 
+        println!("StarkGate balance {}", starkgate_balance_ethereum.low);
+
         // Return the Ethereum balance (low part).
         starkgate_balance_ethereum.low
     }
