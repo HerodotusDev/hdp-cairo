@@ -3,9 +3,9 @@
 ### Prerequisites
 
 - **Dependencies:**
-  - **Rust:** Latest stable version.
-  - **Python:** For setting up a virtual environment.
-- **System Requirements:**
+  - **Rust**.
+  - **Python:** For Cairo0 compiler.
+- **Requirements:**
   - Access to blockchain RPC endpoints (e.g., Ethereum, StarkNet).
 
 ### Installation Steps
