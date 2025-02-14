@@ -38,3 +38,7 @@ The HDP system is composed of several interlocking parts, each responsible for a
   - **Final Checks:** Validates the outputs of syscalls and ensures the integrity of the execution trace.
 
 After execution, the produced trace can be used in a zero-knowledge proving pipeline. The resulting proof attests that the data used was valid and that the user-defined logic was executed correctly.
+
+<p align="center">
+  <img src="hdp_detail.png" alt="hdp diagram"/>
+</p>

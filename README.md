@@ -18,11 +18,13 @@ Runtime require chain nodes RPC calls, ensure an environment variables [.cargo/c
 ### Steps to Execute:
 
 1. **Simulate Cairo1 Module and Collect Proofs Information:**
+
    ```bash
    cargo run --release --bin dry_run -- --program_input examples/hdp_input.json --program_output hdp_keys.json --layout starknet_with_keccak
    ```
 
 2. **Fetch On-Chain Proofs Needed for the HDP Run:**
+
    ```bash
    cargo run --release --bin fetcher --features progress_bars -- hdp_keys.json --program_output hdp_proofs.json
    ```
@@ -39,6 +41,7 @@ The program will output the results root and tasks root. These roots can be used
 Tests require chain nodes RPC calls. Ensure an environment variables [.cargo/config.toml](.cargo/config.example.toml) are set.
 
 1. **Build Cairo1 Modules:**
+
    ```bash
    scarb build
    ```
@@ -47,4 +50,3 @@ Tests require chain nodes RPC calls. Ensure an environment variables [.cargo/con
    ```bash
    cargo nextest run
    ```
-

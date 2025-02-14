@@ -29,3 +29,7 @@ HDP is designed with a two-stage process:
 This combined approach allows HDP to securely prove statements about historical on-chain events, voting power, balances, and other chain-dependent attributes in a trustless and verifiable manner.
 
 HDP is built to support data from multiple blockchains within a single Cairo1 execution. This capability is especially useful for use cases such as bridging, where data from various chains is verified and processed within one unified pipeline.
+
+<p align="center">
+  <img src="hdp_simple.png" alt="hdp diagram"/>
+</p>
