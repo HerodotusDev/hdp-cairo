@@ -1,5 +1,5 @@
 #[starknet::contract]
-mod contract {
+mod example_account_activity_checker {
     use hdp_cairo::{
         HDP, evm::header::{HeaderKey, HeaderImpl}, evm::account::{AccountKey, AccountImpl},
         evm::storage::{StorageKey, StorageImpl}, evm::block_tx::{BlockTxKey, BlockTxImpl},
