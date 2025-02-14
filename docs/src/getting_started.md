@@ -48,7 +48,7 @@ This guide demonstrates how to run an example Cairo1 module that verifies StarkG
 
 The following code compares the total token supply on both chains:
 
-```rust
+```rust,ignore
 #[starknet::contract]
 mod example_starkgate {
     use hdp_cairo::HDP;
