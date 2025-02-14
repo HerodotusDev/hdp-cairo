@@ -88,7 +88,7 @@ namespace StarknetHeaderDecoder {
         if (field == StarknetHeaderFields.L1_DATA_MODE) {
             let (_, remainder) = bitwise_divmod(value_concat, pow2_array[64]);
 
-            let (msb_check, _) = bitwise_divmod(remainder, 2 ** 7);
+            let (msb_check, _) = bitwise_divmod(remainder, pow2_array[63]);
             if (msb_check == 1) {
                 return (value=0x1);  // BLOB mode
             }
