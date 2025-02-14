@@ -1,3 +1,4 @@
+[env]
 RUST_LOG = "debug"
 RPC_URL_ETHEREUM = ""
 RPC_URL_HERODOTUS_INDEXER = "https://staging.rs-indexer.api.herodotus.cloud/"

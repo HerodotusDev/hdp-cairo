@@ -31,10 +31,10 @@
    - Copy the example environment file:
      
      ```bash
-     cp .env.example .env
+     cp .cargo/config.example.toml .cargo/config.toml
      ```
      
-   - Edit the `.env` file to provide the correct RPC endpoints and configuration details.
+   - Edit the `.cargo/config.toml` file to provide the correct RPC endpoints and configuration details.
    - Ensure the environment variables are exported to your PATH.
 
 ---
@@ -155,4 +155,4 @@ mod example_starkgate {
    cargo nextest run
    ```
 
-> **Note:** Ensure that the environment variables from `.env.example` are set before running the tests.
+> **Note:** Ensure that the environment variables from `.cargo/config.toml` are set before running the tests.
