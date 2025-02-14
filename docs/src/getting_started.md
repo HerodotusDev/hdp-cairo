@@ -3,9 +3,9 @@
 ### Prerequisites
 
 - **Dependencies:**
-  - **Rust:** Latest stable version.
-  - **Python:** For setting up a virtual environment.
-- **System Requirements:**
+  - **Rust**.
+  - **Python:** For Cairo0 compiler.
+- **Requirements:**
   - Access to blockchain RPC endpoints (e.g., Ethereum, StarkNet).
 
 ### Installation Steps
@@ -20,7 +20,6 @@
 2. **Set Up the Environment:**
 
    - Install the `cairo0` toolchain.
-   - Create and activate a Python virtual environment by running:
      
      ```bash
      make
@@ -48,7 +47,7 @@ This guide demonstrates how to run an example Cairo1 module that verifies StarkG
 
 The following code compares the total token supply on both chains:
 
-```rust
+```rust,ignore
 #[starknet::contract]
 mod example_starkgate {
     use hdp_cairo::HDP;

@@ -13,7 +13,7 @@ To disable the validation pass while developing and using that macro, you can ad
 allowed-libfuncs-deny = true
 ```
 
-```rust
+```rust,ignore
 #[starknet::contract]
 mod contract {
     use hdp_cairo::{HDP};
