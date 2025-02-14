@@ -20,7 +20,6 @@
 2. **Set Up the Environment:**
 
    - Install the `cairo0` toolchain.
-   - Create and activate a Python virtual environment by running:
      
      ```bash
      make
