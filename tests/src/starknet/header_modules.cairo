@@ -1,7 +1,7 @@
 #[starknet::contract]
 mod starknet_get_block_number {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -19,7 +19,7 @@ mod starknet_get_block_number {
 #[starknet::contract]
 mod starknet_get_state_root {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -37,7 +37,7 @@ mod starknet_get_state_root {
 #[starknet::contract]
 mod starknet_get_sequencer_address {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -55,7 +55,7 @@ mod starknet_get_sequencer_address {
 #[starknet::contract]
 mod starknet_get_block_timestamp {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -73,7 +73,7 @@ mod starknet_get_block_timestamp {
 #[starknet::contract]
 mod starknet_get_transaction_count {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -91,7 +91,7 @@ mod starknet_get_transaction_count {
 #[starknet::contract]
 mod starknet_get_transaction_commitment {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -109,7 +109,7 @@ mod starknet_get_transaction_commitment {
 #[starknet::contract]
 mod starknet_get_event_count {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -127,7 +127,7 @@ mod starknet_get_event_count {
 #[starknet::contract]
 mod starknet_get_event_commitment {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -145,7 +145,7 @@ mod starknet_get_event_commitment {
 #[starknet::contract]
 mod starknet_get_parent_block_hash {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -163,7 +163,7 @@ mod starknet_get_parent_block_hash {
 #[starknet::contract]
 mod starknet_get_state_diff_commitment {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -181,7 +181,7 @@ mod starknet_get_state_diff_commitment {
 #[starknet::contract]
 mod starknet_get_state_diff_length {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -199,7 +199,7 @@ mod starknet_get_state_diff_length {
 #[starknet::contract]
 mod starknet_get_l1_gas_price_in_wei {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -217,7 +217,7 @@ mod starknet_get_l1_gas_price_in_wei {
 #[starknet::contract]
 mod starknet_get_l1_gas_price_in_fri {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -235,7 +235,7 @@ mod starknet_get_l1_gas_price_in_fri {
 #[starknet::contract]
 mod starknet_get_l1_data_gas_price_in_wei {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -253,7 +253,7 @@ mod starknet_get_l1_data_gas_price_in_wei {
 #[starknet::contract]
 mod starknet_get_l1_data_gas_price_in_fri {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -271,7 +271,7 @@ mod starknet_get_l1_data_gas_price_in_fri {
 #[starknet::contract]
 mod starknet_get_receipts_commitment {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -289,7 +289,7 @@ mod starknet_get_receipts_commitment {
 #[starknet::contract]
 mod starknet_get_l1_data_mode {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -307,7 +307,7 @@ mod starknet_get_l1_data_mode {
 #[starknet::contract]
 mod starknet_get_protocol_version {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}

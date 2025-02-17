@@ -1,7 +1,7 @@
 #[starknet::contract]
 mod receipts_get_status {
     use hdp_cairo::{
-        HDP, evm::block_receipt::{BlockReceiptTrait, BlockReceiptKey, BlockReceiptImpl},
+        HDP, evm::block_receipt::{BlockReceiptImpl, BlockReceiptKey, BlockReceiptTrait},
     };
 
     #[storage]
@@ -47,8 +47,8 @@ mod receipts_get_status {
 #[starknet::contract]
 mod receipts_get_and_tx_get {
     use hdp_cairo::{
-        HDP, evm::block_receipt::{BlockReceiptTrait, BlockReceiptKey, BlockReceiptImpl},
-        evm::block_tx::{BlockTxTrait, BlockTxKey, BlockTxImpl},
+        HDP, evm::block_receipt::{BlockReceiptImpl, BlockReceiptKey, BlockReceiptTrait},
+        evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait},
     };
 
     #[storage]

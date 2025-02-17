@@ -1,10 +1,10 @@
 #[starknet::contract]
 mod example_account_activity_checker {
-    use hdp_cairo::{
-        HDP, evm::header::{HeaderKey, HeaderImpl}, evm::account::{AccountKey, AccountImpl},
-        evm::storage::{StorageKey, StorageImpl}, evm::block_tx::{BlockTxKey, BlockTxImpl},
-    };
     use core::traits::TryInto;
+    use hdp_cairo::{
+        HDP, evm::account::{AccountImpl, AccountKey}, evm::block_tx::{BlockTxImpl, BlockTxKey},
+        evm::header::{HeaderImpl, HeaderKey}, evm::storage::{StorageImpl, StorageKey},
+    };
 
     #[storage]
     struct Storage {}

@@ -1,5 +1,5 @@
-use starknet::syscalls::call_contract_syscall;
 use starknet::SyscallResultTrait;
+use starknet::syscalls::call_contract_syscall;
 
 const ARBITRARY_TYPE_CONTRACT_ADDRESS: felt252 = 'arbitrary_type';
 

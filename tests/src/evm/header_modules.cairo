@@ -1,7 +1,7 @@
 #[starknet::contract]
 mod evm_header_get_parent {
     use hdp_cairo::evm::header::HeaderTrait;
-    use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, evm::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -24,7 +24,7 @@ mod evm_header_get_parent {
 #[starknet::contract]
 mod evm_header_get_uncle {
     use hdp_cairo::evm::header::HeaderTrait;
-    use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, evm::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -47,7 +47,7 @@ mod evm_header_get_uncle {
 #[starknet::contract]
 mod evm_header_get_coinbase {
     use hdp_cairo::evm::header::HeaderTrait;
-    use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, evm::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -70,7 +70,7 @@ mod evm_header_get_coinbase {
 #[starknet::contract]
 mod evm_header_get_state_root {
     use hdp_cairo::evm::header::HeaderTrait;
-    use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, evm::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -93,7 +93,7 @@ mod evm_header_get_state_root {
 #[starknet::contract]
 mod evm_header_get_transaction_root {
     use hdp_cairo::evm::header::HeaderTrait;
-    use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, evm::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -116,7 +116,7 @@ mod evm_header_get_transaction_root {
 #[starknet::contract]
 mod evm_header_get_receipt_root {
     use hdp_cairo::evm::header::HeaderTrait;
-    use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, evm::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -139,7 +139,7 @@ mod evm_header_get_receipt_root {
 #[starknet::contract]
 mod evm_header_get_difficulty {
     use hdp_cairo::evm::header::HeaderTrait;
-    use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, evm::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -159,7 +159,7 @@ mod evm_header_get_difficulty {
 #[starknet::contract]
 mod evm_header_get_number {
     use hdp_cairo::evm::header::HeaderTrait;
-    use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, evm::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -179,7 +179,7 @@ mod evm_header_get_number {
 #[starknet::contract]
 mod evm_header_get_gas_limit {
     use hdp_cairo::evm::header::HeaderTrait;
-    use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, evm::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -199,7 +199,7 @@ mod evm_header_get_gas_limit {
 #[starknet::contract]
 mod evm_header_get_gas_used {
     use hdp_cairo::evm::header::HeaderTrait;
-    use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, evm::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -219,7 +219,7 @@ mod evm_header_get_gas_used {
 #[starknet::contract]
 mod evm_header_get_mix_hash {
     use hdp_cairo::evm::header::HeaderTrait;
-    use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, evm::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -242,7 +242,7 @@ mod evm_header_get_mix_hash {
 #[starknet::contract]
 mod evm_header_get_nonce {
     use hdp_cairo::evm::header::HeaderTrait;
-    use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, evm::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -262,7 +262,7 @@ mod evm_header_get_nonce {
 #[starknet::contract]
 mod evm_header_get_base_fee_per_gas {
     use hdp_cairo::evm::header::HeaderTrait;
-    use hdp_cairo::{HDP, evm::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, evm::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
