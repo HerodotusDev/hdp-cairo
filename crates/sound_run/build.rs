@@ -38,8 +38,7 @@ fn main() {
         let cache_metadata = fs::metadata(&hash_cache_file).expect("Failed to get cache metadata");
         let output_metadata = fs::metadata(&output_file).expect("Failed to get output metadata");
         // Check if the output file has been modified since the last hash computation
-        output_metadata.modified().expect("Failed to get modified time") > 
-            cache_metadata.modified().expect("Failed to get modified time")
+        output_metadata.modified().expect("Failed to get modified time") > cache_metadata.modified().expect("Failed to get modified time")
     } else {
         true
     };
@@ -64,7 +63,7 @@ fn main() {
 
         // Cache the hash
         fs::write(&hash_cache_file, &hash).expect("Failed to write hash cache");
-        
+
         hash
     } else {
         // Read the cached hash

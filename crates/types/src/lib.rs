@@ -9,16 +9,14 @@ pub mod keys;
 pub mod param;
 pub mod proofs;
 
+use std::{fmt, str::FromStr};
+
 pub use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
+pub use cairo_vm::{vm::runners::cairo_pie::CairoPie, Felt252};
 use param::Param;
 use proofs::{evm, starknet};
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
-use std::fmt;
-use std::str::FromStr;
-
-pub use cairo_vm::vm::runners::cairo_pie::CairoPie;
-pub use cairo_vm::Felt252;
 
 pub const RPC_URL_ETHEREUM: &str = "RPC_URL_ETHEREUM";
 pub const RPC_URL_HERODOTUS_INDEXER_GROWER: &str = "RPC_URL_HERODOTUS_INDEXER_GROWER";
