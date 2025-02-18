@@ -113,7 +113,7 @@ impl<'de> Deserialize<'de> for ChainIds {
         let value = Value::deserialize(deserializer)?;
 
         match value {
-            Value::String(s) => ChainIds::from_str(&s).map_err(|e| serde::de::Error::custom(e)),
+            Value::String(s) => ChainIds::from_str(&s).map_err(serde::de::Error::custom),
             Value::Number(n) => {
                 if let Some(num) = n.as_u64() {
                     ChainIds::from_u128(num as u128).ok_or_else(|| serde::de::Error::custom(format!("invalid chain ID number: {}", num)))
