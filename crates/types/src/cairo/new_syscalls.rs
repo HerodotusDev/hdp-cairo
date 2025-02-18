@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use cairo_type_derive::FieldOffsetGetters;
 use cairo_vm::{
     types::relocatable::{MaybeRelocatable, Relocatable},
@@ -112,7 +114,22 @@ impl CairoType for KeccakResponse {
     }
 }
 
-impl CairoType for Vec<Felt252> {
+pub struct CairoVec(pub Vec<Felt252>);
+
+impl FromIterator<Felt252> for CairoVec {
+    fn from_iter<T: IntoIterator<Item = Felt252>>(iter: T) -> Self {
+        CairoVec(Vec::<Felt252>::from_iter(iter))
+    }
+}
+
+impl Deref for CairoVec {
+    type Target = Vec<Felt252>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl CairoType for CairoVec {
     fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
         let len = *vm.get_integer((address + 0)?)?;
         let result = vm
@@ -130,5 +147,18 @@ impl CairoType for Vec<Felt252> {
     fn n_fields(vm: &VirtualMachine, address: Relocatable) -> Result<usize, MemoryError> {
         let len = *vm.get_integer((address + 0)?)? + FELT_1;
         Ok(len.try_into().unwrap())
+    }
+}
+
+impl CairoType for Vec<Felt252> {
+    fn from_memory(_vm: &VirtualMachine, _address: Relocatable) -> Result<Self, MemoryError> {
+        unreachable!()
+    }
+    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
+        vm.load_data((address + 0)?, &self.iter().map(MaybeRelocatable::from).collect::<Vec<_>>())?;
+        Ok((address + self.len())?)
+    }
+    fn n_fields(_vm: &VirtualMachine, _address: Relocatable) -> Result<usize, MemoryError> {
+        unreachable!()
     }
 }

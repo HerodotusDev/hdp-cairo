@@ -9,7 +9,11 @@ namespace ReceiptField {
     const SUCCESS = 0;
     const CUMULATIVE_GAS_USED = 1;
     const BLOOM = 2;
-    const LOGS = 3;
+    const TOPIC0 = 3;
+    const TOPIC1 = 4;
+    const TOPIC2 = 5;
+    const TOPIC3 = 6;
+    const DATA = 7;
 }
 
 namespace ReceiptDecoder {
@@ -22,13 +26,30 @@ namespace ReceiptDecoder {
         chain_id: felt,
     ) -> Uint256 {
         alloc_locals;
-        if (field == ReceiptField.LOGS) {
-            assert 1 = 0;  // returns as felt
-        }
-
         if (field == ReceiptField.BLOOM) {
             assert 1 = 0;  // returns as felt
         }
+
+        if (field == ReceiptField.TOPIC0) {
+            assert 1 = 0;  // returns as felt
+        }
+
+        if (field == ReceiptField.TOPIC1) {
+            assert 1 = 0;  // returns as felt
+        }
+
+        if (field == ReceiptField.TOPIC2) {
+            assert 1 = 0;  // returns as felt
+        }
+
+        if (field == ReceiptField.TOPIC3) {
+            assert 1 = 0;  // returns as felt
+        }
+
+        if (field == ReceiptField.DATA) {
+            assert 1 = 0;  // returns as felt
+        }
+
         let (chain_info) = fetch_chain_info(chain_id);
 
         local is_byzantium: felt;
