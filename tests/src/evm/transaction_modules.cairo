@@ -11,10 +11,8 @@ mod transaction_get_nonce {
             hdp
                 .evm
                 .block_tx_get_nonce(
-                    BlockTxKey {
-                        chain_id: 11155111, block_number: 5382809, transaction_index: 217,
-                    },
-                ) == u256 { low: 0x3, high: 0x0 },
+                    BlockTxKey { chain_id: 11155111, block_number: 7692344, transaction_index: 0 },
+                ) == u256 { low: 0x44c, high: 0x0 },
         );
 
         let mut i: usize = 0;
@@ -29,7 +27,7 @@ mod transaction_get_nonce {
                 .evm
                 .block_tx_get_nonce(
                     BlockTxKey {
-                        chain_id: 11155111, block_number: 5382809, transaction_index: tx_idx.into(),
+                        chain_id: 11155111, block_number: 7692344, transaction_index: tx_idx.into(),
                     },
                 );
             i += 1;
@@ -37,27 +35,24 @@ mod transaction_get_nonce {
     }
 }
 
-// TODO: find a tx w/ gas price
-// #[starknet::contract]
-// mod transaction_get_gas_price {
-//     use hdp_cairo::{HDP, evm::block_tx::{BlockTxTrait, BlockTxKey, BlockTxImpl}};
+#[starknet::contract]
+mod transaction_get_gas_price {
+    use hdp_cairo::{HDP, evm::block_tx::{BlockTxTrait, BlockTxKey, BlockTxImpl}};
 
-//     #[storage]
-//     struct Storage {}
+    #[storage]
+    struct Storage {}
 
-//     #[external(v0)]
-//     pub fn main(ref self: ContractState, hdp: HDP) {
-//         assert!(
-//             hdp
-//                 .evm
-//                 .block_tx_get_gas_price(
-//                     BlockTxKey {
-//                         chain_id: 11155111, block_number: 5382809, transaction_index: 217,
-//                     },
-//                 ) == u256 { low: 0x1a48b6b, high: 0x0 },
-//         );
-//     }
-// }
+    #[external(v0)]
+    pub fn main(ref self: ContractState, hdp: HDP) {
+        assert!(
+            hdp
+                .evm
+                .block_tx_get_gas_price(
+                    BlockTxKey { chain_id: 11155111, block_number: 7692344, transaction_index: 0 },
+                ) == u256 { low: 0x13ca651200, high: 0x0 },
+        );
+    }
+}
 
 #[starknet::contract]
 mod transaction_get_gas_limit {
@@ -72,10 +67,8 @@ mod transaction_get_gas_limit {
             hdp
                 .evm
                 .block_tx_get_gas_limit(
-                    BlockTxKey {
-                        chain_id: 11155111, block_number: 5382809, transaction_index: 217,
-                    },
-                ) == u256 { low: 0x30d40, high: 0x0 },
+                    BlockTxKey { chain_id: 11155111, block_number: 7692344, transaction_index: 0 },
+                ) == u256 { low: 0x8066, high: 0x0 },
         );
     }
 }
@@ -93,10 +86,11 @@ mod transaction_get_receiver {
             hdp
                 .evm
                 .block_tx_get_receiver(
-                    BlockTxKey {
-                        chain_id: 11155111, block_number: 5382809, transaction_index: 217,
-                    },
-                ) == u256 { low: 0xf0ab037fe771fc36d39c1e19bcc0fdb5, high: 0x7a4ee6f9 },
+                    BlockTxKey { chain_id: 11155111, block_number: 7692344, transaction_index: 0 },
+                ) == u256 {
+                    low: 0x1b27950eF0215CDF5414dDCFc93E8730,
+                    high: 0x00000000000000000000000066dA461A,
+                },
         );
     }
 }
@@ -114,9 +108,7 @@ mod transaction_get_value {
             hdp
                 .evm
                 .block_tx_get_value(
-                    BlockTxKey {
-                        chain_id: 11155111, block_number: 5382809, transaction_index: 217,
-                    },
+                    BlockTxKey { chain_id: 11155111, block_number: 7692344, transaction_index: 0 },
                 ) == u256 { low: 0x0, high: 0x0 },
         );
     }
@@ -135,10 +127,8 @@ mod transaction_get_v {
             hdp
                 .evm
                 .block_tx_get_v(
-                    BlockTxKey {
-                        chain_id: 11155111, block_number: 5382809, transaction_index: 217,
-                    },
-                ) == u256 { low: 0x0, high: 0x0 },
+                    BlockTxKey { chain_id: 11155111, block_number: 7692344, transaction_index: 14 },
+                ) == u256 { low: 0x1, high: 0x0 },
         );
     }
 }
@@ -156,12 +146,10 @@ mod transaction_get_r {
             hdp
                 .evm
                 .block_tx_get_r(
-                    BlockTxKey {
-                        chain_id: 11155111, block_number: 5382809, transaction_index: 217,
-                    },
+                    BlockTxKey { chain_id: 11155111, block_number: 7692344, transaction_index: 0 },
                 ) == u256 {
-                    low: 0xa81dea211de2ece189bf6d4ab2a6ad92,
-                    high: 0x1c110385b6b091253b50a924d37194c9,
+                    low: 0x3330f4d401e28a15eca335e36aae0f6d,
+                    high: 0xab351c4e42fa9fa986ff8dff111098c6,
                 },
         );
     }
@@ -180,12 +168,10 @@ mod transaction_get_s {
             hdp
                 .evm
                 .block_tx_get_s(
-                    BlockTxKey {
-                        chain_id: 11155111, block_number: 5382809, transaction_index: 217,
-                    },
+                    BlockTxKey { chain_id: 11155111, block_number: 7692344, transaction_index: 0 },
                 ) == u256 {
-                    low: 0x3c55c500af8e549833123c1e46f82aa2,
-                    high: 0x20312b6d21359afdb5877dac42d0632,
+                    low: 0x7013fd6e83d6662112aa5213b160b991,
+                    high: 0x70d642f2986d9dad3c76e18a256894cd,
                 },
         );
     }
@@ -204,55 +190,55 @@ mod transaction_get_chain_id {
             hdp
                 .evm
                 .block_tx_get_chain_id(
-                    BlockTxKey {
-                        chain_id: 11155111, block_number: 5382809, transaction_index: 217,
-                    },
+                    BlockTxKey { chain_id: 11155111, block_number: 7692344, transaction_index: 14 },
                 ) == u256 { low: 0xaa36a7, high: 0x0 },
         );
     }
 }
 
-#[starknet::contract]
-mod transaction_get_max_fee_per_gas {
-    use hdp_cairo::{HDP, evm::block_tx::{BlockTxTrait, BlockTxKey, BlockTxImpl}};
+// TODO: uncomment when the indexer is able to resolve the tx
+// #[starknet::contract]
+// mod transaction_get_max_fee_per_gas {
+//     use hdp_cairo::{HDP, evm::block_tx::{BlockTxTrait, BlockTxKey, BlockTxImpl}};
 
-    #[storage]
-    struct Storage {}
+//     #[storage]
+//     struct Storage {}
 
-    #[external(v0)]
-    pub fn main(ref self: ContractState, hdp: HDP) {
-        assert!(
-            hdp
-                .evm
-                .block_tx_get_max_fee_per_gas(
-                    BlockTxKey {
-                        chain_id: 11155111, block_number: 5382809, transaction_index: 217,
-                    },
-                ) == u256 { low: 0x5f5e100, high: 0x0 },
-        );
-    }
-}
+//     #[external(v0)]
+//     pub fn main(ref self: ContractState, hdp: HDP) {
+//         assert!(
+//             hdp
+//                 .evm
+//                 .block_tx_get_max_fee_per_gas(
+//                     BlockTxKey {
+//                         chain_id: 11155111, block_number: 5382809, transaction_index: 217,
+//                     },
+//                 ) == u256 { low: 0x5f5e100, high: 0x0 },
+//         );
+//     }
+// }
 
-#[starknet::contract]
-mod transaction_get_max_priority_fee_per_gas {
-    use hdp_cairo::{HDP, evm::block_tx::{BlockTxTrait, BlockTxKey, BlockTxImpl}};
+// TODO: uncomment when the indexer is able to resolve the tx
+// #[starknet::contract]
+// mod transaction_get_max_priority_fee_per_gas {
+//     use hdp_cairo::{HDP, evm::block_tx::{BlockTxTrait, BlockTxKey, BlockTxImpl}};
 
-    #[storage]
-    struct Storage {}
+//     #[storage]
+//     struct Storage {}
 
-    #[external(v0)]
-    pub fn main(ref self: ContractState, hdp: HDP) {
-        assert!(
-            hdp
-                .evm
-                .block_tx_get_max_priority_fee_per_gas(
-                    BlockTxKey {
-                        chain_id: 11155111, block_number: 5382809, transaction_index: 217,
-                    },
-                ) == u256 { low: 0x186a0, high: 0x0 },
-        );
-    }
-}
+//     #[external(v0)]
+//     pub fn main(ref self: ContractState, hdp: HDP) {
+//         assert!(
+//             hdp
+//                 .evm
+//                 .block_tx_get_max_priority_fee_per_gas(
+//                     BlockTxKey {
+//                         chain_id: 11155111, block_number: 5382809, transaction_index: 217,
+//                     },
+//                 ) == u256 { low: 0x186a0, high: 0x0 },
+//         );
+//     }
+// }
 
 // TODO: find a tx w/ blob gas
 // #[starknet::contract]
@@ -269,7 +255,7 @@ mod transaction_get_max_priority_fee_per_gas {
 //                 .evm
 //                 .block_tx_get_max_fee_per_blob_gas(
 //                     BlockTxKey {
-//                         chain_id: 11155111, block_number: 5382809, transaction_index: 217,
+//                         chain_id: 11155111, block_number: 7692344, transaction_index: 0,
 //                     },
 //                 ) == u256 { low: 0x3, high: 0x0 },
 //         );
@@ -289,10 +275,8 @@ mod transaction_get_tx_type {
             hdp
                 .evm
                 .block_tx_get_tx_type(
-                    BlockTxKey {
-                        chain_id: 11155111, block_number: 5382809, transaction_index: 217,
-                    },
-                ) == u256 { low: 0x2, high: 0x0 },
+                    BlockTxKey { chain_id: 11155111, block_number: 7692344, transaction_index: 0 },
+                ) == u256 { low: 0x0, high: 0x0 },
         );
     }
 }
@@ -310,10 +294,11 @@ mod transaction_get_sender {
             hdp
                 .evm
                 .block_tx_get_sender(
-                    BlockTxKey {
-                        chain_id: 11155111, block_number: 5382809, transaction_index: 217,
-                    },
-                ) == u256 { low: 0x5f51129cf2ae0c175535460fe055267e, high: 0xc369705f },
+                    BlockTxKey { chain_id: 11155111, block_number: 7692344, transaction_index: 0 },
+                ) == u256 {
+                    low: 0x7073DDdA4Fc7FA9C215d32DeA90e6af0,
+                    high: 0x000000000000000000000000401bF248,
+                },
         );
     }
 }
@@ -331,12 +316,10 @@ mod transaction_get_hash {
             hdp
                 .evm
                 .block_tx_get_hash(
-                    BlockTxKey {
-                        chain_id: 11155111, block_number: 5382809, transaction_index: 217,
-                    },
+                    BlockTxKey { chain_id: 11155111, block_number: 7692344, transaction_index: 0 },
                 ) == u256 {
-                    low: 0x88b3e55ed30c8d9894f8a8657798802a,
-                    high: 0xb1df739d499c7dfae023893bb506ead6,
+                    low: 0xd5b6d3bd82871adf40781ac3b842322,
+                    high: 0x7af28779b0b27c15572d5e425d0f4cef,
                 },
         );
     }

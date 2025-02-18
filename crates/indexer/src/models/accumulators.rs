@@ -8,10 +8,13 @@ use super::{BlockHeader, HashingFunction};
 
 /// Enum for available contract types
 #[derive(Debug, Serialize)]
-#[serde(rename_all = "UPPERCASE")]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ContractType {
-    Aggregator,
-    Accumulator,
+    /// Satellite contract type is used for all EVM contracts
+    Satellite,
+    /// Mmr contract type is used only for Starknet HeadersStore contracts
+    Mmr,
+    /// Remapper contract type is used only for Starknet TimestampRemappers contracts
     Remapper,
 }
 
@@ -34,10 +37,10 @@ pub struct IndexerQuery {
 impl IndexerQuery {
     pub fn new(chain_id: u128, from_block: BlockNumber, to_block: BlockNumber) -> Self {
         Self {
-            deployed_on_chain: 11155111, // For now this is the only thing that is supported
+            deployed_on_chain: 11155111,
             accumulates_chain: chain_id,
             hashing_function: HashingFunction::Poseidon,
-            contract_type: ContractType::Aggregator,
+            contract_type: ContractType::Mmr,
             from_block_number_inclusive: from_block,
             to_block_number_inclusive: to_block,
             is_meta_included: true,

@@ -13,7 +13,7 @@ name = "hdp_cairo"
 version = "0.1.0"
 
 [[package]]
-name = "modules"
+name = "tests"
 version = "0.1.0"
 dependencies = [
  "hdp_cairo",
