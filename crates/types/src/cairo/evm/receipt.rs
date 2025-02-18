@@ -1,19 +1,24 @@
 use alloy::{
-    consensus::{Eip658Value, Receipt, ReceiptWithBloom},
+    consensus::{Eip658Value, Receipt, ReceiptWithBloom, TxReceipt},
     primitives::keccak256,
     rpc::types::Log,
 };
 use alloy_rlp::{Decodable, Encodable};
+use cairo_vm::Felt252;
 use strum_macros::FromRepr;
 
-use crate::cairo::structs::Uint256;
+use crate::cairo::{structs::Uint256, BYTES31_SIZE};
 
 #[derive(FromRepr, Debug)]
 pub enum FunctionId {
     Status = 0,
     CumulativeGasUsed = 1,
     Bloom = 2,
-    Logs = 3,
+    Topic0 = 3,
+    Topic1 = 4,
+    Topic2 = 5,
+    Topic3 = 6,
+    Data = 7,
 }
 
 #[derive(Debug)]
@@ -53,12 +58,25 @@ impl CairoReceiptWithBloom {
         Self(<ReceiptWithBloom>::decode(&mut rlp).unwrap())
     }
 
-    pub fn handle(&self, function_id: FunctionId) -> Uint256 {
+    pub fn handle(&self, function_id: FunctionId) -> Vec<Felt252> {
         match function_id {
-            FunctionId::Status => self.status(),
-            FunctionId::CumulativeGasUsed => self.cumulative_gas_used(),
-            FunctionId::Bloom => panic!("Bloom function id is not supported"),
-            FunctionId::Logs => panic!("Logs function id is not supported"),
+            FunctionId::Status => <Uint256 as Into<[Felt252; 2]>>::into(self.status()).to_vec(),
+            FunctionId::CumulativeGasUsed => <Uint256 as Into<[Felt252; 2]>>::into(self.cumulative_gas_used()).to_vec(),
+            FunctionId::Bloom => <Uint256 as Into<[Felt252; 2]>>::into(self.bloom()).to_vec(),
+            FunctionId::Topic0 => <Uint256 as Into<[Felt252; 2]>>::into(self.0.logs().first().unwrap().data.topics()[0].into()).to_vec(),
+            FunctionId::Topic1 => <Uint256 as Into<[Felt252; 2]>>::into(self.0.logs().first().unwrap().data.topics()[1].into()).to_vec(),
+            FunctionId::Topic2 => <Uint256 as Into<[Felt252; 2]>>::into(self.0.logs().first().unwrap().data.topics()[2].into()).to_vec(),
+            FunctionId::Topic3 => <Uint256 as Into<[Felt252; 2]>>::into(self.0.logs().first().unwrap().data.topics()[3].into()).to_vec(),
+            FunctionId::Data => self
+                .0
+                .logs()
+                .first()
+                .unwrap()
+                .data
+                .data
+                .chunks(BYTES31_SIZE)
+                .map(Felt252::from_bytes_be_slice)
+                .collect(),
         }
     }
 }
