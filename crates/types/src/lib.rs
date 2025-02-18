@@ -2,6 +2,7 @@
 #![warn(unused_extern_crates)]
 #![warn(unused_crate_dependencies)]
 #![forbid(unsafe_code)]
+#![feature(iter_next_chunk)]
 
 pub mod cairo;
 pub mod error;
@@ -10,6 +11,7 @@ pub mod param;
 pub mod proofs;
 
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
+use cairo_vm::Felt252;
 use param::Param;
 use proofs::{evm, starknet};
 use serde::{Deserialize, Serialize};
@@ -51,6 +53,43 @@ impl ChainProofs {
             ChainProofs::EthereumSepolia(_) => 0xaa36a7,
             ChainProofs::StarknetMainnet(_) => 0x534e5f4d41494e,
             ChainProofs::StarknetSepolia(_) => 0x534e5f5345504f4c4941,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct MmrMetaOutput {
+    pub id: Felt252,
+    pub size: Felt252,
+    pub root: Felt252,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct HDPOutput {
+    pub program_hash: Felt252,
+    pub result_low: Felt252,
+    pub result_high: Felt252,
+    pub mmr_metas: Vec<MmrMetaOutput>,
+}
+
+impl FromIterator<Felt252> for HDPOutput {
+    fn from_iter<T: IntoIterator<Item = Felt252>>(iter: T) -> Self {
+        let mut i = iter.into_iter();
+        let program_hash = i.next().unwrap();
+        let result_low = i.next().unwrap();
+        let result_high = i.next().unwrap();
+
+        let mut mmr_metas = Vec::<MmrMetaOutput>::new();
+
+        while let Ok([id, root, size]) = i.next_chunk::<3>() {
+            mmr_metas.push(MmrMetaOutput { id, root, size });
+        }
+
+        Self {
+            program_hash,
+            result_low,
+            result_high,
+            mmr_metas,
         }
     }
 }

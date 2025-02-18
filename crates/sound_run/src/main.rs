@@ -7,12 +7,12 @@ use std::{env, path::PathBuf};
 
 use cairo_vm::{
     cairo_run::{self, cairo_run_program},
-    types::{layout::CairoLayoutParams, layout_name::LayoutName, program::Program},
+    types::{layout::CairoLayoutParams, layout_name::LayoutName, program::Program, relocatable::Relocatable},
 };
 use clap::Parser;
 use sound_hint_processor::CustomHintProcessor;
-use tracing::debug;
-use types::{error::Error, ChainProofs, HDPDryRunInput, HDPInput};
+use tracing::{debug, info};
+use types::{error::Error, ChainProofs, HDPDryRunInput, HDPInput, HDPOutput};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -99,10 +99,19 @@ async fn main() -> Result<(), Error> {
 
     debug!("{:?}", cairo_runner.get_execution_resources());
 
+    let segment_index = cairo_runner.vm.get_output_builtin_mut()?.base();
+    let segment_size = cairo_runner.vm.segments.compute_effective_sizes()[segment_index];
+
+    let iter = cairo_runner
+        .vm
+        .get_range(Relocatable::from((segment_index as isize, 0)), segment_size)
+        .into_iter()
+        .map(|v| v.clone().unwrap().get_int().unwrap());
+
+    let output = HDPOutput::from_iter(iter);
+
     if args.print_output {
-        let mut output_buffer = "Program Output:\n".to_string();
-        cairo_runner.vm.write_output(&mut output_buffer)?;
-        print!("{output_buffer}");
+        info!("{:#?}", output);
     }
 
     if let Some(ref file_name) = args.cairo_pie_output {
