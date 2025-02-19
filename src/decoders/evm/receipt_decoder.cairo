@@ -1,9 +1,11 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
-from src.utils.rlp import rlp_list_retrieve, le_chunks_to_be_uint256, get_rlp_list_meta
+from src.utils.rlp import rlp_list_retrieve, le_chunks_to_be_uint256, get_rlp_list_meta, get_rlp_len
 from src.utils.chain_info import ChainInfo
 from starkware.cairo.common.uint256 import Uint256
 from src.utils.chain_info import fetch_chain_info
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
+
+const LONG_SIZE = 4;
 
 namespace ReceiptField {
     const SUCCESS = 0;
@@ -13,7 +15,8 @@ namespace ReceiptField {
     const TOPIC1 = 4;
     const TOPIC2 = 5;
     const TOPIC3 = 6;
-    const DATA = 7;
+    const TOPIC4 = 7;
+    const DATA = 8;
 }
 
 namespace ReceiptDecoder {
@@ -26,28 +29,49 @@ namespace ReceiptDecoder {
         chain_id: felt,
     ) -> Uint256 {
         alloc_locals;
-        if (field == ReceiptField.BLOOM) {
-            assert 1 = 0;  // returns as felt
-        }
+        let (local value_start_offset) = get_rlp_list_meta(rlp, rlp_start_offset);
 
         if (field == ReceiptField.TOPIC0) {
-            assert 1 = 0;  // returns as felt
+            let (local value_start_offset) = get_rlp_list_meta(rlp, value_start_offset + 3 * LONG_SIZE);
+            let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, field - ReceiptField.TOPIC0, value_start_offset + 2 * LONG_SIZE, 0);
+            let uint_res = le_chunks_to_be_uint256(res, res_len, bytes_len);
+            return uint_res;
         }
 
         if (field == ReceiptField.TOPIC1) {
-            assert 1 = 0;  // returns as felt
+            let (local value_start_offset) = get_rlp_list_meta(rlp, value_start_offset + 3 * LONG_SIZE);
+            let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, field - ReceiptField.TOPIC0, value_start_offset + 2 * LONG_SIZE, 0);
+            let uint_res = le_chunks_to_be_uint256(res, res_len, bytes_len);
+            return uint_res;
         }
 
         if (field == ReceiptField.TOPIC2) {
-            assert 1 = 0;  // returns as felt
+            let (local value_start_offset) = get_rlp_list_meta(rlp, value_start_offset + 3 * LONG_SIZE);
+            let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, field - ReceiptField.TOPIC0, value_start_offset + 2 * LONG_SIZE, 0);
+            let uint_res = le_chunks_to_be_uint256(res, res_len, bytes_len);
+            return uint_res;
         }
 
         if (field == ReceiptField.TOPIC3) {
-            assert 1 = 0;  // returns as felt
+            let (local value_start_offset) = get_rlp_list_meta(rlp, value_start_offset + 3 * LONG_SIZE);
+            let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, field - ReceiptField.TOPIC0, value_start_offset + 2 * LONG_SIZE, 0);
+            let uint_res = le_chunks_to_be_uint256(res, res_len, bytes_len);
+            return uint_res;
+        }
+
+        if (field == ReceiptField.TOPIC4) {
+            let (local value_start_offset) = get_rlp_list_meta(rlp, value_start_offset + 3 * LONG_SIZE);
+            let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, field - ReceiptField.TOPIC0, value_start_offset + 2 * LONG_SIZE, 0);
+            let uint_res = le_chunks_to_be_uint256(res, res_len, bytes_len);
+            return uint_res;
         }
 
         if (field == ReceiptField.DATA) {
-            assert 1 = 0;  // returns as felt
+            let (local value_start_offset) = get_rlp_list_meta(rlp, value_start_offset + 3 * LONG_SIZE);
+            let rlp_len = get_rlp_len(rlp, value_start_offset + 2 * LONG_SIZE);
+            let rlp_len = get_rlp_len(rlp, value_start_offset + value_start_offset + rlp_len);
+            // return (rlp, rlp_len) list
+            return (Uint256(low=0, high=0));
         }
 
         let (chain_info) = fetch_chain_info(chain_id);
@@ -71,7 +95,6 @@ namespace ReceiptDecoder {
         assert [range_check_ptr] = block_number - chain_info.byzantium;
         tempvar range_check_ptr = range_check_ptr + 1;
 
-        let (local value_start_offset) = get_rlp_list_meta(rlp, rlp_start_offset);
         let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, field, value_start_offset, 0);
         let uint_res = le_chunks_to_be_uint256(res, res_len, bytes_len);
         return uint_res;
