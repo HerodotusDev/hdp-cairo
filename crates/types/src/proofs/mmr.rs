@@ -9,6 +9,7 @@ pub struct MmrMeta {
     pub size: u64,
     pub root: Bytes,
     pub peaks: Vec<Bytes>,
+    pub chain_id: u64,
 }
 
 #[derive(thiserror::Error, Debug)]

@@ -26,6 +26,7 @@ func validate_mmr_meta_evm{range_check_ptr, poseidon_ptr: PoseidonBuiltin*, pow2
         id=nondet %{ header_with_mmr_evm.mmr_meta.id %},
         root=nondet %{ header_with_mmr_evm.mmr_meta.root %},
         size=nondet %{ header_with_mmr_evm.mmr_meta.size %},
+        chain_id=nondet %{ header_with_mmr_evm.mmr_meta.chain_id %},
     );
 
     tempvar peaks_len: felt = nondet %{ len(header_with_mmr_evm.mmr_meta.peaks) %};
@@ -64,6 +65,7 @@ func validate_mmr_meta_starknet{range_check_ptr, poseidon_ptr: PoseidonBuiltin*,
         id=nondet %{ header_with_mmr_starknet.mmr_meta.id %},
         root=nondet %{ header_with_mmr_starknet.mmr_meta.root %},
         size=nondet %{ header_with_mmr_starknet.mmr_meta.size %},
+        chain_id=nondet %{ header_with_mmr_starknet.mmr_meta.chain_id %},
     );
 
     tempvar peaks_len: felt = nondet %{ len(header_with_mmr_starknet.mmr_meta.peaks) %};
