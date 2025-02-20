@@ -7,7 +7,8 @@ use std::{env, str::FromStr};
 use cairo_vm::{
     cairo_run::{self, cairo_run_program},
     types::{layout_name::LayoutName, program::Program},
-    vm::runners::cairo_pie::CairoPie, Felt252,
+    vm::runners::cairo_pie::CairoPie,
+    Felt252,
 };
 use sound_hint_processor::CustomHintProcessor;
 use types::{error::Error, HDPInput};
@@ -33,12 +34,9 @@ pub fn exec(input: HDPInput) -> Result<(CairoPie, Vec<Felt252>), Error> {
 
     let mut output_buffer = String::new();
     cairo_runner.vm.write_output(&mut output_buffer)?;
-    
+
     // Parse the output into separate lines, skipping the "Program Output:" header
-    let outputs: Vec<Felt252> = output_buffer
-        .lines()
-        .map(|s| Felt252::from_str(s).unwrap())
-        .collect();
+    let outputs: Vec<Felt252> = output_buffer.lines().map(|s| Felt252::from_str(s).unwrap()).collect();
 
     Ok((pie, outputs))
 }
