@@ -105,8 +105,8 @@ namespace EvmDecoder {
             );
             invoke(func_ptr, 9, invoke_params);
 
-            let res_array = cast([ap - 1], felt*);
-            let res_len = [ap - 2];
+            let res_len = [ap - 1];
+            let res_array = cast([ap - 2], felt*);
             let pow2_array = cast([ap - 3], felt*);
             let bitwise_ptr = cast([ap - 4], BitwiseBuiltin*);
             let range_check_ptr = [ap - 5];
@@ -133,8 +133,8 @@ namespace EvmDecoder {
                 felt*,
             );
             invoke(func_ptr, 9, invoke_params);
-            let res_array = cast([ap - 1], felt*);
-            let res_len = [ap - 2];
+            let res_len = [ap - 1];
+            let res_array = cast([ap - 2], felt*);
             let pow2_array = cast([ap - 3], felt*);
             let bitwise_ptr = cast([ap - 4], BitwiseBuiltin*);
             let range_check_ptr = [ap - 5];
@@ -147,8 +147,8 @@ namespace EvmDecoder {
         );
 
         invoke(func_ptr, 5, invoke_params);
-        let res_array = cast([ap - 1], felt*);
-        let res_len = [ap - 2];
+        let res_len = [ap - 1];
+        let res_array = cast([ap - 2], felt*);
         let pow2_array = cast([ap - 3], felt*);
         let bitwise_ptr = cast([ap - 4], BitwiseBuiltin*);
         let range_check_ptr = [ap - 5];
