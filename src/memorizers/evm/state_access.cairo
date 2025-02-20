@@ -1,22 +1,18 @@
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin, KeccakBuiltin
-from starkware.cairo.common.uint256 import uint256_reverse_endian, Uint256
-from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.registers import get_label_location
-from starkware.cairo.common.invoke import invoke
-from starkware.cairo.common.dict_access import DictAccess
-
-from src.memorizers.evm.memorizer import EvmMemorizer, EvmHashParams2
-from src.decoders.evm.header_decoder import HeaderDecoder as EvmHeaderDecoder
 from src.decoders.evm.account_decoder import AccountDecoder as EvmAccountDecoder
+from src.decoders.evm.header_decoder import HeaderDecoder as EvmHeaderDecoder
+from src.decoders.evm.receipt_decoder import ReceiptDecoder as EvmReceiptDecoder
 from src.decoders.evm.storage_slot_decoder import StorageSlotDecoder as EvmStorageSlotDecoder
 from src.decoders.evm.transaction_decoder import TransactionDecoder as EvmTransactionDecoder
-from src.decoders.evm.receipt_decoder import ReceiptDecoder as EvmReceiptDecoder
+from src.memorizers.evm.memorizer import EvmMemorizer, EvmHashParams2
+from starkware.cairo.common.alloc import alloc
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin, KeccakBuiltin
+from starkware.cairo.common.dict_access import DictAccess
+from starkware.cairo.common.invoke import invoke
+from starkware.cairo.common.memcpy import memcpy
+from starkware.cairo.common.registers import get_label_location
+from starkware.cairo.common.uint256 import uint256_reverse_endian, Uint256
 
 from src.utils.chain_info import Layout
-
-namespace EvmDecoderTarget {
-    const UINT256 = 0;  // returns a Uint256
-}
 
 namespace EvmStateAccessType {
     const HEADER = 0;
@@ -27,27 +23,22 @@ namespace EvmStateAccessType {
 }
 
 namespace EvmDecoder {
-    func init() -> felt*** {
+    func init() -> felt** {
         // these decoders return a native word, so Uint256
-        let (word_handlers: felt**) = alloc();
+        let (handlers: felt**) = alloc();
         let (header_label) = get_label_location(EvmHeaderDecoder.get_field);
         let (account_label) = get_label_location(EvmAccountDecoder.get_field);
         let (storage_label) = get_label_location(EvmStorageSlotDecoder.get_word);
         let (tx_label) = get_label_location(EvmTransactionDecoder.get_field);
         let (receipt_label) = get_label_location(EvmReceiptDecoder.get_field);
 
-        assert word_handlers[EvmStateAccessType.HEADER] = header_label;
-        assert word_handlers[EvmStateAccessType.ACCOUNT] = account_label;
-        assert word_handlers[EvmStateAccessType.STORAGE] = storage_label;
-        assert word_handlers[EvmStateAccessType.BLOCK_TX] = tx_label;
-        assert word_handlers[EvmStateAccessType.BLOCK_RECEIPT] = receipt_label;
+        assert handlers[EvmStateAccessType.HEADER] = header_label;
+        assert handlers[EvmStateAccessType.ACCOUNT] = account_label;
+        assert handlers[EvmStateAccessType.STORAGE] = storage_label;
+        assert handlers[EvmStateAccessType.BLOCK_TX] = tx_label;
+        assert handlers[EvmStateAccessType.BLOCK_RECEIPT] = receipt_label;
 
-        // ToDo: Later one we can add other types of decoders, like for example RLP bytes or arrays
-
-        let (evm_decoder_ptr: felt***) = alloc();
-        assert evm_decoder_ptr[EvmDecoderTarget.UINT256] = word_handlers;
-
-        return evm_decoder_ptr;
+        return handlers;
     }
 
     // A generic function for decoding values via the different EVM decoders.
@@ -56,7 +47,6 @@ namespace EvmDecoder {
     // - rlp: The RLP encoded data
     // - state_access_type: The id of the state to decode (EvmStateAccessType) -> E.g. EvmStateAccessType.Header
     // - field: The field of the specified state to decode (e.g HeaderField.GAS_LIMIT)
-    // - decoder_target: The target format for the decoding (EvmDecoderTarget) -> E.g. EvmDecoderTarget.UINT256
     // - as_be: Whether to return the result as big endian
     // Returns:
     // - The length of the result in felts
@@ -64,7 +54,7 @@ namespace EvmDecoder {
         range_check_ptr,
         bitwise_ptr: BitwiseBuiltin*,
         pow2_array: felt*,
-        evm_decoder_ptr: felt***,
+        evm_decoder_ptr: felt**,
         output_ptr: felt*,
         keccak_ptr: KeccakBuiltin*,
     }(
@@ -73,30 +63,21 @@ namespace EvmDecoder {
         field: felt,
         block_number: felt,
         chain_id: felt,
-        decoder_target: felt,
-    ) -> (result_len: felt) {
-        alloc_locals;  // ToDo: solve output_ptr revoke and remove this
+    ) -> () {
+        alloc_locals;
 
-        let func_ptr = evm_decoder_ptr[decoder_target][state_access_type];
-        if (decoder_target == EvmDecoderTarget.UINT256) {
-            let (res_low, res_high) = _invoke_and_retrieve_uint256(
-                func_ptr, state_access_type, field, block_number, chain_id, rlp
-            );
+        let func_ptr = evm_decoder_ptr[state_access_type];
+        let (res_array, res_len) = call_decoder(
+            func_ptr, state_access_type, field, block_number, chain_id, rlp
+        );
 
-            assert output_ptr[0] = res_low;
-            assert output_ptr[1] = res_high;
+        // Assert correct output_ptr values
+        memcpy(dst=output_ptr, src=res_array, len=res_len);
 
-            return (result_len=2);
-        } else {
-            with_attr error_message("Selected EvmDecoderTarget not implemented") {
-                assert 1 = 0;
-            }
-
-            return (result_len=0);
-        }
+        return ();
     }
 
-    func _invoke_and_retrieve_uint256{
+    func call_decoder{
         range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*
     }(
         func_ptr: felt*,
@@ -105,7 +86,7 @@ namespace EvmDecoder {
         block_number: felt,
         chain_id: felt,
         rlp: felt*,
-    ) -> (low: felt, high: felt) {
+    ) -> (res_array: felt*, res_len: felt) {
         if (state_access_type == EvmStateAccessType.BLOCK_TX) {
             let (tx_type, rlp_start_offset) = EvmTransactionDecoder.open_tx_envelope(rlp);
             tempvar invoke_params = cast(
@@ -124,14 +105,14 @@ namespace EvmDecoder {
             );
             invoke(func_ptr, 9, invoke_params);
 
-            let res_high = [ap - 1];
-            let res_low = [ap - 2];
+            let res_array = cast([ap - 1], felt*);
+            let res_len = [ap - 2];
             let pow2_array = cast([ap - 3], felt*);
             let bitwise_ptr = cast([ap - 4], BitwiseBuiltin*);
             let range_check_ptr = [ap - 5];
             let keccak_ptr = cast([ap - 6], KeccakBuiltin*);
 
-            return (low=res_low, high=res_high);
+            return (res_array=res_array, res_len=res_len);
         }
 
         // ToDo: this (probably) is broken
@@ -152,13 +133,13 @@ namespace EvmDecoder {
                 felt*,
             );
             invoke(func_ptr, 9, invoke_params);
-            let res_high = [ap - 1];
-            let res_low = [ap - 2];
+            let res_array = cast([ap - 1], felt*);
+            let res_len = [ap - 2];
             let pow2_array = cast([ap - 3], felt*);
             let bitwise_ptr = cast([ap - 4], BitwiseBuiltin*);
             let range_check_ptr = [ap - 5];
 
-            return (low=res_low, high=res_high);
+            return (res_array=res_array, res_len=res_len);
         }
 
         tempvar invoke_params = cast(
@@ -166,13 +147,13 @@ namespace EvmDecoder {
         );
 
         invoke(func_ptr, 5, invoke_params);
-        let res_high = [ap - 1];
-        let res_low = [ap - 2];
+        let res_array = cast([ap - 1], felt*);
+        let res_len = [ap - 2];
         let pow2_array = cast([ap - 3], felt*);
         let bitwise_ptr = cast([ap - 4], BitwiseBuiltin*);
         let range_check_ptr = [ap - 5];
 
-        return (low=res_low, high=res_high);
+        return (res_array=res_array, res_len=res_len);
     }
 }
 
@@ -203,7 +184,6 @@ namespace EvmStateAccess {
     // - params: The parameters for the memorizer key
     // - state_access_type: The id of the state to decode (EvmStateAccessType) -> E.g. EvmStateAccessType.Header
     // - field: The field of the specified state to decode (e.g HeaderField.GAS_LIMIT)
-    // - decoder_target: The target format for the decoding (EvmDecoderTarget) -> E.g. EvmDecoderTarget.UINT256
     // - as_be: Whether to return the result as big endian
     // Returns:
     // - The length of the result in felts
@@ -213,13 +193,11 @@ namespace EvmStateAccess {
         bitwise_ptr: BitwiseBuiltin*,
         keccak_ptr: KeccakBuiltin*,
         evm_memorizer: DictAccess*,
-        evm_decoder_ptr: felt***,
+        evm_decoder_ptr: felt**,
         evm_key_hasher_ptr: felt**,
         pow2_array: felt*,
         output_ptr: felt*,
-    }(params: felt*, state_access_type: felt, field: felt, decoder_target: felt) -> (
-        result_len: felt
-    ) {
+    }(params: felt*, state_access_type: felt, field: felt) -> () {
         alloc_locals;  // ToDo: currently needed to retrieve the poseidon_ptr from the _compute_memorizer_key call. Find way to remove this
 
         let (memorizer_key) = _compute_memorizer_key(params, state_access_type);
@@ -228,11 +206,11 @@ namespace EvmStateAccess {
         // In EVM, the block number is always the second param. Ensure this doesnt change in the future
         let chain_id = params[0];
         let block_number = params[1];
-        let (result_len) = EvmDecoder.decode(
-            rlp, state_access_type, field, block_number, chain_id, decoder_target
+        EvmDecoder.decode(
+            rlp, state_access_type, field, block_number, chain_id
         );
 
-        return (result_len=result_len);
+        return ();
     }
 
     // Computes the memorizer key by invoking the corresponding key hasher

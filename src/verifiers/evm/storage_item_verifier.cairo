@@ -117,7 +117,7 @@ func verify_storage_item{
         chain_id=chain_info.id, block_number=block_number, address=address
     );
     let (account_rlp) = EvmMemorizer.get(key=memorizer_key);
-    let state_root = AccountDecoder.get_field(account_rlp, AccountField.STATE_ROOT);
+    let (state_root: Uint256*, _) = AccountDecoder.get_field(account_rlp, AccountField.STATE_ROOT);
 
     let (rlp: felt*, _value_bytes_len: felt) = verify_mpt_proof(
         mpt_proof=mpt_proof,
@@ -125,7 +125,7 @@ func verify_storage_item{
         mpt_proof_len=proof_len,
         key_be=key,
         key_be_leading_zeroes_nibbles=key_leading_zeros,
-        root=state_root,
+        root=Uint256(low=state_root.low, high=state_root.high),
         pow2_array=pow2_array,
     );
 

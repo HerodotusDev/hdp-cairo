@@ -69,7 +69,7 @@ func verify_block_tx_proofs_inner{
 
     let memorizer_key = EvmHashParams.header(chain_id=chain_info.id, block_number=block_number);
     let (header_rlp) = EvmMemorizer.get(key=memorizer_key);
-    let tx_root = HeaderDecoder.get_field(header_rlp, HeaderField.TRANSACTION_ROOT);
+    let (tx_root: Uint256*, _) = HeaderDecoder.get_field(header_rlp, HeaderField.TRANSACTION_ROOT);
 
     let (rlp, _rlp_len) = verify_mpt_proof{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
@@ -79,7 +79,7 @@ func verify_block_tx_proofs_inner{
         mpt_proof_len=proof_len,
         key_be=key,
         key_be_leading_zeroes_nibbles=key_leading_zeros,
-        root=tx_root,
+        root=Uint256(low=tx_root.low, high=tx_root.high),
         pow2_array=pow2_array,
     );
 
