@@ -25,14 +25,11 @@ RUN python -m venv venv && \
     pip install --upgrade pip && \
     pip install packages/cairo-lang-0.13.1.zip
 
-# Activate the virtual environment for subsequent RUN commands
-ENV VIRTUAL_ENV=/hdp-cairo/venv
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-
 # Copy the project files into the container
 COPY . .
 
-# # Install specific Rust binaries
-RUN cargo install --path ./crates/dry_run
-RUN cargo install --path ./crates/fetcher
-RUN cargo install --path ./crates/sound_run
+# Install specific Rust binaries
+RUN cargo install --path ./crates/cli
+
+ENTRYPOINT ["hdp-cli"]
+CMD ["program-hash"]
