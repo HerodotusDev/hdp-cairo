@@ -14,6 +14,7 @@ pub struct Proofs {
 }
 
 impl Proofs {
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.headers_with_mmr.len() + self.storages.len()
     }

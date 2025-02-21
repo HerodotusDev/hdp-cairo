@@ -1,26 +1,22 @@
-use clap::{Parser, Subcommand};
-use fetcher::{parse_syscall_handler, Fetcher};
 use std::path::PathBuf;
-use types::{error::Error, param::Param, ChainProofs, HDPDryRunInput};
-use syscall_handler::{SyscallHandler, SyscallHandlerWrapper};
-use hints::vars;
 
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use cairo_vm::{
     cairo_run::{self, cairo_run_program},
     types::{layout_name::LayoutName, program::Program},
 };
+use clap::{Parser, Subcommand};
 use dry_hint_processor::{
     syscall_handler::{evm, starknet},
     CustomHintProcessor,
 };
-use sound_hint_processor::{
-    CustomHintProcessor as CustomHintProcessorSound,
-};
-
-use sound_run::HDP_COMPILED_JSON;
 use dry_run::DRY_RUN_COMPILED_JSON;
-use types::HDPInput;
+use fetcher::{parse_syscall_handler, Fetcher};
+use hints::vars;
+use sound_hint_processor::CustomHintProcessor as CustomHintProcessorSound;
+use sound_run::HDP_COMPILED_JSON;
+use syscall_handler::{SyscallHandler, SyscallHandlerWrapper};
+use types::{error::Error, param::Param, ChainProofs, HDPDryRunInput, HDPInput};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about)]
@@ -37,9 +33,18 @@ enum Commands {
         compiled_module: PathBuf,
         #[arg(short = 'i', long = "inputs", help = "Path to the JSON file containing input parameters")]
         inputs: Option<PathBuf>,
-        #[arg(short = 'o', long = "output", default_value = "dry_run_output.json", help = "Path where the output JSON will be written")]
+        #[arg(
+            short = 'o',
+            long = "output",
+            default_value = "dry_run_output.json",
+            help = "Path where the output JSON will be written"
+        )]
         output: PathBuf,
-        #[arg(long = "print_output", default_value_t = false, help = "Print program output to stdout [default: true]")]
+        #[arg(
+            long = "print_output",
+            default_value_t = false,
+            help = "Print program output to stdout [default: true]"
+        )]
         print_output: bool,
         #[arg(long = "proof_mode", default_value_t = false, help = "Enable proof mode [default: false]")]
         proof_mode: bool,
@@ -50,9 +55,18 @@ enum Commands {
         compiled_module: PathBuf,
         #[arg(short = 'i', long = "inputs", help = "Path to the JSON file containing input parameters")]
         inputs: Option<PathBuf>,
-        #[arg(short = 'p', long = "proofs", default_value = "proofs.json", help = "Path to the program proofs file (fetch-proof output)")]
+        #[arg(
+            short = 'p',
+            long = "proofs",
+            default_value = "proofs.json",
+            help = "Path to the program proofs file (fetch-proof output)"
+        )]
         proofs: PathBuf,
-        #[arg(long = "print_output", default_value_t = false, help = "Print program output to stdout [default: true]")]
+        #[arg(
+            long = "print_output",
+            default_value_t = false,
+            help = "Print program output to stdout [default: true]"
+        )]
         print_output: bool,
         #[arg(long = "proof_mode", default_value_t = false, help = "Enable proof mode [default: false]")]
         proof_mode: bool,
@@ -60,12 +74,21 @@ enum Commands {
         cairo_pie_output: Option<PathBuf>,
     },
     FetchProofs {
-        #[arg(short = 'i', long = "inputs", default_value = "dry_run_output.json", help = "The output of the dry_run step")]
+        #[arg(
+            short = 'i',
+            long = "inputs",
+            default_value = "dry_run_output.json",
+            help = "The output of the dry_run step"
+        )]
         inputs: PathBuf,
-        #[arg(short = 'o', long = "output", default_value = "proofs.json", help = "Path where the output JSON will be written")]
+        #[arg(
+            short = 'o',
+            long = "output",
+            default_value = "proofs.json",
+            help = "Path where the output JSON will be written"
+        )]
         output: PathBuf,
     },
-    
 }
 
 #[tokio::main]
@@ -82,7 +105,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         } => {
             println!("Starting dry run execution...");
             println!("Reading compiled module from: {}", compiled_module.display());
-            
+
             let cairo_run_config = cairo_run::CairoRunConfig {
                 trace_enabled: false,
                 relocate_mem: false,
@@ -123,7 +146,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 serde_json::to_vec::<SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler>>(
                     &cairo_runner
                         .exec_scopes
-                        .get::<SyscallHandlerWrapper<evm::CallContractHandler, starknet::CallContractHandler>>(vars::scopes::SYSCALL_HANDLER)
+                        .get::<SyscallHandlerWrapper<evm::CallContractHandler, starknet::CallContractHandler>>(
+                            vars::scopes::SYSCALL_HANDLER,
+                        )
                         .unwrap()
                         .syscall_handler
                         .try_read()
@@ -147,7 +172,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("Starting sound run execution...");
             println!("Reading compiled module from: {}", compiled_module.display());
             println!("Reading proofs from: {}", proofs.display());
-            
+
             let module: CasmContractClass = serde_json::from_slice(&std::fs::read(compiled_module).map_err(Error::IO)?)?;
             let input: Vec<Param> = if let Some(input_path) = inputs {
                 serde_json::from_slice(&std::fs::read(input_path).map_err(Error::IO)?)?
@@ -160,7 +185,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 compiled_class: module,
                 params: input,
                 chain_proofs,
-            };  
+            };
 
             let cairo_run_config = cairo_run::CairoRunConfig {
                 trace_enabled: false,
@@ -199,22 +224,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Commands::FetchProofs { inputs, output } => {
             println!("Reading input file from: {}", inputs.display());
             let input_file = std::fs::read(&inputs).map_err(Error::IO)?;
-            
-            let syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler> = 
+
+            let syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler> =
                 serde_json::from_slice(&input_file)?;
             let proof_keys = parse_syscall_handler(syscall_handler)?;
-            
+
             println!("Fetching proofs from Ethereum and Starknet...");
             let fetcher = Fetcher::new(&proof_keys);
-            let (evm_proofs, starknet_proofs) = tokio::try_join!(
-                fetcher.collect_evm_proofs(),
-                fetcher.collect_starknet_proofs()
-            )?;
-            
+            let (evm_proofs, starknet_proofs) = tokio::try_join!(fetcher.collect_evm_proofs(), fetcher.collect_starknet_proofs())?;
+
             println!("Successfully fetched proofs:");
             println!("  - Ethereum: {} proofs", evm_proofs.len());
             println!("  - Starknet: {} proofs", starknet_proofs.len());
-            
+
             let chain_proofs = vec![
                 ChainProofs::EthereumSepolia(evm_proofs),
                 ChainProofs::StarknetSepolia(starknet_proofs),
@@ -226,7 +248,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 serde_json::to_string_pretty(&chain_proofs)
                     .map_err(|e| Error::IO(e.into()))?
                     .as_bytes(),
-            ).map_err(Error::IO)?;
+            )
+            .map_err(Error::IO)?;
 
             println!("Proofs have been saved successfully.");
             Ok(())
