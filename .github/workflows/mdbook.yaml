@@ -34,22 +34,14 @@ jobs:
       - name: Build with mdBook from ./docs
         run: mdbook build docs
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          name: docs
-          path: ./docs/book
-
       - name: Create program_hash JSON file
         run: |
-          mkdir -p ./docs/program_hash
-          echo '{ "program_hash": "0x0" }' > ./docs/program_hash/program_hash.json
+          echo '{ "program_hash": "0x0" }' > ./docs/book/program_hash.json
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          name: program_hash
-          path: ./docs/program_hash
+          path: ./docs/book
 
   deploy:
     environment:
