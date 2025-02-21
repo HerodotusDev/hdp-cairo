@@ -39,6 +39,16 @@ jobs:
         with:
           path: ./docs/book
 
+      - name: Create program_hash JSON file
+        run: |
+          mkdir -p ./docs/program_hash
+          echo '{ "program_hash": "0x0" }' > ./docs/program_hash/program_hash.json
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./docs/program_hash
+
   deploy:
     environment:
       name: hdp-docs
