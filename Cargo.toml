@@ -13,6 +13,7 @@ members = [
     "crates/sound_run",
     "crates/syscall_handler",
     "crates/types",
+    "crates/cli",
     "tests",
 ]
 
@@ -59,11 +60,13 @@ version-compare = "0.0.11"
 
 cairo_type_derive = { path = "crates/cairo_type_derive" }
 dry_hint_processor = { path = "crates/dry_hint_processor" }
+dry_run = { path = "crates/dry_run" }
 eth_essentials_cairo_vm_hints = { path = "packages/eth_essentials/cairo_vm_hints" }
 fetcher = { path = "crates/fetcher" }
 hints = { path = "crates/hints" }
 indexer = { path = "crates/indexer" }
 pathfinder_gateway_types = { git = "https://github.com/eqlabs/pathfinder", package = "starknet-gateway-types" }
 sound_hint_processor = { path = "crates/sound_hint_processor" }
+sound_run = { path = "crates/sound_run" }
 syscall_handler = { path = "crates/syscall_handler" }
 types = { path = "crates/types" }

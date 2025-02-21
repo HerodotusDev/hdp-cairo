@@ -1,0 +1,20 @@
+[package]
+name = "cli"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "hdp-cli"
+path = "src/main.rs"
+
+[dependencies]
+cairo-lang-starknet-classes.workspace = true
+clap.workspace = true
+dry_hint_processor.workspace = true
+dry_run.workspace = true
+fetcher.workspace = true
+serde_json.workspace = true
+sound_run.workspace = true
+syscall_handler.workspace = true
+tokio.workspace = true
+types.workspace = true

@@ -2,6 +2,7 @@
 #![warn(unused_extern_crates)]
 #![warn(unused_crate_dependencies)]
 #![forbid(unsafe_code)]
+#![feature(iter_next_chunk)]
 
 pub mod cairo;
 pub mod error;
@@ -121,6 +122,65 @@ impl<'de> Deserialize<'de> for ChainIds {
                 }
             }
             _ => Err(serde::de::Error::custom("chain ID must be a string or number")),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct HDPDryRunOutput {
+    pub program_hash: Felt252,
+    pub result_low: Felt252,
+    pub result_high: Felt252,
+}
+
+impl FromIterator<Felt252> for HDPDryRunOutput {
+    fn from_iter<T: IntoIterator<Item = Felt252>>(iter: T) -> Self {
+        let mut i = iter.into_iter();
+        let program_hash = i.next().unwrap();
+        let result_low = i.next().unwrap();
+        let result_high = i.next().unwrap();
+
+        Self {
+            program_hash,
+            result_low,
+            result_high,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct MmrMetaOutput {
+    pub id: Felt252,
+    pub size: Felt252,
+    pub root: Felt252,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct HDPOutput {
+    pub program_hash: Felt252,
+    pub result_low: Felt252,
+    pub result_high: Felt252,
+    pub mmr_metas: Vec<MmrMetaOutput>,
+}
+
+impl FromIterator<Felt252> for HDPOutput {
+    fn from_iter<T: IntoIterator<Item = Felt252>>(iter: T) -> Self {
+        let mut i = iter.into_iter();
+        let program_hash = i.next().unwrap();
+        let result_low = i.next().unwrap();
+        let result_high = i.next().unwrap();
+
+        let mut mmr_metas = Vec::<MmrMetaOutput>::new();
+
+        while let Ok([id, root, size]) = i.next_chunk::<3>() {
+            mmr_metas.push(MmrMetaOutput { id, root, size });
+        }
+
+        Self {
+            program_hash,
+            result_low,
+            result_high,
+            mmr_metas,
         }
     }
 }
