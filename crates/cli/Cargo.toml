@@ -1,0 +1,17 @@
+[package]
+name = "hdp-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap.workspace = true
+dry_run = { path = "../dry_run" }
+fetcher = { path = "../fetcher" }
+syscall_handler.workspace = true
+hints.workspace = true
+types.workspace = true
+cairo-lang-starknet-classes.workspace = true
+cairo-vm.workspace = true
+tokio.workspace = true
+serde_json.workspace = true
+dry_hint_processor.workspace = true

@@ -3137,6 +3137,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "hdp-cli"
+version = "0.1.0"
+dependencies = [
+ "cairo-lang-starknet-classes",
+ "cairo-vm",
+ "clap",
+ "dry_hint_processor",
+ "dry_run",
+ "fetcher",
+ "hints",
+ "serde_json",
+ "syscall_handler",
+ "tokio",
+ "types",
+]
+
+[[package]]
 name = "heck"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

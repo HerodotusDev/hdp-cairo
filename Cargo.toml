@@ -13,6 +13,7 @@ members = [
     "crates/sound_run",
     "crates/syscall_handler",
     "crates/types",
+    "crates/cli",
     "tests",
 ]
 
