@@ -5,14 +5,11 @@ edition = "2021"
 
 [dependencies]
 cairo-lang-starknet-classes.workspace = true
-cairo-vm.workspace = true
 clap.workspace = true
 dry_hint_processor.workspace = true
 dry_run.workspace = true
 fetcher.workspace = true
-hints.workspace = true
 serde_json.workspace = true
-sound_hint_processor.workspace = true
 sound_run.workspace = true
 syscall_handler.workspace = true
 tokio.workspace = true

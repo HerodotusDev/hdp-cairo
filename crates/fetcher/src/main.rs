@@ -1,24 +1,30 @@
-use std::{fs, path::PathBuf};
+#![allow(async_fn_in_trait)]
+#![warn(unused_extern_crates)]
+#![warn(unused_crate_dependencies)]
+#![forbid(unsafe_code)]
 
-use clap::{Parser, ValueHint};
+use std::fs;
+
+use alloy as _;
+use alloy_rlp as _;
+use cairo_vm as _;
+use clap::Parser;
 use dry_hint_processor::syscall_handler::{evm, starknet};
-use fetcher::{parse_syscall_handler, Fetcher};
+use eth_trie_proofs as _;
+use fetcher::{parse_syscall_handler, Args, Fetcher};
+use futures as _;
+use indexer as _;
+use indicatif as _;
+use reqwest as _;
+use starknet_types_core as _;
 use syscall_handler::SyscallHandler;
+use thiserror as _;
 use types::ChainProofs;
-
-#[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None)]
-struct Args {
-    #[clap(value_parser, value_hint=ValueHint::FilePath)]
-    filename: PathBuf,
-    #[structopt(long = "program_output")]
-    program_output: PathBuf,
-}
 
 #[tokio::main]
 async fn main() -> Result<(), fetcher::FetcherError> {
     let args = Args::try_parse_from(std::env::args()).map_err(fetcher::FetcherError::Args)?;
-    let input_file = fs::read(&args.filename)?;
+    let input_file = fs::read(&args.inputs)?;
 
     let syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler> = serde_json::from_slice(&input_file)?;
     let proof_keys = parse_syscall_handler(syscall_handler)?;
@@ -31,7 +37,7 @@ async fn main() -> Result<(), fetcher::FetcherError> {
     ];
 
     fs::write(
-        args.program_output,
+        args.output,
         serde_json::to_string_pretty(&chain_proofs)
             .map_err(|e| fetcher::FetcherError::IO(e.into()))?
             .as_bytes(),

@@ -1,10 +1,17 @@
+#![allow(async_fn_in_trait)]
+#![warn(unused_extern_crates)]
+#![warn(unused_crate_dependencies)]
+#![forbid(unsafe_code)]
+
 use std::{
     collections::{HashMap, HashSet},
     env,
     num::ParseIntError,
+    path::PathBuf,
 };
 
 use alloy::hex::FromHexError;
+use clap::Parser;
 use dry_hint_processor::syscall_handler::{evm, starknet};
 use eth_trie_proofs::{tx_receipt_trie::TxReceiptsMptHandler, tx_trie::TxsMptHandler};
 use futures::StreamExt;
@@ -29,6 +36,25 @@ use types::{
 };
 
 pub mod proof_keys;
+
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+pub struct Args {
+    #[arg(
+        short = 'i',
+        long = "inputs",
+        default_value = "dry_run_output.json",
+        help = "The output of the dry_run step"
+    )]
+    pub inputs: PathBuf,
+    #[arg(
+        short = 'o',
+        long = "output",
+        default_value = "proofs.json",
+        help = "Path where the output JSON will be written"
+    )]
+    pub output: PathBuf,
+}
 
 #[derive(Error, Debug)]
 pub enum FetcherError {
