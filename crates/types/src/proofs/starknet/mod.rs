@@ -12,3 +12,9 @@ pub struct Proofs {
     pub headers_with_mmr: Vec<HeaderMmrMeta<Header>>,
     pub storages: Vec<Storage>,
 }
+
+impl Proofs {
+    pub fn len(&self) -> usize {
+        self.headers_with_mmr.len() + self.storages.len()
+    }
+}

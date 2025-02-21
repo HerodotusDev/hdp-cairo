@@ -3140,15 +3140,26 @@ dependencies = [
 name = "hdp-cli"
 version = "0.1.0"
 dependencies = [
+ "alloy 0.7.3",
+ "alloy-rlp",
  "cairo-lang-starknet-classes",
  "cairo-vm",
  "clap",
  "dry_hint_processor",
  "dry_run",
+ "eth-trie-proofs",
  "fetcher",
+ "futures",
  "hints",
+ "indexer",
+ "indicatif",
+ "reqwest 0.12.12",
  "serde_json",
+ "sound_hint_processor",
+ "sound_run",
+ "starknet-types-core",
  "syscall_handler",
+ "thiserror 1.0.69",
  "tokio",
  "types",
 ]
