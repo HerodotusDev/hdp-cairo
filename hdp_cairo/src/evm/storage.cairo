@@ -17,7 +17,12 @@ pub struct StorageKey {
 #[generate_trait]
 pub impl StorageImpl of StorageTrait {
     fn storage_get_slot(self: @EvmMemorizer, key: StorageKey) -> u256 {
-        let value = call_contract_syscall(
+        let result = self.call_memorizer(key);
+        u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
+    }
+
+    fn call_memorizer(self: @EvmMemorizer, key: StorageKey) -> Span<felt252> {
+        call_contract_syscall(
             STORAGE.try_into().unwrap(),
             STORAGE_GET_SLOT,
             array![
@@ -31,7 +36,6 @@ pub impl StorageImpl of StorageTrait {
             ]
                 .span(),
         )
-            .unwrap_syscall();
-        u256 { low: (*value[0]).try_into().unwrap(), high: (*value[1]).try_into().unwrap() }
+            .unwrap_syscall()
     }
 }

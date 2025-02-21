@@ -11,7 +11,8 @@ const BLOCK_RECEIPT_GET_TOPIC0: felt252 = 3;
 const BLOCK_RECEIPT_GET_TOPIC1: felt252 = 4;
 const BLOCK_RECEIPT_GET_TOPIC2: felt252 = 5;
 const BLOCK_RECEIPT_GET_TOPIC3: felt252 = 6;
-const BLOCK_RECEIPT_GET_DATA: felt252 = 7;
+const BLOCK_RECEIPT_GET_TOPIC4: felt252 = 7;
+const BLOCK_RECEIPT_GET_DATA: felt252 = 8;
 
 const BLOCK_RECEIPT_LABEL: felt252 = 'block_receipt';
 
@@ -50,6 +51,10 @@ pub impl BlockReceiptImpl of BlockReceiptTrait {
     }
     fn block_receipt_get_topic3(self: @EvmMemorizer, key: BlockReceiptKey) -> u256 {
         let result = self.call_memorizer(BLOCK_RECEIPT_GET_TOPIC3, key);
+        u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
+    }
+    fn block_receipt_get_topic4(self: @EvmMemorizer, key: BlockReceiptKey) -> u256 {
+        let result = self.call_memorizer(BLOCK_RECEIPT_GET_TOPIC4, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
     fn block_receipt_get_data(self: @EvmMemorizer, key: BlockReceiptKey) -> Span<felt252> {
