@@ -67,7 +67,8 @@
                 "0x00438b2127e36e2c51c3138ebb22cff13f4ecd3694f03be32f942af185202c97"
               ],
               "root": "0x07eb4c4a53079bcced2ccc24cb4203b57241de77a983b72e6eb21ca51b7a768a",
-              "size": 360313
+              "size": 360313,
+              "chain_id": 11155111
             }
           }
         ],
@@ -121,7 +122,8 @@
                 "0x037456b92bd8449a6deae68ad78bce042f3a9ebe7e69be7412dea23060cc48bd"
               ],
               "root": "0x01f4d95b65e91ec0c2478ac20f12718b6ba1188256522c848a9f2f03697e3583",
-              "size": 99917
+              "size": 99917,
+              "chain_id": 393402133025997798000961
             }
           }
         ],
