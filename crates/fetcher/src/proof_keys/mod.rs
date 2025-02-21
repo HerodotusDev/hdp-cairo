@@ -38,7 +38,7 @@ impl ProofKeys {
             id: Self::normalize_hex(&response.mmr_meta.mmr_id).parse()?,
             size: response.mmr_meta.mmr_size,
             root: Self::normalize_hex(&response.mmr_meta.mmr_root).parse()?,
-            chain_id: chain_id.try_into().unwrap(),
+            chain_id,
             peaks: response
                 .mmr_meta
                 .mmr_peaks
