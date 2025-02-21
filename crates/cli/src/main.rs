@@ -1,3 +1,8 @@
+#![allow(async_fn_in_trait)]
+#![warn(unused_extern_crates)]
+#![warn(unused_crate_dependencies)]
+#![forbid(unsafe_code)]
+
 use std::path::PathBuf;
 
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
@@ -42,12 +47,10 @@ enum Commands {
         output: PathBuf,
         #[arg(
             long = "print_output",
-            default_value_t = false,
+            default_value_t = true,
             help = "Print program output to stdout [default: true]"
         )]
         print_output: bool,
-        #[arg(long = "proof_mode", default_value_t = false, help = "Enable proof mode [default: false]")]
-        proof_mode: bool,
     },
     /// Run the sound-run functionality
     SoundRun {
@@ -64,12 +67,10 @@ enum Commands {
         proofs: PathBuf,
         #[arg(
             long = "print_output",
-            default_value_t = false,
+            default_value_t = true,
             help = "Print program output to stdout [default: true]"
         )]
         print_output: bool,
-        #[arg(long = "proof_mode", default_value_t = false, help = "Enable proof mode [default: false]")]
-        proof_mode: bool,
         #[arg(long = "pie", default_value = None, help = "Path where the Cairo PIE zip file will be written")]
         cairo_pie_output: Option<PathBuf>,
     },
@@ -102,7 +103,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             inputs,
             output,
             print_output,
-            proof_mode,
         } => {
             println!("Starting dry run execution...");
             println!("Reading compiled module from: {}", compiled_module.display());
@@ -111,8 +111,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 trace_enabled: false,
                 relocate_mem: false,
                 layout: LayoutName::starknet_with_keccak,
-                proof_mode,
-                secure_run: None,
+                secure_run: Some(true),
                 ..Default::default()
             };
 
@@ -167,7 +166,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             inputs,
             proofs,
             print_output,
-            proof_mode,
             cairo_pie_output,
         } => {
             println!("Starting sound run execution...");
@@ -192,8 +190,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 trace_enabled: false,
                 relocate_mem: false,
                 layout: LayoutName::starknet_with_keccak,
-                proof_mode,
-                secure_run: None,
+                secure_run: Some(true),
                 ..Default::default()
             };
 
@@ -256,7 +253,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Ok(())
         }
         Commands::ProgramHash {} => {
-            println!("Cairo Program Hash: {}", HDP_PROGRAM_HASH);
+            println!("{}", HDP_PROGRAM_HASH);
             Ok(())
         }
     }

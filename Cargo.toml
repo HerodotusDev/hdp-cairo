@@ -68,3 +68,5 @@ pathfinder_gateway_types = { git = "https://github.com/eqlabs/pathfinder", packa
 sound_hint_processor = { path = "crates/sound_hint_processor" }
 syscall_handler = { path = "crates/syscall_handler" }
 types = { path = "crates/types" }
+dry_run = { path = "crates/dry_run" }
+sound_run = { path = "crates/sound_run" }

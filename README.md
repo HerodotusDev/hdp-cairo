@@ -20,7 +20,7 @@ Runtime require chain nodes RPC calls, ensure an environment variables [.cargo/c
 1. **Simulate Cairo1 Module and Collect Proofs Information:**
 
    ```bash
-   cargo run --release --bin dry_run -- --program_input examples/hdp_input.json --program_output hdp_keys.json --layout starknet_with_keccak
+   cargo run --release --bin dry_run -- --program_input examples/hdp_input.json --program_output hdp_keys.json
    ```
 
 2. **Fetch On-Chain Proofs Needed for the HDP Run:**

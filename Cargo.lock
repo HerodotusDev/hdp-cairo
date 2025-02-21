@@ -2104,6 +2104,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f46ad14479a25103f283c0f10005961cf086d8dc42205bb44c46ac563475dca6"
 
 [[package]]
+name = "cli"
+version = "0.1.0"
+dependencies = [
+ "cairo-lang-starknet-classes",
+ "cairo-vm",
+ "clap",
+ "dry_hint_processor",
+ "dry_run",
+ "fetcher",
+ "hints",
+ "serde_json",
+ "sound_hint_processor",
+ "sound_run",
+ "syscall_handler",
+ "tokio",
+ "types",
+]
+
+[[package]]
 name = "colorchoice"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3134,34 +3153,6 @@ dependencies = [
  "equivalent",
  "foldhash",
  "serde",
-]
-
-[[package]]
-name = "hdp-cli"
-version = "0.1.0"
-dependencies = [
- "alloy 0.7.3",
- "alloy-rlp",
- "cairo-lang-starknet-classes",
- "cairo-vm",
- "clap",
- "dry_hint_processor",
- "dry_run",
- "eth-trie-proofs",
- "fetcher",
- "futures",
- "hints",
- "indexer",
- "indicatif",
- "reqwest 0.12.12",
- "serde_json",
- "sound_hint_processor",
- "sound_run",
- "starknet-types-core",
- "syscall_handler",
- "thiserror 1.0.69",
- "tokio",
- "types",
 ]
 
 [[package]]
