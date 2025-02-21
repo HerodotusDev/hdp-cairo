@@ -37,6 +37,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
+          name: docs
           path: ./docs/book
 
       - name: Create program_hash JSON file
@@ -47,6 +48,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
+          name: program_hash
           path: ./docs/program_hash
 
   deploy:
