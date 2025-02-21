@@ -14,7 +14,7 @@ use dry_run::DRY_RUN_COMPILED_JSON;
 use fetcher::{parse_syscall_handler, Fetcher};
 use hints::vars;
 use sound_hint_processor::CustomHintProcessor as CustomHintProcessorSound;
-use sound_run::HDP_COMPILED_JSON;
+use sound_run::{HDP_COMPILED_JSON, HDP_PROGRAM_HASH};
 use syscall_handler::{SyscallHandler, SyscallHandlerWrapper};
 use types::{error::Error, param::Param, ChainProofs, HDPDryRunInput, HDPInput};
 
@@ -89,6 +89,7 @@ enum Commands {
         )]
         output: PathBuf,
     },
+    ProgramHash {},
 }
 
 #[tokio::main]
@@ -252,6 +253,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .map_err(Error::IO)?;
 
             println!("Proofs have been saved successfully.");
+            Ok(())
+        }
+        Commands::ProgramHash {} => {
+            println!("Cairo Program Hash: {}", HDP_PROGRAM_HASH);
             Ok(())
         }
     }
