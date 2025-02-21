@@ -2,6 +2,12 @@
 
 HDP (Herodotus Data Processor) is a modular framework for validating on-chain data from multiple blockchain RPC sources, executing user-defined logic written in Cairo1, and producing an execution trace that can be used to generate a zero-knowledge proof. The proof attests to the correctness of both the on-chain data and the performed computation.
 
+<p align="left">
+  <a href="https://herodotusdev.github.io/hdp-cairo/program_hash.json">
+    <img src="https://img.shields.io/badge/dynamic/json?url=https://herodotusdev.github.io/hdp-cairo/program_hash.json&query=$.program_hash&label=program_hash&color=blue&style=flat-square" alt="program_hash">
+  </a>
+</p>
+
 ## Installation and Setup
 
 To install the required dependencies and set up the Python virtual environment, run:
