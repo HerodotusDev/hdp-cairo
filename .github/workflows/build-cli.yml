@@ -86,13 +86,10 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-            ~/.scarb
             ~/.cache/nextest
-          key: ${{ runner.os }}-cargo-scarb-nextest-${{ hashFiles('**/Cargo.lock', '**/Scarb.toml') }}
+          key: ${{ runner.os }}-${{ matrix.platform.release_for }}-cargo-${{ hashFiles('**/Cargo.lock', '**/Scarb.toml') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-scarb-nextest-
-            ${{ runner.os }}-cargo-scarb-
-            ${{ runner.os }}-cargo-
+            ${{ runner.os }}-${{ matrix.platform.release_for }}-cargo-
 
       - name: Set up Cairo
         run: make
@@ -109,6 +106,9 @@ jobs:
         run: |
           HASH=$(${{ matrix.platform.binary_path }} program-hash)
           echo "PROGRAM_HASH=$HASH" >> $GITHUB_ENV
+        env:
+          RPC_URL_ETHEREUM: ${{ secrets.RPC_URL_ETHEREUM }}
+          RPC_URL_STARKNET: ${{ secrets.RPC_URL_STARKNET }}
 
       - name: Update Release Body
         if: matrix.platform.os == 'ubuntu-latest'
