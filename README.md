@@ -12,7 +12,7 @@ HDP (Herodotus Data Processor) is a modular framework for validating on-chain da
 
 ### Option 1: Install CLI Directly
 
-You can install the CLI using our install script:
+You can install the CLI using install script:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
@@ -46,7 +46,7 @@ Runtime require chain nodes RPC calls, ensure an environment variables [.cargo/c
    
    Or when building from source:
    ```bash
-   cargo run --release --bin cli -- dry-run -m examples/hdp_input.json --print_output
+   cargo run --release --bin hdp-cli -- dry-run -m examples/hdp_input.json --print_output
    ```
 
 2. **Fetch On-Chain Proofs Needed for the HDP Run:**
@@ -56,7 +56,7 @@ Runtime require chain nodes RPC calls, ensure an environment variables [.cargo/c
    
    Or when building from source:
    ```bash
-   cargo run --release --bin cli --features progress_bars -- fetch-proofs
+   cargo run --release --bin hdp-cli --features progress_bars -- fetch-proofs
    ```
 
 3. **Run Cairo1 Module with Verified On-Chain Data:**
@@ -66,7 +66,7 @@ Runtime require chain nodes RPC calls, ensure an environment variables [.cargo/c
    
    Or when building from source:
    ```bash
-   cargo run --release --bin cli -- sound-run -m examples/hdp_input.json --print_output
+   cargo run --release --bin hdp-cli -- sound-run -m examples/hdp_input.json --print_output
    ```
 
 The program will output the results root and tasks root. These roots can be used to extract the results from the on-chain contract.
