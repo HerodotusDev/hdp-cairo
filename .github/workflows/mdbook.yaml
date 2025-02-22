@@ -65,7 +65,7 @@ jobs:
           RPC_URL_HERODOTUS_INDEXER: ${{ secrets.RPC_URL_HERODOTUS_INDEXER }}
           RPC_URL_STARKNET: ${{ secrets.RPC_URL_STARKNET }}
         run: |
-          echo "{ \"program_hash\": \"$(cargo run --release --bin cli -- program-hash | tr -d '\n')\" }" > ./docs/book/program_hash.json
+          echo "{ \"program_hash\": \"$(cargo run --release --bin hdp-cli -- program-hash | tr -d '\n')\" }" > ./docs/book/program_hash.json
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
