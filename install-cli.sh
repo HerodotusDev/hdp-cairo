@@ -72,6 +72,16 @@ curl -L "$SOUND_RUN_JSON_URL" -o "$BASE_DIR/sound_run_compiled.json"
 echo "hdp-cli has been installed to $BIN_DIR/"
 echo "JSON files have been installed to $BASE_DIR/"
 
+# Output the export commands
+echo
+echo "Please add the following lines to your shell configuration file ($SHELL_RC):"
+echo "export HDP_DRY_RUN_PATH=\"$BASE_DIR/dry_run_compiled.json\""
+echo "export HDP_SOUND_RUN_PATH=\"$BASE_DIR/sound_run_compiled.json\""
+echo
+echo "Or run these commands in your current shell:"
+echo "export HDP_DRY_RUN_PATH=\"$BASE_DIR/dry_run_compiled.json\""
+echo "export HDP_SOUND_RUN_PATH=\"$BASE_DIR/sound_run_compiled.json\""
+
 # Add to PATH if needed
 case ":${PATH}:" in
     *":$BIN_DIR:"*) : ;; # Already in PATH
@@ -89,8 +99,5 @@ case ":${PATH}:" in
         echo "export HDP_DRY_RUN_PATH=\"$BASE_DIR/dry_run_compiled.json\"" >> "$SHELL_RC"
         echo "export HDP_SOUND_RUN_PATH=\"$BASE_DIR/sound_run_compiled.json\"" >> "$SHELL_RC"
         export PATH="$BIN_DIR:$PATH"
-        export HDP_DRY_RUN_PATH="$BASE_DIR/dry_run_compiled.json"
-        export HDP_SOUND_RUN_PATH="$BASE_DIR/sound_run_compiled.json"
-        echo "Added to $SHELL_RC. The change will be permanent after restart or running: source $SHELL_RC"
         ;;
 esac
