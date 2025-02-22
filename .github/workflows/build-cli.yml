@@ -9,7 +9,25 @@ on:
         type: string
 
 jobs:
-  release:
+  create_release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ inputs.version }}
+          name: Release ${{ inputs.version }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  build_and_upload:
+    needs: create_release
     name: Release - ${{ matrix.platform.release_for }}
     runs-on: ${{ matrix.platform.os }}
     strategy:
@@ -20,6 +38,12 @@ jobs:
             target: x86_64-unknown-linux-gnu
             binary_path: target/release/hdp-cli
             asset_name: hdp-cli-linux-amd64
+
+          - release_for: Linux-aarch64
+            os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            binary_path: target/release/hdp-cli
+            asset_name: hdp-cli-linux-arm64
 
           - release_for: Windows-x86_64
             os: windows-latest
@@ -33,18 +57,14 @@ jobs:
             binary_path: target/release/hdp-cli
             asset_name: hdp-cli-macos-amd64
 
+          - release_for: macOS-aarch64
+            os: macos-latest
+            target: aarch64-apple-darwin
+            binary_path: target/release/hdp-cli
+            asset_name: hdp-cli-macos-arm64
+
     steps:
       - uses: actions/checkout@v3
-      
-      - name: Create Release
-        if: matrix.platform.os == 'ubuntu-latest'
-        id: create_release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ inputs.version }}
-          name: Release ${{ inputs.version }}
-          draft: false
-          prerelease: false
       
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -55,6 +75,15 @@ jobs:
 
       - name: Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Install Cross-Compilation Tools
+        if: matrix.platform.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+
+      - name: Install Rust Target
+        run: rustup target add ${{ matrix.platform.target }}
 
       - name: Cargo Cache
         uses: actions/cache@v3
@@ -89,6 +118,18 @@ jobs:
           HASH=$(${{ matrix.platform.binary_path }} program-hash)
           echo "PROGRAM_HASH=$HASH" >> $GITHUB_ENV
 
+      - name: Update Release Body
+        if: matrix.platform.os == 'ubuntu-latest'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ inputs.version }}
+          body: |
+            ## Program Hash
+            ```
+            ${{ env.PROGRAM_HASH }}
+            ```
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
@@ -96,9 +137,4 @@ jobs:
           file: ${{ matrix.platform.binary_path }}
           asset_name: ${{ matrix.platform.asset_name }}
           tag: ${{ inputs.version }}
-          body: |
-            ## Program Hash
-            ```
-            ${{ env.PROGRAM_HASH }}
-            ```
           overwrite: true 
