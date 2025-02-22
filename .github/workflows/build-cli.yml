@@ -66,8 +66,7 @@ jobs:
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
-          target: ${{ matrix.platform.target }}
+          toolchain: nightly
           override: true
 
       - name: Set up Rust
@@ -102,7 +101,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --release --target ${{ matrix.platform.target }} --bin hdp-cli
+          args: --release --bin hdp-cli
 
       - name: Get Program Hash
         if: matrix.platform.os == 'ubuntu-latest'
