@@ -8,7 +8,23 @@ HDP (Herodotus Data Processor) is a modular framework for validating on-chain da
   </a>
 </p>
 
-## Installation and Setup
+## Installation
+
+### Option 1: Install CLI Directly
+
+You can install the CLI using our install script:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
+```
+
+To install a specific version:
+
+```bash
+VERSION=v1.0.4 curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
+```
+
+### Option 2: Build from Source
 
 To install the required dependencies and set up the Python virtual environment, run:
 
@@ -24,18 +40,31 @@ Runtime require chain nodes RPC calls, ensure an environment variables [.cargo/c
 ### Steps to Execute:
 
 1. **Simulate Cairo1 Module and Collect Proofs Information:**
-
+   ```bash
+   hdp-cli dry-run -m examples/hdp_input.json --print_output
+   ```
+   
+   Or when building from source:
    ```bash
    cargo run --release --bin cli -- dry-run -m examples/hdp_input.json --print_output
    ```
 
 2. **Fetch On-Chain Proofs Needed for the HDP Run:**
-
+   ```bash
+   hdp-cli fetch-proofs
+   ```
+   
+   Or when building from source:
    ```bash
    cargo run --release --bin cli --features progress_bars -- fetch-proofs
    ```
 
 3. **Run Cairo1 Module with Verified On-Chain Data:**
+   ```bash
+   hdp-cli sound-run -m examples/hdp_input.json --print_output
+   ```
+   
+   Or when building from source:
    ```bash
    cargo run --release --bin cli -- sound-run -m examples/hdp_input.json --print_output
    ```
