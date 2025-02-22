@@ -8,8 +8,29 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: write
+
 jobs:
-  release:
+  create_release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ inputs.version }}
+          name: Release ${{ inputs.version }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  build_and_upload:
+    needs: create_release
     name: Release - ${{ matrix.platform.release_for }}
     runs-on: ${{ matrix.platform.os }}
     strategy:
@@ -17,46 +38,44 @@ jobs:
         platform:
           - release_for: Linux-x86_64
             os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
             binary_path: target/release/hdp-cli
             asset_name: hdp-cli-linux-amd64
+            runner: ubuntu-latest
 
-          - release_for: Windows-x86_64
-            os: windows-latest
-            target: x86_64-pc-windows-msvc
-            binary_path: target/release/hdp-cli.exe
-            asset_name: hdp-cli-windows-amd64.exe
+          - release_for: Linux-aarch64
+            os: ubuntu-latest
+            binary_path: target/release/hdp-cli
+            asset_name: hdp-cli-linux-arm64
+            runner: ubuntu-latest-arm64
 
           - release_for: macOS-x86_64
             os: macos-latest
-            target: x86_64-apple-darwin
             binary_path: target/release/hdp-cli
             asset_name: hdp-cli-macos-amd64
+            runner: macos-latest-large
+
+          - release_for: macOS-aarch64
+            os: macos-latest
+            binary_path: target/release/hdp-cli
+            asset_name: hdp-cli-macos-arm64
+            runner: macos-latest-xlarge
 
     steps:
       - uses: actions/checkout@v3
       
-      - name: Create Release
-        if: matrix.platform.os == 'ubuntu-latest'
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ inputs.version }}
-          release_name: Release ${{ inputs.version }}
-          draft: false
-          prerelease: false
-      
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
-          target: ${{ matrix.platform.target }}
+          toolchain: nightly
           override: true
 
       - name: Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
 
       - name: Cargo Cache
         uses: actions/cache@v3
@@ -82,7 +101,26 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --release --target ${{ matrix.platform.target }} --bin hdp-cli
+          args: --release --bin hdp-cli
+
+      - name: Get Program Hash
+        if: matrix.platform.os == 'ubuntu-latest'
+        id: program_hash
+        run: |
+          HASH=$(${{ matrix.platform.binary_path }} program-hash)
+          echo "PROGRAM_HASH=$HASH" >> $GITHUB_ENV
+
+      - name: Update Release Body
+        if: matrix.platform.os == 'ubuntu-latest'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ inputs.version }}
+          body: |
+            ## Program Hash
+            ```
+            ${{ env.PROGRAM_HASH }}
+            ```
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
@@ -91,4 +129,4 @@ jobs:
           file: ${{ matrix.platform.binary_path }}
           asset_name: ${{ matrix.platform.asset_name }}
           tag: ${{ inputs.version }}
-          overwrite: true 
+          overwrite: true

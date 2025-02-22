@@ -32,11 +32,22 @@ enum Commands {
     #[command(name = "sound-run")]
     SoundRun(sound_run::Args),
     /// Get program hash
+    #[command(name = "program-hash")]
     ProgramHash,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Set default RPC URL for Herodotus Indexer
+    std::env::set_var("RPC_URL_HERODOTUS_INDEXER", "https://staging.rs-indexer.api.herodotus.cloud/");
+
+    // Check required environment variables
+    for env_var in ["RPC_URL_ETHEREUM", "RPC_URL_STARKNET"] {
+        if std::env::var(env_var).is_err() {
+            return Err(format!("Missing required environment variable: {}", env_var).into());
+        }
+    }
+
     let cli = Cli::parse();
 
     match cli.command {
