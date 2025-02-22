@@ -28,6 +28,8 @@ pub const DRY_RUN_COMPILED_JSON: &str = env!("DRY_RUN_COMPILED_JSON");
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 pub struct Args {
+    #[arg(short = 'p', long = "program", help = "Path to the compiled dry run hdp program")]
+    pub program: Option<PathBuf>,
     #[arg(short = 'm', long = "compiled_module", help = "Path to the compiled module file")]
     pub compiled_module: PathBuf,
     #[arg(short = 'i', long = "inputs", help = "Path to the JSON file containing input parameters")]
@@ -50,6 +52,7 @@ pub struct Args {
 }
 
 pub fn run(
+    program_path: PathBuf,
     input: HDPDryRunInput,
 ) -> Result<
     (
@@ -65,7 +68,8 @@ pub fn run(
         ..Default::default()
     };
 
-    let program_file = std::fs::read(DRY_RUN_COMPILED_JSON).map_err(Error::IO)?;
+    println!("Program path: {}", program_path.display());
+    let program_file = std::fs::read(program_path).map_err(Error::IO)?;
     let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))?;
 
     let mut hint_processor = CustomHintProcessor::new(input);

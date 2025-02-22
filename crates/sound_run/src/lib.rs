@@ -24,6 +24,8 @@ pub const HDP_PROGRAM_HASH: &str = env!("HDP_PROGRAM_HASH");
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 pub struct Args {
+    #[arg(short = 'p', long = "program", help = "Path to the compiled hdp program")]
+    pub program: Option<PathBuf>,
     #[arg(short = 'm', long = "compiled_module", help = "Path to the compiled module file")]
     pub compiled_module: PathBuf,
     #[arg(short = 'i', long = "inputs", help = "Path to the JSON file containing input parameters")]
@@ -45,7 +47,7 @@ pub struct Args {
     pub cairo_pie_output: Option<PathBuf>,
 }
 
-pub fn run(input: HDPInput) -> Result<(CairoPie, HDPOutput), Error> {
+pub fn run(program_path: PathBuf, input: HDPInput) -> Result<(CairoPie, HDPOutput), Error> {
     let cairo_run_config = cairo_run::CairoRunConfig {
         layout: LayoutName::starknet_with_keccak,
         secure_run: Some(true),
@@ -53,7 +55,8 @@ pub fn run(input: HDPInput) -> Result<(CairoPie, HDPOutput), Error> {
         ..Default::default()
     };
 
-    let program_file = std::fs::read(HDP_COMPILED_JSON).map_err(Error::IO)?;
+    println!("Program path: {}", program_path.display());
+    let program_file = std::fs::read(program_path).map_err(Error::IO)?;
     let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))?;
 
     let mut hint_processor = CustomHintProcessor::new(input);
@@ -73,4 +76,8 @@ pub fn run(input: HDPInput) -> Result<(CairoPie, HDPOutput), Error> {
     let output = HDPOutput::from_iter(iter);
 
     Ok((pie, output))
+}
+
+pub fn get_program_path() -> String {
+    std::env::var("HDP_SOUND_RUN_PATH").unwrap_or_else(|_| HDP_COMPILED_JSON.to_string())
 }

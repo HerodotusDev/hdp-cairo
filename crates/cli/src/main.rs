@@ -3,13 +3,14 @@
 #![warn(unused_crate_dependencies)]
 #![forbid(unsafe_code)]
 
-use std::fs;
+use std::{fs, path::PathBuf};
 
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use clap::{Parser, Subcommand};
 use dry_hint_processor::syscall_handler::{evm, starknet};
+use dry_run::DRY_RUN_COMPILED_JSON;
 use fetcher::{parse_syscall_handler, Fetcher};
-use sound_run::HDP_PROGRAM_HASH;
+use sound_run::{HDP_COMPILED_JSON, HDP_PROGRAM_HASH};
 use syscall_handler::SyscallHandler;
 use types::{error::Error, param::Param, ChainProofs, HDPDryRunInput, HDPInput};
 
@@ -63,7 +64,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             };
 
             println!("Executing program...");
-            let (syscall_handler, output) = dry_run::run(HDPDryRunInput { compiled_class, params })?;
+            let (syscall_handler, output) = dry_run::run(
+                args.program.unwrap_or(PathBuf::from(DRY_RUN_COMPILED_JSON)),
+                HDPDryRunInput { compiled_class, params },
+            )?;
 
             if args.print_output {
                 println!("{:#?}", output);
@@ -119,11 +123,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let chain_proofs: Vec<ChainProofs> = serde_json::from_slice(&std::fs::read(args.proofs).map_err(Error::IO)?)?;
 
             println!("Executing program...");
-            let (pie, output) = sound_run::run(HDPInput {
-                chain_proofs,
-                compiled_class,
-                params,
-            })?;
+            let (pie, output) = sound_run::run(
+                args.program.unwrap_or(PathBuf::from(HDP_COMPILED_JSON)),
+                HDPInput {
+                    chain_proofs,
+                    compiled_class,
+                    params,
+                },
+            )?;
 
             if args.print_output {
                 println!("{:#?}", output);
