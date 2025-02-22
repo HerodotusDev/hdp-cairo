@@ -39,10 +39,7 @@ enum Commands {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Set default RPC URL for Herodotus Indexer
-    std::env::set_var(
-        "RPC_URL_HERODOTUS_INDEXER",
-        "https://staging.rs-indexer.api.herodotus.cloud/",
-    );
+    std::env::set_var("RPC_URL_HERODOTUS_INDEXER", "https://staging.rs-indexer.api.herodotus.cloud/");
 
     // Check required environment variables
     for env_var in ["RPC_URL_ETHEREUM", "RPC_URL_STARKNET"] {
