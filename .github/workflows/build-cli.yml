@@ -48,12 +48,6 @@ jobs:
             binary_path: target/release/hdp-cli
             asset_name: hdp-cli-linux-arm64
 
-          - release_for: Windows-x86_64
-            os: windows-latest
-            target: x86_64-pc-windows-msvc
-            binary_path: target/release/hdp-cli.exe
-            asset_name: hdp-cli-windows-amd64.exe
-
           - release_for: macOS-x86_64
             os: macos-latest
             target: x86_64-apple-darwin
