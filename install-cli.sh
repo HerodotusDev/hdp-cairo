@@ -10,7 +10,9 @@ case $ARCH in
     x86_64)
         ARCH="amd64"
         ;;
-    # Add more architectures if needed
+    aarch64|arm64)
+        ARCH="arm64"
+        ;;
     *)
         echo "Unsupported architecture: $ARCH"
         exit 1
@@ -48,4 +50,23 @@ echo "Downloading hdp-cli..."
 curl -L "$DOWNLOAD_URL" -o "$INSTALL_DIR/hdp-cli"
 chmod +x "$INSTALL_DIR/hdp-cli"
 
-echo "hdp-cli has been installed to $INSTALL_DIR/hdp-cli" 
+echo "hdp-cli has been installed to $INSTALL_DIR/hdp-cli"
+
+# Add to PATH if needed
+case ":${PATH}:" in
+    *":$INSTALL_DIR:"*) : ;; # Already in PATH
+    *)
+        echo "Adding $INSTALL_DIR to PATH..."
+        # Handle different shell types
+        if [ -n "$BASH_VERSION" ]; then
+            SHELL_RC="$HOME/.bashrc"
+        elif [ -n "$ZSH_VERSION" ]; then
+            SHELL_RC="$HOME/.zshrc"
+        else
+            SHELL_RC="$HOME/.profile"  # Fallback for other shells
+        fi
+        echo 'export PATH="'$INSTALL_DIR':$PATH"' >> "$SHELL_RC"
+        export PATH="$INSTALL_DIR:$PATH"
+        echo "Added to $SHELL_RC. The change will be permanent after restart or running: source $SHELL_RC"
+        ;;
+esac
