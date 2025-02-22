@@ -1,6 +1,26 @@
 ## Installation and Setup
 
-### Prerequisites
+### Option 1: Using CLI Tool (Recommended)
+
+1. **Install the CLI:**
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
+   ```
+   
+   To install a specific version:
+   ```bash
+   VERSION=v1.0.4 curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
+   ```
+
+2. **ENVs:**
+  - HDP CLI requires and RPC endpoint for Ethereum and Starknet. Please expose them before running:
+    ```bash
+    export RPC_URL_ETHEREUM=<RPC_URL>
+    export RPC_URL_STARKNET=<RPC_URL>
+    ```
+
+
+### Option 2: Building from Source
 
 - **Dependencies:**
   - **Rust**.
@@ -109,34 +129,49 @@ mod example_starkgate {
 
 ### Running the Pipeline
 
-#### Dry Run Process
+You can run the pipeline either using the CLI tool or building from source.
 
+#### Using CLI Tool
+
+1. **Dry Run Process:**
+   ```bash
+   hdp-cli dry-run -m examples/hdp_input.json --print_output
+   ```
+
+2. **Fetcher Process:**
+   ```bash
+   hdp-cli fetch-proofs
+   ```
+
+3. **Sound Run Process:**
+   ```bash
+   hdp-cli sound-run -m examples/hdp_input.json --print_output
+   ```
+
+#### Using Source Build
+
+1. **Dry Run Process:**
 - **Purpose:**  
   Identify the required on-chain data and proofs.
 - **Command:**
-
   ```bash
-  cargo run --release --bin dry_run -- --program_input examples/hdp_input.json --program_output hdp_keys.json --layout starknet_with_keccak
+  cargo run --release --bin hdp-cli -- dry-run -m examples/hdp_input.json --print_output
   ```
 
-#### Fetcher Process
-
+2. **Fetcher Process:**
 - **Purpose:**  
   Connect to blockchain RPC endpoints to fetch on-chain data and corresponding proofs, using the keys identified during the dry run.
 - **Command:**
-
   ```bash
-  cargo run --release --bin fetcher --features progress_bars -- hdp_keys.json --program_output hdp_proofs.json
+  cargo run --release --bin hdp-cli --features progress_bars -- fetch-proofs
   ```
 
-#### Sound Run Process
-
+3. **Sound Run Process:**
 - **Purpose:**  
   Execute the compiled Cairo1 bytecode with the verified data. During this process, the bootloader retrieves data, handles system calls, and runs user logic, generating an execution trace.
 - **Command:**
-
   ```bash
-  cargo run --release --bin sound_run -- --program_input examples/hdp_input.json --program_proofs hdp_proofs.json --print_output --layout starknet_with_keccak --cairo_pie_output pie.zip
+  cargo run --release --bin hdp-cli -- sound-run -m examples/hdp_input.json --print_output
   ```
 
 ---
