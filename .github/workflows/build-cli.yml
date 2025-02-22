@@ -31,51 +31,40 @@ jobs:
 
   build_and_upload:
     needs: create_release
-    name: Release - ${{ matrix.platform.release_for }}
+    name: Release - ${{ matrix.platform.asset_name }}
     runs-on: ${{ matrix.platform.os }}
     strategy:
       matrix:
         platform:
-          - release_for: Linux-x86_64
-            os: ubuntu-latest
+          - os: ubuntu-24.04
             binary_path: target/release/hdp-cli
             asset_name: hdp-cli-linux-amd64
-            runner: ubuntu-latest
 
-          - release_for: Linux-aarch64
-            os: ubuntu-latest
+          - os: ubuntu-24.04-arm
             binary_path: target/release/hdp-cli
             asset_name: hdp-cli-linux-arm64
-            runner: ubuntu-latest-arm64
 
-          - release_for: macOS-x86_64
-            os: macos-latest
+          - os: macos-13
             binary_path: target/release/hdp-cli
             asset_name: hdp-cli-macos-amd64
-            runner: macos-latest-large
 
-          - release_for: macOS-aarch64
-            os: macos-latest
+          - os: macos-15
             binary_path: target/release/hdp-cli
             asset_name: hdp-cli-macos-arm64
-            runner: macos-latest-xlarge
 
     steps:
-      - uses: actions/checkout@v3
-      
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
+      - name: Checkout Code
+        uses: actions/checkout@v3
         with:
-          toolchain: nightly
-          override: true
-
-      - name: Set up Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+          submodules: true
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
+
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
 
       - name: Cargo Cache
         uses: actions/cache@v3
@@ -87,9 +76,9 @@ jobs:
             ~/.cargo/git/db/
             target/
             ~/.cache/nextest
-          key: ${{ runner.os }}-${{ matrix.platform.release_for }}-cargo-${{ hashFiles('**/Cargo.lock', '**/Scarb.toml') }}
+          key: ${{ runner.os }}-${{ matrix.platform.os }}-cargo-${{ hashFiles('**/Cargo.lock', '**/Scarb.toml') }}
           restore-keys: |
-            ${{ runner.os }}-${{ matrix.platform.release_for }}-cargo-
+            ${{ runner.os }}-${{ matrix.platform.os }}-cargo-
 
       - name: Set up Cairo
         run: make
@@ -101,17 +90,18 @@ jobs:
           args: --release --bin hdp-cli
 
       - name: Get Program Hash
-        if: matrix.platform.os == 'ubuntu-latest'
+        if: matrix.platform.os == 'ubuntu-24.04'
         id: program_hash
         run: |
           HASH=$(${{ matrix.platform.binary_path }} program-hash)
           echo "PROGRAM_HASH=$HASH" >> $GITHUB_ENV
         env:
           RPC_URL_ETHEREUM: ${{ secrets.RPC_URL_ETHEREUM }}
+          RPC_URL_HERODOTUS_INDEXER: ${{ secrets.RPC_URL_HERODOTUS_INDEXER }}
           RPC_URL_STARKNET: ${{ secrets.RPC_URL_STARKNET }}
 
       - name: Update Release Body
-        if: matrix.platform.os == 'ubuntu-latest'
+        if: matrix.platform.os == 'ubuntu-24.04'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ inputs.version }}
