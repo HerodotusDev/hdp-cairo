@@ -42,8 +42,7 @@ fi
 DOWNLOAD_URL="https://github.com/HerodotusDev/hdp-cairo/releases/download/${VERSION}/${BINARY_NAME}"
 
 # Installation directory
-INSTALL_DIR="/usr/local/bin"
-[ -d "$INSTALL_DIR" ] || INSTALL_DIR="$HOME/.local/bin"
+INSTALL_DIR="${HDP_INSTALL_DIR:-$HOME/.local/bin}"
 mkdir -p "$INSTALL_DIR"
 
 echo "Downloading hdp-cli..."
