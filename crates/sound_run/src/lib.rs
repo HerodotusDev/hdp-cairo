@@ -53,7 +53,7 @@ pub fn run(input: HDPInput) -> Result<(CairoPie, HDPOutput), Error> {
         ..Default::default()
     };
 
-    let program_file = std::fs::read(HDP_COMPILED_JSON).map_err(Error::IO)?;
+    let program_file = std::fs::read(get_program_path()).map_err(Error::IO)?;
     let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))?;
 
     let mut hint_processor = CustomHintProcessor::new(input);
@@ -73,4 +73,8 @@ pub fn run(input: HDPInput) -> Result<(CairoPie, HDPOutput), Error> {
     let output = HDPOutput::from_iter(iter);
 
     Ok((pie, output))
+}
+
+pub fn get_program_path() -> String {
+    std::env::var("HDP_SOUND_RUN_PATH").unwrap_or_else(|_| HDP_COMPILED_JSON.to_string())
 }
