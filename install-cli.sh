@@ -40,22 +40,43 @@ fi
 
 # Download URL
 DOWNLOAD_URL="https://github.com/HerodotusDev/hdp-cairo/releases/download/${VERSION}/${BINARY_NAME}"
+DRY_RUN_JSON_URL="https://github.com/HerodotusDev/hdp-cairo/releases/download/${VERSION}/dry_run_compiled.json"
+SOUND_RUN_JSON_URL="https://github.com/HerodotusDev/hdp-cairo/releases/download/${VERSION}/sound_run_compiled.json"
 
-# Installation directory
-INSTALL_DIR="${HDP_INSTALL_DIR:-$HOME/.local/bin}"
-mkdir -p "$INSTALL_DIR"
+# Installation directory structure
+BASE_DIR="${HDP_INSTALL_DIR:-$HOME/.local/share/hdp}"
+BIN_DIR="$HOME/.local/bin"
+mkdir -p "$BASE_DIR"
+mkdir -p "$BIN_DIR"
+
+# Check for existing installation
+if [ -f "$BIN_DIR/hdp-cli" ] || [ -f "$BASE_DIR/dry_run_compiled.json" ] || [ -f "$BASE_DIR/sound_run_compiled.json" ]; then
+    echo "Existing HDP installation found."
+    read -p "Do you want to overwrite the existing installation? (y/N) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Installation cancelled."
+        exit 1
+    fi
+    echo "Proceeding with installation..."
+fi
 
 echo "Downloading hdp-cli..."
-curl -L "$DOWNLOAD_URL" -o "$INSTALL_DIR/hdp-cli"
-chmod +x "$INSTALL_DIR/hdp-cli"
+curl -L "$DOWNLOAD_URL" -o "$BIN_DIR/hdp-cli"
+chmod +x "$BIN_DIR/hdp-cli"
 
-echo "hdp-cli has been installed to $INSTALL_DIR/hdp-cli"
+echo "Downloading JSON files..."
+curl -L "$DRY_RUN_JSON_URL" -o "$BASE_DIR/dry_run_compiled.json"
+curl -L "$SOUND_RUN_JSON_URL" -o "$BASE_DIR/sound_run_compiled.json"
+
+echo "hdp-cli has been installed to $BIN_DIR/"
+echo "JSON files have been installed to $BASE_DIR/"
 
 # Add to PATH if needed
 case ":${PATH}:" in
-    *":$INSTALL_DIR:"*) : ;; # Already in PATH
+    *":$BIN_DIR:"*) : ;; # Already in PATH
     *)
-        echo "Adding $INSTALL_DIR to PATH..."
+        echo "Adding $BIN_DIR to PATH..."
         # Handle different shell types
         if [ -n "$BASH_VERSION" ]; then
             SHELL_RC="$HOME/.bashrc"
@@ -64,8 +85,12 @@ case ":${PATH}:" in
         else
             SHELL_RC="$HOME/.profile"  # Fallback for other shells
         fi
-        echo 'export PATH="'$INSTALL_DIR':$PATH"' >> "$SHELL_RC"
-        export PATH="$INSTALL_DIR:$PATH"
+        echo "export PATH=\"$BIN_DIR:\$PATH\"" >> "$SHELL_RC"
+        echo "export HDP_DRY_RUN_PATH=\"$BASE_DIR/dry_run_compiled.json\"" >> "$SHELL_RC"
+        echo "export HDP_SOUND_RUN_PATH=\"$BASE_DIR/sound_run_compiled.json\"" >> "$SHELL_RC"
+        export PATH="$BIN_DIR:$PATH"
+        export HDP_DRY_RUN_PATH="$BASE_DIR/dry_run_compiled.json"
+        export HDP_SOUND_RUN_PATH="$BASE_DIR/sound_run_compiled.json"
         echo "Added to $SHELL_RC. The change will be permanent after restart or running: source $SHELL_RC"
         ;;
 esac
