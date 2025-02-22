@@ -39,12 +39,10 @@ jobs:
       - name: Create Release
         if: matrix.platform.os == 'ubuntu-latest'
         id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ inputs.version }}
-          release_name: Release ${{ inputs.version }}
+          name: Release ${{ inputs.version }}
           draft: false
           prerelease: false
       
@@ -84,6 +82,13 @@ jobs:
           command: build
           args: --release --target ${{ matrix.platform.target }} --bin hdp-cli
 
+      - name: Get Program Hash
+        if: matrix.platform.os == 'ubuntu-latest'
+        id: program_hash
+        run: |
+          HASH=$(${{ matrix.platform.binary_path }} program-hash)
+          echo "PROGRAM_HASH=$HASH" >> $GITHUB_ENV
+
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
@@ -91,4 +96,9 @@ jobs:
           file: ${{ matrix.platform.binary_path }}
           asset_name: ${{ matrix.platform.asset_name }}
           tag: ${{ inputs.version }}
+          body: |
+            ## Program Hash
+            ```
+            ${{ env.PROGRAM_HASH }}
+            ```
           overwrite: true 
