@@ -25,6 +25,10 @@ use types::{error::Error, HDPDryRunInput, HDPDryRunOutput};
 
 pub const DRY_RUN_COMPILED_JSON: &str = env!("DRY_RUN_COMPILED_JSON");
 
+pub fn get_program_path() -> String {
+    std::env::var("HDP_DRY_RUN_PATH").unwrap_or_else(|_| DRY_RUN_COMPILED_JSON.to_string())
+}
+
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 pub struct Args {
@@ -65,7 +69,9 @@ pub fn run(
         ..Default::default()
     };
 
-    let program_file = std::fs::read(DRY_RUN_COMPILED_JSON).map_err(Error::IO)?;
+    let program_path = get_program_path();
+    println!("Program path: {}", program_path);
+    let program_file = std::fs::read(program_path).map_err(Error::IO)?;
     let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))?;
 
     let mut hint_processor = CustomHintProcessor::new(input);
