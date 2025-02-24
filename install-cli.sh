@@ -78,9 +78,7 @@ echo "Please add the following lines to your shell configuration file ($SHELL_RC
 echo "export HDP_DRY_RUN_PATH=\"$BASE_DIR/dry_run_compiled.json\""
 echo "export HDP_SOUND_RUN_PATH=\"$BASE_DIR/sound_run_compiled.json\""
 echo
-echo "Or run these commands in your current shell:"
-echo "export HDP_DRY_RUN_PATH=\"$BASE_DIR/dry_run_compiled.json\""
-echo "export HDP_SOUND_RUN_PATH=\"$BASE_DIR/sound_run_compiled.json\""
+echo "Or run these commands in your current shell"
 
 # Add to PATH if needed
 case ":${PATH}:" in

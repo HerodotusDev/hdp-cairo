@@ -7,19 +7,20 @@ edition = "2024"
 anyhow.workspace = true
 axum.workspace = true
 cairo-vm.workspace = true
+dotenvy.workspace = true
 dry_hint_processor.workspace = true
 fetcher.workspace = true
 hints.workspace = true
 serde_json.workspace = true
 serde.workspace = true
 sound_hint_processor.workspace = true
+syscall_handler.workspace = true
 tokio.workspace = true
 tower-http.workspace = true
 tracing-subscriber.workspace = true
 types.workspace = true
-utoipa.workspace = true
 utoipa-swagger-ui.workspace = true
-syscall_handler.workspace = true
+utoipa.workspace = true
 
 [dev-dependencies]
 http-body-util.workspace = true

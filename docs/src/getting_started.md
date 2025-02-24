@@ -9,15 +9,12 @@
    
    To install a specific version:
    ```bash
-   VERSION=v1.0.4 curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
+   VERSION=vX.X.X curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
    ```
 
 2. **ENVs:**
-  - HDP CLI requires and RPC endpoint for Ethereum and Starknet. Please expose them before running:
-    ```bash
-    export RPC_URL_ETHEREUM=<RPC_URL>
-    export RPC_URL_STARKNET=<RPC_URL>
-    ```
+    HDP CLI requires and RPC endpoint for Ethereum and Starknet.
+    Please expose env vars before running present in [.env](example.env)
 
 
 ### Option 2: Building from Source
@@ -50,10 +47,10 @@
    - Copy the example environment file:
      
      ```bash
-     cp .cargo/config.example.toml .cargo/config.toml
+     cp example.env .env
      ```
      
-   - Edit the `.cargo/config.toml` file to provide the correct RPC endpoints and configuration details.
+   - Edit the [.env](example.env) file to provide the correct RPC endpoints and configuration details.
 
 ---
 
@@ -190,4 +187,4 @@ You can run the pipeline either using the CLI tool or building from source.
    cargo nextest run
    ```
 
-> **Note:** Ensure that the environment variables from `.cargo/config.toml` are set before running the tests.
+> **Note:** Ensure that the environment variables from [.env](example.env) are set before running the tests.

@@ -21,7 +21,7 @@ curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install
 To install a specific version:
 
 ```bash
-VERSION=v1.0.4 curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
+VERSION=vX.X.X curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
 ```
 
 ### Option 2: Build from Source
@@ -35,7 +35,7 @@ make
 ## Running
 
 Before running the program, prepare the input data. The inputs are provided via the [hdp_input.json](examples/hdp_input.json).
-Runtime require chain nodes RPC calls, ensure an environment variables [.cargo/config.toml](.cargo/config.example.toml) are set.
+Runtime require chain nodes RPC calls, ensure an environment variables [.env](example.env) are set.
 
 ### Steps to Execute:
 
@@ -73,7 +73,7 @@ The program will output the results root and tasks root. These roots can be used
 
 ## Testing
 
-Tests require chain nodes RPC calls. Ensure an environment variables [.cargo/config.toml](.cargo/config.example.toml) are set.
+Tests require chain nodes RPC calls. Ensure an environment variables [.env](example.env) are set.
 
 1. **Build Cairo1 Modules:**
 

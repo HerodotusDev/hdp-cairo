@@ -39,20 +39,14 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Set default RPC URL for Herodotus Indexer
-    std::env::set_var("RPC_URL_HERODOTUS_INDEXER", "https://staging.rs-indexer.api.herodotus.cloud/");
-
-    // Check required environment variables
-    for env_var in ["RPC_URL_ETHEREUM", "RPC_URL_STARKNET"] {
-        if std::env::var(env_var).is_err() {
-            return Err(format!("Missing required environment variable: {}", env_var).into());
-        }
-    }
+    dotenvy::dotenv().ok();
 
     let cli = Cli::parse();
 
     match cli.command {
         Commands::DryRun(args) => {
+            check_env()?;
+
             println!("Starting dry run execution...");
             println!("Reading compiled module from: {}", args.compiled_module.display());
 
@@ -84,6 +78,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Ok(())
         }
         Commands::FetchProofs(args) => {
+            check_env()?;
+
             println!("Reading input file from: {}", args.inputs.display());
             let input_file = fs::read(&args.inputs)?;
 
@@ -148,4 +144,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Ok(())
         }
     }
+}
+
+fn check_env() -> Result<(), Box<dyn std::error::Error>> {
+    // Check required environment variables
+    for env_var in ["RPC_URL_ETHEREUM", "RPC_URL_STARKNET", "RPC_URL_HERODOTUS_INDEXER"] {
+        if std::env::var(env_var).is_err() {
+            return Err(format!("Missing required environment variable: {}", env_var).into());
+        }
+    }
+
+    Ok(())
 }
