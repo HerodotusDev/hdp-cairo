@@ -148,7 +148,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let program = Program::from_bytes(&program_file, Some(cairo_run::CairoRunConfig::default().entrypoint))?;
 
             println!(
-                "Program hash: {}",
+                "{}",
                 compute_program_hash_chain(&program.get_stripped_program().unwrap(), 0)?.to_hex_string()
             );
             Ok(())
