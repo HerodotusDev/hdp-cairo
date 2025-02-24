@@ -20,7 +20,6 @@ use tracing_subscriber as _;
 use types::{error::Error, HDPInput, HDPOutput};
 
 pub const HDP_COMPILED_JSON: &str = env!("HDP_COMPILED_JSON");
-pub const HDP_PROGRAM_HASH: &str = env!("HDP_PROGRAM_HASH");
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]

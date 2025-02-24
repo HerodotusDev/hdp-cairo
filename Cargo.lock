@@ -2108,6 +2108,7 @@ name = "cli"
 version = "0.1.0"
 dependencies = [
  "cairo-lang-starknet-classes",
+ "cairo-vm",
  "clap",
  "dotenvy",
  "dry_hint_processor",
