@@ -28,3 +28,7 @@ thiserror.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 types.workspace = true
+pyo3.workspace = true
+
+[package.metadata.pyo3-build-config]
+python-path = "venv/bin/python"

@@ -13,12 +13,12 @@ pub mod contract_bootloader;
 pub mod decoder;
 pub mod merkle;
 pub mod print;
+pub mod python;
 pub mod rlp;
 pub mod segments;
 pub mod utils;
 pub mod vars;
 pub mod verifiers;
-
 pub type HintImpl = fn(&mut VirtualMachine, &mut ExecutionScopes, &HintProcessorData, &HashMap<String, Felt252>) -> Result<(), HintError>;
 
 /// Hint Extensions extend the current map of hints used by the VM.
@@ -181,6 +181,9 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(utils::debug::PRINT_FELT.into(), utils::debug::print_felt);
     hints.insert(utils::debug::PRINT_STRING.into(), utils::debug::print_string);
     hints.insert(utils::debug::PRINT_FELT_HEX.into(), utils::debug::print_felt_hex);
+    hints.insert(python::garaga::modulo_circuit::MODULO_CIRCUIT_IMPORTS.into(), python::garaga::modulo_circuit::modulo_circuit_imports);
+    hints.insert(python::garaga::modulo_circuit::RUN_MODULO_CIRCUIT.into(), python::garaga::modulo_circuit::run_modulo_circuit);
+
     hints
 }
 
