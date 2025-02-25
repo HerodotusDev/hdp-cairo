@@ -58,6 +58,40 @@ impl From<u128> for Limb {
     }
 }
 
+impl PartialEq for UInt384 {
+    fn eq(&self, other: &Self) -> bool {
+        self.d0.0 == other.d0.0 && 
+        self.d1.0 == other.d1.0 && 
+        self.d2.0 == other.d2.0 && 
+        self.d3.0 == other.d3.0
+    }
+}
+
+impl Eq for UInt384 {}
+
+impl PartialOrd for UInt384 {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for UInt384 {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        // Compare from most significant limb (d3) to least significant (d0)
+        // Since limbs are already big-endian, we can directly compare them
+        match self.d3.0.cmp(&other.d3.0) {
+            std::cmp::Ordering::Equal => match self.d2.0.cmp(&other.d2.0) {
+                std::cmp::Ordering::Equal => match self.d1.0.cmp(&other.d1.0) {
+                    std::cmp::Ordering::Equal => self.d0.0.cmp(&other.d0.0),
+                    ord => ord,
+                },
+                ord => ord,
+            },
+            ord => ord,
+        }
+    }
+}
+
 impl UInt384 {
     pub fn from_python_list(py_list: &PyAny) -> Result<Self, MemoryError> {
         // Convert PyAny to PyList
@@ -91,6 +125,28 @@ impl UInt384 {
         bytes.extend(self.d0.0);
         
         bytes
+    }
+
+    // Helper methods for explicit comparisons
+    
+    /// Returns true if self is less than or equal to other
+    pub fn lte(&self, other: &Self) -> bool {
+        self <= other
+    }
+    
+    /// Returns true if self is greater than or equal to other
+    pub fn gte(&self, other: &Self) -> bool {
+        self >= other
+    }
+    
+    /// Returns true if self is less than other
+    pub fn lt(&self, other: &Self) -> bool {
+        self < other
+    }
+    
+    /// Returns true if self is greater than other
+    pub fn gt(&self, other: &Self) -> bool {
+        self > other
     }
 }
 

@@ -185,6 +185,9 @@ pub fn hints() -> HashMap<String, HintImpl> {
     
     hints.insert(python::garaga::modulo_circuit::MODULO_CIRCUIT_IMPORTS.into(), python::garaga::modulo_circuit::modulo_circuit_imports);
     hints.insert(python::garaga::modulo_circuit::RUN_MODULO_CIRCUIT.into(), python::garaga::modulo_circuit::run_modulo_circuit);
+    hints.insert(python::garaga::utils::HINT_RETRIEVE_OUTPUT.into(), python::garaga::utils::hint_retrieve_output);
+    hints.insert(python::garaga::basic_field_ops::HINT_UINT384_IS_LE.into(), python::garaga::basic_field_ops::hint_uint384_is_le);
+    hints.insert(python::garaga::basic_field_ops::HINT_ADD_MOD_CIRCUIT.into(), python::garaga::basic_field_ops::hint_add_mod_circuit);
 
     hints
 }

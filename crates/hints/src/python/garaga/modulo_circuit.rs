@@ -51,7 +51,8 @@ pub fn modulo_circuit_imports(
 // #MOD_CIRCUIT.print_value_segment()"#;
 
 pub const RUN_MODULO_CIRCUIT: &str = r#"from hints.modulo_circuit import run_modulo_circuit_hints
-witnesses = run_modulo_circuit_hints(memory, ids.input, ids.N_LIMBS, ids.BASE, ids.circuit)"#;
+witnesses = run_modulo_circuit_hints(memory, ids.input, ids.N_LIMBS, ids.BASE, ids.circuit)
+fill_felt_ptr(x=witnesses, memory=memory, address=ids.range_check96_ptr + ids.circuit.constants_ptr_len * ids.N_LIMBS + ids.circuit.input_len)"#;
 
 /// Packs multiple limbs into a single value using the formula: sum(limb[i] * base^i)
 fn bigint_pack_ptr(vm: &VirtualMachine, ptr: Relocatable) -> Result<UInt384, HintError> {
@@ -80,9 +81,7 @@ pub fn run_modulo_circuit(
 ) -> Result<(), HintError> {
     println!("Running modulo circuit");
 
-    let res = compute_mod_circuit(vm, exec_scopes, _hint_data, _constants).unwrap();
-    println!("res: {:?}", res);
-
+    compute_mod_circuit(vm, exec_scopes, _hint_data, _constants).unwrap();
 
     Ok(())
 }
@@ -111,7 +110,7 @@ pub fn compute_mod_circuit(
             )?;
 
             Ok(py_int.into())
-        }).collect::<PyResult<Vec<_>>>()?; // Handle the Result from collect
+        }).collect::<PyResult<Vec<_>>>()?;
 
         let py_circuit_id = py.eval(
             &format!("int.from_bytes({:?}, 'big')", circuit_id),
@@ -123,7 +122,6 @@ pub fn compute_mod_circuit(
         let witnesses = run_modulo_circuit_hints.call1((py_input, n_limbs, base, py_circuit_id, curve_id))?;
         println!("got witnesses: {:?}", witnesses);
 
-        // Write each witness value to memory
         let mut i: usize = 0;
         for witness in witnesses.iter()? {
             let addr = (witness_target_ptr + i).unwrap();
@@ -131,8 +129,6 @@ pub fn compute_mod_circuit(
             vm.insert_value(addr, Felt252::from(val)).unwrap();
             i += 1;
         }
-
-        print_address_range(vm, witness_target_ptr, 10, Some(10));
 
         Ok(())
     })
