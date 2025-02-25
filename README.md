@@ -18,12 +18,6 @@ You can install the CLI using install script:
 curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
 ```
 
-To install a specific version:
-
-```bash
-VERSION=vX.X.X curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
-```
-
 ### Option 2: Build from Source
 
 To install the required dependencies and set up the Python virtual environment, run:
@@ -34,40 +28,31 @@ make
 
 ## Running
 
-Before running the program, prepare the input data. The inputs are provided via the [hdp_input.json](examples/hdp_input.json).
 Runtime require chain nodes RPC calls, ensure an environment variables [.env](example.env) are set.
 
 ### Steps to Execute:
 
 1. **Simulate Cairo1 Module and Collect Proofs Information:**
+
    ```bash
-   hdp-cli dry-run -m examples/hdp_input.json --print_output
-   ```
-   
-   Or when building from source:
-   ```bash
-   cargo run --release --bin hdp-cli -- dry-run -m examples/hdp_input.json --print_output
+   cargo run --release --bin hdp-cli -- dry-run -m module_contract_class.json --print_output
    ```
 
+   `module_contract_class.json` is built contract code from `Scarb` build, more specific example in [DOCS](./docs/src/getting_started.md)
+
 2. **Fetch On-Chain Proofs Needed for the HDP Run:**
-   ```bash
-   hdp-cli fetch-proofs
-   ```
-   
-   Or when building from source:
+
    ```bash
    cargo run --release --bin hdp-cli --features progress_bars -- fetch-proofs
    ```
 
 3. **Run Cairo1 Module with Verified On-Chain Data:**
+
    ```bash
-   hdp-cli sound-run -m examples/hdp_input.json --print_output
+   cargo run --release --bin hdp-cli -- sound-run -m module_contract_class.json --print_output
    ```
-   
-   Or when building from source:
-   ```bash
-   cargo run --release --bin hdp-cli -- sound-run -m examples/hdp_input.json --print_output
-   ```
+
+   `module_contract_class.json` is built contract code from `Scarb` build, more specific example in [DOCS](./docs/src/getting_started.md)
 
 The program will output the results root and tasks root. These roots can be used to extract the results from the on-chain contract.
 

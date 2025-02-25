@@ -1,5 +1,5 @@
 #[starknet::contract]
-mod example_starkgate {
+mod module {
     use hdp_cairo::HDP;
     use hdp_cairo::evm::{account::{AccountKey, AccountImpl}, ETHEREUM_TESTNET_CHAIN_ID};
     use hdp_cairo::starknet::{storage::{StorageKey, StorageImpl}, STARKNET_TESTNET_CHAIN_ID};
