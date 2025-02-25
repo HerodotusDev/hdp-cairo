@@ -152,6 +152,7 @@ impl FromIterator<Felt252> for HDPDryRunOutput {
 pub struct MmrMetaOutput {
     pub id: Felt252,
     pub size: Felt252,
+    pub chain_id: Felt252,
     pub root: Felt252,
 }
 
@@ -172,8 +173,8 @@ impl FromIterator<Felt252> for HDPOutput {
 
         let mut mmr_metas = Vec::<MmrMetaOutput>::new();
 
-        while let Ok([id, root, size]) = i.next_chunk::<3>() {
-            mmr_metas.push(MmrMetaOutput { id, root, size });
+        while let Ok([id, size, chain_id, root]) = i.next_chunk::<4>() {
+            mmr_metas.push(MmrMetaOutput { id, size, chain_id, root });
         }
 
         Self {
