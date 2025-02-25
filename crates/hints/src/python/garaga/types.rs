@@ -52,7 +52,7 @@ impl From<u128> for Limb {
         // Copy the least significant bytes (up to 12)
         let start_idx = if value_bytes.len() > 12 { value_bytes.len() - 12 } else { 0 };
         let dest_start = 12 - value_bytes.len().min(12);
-        
+
         bytes[dest_start..].copy_from_slice(&value_bytes[start_idx..]);
         Limb(bytes)
     }
@@ -60,10 +60,7 @@ impl From<u128> for Limb {
 
 impl PartialEq for UInt384 {
     fn eq(&self, other: &Self) -> bool {
-        self.d0.0 == other.d0.0 && 
-        self.d1.0 == other.d1.0 && 
-        self.d2.0 == other.d2.0 && 
-        self.d3.0 == other.d3.0
+        self.d0.0 == other.d0.0 && self.d1.0 == other.d1.0 && self.d2.0 == other.d2.0 && self.d3.0 == other.d3.0
     }
 }
 
@@ -96,16 +93,16 @@ impl UInt384 {
     pub fn from_python_list(py_list: &PyAny) -> Result<Self, MemoryError> {
         // Convert PyAny to PyList
         let py_list = py_list.downcast::<PyList>().unwrap();
-        
+
         // Check if we have exactly 4 limbs
         assert_eq!(py_list.len(), 4, "Expected exactly 4 limbs");
-        
+
         // Extract the limbs as u128 values
         let d0_val: u128 = py_list.get_item(0).unwrap().extract().unwrap();
         let d1_val: u128 = py_list.get_item(1).unwrap().extract().unwrap();
         let d2_val: u128 = py_list.get_item(2).unwrap().extract().unwrap();
         let d3_val: u128 = py_list.get_item(3).unwrap().extract().unwrap();
-        
+
         // Create the UInt384 from the limbs
         Ok(Self {
             d0: Limb::from(d0_val),
@@ -114,36 +111,35 @@ impl UInt384 {
             d3: Limb::from(d3_val),
         })
     }
-    
 
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::with_capacity(48); // 384 bits = 48 bytes
-        
+
         bytes.extend(self.d3.0);
         bytes.extend(self.d2.0);
         bytes.extend(self.d1.0);
         bytes.extend(self.d0.0);
-        
+
         bytes
     }
 
     // Helper methods for explicit comparisons
-    
+
     /// Returns true if self is less than or equal to other
     pub fn lte(&self, other: &Self) -> bool {
         self <= other
     }
-    
+
     /// Returns true if self is greater than or equal to other
     pub fn gte(&self, other: &Self) -> bool {
         self >= other
     }
-    
+
     /// Returns true if self is less than other
     pub fn lt(&self, other: &Self) -> bool {
         self < other
     }
-    
+
     /// Returns true if self is greater than other
     pub fn gt(&self, other: &Self) -> bool {
         self > other

@@ -36,8 +36,8 @@ pub fn modulo_circuit_imports(
     Ok(())
 }
 
-// pub const RUN_MODULO_CIRCUIT: &str = r#"circuit_input = pack_bigint_ptr(memory, ids.input, ids.N_LIMBS, ids.BASE, ids.circuit.input_len//ids.N_LIMBS)
-// # Convert the int value back to a string and print it
+// pub const RUN_MODULO_CIRCUIT: &str = r#"circuit_input = pack_bigint_ptr(memory, ids.input, ids.N_LIMBS, ids.BASE,
+// ids.circuit.input_len//ids.N_LIMBS) # Convert the int value back to a string and print it
 // circuit_name = ids.circuit.name.to_bytes((ids.circuit.name.bit_length() + 7) // 8, 'big').decode()
 // #print(f"circuit.name = {circuit_name}")
 // circuit_id = find_best_circuit_id_from_int(ids.circuit.name)
@@ -47,8 +47,8 @@ pub fn modulo_circuit_imports(
 
 // witnesses = flatten([bigint_split(x.value, ids.N_LIMBS, ids.BASE) for x in MOD_CIRCUIT.witnesses])
 
-// fill_felt_ptr(x=witnesses, memory=memory, address=ids.range_check96_ptr + ids.circuit.constants_ptr_len * ids.N_LIMBS + ids.circuit.input_len)
-// #MOD_CIRCUIT.print_value_segment()"#;
+// fill_felt_ptr(x=witnesses, memory=memory, address=ids.range_check96_ptr + ids.circuit.constants_ptr_len * ids.N_LIMBS +
+// ids.circuit.input_len) #MOD_CIRCUIT.print_value_segment()"#;
 
 pub const RUN_MODULO_CIRCUIT: &str = r#"from hints.modulo_circuit import run_modulo_circuit_hints
 witnesses = run_modulo_circuit_hints(memory, ids.input, ids.N_LIMBS, ids.BASE, ids.circuit)
@@ -96,27 +96,24 @@ pub fn compute_mod_circuit(
     let circuit_address = get_ptr_from_var_name("circuit", vm, &hint_data.ids_data, &hint_data.ap_tracking).unwrap();
     let circuit = ModuloCircuit::from_memory(vm, circuit_address).unwrap();
     let range_check_ptr = get_ptr_from_var_name("range_check96_ptr", vm, &hint_data.ids_data, &hint_data.ap_tracking).unwrap();
-    
-    let move_amt: usize = (circuit.constants_ptr_len * Felt252::from(n_limbs) + circuit.input_len).try_into().unwrap();
+
+    let move_amt: usize = (circuit.constants_ptr_len * Felt252::from(n_limbs) + circuit.input_len)
+        .try_into()
+        .unwrap();
     let witness_target_ptr = (range_check_ptr + move_amt).unwrap();
 
     Python::with_gil(|py| {
-        let py_input = circuit_input.iter().map(|uint384| -> PyResult<PyObject> {
-            let bytes = uint384.to_bytes();            
-            let py_int = py.eval(
-                &format!("int.from_bytes({:?}, 'big')", bytes),
-                None,
-                None
-            )?;
+        let py_input = circuit_input
+            .iter()
+            .map(|uint384| -> PyResult<PyObject> {
+                let bytes = uint384.to_bytes();
+                let py_int = py.eval(&format!("int.from_bytes({:?}, 'big')", bytes), None, None)?;
 
-            Ok(py_int.into())
-        }).collect::<PyResult<Vec<_>>>()?;
+                Ok(py_int.into())
+            })
+            .collect::<PyResult<Vec<_>>>()?;
 
-        let py_circuit_id = py.eval(
-            &format!("int.from_bytes({:?}, 'big')", circuit_id),
-            None,
-            None
-        )?;
+        let py_circuit_id = py.eval(&format!("int.from_bytes({:?}, 'big')", circuit_id), None, None)?;
         let all_circuits = py.import("hints.modulo_circuit")?;
         let run_modulo_circuit_hints = all_circuits.getattr("run_modulo_circuit_hints")?;
         let witnesses = run_modulo_circuit_hints.call1((py_input, n_limbs, base, py_circuit_id, curve_id))?;
@@ -134,7 +131,6 @@ pub fn compute_mod_circuit(
     })
 }
 
-
 fn perpare_python_inputs(
     vm: &mut VirtualMachine,
     _exec_scopes: &mut ExecutionScopes,
@@ -151,7 +147,6 @@ fn perpare_python_inputs(
     let circuit_input = pack_bigint_ptr_vec(vm, input_ptr, n_limbs, input_len as usize / n_limbs as usize).unwrap();
     let circuit_id = circuit.name.to_bytes_be().to_vec();
     let curve_id: u64 = circuit.curve_id.try_into().unwrap();
-
 
     (circuit_input, circuit_id, curve_id, n_limbs, base)
 }

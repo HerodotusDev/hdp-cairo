@@ -188,6 +188,8 @@ func main{
     // );
     // let (res) = is_on_curve_g1(1, p);
 
+    
+
 
     let x = UInt384(
         d0=0x43a4349c2f833e23209eec32,
@@ -195,6 +197,8 @@ func main{
         d2=0x8759162520009d30bce6d5ca,
         d3=0x86c6e5c9d071c9b6dde93804
     );
+
+
 
 
 // 0x86c6e5c9d071c9b6dde93804 8759162520009d30bce6d5ca 0884b9a3aa10bb098e084ca1 43a4349c2f833e23209eec32
