@@ -181,6 +181,8 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(utils::debug::PRINT_FELT.into(), utils::debug::print_felt);
     hints.insert(utils::debug::PRINT_STRING.into(), utils::debug::print_string);
     hints.insert(utils::debug::PRINT_FELT_HEX.into(), utils::debug::print_felt_hex);
+    hints.insert(utils::debug::PRINT_UINT384.into(), utils::debug::print_uint384);
+    
     hints.insert(python::garaga::modulo_circuit::MODULO_CIRCUIT_IMPORTS.into(), python::garaga::modulo_circuit::modulo_circuit_imports);
     hints.insert(python::garaga::modulo_circuit::RUN_MODULO_CIRCUIT.into(), python::garaga::modulo_circuit::run_modulo_circuit);
 

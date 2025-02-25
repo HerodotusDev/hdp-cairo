@@ -5,6 +5,7 @@ use cairo_vm::{
     vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
     Felt252,
 };
+use pyo3::{types::PyList, PyAny};
 use types::cairo::traits::CairoType;
 
 #[derive(Debug, Clone, Copy)]
@@ -43,10 +44,43 @@ impl From<Limb> for u128 {
     }
 }
 
-impl UInt384 {
-    pub fn to_python_list(&self) -> Vec<u128> {
-        vec![self.d0.into(), self.d1.into(), self.d2.into(), self.d3.into()]
+impl From<u128> for Limb {
+    fn from(value: u128) -> Self {
+        let mut bytes = [0u8; 12];
+        // Convert u128 to big-endian bytes
+        let value_bytes = value.to_be_bytes();
+        // Copy the least significant bytes (up to 12)
+        let start_idx = if value_bytes.len() > 12 { value_bytes.len() - 12 } else { 0 };
+        let dest_start = 12 - value_bytes.len().min(12);
+        
+        bytes[dest_start..].copy_from_slice(&value_bytes[start_idx..]);
+        Limb(bytes)
     }
+}
+
+impl UInt384 {
+    pub fn from_python_list(py_list: &PyAny) -> Result<Self, MemoryError> {
+        // Convert PyAny to PyList
+        let py_list = py_list.downcast::<PyList>().unwrap();
+        
+        // Check if we have exactly 4 limbs
+        assert_eq!(py_list.len(), 4, "Expected exactly 4 limbs");
+        
+        // Extract the limbs as u128 values
+        let d0_val: u128 = py_list.get_item(0).unwrap().extract().unwrap();
+        let d1_val: u128 = py_list.get_item(1).unwrap().extract().unwrap();
+        let d2_val: u128 = py_list.get_item(2).unwrap().extract().unwrap();
+        let d3_val: u128 = py_list.get_item(3).unwrap().extract().unwrap();
+        
+        // Create the UInt384 from the limbs
+        Ok(Self {
+            d0: Limb::from(d0_val),
+            d1: Limb::from(d1_val),
+            d2: Limb::from(d2_val),
+            d3: Limb::from(d3_val),
+        })
+    }
+    
 
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::with_capacity(48); // 384 bits = 48 bytes
