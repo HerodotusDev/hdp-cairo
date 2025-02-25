@@ -76,10 +76,11 @@ async fn main() -> Result<(), Error> {
     let cairo_run_config = cairo_run::CairoRunConfig {
         trace_enabled: args.trace_file.is_some() || args.air_public_input.is_some(),
         relocate_mem: args.memory_file.is_some() || args.air_public_input.is_some(),
-        layout: args.layout,
+        layout: LayoutName::all_cairo,
         proof_mode: args.proof_mode,
         secure_run: args.secure_run,
-        allow_missing_builtins: args.allow_missing_builtins,
+        // allow_missing_builtins: args.allow_missing_builtins,
+        // allow_missing_builtins: Some(true),
         dynamic_layout_params: cairo_layout_params,
         ..Default::default()
     };
@@ -112,20 +113,20 @@ async fn main() -> Result<(), Error> {
             .write_zip_file(file_name)?
     }
 
-    std::fs::write(
-        args.program_output,
-        serde_json::to_vec::<SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler>>(
-            &cairo_runner
-                .exec_scopes
-                .get::<SyscallHandlerWrapper<evm::CallContractHandler, starknet::CallContractHandler>>(vars::scopes::SYSCALL_HANDLER)
-                .unwrap()
-                .syscall_handler
-                .try_read()
-                .unwrap(),
-        )
-        .map_err(|e| Error::IO(e.into()))?,
-    )
-    .map_err(Error::IO)?;
+    // std::fs::write(
+    //     args.program_output,
+    //     serde_json::to_vec::<SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler>>(
+    //         &cairo_runner
+    //             .exec_scopes
+    //             .get::<SyscallHandlerWrapper<evm::CallContractHandler, starknet::CallContractHandler>>(vars::scopes::SYSCALL_HANDLER)
+    //             .unwrap()
+    //             .syscall_handler
+    //             .try_read()
+    //             .unwrap(),
+    //     )
+    //     .map_err(|e| Error::IO(e.into()))?,
+    // )
+    // .map_err(Error::IO)?;
 
     Ok(())
 }

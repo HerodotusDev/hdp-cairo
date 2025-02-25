@@ -1,3 +1,6 @@
 [submodule "packages/eth_essentials"]
 	path = packages/eth_essentials
 	url = https://github.com/HerodotusDev/eth_essentials.git
+[submodule "packages/garaga_zero"]
+	path = packages/garaga_zero
+	url = https://github.com/petscheit/garaga-zero.git

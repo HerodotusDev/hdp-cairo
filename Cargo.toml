@@ -24,7 +24,7 @@ axum = { version = "0.8", features = ["tracing"] }
 bincode = { version = "2.0.0-rc.3", default-features = false, features = ["serde"]}
 cairo-lang-casm = { version = "2.10.0-rc.1", default-features = false }
 cairo-lang-starknet-classes = "2.10.0-rc.1"
-cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", tag = "v2.0.0-rc4", features = ["extensive_hints", "clap", "cairo-1-hints"] }
+cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", tag = "v2.0.0-rc4", features = ["extensive_hints", "clap", "cairo-1-hints", "mod_builtin"] }
 clap = { version = "4.3.10", features = ["derive"] }
 eth-trie-proofs = "0.1.2"
 futures = "0.3.31"
@@ -67,3 +67,4 @@ pathfinder_gateway_types = { git = "https://github.com/eqlabs/pathfinder", packa
 sound_hint_processor = { path = "crates/sound_hint_processor" }
 syscall_handler = { path = "crates/syscall_handler" }
 types = { path = "crates/types" }
+pyo3 = { version = "0.20.0", features = ["auto-initialize"] }
