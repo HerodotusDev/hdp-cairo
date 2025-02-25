@@ -6,11 +6,12 @@
 use std::{fs, path::PathBuf};
 
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
+use cairo_vm::{cairo_run, program_hash::compute_program_hash_chain};
 use clap::{Parser, Subcommand};
 use dry_hint_processor::syscall_handler::{evm, starknet};
-use dry_run::DRY_RUN_COMPILED_JSON;
+use dry_run::{Program, DRY_RUN_COMPILED_JSON};
 use fetcher::{parse_syscall_handler, Fetcher};
-use sound_run::{HDP_COMPILED_JSON, HDP_PROGRAM_HASH};
+use sound_run::HDP_COMPILED_JSON;
 use syscall_handler::SyscallHandler;
 use types::{error::Error, param::Param, ChainProofs, HDPDryRunInput, HDPInput};
 
@@ -34,25 +35,22 @@ enum Commands {
     SoundRun(sound_run::Args),
     /// Get program hash
     #[command(name = "program-hash")]
-    ProgramHash,
+    ProgramHash {
+        #[arg(short = 'p', long = "program", help = "Path to the compiled program")]
+        program: Option<PathBuf>,
+    },
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Set default RPC URL for Herodotus Indexer
-    std::env::set_var("RPC_URL_HERODOTUS_INDEXER", "https://staging.rs-indexer.api.herodotus.cloud/");
-
-    // Check required environment variables
-    for env_var in ["RPC_URL_ETHEREUM", "RPC_URL_STARKNET"] {
-        if std::env::var(env_var).is_err() {
-            return Err(format!("Missing required environment variable: {}", env_var).into());
-        }
-    }
+    dotenvy::dotenv().ok();
 
     let cli = Cli::parse();
 
     match cli.command {
         Commands::DryRun(args) => {
+            check_env()?;
+
             println!("Starting dry run execution...");
             println!("Reading compiled module from: {}", args.compiled_module.display());
 
@@ -84,6 +82,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Ok(())
         }
         Commands::FetchProofs(args) => {
+            check_env()?;
+
             println!("Reading input file from: {}", args.inputs.display());
             let input_file = fs::read(&args.inputs)?;
 
@@ -143,9 +143,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("Sound run completed successfully.");
             Ok(())
         }
-        Commands::ProgramHash => {
-            println!("{}", HDP_PROGRAM_HASH);
+        Commands::ProgramHash { program } => {
+            let program_file = std::fs::read(program.unwrap_or(PathBuf::from(HDP_COMPILED_JSON))).map_err(Error::IO)?;
+            let program = Program::from_bytes(&program_file, Some(cairo_run::CairoRunConfig::default().entrypoint))?;
+
+            println!(
+                "{}",
+                compute_program_hash_chain(&program.get_stripped_program().unwrap(), 0)?.to_hex_string()
+            );
             Ok(())
         }
     }
+}
+
+fn check_env() -> Result<(), Box<dyn std::error::Error>> {
+    // Check required environment variables
+    for env_var in ["RPC_URL_ETHEREUM", "RPC_URL_STARKNET", "RPC_URL_HERODOTUS_INDEXER"] {
+        if std::env::var(env_var).is_err() {
+            return Err(format!("Missing required environment variable: {}", env_var).into());
+        }
+    }
+
+    Ok(())
 }

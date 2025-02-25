@@ -14,4 +14,5 @@ thiserror.workspace = true
 types.workspace = true
 
 [dev-dependencies]
+dotenvy.workspace = true
 tokio.workspace = true

@@ -9,14 +9,15 @@ path = "src/lib.rs"
 [dependencies]
 cairo-vm.workspace = true
 clap.workspace = true
+dotenvy.workspace = true
 dry_hint_processor.workspace = true
 hints.workspace = true
 serde_json.workspace = true
+syscall_handler.workspace = true
 tokio.workspace = true
 tracing-subscriber.workspace = true
 tracing.workspace = true
 types.workspace = true
-syscall_handler.workspace = true
 
 [build-dependencies]
 sha2 = "0.10.6"

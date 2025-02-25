@@ -14,6 +14,7 @@ use types::{error::Error, param::Param, CasmContractClass, ChainProofs, HDPInput
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 1)]
 async fn main() -> Result<(), Error> {
+    dotenvy::dotenv().ok();
     tracing_subscriber::fmt::init();
 
     let args = Args::try_parse_from(std::env::args()).map_err(Error::Cli)?;

@@ -2,7 +2,14 @@
 version = 1
 
 [[package]]
-name = "examples"
+name = "example_hello_world"
+version = "0.1.0"
+dependencies = [
+ "hdp_cairo",
+]
+
+[[package]]
+name = "example_starkgate"
 version = "0.1.0"
 dependencies = [
  "hdp_cairo",

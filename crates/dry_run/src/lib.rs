@@ -11,6 +11,7 @@ use cairo_vm::{
     types::relocatable::Relocatable,
 };
 use clap::Parser;
+use dotenvy as _;
 use dry_hint_processor::{
     syscall_handler::{evm, starknet},
     CustomHintProcessor,

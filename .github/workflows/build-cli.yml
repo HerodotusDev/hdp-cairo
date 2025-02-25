@@ -13,7 +13,6 @@ permissions:
 
 jobs:
   create_release:
-    name: Create Release
     runs-on: ubuntu-latest
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
@@ -23,15 +22,54 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ inputs.version }}
-          name: Release ${{ inputs.version }}
+          name: ${{ inputs.version }}
           draft: false
           prerelease: false
           generate_release_notes: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
-  build_and_upload:
+  build_and_upload_compiled_program:
     needs: create_release
-    name: Release - ${{ matrix.platform.asset_name }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Set up Cairo
+        run: make
+      
+      - name: Build
+        run: |
+          venv/bin/cairo-compile --cairo_path=packages/eth_essentials src/hdp.cairo --output sound_run_compiled.json --no_debug_info
+          venv/bin/cairo-compile --cairo_path=packages/eth_essentials src/contract_bootloader/contract_dry_run.cairo --output dry_run_compiled.json --no_debug_info
+
+      - name: Upload to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: sound_run_compiled.json
+          asset_name: sound_run_compiled.json
+          tag: ${{ inputs.version }}
+          overwrite: true
+
+      - name: Upload to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dry_run_compiled.json
+          asset_name: dry_run_compiled.json
+          tag: ${{ inputs.version }}
+          overwrite: true
+
+  build_and_upload_cli:
+    needs: create_release
     runs-on: ${{ matrix.platform.os }}
     strategy:
       matrix:
@@ -89,34 +127,62 @@ jobs:
           command: build
           args: --release --bin hdp-cli
 
-      - name: Get Program Hash
-        if: matrix.platform.os == 'ubuntu-24.04'
-        id: program_hash
-        run: |
-          HASH=$(${{ matrix.platform.binary_path }} program-hash)
-          echo "PROGRAM_HASH=$HASH" >> $GITHUB_ENV
-        env:
-          RPC_URL_ETHEREUM: ${{ secrets.RPC_URL_ETHEREUM }}
-          RPC_URL_HERODOTUS_INDEXER: ${{ secrets.RPC_URL_HERODOTUS_INDEXER }}
-          RPC_URL_STARKNET: ${{ secrets.RPC_URL_STARKNET }}
-
-      - name: Update Release Body
-        if: matrix.platform.os == 'ubuntu-24.04'
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ inputs.version }}
-          body: |
-            ## Program Hash
-            ```
-            ${{ env.PROGRAM_HASH }}
-            ```
-          token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ matrix.platform.binary_path }}
           asset_name: ${{ matrix.platform.asset_name }}
+          tag: ${{ inputs.version }}
+          overwrite: true
+
+  upload_program_hash_file:
+    needs: create_release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Cargo Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Set up Cairo
+        run: make
+
+      - name: Get Program Hash
+        run: |
+          hash=$(cargo run --release --bin hdp-cli -- program-hash | tr -d '\n')
+          echo "PROGRAM_HASH=$hash" >> $GITHUB_ENV
+
+      - name: Create file with program hash as filename
+        run: |
+          echo "$PROGRAM_HASH" > "./${PROGRAM_HASH}"
+
+      - name: Upload program hash file to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ env.PROGRAM_HASH }}
+          asset_name: ${{ env.PROGRAM_HASH }}
           tag: ${{ inputs.version }}
           overwrite: true

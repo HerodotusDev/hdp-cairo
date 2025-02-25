@@ -27,6 +27,7 @@ cairo-lang-casm = { version = "2.10.0-rc.1", default-features = false }
 cairo-lang-starknet-classes = "2.10.0-rc.1"
 cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", tag = "v2.0.0-rc4", features = ["extensive_hints", "clap", "cairo-1-hints"] }
 clap = { version = "4.3.10", features = ["derive"] }
+dotenvy = "0.15.7"
 eth-trie-proofs = "0.1.2"
 futures = "0.3.31"
 hex = "0.4.3"

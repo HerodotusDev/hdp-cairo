@@ -11,6 +11,7 @@ use cairo_vm::{
     vm::runners::cairo_pie::CairoPie,
 };
 use clap::Parser;
+use dotenvy as _;
 use serde_json as _;
 use sound_hint_processor::CustomHintProcessor;
 use tokio as _;
@@ -19,7 +20,6 @@ use tracing_subscriber as _;
 use types::{error::Error, HDPInput, HDPOutput};
 
 pub const HDP_COMPILED_JSON: &str = env!("HDP_COMPILED_JSON");
-pub const HDP_PROGRAM_HASH: &str = env!("HDP_PROGRAM_HASH");
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -31,7 +31,6 @@ pub struct Args {
     #[arg(short = 'i', long = "inputs", help = "Path to the JSON file containing input parameters")]
     pub inputs: Option<PathBuf>,
     #[arg(
-        short = 'p',
         long = "proofs",
         default_value = "proofs.json",
         help = "Path to the program proofs file (fetch-proof output)"
