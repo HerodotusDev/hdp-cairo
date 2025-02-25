@@ -2,6 +2,13 @@
 version = 1
 
 [[package]]
+name = "example_average"
+version = "0.1.0"
+dependencies = [
+ "hdp_cairo",
+]
+
+[[package]]
 name = "example_hello_world"
 version = "0.1.0"
 dependencies = [
