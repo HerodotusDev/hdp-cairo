@@ -185,3 +185,13 @@ impl FromIterator<Felt252> for HDPOutput {
         }
     }
 }
+
+impl HDPOutput {
+    pub fn to_felt_vec(&self) -> Vec<Felt252> {
+        let mut felt_vec = vec![self.program_hash, self.result_low, self.result_high];
+        self.mmr_metas.iter().for_each(|mmr_meta| {
+            felt_vec.extend([mmr_meta.id, mmr_meta.size, mmr_meta.chain_id, mmr_meta.root]);
+        });
+        felt_vec
+    }
+}
