@@ -24,7 +24,12 @@ use tracing::debug;
 use tracing_subscriber as _;
 use types::{error::Error, HDPDryRunInput, HDPDryRunOutput};
 
-pub const DRY_RUN_COMPILED_JSON: &str = env!("DRY_RUN_COMPILED_JSON");
+include!(concat!(env!("OUT_DIR"), "/compiled_dry_run_program.rs"));
+
+fn get_program_from_embedded_json(entrypoint: Option<&str>) -> Result<Program, Error> {
+    let program_json = COMPILED_DRY_RUN_PROGRAM;
+    Program::from_bytes(program_json, entrypoint).map_err(Error::from)
+}
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -53,7 +58,7 @@ pub struct Args {
 }
 
 pub fn run(
-    program_path: PathBuf,
+    program_path: Option<PathBuf>,
     input: HDPDryRunInput,
 ) -> Result<
     (
@@ -69,9 +74,17 @@ pub fn run(
         ..Default::default()
     };
 
-    println!("Program path: {}", program_path.display());
-    let program_file = std::fs::read(program_path).map_err(Error::IO)?;
-    let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))?;
+    let program = match program_path {
+        Some(path) => {
+            println!("Program path: {}", path.display());
+            let program_file = std::fs::read(path).map_err(Error::IO)?;
+            Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))?
+        }
+        None => {
+            println!("Using embedded program JSON");
+            get_program_from_embedded_json(Some(cairo_run_config.entrypoint))?
+        }
+    };
 
     let mut hint_processor = CustomHintProcessor::new(input);
     let mut cairo_runner = cairo_run_program(&program, &cairo_run_config, &mut hint_processor)?;

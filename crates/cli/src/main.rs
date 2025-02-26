@@ -9,9 +9,8 @@ use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use cairo_vm::{cairo_run, program_hash::compute_program_hash_chain};
 use clap::{Parser, Subcommand};
 use dry_hint_processor::syscall_handler::{evm, starknet};
-use dry_run::{Program, DRY_RUN_COMPILED_JSON};
+use dry_run::Program;
 use fetcher::{parse_syscall_handler, Fetcher};
-use sound_run::HDP_COMPILED_JSON;
 use syscall_handler::SyscallHandler;
 use types::{error::Error, param::Param, ChainProofs, HDPDryRunInput, HDPInput};
 
@@ -62,10 +61,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             };
 
             println!("Executing program...");
-            let (syscall_handler, output) = dry_run::run(
-                args.program.unwrap_or(PathBuf::from(DRY_RUN_COMPILED_JSON)),
-                HDPDryRunInput { compiled_class, params },
-            )?;
+            let (syscall_handler, output) = dry_run::run(args.program, HDPDryRunInput { compiled_class, params })?;
 
             if args.print_output {
                 println!("{:#?}", output);
@@ -124,7 +120,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             println!("Executing program...");
             let (pie, output) = sound_run::run(
-                args.program.unwrap_or(PathBuf::from(HDP_COMPILED_JSON)),
+                args.program,
                 HDPInput {
                     chain_proofs,
                     compiled_class,
@@ -144,8 +140,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Ok(())
         }
         Commands::ProgramHash { program } => {
-            let program_file = std::fs::read(program.unwrap_or(PathBuf::from(HDP_COMPILED_JSON))).map_err(Error::IO)?;
-            let program = Program::from_bytes(&program_file, Some(cairo_run::CairoRunConfig::default().entrypoint))?;
+            let program = match program {
+                Some(path) => {
+                    let program_file = std::fs::read(path).map_err(Error::IO)?;
+                    Program::from_bytes(&program_file, Some(cairo_run::CairoRunConfig::default().entrypoint))?
+                }
+                None => {
+                    println!("Using embedded program JSON");
+                    sound_run::get_program_from_embedded_json(Some(cairo_run::CairoRunConfig::default().entrypoint))?
+                }
+            };
 
             println!(
                 "{}",

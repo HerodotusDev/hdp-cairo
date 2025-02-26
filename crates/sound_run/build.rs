@@ -32,9 +32,14 @@ fn main() {
         panic!("cairo-compile failed for file: {}", entrypoint_path.display());
     }
 
-    // This directive tells Cargo to set an environment variable named HDP_COMPILED_JSON
-    // that will be available at compile-time (not runtime). The value is the path to our output file.
-    // This environment variable can then be accessed in our Rust code using the env!() macro.
-    // Example: let path = env!("HDP_COMPILED_JSON");
-    println!("cargo:rustc-env=HDP_COMPILED_JSON={}", output_file.display());
+    // Generate a Rust file that contains the JSON content as a byte array instead of a string
+    let gen_path = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR is not set")).join("compiled_sound_run_program.rs");
+    fs::write(
+        &gen_path,
+        format!(
+            "pub const COMPILED_SOUND_RUN_PROGRAM: &[u8] = include_bytes!(r#\"{}\"#);",
+            output_file.display()
+        ),
+    )
+    .expect("Failed to write generated Rust file");
 }
