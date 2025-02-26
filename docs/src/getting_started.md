@@ -1,6 +1,24 @@
 ## Installation and Setup
 
-### Prerequisites
+### Option 1: Using CLI Tool (Recommended)
+
+1. **Install the CLI:**
+
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
+   ```
+
+   To install a specific version:
+
+   ```bash
+   VERSION=vX.X.X curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
+   ```
+
+2. **ENVs:**
+   HDP CLI requires and RPC endpoint for Ethereum and Starknet.
+   Please expose env vars before running present in [.env](example.env)
+
+### Option 2: Building from Source
 
 - **Dependencies:**
   - **Rust**.
@@ -20,7 +38,7 @@
 2. **Set Up the Environment:**
 
    - Install the `cairo0` toolchain.
-     
+
      ```bash
      make
      ```
@@ -28,12 +46,12 @@
 3. **Configuration:**
 
    - Copy the example environment file:
-     
+
      ```bash
-     cp .cargo/config.example.toml .cargo/config.toml
+     cp example.env .env
      ```
-     
-   - Edit the `.cargo/config.toml` file to provide the correct RPC endpoints and configuration details.
+
+   - Edit the [.env](example.env) file to provide the correct RPC endpoints and configuration details.
 
 ---
 
@@ -109,34 +127,70 @@ mod example_starkgate {
 
 ### Running the Pipeline
 
-#### Dry Run Process
+You can run the pipeline either using the CLI tool or building from source.
+
+#### Build the Cairo1 Modules
+
+```bash
+scarb build
+```
+
+#### Using CLI Tool
+
+1. **Dry Run Process:**
 
 - **Purpose:**  
   Identify the required on-chain data and proofs.
 - **Command:**
-
   ```bash
-  cargo run --release --bin dry_run -- --program_input examples/hdp_input.json --program_output hdp_keys.json --layout starknet_with_keccak
+  hdp-cli dry-run -m target/dev/example_starkgate_module.compiled_contract_class.json --print_output
   ```
 
-#### Fetcher Process
+2. **Fetcher Process:**
 
 - **Purpose:**  
   Connect to blockchain RPC endpoints to fetch on-chain data and corresponding proofs, using the keys identified during the dry run.
 - **Command:**
-
   ```bash
-  cargo run --release --bin fetcher --features progress_bars -- hdp_keys.json --program_output hdp_proofs.json
+  hdp-cli fetch-proofs
   ```
 
-#### Sound Run Process
+3. **Sound Run Process:**
 
 - **Purpose:**  
   Execute the compiled Cairo1 bytecode with the verified data. During this process, the bootloader retrieves data, handles system calls, and runs user logic, generating an execution trace.
 - **Command:**
-
   ```bash
-  cargo run --release --bin sound_run -- --program_input examples/hdp_input.json --program_proofs hdp_proofs.json --print_output --layout starknet_with_keccak --cairo_pie_output pie.zip
+  hdp-cli sound-run -m target/dev/example_starkgate_module.compiled_contract_class.json --print_output
+  ```
+
+#### Using Source Build
+
+1. **Dry Run Process:**
+
+- **Purpose:**  
+  Identify the required on-chain data and proofs.
+- **Command:**
+  ```bash
+  cargo run --release --bin hdp-cli -- dry-run -m target/dev/example_starkgate_module.compiled_contract_class.json --print_output
+  ```
+
+2. **Fetcher Process:**
+
+- **Purpose:**  
+  Connect to blockchain RPC endpoints to fetch on-chain data and corresponding proofs, using the keys identified during the dry run.
+- **Command:**
+  ```bash
+  cargo run --release --bin hdp-cli --features progress_bars -- fetch-proofs
+  ```
+
+3. **Sound Run Process:**
+
+- **Purpose:**  
+  Execute the compiled Cairo1 bytecode with the verified data. During this process, the bootloader retrieves data, handles system calls, and runs user logic, generating an execution trace.
+- **Command:**
+  ```bash
+  cargo run --release --bin hdp-cli -- sound-run -m target/dev/example_starkgate_module.compiled_contract_class.json --print_output
   ```
 
 ---
@@ -155,4 +209,4 @@ mod example_starkgate {
    cargo nextest run
    ```
 
-> **Note:** Ensure that the environment variables from `.cargo/config.toml` are set before running the tests.
+> **Note:** Ensure that the environment variables from [.env](example.env) are set before running the tests.

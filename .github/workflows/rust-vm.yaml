@@ -8,7 +8,11 @@ on:
 jobs:
   check:
     name: Format and Lint
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout Code
@@ -58,7 +62,11 @@ jobs:
 
   test:
     name: Run Tests
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout Code
@@ -105,8 +113,7 @@ jobs:
 
       - name: Run Nextest Tests
         env:
-          RPC_URL_ETHEREUM: ${{ secrets.RPC_URL_ETHEREUM_SEPOLIA }}
+          RPC_URL_ETHEREUM: ${{ secrets.RPC_URL_ETHEREUM }}
           RPC_URL_HERODOTUS_INDEXER: ${{ secrets.RPC_URL_HERODOTUS_INDEXER }}
-          RPC_URL_STARKNET: ${{ secrets.RPC_URL_STARKNET_SEPOLIA }}
+          RPC_URL_STARKNET: ${{ secrets.RPC_URL_STARKNET }}
         run: cargo nextest run
-

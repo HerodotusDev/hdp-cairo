@@ -12,6 +12,7 @@ dist/
 
 # Environment Files
 *.env
+!example.env
 
 # Miscellaneous
 .idea/

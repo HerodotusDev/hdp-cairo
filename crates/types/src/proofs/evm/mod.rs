@@ -21,3 +21,10 @@ pub struct Proofs {
     pub transactions: Vec<Transaction>,
     pub transaction_receipts: Vec<Receipt>,
 }
+
+impl Proofs {
+    #[allow(clippy::len_without_is_empty)]
+    pub fn len(&self) -> usize {
+        self.headers_with_mmr.len() + self.accounts.len() + self.storages.len() + self.transactions.len() + self.transaction_receipts.len()
+    }
+}

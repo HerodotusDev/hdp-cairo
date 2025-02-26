@@ -88,3 +88,16 @@ pub fn hint_headers_with_mmr_peaks(
 
     Ok(())
 }
+
+pub const HINT_HEADERS_WITH_MMR_META_CHAIN_ID: &str = "memory[ap] = to_felt_or_relocatable(header_with_mmr_starknet.mmr_meta.chain_id)";
+
+pub fn hint_headers_with_mmr_meta_chain_id(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    _hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let header_with_mmr = exec_scopes.get::<HeaderMmrMeta<starknet::header::Header>>(vars::scopes::HEADER_WITH_MMR_STARKNET)?;
+
+    insert_value_into_ap(vm, Felt252::from(header_with_mmr.mmr_meta.chain_id))
+}

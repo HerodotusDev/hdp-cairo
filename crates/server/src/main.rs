@@ -27,7 +27,7 @@ struct ApiDoc;
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 4)]
 async fn main() {
-    // Enable tracing.
+    dotenvy::dotenv().ok();
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -106,6 +106,7 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn test_dry_run_endpoint() {
+        dotenvy::dotenv().ok();
         let app = build_test_app();
         let input = serde_json::json!({
             "params": Option::<()>::None,
@@ -134,6 +135,7 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn test_fetch_proofs_endpoint() {
+        dotenvy::dotenv().ok();
         let app = build_test_app();
         let input = serde_json::from_str::<SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler>>(
             &std::fs::read_to_string("tests/hdp_keys.json").unwrap(),
@@ -159,6 +161,7 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn test_sound_run_endpoint() {
+        dotenvy::dotenv().ok();
         let app = build_test_app();
         let sub_input = serde_json::from_str::<HDPDryRunInput>(&std::fs::read_to_string("tests/hdp_input.json").unwrap()).unwrap();
         let input = serde_json::json!({
@@ -190,6 +193,7 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
     async fn test_pipeline_integration() {
+        dotenvy::dotenv().ok();
         let app = build_test_app();
 
         // 1. First dry run

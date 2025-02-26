@@ -2,6 +2,7 @@ use crate::test_utils::run;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_tests_transaction_get_nonce() {
+    dotenvy::dotenv().ok();
     run(serde_json::from_slice(include_bytes!(
         "../../../target/dev/tests_transaction_get_nonce.compiled_contract_class.json"
     ))
@@ -11,6 +12,7 @@ async fn test_tests_transaction_get_nonce() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_tests_transaction_get_gas_price() {
+    dotenvy::dotenv().ok();
     run(serde_json::from_slice(include_bytes!(
         "../../../target/dev/tests_transaction_get_gas_price.compiled_contract_class.json"
     ))
@@ -20,6 +22,7 @@ async fn test_tests_transaction_get_gas_price() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_tests_transaction_get_gas_limit() {
+    dotenvy::dotenv().ok();
     run(serde_json::from_slice(include_bytes!(
         "../../../target/dev/tests_transaction_get_gas_limit.compiled_contract_class.json"
     ))
@@ -29,6 +32,7 @@ async fn test_tests_transaction_get_gas_limit() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_tests_transaction_get_receiver() {
+    dotenvy::dotenv().ok();
     run(serde_json::from_slice(include_bytes!(
         "../../../target/dev/tests_transaction_get_receiver.compiled_contract_class.json"
     ))
@@ -38,6 +42,7 @@ async fn test_tests_transaction_get_receiver() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_tests_transaction_get_value() {
+    dotenvy::dotenv().ok();
     run(serde_json::from_slice(include_bytes!(
         "../../../target/dev/tests_transaction_get_value.compiled_contract_class.json"
     ))
@@ -47,6 +52,7 @@ async fn test_tests_transaction_get_value() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_tests_transaction_get_v() {
+    dotenvy::dotenv().ok();
     run(serde_json::from_slice(include_bytes!(
         "../../../target/dev/tests_transaction_get_v.compiled_contract_class.json"
     ))
@@ -56,6 +62,7 @@ async fn test_tests_transaction_get_v() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_tests_transaction_get_r() {
+    dotenvy::dotenv().ok();
     run(serde_json::from_slice(include_bytes!(
         "../../../target/dev/tests_transaction_get_r.compiled_contract_class.json"
     ))
@@ -65,6 +72,7 @@ async fn test_tests_transaction_get_r() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_tests_transaction_get_s() {
+    dotenvy::dotenv().ok();
     run(serde_json::from_slice(include_bytes!(
         "../../../target/dev/tests_transaction_get_s.compiled_contract_class.json"
     ))
@@ -74,6 +82,7 @@ async fn test_tests_transaction_get_s() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_tests_transaction_get_chain_id() {
+    dotenvy::dotenv().ok();
     run(serde_json::from_slice(include_bytes!(
         "../../../target/dev/tests_transaction_get_chain_id.compiled_contract_class.json"
     ))
@@ -83,7 +92,8 @@ async fn test_tests_transaction_get_chain_id() {
 
 // #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 // async fn test_tests_transaction_get_max_fee_per_gas() {
-//     run(serde_json::from_slice(include_bytes!(
+// dotenvy::dotenv().ok();//
+// run(serde_json::from_slice(include_bytes!(
 //         "../../../target/dev/tests_transaction_get_max_fee_per_gas.compiled_contract_class.json"
 //     ))
 //     .unwrap())
@@ -92,7 +102,8 @@ async fn test_tests_transaction_get_chain_id() {
 
 // #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 // async fn test_tests_transaction_get_max_priority_fee_per_gas() {
-//     run(serde_json::from_slice(include_bytes!(
+// dotenvy::dotenv().ok();//
+// run(serde_json::from_slice(include_bytes!(
 //         "../../../target/dev/tests_transaction_get_max_priority_fee_per_gas.compiled_contract_class.json"
 //     ))
 //     .unwrap())
@@ -101,7 +112,8 @@ async fn test_tests_transaction_get_chain_id() {
 
 // #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 // async fn test_tests_transaction_get_max_fee_per_blob_gas() {
-//     run(serde_json::from_slice(include_bytes!(
+// dotenvy::dotenv().ok();//
+// run(serde_json::from_slice(include_bytes!(
 //         "../../../target/dev/tests_transaction_get_max_fee_per_blob_gas.
 // compiled_contract_class.json"     ))
 //     .unwrap())
@@ -110,6 +122,7 @@ async fn test_tests_transaction_get_chain_id() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_tests_transaction_get_tx_type() {
+    dotenvy::dotenv().ok();
     run(serde_json::from_slice(include_bytes!(
         "../../../target/dev/tests_transaction_get_tx_type.compiled_contract_class.json"
     ))
@@ -119,6 +132,7 @@ async fn test_tests_transaction_get_tx_type() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_tests_transaction_get_sender() {
+    dotenvy::dotenv().ok();
     run(serde_json::from_slice(include_bytes!(
         "../../../target/dev/tests_transaction_get_sender.compiled_contract_class.json"
     ))
@@ -128,6 +142,7 @@ async fn test_tests_transaction_get_sender() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_tests_transaction_get_hash() {
+    dotenvy::dotenv().ok();
     run(serde_json::from_slice(include_bytes!(
         "../../../target/dev/tests_transaction_get_hash.compiled_contract_class.json"
     ))

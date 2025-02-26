@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Update submodules
+echo "Updating git submodules..."
+git submodule update --init || { echo "Failed to update git submodules."; exit 1; }
+
 VENV_PATH=${1:-venv}
 PYTHON_VERSION=${2:-3.9}
 
@@ -20,7 +24,3 @@ source "$VENV_PATH/bin/activate" || { echo "Failed to activate virtual environme
 # Update dependencies
 echo "Installing dependencies"
 pip install packages/cairo-lang-0.13.1.zip || { echo "Failed to install cairo-lang-0.13.1."; exit 1; }
-
-# Update submodules
-echo "Updating git submodule..."
-git submodule update --init || { echo "Failed to update git submodules."; exit 1; }

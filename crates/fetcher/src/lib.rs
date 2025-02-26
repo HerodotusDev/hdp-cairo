@@ -1,10 +1,17 @@
+#![allow(async_fn_in_trait)]
+#![warn(unused_extern_crates)]
+#![warn(unused_crate_dependencies)]
+#![forbid(unsafe_code)]
+
 use std::{
     collections::{HashMap, HashSet},
     env,
     num::ParseIntError,
+    path::PathBuf,
 };
 
 use alloy::hex::FromHexError;
+use clap::Parser;
 use dry_hint_processor::syscall_handler::{evm, starknet};
 use eth_trie_proofs::{tx_receipt_trie::TxReceiptsMptHandler, tx_trie::TxsMptHandler};
 use futures::StreamExt;
@@ -25,10 +32,29 @@ use types::{
         mmr::MmrMeta,
         starknet::{header::Header as StarknetHeader, storage::Storage as StarknetStorage, Proofs as StarknetProofs},
     },
-    RPC_URL_ETHEREUM,
+    ChainProofs, RPC_URL_ETHEREUM,
 };
 
 pub mod proof_keys;
+
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+pub struct Args {
+    #[arg(
+        short = 'i',
+        long = "inputs",
+        default_value = "dry_run_output.json",
+        help = "The output of the dry_run step"
+    )]
+    pub inputs: PathBuf,
+    #[arg(
+        short = 'o',
+        long = "output",
+        default_value = "proofs.json",
+        help = "Path where the output JSON will be written"
+    )]
+    pub output: PathBuf,
+}
 
 #[derive(Error, Debug)]
 pub enum FetcherError {
@@ -362,6 +388,20 @@ impl<'a> Fetcher<'a> {
             storages: storages.into_iter().collect(),
         })
     }
+}
+
+pub async fn run_fetcher(
+    syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler>,
+) -> Result<Vec<ChainProofs>, FetcherError> {
+    let proof_keys = parse_syscall_handler(syscall_handler)?;
+    let fetcher = Fetcher::new(&proof_keys);
+    let (evm_proofs, starknet_proofs) = tokio::try_join!(fetcher.collect_evm_proofs(), fetcher.collect_starknet_proofs())?;
+    let chain_proofs = vec![
+        ChainProofs::EthereumSepolia(evm_proofs),
+        ChainProofs::StarknetSepolia(starknet_proofs),
+    ];
+
+    Ok(chain_proofs)
 }
 
 pub fn process_headers<H>(headers_with_mmr: HashMap<MmrMeta, Vec<H>>) -> Vec<HeaderMmrMeta<H>>

@@ -2,7 +2,23 @@
 
 HDP (Herodotus Data Processor) is a modular framework for validating on-chain data from multiple blockchain RPC sources, executing user-defined logic written in Cairo1, and producing an execution trace that can be used to generate a zero-knowledge proof. The proof attests to the correctness of both the on-chain data and the performed computation.
 
-## Installation and Setup
+<p align="left">
+  <a href="https://herodotusdev.github.io/hdp-cairo/program_hash.json">
+    <img src="https://img.shields.io/badge/dynamic/json?url=https://herodotusdev.github.io/hdp-cairo/program_hash.json&query=$.program_hash&label=program_hash&color=blue&style=flat-square" alt="program_hash">
+  </a>
+</p>
+
+## Installation
+
+### Option 1: Install CLI Directly
+
+You can install the CLI using install script:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
+```
+
+### Option 2: Build from Source
 
 To install the required dependencies and set up the Python virtual environment, run:
 
@@ -12,33 +28,37 @@ make
 
 ## Running
 
-Before running the program, prepare the input data. The inputs are provided via the [hdp_input.json](examples/hdp_input.json).
-Runtime require chain nodes RPC calls, ensure an environment variables [.cargo/config.toml](.cargo/config.example.toml) are set.
+Runtime require chain nodes RPC calls, ensure an environment variables [.env](example.env) are set.
 
 ### Steps to Execute:
 
 1. **Simulate Cairo1 Module and Collect Proofs Information:**
 
    ```bash
-   cargo run --release --bin dry_run -- --program_input examples/hdp_input.json --program_output hdp_keys.json --layout starknet_with_keccak
+   cargo run --release --bin hdp-cli -- dry-run -m module_contract_class.json --print_output
    ```
+
+   `module_contract_class.json` is built contract code from `Scarb` build, more specific example in [DOCS](./docs/src/getting_started.md)
 
 2. **Fetch On-Chain Proofs Needed for the HDP Run:**
 
    ```bash
-   cargo run --release --bin fetcher --features progress_bars -- hdp_keys.json --program_output hdp_proofs.json
+   cargo run --release --bin hdp-cli --features progress_bars -- fetch-proofs
    ```
 
 3. **Run Cairo1 Module with Verified On-Chain Data:**
+
    ```bash
-   cargo run --release --bin sound_run -- --program_input examples/hdp_input.json --program_proofs hdp_proofs.json --print_output --layout starknet_with_keccak --cairo_pie_output pie.zip
+   cargo run --release --bin hdp-cli -- sound-run -m module_contract_class.json --print_output
    ```
+
+   `module_contract_class.json` is built contract code from `Scarb` build, more specific example in [DOCS](./docs/src/getting_started.md)
 
 The program will output the results root and tasks root. These roots can be used to extract the results from the on-chain contract.
 
 ## Testing
 
-Tests require chain nodes RPC calls. Ensure an environment variables [.cargo/config.toml](.cargo/config.example.toml) are set.
+Tests require chain nodes RPC calls. Ensure an environment variables [.env](example.env) are set.
 
 1. **Build Cairo1 Modules:**
 

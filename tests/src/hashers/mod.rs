@@ -18,14 +18,14 @@ async fn test_poseidon_hash_rust() {
 
 #[tokio::test]
 async fn test_keccak_hash_rust() {
-    let values = vec![U256::from(1), U256::from(2), U256::from(3), U256::from(4)];
+    let values = [U256::from(1), U256::from(2), U256::from(3), U256::from(4)];
     let bytes: Vec<u8> = values.iter().flat_map(|v| v.to_be_bytes::<32>()).collect();
     let mut hash1 = keccak256(bytes.as_slice());
     hash1.reverse();
 
     assert!(hash1 == FixedBytes::from_hex("0x2d9982dfaf468a9ddf7101b6323aa9d56510e6fd534f267a01086462df912739").unwrap());
 
-    let values2 = vec![U256::from(1), U256::from(2), U256::from(3), U256::from(5)];
+    let values2 = [U256::from(1), U256::from(2), U256::from(3), U256::from(5)];
     let bytes2: Vec<u8> = values2.iter().flat_map(|v| v.to_be_bytes::<32>()).collect();
     let mut hash2 = keccak256(bytes2.as_slice());
     hash2.reverse();

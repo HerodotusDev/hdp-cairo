@@ -3,7 +3,9 @@ version = "0.1.0"
 edition = "2023_11"
 
 members = [
-    "examples",
+    "examples/average",
+    "examples/hello_world",
+    "examples/starkgate",
     "hdp_cairo",
     "tests",
 ]
@@ -11,9 +13,9 @@ members = [
 [workspace.dependencies]
 alexandria_bytes = { git = "https://github.com/keep-starknet-strange/alexandria.git" }
 alexandria_encoding = { git = "https://github.com/keep-starknet-strange/alexandria.git" }
-cairo_test = "2.9.2"
+cairo_test = "2.10.0"
 hdp_cairo = { path = "hdp_cairo" }
-starknet = "2.9.2"
+starknet = "2.10.0"
 
 [workspace.tool.fmt]
 sort-module-level-items = true
