@@ -1,8 +1,8 @@
 #[starknet::contract]
 mod module {
-    use hdp_cairo::HDP;
-    use hdp_cairo::evm::{account::{AccountKey, AccountTrait}, ETHEREUM_TESTNET_CHAIN_ID};
     use core::starknet::EthAddress;
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::{ETHEREUM_TESTNET_CHAIN_ID, account::{AccountKey, AccountTrait}};
 
     #[storage]
     struct Storage {}

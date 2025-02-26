@@ -183,6 +183,8 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(utils::debug::PRINT_FELT.into(), utils::debug::print_felt);
     hints.insert(utils::debug::PRINT_STRING.into(), utils::debug::print_string);
     hints.insert(utils::debug::PRINT_FELT_HEX.into(), utils::debug::print_felt_hex);
+    hints.insert(print::PRINT_RLP.into(), print::print_rlp);
+
     hints
 }
 

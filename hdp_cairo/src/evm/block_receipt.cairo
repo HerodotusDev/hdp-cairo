@@ -4,15 +4,18 @@ use starknet::{SyscallResultTrait};
 
 const BLOCK_RECEIPT: felt252 = 4;
 
+const LOGS: felt252 = 3;
+
 const BLOCK_RECEIPT_GET_STATUS: felt252 = 0;
 const BLOCK_RECEIPT_GET_CUMULATIVE_GAS_USED: felt252 = 1;
 const BLOCK_RECEIPT_GET_BLOOM: felt252 = 2;
-const BLOCK_RECEIPT_GET_TOPIC0: felt252 = 3;
-const BLOCK_RECEIPT_GET_TOPIC1: felt252 = 4;
-const BLOCK_RECEIPT_GET_TOPIC2: felt252 = 5;
-const BLOCK_RECEIPT_GET_TOPIC3: felt252 = 6;
-const BLOCK_RECEIPT_GET_TOPIC4: felt252 = 7;
-const BLOCK_RECEIPT_GET_DATA: felt252 = 8;
+const BLOCK_RECEIPT_GET_ADDRESS: felt252 = LOGS + 0;
+const BLOCK_RECEIPT_GET_TOPIC0: felt252 = LOGS + 1;
+const BLOCK_RECEIPT_GET_TOPIC1: felt252 = LOGS + 2;
+const BLOCK_RECEIPT_GET_TOPIC2: felt252 = LOGS + 3;
+const BLOCK_RECEIPT_GET_TOPIC3: felt252 = LOGS + 4;
+const BLOCK_RECEIPT_GET_TOPIC4: felt252 = LOGS + 5;
+const BLOCK_RECEIPT_GET_DATA: felt252 = LOGS + 6;
 
 const BLOCK_RECEIPT_LABEL: felt252 = 'block_receipt';
 
@@ -35,6 +38,10 @@ pub impl BlockReceiptImpl of BlockReceiptTrait {
     }
     fn block_receipt_get_bloom(self: @EvmMemorizer, key: BlockReceiptKey) -> u256 {
         let result = self.call_memorizer(BLOCK_RECEIPT_GET_BLOOM, key);
+        u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
+    }
+    fn block_receipt_get_address(self: @EvmMemorizer, key: BlockReceiptKey) -> u256 {
+        let result = self.call_memorizer(BLOCK_RECEIPT_GET_ADDRESS, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
     fn block_receipt_get_topic0(self: @EvmMemorizer, key: BlockReceiptKey) -> u256 {

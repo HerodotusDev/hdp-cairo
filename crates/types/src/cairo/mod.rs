@@ -7,8 +7,6 @@ pub mod starknet;
 pub mod structs;
 pub mod traits;
 
-pub const BYTES31_SIZE: usize = 31;
-
 pub const FELT_0: Felt = Felt252::from_hex_unchecked("0x00");
 pub const FELT_1: Felt252 = Felt252::from_hex_unchecked("0x01");
 pub const FELT_2: Felt252 = Felt252::from_hex_unchecked("0x02");
