@@ -70,7 +70,7 @@ impl CairoReceiptWithBloom {
             FunctionId::Topic1 => <Uint256 as Into<[Felt252; 2]>>::into(self.0.logs().first().unwrap().data.topics()[1].into()).to_vec(),
             FunctionId::Topic2 => <Uint256 as Into<[Felt252; 2]>>::into(self.0.logs().first().unwrap().data.topics()[2].into()).to_vec(),
             FunctionId::Topic3 => <Uint256 as Into<[Felt252; 2]>>::into(self.0.logs().first().unwrap().data.topics()[3].into()).to_vec(),
-            FunctionId::Topic4 => <Uint256 as Into<[Felt252; 2]>>::into(self.0.logs().first().unwrap().data.topics()[3].into()).to_vec(),
+            FunctionId::Topic4 => <Uint256 as Into<[Felt252; 2]>>::into(self.0.logs().first().unwrap().data.topics()[4].into()).to_vec(),
             FunctionId::Data => self
                 .0
                 .logs()
@@ -79,6 +79,7 @@ impl CairoReceiptWithBloom {
                 .data
                 .data
                 .chunks((u128::BITS / 8) as usize)
+                .rev()
                 .map(Felt252::from_bytes_be_slice)
                 .collect(),
         }

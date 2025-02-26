@@ -13,8 +13,9 @@ mod module {
             chain_id: ETHEREUM_TESTNET_CHAIN_ID, block_number: 7692344, transaction_index: 180,
         };
 
-        let topic0 = hdp.evm.block_receipt_get_topic2(key);
-        println!("topic0 {}", topic0.low);
-        println!("topic0 {}", topic0.high);
+        let topic0 = hdp.evm.block_receipt_get_data(key);
+        println!("data len {}", topic0.len());
+        println!("data [0] {}", topic0[0]);
+        println!("data [1] {}", topic0[1]);
     }
 }

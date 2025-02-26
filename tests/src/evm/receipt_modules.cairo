@@ -170,3 +170,26 @@ mod receipts_get_topic2 {
         );
     }
 }
+
+#[starknet::contract]
+mod receipts_get_data {
+    use hdp_cairo::{
+        HDP, evm::block_receipt::{BlockReceiptImpl, BlockReceiptKey, BlockReceiptTrait},
+    };
+
+    #[storage]
+    struct Storage {}
+
+    #[external(v0)]
+    pub fn main(ref self: ContractState, hdp: HDP) {
+        let mut data = hdp.evm.block_receipt_get_data(
+            BlockReceiptKey {
+                chain_id: 11155111, block_number: 7692344, transaction_index: 180,
+            }
+        );
+
+        assert!(
+            Serde::deserialize(ref data).unwrap() == u256 { low: 0xde0b6b3a7640000, high: 0x0 },
+        );
+    }
+}

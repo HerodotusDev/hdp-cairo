@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData,
-        hint_utils::{get_integer_from_var_name, get_ptr_from_var_name, get_relocatable_from_var_name},
+        hint_utils::{get_integer_from_var_name, get_relocatable_from_var_name},
     },
     types::exec_scope::ExecutionScopes,
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
@@ -50,21 +50,5 @@ pub fn hint_print_task_result(
     let result_value = result_high * base + result_low;
 
     debug!("Task Result: 0x{:x}", result_value);
-    Ok(())
-}
-
-pub const PRINT_RLP: &str = "print rlp";
-
-pub fn print_rlp(
-    vm: &mut VirtualMachine,
-    _exec_scopes: &mut ExecutionScopes,
-    hint_data: &HintProcessorData,
-    _constants: &HashMap<String, Felt252>,
-) -> Result<(), HintError> {
-    let rlp = get_ptr_from_var_name("res", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let rlp_len = get_integer_from_var_name("res_len", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-
-    println!("{:?}", vm.get_integer_range(rlp, rlp_len.try_into().unwrap()).unwrap());
-
     Ok(())
 }
