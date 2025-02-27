@@ -22,6 +22,12 @@ namespace ReceiptField {
     const LOGS_DATA = LOGS + 6;
 }
 
+namespace ReceiptFieldOffset {
+    const LOGS_ADDRESS_OFFSET = 0;
+    const LOGS_TOPICS_OFFSET = 1;
+    const LOGS_DATA_OFFSET = 2;
+}
+
 namespace ReceiptDecoder {
     func get_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
         rlp: felt*,
@@ -39,7 +45,7 @@ namespace ReceiptDecoder {
         if (field == ReceiptField.LOGS_ADDRESS) {
             let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, LOGS, value_start_offset, 0);
             let (local value_start_offset) = get_rlp_list_meta(res, 0);
-            let (res, res_len, bytes_len) = rlp_list_retrieve(res, 0, value_start_offset, 0);
+            let (res, res_len, bytes_len) = rlp_list_retrieve(res, ReceiptFieldOffset.LOGS_ADDRESS_OFFSET, value_start_offset, 0);
             let (local result) = le_chunks_to_be_uint256(res, res_len, bytes_len);
             return (res_array=&result, res_len=2);
         }
@@ -47,7 +53,7 @@ namespace ReceiptDecoder {
         if (field == ReceiptField.LOGS_TOPIC0) {
             let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, LOGS, value_start_offset, 0);
             let (local value_start_offset) = get_rlp_list_meta(res, 0);
-            let (res, res_len, bytes_len) = rlp_list_retrieve(res, 1, value_start_offset, 0);
+            let (res, res_len, bytes_len) = rlp_list_retrieve(res, ReceiptFieldOffset.LOGS_TOPICS_OFFSET, value_start_offset, 0);
             let (res, res_len, bytes_len) = rlp_list_retrieve(res, ReceiptField.LOGS_TOPIC0 - LOGS - 1, 0, 0);
             let (local result) = le_chunks_to_be_uint256(res, res_len, bytes_len);
             return (res_array=&result, res_len=2);
@@ -56,7 +62,7 @@ namespace ReceiptDecoder {
         if (field == ReceiptField.LOGS_TOPIC1) {
             let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, LOGS, value_start_offset, 0);
             let (local value_start_offset) = get_rlp_list_meta(res, 0);
-            let (res, res_len, bytes_len) = rlp_list_retrieve(res, 1, value_start_offset, 0);
+            let (res, res_len, bytes_len) = rlp_list_retrieve(res, ReceiptFieldOffset.LOGS_TOPICS_OFFSET, value_start_offset, 0);
             let (res, res_len, bytes_len) = rlp_list_retrieve(res, ReceiptField.LOGS_TOPIC1  - LOGS - 1, 0, 0);
             let (local result) = le_chunks_to_be_uint256(res, res_len, bytes_len);
             return (res_array=&result, res_len=2);
@@ -65,7 +71,7 @@ namespace ReceiptDecoder {
         if (field == ReceiptField.LOGS_TOPIC2) {
             let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, LOGS, value_start_offset, 0);
             let (local value_start_offset) = get_rlp_list_meta(res, 0);
-            let (res, res_len, bytes_len) = rlp_list_retrieve(res, 1, value_start_offset, 0);
+            let (res, res_len, bytes_len) = rlp_list_retrieve(res, ReceiptFieldOffset.LOGS_TOPICS_OFFSET, value_start_offset, 0);
             let (res, res_len, bytes_len) = rlp_list_retrieve(res, ReceiptField.LOGS_TOPIC2  - LOGS - 1, 0, 0);
             let (local result) = le_chunks_to_be_uint256(res, res_len, bytes_len);
             return (res_array=&result, res_len=2);
@@ -74,7 +80,7 @@ namespace ReceiptDecoder {
         if (field == ReceiptField.LOGS_TOPIC3) {
             let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, LOGS, value_start_offset, 0);
             let (local value_start_offset) = get_rlp_list_meta(res, 0);
-            let (res, res_len, bytes_len) = rlp_list_retrieve(res, 1, value_start_offset, 0);
+            let (res, res_len, bytes_len) = rlp_list_retrieve(res, ReceiptFieldOffset.LOGS_TOPICS_OFFSET, value_start_offset, 0);
             let (res, res_len, bytes_len) = rlp_list_retrieve(res, ReceiptField.LOGS_TOPIC3  - LOGS - 1, 0, 0);
             let (local result) = le_chunks_to_be_uint256(res, res_len, bytes_len);
             return (res_array=&result, res_len=2);
@@ -83,7 +89,7 @@ namespace ReceiptDecoder {
         if (field == ReceiptField.LOGS_TOPIC4) {
             let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, LOGS, value_start_offset, 0);
             let (local value_start_offset) = get_rlp_list_meta(res, 0);
-            let (res, res_len, bytes_len) = rlp_list_retrieve(res, 1, value_start_offset, 0);
+            let (res, res_len, bytes_len) = rlp_list_retrieve(res, ReceiptFieldOffset.LOGS_TOPICS_OFFSET, value_start_offset, 0);
             let (res, res_len, bytes_len) = rlp_list_retrieve(res, ReceiptField.LOGS_TOPIC4  - LOGS - 1, 0, 0);
             let (local result) = le_chunks_to_be_uint256(res, res_len, bytes_len);
             return (res_array=&result, res_len=2);
@@ -92,7 +98,7 @@ namespace ReceiptDecoder {
         if (field == ReceiptField.LOGS_DATA) {
             let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, LOGS, value_start_offset, 0);
             let (local value_start_offset) = get_rlp_list_meta(res, 0);
-            let (res, res_len, bytes_len) = rlp_list_retrieve(res, 2, value_start_offset, 0);
+            let (res, res_len, bytes_len) = rlp_list_retrieve(res, ReceiptFieldOffset.LOGS_DATA_OFFSET, value_start_offset, 0);
 
             // TODO decode all of the data given bytes_len // 0x20
             let (local result) = le_chunks_to_be_uint256(res, res_len, bytes_len);

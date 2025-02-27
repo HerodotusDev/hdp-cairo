@@ -1,5 +1,6 @@
 #[starknet::contract]
 mod module {
+    use core::starknet::EthAddress;
     use hdp_cairo::HDP;
     use hdp_cairo::evm::block_receipt::BlockReceiptTrait;
     use hdp_cairo::evm::{ETHEREUM_TESTNET_CHAIN_ID, block_receipt::BlockReceiptKey};
@@ -7,15 +8,27 @@ mod module {
     #[storage]
     struct Storage {}
 
+    struct EVMApprovalEvent {
+        owner: EthAddress,
+        spender: EthAddress,
+        value: u256,
+    }
+
     #[external(v0)]
     pub fn main(ref self: ContractState, hdp: HDP) {
         let key = BlockReceiptKey {
             chain_id: ETHEREUM_TESTNET_CHAIN_ID, block_number: 7692344, transaction_index: 180,
         };
+        let mut data = hdp.evm.block_receipt_get_data(@key);
 
-        let topic0 = hdp.evm.block_receipt_get_data(key);
-        println!("data len {}", topic0.len());
-        println!("data [0] {}", topic0[0]);
-        println!("data [1] {}", topic0[1]);
+        let event = EVMApprovalEvent {
+            owner: hdp.evm.block_receipt_get_topic1(@key).into(),
+            spender: hdp.evm.block_receipt_get_topic2(@key).into(),
+            value: Serde::deserialize(ref data).unwrap(),
+        };
+
+        assert!(event.owner == 0xfB41B2F3c2eD6f12bF99dAb43C55f40d7D40b730.try_into().unwrap());
+        assert!(event.spender == 0x421c3ab6798deddCAf5EB9264a3b8D1D7c4f09d7.try_into().unwrap());
+        assert!(event.value == u256 { low: 0xde0b6b3a7640000, high: 0x0 });
     }
 }

@@ -13,7 +13,7 @@ mod receipts_get_status {
             hdp
                 .evm
                 .block_receipt_get_status(
-                    BlockReceiptKey {
+                    @BlockReceiptKey {
                         chain_id: 11155111, block_number: 7692344, transaction_index: 0,
                     },
                 ) == u256 { low: 0x1, high: 0x0 },
@@ -32,7 +32,7 @@ mod receipts_get_status {
             hdp
                 .evm
                 .block_receipt_get_status(
-                    BlockReceiptKey {
+                    @BlockReceiptKey {
                         chain_id: 11155111,
                         block_number: 7692344,
                         transaction_index: *tx_indexes.at(i),
@@ -60,7 +60,7 @@ mod receipts_get_and_tx_get {
             hdp
                 .evm
                 .block_receipt_get_cumulative_gas_used(
-                    BlockReceiptKey {
+                    @BlockReceiptKey {
                         chain_id: 11155111, block_number: 7692344, transaction_index: 0,
                     },
                 ) == u256 { low: 0x7f03, high: 0x0 },
@@ -70,7 +70,7 @@ mod receipts_get_and_tx_get {
             hdp
                 .evm
                 .block_tx_get_nonce(
-                    BlockTxKey { chain_id: 11155111, block_number: 7692344, transaction_index: 0 },
+                    @BlockTxKey { chain_id: 11155111, block_number: 7692344, transaction_index: 0 },
                 ) == u256 { low: 0x44c, high: 0x0 },
         );
     }
@@ -91,7 +91,7 @@ mod receipts_get_address {
             hdp
                 .evm
                 .block_receipt_get_address(
-                    BlockReceiptKey {
+                    @BlockReceiptKey {
                         chain_id: 11155111, block_number: 7692344, transaction_index: 180,
                     },
                 ) == u256 { low: 0xE1A608bcc77C2d392093cE7F05c0DB14, high: 0x7Eaa8557 },
@@ -114,7 +114,7 @@ mod receipts_get_topic0 {
             hdp
                 .evm
                 .block_receipt_get_topic0(
-                    BlockReceiptKey {
+                    @BlockReceiptKey {
                         chain_id: 11155111, block_number: 7692344, transaction_index: 180,
                     },
                 ) == u256 {
@@ -140,7 +140,7 @@ mod receipts_get_topic1 {
             hdp
                 .evm
                 .block_receipt_get_topic1(
-                    BlockReceiptKey {
+                    @BlockReceiptKey {
                         chain_id: 11155111, block_number: 7692344, transaction_index: 180,
                     },
                 ) == u256 { low: 0xc2eD6f12bF99dAb43C55f40d7D40b730, high: 0xfB41B2F3 },
@@ -163,7 +163,7 @@ mod receipts_get_topic2 {
             hdp
                 .evm
                 .block_receipt_get_topic2(
-                    BlockReceiptKey {
+                    @BlockReceiptKey {
                         chain_id: 11155111, block_number: 7692344, transaction_index: 180,
                     },
                 ) == u256 { low: 0x798deddCAf5EB9264a3b8D1D7c4f09d7, high: 0x421c3ab6 },
@@ -173,6 +173,7 @@ mod receipts_get_topic2 {
 
 #[starknet::contract]
 mod receipts_get_data {
+    use core::starknet::EthAddress;
     use hdp_cairo::{
         HDP, evm::block_receipt::{BlockReceiptImpl, BlockReceiptKey, BlockReceiptTrait},
     };
@@ -180,16 +181,27 @@ mod receipts_get_data {
     #[storage]
     struct Storage {}
 
+    struct EVMApprovalEvent {
+        owner: EthAddress,
+        spender: EthAddress,
+        value: u256,
+    }
+
     #[external(v0)]
     pub fn main(ref self: ContractState, hdp: HDP) {
-        let mut data = hdp.evm.block_receipt_get_data(
-            BlockReceiptKey {
-                chain_id: 11155111, block_number: 7692344, transaction_index: 180,
-            }
-        );
+        let key = BlockReceiptKey {
+            chain_id: 11155111, block_number: 7692344, transaction_index: 180,
+        };
+        let mut data = hdp.evm.block_receipt_get_data(@key);
 
-        assert!(
-            Serde::deserialize(ref data).unwrap() == u256 { low: 0xde0b6b3a7640000, high: 0x0 },
-        );
+        let event = EVMApprovalEvent {
+            owner: hdp.evm.block_receipt_get_topic1(@key).into(),
+            spender: hdp.evm.block_receipt_get_topic2(@key).into(),
+            value: Serde::deserialize(ref data).unwrap(),
+        };
+
+        assert!(event.owner == 0xfB41B2F3c2eD6f12bF99dAb43C55f40d7D40b730.try_into().unwrap());
+        assert!(event.spender == 0x421c3ab6798deddCAf5EB9264a3b8D1D7c4f09d7.try_into().unwrap());
+        assert!(event.value == u256 { low: 0xde0b6b3a7640000, high: 0x0 });
     }
 }

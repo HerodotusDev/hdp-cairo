@@ -18,33 +18,33 @@ pub struct AccountKey {
 
 #[generate_trait]
 pub impl AccountImpl of AccountTrait {
-    fn account_get_nonce(self: @EvmMemorizer, key: AccountKey) -> u256 {
+    fn account_get_nonce(self: @EvmMemorizer, key: @AccountKey) -> u256 {
         let result = self.call_memorizer(ACCOUNT_GET_NONCE, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
-    fn account_get_balance(self: @EvmMemorizer, key: AccountKey) -> u256 {
+    fn account_get_balance(self: @EvmMemorizer, key: @AccountKey) -> u256 {
         let result = self.call_memorizer(ACCOUNT_GET_BALANCE, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
-    fn account_get_state_root(self: @EvmMemorizer, key: AccountKey) -> u256 {
+    fn account_get_state_root(self: @EvmMemorizer, key: @AccountKey) -> u256 {
         let result = self.call_memorizer(ACCOUNT_GET_STATE_ROOT, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
-    fn account_get_code_hash(self: @EvmMemorizer, key: AccountKey) -> u256 {
+    fn account_get_code_hash(self: @EvmMemorizer, key: @AccountKey) -> u256 {
         let result = self.call_memorizer(ACCOUNT_GET_CODE_HASH, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
 
-    fn call_memorizer(self: @EvmMemorizer, selector: felt252, key: AccountKey) -> Span<felt252> {
+    fn call_memorizer(self: @EvmMemorizer, selector: felt252, key: @AccountKey) -> Span<felt252> {
         call_contract_syscall(
             ACCOUNT.try_into().unwrap(),
             selector,
             array![
                 *self.dict.segment_index,
                 *self.dict.offset,
-                key.chain_id,
-                key.block_number,
-                key.address,
+                *key.chain_id,
+                *key.block_number,
+                *key.address,
             ]
                 .span(),
         )

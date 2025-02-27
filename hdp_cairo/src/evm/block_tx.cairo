@@ -43,92 +43,92 @@ pub enum TxType {
 
 #[generate_trait]
 pub impl BlockTxImpl of BlockTxTrait {
-    fn block_tx_get_nonce(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
+    fn block_tx_get_nonce(self: @EvmMemorizer, key: @BlockTxKey) -> u256 {
         let result = self.call_memorizer(BLOCK_TX_GET_NONCE, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
 
-    fn block_tx_get_gas_price(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
+    fn block_tx_get_gas_price(self: @EvmMemorizer, key: @BlockTxKey) -> u256 {
         let result = self.call_memorizer(BLOCK_TX_GET_GAS_PRICE, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
 
-    fn block_tx_get_gas_limit(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
+    fn block_tx_get_gas_limit(self: @EvmMemorizer, key: @BlockTxKey) -> u256 {
         let result = self.call_memorizer(BLOCK_TX_GET_GAS_LIMIT, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
 
-    fn block_tx_get_receiver(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
+    fn block_tx_get_receiver(self: @EvmMemorizer, key: @BlockTxKey) -> u256 {
         let result = self.call_memorizer(BLOCK_TX_GET_RECEIVER, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
 
-    fn block_tx_get_value(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
+    fn block_tx_get_value(self: @EvmMemorizer, key: @BlockTxKey) -> u256 {
         let result = self.call_memorizer(BLOCK_TX_GET_VALUE, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
 
-    fn block_tx_get_v(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
+    fn block_tx_get_v(self: @EvmMemorizer, key: @BlockTxKey) -> u256 {
         let result = self.call_memorizer(BLOCK_TX_GET_V, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
 
-    fn block_tx_get_r(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
+    fn block_tx_get_r(self: @EvmMemorizer, key: @BlockTxKey) -> u256 {
         let result = self.call_memorizer(BLOCK_TX_GET_R, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
 
-    fn block_tx_get_s(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
+    fn block_tx_get_s(self: @EvmMemorizer, key: @BlockTxKey) -> u256 {
         let result = self.call_memorizer(BLOCK_TX_GET_S, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
 
-    fn block_tx_get_chain_id(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
+    fn block_tx_get_chain_id(self: @EvmMemorizer, key: @BlockTxKey) -> u256 {
         let result = self.call_memorizer(BLOCK_TX_GET_CHAIN_ID, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
 
-    fn block_tx_get_max_fee_per_gas(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
+    fn block_tx_get_max_fee_per_gas(self: @EvmMemorizer, key: @BlockTxKey) -> u256 {
         let result = self.call_memorizer(BLOCK_TX_GET_MAX_FEE_PER_GAS, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
 
-    fn block_tx_get_max_priority_fee_per_gas(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
+    fn block_tx_get_max_priority_fee_per_gas(self: @EvmMemorizer, key: @BlockTxKey) -> u256 {
         let result = self.call_memorizer(BLOCK_TX_GET_MAX_PRIORITY_FEE_PER_GAS, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
 
-    fn block_tx_get_max_fee_per_blob_gas(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
+    fn block_tx_get_max_fee_per_blob_gas(self: @EvmMemorizer, key: @BlockTxKey) -> u256 {
         let result = self.call_memorizer(BLOCK_TX_GET_MAX_FEE_PER_BLOB_GAS, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
 
-    fn block_tx_get_tx_type(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
+    fn block_tx_get_tx_type(self: @EvmMemorizer, key: @BlockTxKey) -> u256 {
         let result = self.call_memorizer(BLOCK_TX_GET_TX_TYPE, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
 
-    fn block_tx_get_sender(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
+    fn block_tx_get_sender(self: @EvmMemorizer, key: @BlockTxKey) -> u256 {
         let result = self.call_memorizer(BLOCK_TX_GET_SENDER, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
 
-    fn block_tx_get_hash(self: @EvmMemorizer, key: BlockTxKey) -> u256 {
+    fn block_tx_get_hash(self: @EvmMemorizer, key: @BlockTxKey) -> u256 {
         let result = self.call_memorizer(BLOCK_TX_GET_HASH, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
 
-    fn call_memorizer(self: @EvmMemorizer, selector: felt252, key: BlockTxKey) -> Span<felt252> {
+    fn call_memorizer(self: @EvmMemorizer, selector: felt252, key: @BlockTxKey) -> Span<felt252> {
         call_contract_syscall(
             BLOCK_TX.try_into().unwrap(),
             selector,
             array![
                 *self.dict.segment_index,
                 *self.dict.offset,
-                key.chain_id,
+                *key.chain_id,
                 BLOCK_TX_LABEL,
-                key.block_number,
-                key.transaction_index,
+                *key.block_number,
+                *key.transaction_index,
             ]
                 .span(),
         )

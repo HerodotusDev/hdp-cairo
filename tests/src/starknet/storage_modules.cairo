@@ -11,7 +11,7 @@ mod starknet_get_storage {
         hdp
             .starknet
             .storage_get_slot(
-                StorageKey {
+                @StorageKey {
                     chain_id: 393402133025997798000961,
                     block_number: 517902,
                     address: 0x6b8838af5d2a023b24ec8a69720b152d72ae2e4528139c32e05d8a3b9d7d4e7,

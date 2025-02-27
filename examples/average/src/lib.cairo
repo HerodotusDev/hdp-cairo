@@ -19,7 +19,7 @@ mod module {
             sum += hdp
                 .evm
                 .account_get_balance(
-                    AccountKey {
+                    @AccountKey {
                         chain_id: ETHEREUM_TESTNET_CHAIN_ID,
                         address: address.into(),
                         block_number: *blocks[counter],
