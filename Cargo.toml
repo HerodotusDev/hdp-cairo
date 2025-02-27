@@ -8,7 +8,6 @@ members = [
     "crates/fetcher",
     "crates/hints",
     "crates/indexer",
-    "crates/server",
     "crates/sound_hint_processor",
     "crates/sound_run",
     "crates/syscall_handler",

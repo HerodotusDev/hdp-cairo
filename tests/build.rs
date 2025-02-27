@@ -9,61 +9,76 @@ fn main() {
 
     println!("cargo::rerun-if-changed={}", src_dir.display());
 
-    // Create output directory
-    fs::create_dir_all(&output_dir).expect("Failed to create output directory");
+    // Check if DRY_RUN_COMPILED_JSON is already set
+    if let Ok(compiled_json) = env::var("DRY_RUN_COMPILED_JSON") {
+        println!("cargo:rustc-env=DRY_RUN_COMPILED_JSON={}", compiled_json);
+        println!("Skipping Cairo compilation since DRY_RUN_COMPILED_JSON is already set.");
+    } else {
+        // Create output directory
+        fs::create_dir_all(&output_dir).expect("Failed to create output directory");
 
-    // Run the cairo-compile command.
-    let status = Command::new(
-        python_path
-            .join("cairo-compile")
-            .to_str()
-            .expect("Failed to convert path to string"),
-    )
-    .arg(format!("--cairo_path={}:{}", workspace_root.display(), cairo_path.display()))
-    .arg(
-        src_dir
-            .join("contract_bootloader")
-            .join("contract_dry_run.cairo")
-            .to_str()
-            .expect("Failed to convert path to string"),
-    )
-    .arg("--output")
-    .arg(
-        output_dir
-            .join("dry_run_compiled.json")
-            .to_str()
-            .expect("Failed to convert path to string"),
-    )
-    .status()
-    .expect("Failed to execute cairo-compile");
+        // Run the cairo-compile command.
+        let status = Command::new(
+            python_path
+                .join("cairo-compile")
+                .to_str()
+                .expect("Failed to convert path to string"),
+        )
+        .arg(format!("--cairo_path={}:{}", workspace_root.display(), cairo_path.display()))
+        .arg(
+            src_dir
+                .join("contract_bootloader")
+                .join("contract_dry_run.cairo")
+                .to_str()
+                .expect("Failed to convert path to string"),
+        )
+        .arg("--output")
+        .arg(
+            output_dir
+                .join("dry_run_compiled.json")
+                .to_str()
+                .expect("Failed to convert path to string"),
+        )
+        .status()
+        .expect("Failed to execute cairo-compile");
 
-    if !status.success() {
-        panic!(
-            "cairo-compile failed for file: {}",
-            src_dir.join("contract_bootloader").join("contract_dry_run.cairo").display()
-        );
+        if !status.success() {
+            panic!(
+                "cairo-compile failed for file: {}",
+                src_dir.join("contract_bootloader").join("contract_dry_run.cairo").display()
+            );
+        }
     }
 
-    // Run the cairo-compile command.
-    let status = Command::new(
-        python_path
-            .join("cairo-compile")
-            .to_str()
-            .expect("Failed to convert path to string"),
-    )
-    .arg(format!("--cairo_path={}:{}", workspace_root.display(), cairo_path.display()))
-    .arg(src_dir.join("hdp.cairo").to_str().expect("Failed to convert path to string"))
-    .arg("--output")
-    .arg(
-        output_dir
-            .join("sound_run_compiled.json")
-            .to_str()
-            .expect("Failed to convert path to string"),
-    )
-    .status()
-    .expect("Failed to execute cairo-compile");
+    // Check if HDP_COMPILED_JSON is already set
+    if let Ok(compiled_json) = env::var("HDP_COMPILED_JSON") {
+        println!("cargo:rustc-env=HDP_COMPILED_JSON={}", compiled_json);
+        println!("Skipping Cairo compilation since HDP_COMPILED_JSON is already set.");
+    } else {
+        // Create output directory
+        fs::create_dir_all(&output_dir).expect("Failed to create output directory");
 
-    if !status.success() {
-        panic!("cairo-compile failed for file: {}", src_dir.join("hdp.cairo").display());
+        // Run the cairo-compile command.
+        let status = Command::new(
+            python_path
+                .join("cairo-compile")
+                .to_str()
+                .expect("Failed to convert path to string"),
+        )
+        .arg(format!("--cairo_path={}:{}", workspace_root.display(), cairo_path.display()))
+        .arg(src_dir.join("hdp.cairo").to_str().expect("Failed to convert path to string"))
+        .arg("--output")
+        .arg(
+            output_dir
+                .join("sound_run_compiled.json")
+                .to_str()
+                .expect("Failed to convert path to string"),
+        )
+        .status()
+        .expect("Failed to execute cairo-compile");
+
+        if !status.success() {
+            panic!("cairo-compile failed for file: {}", src_dir.join("hdp.cairo").display());
+        }
     }
 }
