@@ -3,12 +3,10 @@
 #![warn(unused_crate_dependencies)]
 #![forbid(unsafe_code)]
 
-use std::path::PathBuf;
-
 use cairo_vm as _;
 use clap::Parser;
 use dry_hint_processor::syscall_handler::{evm, starknet};
-use dry_run::{Args, DRY_RUN_COMPILED_JSON};
+use dry_run::Args;
 use hints as _;
 use syscall_handler::SyscallHandler;
 use tracing::info;
@@ -28,10 +26,7 @@ async fn main() -> Result<(), Error> {
         Vec::new()
     };
 
-    let (syscall_handler, output) = dry_run::run(
-        args.program.unwrap_or(PathBuf::from(DRY_RUN_COMPILED_JSON)),
-        HDPDryRunInput { compiled_class, params },
-    )?;
+    let (syscall_handler, output) = dry_run::run(args.program, HDPDryRunInput { compiled_class, params })?;
 
     if args.print_output {
         info!("{:#?}", output);
