@@ -16,6 +16,12 @@ pub struct Uint256 {
     pub high: Felt252,
 }
 
+impl From<Uint256> for [Felt252; 2] {
+    fn from(value: Uint256) -> Self {
+        [value.low, value.high]
+    }
+}
+
 impl From<u64> for Uint256 {
     fn from(value: u64) -> Self {
         Self {

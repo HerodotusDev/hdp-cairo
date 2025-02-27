@@ -15,17 +15,17 @@ pub struct StorageKey {
 
 #[generate_trait]
 pub impl StorageImpl of StorageTrait {
-    fn storage_get_slot(self: @StarknetMemorizer, key: StorageKey) -> felt252 {
+    fn storage_get_slot(self: @StarknetMemorizer, key: @StorageKey) -> felt252 {
         let value = call_contract_syscall(
             STORAGE.try_into().unwrap(),
             STORAGE_GET_SLOT,
             array![
                 *self.dict.segment_index,
                 *self.dict.offset,
-                key.chain_id,
-                key.block_number,
-                key.address,
-                key.storage_slot,
+                *key.chain_id,
+                *key.block_number,
+                *key.address,
+                *key.storage_slot,
             ]
                 .span(),
         )

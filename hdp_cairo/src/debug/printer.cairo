@@ -1,6 +1,6 @@
-use starknet::syscalls::call_contract_syscall;
-use starknet::SyscallResultTrait;
 use core::fmt::Display;
+use starknet::SyscallResultTrait;
+use starknet::syscalls::call_contract_syscall;
 
 
 const DEBUG_CONTRACT_ADDRESS: felt252 = 'debug';

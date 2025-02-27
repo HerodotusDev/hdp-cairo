@@ -20,7 +20,7 @@ from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.registers import get_label_location
 from src.utils.chain_info import chain_id_to_layout
-from src.memorizers.evm.state_access import EvmStateAccess, EvmStateAccessType, EvmDecoderTarget
+from src.memorizers.evm.state_access import EvmStateAccess, EvmStateAccessType
 from src.memorizers.starknet.state_access import (
     StarknetStateAccess,
     StarknetStateAccessType,
@@ -56,7 +56,7 @@ func execute_syscalls{
     builtin_ptrs: BuiltinPointers*,
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
-    evm_decoder_ptr: felt***,
+    evm_decoder_ptr: felt**,
     evm_key_hasher_ptr: felt**,
     starknet_memorizer: DictAccess*,
     starknet_decoder_ptr: felt***,
@@ -104,7 +104,7 @@ func execute_call_contract{
     builtin_ptrs: BuiltinPointers*,
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
-    evm_decoder_ptr: felt***,
+    evm_decoder_ptr: felt**,
     evm_key_hasher_ptr: felt**,
     starknet_memorizer: DictAccess*,
     starknet_decoder_ptr: felt***,
@@ -141,11 +141,10 @@ func execute_call_contract{
 
     if (layout == Layout.EVM) {
         with output_ptr {
-            let output_len = EvmStateAccess.read_and_decode(
+            EvmStateAccess.read_and_decode(
                 params=request.calldata_start + 2,
                 state_access_type=state_access_type,
                 field=field,
-                decoder_target=EvmDecoderTarget.UINT256,
             );
 
             return ();
@@ -154,11 +153,11 @@ func execute_call_contract{
 
     if (layout == Layout.STARKNET) {
         with output_ptr {
-            let output_len = StarknetStateAccess.read_and_decode(
+            StarknetStateAccess.read_and_decode(
                 params=request.calldata_start + 2,
                 state_access_type=state_access_type,
                 field=field,
-                decoder_target=StarknetDecoderTarget.FELT,
+                decoder_target=0,
                 as_be=1,
             );
         }
@@ -182,7 +181,7 @@ func execute_keccak{
     builtin_ptrs: BuiltinPointers*,
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
-    evm_decoder_ptr: felt***,
+    evm_decoder_ptr: felt**,
     evm_key_hasher_ptr: felt**,
     starknet_memorizer: DictAccess*,
     starknet_decoder_ptr: felt***,

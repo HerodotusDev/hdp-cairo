@@ -29,7 +29,7 @@ mod module {
         // Retrieve the Ethereum balance for the L1 bridge account.
         let starkgate_balance_ethereum: u256 = hdp
             .evm
-            .account_get_balance(starkgate_evm_account_key);
+            .account_get_balance(@starkgate_evm_account_key);
 
         // Ensure the balance is within 128 bits.
         assert!(starkgate_balance_ethereum.high == 0x0);
@@ -37,7 +37,7 @@ mod module {
         // Retrieve the StarkNet token total supply.
         let starkgate_balance_starknet: u128 = hdp
             .starknet
-            .storage_get_slot(starkgate_starknet_storage_key)
+            .storage_get_slot(@starkgate_starknet_storage_key)
             .try_into()
             .unwrap();
 

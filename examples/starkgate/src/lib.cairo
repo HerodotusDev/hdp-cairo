@@ -1,8 +1,8 @@
 #[starknet::contract]
 mod module {
     use hdp_cairo::HDP;
-    use hdp_cairo::evm::{account::{AccountKey, AccountImpl}, ETHEREUM_TESTNET_CHAIN_ID};
-    use hdp_cairo::starknet::{storage::{StorageKey, StorageImpl}, STARKNET_TESTNET_CHAIN_ID};
+    use hdp_cairo::evm::{ETHEREUM_TESTNET_CHAIN_ID, account::{AccountImpl, AccountKey}};
+    use hdp_cairo::starknet::{STARKNET_TESTNET_CHAIN_ID, storage::{StorageImpl, StorageKey}};
 
     #[storage]
     struct Storage {}
@@ -29,7 +29,7 @@ mod module {
         // Retrieve the Ethereum balance for the L1 bridge account.
         let starkgate_balance_ethereum: u256 = hdp
             .evm
-            .account_get_balance(starkgate_evm_account_key);
+            .account_get_balance(@starkgate_evm_account_key);
 
         // Ensure the balance is within 128 bits.
         assert!(starkgate_balance_ethereum.high == 0x0);
@@ -37,7 +37,7 @@ mod module {
         // Retrieve the StarkNet token total supply.
         let starkgate_balance_starknet: u128 = hdp
             .starknet
-            .storage_get_slot(starkgate_starknet_storage_key)
+            .storage_get_slot(@starkgate_starknet_storage_key)
             .try_into()
             .unwrap();
 

@@ -96,7 +96,7 @@ func verify_account{
     // get state_root from verified headers
     let memorizer_key = EvmHashParams.header(chain_id=chain_info.id, block_number=block_number);
     let (header_rlp) = EvmMemorizer.get(key=memorizer_key);
-    let state_root = HeaderDecoder.get_field(header_rlp, HeaderField.STATE_ROOT);
+    let (state_root: Uint256*, _) = HeaderDecoder.get_field(header_rlp, HeaderField.STATE_ROOT);
 
     let (rlp: felt*, value_len: felt) = verify_mpt_proof(
         mpt_proof=mpt_proof,
@@ -104,7 +104,7 @@ func verify_account{
         mpt_proof_len=proof_len,
         key_be=key,
         key_be_leading_zeroes_nibbles=key_leading_zeros,
-        root=state_root,
+        root=Uint256(low=state_root.low, high=state_root.high),
         pow2_array=pow2_array,
     );
 

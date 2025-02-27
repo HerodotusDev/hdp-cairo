@@ -27,7 +27,7 @@ func compute_contract{
     poseidon_ptr: PoseidonBuiltin*,
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
-    evm_decoder_ptr: felt***,
+    evm_decoder_ptr: felt**,
     evm_key_hasher_ptr: felt**,
     starknet_memorizer: DictAccess*,
     starknet_decoder_ptr: felt***,

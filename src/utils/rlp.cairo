@@ -357,10 +357,10 @@ func decode_rlp_word_to_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, p
 // - the decoded uint256 in LE
 func le_chunks_to_be_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
     elements: felt*, elements_len: felt, bytes_len: felt
-) -> Uint256 {
+) -> (res: Uint256) {
     let le_val = le_chunks_to_uint256(elements, elements_len, bytes_len);
     let (result) = uint256_reverse_endian(le_val);
-    return result;
+    return (res=result);
 }
 
 // Converts a LE 8-bytes chunks to uint256. Converts between [1-4] chunks
