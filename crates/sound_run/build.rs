@@ -10,6 +10,13 @@ fn main() {
 
     println!("cargo:rerun-if-changed={}", src_dir.display());
 
+    // Check if HDP_COMPILED_JSON is already set
+    if let Ok(compiled_json) = env::var("HDP_COMPILED_JSON") {
+        println!("cargo:rustc-env=HDP_COMPILED_JSON={}", compiled_json);
+        println!("Skipping Cairo compilation since HDP_COMPILED_JSON is already set.");
+        return;
+    }
+
     // Create output directory
     fs::create_dir_all(&output_dir).expect("Failed to create output directory");
     let output_file = output_dir.join("compiled.json");
