@@ -12,8 +12,6 @@ const LOG_GET_TOPIC3: felt252 = 4;
 const LOG_GET_TOPIC4: felt252 = 5;
 const LOG_GET_DATA: felt252 = 6;
 
-const LOG_LABEL: felt252 = 'log';
-
 #[derive(Serde, Drop)]
 pub struct LogKey {
     pub chain_id: felt252,

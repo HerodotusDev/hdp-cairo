@@ -9,7 +9,6 @@ from starkware.cairo.common.uint256 import Uint256
 
 struct ReceiptKey {
     chain_id: felt,
-    label: felt,
     block_number: felt,
     transaction_index: felt,
 }
@@ -21,19 +20,23 @@ namespace ReceiptField {
 }
 
 namespace ReceiptDecoder {
-    func get_field{keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
-        rlp: felt*,
-        field: felt,
-        key: ReceiptKey*,
+    func get_field{
+        keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
+    }(rlp: felt*, field: felt, key: ReceiptKey*) -> (res_array: felt*, res_len: felt) {
+        let (tx_type, rlp_start_offset) = open_receipt_envelope(rlp);
+        let (res_array, res_len) = _get_field(rlp, field, rlp_start_offset, tx_type, key.chain_id, key.block_number);
+        return (res_array=res_array, res_len=res_len);
+    }
+
+    func _get_field{keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+        rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt, chain_id: felt, block_number: felt
     ) -> (res_array: felt*, res_len: felt) {
         alloc_locals;
         let (__fp__, _) = get_fp_and_pc();
 
-        let (tx_type, rlp_start_offset) = open_receipt_envelope(rlp);
         let (local value_start_offset) = get_rlp_list_meta(rlp, rlp_start_offset);
-        let (chain_info) = fetch_chain_info(key.chain_id);
+        let (chain_info) = fetch_chain_info(chain_id);
 
-        let block_number = key.block_number;
         local is_byzantium: felt;
         %{
             if ids.block_number >= ids.chain_info.byzantium:

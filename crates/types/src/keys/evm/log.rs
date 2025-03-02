@@ -7,7 +7,7 @@ use cairo_vm::{
 use serde::{Deserialize, Serialize};
 use starknet_crypto::poseidon_hash_many;
 
-use super::KeyError;
+use super::{KeyError, BLOCK_RECEIPT_LABEL};
 use crate::cairo::traits::CairoType;
 
 #[derive(Debug, Clone)]
@@ -20,12 +20,7 @@ pub struct CairoKey {
 
 impl CairoKey {
     pub fn hash(&self) -> Felt252 {
-        poseidon_hash_many(&[
-            self.chain_id,
-            Felt252::from_hex_unchecked("0x626c6f636b5f72656365697074"),
-            self.block_number,
-            self.transaction_index,
-        ])
+        poseidon_hash_many(&[self.chain_id, BLOCK_RECEIPT_LABEL, self.block_number, self.transaction_index])
     }
 }
 

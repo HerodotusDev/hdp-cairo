@@ -7,20 +7,19 @@ use cairo_vm::{
 use serde::{Deserialize, Serialize};
 use starknet_crypto::poseidon_hash_many;
 
-use super::KeyError;
+use super::{KeyError, BLOCK_TX_LABEL};
 use crate::cairo::traits::CairoType;
 
 #[derive(Debug, Clone)]
 pub struct CairoKey {
     chain_id: Felt252,
-    domain: Felt252,
     block_number: Felt252,
     transaction_index: Felt252,
 }
 
 impl CairoKey {
     pub fn hash(&self) -> Felt252 {
-        poseidon_hash_many(&[self.chain_id, self.domain, self.block_number, self.transaction_index])
+        poseidon_hash_many(&[self.chain_id, BLOCK_TX_LABEL, self.block_number, self.transaction_index])
     }
 }
 
@@ -28,22 +27,20 @@ impl CairoType for CairoKey {
     fn from_memory(vm: &VirtualMachine, ptr: Relocatable) -> Result<Self, MemoryError> {
         Ok(Self {
             chain_id: *vm.get_integer((ptr + 0)?)?,
-            domain: *vm.get_integer((ptr + 1)?)?,
-            block_number: *vm.get_integer((ptr + 2)?)?,
-            transaction_index: *vm.get_integer((ptr + 3)?)?,
+            block_number: *vm.get_integer((ptr + 1)?)?,
+            transaction_index: *vm.get_integer((ptr + 2)?)?,
         })
     }
 
     fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
         vm.insert_value((address + 0)?, self.chain_id)?;
-        vm.insert_value((address + 1)?, self.domain)?;
-        vm.insert_value((address + 2)?, self.block_number)?;
-        vm.insert_value((address + 3)?, self.transaction_index)?;
-        Ok((address + 4)?)
+        vm.insert_value((address + 1)?, self.block_number)?;
+        vm.insert_value((address + 2)?, self.transaction_index)?;
+        Ok((address + 3)?)
     }
 
     fn n_fields(_vm: &VirtualMachine, _address: Relocatable) -> Result<usize, MemoryError> {
-        Ok(4)
+        Ok(3)
     }
 }
 

@@ -32,7 +32,6 @@ from starkware.cairo.common.registers import get_label_location
 
 struct TransactionKey {
     chain_id: felt,
-    label: felt,
     block_number: felt,
     transaction_index: felt,
 }
@@ -70,18 +69,11 @@ namespace TransactionDecoder {
     func get_field{
         keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
     }(rlp: felt*, field: felt, key: TransactionKey*) -> (res_array: felt*, res_len: felt) {
-        alloc_locals;
-        let (__fp__, _) = get_fp_and_pc();
-
-        let chain_id = key.chain_id;
         let (tx_type, rlp_start_offset) = open_tx_envelope(rlp);
-
-        let (res_array, res_len) = _get_field(rlp, field, rlp_start_offset, tx_type, chain_id);
-
+        let (res_array, res_len) = _get_field(rlp, field, rlp_start_offset, tx_type, key.chain_id);
         return (res_array=res_array, res_len=res_len);
     }
 
-    // Returns the TX field as BE uint256
     func _get_field{
         keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
     }(rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt, chain_id: felt) -> (res_array: felt*, res_len: felt) {

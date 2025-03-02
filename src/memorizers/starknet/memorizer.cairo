@@ -9,7 +9,6 @@ from starkware.cairo.common.alloc import alloc
 from src.memorizers.bare import BareMemorizer, SingleBareMemorizer
 
 namespace StarknetPackParams {
-    const HEADER_PARAMS_LEN = 2;
     func header(chain_id: felt, block_number: felt) -> (params: felt*, params_len: felt) {
         alloc_locals;
 
@@ -20,7 +19,6 @@ namespace StarknetPackParams {
         return (params=params, params_len=2);
     }
 
-    const STORAGE_SLOT_PARAMS_LEN = 4;
     func storage(
         chain_id: felt, block_number: felt, contract_address: felt, storage_address: felt
     ) -> (params: felt*, params_len: felt) {
@@ -59,11 +57,13 @@ namespace StarknetHashParams {
 
 namespace StarknetHashParams2 {
     func header{poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> felt {
-        return hash_memorizer_key(params, StarknetPackParams.HEADER_PARAMS_LEN);
+        let (params, params_len) = StarknetPackParams.header(chain_id=params[0], block_number=params[1]);
+        return hash_memorizer_key(params, params_len);
     }
 
     func storage{poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> felt {
-        return hash_memorizer_key(params, StarknetPackParams.STORAGE_SLOT_PARAMS_LEN);
+        let (params, params_len) = StarknetPackParams.storage(chain_id=params[0], block_number=params[1], contract_address=params[2], storage_address=params[3]);
+        return hash_memorizer_key(params, params_len);
     }
 }
 

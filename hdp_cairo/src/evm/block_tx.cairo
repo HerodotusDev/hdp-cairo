@@ -23,8 +23,6 @@ const BLOCK_TX_GET_TX_TYPE: felt252 = 15;
 const BLOCK_TX_GET_SENDER: felt252 = 16;
 const BLOCK_TX_GET_HASH: felt252 = 17;
 
-const BLOCK_TX_LABEL: felt252 = 'block_tx';
-
 #[derive(Serde, Drop)]
 pub struct BlockTxKey {
     pub chain_id: felt252,
@@ -126,7 +124,6 @@ pub impl BlockTxImpl of BlockTxTrait {
                 *self.dict.segment_index,
                 *self.dict.offset,
                 *key.chain_id,
-                BLOCK_TX_LABEL,
                 *key.block_number,
                 *key.transaction_index,
             ]
