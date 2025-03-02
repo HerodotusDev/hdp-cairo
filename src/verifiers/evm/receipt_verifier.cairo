@@ -13,7 +13,8 @@ from packages.eth_essentials.lib.rlp_little import (
 from src.utils.rlp import be_chunk_to_felt_be
 from src.types import ChainInfo
 from src.memorizers.evm.memorizer import EvmMemorizer, EvmHashParams
-from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField
+from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField, HeaderKey
+from starkware.cairo.common.registers import get_fp_and_pc
 
 // Verfies an array of receipt proofs with the headers stored in the memorizer.
 // The verified receipts are then added to the memorizer.
@@ -44,6 +45,7 @@ func verify_block_receipt_proofs_inner{
     pow2_array: felt*,
 }(n_receipts: felt, idx: felt) {
     alloc_locals;
+    let (__fp__, _) = get_fp_and_pc();
 
     if (n_receipts == idx) {
         return ();
@@ -66,9 +68,10 @@ func verify_block_receipt_proofs_inner{
     let (mpt_proof: felt**) = alloc();
     %{ segments.write_arg(ids.mpt_proof, [int(x, 16) for x in receipt.proof]) %}
 
+    local header_key: HeaderKey = HeaderKey(chain_id=chain_info.id, block_number=block_number);
     let memorizer_key = EvmHashParams.header(chain_id=chain_info.id, block_number=block_number);
     let (header_rlp) = EvmMemorizer.get(key=memorizer_key);
-    let (receipt_root: Uint256*, _) = HeaderDecoder.get_field(header_rlp, HeaderField.RECEIPT_ROOT);
+    let (receipt_root: Uint256*, _) = HeaderDecoder.get_field(header_rlp, HeaderField.RECEIPT_ROOT, &header_key);
 
     let (rlp, rlp_bytes_len) = verify_mpt_proof{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
@@ -87,6 +90,7 @@ func verify_block_receipt_proofs_inner{
     let memorizer_key = EvmHashParams.block_receipt(
         chain_id=chain_info.id, block_number=block_number, index=receipt_index
     );
+    
     EvmMemorizer.add(key=memorizer_key, data=rlp);
 
     return verify_block_receipt_proofs_inner(n_receipts=n_receipts, idx=idx + 1);

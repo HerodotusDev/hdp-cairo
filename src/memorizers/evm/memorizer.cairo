@@ -146,6 +146,15 @@ namespace EvmHashParams2 {
     func block_receipt{poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> felt {
         return hash_memorizer_key(params, EvmPackParams.BLOCK_RECEIPT_PARAMS_LEN);
     }
+    func log{poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> felt {
+        let chain_id: felt = params[0];
+        let block_number: felt = params[1];
+        let index: felt = params[2];
+
+        let (params, params_len) = EvmPackParams.block_receipt(chain_id, block_number, index);
+
+        return hash_memorizer_key(params, EvmPackParams.BLOCK_RECEIPT_PARAMS_LEN);
+    }
 }
 
 func hash_memorizer_key{poseidon_ptr: PoseidonBuiltin*}(params: felt*, params_len: felt) -> felt {

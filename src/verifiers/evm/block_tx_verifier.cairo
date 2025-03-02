@@ -14,7 +14,8 @@ from packages.eth_essentials.lib.rlp_little import (
 from src.utils.rlp import be_chunk_to_felt_be
 from src.types import ChainInfo
 from src.memorizers.evm.memorizer import EvmMemorizer, EvmHashParams
-from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField
+from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField, HeaderKey
+from starkware.cairo.common.registers import get_fp_and_pc
 
 // Verfies an array of transaction proofs with the headers stored in the memorizer.
 // The verified transactions are then added to the memorizer.
@@ -45,6 +46,7 @@ func verify_block_tx_proofs_inner{
     pow2_array: felt*,
 }(n_tx_proofs: felt, idx: felt) {
     alloc_locals;
+    let (__fp__, _) = get_fp_and_pc();
 
     if (n_tx_proofs == idx) {
         return ();
@@ -67,9 +69,10 @@ func verify_block_tx_proofs_inner{
     let (mpt_proof: felt**) = alloc();
     %{ segments.write_arg(ids.mpt_proof, [int(x, 16) for x in transaction.proof]) %}
 
+    local header_key: HeaderKey = HeaderKey(chain_id=chain_info.id, block_number=block_number);
     let memorizer_key = EvmHashParams.header(chain_id=chain_info.id, block_number=block_number);
     let (header_rlp) = EvmMemorizer.get(key=memorizer_key);
-    let (tx_root: Uint256*, _) = HeaderDecoder.get_field(header_rlp, HeaderField.TRANSACTION_ROOT);
+    let (tx_root: Uint256*, _) = HeaderDecoder.get_field(header_rlp, HeaderField.TRANSACTION_ROOT, &header_key);
 
     let (rlp, _rlp_len) = verify_mpt_proof{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr

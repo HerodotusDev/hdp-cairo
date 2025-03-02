@@ -1,5 +1,6 @@
 from src.decoders.evm.account_decoder import AccountDecoder as EvmAccountDecoder
 from src.decoders.evm.header_decoder import HeaderDecoder as EvmHeaderDecoder
+from src.decoders.evm.log_decoder import LogDecoder as EvmLogDecoder
 from src.decoders.evm.receipt_decoder import ReceiptDecoder as EvmReceiptDecoder
 from src.decoders.evm.storage_slot_decoder import StorageSlotDecoder as EvmStorageSlotDecoder
 from src.decoders.evm.transaction_decoder import TransactionDecoder as EvmTransactionDecoder
@@ -20,23 +21,25 @@ namespace EvmStateAccessType {
     const STORAGE = 2;
     const BLOCK_TX = 3;
     const BLOCK_RECEIPT = 4;
+    const LOG = 5;
 }
 
 namespace EvmDecoder {
     func init() -> felt** {
-        // these decoders return a native word, so Uint256
         let (handlers: felt**) = alloc();
         let (header_label) = get_label_location(EvmHeaderDecoder.get_field);
         let (account_label) = get_label_location(EvmAccountDecoder.get_field);
         let (storage_label) = get_label_location(EvmStorageSlotDecoder.get_word);
         let (tx_label) = get_label_location(EvmTransactionDecoder.get_field);
         let (receipt_label) = get_label_location(EvmReceiptDecoder.get_field);
+        let (log_label) = get_label_location(EvmLogDecoder.get_field);
 
         assert handlers[EvmStateAccessType.HEADER] = header_label;
         assert handlers[EvmStateAccessType.ACCOUNT] = account_label;
         assert handlers[EvmStateAccessType.STORAGE] = storage_label;
         assert handlers[EvmStateAccessType.BLOCK_TX] = tx_label;
         assert handlers[EvmStateAccessType.BLOCK_RECEIPT] = receipt_label;
+        assert handlers[EvmStateAccessType.LOG] = log_label;
 
         return handlers;
     }
@@ -59,101 +62,39 @@ namespace EvmDecoder {
         keccak_ptr: KeccakBuiltin*,
     }(
         rlp: felt*,
+        params: felt*,
         state_access_type: felt,
-        field: felt,
-        block_number: felt,
-        chain_id: felt,
+        field: felt
     ) -> () {
         alloc_locals;
 
         let func_ptr = evm_decoder_ptr[state_access_type];
-        let (res_array, res_len) = call_decoder(
-            func_ptr, state_access_type, field, block_number, chain_id, rlp
-        );
-
-        // Assert correct output_ptr values
-        memcpy(dst=output_ptr, src=res_array, len=res_len);
-
-        return ();
-    }
-
-    func call_decoder{
-        range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*
-    }(
-        func_ptr: felt*,
-        state_access_type: felt,
-        field: felt,
-        block_number: felt,
-        chain_id: felt,
-        rlp: felt*,
-    ) -> (res_array: felt*, res_len: felt) {
-        if (state_access_type == EvmStateAccessType.BLOCK_TX) {
-            let (tx_type, rlp_start_offset) = EvmTransactionDecoder.open_tx_envelope(rlp);
-            tempvar invoke_params = cast(
-                new (
-                    keccak_ptr,
-                    range_check_ptr,
-                    bitwise_ptr,
-                    pow2_array,
-                    rlp,
-                    field,
-                    rlp_start_offset,
-                    tx_type,
-                    chain_id,
-                ),
-                felt*,
-            );
-            invoke(func_ptr, 9, invoke_params);
-
-            let res_len = [ap - 1];
-            let res_array = cast([ap - 2], felt*);
-            let pow2_array = cast([ap - 3], felt*);
-            let bitwise_ptr = cast([ap - 4], BitwiseBuiltin*);
-            let range_check_ptr = [ap - 5];
-            let keccak_ptr = cast([ap - 6], KeccakBuiltin*);
-
-            return (res_array=res_array, res_len=res_len);
-        }
-
-        // ToDo: this (probably) is broken
-        if (state_access_type == EvmStateAccessType.BLOCK_RECEIPT) {
-            let (tx_type, rlp_start_offset) = EvmReceiptDecoder.open_receipt_envelope(rlp);
-            tempvar invoke_params = cast(
-                new (
-                    range_check_ptr,
-                    bitwise_ptr,
-                    pow2_array,
-                    rlp,
-                    field,
-                    rlp_start_offset,
-                    tx_type,
-                    block_number,
-                    chain_id,
-                ),
-                felt*,
-            );
-            invoke(func_ptr, 9, invoke_params);
-            let res_len = [ap - 1];
-            let res_array = cast([ap - 2], felt*);
-            let pow2_array = cast([ap - 3], felt*);
-            let bitwise_ptr = cast([ap - 4], BitwiseBuiltin*);
-            let range_check_ptr = [ap - 5];
-
-            return (res_array=res_array, res_len=res_len);
-        }
 
         tempvar invoke_params = cast(
-            new (range_check_ptr, bitwise_ptr, pow2_array, rlp, field), felt*
+            new (
+                keccak_ptr,
+                range_check_ptr,
+                bitwise_ptr,
+                pow2_array,
+                rlp,
+                field,
+                params,
+            ),
+            felt*,
         );
+        invoke(func_ptr, 7, invoke_params);
 
-        invoke(func_ptr, 5, invoke_params);
         let res_len = [ap - 1];
         let res_array = cast([ap - 2], felt*);
         let pow2_array = cast([ap - 3], felt*);
         let bitwise_ptr = cast([ap - 4], BitwiseBuiltin*);
         let range_check_ptr = [ap - 5];
+        let keccak_ptr = cast([ap - 6], KeccakBuiltin*);
 
-        return (res_array=res_array, res_len=res_len);
+        // Assert correct output_ptr values
+        memcpy(dst=output_ptr, src=res_array, len=res_len);
+
+        return ();
     }
 }
 
@@ -167,12 +108,14 @@ namespace EvmStateAccess {
         let (storage_label) = get_label_location(EvmHashParams2.storage);
         let (tx_label) = get_label_location(EvmHashParams2.block_tx);
         let (receipt_label) = get_label_location(EvmHashParams2.block_receipt);
+        let (log_label) = get_label_location(EvmHashParams2.log);
 
         assert evm_key_hasher_ptr[EvmStateAccessType.HEADER] = header_label;
         assert evm_key_hasher_ptr[EvmStateAccessType.ACCOUNT] = account_label;
         assert evm_key_hasher_ptr[EvmStateAccessType.STORAGE] = storage_label;
         assert evm_key_hasher_ptr[EvmStateAccessType.BLOCK_TX] = tx_label;
         assert evm_key_hasher_ptr[EvmStateAccessType.BLOCK_RECEIPT] = receipt_label;
+        assert evm_key_hasher_ptr[EvmStateAccessType.LOG] = log_label;
 
         return evm_key_hasher_ptr;
     }
@@ -198,17 +141,12 @@ namespace EvmStateAccess {
         pow2_array: felt*,
         output_ptr: felt*,
     }(params: felt*, state_access_type: felt, field: felt) -> () {
-        alloc_locals;  // ToDo: currently needed to retrieve the poseidon_ptr from the _compute_memorizer_key call. Find way to remove this
+        alloc_locals;  // ToDo: currently needed to retrieve the poseidon_ptr from the compute_memorizer_key call. Find way to remove this
 
-        let (memorizer_key) = _compute_memorizer_key(params, state_access_type);
+        let (memorizer_key) = compute_memorizer_key(params, state_access_type);
         let (rlp) = EvmMemorizer.get(memorizer_key);
 
-        // In EVM, the block number is always the second param. Ensure this doesnt change in the future
-        let chain_id = params[0];
-        let block_number = params[1];
-        EvmDecoder.decode(
-            rlp, state_access_type, field, block_number, chain_id
-        );
+        EvmDecoder.decode(rlp, params, state_access_type, field);
 
         return ();
     }
@@ -216,7 +154,7 @@ namespace EvmStateAccess {
     // Computes the memorizer key by invoking the corresponding key hasher
     // Returns:
     // - The memorizer key
-    func _compute_memorizer_key{poseidon_ptr: PoseidonBuiltin*, evm_key_hasher_ptr: felt**}(
+    func compute_memorizer_key{poseidon_ptr: PoseidonBuiltin*, evm_key_hasher_ptr: felt**}(
         params: felt*, state_access_type: felt
     ) -> (key: felt) {
         tempvar invoke_params = cast(new (poseidon_ptr, params), felt*);
@@ -230,8 +168,6 @@ namespace EvmStateAccess {
         return (key=key);
     }
 }
-
-// Utils:
 
 // The reader maps this function to memorizers that are not available in a specific memorizer layout
 func invalid_memorizer_access{dict_ptr: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(

@@ -3,111 +3,37 @@ from src.utils.chain_info import ChainInfo
 from src.utils.chain_info import fetch_chain_info
 from src.utils.rlp import rlp_list_retrieve, le_chunks_to_be_uint256, get_rlp_list_meta, get_rlp_len, decode_rlp_word_to_uint256
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin, KeccakBuiltin
 from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.uint256 import Uint256
 
-const LOGS = 3;
+struct ReceiptKey {
+    chain_id: felt,
+    label: felt,
+    block_number: felt,
+    transaction_index: felt,
+}
 
 namespace ReceiptField {
     const SUCCESS = 0;
     const CUMULATIVE_GAS_USED = 1;
     const BLOOM = 2;
-    const LOGS_ADDRESS = LOGS + 0;
-    const LOGS_TOPIC0 = LOGS + 1;
-    const LOGS_TOPIC1 = LOGS + 2;
-    const LOGS_TOPIC2 = LOGS + 3;
-    const LOGS_TOPIC3 = LOGS + 4;
-    const LOGS_TOPIC4 = LOGS + 5;
-    const LOGS_DATA = LOGS + 6;
-}
-
-namespace ReceiptFieldOffset {
-    const LOGS_ADDRESS_OFFSET = 0;
-    const LOGS_TOPICS_OFFSET = 1;
-    const LOGS_DATA_OFFSET = 2;
 }
 
 namespace ReceiptDecoder {
-    func get_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    func get_field{keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
         rlp: felt*,
         field: felt,
-        rlp_start_offset: felt,
-        tx_type: felt,
-        block_number: felt,
-        chain_id: felt,
+        key: ReceiptKey*,
     ) -> (res_array: felt*, res_len: felt) {
         alloc_locals;
         let (__fp__, _) = get_fp_and_pc();
 
+        let (tx_type, rlp_start_offset) = open_receipt_envelope(rlp);
         let (local value_start_offset) = get_rlp_list_meta(rlp, rlp_start_offset);
+        let (chain_info) = fetch_chain_info(key.chain_id);
 
-        if (field == ReceiptField.LOGS_ADDRESS) {
-            let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, LOGS, value_start_offset, 0);
-            let (local value_start_offset) = get_rlp_list_meta(res, 0);
-            let (res, res_len, bytes_len) = rlp_list_retrieve(res, ReceiptFieldOffset.LOGS_ADDRESS_OFFSET, value_start_offset, 0);
-            let (local result) = le_chunks_to_be_uint256(res, res_len, bytes_len);
-            return (res_array=&result, res_len=2);
-        }
-
-        if (field == ReceiptField.LOGS_TOPIC0) {
-            let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, LOGS, value_start_offset, 0);
-            let (local value_start_offset) = get_rlp_list_meta(res, 0);
-            let (res, res_len, bytes_len) = rlp_list_retrieve(res, ReceiptFieldOffset.LOGS_TOPICS_OFFSET, value_start_offset, 0);
-            let (res, res_len, bytes_len) = rlp_list_retrieve(res, ReceiptField.LOGS_TOPIC0 - LOGS - 1, 0, 0);
-            let (local result) = le_chunks_to_be_uint256(res, res_len, bytes_len);
-            return (res_array=&result, res_len=2);
-        }
-
-        if (field == ReceiptField.LOGS_TOPIC1) {
-            let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, LOGS, value_start_offset, 0);
-            let (local value_start_offset) = get_rlp_list_meta(res, 0);
-            let (res, res_len, bytes_len) = rlp_list_retrieve(res, ReceiptFieldOffset.LOGS_TOPICS_OFFSET, value_start_offset, 0);
-            let (res, res_len, bytes_len) = rlp_list_retrieve(res, ReceiptField.LOGS_TOPIC1  - LOGS - 1, 0, 0);
-            let (local result) = le_chunks_to_be_uint256(res, res_len, bytes_len);
-            return (res_array=&result, res_len=2);
-        }
-
-        if (field == ReceiptField.LOGS_TOPIC2) {
-            let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, LOGS, value_start_offset, 0);
-            let (local value_start_offset) = get_rlp_list_meta(res, 0);
-            let (res, res_len, bytes_len) = rlp_list_retrieve(res, ReceiptFieldOffset.LOGS_TOPICS_OFFSET, value_start_offset, 0);
-            let (res, res_len, bytes_len) = rlp_list_retrieve(res, ReceiptField.LOGS_TOPIC2  - LOGS - 1, 0, 0);
-            let (local result) = le_chunks_to_be_uint256(res, res_len, bytes_len);
-            return (res_array=&result, res_len=2);
-        }
-
-        if (field == ReceiptField.LOGS_TOPIC3) {
-            let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, LOGS, value_start_offset, 0);
-            let (local value_start_offset) = get_rlp_list_meta(res, 0);
-            let (res, res_len, bytes_len) = rlp_list_retrieve(res, ReceiptFieldOffset.LOGS_TOPICS_OFFSET, value_start_offset, 0);
-            let (res, res_len, bytes_len) = rlp_list_retrieve(res, ReceiptField.LOGS_TOPIC3  - LOGS - 1, 0, 0);
-            let (local result) = le_chunks_to_be_uint256(res, res_len, bytes_len);
-            return (res_array=&result, res_len=2);
-        }
-
-        if (field == ReceiptField.LOGS_TOPIC4) {
-            let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, LOGS, value_start_offset, 0);
-            let (local value_start_offset) = get_rlp_list_meta(res, 0);
-            let (res, res_len, bytes_len) = rlp_list_retrieve(res, ReceiptFieldOffset.LOGS_TOPICS_OFFSET, value_start_offset, 0);
-            let (res, res_len, bytes_len) = rlp_list_retrieve(res, ReceiptField.LOGS_TOPIC4  - LOGS - 1, 0, 0);
-            let (local result) = le_chunks_to_be_uint256(res, res_len, bytes_len);
-            return (res_array=&result, res_len=2);
-        }
-
-        if (field == ReceiptField.LOGS_DATA) {
-            let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, LOGS, value_start_offset, 0);
-            let (local value_start_offset) = get_rlp_list_meta(res, 0);
-            let (res, res_len, bytes_len) = rlp_list_retrieve(res, ReceiptFieldOffset.LOGS_DATA_OFFSET, value_start_offset, 0);
-
-            // TODO decode all of the data given bytes_len // 0x20
-            let (local result) = le_chunks_to_be_uint256(res, res_len, bytes_len);
-            
-            return (res_array=&result, res_len=2);
-        }
-
-        let (chain_info) = fetch_chain_info(chain_id);
-
+        let block_number = key.block_number;
         local is_byzantium: felt;
         %{
             if ids.block_number >= ids.chain_info.byzantium:

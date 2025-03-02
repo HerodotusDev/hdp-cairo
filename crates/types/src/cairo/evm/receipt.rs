@@ -1,5 +1,5 @@
 use alloy::{
-    consensus::{Eip658Value, Receipt, ReceiptWithBloom, TxReceipt},
+    consensus::{Eip658Value, Receipt, ReceiptWithBloom},
     primitives::keccak256,
     rpc::types::Log,
 };
@@ -14,13 +14,6 @@ pub enum FunctionId {
     Status = 0,
     CumulativeGasUsed = 1,
     Bloom = 2,
-    Address = 3,
-    Topic0 = 3 + 1,
-    Topic1 = 3 + 2,
-    Topic2 = 3 + 3,
-    Topic3 = 3 + 4,
-    Topic4 = 3 + 5,
-    Data = 3 + 6,
 }
 
 #[derive(Debug)]
@@ -65,23 +58,6 @@ impl CairoReceiptWithBloom {
             FunctionId::Status => <Uint256 as Into<[Felt252; 2]>>::into(self.status()).to_vec(),
             FunctionId::CumulativeGasUsed => <Uint256 as Into<[Felt252; 2]>>::into(self.cumulative_gas_used()).to_vec(),
             FunctionId::Bloom => <Uint256 as Into<[Felt252; 2]>>::into(self.bloom()).to_vec(),
-            FunctionId::Address => <Uint256 as Into<[Felt252; 2]>>::into(self.0.logs().first().unwrap().address.into()).to_vec(),
-            FunctionId::Topic0 => <Uint256 as Into<[Felt252; 2]>>::into(self.0.logs().first().unwrap().data.topics()[0].into()).to_vec(),
-            FunctionId::Topic1 => <Uint256 as Into<[Felt252; 2]>>::into(self.0.logs().first().unwrap().data.topics()[1].into()).to_vec(),
-            FunctionId::Topic2 => <Uint256 as Into<[Felt252; 2]>>::into(self.0.logs().first().unwrap().data.topics()[2].into()).to_vec(),
-            FunctionId::Topic3 => <Uint256 as Into<[Felt252; 2]>>::into(self.0.logs().first().unwrap().data.topics()[3].into()).to_vec(),
-            FunctionId::Topic4 => <Uint256 as Into<[Felt252; 2]>>::into(self.0.logs().first().unwrap().data.topics()[4].into()).to_vec(),
-            FunctionId::Data => self
-                .0
-                .logs()
-                .first()
-                .unwrap()
-                .data
-                .data
-                .chunks((u128::BITS / 8) as usize)
-                .rev()
-                .map(Felt252::from_bytes_be_slice)
-                .collect(),
         }
     }
 }

@@ -30,6 +30,13 @@ from src.utils.utils import get_felt_bytes_len, reverse_chunk_endianess
 from src.utils.chain_info import fetch_chain_info
 from starkware.cairo.common.registers import get_label_location
 
+struct TransactionKey {
+    chain_id: felt,
+    label: felt,
+    block_number: felt,
+    transaction_index: felt,
+}
+
 namespace TransactionField {
     const NONCE = 0;
     const GAS_PRICE = 1;
@@ -61,6 +68,21 @@ namespace TransactionType {
 namespace TransactionDecoder {
     // Returns the TX field as BE uint256
     func get_field{
+        keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
+    }(rlp: felt*, field: felt, key: TransactionKey*) -> (res_array: felt*, res_len: felt) {
+        alloc_locals;
+        let (__fp__, _) = get_fp_and_pc();
+
+        let chain_id = key.chain_id;
+        let (tx_type, rlp_start_offset) = open_tx_envelope(rlp);
+
+        let (res_array, res_len) = _get_field(rlp, field, rlp_start_offset, tx_type, chain_id);
+
+        return (res_array=res_array, res_len=res_len);
+    }
+
+    // Returns the TX field as BE uint256
+    func _get_field{
         keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
     }(rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt, chain_id: felt) -> (res_array: felt*, res_len: felt) {
         alloc_locals;
@@ -190,7 +212,7 @@ namespace TransactionSender {
         alloc_locals;
         let (chain_info) = fetch_chain_info(chain_id);
 
-        let (v: Uint256*, _) = TransactionDecoder.get_field(
+        let (v: Uint256*, _) = TransactionDecoder._get_field(
             rlp, TransactionField.V, rlp_start_offset, tx_type, chain_id
         );
         let (v_norm, is_eip155) = normalize_v{

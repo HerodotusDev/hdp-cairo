@@ -1,14 +1,15 @@
+from packages.eth_essentials.lib.block_header import extract_state_root_little
+from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField, HeaderKey
+from src.memorizers.evm.memorizer import EvmMemorizer, EvmHashParams
+from src.types import ChainInfo
+from src.utils.converter import le_address_chunks_to_felt
+from src.utils.mpt import verify_mpt_proof
+from starkware.cairo.common.alloc import alloc
+from starkware.cairo.common.builtin_keccak.keccak import keccak_bigend
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
 from starkware.cairo.common.dict_access import DictAccess
-from src.utils.mpt import verify_mpt_proof
+from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.uint256 import Uint256
-from starkware.cairo.common.builtin_keccak.keccak import keccak_bigend
-from starkware.cairo.common.alloc import alloc
-from src.types import ChainInfo
-from packages.eth_essentials.lib.block_header import extract_state_root_little
-from src.memorizers.evm.memorizer import EvmMemorizer, EvmHashParams
-from src.utils.converter import le_address_chunks_to_felt
-from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField
 
 // Verifies the validity of all of the available account proofs and writes them to the memorizer
 func verify_accounts{
@@ -79,6 +80,8 @@ func verify_account{
     pow2_array: felt*,
 }(address: felt, key: Uint256, key_leading_zeros: felt, n_proofs: felt, idx: felt) {
     alloc_locals;
+    let (__fp__, _) = get_fp_and_pc();
+
     if (idx == n_proofs) {
         return ();
     }
@@ -94,9 +97,10 @@ func verify_account{
     %{ segments.write_arg(ids.mpt_proof, [int(x, 16) for x in proof.proof]) %}
 
     // get state_root from verified headers
+    local header_key: HeaderKey = HeaderKey(chain_id=chain_info.id, block_number=block_number);
     let memorizer_key = EvmHashParams.header(chain_id=chain_info.id, block_number=block_number);
     let (header_rlp) = EvmMemorizer.get(key=memorizer_key);
-    let (state_root: Uint256*, _) = HeaderDecoder.get_field(header_rlp, HeaderField.STATE_ROOT);
+    let (state_root: Uint256*, _) = HeaderDecoder.get_field(header_rlp, HeaderField.STATE_ROOT, &header_key);
 
     let (rlp: felt*, value_len: felt) = verify_mpt_proof(
         mpt_proof=mpt_proof,

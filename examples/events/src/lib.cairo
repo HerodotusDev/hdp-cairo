@@ -1,9 +1,7 @@
 #[starknet::contract]
 mod module {
     use core::starknet::EthAddress;
-    use hdp_cairo::HDP;
-    use hdp_cairo::evm::block_receipt::BlockReceiptTrait;
-    use hdp_cairo::evm::{ETHEREUM_TESTNET_CHAIN_ID, block_receipt::BlockReceiptKey};
+    use hdp_cairo::{HDP, evm::log::{LogImpl, LogKey, LogTrait}};
 
     #[storage]
     struct Storage {}
@@ -16,14 +14,14 @@ mod module {
 
     #[external(v0)]
     pub fn main(ref self: ContractState, hdp: HDP) {
-        let key = BlockReceiptKey {
-            chain_id: ETHEREUM_TESTNET_CHAIN_ID, block_number: 7692344, transaction_index: 180,
+        let key = LogKey {
+            chain_id: 11155111, block_number: 7692344, transaction_index: 180, log_index: 0,
         };
-        let mut data = hdp.evm.block_receipt_get_data(@key);
+        let mut data = hdp.evm.log_get_data(@key);
 
         let event = EVMApprovalEvent {
-            owner: hdp.evm.block_receipt_get_topic1(@key).into(),
-            spender: hdp.evm.block_receipt_get_topic2(@key).into(),
+            owner: hdp.evm.log_get_topic1(@key).into(),
+            spender: hdp.evm.log_get_topic2(@key).into(),
             value: Serde::deserialize(ref data).unwrap(),
         };
 

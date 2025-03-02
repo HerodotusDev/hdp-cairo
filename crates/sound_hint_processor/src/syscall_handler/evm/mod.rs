@@ -1,5 +1,6 @@
 pub mod account;
 pub mod header;
+pub mod log;
 pub mod receipt;
 pub mod storage;
 pub mod transaction;
@@ -30,6 +31,7 @@ pub enum CallHandlerId {
     Storage = 2,
     Transaction = 3,
     Receipt = 4,
+    Logs = 5,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
@@ -101,6 +103,14 @@ impl traits::SyscallHandler for CallContractHandler {
                 let key = receipt::ReceiptCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = receipt::ReceiptCallHandler::derive_id(request.selector)?;
                 let result = receipt::ReceiptCallHandler::new(memorizer, self.dict_manager.clone())
+                    .handle(key.clone(), function_id, vm)
+                    .await?;
+                retdata_end = result.to_memory(vm, retdata_end)?;
+            }
+            CallHandlerId::Logs => {
+                let key = log::LogsCallHandler::derive_key(vm, &mut calldata)?;
+                let function_id = log::LogsCallHandler::derive_id(request.selector)?;
+                let result = log::LogsCallHandler::new(memorizer, self.dict_manager.clone())
                     .handle(key.clone(), function_id, vm)
                     .await?;
                 retdata_end = result.to_memory(vm, retdata_end)?;

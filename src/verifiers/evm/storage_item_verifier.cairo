@@ -12,7 +12,8 @@ from packages.eth_essentials.lib.rlp_little import (
 )
 from src.utils.converter import le_address_chunks_to_felt
 from src.memorizers.evm.memorizer import EvmMemorizer, EvmHashParams
-from src.decoders.evm.account_decoder import AccountDecoder, AccountField
+from src.decoders.evm.account_decoder import AccountDecoder, AccountField, AccountKey
+from starkware.cairo.common.registers import get_fp_and_pc
 
 from packages.eth_essentials.lib.utils import felt_divmod, felt_divmod_8, word_reverse_endian_64
 
@@ -98,6 +99,7 @@ func verify_storage_item{
     pow2_array: felt*,
 }(address: felt, slot: Uint256, key: Uint256, key_leading_zeros: felt, n_proofs: felt, idx: felt) {
     alloc_locals;
+    let (__fp__, _) = get_fp_and_pc();
 
     if (n_proofs == idx) {
         return ();
@@ -113,11 +115,12 @@ func verify_storage_item{
     let (mpt_proof: felt**) = alloc();
     %{ segments.write_arg(ids.mpt_proof, [int(x, 16) for x in proof.proof]) %}
 
+    local account_key: AccountKey = AccountKey(chain_id=chain_info.id, block_number=block_number, address=address);
     let memorizer_key = EvmHashParams.account(
         chain_id=chain_info.id, block_number=block_number, address=address
     );
     let (account_rlp) = EvmMemorizer.get(key=memorizer_key);
-    let (state_root: Uint256*, _) = AccountDecoder.get_field(account_rlp, AccountField.STATE_ROOT);
+    let (state_root: Uint256*, _) = AccountDecoder.get_field(account_rlp, AccountField.STATE_ROOT, &account_key);
 
     let (rlp: felt*, _value_bytes_len: felt) = verify_mpt_proof(
         mpt_proof=mpt_proof,

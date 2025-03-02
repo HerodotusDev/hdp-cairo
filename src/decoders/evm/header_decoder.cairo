@@ -5,7 +5,7 @@ from src.types import MMRMeta
 from src.utils.rlp import rlp_list_retrieve, le_chunks_to_be_uint256
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash, poseidon_hash_many
-from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin
+from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, KeccakBuiltin
 from starkware.cairo.common.dict import dict_read
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.registers import get_fp_and_pc
@@ -34,6 +34,11 @@ namespace HeaderField {
     const PARENT_BEACON_BLOCK_ROOT = 19;
 }
 
+struct HeaderKey {
+    chain_id: felt,
+    block_number: felt,
+}
+
 namespace HeaderDecoder {
     func get_block_number{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
         rlp: felt*
@@ -43,8 +48,8 @@ namespace HeaderDecoder {
         return value.low;
     }
 
-    func get_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
-        rlp: felt*, field: felt
+    func get_field{keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+        rlp: felt*, field: felt, key: HeaderKey*
     ) -> (res_array: felt*, res_len: felt) {
         alloc_locals;
         let (__fp__, _) = get_fp_and_pc();

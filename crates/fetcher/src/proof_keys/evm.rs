@@ -25,10 +25,10 @@ use crate::FetcherError;
 
 #[derive(Debug, Default)]
 pub struct ProofKeys {
-    pub header_keys: HashSet<keys::evm::header::Key>,
     pub account_keys: HashSet<keys::evm::account::Key>,
-    pub storage_keys: HashSet<keys::evm::storage::Key>,
+    pub header_keys: HashSet<keys::evm::header::Key>,
     pub receipt_keys: HashSet<keys::evm::receipt::Key>,
+    pub storage_keys: HashSet<keys::evm::storage::Key>,
     pub transaction_keys: HashSet<keys::evm::transaction::Key>,
 }
 
