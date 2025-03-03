@@ -1,16 +1,9 @@
 #[starknet::contract]
 mod module {
-    use core::starknet::EthAddress;
     use hdp_cairo::{HDP, evm::log::{LogImpl, LogKey, LogTrait}};
 
     #[storage]
     struct Storage {}
-
-    struct EVMApprovalEvent {
-        owner: EthAddress,
-        spender: EthAddress,
-        value: u256,
-    }
 
     #[external(v0)]
     pub fn main(ref self: ContractState, hdp: HDP) {
@@ -24,13 +17,10 @@ mod module {
         let topic3 = hdp.evm.log_get_topic3(@key).into();
         let data = hdp.evm.log_get_data(@key);
 
-        print!("topic0 {}", topic0);
-        print!("topic1 {}", topic1);
-        print!("topic2 {}", topic2);
-        print!("topic3 {}", topic3);
-        print!("data0 {}", data[0]);
-        print!("data1 {}", data[1]);
-        print!("data2 {}", data[2]);
-        print!("data3 {}", data[3]);
+        print!("topic0 {:x}", topic0);
+        print!("topic1 {:x}", topic1);
+        print!("topic2 {:x}", topic2);
+        print!("topic3 {:x}", topic3);
+        print!("data {:?}", data);
     }
 }

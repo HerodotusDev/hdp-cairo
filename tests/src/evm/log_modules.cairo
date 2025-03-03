@@ -110,8 +110,8 @@ mod logs_get_data {
             chain_id: 11155111, block_number: 7692344, transaction_index: 180, log_index: 0,
         };
         let mut data = hdp.evm.log_get_data(@key);
-        let value: u256 = Serde::deserialize(ref data).unwrap();
 
-        assert!(value == u256 { low: 0x0, high: 0xde0b6b3a7640000 });
+        assert!(*data[0] == 0x0_u128);
+        assert!(*data[1] == 0xde0b6b3a7640000_u128);
     }
 }

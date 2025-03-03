@@ -46,8 +46,12 @@ pub impl LogImpl of LogTrait {
         let result = self.call_memorizer(LOG_GET_TOPIC4, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
-    fn log_get_data(self: @EvmMemorizer, key: @LogKey) -> Span<felt252> {
-        self.call_memorizer(LOG_GET_DATA, key)
+    fn log_get_data(self: @EvmMemorizer, key: @LogKey) -> Array<u128> {
+        let mut result: Array<u128> = array![];
+        for element in self.call_memorizer(LOG_GET_DATA, key) {
+            result.append((*element).try_into().unwrap());
+        };
+        result
     }
 
     fn call_memorizer(self: @EvmMemorizer, selector: felt252, key: @LogKey) -> Span<felt252> {
