@@ -112,6 +112,6 @@ mod logs_get_data {
         let mut data = hdp.evm.log_get_data(@key);
         let value: u256 = Serde::deserialize(ref data).unwrap();
 
-        assert!(value == u256 { low: 0xde0b6b3a7640000, high: 0x0 });
+        assert!(value == u256 { low: 0x0, high: 0xde0b6b3a7640000 });
     }
 }

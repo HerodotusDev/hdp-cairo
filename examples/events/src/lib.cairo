@@ -17,7 +17,7 @@ mod module {
         let key = LogKey {
             chain_id: 11155111, block_number: 7692344, transaction_index: 183, log_index: 2,
         };
-        
+
         let topic0 = hdp.evm.log_get_topic0(@key).into();
         let topic1 = hdp.evm.log_get_topic1(@key).into();
         let topic2 = hdp.evm.log_get_topic2(@key).into();
