@@ -2789,6 +2789,7 @@ dependencies = [
  "alloy-rlp",
  "cairo-vm",
  "clap",
+ "dotenvy",
  "dry_hint_processor",
  "eth-trie-proofs",
  "futures",

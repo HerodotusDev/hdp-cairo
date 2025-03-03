@@ -7,22 +7,23 @@ edition = "2021"
 path = "src/lib.rs"
 
 [dependencies]
+alloy-rlp.workspace = true
 alloy.workspace = true
 cairo-vm.workspace = true
-alloy-rlp.workspace = true
 clap.workspace = true
+dotenvy.workspace = true
 dry_hint_processor.workspace = true
+eth-trie-proofs.workspace = true
 futures.workspace = true
 indexer.workspace = true
 indicatif.workspace = true
 reqwest.workspace = true
 serde_json.workspace = true
 starknet-types-core.workspace = true
+syscall_handler.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 types.workspace = true
-eth-trie-proofs.workspace = true
-syscall_handler.workspace = true
 
 [features]
 default = []

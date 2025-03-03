@@ -68,7 +68,6 @@ impl CairoReceiptWithBloom {
                 .data
                 .data
                 .chunks((u128::BITS / 8) as usize)
-                .rev()
                 .map(Felt252::from_bytes_be_slice)
                 .collect(),
         }

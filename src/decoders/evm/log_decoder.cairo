@@ -102,15 +102,29 @@ namespace LogDecoder {
             let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, LOGS_OFFSET, value_start_offset, 0);
             let (res, res_len, bytes_len) = rlp_list_retrieve(res, key.log_index, 0, 0);
             let (res, res_len, bytes_len) = rlp_list_retrieve(res, LogFieldOffset.LOG_DATA_OFFSET, 0, 0);
-
-            // TODO decode all of the data given bytes_len // 0x20
-            let (local result) = le_chunks_to_be_uint256(res, res_len, bytes_len);
             
-            return (res_array=&result, res_len=2);
+            let (local res_array: felt*) = alloc();
+            abi_data_to_uint256_array(res, res_len, bytes_len, res_array);
+            
+            return (res_array=res_array, res_len=bytes_len / 0x20 * 2);
         }
 
 
-        local result: Uint256 = Uint256(low=0x0, high=0x0);
-        return (res_array=&result, res_len=2);
+        let (local res_array: felt*) = alloc();
+        return (res_array=res_array, res_len=0);
+    }
+
+    func abi_data_to_uint256_array{keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(res: felt*, res_len: felt, bytes_len: felt, res_array: felt*) {
+        alloc_locals;
+
+        if (bytes_len == 0) {
+            return ();
+        }
+
+        let (local result) = le_chunks_to_be_uint256(res, 4, 0x20);
+        assert [res_array + 1] = result.low;
+        assert [res_array + 0] = result.high;
+        
+        return abi_data_to_uint256_array(res + 4, res_len - 4, bytes_len - 0x20, res_array + 2);
     }
 }
