@@ -99,6 +99,8 @@ mod logs_get_topic2 {
 
 #[starknet::contract]
 mod logs_get_data {
+    use alexandria_bytes::{Bytes, BytesTrait};
+    use alexandria_encoding::sol_abi::{decode::SolAbiDecodeTrait};
     use hdp_cairo::{HDP, evm::log::{LogImpl, LogKey, LogTrait}};
 
     #[storage]
@@ -110,8 +112,11 @@ mod logs_get_data {
             chain_id: 11155111, block_number: 7692344, transaction_index: 180, log_index: 0,
         };
         let mut data = hdp.evm.log_get_data(@key);
+        let encoded: Bytes = BytesTrait::new(data.len() * 0x20, data);
 
-        assert!(*data[0] == 0x0_u128);
-        assert!(*data[1] == 0xde0b6b3a7640000_u128);
+        let mut offset = 0;
+        let decoded: u256 = encoded.decode(ref offset);
+
+        assert!(decoded == u256 { low: 0xde0b6b3a7640000, high: 0x0 });
     }
 }
