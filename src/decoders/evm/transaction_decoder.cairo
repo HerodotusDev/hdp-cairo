@@ -4,6 +4,7 @@ from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian, felt
 from starkware.cairo.common.builtin_keccak.keccak import keccak_bigend
 from starkware.cairo.common.cairo_secp.bigint import uint256_to_bigint
 from starkware.cairo.common.cairo_keccak.keccak import finalize_keccak
+from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.cairo_secp.signature import (
     recover_public_key,
     public_key_point_to_eth_address,
@@ -28,6 +29,12 @@ from src.types import ChainInfo
 from src.utils.utils import get_felt_bytes_len, reverse_chunk_endianess
 from src.utils.chain_info import fetch_chain_info
 from starkware.cairo.common.registers import get_label_location
+
+struct TransactionKey {
+    chain_id: felt,
+    block_number: felt,
+    transaction_index: felt,
+}
 
 namespace TransactionField {
     const NONCE = 0;
@@ -61,23 +68,34 @@ namespace TransactionDecoder {
     // Returns the TX field as BE uint256
     func get_field{
         keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
-    }(rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt, chain_id: felt) -> Uint256 {
+    }(rlp: felt*, field: felt, key: TransactionKey*) -> (res_array: felt*, res_len: felt) {
+        let (tx_type, rlp_start_offset) = open_tx_envelope(rlp);
+        let (res_array, res_len) = _get_field(rlp, field, rlp_start_offset, tx_type, key.chain_id);
+        return (res_array=res_array, res_len=res_len);
+    }
+
+    func _get_field{
+        keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
+    }(rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt, chain_id: felt) -> (res_array: felt*, res_len: felt) {
         alloc_locals;
+        let (__fp__, _) = get_fp_and_pc();
 
         if (field == TransactionField.TX_TYPE) {
-            return (Uint256(low=tx_type, high=0));
+            local result: Uint256 = (Uint256(low=tx_type, high=0));
+            return (res_array=&result, res_len=2);
         }
 
         if (field == TransactionField.SENDER) {
             let sender_felt = TransactionSender.derive(rlp, rlp_start_offset, tx_type, chain_id);
-            let result = felt_to_uint256(sender_felt);
-            return result;
+            let value: Uint256 = felt_to_uint256(sender_felt);
+            local result: Uint256 = (Uint256(low=value.low, high=value.high));
+            return (res_array=&result, res_len=2);
         }
 
         if (field == TransactionField.HASH) {
             let rlp_len = get_rlp_len(rlp, rlp_start_offset);
-            let (tx_hash) = keccak_bigend(rlp, rlp_len + rlp_start_offset);
-            return tx_hash;
+            let (local result) = keccak_bigend(rlp, rlp_len + rlp_start_offset);
+            return (res_array=&result, res_len=2);
         }
 
         if (field == TransactionField.INPUT) {
@@ -96,8 +114,8 @@ namespace TransactionDecoder {
         let field_index = TxTypeFieldMap.get_field_index(tx_type, field);
 
         let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, field_index, value_start_offset, 0);
-        let result = le_chunks_to_be_uint256(res, res_len, bytes_len);
-        return result;
+        let (local result) = le_chunks_to_be_uint256(res, res_len, bytes_len);
+        return (res_array=&result, res_len=2);
     }
 
     func get_field_and_bytes_len{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
@@ -186,12 +204,12 @@ namespace TransactionSender {
         alloc_locals;
         let (chain_info) = fetch_chain_info(chain_id);
 
-        let v = TransactionDecoder.get_field(
+        let (v: Uint256*, _) = TransactionDecoder._get_field(
             rlp, TransactionField.V, rlp_start_offset, tx_type, chain_id
         );
         let (v_norm, is_eip155) = normalize_v{
             range_check_ptr=range_check_ptr, chain_info=chain_info
-        }(tx_type, v);
+        }(tx_type, Uint256(low=v.low, high=v.high));
 
         let (r_le, r_bytes_len) = TransactionDecoder.get_field_and_bytes_len(
             rlp, TransactionField.R, rlp_start_offset, tx_type

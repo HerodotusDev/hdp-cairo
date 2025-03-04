@@ -1,5 +1,6 @@
 pub mod account;
 pub mod header;
+pub mod log;
 pub mod receipt;
 pub mod storage;
 pub mod transaction;
@@ -30,6 +31,7 @@ pub enum CallHandlerId {
     Storage = 2,
     Transaction = 3,
     Receipt = 4,
+    Logs = 5,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
@@ -71,8 +73,7 @@ impl traits::SyscallHandler for CallContractHandler {
                 let result = header::HeaderCallHandler::new(memorizer, self.dict_manager.clone())
                     .handle(key.clone(), function_id, vm)
                     .await?;
-                result.to_memory(vm, retdata_end)?;
-                retdata_end += <header::HeaderCallHandler as CallHandler>::CallHandlerResult::n_fields(vm, retdata_end)?;
+                retdata_end = result.to_memory(vm, retdata_end)?;
             }
             CallHandlerId::Account => {
                 let key = account::AccountCallHandler::derive_key(vm, &mut calldata)?;
@@ -80,8 +81,7 @@ impl traits::SyscallHandler for CallContractHandler {
                 let result = account::AccountCallHandler::new(memorizer, self.dict_manager.clone())
                     .handle(key.clone(), function_id, vm)
                     .await?;
-                result.to_memory(vm, retdata_end)?;
-                retdata_end += <account::AccountCallHandler as CallHandler>::CallHandlerResult::n_fields(vm, retdata_end)?;
+                retdata_end = result.to_memory(vm, retdata_end)?;
             }
             CallHandlerId::Storage => {
                 let key = storage::StorageCallHandler::derive_key(vm, &mut calldata)?;
@@ -89,8 +89,7 @@ impl traits::SyscallHandler for CallContractHandler {
                 let result = storage::StorageCallHandler::new(memorizer, self.dict_manager.clone())
                     .handle(key.clone(), function_id, vm)
                     .await?;
-                result.to_memory(vm, retdata_end)?;
-                retdata_end += <storage::StorageCallHandler as CallHandler>::CallHandlerResult::n_fields(vm, retdata_end)?;
+                retdata_end = result.to_memory(vm, retdata_end)?;
             }
             CallHandlerId::Transaction => {
                 let key = transaction::TransactionCallHandler::derive_key(vm, &mut calldata)?;
@@ -98,8 +97,7 @@ impl traits::SyscallHandler for CallContractHandler {
                 let result = transaction::TransactionCallHandler::new(memorizer, self.dict_manager.clone())
                     .handle(key.clone(), function_id, vm)
                     .await?;
-                result.to_memory(vm, retdata_end)?;
-                retdata_end += <transaction::TransactionCallHandler as CallHandler>::CallHandlerResult::n_fields(vm, retdata_end)?;
+                retdata_end = result.to_memory(vm, retdata_end)?;
             }
             CallHandlerId::Receipt => {
                 let key = receipt::ReceiptCallHandler::derive_key(vm, &mut calldata)?;
@@ -107,8 +105,15 @@ impl traits::SyscallHandler for CallContractHandler {
                 let result = receipt::ReceiptCallHandler::new(memorizer, self.dict_manager.clone())
                     .handle(key.clone(), function_id, vm)
                     .await?;
-                result.to_memory(vm, retdata_end)?;
-                retdata_end += <receipt::ReceiptCallHandler as CallHandler>::CallHandlerResult::n_fields(vm, retdata_end)?;
+                retdata_end = result.to_memory(vm, retdata_end)?;
+            }
+            CallHandlerId::Logs => {
+                let key = log::LogsCallHandler::derive_key(vm, &mut calldata)?;
+                let function_id = log::LogsCallHandler::derive_id(request.selector)?;
+                let result = log::LogsCallHandler::new(memorizer, self.dict_manager.clone())
+                    .handle(key.clone(), function_id, vm)
+                    .await?;
+                retdata_end = result.to_memory(vm, retdata_end)?;
             }
         }
 

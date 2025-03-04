@@ -2,7 +2,64 @@
 version = 1
 
 [[package]]
+name = "alexandria_bytes"
+version = "0.1.0"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git#74cafd429eef374730f2c6fed9a74753103c6fdb"
+dependencies = [
+ "alexandria_data_structures",
+ "alexandria_math",
+]
+
+[[package]]
+name = "alexandria_data_structures"
+version = "0.2.0"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git#74cafd429eef374730f2c6fed9a74753103c6fdb"
+dependencies = [
+ "alexandria_encoding",
+]
+
+[[package]]
+name = "alexandria_encoding"
+version = "0.1.0"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git#74cafd429eef374730f2c6fed9a74753103c6fdb"
+dependencies = [
+ "alexandria_bytes",
+ "alexandria_data_structures",
+ "alexandria_math",
+ "alexandria_numeric",
+]
+
+[[package]]
+name = "alexandria_math"
+version = "0.2.1"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git#74cafd429eef374730f2c6fed9a74753103c6fdb"
+
+[[package]]
+name = "alexandria_numeric"
+version = "0.1.0"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git#74cafd429eef374730f2c6fed9a74753103c6fdb"
+dependencies = [
+ "alexandria_math",
+ "alexandria_searching",
+]
+
+[[package]]
+name = "alexandria_searching"
+version = "0.1.0"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git#74cafd429eef374730f2c6fed9a74753103c6fdb"
+dependencies = [
+ "alexandria_data_structures",
+]
+
+[[package]]
 name = "example_average"
+version = "0.1.0"
+dependencies = [
+ "hdp_cairo",
+]
+
+[[package]]
+name = "example_events"
 version = "0.1.0"
 dependencies = [
  "hdp_cairo",
@@ -25,10 +82,16 @@ dependencies = [
 [[package]]
 name = "hdp_cairo"
 version = "0.1.0"
+dependencies = [
+ "alexandria_bytes",
+ "alexandria_encoding",
+]
 
 [[package]]
 name = "tests"
 version = "0.1.0"
 dependencies = [
+ "alexandria_bytes",
+ "alexandria_encoding",
  "hdp_cairo",
 ]

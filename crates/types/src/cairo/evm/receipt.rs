@@ -4,6 +4,7 @@ use alloy::{
     rpc::types::Log,
 };
 use alloy_rlp::{Decodable, Encodable};
+use cairo_vm::Felt252;
 use strum_macros::FromRepr;
 
 use crate::cairo::structs::Uint256;
@@ -13,7 +14,6 @@ pub enum FunctionId {
     Status = 0,
     CumulativeGasUsed = 1,
     Bloom = 2,
-    Logs = 3,
 }
 
 #[derive(Debug)]
@@ -53,12 +53,11 @@ impl CairoReceiptWithBloom {
         Self(<ReceiptWithBloom>::decode(&mut rlp).unwrap())
     }
 
-    pub fn handle(&self, function_id: FunctionId) -> Uint256 {
+    pub fn handle(&self, function_id: FunctionId) -> Vec<Felt252> {
         match function_id {
-            FunctionId::Status => self.status(),
-            FunctionId::CumulativeGasUsed => self.cumulative_gas_used(),
-            FunctionId::Bloom => panic!("Bloom function id is not supported"),
-            FunctionId::Logs => panic!("Logs function id is not supported"),
+            FunctionId::Status => <Uint256 as Into<[Felt252; 2]>>::into(self.status()).to_vec(),
+            FunctionId::CumulativeGasUsed => <Uint256 as Into<[Felt252; 2]>>::into(self.cumulative_gas_used()).to_vec(),
+            FunctionId::Bloom => <Uint256 as Into<[Felt252; 2]>>::into(self.bloom()).to_vec(),
         }
     }
 }

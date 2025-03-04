@@ -7,27 +7,27 @@ use cairo_vm::{
 use syscall_handler::{traits::CallHandler, SyscallExecutionError, SyscallResult};
 use types::{
     cairo::{
-        evm::receipt::{CairoReceiptWithBloom, FunctionId},
+        evm::log::{CairoReceiptWithBloom, FunctionId},
         traits::CairoType,
     },
-    keys::evm::receipt::CairoKey,
+    keys::evm::log::{self, CairoKey},
 };
 
 use crate::syscall_handler::Memorizer;
 #[derive(Debug)]
-pub struct ReceiptCallHandler {
+pub struct LogsCallHandler {
     pub memorizer: Memorizer,
     pub dict_manager: Rc<RefCell<DictManager>>,
 }
 
-impl ReceiptCallHandler {
+impl LogsCallHandler {
     pub fn new(memorizer: Memorizer, dict_manager: Rc<RefCell<DictManager>>) -> Self {
         Self { memorizer, dict_manager }
     }
 }
 
 #[allow(refining_impl_trait)]
-impl CallHandler for ReceiptCallHandler {
+impl CallHandler for LogsCallHandler {
     type Key = CairoKey;
     type Id = FunctionId;
     type CallHandlerResult = Vec<Felt252>;
@@ -74,10 +74,12 @@ impl CallHandler for ReceiptCallHandler {
             .take(length)
             .collect::<Vec<u8>>();
 
+        let key = log::Key::try_from(key).unwrap();
+
         if extra_len != 0 {
-            Ok(CairoReceiptWithBloom::rlp_decode(&rlp[1..]).handle(function_id))
+            Ok(CairoReceiptWithBloom::rlp_decode(&rlp[1..]).handle(function_id, key.log_index))
         } else {
-            Ok(CairoReceiptWithBloom::rlp_decode(&rlp).handle(function_id))
+            Ok(CairoReceiptWithBloom::rlp_decode(&rlp).handle(function_id, key.log_index))
         }
     }
 }

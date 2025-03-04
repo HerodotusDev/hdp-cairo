@@ -23,6 +23,7 @@ use types::ChainProofs;
 
 #[tokio::main]
 async fn main() -> Result<(), fetcher::FetcherError> {
+    dotenvy::dotenv().ok();
     let args = Args::try_parse_from(std::env::args()).map_err(fetcher::FetcherError::Args)?;
     let input_file = fs::read(&args.inputs)?;
 

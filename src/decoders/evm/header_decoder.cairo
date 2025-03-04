@@ -1,20 +1,15 @@
-from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin
-from starkware.cairo.common.dict_access import DictAccess
-from starkware.cairo.common.dict import dict_read
-
-from starkware.cairo.common.alloc import alloc
-
-from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash, poseidon_hash_many
-from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
-from src.utils.rlp import rlp_list_retrieve, le_chunks_to_be_uint256
-from packages.eth_essentials.lib.utils import felt_divmod
-
+from packages.eth_essentials.lib.block_header import (extract_block_number_big,reverse_block_header_chunks)
 from packages.eth_essentials.lib.mmr import hash_subtree_path
+from packages.eth_essentials.lib.utils import felt_divmod
 from src.types import MMRMeta
-from packages.eth_essentials.lib.block_header import (
-    extract_block_number_big,
-    reverse_block_header_chunks,
-)
+from src.utils.rlp import rlp_list_retrieve, le_chunks_to_be_uint256
+from starkware.cairo.common.alloc import alloc
+from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash, poseidon_hash_many
+from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, KeccakBuiltin
+from starkware.cairo.common.dict import dict_read
+from starkware.cairo.common.dict_access import DictAccess
+from starkware.cairo.common.registers import get_fp_and_pc
+from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 
 namespace HeaderField {
     const PARENT = 0;
@@ -39,36 +34,50 @@ namespace HeaderField {
     const PARENT_BEACON_BLOCK_ROOT = 19;
 }
 
+struct HeaderKey {
+    chain_id: felt,
+    block_number: felt,
+}
+
 namespace HeaderDecoder {
     func get_block_number{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
         rlp: felt*
     ) -> felt {
-        let value = get_dynamic_field(rlp, 8);
+        let (value) = get_dynamic_field(rlp, HeaderField.NUMBER);
         assert value.high = 0x0;  // u128 is sufficient for the time being
         return value.low;
     }
 
-    func get_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
-        rlp: felt*, field: felt
-    ) -> Uint256 {
+    func get_field{keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+        rlp: felt*, field: felt, key: HeaderKey*
+    ) -> (res_array: felt*, res_len: felt) {
+        alloc_locals;
+        let (__fp__, _) = get_fp_and_pc();
+
         if (field == HeaderField.PARENT) {
-            return get_hash_value(rlp, 0, 4);
+            let (local result) = get_hash_value(rlp, 0, 4);
+            return (res_array=&result, res_len=2);
         }
         if (field == HeaderField.UNCLE) {
-            return get_hash_value(rlp, 4, 5);
+            let (local result) = get_hash_value(rlp, 4, 5);
+            return (res_array=&result, res_len=2);
         }
         if (field == HeaderField.COINBASE) {
             let address = get_address_value(rlp, 8, 6);
-            return le_chunks_to_be_uint256(elements=address, elements_len=3, bytes_len=20);
+            let (local result) = le_chunks_to_be_uint256(elements=address, elements_len=3, bytes_len=20);
+            return (res_array=&result, res_len=2);
         }
         if (field == HeaderField.STATE_ROOT) {
-            return get_hash_value(rlp, 11, 3);
+            let (local result) = get_hash_value(rlp, 11, 3);
+            return (res_array=&result, res_len=2);
         }
         if (field == HeaderField.TRANSACTION_ROOT) {
-            return get_hash_value(rlp, 15, 4);
+            let (local result) = get_hash_value(rlp, 15, 4);
+            return (res_array=&result, res_len=2);
         }
         if (field == HeaderField.RECEIPT_ROOT) {
-            return get_hash_value(rlp, 19, 5);
+            let (local result) = get_hash_value(rlp, 19, 5);
+            return (res_array=&result, res_len=2);
         }
         if (field == HeaderField.BLOOM) {
             // not implemented
@@ -79,14 +88,16 @@ namespace HeaderDecoder {
         }
 
         // field is part of the dynamic section
-        return get_dynamic_field(rlp, field);
+        let (local result) = get_dynamic_field(rlp, field);
+        return (res_array=&result, res_len=2);
     }
 
     func get_dynamic_field{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
         rlp: felt*, field: felt
-    ) -> Uint256 {
+    ) -> (res: Uint256) {
         let (value, value_len, bytes_len) = get_dynamic_field_bytes(rlp, field);
-        return le_chunks_to_be_uint256(value, value_len, bytes_len);
+        let (result) = le_chunks_to_be_uint256(value, value_len, bytes_len);
+        return (res=result);
     }
 
     func get_dynamic_field_bytes{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
@@ -105,7 +116,7 @@ namespace HeaderDecoder {
 
 func get_hash_value{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
     rlp: felt*, word_idx: felt, offset: felt
-) -> Uint256 {
+) -> (res: Uint256) {
     let shifter = (8 - offset) * 8;
     let devisor = pow2_array[offset * 8];
 
@@ -121,8 +132,8 @@ func get_hash_value{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: f
     let res_low = rlp_2_right * pow2_array[shifter + 64] + rlp_1 * pow2_array[shifter] + rlp_0;
     let res_high = rlp_4 * pow2_array[shifter + 64] + rlp_3 * pow2_array[shifter] + rlp_2_left;
 
-    let (be_value) = uint256_reverse_endian(Uint256(low=res_low, high=res_high));
-    return be_value;
+    let (result) = uint256_reverse_endian(Uint256(low=res_low, high=res_high));
+    return (res=result);
 }
 
 func get_address_value{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(

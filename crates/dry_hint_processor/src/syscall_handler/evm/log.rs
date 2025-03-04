@@ -9,17 +9,17 @@ use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Fel
 use syscall_handler::{traits::CallHandler, SyscallExecutionError, SyscallResult};
 use types::{
     cairo::{
-        evm::receipt::{CairoReceiptWithBloom, FunctionId},
+        evm::log::{CairoReceiptWithBloom, FunctionId},
         traits::CairoType,
     },
-    keys::evm::receipt::{CairoKey, Key},
+    keys::evm::log::{CairoKey, Key},
     RPC_URL_ETHEREUM,
 };
 
 #[derive(Debug, Default)]
-pub struct ReceiptCallHandler;
+pub struct LogCallHandler;
 
-impl CallHandler for ReceiptCallHandler {
+impl CallHandler for LogCallHandler {
     type Key = Key;
     type Id = FunctionId;
     type CallHandlerResult = Vec<Felt252>;
@@ -57,6 +57,6 @@ impl CallHandler for ReceiptCallHandler {
             None => return Err(SyscallExecutionError::InternalError("Receipt not found".into())),
         };
 
-        Ok(receipt.handle(function_id))
+        Ok(receipt.handle(function_id, key.log_index))
     }
 }

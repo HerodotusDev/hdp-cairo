@@ -12,6 +12,7 @@ use std::{
 
 use alloy::hex::FromHexError;
 use clap::Parser;
+use dotenvy as _;
 use dry_hint_processor::syscall_handler::{evm, starknet};
 use eth_trie_proofs::{tx_receipt_trie::TxReceiptsMptHandler, tx_trie::TxsMptHandler};
 use futures::StreamExt;

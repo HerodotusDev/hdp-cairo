@@ -1,7 +1,7 @@
 #[starknet::contract]
 mod hashers_poseidon {
-    use core::poseidon::{poseidon_hash_span, PoseidonImpl};
     use core::hash::{HashStateTrait};
+    use core::poseidon::{PoseidonImpl, poseidon_hash_span};
     use hdp_cairo::{HDP};
 
     #[storage]

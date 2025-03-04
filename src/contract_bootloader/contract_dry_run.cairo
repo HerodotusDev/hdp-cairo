@@ -98,7 +98,7 @@ func main{
     memcpy(dst=calldata + 4, src=params, len=params_len);
     let calldata_size = 4 + params_len;
 
-    let (evm_decoder_ptr: felt***) = alloc();
+    let (evm_decoder_ptr: felt**) = alloc();
     let (starknet_decoder_ptr: felt***) = alloc();
     let (evm_key_hasher_ptr: felt**) = alloc();
     let (starknet_key_hasher_ptr: felt**) = alloc();

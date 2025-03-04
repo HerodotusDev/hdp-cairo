@@ -7,7 +7,6 @@ from starkware.cairo.common.alloc import alloc
 from src.memorizers.bare import BareMemorizer
 
 namespace EvmPackParams {
-    const HEADER_PARAMS_LEN = 2;
     func header(chain_id: felt, block_number: felt) -> (params: felt*, params_len: felt) {
         alloc_locals;
 
@@ -18,7 +17,6 @@ namespace EvmPackParams {
         return (params=params, params_len=2);
     }
 
-    const ACCOUNT_PARAMS_LEN = 3;
     func account(chain_id: felt, block_number: felt, address: felt) -> (
         params: felt*, params_len: felt
     ) {
@@ -32,7 +30,6 @@ namespace EvmPackParams {
         return (params=params, params_len=3);
     }
 
-    const STORAGE_PARAMS_LEN = 5;
     func storage(chain_id: felt, block_number: felt, address: felt, storage_slot: Uint256) -> (
         params: felt*, params_len: felt
     ) {
@@ -49,7 +46,6 @@ namespace EvmPackParams {
     }
 
     const BLOCK_TX_LABEL = 'block_tx';
-    const BLOCK_TX_PARAMS_LEN = 4;
     func block_tx(chain_id: felt, block_number: felt, index: felt) -> (
         params: felt*, params_len: felt
     ) {
@@ -65,7 +61,6 @@ namespace EvmPackParams {
     }
 
     const BLOCK_RECEIPT_LABEL = 'block_receipt';
-    const BLOCK_RECEIPT_PARAMS_LEN = 4;
     func block_receipt(chain_id: felt, block_number: felt, index: felt) -> (
         params: felt*, params_len: felt
     ) {
@@ -128,23 +123,32 @@ namespace EvmHashParams {
 
 namespace EvmHashParams2 {
     func header{poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> felt {
-        return hash_memorizer_key(params, EvmPackParams.HEADER_PARAMS_LEN);
+        let (params, params_len) = EvmPackParams.header(params[0], params[1]);
+        return hash_memorizer_key(params, params_len);
     }
 
     func account{poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> felt {
-        return hash_memorizer_key(params, EvmPackParams.ACCOUNT_PARAMS_LEN);
+        let (params, params_len) = EvmPackParams.account(params[0], params[1], params[2]);
+        return hash_memorizer_key(params, params_len);
     }
 
     func storage{poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> felt {
-        return hash_memorizer_key(params, EvmPackParams.STORAGE_PARAMS_LEN);
+        let (params, params_len) = EvmPackParams.storage(params[0], params[1], params[2], Uint256(low=params[4], high=params[3]));
+        return hash_memorizer_key(params, params_len);
     }
 
     func block_tx{poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> felt {
-        return hash_memorizer_key(params, EvmPackParams.BLOCK_TX_PARAMS_LEN);
+        let (params, params_len) = EvmPackParams.block_tx(params[0], params[1], params[2]);
+        return hash_memorizer_key(params, params_len);
     }
 
     func block_receipt{poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> felt {
-        return hash_memorizer_key(params, EvmPackParams.BLOCK_RECEIPT_PARAMS_LEN);
+        let (params, params_len) = EvmPackParams.block_receipt(params[0], params[1], params[2]);
+        return hash_memorizer_key(params, params_len);
+    }
+    func log{poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> felt {
+        let (params, params_len) = EvmPackParams.block_receipt(params[0], params[1], params[2]);
+        return hash_memorizer_key(params, params_len);
     }
 }
 

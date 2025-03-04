@@ -1,7 +1,7 @@
 #[starknet::contract]
 mod receipts_get_status {
     use hdp_cairo::{
-        HDP, evm::block_receipt::{BlockReceiptTrait, BlockReceiptKey, BlockReceiptImpl},
+        HDP, evm::block_receipt::{BlockReceiptImpl, BlockReceiptKey, BlockReceiptTrait},
     };
 
     #[storage]
@@ -13,7 +13,7 @@ mod receipts_get_status {
             hdp
                 .evm
                 .block_receipt_get_status(
-                    BlockReceiptKey {
+                    @BlockReceiptKey {
                         chain_id: 11155111, block_number: 7692344, transaction_index: 0,
                     },
                 ) == u256 { low: 0x1, high: 0x0 },
@@ -32,7 +32,7 @@ mod receipts_get_status {
             hdp
                 .evm
                 .block_receipt_get_status(
-                    BlockReceiptKey {
+                    @BlockReceiptKey {
                         chain_id: 11155111,
                         block_number: 7692344,
                         transaction_index: *tx_indexes.at(i),
@@ -47,8 +47,8 @@ mod receipts_get_status {
 #[starknet::contract]
 mod receipts_get_and_tx_get {
     use hdp_cairo::{
-        HDP, evm::block_receipt::{BlockReceiptTrait, BlockReceiptKey, BlockReceiptImpl},
-        evm::block_tx::{BlockTxTrait, BlockTxKey, BlockTxImpl},
+        HDP, evm::block_receipt::{BlockReceiptImpl, BlockReceiptKey, BlockReceiptTrait},
+        evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait},
     };
 
     #[storage]
@@ -60,7 +60,7 @@ mod receipts_get_and_tx_get {
             hdp
                 .evm
                 .block_receipt_get_cumulative_gas_used(
-                    BlockReceiptKey {
+                    @BlockReceiptKey {
                         chain_id: 11155111, block_number: 7692344, transaction_index: 0,
                     },
                 ) == u256 { low: 0x7f03, high: 0x0 },
@@ -70,7 +70,7 @@ mod receipts_get_and_tx_get {
             hdp
                 .evm
                 .block_tx_get_nonce(
-                    BlockTxKey { chain_id: 11155111, block_number: 7692344, transaction_index: 0 },
+                    @BlockTxKey { chain_id: 11155111, block_number: 7692344, transaction_index: 0 },
                 ) == u256 { low: 0x44c, high: 0x0 },
         );
     }

@@ -1,7 +1,7 @@
 #[starknet::contract]
 mod starknet_get_block_number {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -11,7 +11,7 @@ mod starknet_get_block_number {
         hdp
             .starknet
             .header_get_block_number(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
+                @HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -19,7 +19,7 @@ mod starknet_get_block_number {
 #[starknet::contract]
 mod starknet_get_state_root {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -29,7 +29,7 @@ mod starknet_get_state_root {
         hdp
             .starknet
             .header_get_state_root(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
+                @HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -37,7 +37,7 @@ mod starknet_get_state_root {
 #[starknet::contract]
 mod starknet_get_sequencer_address {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -47,7 +47,7 @@ mod starknet_get_sequencer_address {
         hdp
             .starknet
             .header_get_sequencer_address(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
+                @HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -55,7 +55,7 @@ mod starknet_get_sequencer_address {
 #[starknet::contract]
 mod starknet_get_block_timestamp {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -65,7 +65,7 @@ mod starknet_get_block_timestamp {
         hdp
             .starknet
             .header_get_block_timestamp(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
+                @HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -73,7 +73,7 @@ mod starknet_get_block_timestamp {
 #[starknet::contract]
 mod starknet_get_transaction_count {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -83,7 +83,7 @@ mod starknet_get_transaction_count {
         hdp
             .starknet
             .header_get_transaction_count(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
+                @HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -91,7 +91,7 @@ mod starknet_get_transaction_count {
 #[starknet::contract]
 mod starknet_get_transaction_commitment {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -101,7 +101,7 @@ mod starknet_get_transaction_commitment {
         hdp
             .starknet
             .header_get_transaction_commitment(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
+                @HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -109,7 +109,7 @@ mod starknet_get_transaction_commitment {
 #[starknet::contract]
 mod starknet_get_event_count {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -119,7 +119,7 @@ mod starknet_get_event_count {
         hdp
             .starknet
             .header_get_event_count(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
+                @HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -127,7 +127,7 @@ mod starknet_get_event_count {
 #[starknet::contract]
 mod starknet_get_event_commitment {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -137,7 +137,7 @@ mod starknet_get_event_commitment {
         hdp
             .starknet
             .header_get_event_commitment(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
+                @HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -145,7 +145,7 @@ mod starknet_get_event_commitment {
 #[starknet::contract]
 mod starknet_get_parent_block_hash {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -155,7 +155,7 @@ mod starknet_get_parent_block_hash {
         hdp
             .starknet
             .header_get_parent_block_hash(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
+                @HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -163,7 +163,7 @@ mod starknet_get_parent_block_hash {
 #[starknet::contract]
 mod starknet_get_state_diff_commitment {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -173,7 +173,7 @@ mod starknet_get_state_diff_commitment {
         hdp
             .starknet
             .header_get_state_diff_commitment(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
+                @HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -181,7 +181,7 @@ mod starknet_get_state_diff_commitment {
 #[starknet::contract]
 mod starknet_get_state_diff_length {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -191,7 +191,7 @@ mod starknet_get_state_diff_length {
         hdp
             .starknet
             .header_get_state_diff_length(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
+                @HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -199,7 +199,7 @@ mod starknet_get_state_diff_length {
 #[starknet::contract]
 mod starknet_get_l1_gas_price_in_wei {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -209,7 +209,7 @@ mod starknet_get_l1_gas_price_in_wei {
         hdp
             .starknet
             .header_get_l1_gas_price_in_wei(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
+                @HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -217,7 +217,7 @@ mod starknet_get_l1_gas_price_in_wei {
 #[starknet::contract]
 mod starknet_get_l1_gas_price_in_fri {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -227,7 +227,7 @@ mod starknet_get_l1_gas_price_in_fri {
         hdp
             .starknet
             .header_get_l1_gas_price_in_fri(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
+                @HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -235,7 +235,7 @@ mod starknet_get_l1_gas_price_in_fri {
 #[starknet::contract]
 mod starknet_get_l1_data_gas_price_in_wei {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -245,7 +245,7 @@ mod starknet_get_l1_data_gas_price_in_wei {
         hdp
             .starknet
             .header_get_l1_data_gas_price_in_wei(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
+                @HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -253,7 +253,7 @@ mod starknet_get_l1_data_gas_price_in_wei {
 #[starknet::contract]
 mod starknet_get_l1_data_gas_price_in_fri {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -263,7 +263,7 @@ mod starknet_get_l1_data_gas_price_in_fri {
         hdp
             .starknet
             .header_get_l1_data_gas_price_in_fri(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
+                @HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -271,7 +271,7 @@ mod starknet_get_l1_data_gas_price_in_fri {
 #[starknet::contract]
 mod starknet_get_receipts_commitment {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -281,7 +281,7 @@ mod starknet_get_receipts_commitment {
         hdp
             .starknet
             .header_get_receipts_commitment(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
+                @HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -289,7 +289,7 @@ mod starknet_get_receipts_commitment {
 #[starknet::contract]
 mod starknet_get_l1_data_mode {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -299,7 +299,7 @@ mod starknet_get_l1_data_mode {
         hdp
             .starknet
             .header_get_l1_data_mode(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
+                @HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }
@@ -307,7 +307,7 @@ mod starknet_get_l1_data_mode {
 #[starknet::contract]
 mod starknet_get_protocol_version {
     use hdp_cairo::starknet::header::HeaderTrait;
-    use hdp_cairo::{HDP, starknet::header::{HeaderKey, HeaderImpl}};
+    use hdp_cairo::{HDP, starknet::header::{HeaderImpl, HeaderKey}};
 
     #[storage]
     struct Storage {}
@@ -317,7 +317,7 @@ mod starknet_get_protocol_version {
         hdp
             .starknet
             .header_get_protocol_version(
-                HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
+                @HeaderKey { chain_id: 393402133025997798000961, block_number: 517902 },
             )
     }
 }

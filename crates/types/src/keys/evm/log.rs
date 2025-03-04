@@ -15,6 +15,7 @@ pub struct CairoKey {
     chain_id: Felt252,
     block_number: Felt252,
     transaction_index: Felt252,
+    log_index: Felt252,
 }
 
 impl CairoKey {
@@ -29,6 +30,7 @@ impl CairoType for CairoKey {
             chain_id: *vm.get_integer((ptr + 0)?)?,
             block_number: *vm.get_integer((ptr + 1)?)?,
             transaction_index: *vm.get_integer((ptr + 2)?)?,
+            log_index: *vm.get_integer((ptr + 3)?)?,
         })
     }
 
@@ -36,11 +38,12 @@ impl CairoType for CairoKey {
         vm.insert_value((address + 0)?, self.chain_id)?;
         vm.insert_value((address + 1)?, self.block_number)?;
         vm.insert_value((address + 2)?, self.transaction_index)?;
-        Ok((address + 3)?)
+        vm.insert_value((address + 3)?, self.log_index)?;
+        Ok((address + 4)?)
     }
 
     fn n_fields(_vm: &VirtualMachine, _address: Relocatable) -> Result<usize, MemoryError> {
-        Ok(3)
+        Ok(4)
     }
 }
 
@@ -49,6 +52,7 @@ pub struct Key {
     pub chain_id: u128,
     pub block_number: BlockNumber,
     pub transaction_index: TxNumber,
+    pub log_index: usize,
 }
 
 impl TryFrom<CairoKey> for Key {
@@ -64,6 +68,20 @@ impl TryFrom<CairoKey> for Key {
                 .transaction_index
                 .try_into()
                 .map_err(|e| KeyError::ConversionError(format!("{}", e)))?,
+            log_index: value
+                .log_index
+                .try_into()
+                .map_err(|e| KeyError::ConversionError(format!("{}", e)))?,
         })
+    }
+}
+
+impl From<Key> for crate::keys::evm::receipt::Key {
+    fn from(value: Key) -> Self {
+        Self {
+            chain_id: value.chain_id,
+            block_number: value.block_number,
+            transaction_index: value.transaction_index,
+        }
     }
 }
