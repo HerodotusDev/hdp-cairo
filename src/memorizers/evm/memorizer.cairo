@@ -60,6 +60,32 @@ namespace EvmPackParams {
         return (params=params, params_len=4);
     }
 
+    func account_tx(chain_id: felt, address: felt, nonce: felt) -> (
+        params: felt*, params_len: felt
+    ) {
+        alloc_locals;
+
+        local params: felt* = nondet %{ segments.add() %};
+        assert params[0] = chain_id;
+        assert params[1] = address;
+        assert params[2] = nonce;
+
+        return (params=params, params_len=3);
+    }
+
+    func hash_tx(chain_id: felt, hash: Uint256) -> (
+        params: felt*, params_len: felt
+    ) {
+        alloc_locals;
+
+        local params: felt* = nondet %{ segments.add() %};
+        assert params[0] = chain_id;
+        assert params[1] = hash.low;
+        assert params[2] = hash.high;
+
+        return (params=params, params_len=3);
+    }
+
     const BLOCK_RECEIPT_LABEL = 'block_receipt';
     func block_receipt(chain_id: felt, block_number: felt, index: felt) -> (
         params: felt*, params_len: felt
@@ -111,6 +137,24 @@ namespace EvmHashParams {
         return hash_memorizer_key(params, params_len);
     }
 
+    func account_tx{poseidon_ptr: PoseidonBuiltin*}(
+        chain_id: felt, address: felt, nonce: felt
+    ) -> felt {
+        let (params, params_len) = EvmPackParams.account_tx(
+            chain_id=chain_id, address=address, nonce=nonce
+        );
+        return hash_memorizer_key(params, params_len);
+    }
+
+    func hash_tx{poseidon_ptr: PoseidonBuiltin*}(
+        chain_id: felt, hash: Uint256,
+    ) -> felt {
+        let (params, params_len) = EvmPackParams.hash_tx(
+            chain_id=chain_id, hash=hash,
+        );
+        return hash_memorizer_key(params, params_len);
+    }
+
     func block_receipt{poseidon_ptr: PoseidonBuiltin*}(
         chain_id: felt, block_number: felt, index: felt
     ) -> felt {
@@ -139,6 +183,16 @@ namespace EvmHashParams2 {
 
     func block_tx{poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> felt {
         let (params, params_len) = EvmPackParams.block_tx(params[0], params[1], params[2]);
+        return hash_memorizer_key(params, params_len);
+    }
+
+    func account_tx{poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> felt {
+        let (params, params_len) = EvmPackParams.account_tx(params[0], params[1], params[2]);
+        return hash_memorizer_key(params, params_len);
+    }
+
+    func hash_tx{poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> felt {
+        let (params, params_len) = EvmPackParams.hash_tx(params[0], Uint256(low=params[2], high=params[1]));
         return hash_memorizer_key(params, params_len);
     }
 

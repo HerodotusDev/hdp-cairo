@@ -1,7 +1,7 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.builtin_keccak.keccak import keccak
-from starkware.cairo.common.uint256 import Uint256
+from starkware.cairo.common.uint256 import Uint256, uint256_to_felt
 
 from starkware.cairo.common.alloc import alloc
 from src.utils.mpt import verify_mpt_proof
@@ -15,6 +15,7 @@ from src.utils.rlp import be_chunk_to_felt_be
 from src.types import ChainInfo
 from src.memorizers.evm.memorizer import EvmMemorizer, EvmHashParams
 from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField, HeaderKey
+from src.decoders.evm.transaction_decoder import TransactionDecoder, TransactionField
 from starkware.cairo.common.registers import get_fp_and_pc
 
 // Verfies an array of transaction proofs with the headers stored in the memorizer.
@@ -86,11 +87,44 @@ func verify_block_tx_proofs_inner{
         pow2_array=pow2_array,
     );
 
+    %{ memory[ap] = 0 if transaction.verifier_advice.is_block_tx() else 1 %}
+    jmp block_tx_end if [ap] != 0, ap++;
+
     let tx_index = be_chunk_to_felt_be(key.low);
     let memorizer_key = EvmHashParams.block_tx(
         chain_id=chain_info.id, block_number=block_number, index=tx_index
     );
     EvmMemorizer.add(key=memorizer_key, data=rlp);
+
+    block_tx_end:
+
+    %{ memory[ap] = 0 if transaction.verifier_advice.is_address_tx() else 1 %}
+    jmp account_tx_end if [ap] != 0, ap++;
+
+    let (sender: Uint256*, _) = TransactionDecoder.get_field(rlp, TransactionField.SENDER, chain_info.id);
+    let sender_felt = uint256_to_felt(Uint256(low=sender.low, high=sender.high));
+
+    let (nonce: Uint256*, _) = TransactionDecoder.get_field(rlp, TransactionField.NONCE, chain_info.id);
+    let nonce_felt = uint256_to_felt(Uint256(low=nonce.low, high=nonce.high));
+
+    let memorizer_key = EvmHashParams.account_tx(
+        chain_id=chain_info.id, address=sender_felt, nonce=nonce_felt
+    );
+    EvmMemorizer.add(key=memorizer_key, data=rlp);
+
+    account_tx_end:
+
+    %{ memory[ap] = 0 if transaction.verifier_advice.is_hash_tx() else 1 %}
+    jmp hash_tx_end if [ap] != 0, ap++;
+
+    let (hash: Uint256*, _) = TransactionDecoder.get_field(rlp, TransactionField.HASH, chain_info.id);
+
+    let memorizer_key = EvmHashParams.hash_tx(
+        chain_id=chain_info.id, hash=Uint256(low=hash.low, high=hash.high),
+    );
+    EvmMemorizer.add(key=memorizer_key, data=rlp);
+
+    hash_tx_end:
 
     return verify_block_tx_proofs_inner(n_tx_proofs=n_tx_proofs, idx=idx + 1);
 }

@@ -68,9 +68,9 @@ namespace TransactionDecoder {
     // Returns the TX field as BE uint256
     func get_field{
         keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
-    }(rlp: felt*, field: felt, key: TransactionKey*) -> (res_array: felt*, res_len: felt) {
+    }(rlp: felt*, field: felt, chain_id: felt) -> (res_array: felt*, res_len: felt) {
         let (tx_type, rlp_start_offset) = open_tx_envelope(rlp);
-        let (res_array, res_len) = _get_field(rlp, field, rlp_start_offset, tx_type, key.chain_id);
+        let (res_array, res_len) = _get_field(rlp, field, rlp_start_offset, tx_type, chain_id);
         return (res_array=res_array, res_len=res_len);
     }
 
