@@ -3,12 +3,10 @@
 #![warn(unused_crate_dependencies)]
 #![forbid(unsafe_code)]
 
-use std::path::PathBuf;
-
 use cairo_vm as _;
 use clap::Parser;
 use sound_hint_processor as _;
-use sound_run::{Args, HDP_COMPILED_JSON};
+use sound_run::Args;
 use tracing::info;
 use types::{error::Error, param::Param, CasmContractClass, ChainProofs, HDPInput};
 
@@ -28,7 +26,7 @@ async fn main() -> Result<(), Error> {
     let chain_proofs: Vec<ChainProofs> = serde_json::from_slice(&std::fs::read(args.proofs).map_err(Error::IO)?)?;
 
     let (pie, output) = sound_run::run(
-        args.program.unwrap_or(PathBuf::from(HDP_COMPILED_JSON)),
+        args.program,
         HDPInput {
             chain_proofs,
             compiled_class,
