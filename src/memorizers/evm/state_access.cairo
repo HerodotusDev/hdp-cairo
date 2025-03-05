@@ -22,6 +22,8 @@ namespace EvmStateAccessType {
     const BLOCK_TX = 3;
     const BLOCK_RECEIPT = 4;
     const LOG = 5;
+    const ADDRESS_TX = 6;
+    const HASH_TX = 7;
 }
 
 namespace EvmDecoder {
@@ -40,6 +42,8 @@ namespace EvmDecoder {
         assert handlers[EvmStateAccessType.BLOCK_TX] = tx_label;
         assert handlers[EvmStateAccessType.BLOCK_RECEIPT] = receipt_label;
         assert handlers[EvmStateAccessType.LOG] = log_label;
+        assert handlers[EvmStateAccessType.ADDRESS_TX] = tx_label;
+        assert handlers[EvmStateAccessType.HASH_TX] = tx_label;
 
         return handlers;
     }
@@ -106,16 +110,21 @@ namespace EvmStateAccess {
         let (header_label) = get_label_location(EvmHashParams2.header);
         let (account_label) = get_label_location(EvmHashParams2.account);
         let (storage_label) = get_label_location(EvmHashParams2.storage);
-        let (tx_label) = get_label_location(EvmHashParams2.block_tx);
+        let (block_tx_label) = get_label_location(EvmHashParams2.block_tx);
         let (receipt_label) = get_label_location(EvmHashParams2.block_receipt);
         let (log_label) = get_label_location(EvmHashParams2.log);
+        let (address_tx_label) = get_label_location(EvmHashParams2.address_tx);
+        let (hash_tx_label) = get_label_location(EvmHashParams2.hash_tx);
 
         assert evm_key_hasher_ptr[EvmStateAccessType.HEADER] = header_label;
         assert evm_key_hasher_ptr[EvmStateAccessType.ACCOUNT] = account_label;
         assert evm_key_hasher_ptr[EvmStateAccessType.STORAGE] = storage_label;
-        assert evm_key_hasher_ptr[EvmStateAccessType.BLOCK_TX] = tx_label;
+        assert evm_key_hasher_ptr[EvmStateAccessType.BLOCK_TX] = block_tx_label;
         assert evm_key_hasher_ptr[EvmStateAccessType.BLOCK_RECEIPT] = receipt_label;
         assert evm_key_hasher_ptr[EvmStateAccessType.LOG] = log_label;
+        assert handlers[EvmStateAccessType.ADDRESS_TX] = address_tx_label;
+        assert handlers[EvmStateAccessType.HASH_TX] = hash_tx_label;
+
 
         return evm_key_hasher_ptr;
     }
