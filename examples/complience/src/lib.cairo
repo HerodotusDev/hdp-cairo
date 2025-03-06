@@ -111,7 +111,6 @@ mod module {
         // account's nonce.
         assert!(prev_nonce == account_nonce);
 
-        // Return an array containing the upper bound block number and the forbidden address.
-        array![upper_bound_block_number, forbidden_address.into()]
+        array![user_address.into(), forbidden_address.into(), upper_bound_block_number]
     }
 }
