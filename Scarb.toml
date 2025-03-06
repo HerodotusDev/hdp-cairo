@@ -4,6 +4,7 @@ edition = "2023_11"
 
 members = [
     "examples/average",
+    "examples/complience",
     "examples/events",
     "examples/hello_world",
     "examples/starkgate",
