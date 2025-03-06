@@ -90,7 +90,6 @@ func verify_block_receipt_proofs_inner{
     let memorizer_key = EvmHashParams.block_receipt(
         chain_id=chain_info.id, block_number=block_number, index=receipt_index
     );
-    
     EvmMemorizer.add(key=memorizer_key, data=rlp);
 
     return verify_block_receipt_proofs_inner(n_receipts=n_receipts, idx=idx + 1);
