@@ -109,31 +109,11 @@ func main{
         );
     }
 
-    tempvar low;
-    tempvar high;
-
-    if (retdata_size == 0) {
-        low = 0x0;
-        high = 0x0;
-    }
-    if (retdata_size == 1) {
-        low = retdata[0];
-        high = 0x0;
-    }
-    if (retdata_size == 2) {
-        low = retdata[0];
-        high = retdata[1];
-    }
-
-    local result: Uint256 = Uint256(low=low, high=high);
-
-    %{ print(f"Task Result: {hex(ids.result.high * 2 ** 128 + ids.result.low)}") %}
-
-    // Write DryRunOutput to output.
-    assert [cast(output_ptr, DryRunOutput*)] = DryRunOutput(
-        program_hash=program_hash, result=result
-    );
-    let output_ptr = output_ptr + DryRunOutput.SIZE;
+    assert[output_ptr] = program_hash;
+    let output_ptr = output_ptr + 1;
+    
+    memcpy(output_ptr, retdata, retdata_size);
+    let output_ptr = output_ptr + retdata_size;
 
     return ();
 }

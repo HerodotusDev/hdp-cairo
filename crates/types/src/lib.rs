@@ -129,21 +129,18 @@ impl<'de> Deserialize<'de> for ChainIds {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct HDPDryRunOutput {
     pub program_hash: Felt252,
-    pub result_low: Felt252,
-    pub result_high: Felt252,
+    pub output: Vec<Felt252>,
 }
 
 impl FromIterator<Felt252> for HDPDryRunOutput {
     fn from_iter<T: IntoIterator<Item = Felt252>>(iter: T) -> Self {
         let mut i = iter.into_iter();
         let program_hash = i.next().unwrap();
-        let result_low = i.next().unwrap();
-        let result_high = i.next().unwrap();
+        let output_len: usize = i.next().unwrap().try_into().unwrap();
 
         Self {
             program_hash,
-            result_low,
-            result_high,
+            output: i.take(output_len).collect(),
         }
     }
 }
@@ -159,17 +156,17 @@ pub struct MmrMetaOutput {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct HDPOutput {
     pub program_hash: Felt252,
-    pub result_low: Felt252,
-    pub result_high: Felt252,
+    pub output: Vec<Felt252>,
     pub mmr_metas: Vec<MmrMetaOutput>,
 }
 
 impl FromIterator<Felt252> for HDPOutput {
     fn from_iter<T: IntoIterator<Item = Felt252>>(iter: T) -> Self {
         let mut i = iter.into_iter();
+
         let program_hash = i.next().unwrap();
-        let result_low = i.next().unwrap();
-        let result_high = i.next().unwrap();
+        let output_len: usize = i.next().unwrap().try_into().unwrap();
+        let output = i.by_ref().take(output_len).collect();
 
         let mut mmr_metas = Vec::<MmrMetaOutput>::new();
 
@@ -179,8 +176,7 @@ impl FromIterator<Felt252> for HDPOutput {
 
         Self {
             program_hash,
-            result_low,
-            result_high,
+            output,
             mmr_metas,
         }
     }
@@ -188,7 +184,8 @@ impl FromIterator<Felt252> for HDPOutput {
 
 impl HDPOutput {
     pub fn to_felt_vec(&self) -> Vec<Felt252> {
-        let mut felt_vec = vec![self.program_hash, self.result_low, self.result_high];
+        let mut felt_vec = vec![self.program_hash];
+        felt_vec.extend(self.output.iter());
         self.mmr_metas.iter().for_each(|mmr_meta| {
             felt_vec.extend([mmr_meta.id, mmr_meta.size, mmr_meta.chain_id, mmr_meta.root]);
         });
