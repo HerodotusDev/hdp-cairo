@@ -29,6 +29,7 @@ mod module {
         let mut res = array![];
 
         for tx in txs {
+            // Get the contract address (receiver) for the transaction.
             let contract_address: EthAddress = hdp
                 .evm
                 .block_tx_get_receiver(
@@ -40,8 +41,12 @@ mod module {
                 )
                 .try_into()
                 .unwrap();
+            // Assert that the receiver address matches the forbidden address.
             assert!(contract_address == forbidden_address);
 
+            // Check if the bloom filter in the block receipt contains the specific target value coresponding to 
+            // Withdrawal (address to, bytes32 nullifierHash, index_topic_1 address relayer, uint256 fee) event of 
+            // https://sepolia.etherscan.io/address/0x1572afe6949fdf51cb3e0856216670ae9ee160ee contract.
             if (bloom::contains(
                 hdp
                     .evm
@@ -57,6 +62,7 @@ mod module {
                     high: 0xe9e508bad6d4c3227e881ca19068f099,
                 },
             ) == true) {
+                // Create a key to access the first log of the transaction.
                 let key = LogKey {
                     chain_id: ETHEREUM_TESTNET_CHAIN_ID,
                     block_number: tx.block_number,
@@ -64,10 +70,12 @@ mod module {
                     log_index: 0,
                 };
 
+                // Retrieve the log data.
                 let data = hdp.evm.log_get_data(@key);
                 let encoded: Bytes = BytesTrait::new(data.len() * 0x20, data);
 
                 let mut offset = 0;
+                // Decode the data to extract an Ethereum address corresponding to Withdrawal (address: to) field.
                 let address: EthAddress = encoded.decode(ref offset);
 
                 println!("{:x}", address);
@@ -75,6 +83,7 @@ mod module {
             }
         };
 
+        // Return the array of blacklisted addresses.
         res
     }
 }
