@@ -1,3 +1,5 @@
+pub mod bloom;
+
 #[starknet::contract]
 mod module {
     use hdp_cairo::{HDP, evm::log::{LogImpl, LogKey, LogTrait}};
