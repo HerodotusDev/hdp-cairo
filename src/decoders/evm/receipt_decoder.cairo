@@ -37,10 +37,6 @@ namespace ReceiptDecoder {
 
         let (local value_start_offset) = get_rlp_list_meta(rlp, rlp_start_offset);
 
-        if (tx_type == TransactionType.LEGACY) {
-            assert 1 = 0;  // we dont have a status for pre-byzantium
-        }
-
         let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, field, value_start_offset, 0);
 
         if (field == ReceiptField.BLOOM) {

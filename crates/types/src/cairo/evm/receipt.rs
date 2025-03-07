@@ -1,5 +1,6 @@
 use alloy::{
     consensus::{Eip658Value, Receipt, ReceiptWithBloom},
+    hex::ToHexExt,
     primitives::{keccak256, Bloom},
     rpc::types::Log,
 };
@@ -36,6 +37,7 @@ impl CairoReceiptWithBloom {
     }
 
     pub fn bloom(&self) -> Bloom {
+        println!("{}", self.0.logs_bloom.0.encode_hex());
         self.0.logs_bloom
     }
 

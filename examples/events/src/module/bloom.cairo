@@ -19,22 +19,19 @@ fn bloom_filter_indices(key: Span<u256>) -> (usize, usize, usize) {
 
 /// Check if an element might be in the bloom filter.
 /// Returns `true` if all three bits corresponding to the element are set.
-fn contains(bloom: ByteArray, input: u256) -> bool {
+pub fn contains(bloom: ByteArray, input: u256) -> bool {
     let (index1, index2, index3) = bloom_filter_indices(array![input].span());
     let pow_of_2: Array<u8> = array![0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80];
 
-    let byte_index1 = index1 / 8;
-    if (bloom[byte_index1] & *pow_of_2[index1 - byte_index1] == 0) {
+    if (bloom[index1 / 8] & *pow_of_2[index1 % 8] == 0) {
         return false;
     }
 
-    let byte_index2 = index2 / 8;
-    if (bloom[byte_index2] & *pow_of_2[index2 - byte_index2] == 0) {
+    if (bloom[index2 / 8] & *pow_of_2[index2 % 8] == 0) {
         return false;
     }
 
-    let byte_index3 = index3 / 8;
-    if (bloom[byte_index3] & *pow_of_2[index3 - byte_index3] == 0) {
+    if (bloom[index3 / 8] & *pow_of_2[index3 % 8] == 0) {
         return false;
     }
 
