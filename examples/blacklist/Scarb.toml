@@ -1,13 +1,15 @@
 [package]
-name = "example_events"
+name = "example_blacklist"
 version = "0.1.0"
 edition = "2023_11"
 
 # See more keys and their definitions at https://docs.swmansion.com/scarb/docs/reference/manifest.html
 
 [dependencies]
-starknet = { workspace = true }
+alexandria_bytes = { workspace = true }
+alexandria_encoding = { workspace = true }
 hdp_cairo = { workspace = true }
+starknet = { workspace = true }
 
 [[target.starknet-contract]]
 sierra = true

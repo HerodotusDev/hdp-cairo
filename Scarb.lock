@@ -52,14 +52,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "example_complience"
+name = "example_blacklist"
 version = "0.1.0"
 dependencies = [
+ "alexandria_bytes",
+ "alexandria_encoding",
  "hdp_cairo",
 ]
 
 [[package]]
-name = "example_events"
+name = "example_complience"
 version = "0.1.0"
 dependencies = [
  "hdp_cairo",

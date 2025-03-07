@@ -25,10 +25,10 @@ pub impl BlockReceiptImpl of BlockReceiptTrait {
         let result = self.call_memorizer(BLOCK_RECEIPT_GET_CUMULATIVE_GAS_USED, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
-    fn block_receipt_get_bloom(self: @EvmMemorizer, key: @BlockReceiptKey) -> Array<u128> {
-        let mut result: Array<u128> = array![];
+    fn block_receipt_get_bloom(self: @EvmMemorizer, key: @BlockReceiptKey) -> ByteArray {
+        let mut result: ByteArray = "";
         for element in self.call_memorizer(BLOCK_RECEIPT_GET_BLOOM, key) {
-            result.append((*element).try_into().unwrap());
+            result.append_word(*element, 16);
         };
         result
     }
