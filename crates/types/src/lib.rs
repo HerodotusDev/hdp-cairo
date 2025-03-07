@@ -136,7 +136,7 @@ impl FromIterator<Felt252> for HDPDryRunOutput {
     fn from_iter<T: IntoIterator<Item = Felt252>>(iter: T) -> Self {
         let mut i = iter.into_iter();
         let program_hash = i.next().unwrap();
-        let output_len: usize = i.next().unwrap().try_into().unwrap();
+        let output_len: usize = if let Some(v) = i.next() { v.try_into().unwrap() } else { 0 };
 
         Self {
             program_hash,

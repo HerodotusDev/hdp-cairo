@@ -1,4 +1,5 @@
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
+from src.decoders.evm.transaction_decoder import TransactionType
 from src.utils.chain_info import ChainInfo
 from src.utils.chain_info import fetch_chain_info
 from src.utils.rlp import rlp_list_retrieve, le_chunks_to_be_uint256, get_rlp_list_meta, get_rlp_len, decode_rlp_word_to_uint256
@@ -24,41 +25,47 @@ namespace ReceiptDecoder {
         keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
     }(rlp: felt*, field: felt, key: ReceiptKey*) -> (res_array: felt*, res_len: felt) {
         let (tx_type, rlp_start_offset) = open_receipt_envelope(rlp);
-        let (res_array, res_len) = _get_field(rlp, field, rlp_start_offset, tx_type, key.chain_id, key.block_number);
+        let (res_array, res_len) = _get_field(rlp, field, rlp_start_offset, tx_type);
         return (res_array=res_array, res_len=res_len);
     }
 
     func _get_field{keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
-        rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt, chain_id: felt, block_number: felt
+        rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt
     ) -> (res_array: felt*, res_len: felt) {
         alloc_locals;
         let (__fp__, _) = get_fp_and_pc();
 
         let (local value_start_offset) = get_rlp_list_meta(rlp, rlp_start_offset);
-        let (chain_info) = fetch_chain_info(chain_id);
 
-        local is_byzantium: felt;
-        %{
-            if ids.block_number >= ids.chain_info.byzantium:
-                ids.is_byzantium = 1
-            else:
-                ids.is_byzantium = 0
-        %}
-
-        if (is_byzantium == 0) {
-            assert [range_check_ptr] = chain_info.byzantium - block_number;
+        if (tx_type == TransactionType.LEGACY) {
             assert 1 = 0;  // we dont have a status for pre-byzantium
-            tempvar range_check_ptr = range_check_ptr + 1;
-        } else {
-            tempvar range_check_ptr = range_check_ptr;
         }
 
-        assert [range_check_ptr] = block_number - chain_info.byzantium;
-        tempvar range_check_ptr = range_check_ptr + 1;
-
         let (res, res_len, bytes_len) = rlp_list_retrieve(rlp, field, value_start_offset, 0);
+
+        if (field == ReceiptField.BLOOM) {
+            let (local res_array: felt*) = alloc();
+            bloom_to_uint256_array(res, res_len, bytes_len, res_array);
+            
+            return (res_array=res_array, res_len=bytes_len / 0x20 * 2);
+        }
+        
         let (local result) = le_chunks_to_be_uint256(res, res_len, bytes_len);
         return (res_array=&result, res_len=2);
+    }
+
+    func bloom_to_uint256_array{keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(res: felt*, res_len: felt, bytes_len: felt, res_array: felt*) {
+        alloc_locals;
+
+        if (bytes_len == 0) {
+            return ();
+        }
+
+        let (local result) = le_chunks_to_be_uint256(res, 4, 0x20);
+        assert [res_array + 1] = result.low;
+        assert [res_array + 0] = result.high;
+        
+        return bloom_to_uint256_array(res + 4, res_len - 4, bytes_len - 0x20, res_array + 2);
     }
 
     // Opens the EIP-2718 transaction envelope for receipts. It returns the transaction type and the index where the RLP-encoded payload starts.

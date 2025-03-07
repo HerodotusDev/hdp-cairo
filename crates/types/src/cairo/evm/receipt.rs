@@ -1,6 +1,6 @@
 use alloy::{
     consensus::{Eip658Value, Receipt, ReceiptWithBloom},
-    primitives::keccak256,
+    primitives::{keccak256, Bloom},
     rpc::types::Log,
 };
 use alloy_rlp::{Decodable, Encodable};
@@ -35,8 +35,8 @@ impl CairoReceiptWithBloom {
         Uint256::from(self.0.receipt.cumulative_gas_used)
     }
 
-    pub fn bloom(&self) -> Uint256 {
-        Uint256::from(self.0.logs_bloom)
+    pub fn bloom(&self) -> Bloom {
+        self.0.logs_bloom
     }
 
     pub fn hash(&self) -> Uint256 {
@@ -57,7 +57,12 @@ impl CairoReceiptWithBloom {
         match function_id {
             FunctionId::Status => <Uint256 as Into<[Felt252; 2]>>::into(self.status()).to_vec(),
             FunctionId::CumulativeGasUsed => <Uint256 as Into<[Felt252; 2]>>::into(self.cumulative_gas_used()).to_vec(),
-            FunctionId::Bloom => <Uint256 as Into<[Felt252; 2]>>::into(self.bloom()).to_vec(),
+            FunctionId::Bloom => self
+                .bloom()
+                .0
+                .chunks((u128::BITS / 8) as usize)
+                .map(Felt252::from_bytes_be_slice)
+                .collect(),
         }
     }
 }
