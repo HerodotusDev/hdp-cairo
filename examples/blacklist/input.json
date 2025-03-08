@@ -5,14 +5,10 @@
     },
     {
         "visibility": "public",
-        "value": "0x1"
-    },
-    {
-        "visibility": "public",
         "value": "0x752C60"
     },
     {
         "visibility": "public",
-        "value": "0xbf"
+        "value": "0xcb"
     }
 ]

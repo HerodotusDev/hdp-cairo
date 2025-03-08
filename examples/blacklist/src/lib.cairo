@@ -3,6 +3,7 @@ mod module {
     use alexandria_bytes::{Bytes, BytesTrait};
     use alexandria_encoding::sol_abi::{decode::SolAbiDecodeTrait};
     use core::byte_array::ByteArrayImpl;
+    use core::num::traits::BitSize;
     use core::starknet::EthAddress;
     use hdp_cairo::{
         HDP, evm::ETHEREUM_TESTNET_CHAIN_ID,
@@ -24,66 +25,91 @@ mod module {
 
     #[external(v0)]
     pub fn main(
-        ref self: ContractState, hdp: HDP, forbidden_address: EthAddress, txs: Array<TxId>,
+        ref self: ContractState,
+        hdp: HDP,
+        forbidden_address: EthAddress,
+        block_number: felt252,
+        transaction_count: u32,
     ) -> Array<felt252> {
-        let mut res = array![];
+        let mut res = array![block_number, transaction_count.into()];
 
-        for tx in txs {
-            // Get the contract address (receiver) for the transaction.
-            let contract_address: EthAddress = hdp
-                .evm
-                .block_tx_get_receiver(
-                    @BlockTxKey {
-                        chain_id: ETHEREUM_TESTNET_CHAIN_ID,
-                        block_number: tx.block_number,
-                        transaction_index: tx.index,
-                    },
-                )
-                .try_into()
-                .unwrap();
-            // Assert that the receiver address matches the forbidden address.
-            assert!(contract_address == forbidden_address);
-
-            // Check if the bloom filter in the block receipt contains the specific target value coresponding to 
-            // Withdrawal (address to, bytes32 nullifierHash, index_topic_1 address relayer, uint256 fee) event of 
-            // https://sepolia.etherscan.io/address/0x1572afe6949fdf51cb3e0856216670ae9ee160ee contract.
+        for index in 0..transaction_count {
+            // Check if the bloom filter in the block receipt contains the specific target value
+            // coresponding to Withdrawal (address to, bytes32 nullifierHash, index_topic_1 address
+            // relayer, uint256 fee) event of
+            // https://sepolia.etherscan.io/address/0x1572afe6949fdf51cb3e0856216670ae9ee160ee
+            // contract.
             if (bloom::contains(
                 hdp
                     .evm
                     .block_receipt_get_bloom(
                         @BlockReceiptKey {
                             chain_id: ETHEREUM_TESTNET_CHAIN_ID,
-                            block_number: tx.block_number,
-                            transaction_index: tx.index,
+                            block_number: block_number,
+                            transaction_index: index.into(),
                         },
                     ),
                 u256 {
+                    // Event signature Withdrawal (address to, bytes32 nullifierHash, index_topic_1
+                    // address relayer, uint256 fee)View Source
+                    // https://sepolia.etherscan.io/tx/0x2cdbdae6c1ebd5f8502531c5a130d5d603662cdb7874ab7ca2494b6c7ec5144e#eventlog
                     low: 0xda81b5164dd6d62b2eaf1e8bc6c34931,
                     high: 0xe9e508bad6d4c3227e881ca19068f099,
                 },
             ) == true) {
-                // Create a key to access the first log of the transaction.
-                let key = LogKey {
-                    chain_id: ETHEREUM_TESTNET_CHAIN_ID,
-                    block_number: tx.block_number,
-                    transaction_index: tx.index,
-                    log_index: 0,
-                };
+                // Get the contract address (receiver) for the transaction.
+                let contract_address: EthAddress = hdp
+                    .evm
+                    .block_tx_get_receiver(
+                        @BlockTxKey {
+                            chain_id: ETHEREUM_TESTNET_CHAIN_ID,
+                            block_number: block_number,
+                            transaction_index: index.into(),
+                        },
+                    )
+                    .try_into()
+                    .unwrap();
+                // Assert that the receiver address matches the forbidden address.
+                assert!(contract_address == forbidden_address);
 
-                // Retrieve the log data.
-                let data = hdp.evm.log_get_data(@key);
-                let encoded: Bytes = BytesTrait::new(data.len() * 0x20, data);
+                let mut counter: u32 = 0;
+                while counter < 100 {
+                    // Create a key to access the log of the transaction.
+                    let key = LogKey {
+                        chain_id: ETHEREUM_TESTNET_CHAIN_ID,
+                        block_number: block_number,
+                        transaction_index: index.into(),
+                        log_index: counter.into(),
+                    };
 
-                let mut offset = 0;
-                // Decode the data to extract an Ethereum address corresponding to Withdrawal (address: to) field.
-                let address: EthAddress = encoded.decode(ref offset);
+                    let topic0 = hdp.evm.log_get_topic0(@key);
+                    if (topic0 == u256 {
+                        low: 0xda81b5164dd6d62b2eaf1e8bc6c34931,
+                        high: 0xe9e508bad6d4c3227e881ca19068f099,
+                    }) {
+                        // Retrieve the log data.
+                        let data = hdp.evm.log_get_data(@key);
+                        let encoded: Bytes = BytesTrait::new(
+                            data.len() * BitSize::<u256>::bits() / BitSize::<u8>::bits(), data,
+                        );
 
-                println!("{:x}", address);
-                res.append(address.into());
+                        let mut offset = 0;
+                        // Decode the data to extract an Ethereum address corresponding to
+                        // Withdrawal (address: to) field.
+                        let address: EthAddress = encoded.decode(ref offset);
+
+                        println!("{:x}", address);
+                        res.append(address.into());
+
+                        break;
+                    }
+
+                    counter += 1;
+                }
             }
         };
 
-        // Return the array of blacklisted addresses.
+        // Return the array of block_number-transaction_count-detected_addresses.
         res
     }
 }
