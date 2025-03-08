@@ -31,7 +31,7 @@ mod module {
         block_number: felt252,
         transaction_count: u32,
     ) -> Array<felt252> {
-        let mut res = array![block_number, transaction_count.into()];
+        let mut res = array![forbidden_address.into(), block_number, transaction_count.into()];
 
         for index in 0..transaction_count {
             // Check if the bloom filter in the block receipt contains the specific target value
