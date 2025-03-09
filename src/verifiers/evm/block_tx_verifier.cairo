@@ -87,6 +87,7 @@ func verify_block_tx_proofs_inner{
     );
 
     let tx_index = be_chunk_to_felt_be(key.low);
+
     let memorizer_key = EvmHashParams.block_tx(
         chain_id=chain_info.id, block_number=block_number, index=tx_index
     );

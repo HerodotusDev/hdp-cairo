@@ -102,7 +102,7 @@ func run{
     let starknet_key_hasher_ptr = StarknetStateAccess.init();
     let starknet_decoder_ptr = StarknetDecoder.init();
 
-    let (result, program_hash) = compute_contract{
+    let (program_hash, retdata, retdata_size) = compute_contract{
         pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
         ecdsa_ptr=ecdsa_ptr,
@@ -126,7 +126,11 @@ func run{
     );
 
     write_output_ptr{output_ptr=output_ptr}(
-        mmr_metas=mmr_metas, mmr_metas_len=mmr_metas_len, program_hash=program_hash, result=result
+        mmr_metas=mmr_metas,
+        mmr_metas_len=mmr_metas_len,
+        program_hash=program_hash,
+        retdata=retdata,
+        retdata_size=retdata_size,
     );
 
     return ();
