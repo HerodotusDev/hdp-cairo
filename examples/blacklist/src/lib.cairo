@@ -12,6 +12,15 @@ mod module {
         evm::log::{LogImpl, LogKey, LogTrait},
     };
 
+    const MAX_CONSIDERED_LOGS_PER_TRANSACTION: u32 = 80000;
+
+    const WITHDRAWAL_EVENT_SIGNATURE: u256 = u256 {
+        // Event signature Withdrawal (address to, bytes32 nullifierHash, index_topic_1
+        // address relayer, uint256 fee)View Source
+        // https://sepolia.etherscan.io/tx/0x2cdbdae6c1ebd5f8502531c5a130d5d603662cdb7874ab7ca2494b6c7ec5144e#eventlog
+        low: 0xda81b5164dd6d62b2eaf1e8bc6c34931, high: 0xe9e508bad6d4c3227e881ca19068f099,
+    };
+
     pub mod bloom;
 
     #[derive(Drop, Serde)]
@@ -49,13 +58,7 @@ mod module {
                             transaction_index: index.into(),
                         },
                     ),
-                u256 {
-                    // Event signature Withdrawal (address to, bytes32 nullifierHash, index_topic_1
-                    // address relayer, uint256 fee)View Source
-                    // https://sepolia.etherscan.io/tx/0x2cdbdae6c1ebd5f8502531c5a130d5d603662cdb7874ab7ca2494b6c7ec5144e#eventlog
-                    low: 0xda81b5164dd6d62b2eaf1e8bc6c34931,
-                    high: 0xe9e508bad6d4c3227e881ca19068f099,
-                },
+                WITHDRAWAL_EVENT_SIGNATURE,
             ) == true) {
                 // Get the contract address (receiver) for the transaction.
                 let contract_address: EthAddress = hdp
@@ -73,7 +76,7 @@ mod module {
                 assert!(contract_address == forbidden_address);
 
                 let mut counter: u32 = 0;
-                while counter < 100 {
+                while counter < MAX_CONSIDERED_LOGS_PER_TRANSACTION {
                     // Create a key to access the log of the transaction.
                     let key = LogKey {
                         chain_id: ETHEREUM_TESTNET_CHAIN_ID,
@@ -83,10 +86,7 @@ mod module {
                     };
 
                     let topic0 = hdp.evm.log_get_topic0(@key);
-                    if (topic0 == u256 {
-                        low: 0xda81b5164dd6d62b2eaf1e8bc6c34931,
-                        high: 0xe9e508bad6d4c3227e881ca19068f099,
-                    }) {
+                    if (topic0 == WITHDRAWAL_EVENT_SIGNATURE) {
                         // Retrieve the log data.
                         let data = hdp.evm.log_get_data(@key);
                         let encoded: Bytes = BytesTrait::new(
@@ -97,10 +97,7 @@ mod module {
                         // Decode the data to extract an Ethereum address corresponding to
                         // Withdrawal (address: to) field.
                         let address: EthAddress = encoded.decode(ref offset);
-
-                        println!("{:x}", address);
                         res.append(address.into());
-
                         break;
                     }
 
@@ -109,7 +106,6 @@ mod module {
             }
         };
 
-        // Return the array of block_number-transaction_count-detected_addresses.
         res
     }
 }
