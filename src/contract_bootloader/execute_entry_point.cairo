@@ -1,8 +1,11 @@
 from starkware.cairo.common.cairo_builtins import (
     BitwiseBuiltin,
-    PoseidonBuiltin,
+    EcOpBuiltin,
     HashBuiltin,
     KeccakBuiltin,
+    ModBuiltin,
+    PoseidonBuiltin,
+    SignatureBuiltin,
 )
 from starkware.cairo.builtin_selection.select_input_builtins import select_input_builtins
 from starkware.cairo.common.alloc import alloc
@@ -55,12 +58,17 @@ struct EntryPointReturnValues {
 // Performs a Cairo jump to the function 'execute_syscalls'.
 // This function's signature must match the signature of 'execute_syscalls'.
 func call_execute_syscalls{
+    pedersen_ptr: HashBuiltin*,
     range_check_ptr,
+    ecdsa_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    poseidon_ptr: PoseidonBuiltin*,
+    ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
+    range_check96_ptr: felt*,
+    add_mod_ptr: ModBuiltin*,
+    mul_mod_ptr: ModBuiltin*,
     syscall_ptr: felt*,
-    builtin_ptrs: BuiltinPointers*,
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
     evm_decoder_ptr: felt**,
@@ -142,6 +150,9 @@ func execute_entry_point{
     ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
+    range_check96_ptr: felt*,
+    add_mod_ptr: ModBuiltin*,
+    mul_mod_ptr: ModBuiltin*,
     builtin_ptrs: BuiltinPointers*,
     builtin_params: BuiltinParams*,
     pow2_array: felt*,
@@ -246,12 +257,27 @@ func execute_entry_point{
 
     let builtin_ptrs = return_builtin_ptrs;
 
-    let pedersen_ptr = cast(builtin_ptrs.selectable.pedersen, HashBuiltin*);
-    let ecdsa_ptr = builtin_ptrs.selectable.ecdsa;
-    let bitwise_ptr = builtin_ptrs.selectable.bitwise;
-    let ec_op_ptr = builtin_ptrs.selectable.ec_op;
+    let selectable_builtins = &builtin_ptrs.selectable;
+    let pedersen_ptr = selectable_builtins.pedersen;
+    let range_check_ptr = selectable_builtins.range_check;
+    let ecdsa_ptr = selectable_builtins.ecdsa;
+    let bitwise_ptr = selectable_builtins.bitwise;
+    let ec_op_ptr = selectable_builtins.ec_op;
+    let poseidon_ptr = selectable_builtins.poseidon;
+    let range_check96_ptr = selectable_builtins.range_check96;
+    let add_mod_ptr = selectable_builtins.add_mod;
+    let mul_mod_ptr = selectable_builtins.mul_mod;
     let keccak_ptr = builtin_ptrs.non_selectable.keccak;
-    let poseidon_ptr = cast(builtin_ptrs.selectable.poseidon, PoseidonBuiltin*);
+
+    // Fill holes in the rc96 segment.
+    %{
+        rc96_ptr = ids.range_check96_ptr
+        segment_size = rc96_ptr.offset
+        base = rc96_ptr - segment_size
+
+        for i in range(segment_size):
+            memory.setdefault(base + i, 0)
+    %}
 
     with syscall_ptr {
         call_execute_syscalls(
@@ -290,6 +316,9 @@ func prepare_builtin_ptrs_for_execute(builtin_ptrs: BuiltinPointers*) -> Builtin
             ec_op=selectable_builtins.ec_op,
             poseidon=selectable_builtins.poseidon,
             segment_arena=segment_arena_ptr,
+            range_check96=selectable_builtins.range_check96,
+            add_mod=selectable_builtins.add_mod,
+            mul_mod=selectable_builtins.mul_mod,
         ),
         non_selectable=builtin_ptrs.non_selectable,
     );

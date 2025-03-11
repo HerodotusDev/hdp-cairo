@@ -1,11 +1,14 @@
 from starkware.cairo.common.cairo_builtins import (
-    HashBuiltin,
-    PoseidonBuiltin,
     BitwiseBuiltin,
-    KeccakBuiltin,
-    SignatureBuiltin,
     EcOpBuiltin,
+    HashBuiltin,
+    KeccakBuiltin,
+    ModBuiltin,
+    PoseidonBuiltin,
+    SignatureBuiltin,
 )
+from starkware.cairo.common.sha256_state import Sha256ProcessBlock
+from starkware.cairo.common.cairo_sha256.sha256_utils import finalize_sha256
 from starkware.cairo.common.registers import get_fp_and_pc
 from src.contract_bootloader.contract_class.compiled_class import CompiledClass
 from starkware.starknet.builtins.segment_arena.segment_arena import new_arena, SegmentArenaBuiltin
@@ -40,6 +43,9 @@ func run_contract_bootloader{
     ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
+    range_check96_ptr: felt*,
+    add_mod_ptr: ModBuiltin*,
+    mul_mod_ptr: ModBuiltin*,
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
     evm_decoder_ptr: felt**,
@@ -54,6 +60,8 @@ func run_contract_bootloader{
 
     // Prepare builtin pointers.
     let segment_arena_ptr = new_arena();
+    let (sha256_ptr: Sha256ProcessBlock*) = alloc();
+    %{ syscall_handler.sha256_segment = ids.sha256_ptr %}
 
     let (__fp__, _) = get_fp_and_pc();
     local local_builtin_ptrs: BuiltinPointers = BuiltinPointers(
@@ -65,10 +73,15 @@ func run_contract_bootloader{
             ec_op=ec_op_ptr,
             poseidon=poseidon_ptr,
             segment_arena=segment_arena_ptr,
+            range_check96=range_check96_ptr,
+            add_mod=add_mod_ptr,
+            mul_mod=mul_mod_ptr,
         ),
-        non_selectable=NonSelectableBuiltins(keccak=keccak_ptr),
+        non_selectable=NonSelectableBuiltins(keccak=keccak_ptr, sha256=sha256_ptr),
     );
+    
     let builtin_ptrs = &local_builtin_ptrs;
+    let sha256_ptr_start = builtin_ptrs.non_selectable.sha256;
 
     local local_builtin_encodings: BuiltinEncodings = BuiltinEncodings(
         pedersen='pedersen',
@@ -78,6 +91,9 @@ func run_contract_bootloader{
         ec_op='ec_op',
         poseidon='poseidon',
         segment_arena='segment_arena',
+        range_check96='range_check96',
+        add_mod='add_mod',
+        mul_mod='mul_mod',
     );
 
     local local_builtin_instance_sizes: BuiltinInstanceSizes = BuiltinInstanceSizes(
@@ -88,6 +104,9 @@ func run_contract_bootloader{
         ec_op=EcOpBuiltin.SIZE,
         poseidon=PoseidonBuiltin.SIZE,
         segment_arena=SegmentArenaBuiltin.SIZE,
+        range_check96=1,
+        add_mod=ModBuiltin.SIZE,
+        mul_mod=ModBuiltin.SIZE,
     );
 
     local local_builtin_params: BuiltinParams = BuiltinParams(
@@ -112,6 +131,11 @@ func run_contract_bootloader{
             compiled_class, &execution_context, dry_run=dry_run
         );
     }
+
+    // Finalize the sha256 segment.
+    finalize_sha256(
+        sha256_ptr_start=sha256_ptr_start, sha256_ptr_end=builtin_ptrs.non_selectable.sha256
+    );
 
     return (retdata_size, retdata);
 }

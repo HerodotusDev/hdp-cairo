@@ -14,7 +14,15 @@ from starkware.cairo.common.builtin_keccak.keccak import (
     keccak_padded_input,
 )
 from starkware.cairo.common.math import unsigned_div_rem
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin, KeccakBuiltin
+from starkware.cairo.common.cairo_builtins import (
+    BitwiseBuiltin,
+    EcOpBuiltin,
+    HashBuiltin,
+    KeccakBuiltin,
+    ModBuiltin,
+    PoseidonBuiltin,
+    SignatureBuiltin,
+)
 from starkware.starknet.core.os.builtins import BuiltinPointers
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.dict_access import DictAccess
@@ -48,12 +56,17 @@ struct ExecutionContext {
 // execution_context - The execution context in which the system calls need to be executed.
 // syscall_ptr_end - a pointer to the end of the syscall segment.
 func execute_syscalls{
+    pedersen_ptr: HashBuiltin*,
     range_check_ptr,
+    ecdsa_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    poseidon_ptr: PoseidonBuiltin*,
+    ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
+    range_check96_ptr: felt*,
+    add_mod_ptr: ModBuiltin*,
+    mul_mod_ptr: ModBuiltin*,
     syscall_ptr: felt*,
-    builtin_ptrs: BuiltinPointers*,
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
     evm_decoder_ptr: felt**,
@@ -96,12 +109,17 @@ func abstract_memorizer_handler{
 
 // Executes a syscall that calls another contract.
 func execute_call_contract{
+    pedersen_ptr: HashBuiltin*,
     range_check_ptr,
+    ecdsa_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    poseidon_ptr: PoseidonBuiltin*,
+    ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
+    range_check96_ptr: felt*,
+    add_mod_ptr: ModBuiltin*,
+    mul_mod_ptr: ModBuiltin*,
     syscall_ptr: felt*,
-    builtin_ptrs: BuiltinPointers*,
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
     evm_decoder_ptr: felt**,
@@ -173,12 +191,17 @@ func execute_call_contract{
 
 // Executes a syscall that calls another contract.
 func execute_keccak{
+    pedersen_ptr: HashBuiltin*,
     range_check_ptr,
+    ecdsa_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    poseidon_ptr: PoseidonBuiltin*,
+    ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
+    range_check96_ptr: felt*,
+    add_mod_ptr: ModBuiltin*,
+    mul_mod_ptr: ModBuiltin*,
     syscall_ptr: felt*,
-    builtin_ptrs: BuiltinPointers*,
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
     evm_decoder_ptr: felt**,
