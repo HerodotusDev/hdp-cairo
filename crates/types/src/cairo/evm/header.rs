@@ -3,6 +3,7 @@ use alloy::{
     primitives::{keccak256, Bloom, Bytes},
 };
 use alloy_rlp::{Decodable, Encodable};
+use cairo_vm::Felt252;
 use strum_macros::FromRepr;
 
 use crate::cairo::structs::Uint256;
@@ -132,23 +133,29 @@ impl CairoHeader {
         Self(<Header>::decode(&mut rlp).unwrap())
     }
 
-    pub fn handle(&self, function_id: FunctionId) -> Uint256 {
+    pub fn handle(&self, function_id: FunctionId) -> Vec<Felt252> {
         match function_id {
-            FunctionId::Parent => self.parent(),
-            FunctionId::Uncle => self.uncle(),
-            FunctionId::Coinbase => self.coinbase(),
-            FunctionId::StateRoot => self.state_root(),
-            FunctionId::ReceiptRoot => self.receipts_root(),
-            FunctionId::TransactionRoot => self.transactions_root(),
-            FunctionId::Difficulty => self.difficulty(),
-            FunctionId::Number => self.number(),
-            FunctionId::GasLimit => self.gas_limit(),
-            FunctionId::GasUsed => self.gas_used(),
-            FunctionId::Timestamp => self.timestamp(),
-            FunctionId::MixHash => self.mix_hash(),
-            FunctionId::Nonce => self.nonce(),
-            FunctionId::BaseFeePerGas => self.base_fee_per_gas().unwrap(),
-            _ => Uint256::default(),
+            FunctionId::Parent => <Uint256 as Into<[Felt252; 2]>>::into(self.parent()).to_vec(),
+            FunctionId::Uncle => <Uint256 as Into<[Felt252; 2]>>::into(self.uncle()).to_vec(),
+            FunctionId::Coinbase => <Uint256 as Into<[Felt252; 2]>>::into(self.coinbase()).to_vec(),
+            FunctionId::StateRoot => <Uint256 as Into<[Felt252; 2]>>::into(self.state_root()).to_vec(),
+            FunctionId::ReceiptRoot => <Uint256 as Into<[Felt252; 2]>>::into(self.receipts_root()).to_vec(),
+            FunctionId::TransactionRoot => <Uint256 as Into<[Felt252; 2]>>::into(self.transactions_root()).to_vec(),
+            FunctionId::Difficulty => <Uint256 as Into<[Felt252; 2]>>::into(self.difficulty()).to_vec(),
+            FunctionId::Number => <Uint256 as Into<[Felt252; 2]>>::into(self.number()).to_vec(),
+            FunctionId::GasLimit => <Uint256 as Into<[Felt252; 2]>>::into(self.gas_limit()).to_vec(),
+            FunctionId::GasUsed => <Uint256 as Into<[Felt252; 2]>>::into(self.gas_used()).to_vec(),
+            FunctionId::Timestamp => <Uint256 as Into<[Felt252; 2]>>::into(self.timestamp()).to_vec(),
+            FunctionId::MixHash => <Uint256 as Into<[Felt252; 2]>>::into(self.mix_hash()).to_vec(),
+            FunctionId::Nonce => <Uint256 as Into<[Felt252; 2]>>::into(self.nonce()).to_vec(),
+            FunctionId::BaseFeePerGas => <Uint256 as Into<[Felt252; 2]>>::into(self.base_fee_per_gas().unwrap()).to_vec(),
+            FunctionId::Bloom => self
+                .bloom()
+                .0
+                .chunks((u128::BITS / 8) as usize)
+                .map(Felt252::from_bytes_be_slice)
+                .collect(),
+            _ => panic!("Unsupported FunctionId"),
         }
     }
 }

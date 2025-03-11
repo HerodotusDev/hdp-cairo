@@ -10,7 +10,6 @@ use syscall_handler::{traits::CallHandler, SyscallExecutionError, SyscallResult}
 use types::{
     cairo::{
         evm::header::{CairoHeader, FunctionId},
-        structs::Uint256,
         traits::CairoType,
     },
     keys::evm::header::{CairoKey, Key},
@@ -24,7 +23,7 @@ pub struct HeaderCallHandler;
 impl CallHandler for HeaderCallHandler {
     type Key = Key;
     type Id = FunctionId;
-    type CallHandlerResult = Uint256;
+    type CallHandlerResult = Vec<Felt252>;
 
     fn derive_key(vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Key> {
         let ret = CairoKey::from_memory(vm, *ptr)?;

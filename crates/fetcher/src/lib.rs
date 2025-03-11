@@ -87,7 +87,7 @@ impl From<FromStrError> for FetcherError {
     }
 }
 
-const BUFFER_UNORDERED: usize = 50;
+const BUFFER_UNORDERED: usize = 10;
 
 pub struct ProgressBars {
     pub evm_header: Option<ProgressBar>,

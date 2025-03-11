@@ -5,7 +5,6 @@ edition = "2023_11"
 members = [
     "examples/blacklist",
     "examples/complience",
-    "examples/hello_world",
     "examples/starkgate",
     "hdp_cairo",
     "tests",
