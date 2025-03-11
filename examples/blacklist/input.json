@@ -5,7 +5,7 @@
     },
     {
         "visibility": "public",
-        "value": "0x6f"
+        "value": "0x65"
     },
     {
         "visibility": "public",
@@ -814,85 +814,5 @@
     {
         "visibility": "public",
         "value": "0x50"
-    },
-    {
-        "visibility": "public",
-        "value": "0x752cc5"
-    },
-    {
-        "visibility": "public",
-        "value": "0xba"
-    },
-    {
-        "visibility": "public",
-        "value": "0x752cc6"
-    },
-    {
-        "visibility": "public",
-        "value": "0x7b"
-    },
-    {
-        "visibility": "public",
-        "value": "0x752cc7"
-    },
-    {
-        "visibility": "public",
-        "value": "0x5a"
-    },
-    {
-        "visibility": "public",
-        "value": "0x752cc8"
-    },
-    {
-        "visibility": "public",
-        "value": "0xb0"
-    },
-    {
-        "visibility": "public",
-        "value": "0x752cc9"
-    },
-    {
-        "visibility": "public",
-        "value": "0x6d"
-    },
-    {
-        "visibility": "public",
-        "value": "0x752cca"
-    },
-    {
-        "visibility": "public",
-        "value": "0x81"
-    },
-    {
-        "visibility": "public",
-        "value": "0x752ccb"
-    },
-    {
-        "visibility": "public",
-        "value": "0xa5"
-    },
-    {
-        "visibility": "public",
-        "value": "0x752ccc"
-    },
-    {
-        "visibility": "public",
-        "value": "0x10"
-    },
-    {
-        "visibility": "public",
-        "value": "0x752ccd"
-    },
-    {
-        "visibility": "public",
-        "value": "0xd5"
-    },
-    {
-        "visibility": "public",
-        "value": "0x752cce"
-    },
-    {
-        "visibility": "public",
-        "value": "0x70"
     }
 ]
