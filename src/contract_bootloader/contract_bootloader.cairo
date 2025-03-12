@@ -61,7 +61,8 @@ func run_contract_bootloader{
     // Prepare builtin pointers.
     let segment_arena_ptr = new_arena();
     let (sha256_ptr: Sha256ProcessBlock*) = alloc();
-    %{ syscall_handler.sha256_segment = ids.sha256_ptr %}
+    // TODO enable and test it.
+    // %{ syscall_handler.sha256_segment = ids.sha256_ptr %}
 
     let (__fp__, _) = get_fp_and_pc();
     local local_builtin_ptrs: BuiltinPointers = BuiltinPointers(
@@ -132,10 +133,11 @@ func run_contract_bootloader{
         );
     }
 
+    // TODO enable and test it.
     // Finalize the sha256 segment.
-    finalize_sha256(
-        sha256_ptr_start=sha256_ptr_start, sha256_ptr_end=builtin_ptrs.non_selectable.sha256
-    );
+    // finalize_sha256(
+    //     sha256_ptr_start=sha256_ptr_start, sha256_ptr_end=builtin_ptrs.non_selectable.sha256
+    // );
 
     return (retdata_size, retdata);
 }

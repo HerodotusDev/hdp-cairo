@@ -259,7 +259,6 @@ func execute_entry_point{
 
     let selectable_builtins = &builtin_ptrs.selectable;
     let pedersen_ptr = selectable_builtins.pedersen;
-    let range_check_ptr = selectable_builtins.range_check;
     let ecdsa_ptr = selectable_builtins.ecdsa;
     let bitwise_ptr = selectable_builtins.bitwise;
     let ec_op_ptr = selectable_builtins.ec_op;
@@ -269,15 +268,16 @@ func execute_entry_point{
     let mul_mod_ptr = selectable_builtins.mul_mod;
     let keccak_ptr = builtin_ptrs.non_selectable.keccak;
 
+    // TODO enable and test it.
     // Fill holes in the rc96 segment.
-    %{
-        rc96_ptr = ids.range_check96_ptr
-        segment_size = rc96_ptr.offset
-        base = rc96_ptr - segment_size
+    // %{
+    //     rc96_ptr = ids.range_check96_ptr
+    //     segment_size = rc96_ptr.offset
+    //     base = rc96_ptr - segment_size
 
-        for i in range(segment_size):
-            memory.setdefault(base + i, 0)
-    %}
+    //     for i in range(segment_size):
+    //         memory.setdefault(base + i, 0)
+    // %}
 
     with syscall_ptr {
         call_execute_syscalls(
