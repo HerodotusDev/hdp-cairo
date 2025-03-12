@@ -136,12 +136,13 @@ impl FromIterator<Felt252> for HDPDryRunOutput {
     fn from_iter<T: IntoIterator<Item = Felt252>>(iter: T) -> Self {
         let mut i = iter.into_iter();
         let program_hash = i.next().unwrap();
-        let output_len: usize = if let Some(v) = i.next() { v.try_into().unwrap() } else { 0 };
+        let output: Vec<Felt252> = if let Some(output_len) = i.next() {
+            i.by_ref().take(output_len.try_into().unwrap()).collect()
+        } else {
+            vec![]
+        };
 
-        Self {
-            program_hash,
-            output: i.take(output_len).collect(),
-        }
+        Self { program_hash, output }
     }
 }
 
@@ -165,8 +166,11 @@ impl FromIterator<Felt252> for HDPOutput {
         let mut i = iter.into_iter();
 
         let program_hash = i.next().unwrap();
-        let output_len: usize = i.next().unwrap().try_into().unwrap();
-        let output = i.by_ref().take(output_len).collect();
+        let output: Vec<Felt252> = if let Some(output_len) = i.next() {
+            i.by_ref().take(output_len.try_into().unwrap()).collect()
+        } else {
+            vec![]
+        };
 
         let mut mmr_metas = Vec::<MmrMetaOutput>::new();
 
