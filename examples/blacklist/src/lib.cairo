@@ -55,7 +55,7 @@ mod module {
             ) == true) {
                 for index in 0..block.tx_count {
                     // Check if the bloom filter in the block receipt contains the specific target
-                    // value coresponding to Withdrawal (address to, bytes32 nullifierHash,
+                    // value corresponding to Withdrawal (address to, bytes32 nullifierHash,
                     // index_topic_1 address relayer, uint256 fee) event of
                     // https://sepolia.etherscan.io/address/0x1572afe6949fdf51cb3e0856216670ae9ee160ee
                     // contract.
