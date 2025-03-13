@@ -1,0 +1,10 @@
+[codespell]
+
+# Check all files except those matching these patterns
+skip = .git,venv,target
+
+# Enable checking of filenames
+check-filenames = true
+
+# Report only unique misspellings
+quiet-level = 2
