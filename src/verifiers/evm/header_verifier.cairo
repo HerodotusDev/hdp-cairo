@@ -48,7 +48,7 @@ func verify_mmr_batches{
 // It ensures:
 // 1. The header hash is included in one of the peaks of the MMR.
 // 2. The peaks dict contains the computed peak
-// The peak checks are performed in isolation, so each MMR batch separatly.
+// The peak checks are performed in isolation, so each MMR batch separately.
 // This ensures we dont create a bag of mmr peas from different chains, which are then used to check the header inclusion for every chain
 func verify_headers_with_mmr_peaks{
     range_check_ptr,

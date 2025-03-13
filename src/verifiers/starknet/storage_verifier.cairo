@@ -225,7 +225,7 @@ func traverse_edge_leaf{
     //             eval_depth - leaf_len       eval_depth
     local edge_node_shift = 251 - (eval_depth - leaf.len);
 
-    // Since devisions are impractical in Cairo, we traverse the proof from the bottom up.
+    // Since divisions are impractical in Cairo, we traverse the proof from the bottom up.
     // To track where we are in the tree, we use this variable: path_length_pow2
     // We initializer it with the shifted index we computed above (pow of 2)
     // This results in us skipping all of the proof nodes that come before the edge node.
@@ -261,7 +261,7 @@ func traverse_binary_leaf{
     let leaf: TrieNodeBinary* = cast(nodes[n_nodes - 1], TrieNodeBinary*);
     let leaf_hash = hash_binary_node(leaf);
 
-    // In this case, the initial path is the least signficant bit of the expected path.
+    // In this case, the initial path is the least significant bit of the expected path.
     // This value is also used for retrieving the value from the leaf.
     let (node_path) = bitwise_and(expected_path, 1);
     let path_length_pow2 = 2;

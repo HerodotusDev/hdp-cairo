@@ -68,7 +68,7 @@ func compute_merkle_root{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_p
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr, tree=tree
     }(tree_range=tree_len - leafs_len - 1, index=0);
 
-    // reverse endianess to use in solidity
+    // reverse endianness to use in solidity
     let (root) = uint256_reverse_endian{bitwise_ptr=bitwise_ptr}(num=tree[0]);
 
     return (root);

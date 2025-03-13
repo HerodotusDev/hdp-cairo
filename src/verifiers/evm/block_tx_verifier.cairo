@@ -17,7 +17,7 @@ from src.memorizers.evm.memorizer import EvmMemorizer, EvmHashParams
 from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField, HeaderKey
 from starkware.cairo.common.registers import get_fp_and_pc
 
-// Verfies an array of transaction proofs with the headers stored in the memorizer.
+// Verifies an array of transaction proofs with the headers stored in the memorizer.
 // The verified transactions are then added to the memorizer.
 func verify_block_tx_proofs{
     range_check_ptr,
