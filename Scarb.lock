@@ -61,13 +61,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "example_complience"
-version = "0.1.0"
-dependencies = [
- "hdp_cairo",
-]
-
-[[package]]
 name = "example_starkgate"
 version = "0.1.0"
 dependencies = [

@@ -22,7 +22,7 @@ pub mod verifiers;
 pub type HintImpl = fn(&mut VirtualMachine, &mut ExecutionScopes, &HintProcessorData, &HashMap<String, Felt252>) -> Result<(), HintError>;
 
 /// Hint Extensions extend the current map of hints used by the VM.
-/// This behaviour achieves what the `vm_load_data` primitive does for cairo-lang
+/// This behavior achieves what the `vm_load_data` primitive does for cairo-lang
 /// and is needed to implement os hints like `vm_load_program`.
 pub type ExtensiveHintImpl =
     fn(&mut VirtualMachine, &mut ExecutionScopes, &HintProcessorData, &HashMap<String, Felt252>) -> Result<HintExtension, HintError>;
