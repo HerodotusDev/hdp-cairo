@@ -2,9 +2,10 @@ use std::{collections::HashSet, env};
 
 use alloy::{
     hex::FromHexError,
+    network::Ethereum,
     primitives::{Bytes, U256},
     providers::{Provider, RootProvider},
-    transports::http::{reqwest::Url, Client, Http},
+    transports::http::reqwest::Url,
 };
 use cairo_vm::Felt252;
 use eth_trie_proofs::{tx_receipt_trie::TxReceiptsMptHandler, tx_trie::TxsMptHandler};
@@ -72,7 +73,7 @@ impl ProofKeys {
     }
 
     pub async fn fetch_account_proof(key: &keys::evm::account::Key) -> Result<Account, FetcherError> {
-        let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap());
+        let provider = RootProvider::<Ethereum>::new_http(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap());
         let value = provider
             .get_proof(key.address, vec![])
             .block_id(key.block_number.into())
@@ -85,7 +86,7 @@ impl ProofKeys {
     }
 
     pub async fn fetch_storage_proof(key: &keys::evm::storage::Key) -> Result<(Account, Storage), FetcherError> {
-        let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap());
+        let provider = RootProvider::<Ethereum>::new_http(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap());
         let value = provider
             .get_proof(key.address, vec![key.storage_slot])
             .block_id(key.block_number.into())
@@ -109,6 +110,7 @@ impl ProofKeys {
         block_number: u64,
         tx_index: u64,
     ) -> Result<MPTProof, FetcherError> {
+        println!("tx_index: {}", tx_index);
         let trie_proof = tx_receipts_mpt_handler
             .get_proof(tx_index)
             .map_err(|e| FetcherError::InternalError(e.to_string()))?;
