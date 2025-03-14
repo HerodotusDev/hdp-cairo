@@ -129,21 +129,21 @@ impl<'de> Deserialize<'de> for ChainIds {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct HDPDryRunOutput {
     pub program_hash: Felt252,
-    pub output_low: Felt252,
-    pub output_high: Felt252,
+    pub output_tree_root_low: Felt252,
+    pub output_tree_root_high: Felt252,
 }
 
 impl FromIterator<Felt252> for HDPDryRunOutput {
     fn from_iter<T: IntoIterator<Item = Felt252>>(iter: T) -> Self {
         let mut i = iter.into_iter();
         let program_hash = i.next().unwrap();
-        let output_low = i.next().unwrap();
-        let output_high = i.next().unwrap();
+        let output_tree_root_low = i.next().unwrap();
+        let output_tree_root_high = i.next().unwrap();
 
         Self {
             program_hash,
-            output_low,
-            output_high,
+            output_tree_root_low,
+            output_tree_root_high,
         }
     }
 }
@@ -159,8 +159,8 @@ pub struct MmrMetaOutput {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct HDPOutput {
     pub program_hash: Felt252,
-    pub output_low: Felt252,
-    pub output_high: Felt252,
+    pub output_tree_root_low: Felt252,
+    pub output_tree_root_high: Felt252,
     pub mmr_metas: Vec<MmrMetaOutput>,
 }
 
@@ -169,8 +169,8 @@ impl FromIterator<Felt252> for HDPOutput {
         let mut i = iter.into_iter();
 
         let program_hash = i.next().unwrap();
-        let output_low = i.next().unwrap();
-        let output_high = i.next().unwrap();
+        let output_tree_root_low = i.next().unwrap();
+        let output_tree_root_high = i.next().unwrap();
 
         let mut mmr_metas = Vec::<MmrMetaOutput>::new();
 
@@ -180,8 +180,8 @@ impl FromIterator<Felt252> for HDPOutput {
 
         Self {
             program_hash,
-            output_low,
-            output_high,
+            output_tree_root_low,
+            output_tree_root_high,
             mmr_metas,
         }
     }
@@ -190,7 +190,7 @@ impl FromIterator<Felt252> for HDPOutput {
 impl HDPOutput {
     pub fn to_felt_vec(&self) -> Vec<Felt252> {
         let mut felt_vec = vec![self.program_hash];
-        felt_vec.extend([self.output_low, self.output_high]);
+        felt_vec.extend([self.output_tree_root_low, self.output_tree_root_high]);
         self.mmr_metas.iter().for_each(|mmr_meta| {
             felt_vec.extend([mmr_meta.id, mmr_meta.size, mmr_meta.chain_id, mmr_meta.root]);
         });
