@@ -63,7 +63,7 @@ pub fn run(
     Error,
 > {
     let cairo_run_config = cairo_run::CairoRunConfig {
-        layout: LayoutName::starknet_with_keccak,
+        layout: LayoutName::all_cairo,
         secure_run: Some(true),
         allow_missing_builtins: Some(false),
         ..Default::default()

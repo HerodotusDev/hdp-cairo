@@ -1,12 +1,13 @@
-%builtins output pedersen range_check ecdsa bitwise ec_op keccak poseidon
+%builtins output pedersen range_check ecdsa bitwise ec_op keccak poseidon range_check96 add_mod mul_mod
 
 from starkware.cairo.common.cairo_builtins import (
-    HashBuiltin,
-    PoseidonBuiltin,
     BitwiseBuiltin,
-    KeccakBuiltin,
-    SignatureBuiltin,
     EcOpBuiltin,
+    HashBuiltin,
+    KeccakBuiltin,
+    ModBuiltin,
+    PoseidonBuiltin,
+    SignatureBuiltin,
 )
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256
@@ -34,6 +35,9 @@ func main{
     ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
+    range_check96_ptr: felt*,
+    add_mod_ptr: ModBuiltin*,
+    mul_mod_ptr: ModBuiltin*,
 }() {
     alloc_locals;
 

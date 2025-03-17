@@ -1,12 +1,13 @@
-%builtins output pedersen range_check ecdsa bitwise ec_op keccak poseidon
+%builtins output pedersen range_check ecdsa bitwise ec_op keccak poseidon range_check96 add_mod mul_mod
 
 from starkware.cairo.common.cairo_builtins import (
-    HashBuiltin,
-    PoseidonBuiltin,
     BitwiseBuiltin,
-    KeccakBuiltin,
-    SignatureBuiltin,
     EcOpBuiltin,
+    HashBuiltin,
+    KeccakBuiltin,
+    ModBuiltin,
+    PoseidonBuiltin,
+    SignatureBuiltin,
 )
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
@@ -41,6 +42,9 @@ func main{
     ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
+    range_check96_ptr: felt*,
+    add_mod_ptr: ModBuiltin*,
+    mul_mod_ptr: ModBuiltin*,
 }() {
     run{
         output_ptr=output_ptr,
@@ -51,6 +55,9 @@ func main{
         ec_op_ptr=ec_op_ptr,
         keccak_ptr=keccak_ptr,
         poseidon_ptr=poseidon_ptr,
+        range_check96_ptr=range_check96_ptr,
+        add_mod_ptr=add_mod_ptr,
+        mul_mod_ptr=mul_mod_ptr,
     }();
 
     return ();
@@ -65,6 +72,9 @@ func run{
     ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
+    range_check96_ptr: felt*,
+    add_mod_ptr: ModBuiltin*,
+    mul_mod_ptr: ModBuiltin*,
 }() {
     alloc_locals;
 
@@ -110,6 +120,9 @@ func run{
         ec_op_ptr=ec_op_ptr,
         keccak_ptr=keccak_ptr,
         poseidon_ptr=poseidon_ptr,
+        range_check96_ptr=range_check96_ptr,
+        add_mod_ptr=add_mod_ptr,
+        mul_mod_ptr=mul_mod_ptr,
         pow2_array=pow2_array,
         evm_memorizer=evm_memorizer,
         evm_decoder_ptr=evm_decoder_ptr,

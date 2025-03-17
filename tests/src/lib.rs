@@ -32,7 +32,7 @@ mod test_utils {
     pub async fn run(compiled_class: CasmContractClass) {
         // Init CairoRunConfig
         let cairo_run_config = CairoRunConfig {
-            layout: LayoutName::starknet_with_keccak,
+            layout: LayoutName::all_cairo,
             relocate_mem: true,
             trace_enabled: true,
             ..Default::default()

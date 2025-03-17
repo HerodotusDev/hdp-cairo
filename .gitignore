@@ -31,7 +31,7 @@ broadcast/
 
 # Whitelist - these files should not be ignored
 !*_contract.json
-!packages/cairo-lang-0.13.1.zip
+!packages/cairo-lang-0.13.3.zip
 
 # Scarb & snfoundry
 target

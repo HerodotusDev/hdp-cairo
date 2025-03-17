@@ -23,4 +23,4 @@ source "$VENV_PATH/bin/activate" || { echo "Failed to activate virtual environme
 
 # Update dependencies
 echo "Installing dependencies"
-pip install packages/cairo-lang-0.13.1.zip || { echo "Failed to install cairo-lang-0.13.1."; exit 1; }
+pip install packages/cairo-lang-0.13.3.zip || { echo "Failed to install cairo-lang-0.13.3."; exit 1; }

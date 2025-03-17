@@ -1,11 +1,12 @@
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.cairo_builtins import (
-    HashBuiltin,
-    PoseidonBuiltin,
     BitwiseBuiltin,
-    KeccakBuiltin,
-    SignatureBuiltin,
     EcOpBuiltin,
+    HashBuiltin,
+    KeccakBuiltin,
+    ModBuiltin,
+    PoseidonBuiltin,
+    SignatureBuiltin,
 )
 from src.contract_bootloader.contract_class.compiled_class import CompiledClass, compiled_class_hash
 from src.contract_bootloader.contract_bootloader import (
@@ -25,6 +26,9 @@ func compute_contract{
     ec_op_ptr,
     keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
+    range_check96_ptr: felt*,
+    add_mod_ptr: ModBuiltin*,
+    mul_mod_ptr: ModBuiltin*,
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
     evm_decoder_ptr: felt**,
