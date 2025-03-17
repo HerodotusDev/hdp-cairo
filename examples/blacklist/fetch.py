@@ -6,7 +6,7 @@ def main():
     # Retrieve the RPC URL from the environment variable
     rpc_url = os.getenv("RPC_URL_ETHEREUM")
     if not rpc_url:
-        print("RPC_URL_ETHEREUM not found in the .env file.")
+        print("RPC_URL_ETHEREUM not found in the env")
         return
 
     # Connect to the Ethereum node using the provided RPC URL

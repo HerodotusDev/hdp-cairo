@@ -139,5 +139,5 @@ func felt_array_to_uint256s{range_check_ptr}(counter: felt, retdata: felt*, leaf
 
     let res = felt_to_uint256([retdata]);
     assert[leafs] = res;
-    return felt_array_to_uint256s(counter=counter - 1, retdata=retdata + 1, leafs=leafs + 1);
+    return felt_array_to_uint256s(counter=counter - 1, retdata=retdata + 1, leafs=leafs + 2);
 }

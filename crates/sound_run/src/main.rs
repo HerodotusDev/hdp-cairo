@@ -9,13 +9,14 @@ use cairo_vm as _;
 use clap::Parser;
 use sound_hint_processor as _;
 use sound_run::{Args, HDP_COMPILED_JSON};
-use tracing::info;
+use tracing as _;
+use tracing_subscriber::EnvFilter;
 use types::{error::Error, param::Param, CasmContractClass, ChainProofs, HDPInput};
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 1)]
 async fn main() -> Result<(), Error> {
     dotenvy::dotenv().ok();
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init();
 
     let args = Args::try_parse_from(std::env::args()).map_err(Error::Cli)?;
 
@@ -37,7 +38,7 @@ async fn main() -> Result<(), Error> {
     )?;
 
     if args.print_output {
-        info!("{:#?}", output);
+        println!("{:#?}", output);
     }
 
     if let Some(ref file_name) = args.cairo_pie_output {
