@@ -2,8 +2,9 @@ use std::env;
 
 use alloy::{
     eips::{BlockId, BlockNumberOrTag},
+    network::Ethereum,
     providers::{Provider, RootProvider},
-    transports::http::{reqwest::Url, Client, Http},
+    transports::http::reqwest::Url,
 };
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
 use syscall_handler::{traits::CallHandler, SyscallExecutionError, SyscallResult};
@@ -43,7 +44,7 @@ impl CallHandler for LogCallHandler {
     }
 
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
-        let provider = RootProvider::<Http<Client>>::new_http(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap());
+        let provider = RootProvider::<Ethereum>::new_http(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap());
 
         let receipts = provider
             .get_block_receipts(BlockId::Number(BlockNumberOrTag::Number(key.block_number)))

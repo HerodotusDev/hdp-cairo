@@ -171,6 +171,6 @@ impl CairoTransaction {
 
 impl From<Transaction> for CairoTransaction {
     fn from(value: Transaction) -> Self {
-        Self(value.inner)
+        Self(value.into_inner())
     }
 }

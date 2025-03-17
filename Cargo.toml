@@ -17,7 +17,7 @@ members = [
 ]
 
 [workspace.dependencies]
-alloy = { version = "0.7.2", features = ["full"] }
+alloy = { version = "0.12.5", features = ["full"] }
 alloy-rlp = { version = "0.3.5", features = ["derive"] }
 anyhow = "1.0.95"
 axum = { version = "0.8", features = ["tracing"] }
