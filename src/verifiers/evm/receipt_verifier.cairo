@@ -16,7 +16,7 @@ from src.memorizers.evm.memorizer import EvmMemorizer, EvmHashParams
 from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField, HeaderKey
 from starkware.cairo.common.registers import get_fp_and_pc
 
-// Verfies an array of receipt proofs with the headers stored in the memorizer.
+// Verifies an array of receipt proofs with the headers stored in the memorizer.
 // The verified receipts are then added to the memorizer.
 func verify_block_receipt_proofs{
     range_check_ptr,
@@ -90,7 +90,6 @@ func verify_block_receipt_proofs_inner{
     let memorizer_key = EvmHashParams.block_receipt(
         chain_id=chain_info.id, block_number=block_number, index=receipt_index
     );
-    
     EvmMemorizer.add(key=memorizer_key, data=rlp);
 
     return verify_block_receipt_proofs_inner(n_receipts=n_receipts, idx=idx + 1);

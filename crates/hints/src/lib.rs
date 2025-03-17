@@ -22,7 +22,7 @@ pub mod verifiers;
 pub type HintImpl = fn(&mut VirtualMachine, &mut ExecutionScopes, &HintProcessorData, &HashMap<String, Felt252>) -> Result<(), HintError>;
 
 /// Hint Extensions extend the current map of hints used by the VM.
-/// This behaviour achieves what the `vm_load_data` primitive does for cairo-lang
+/// This behavior achieves what the `vm_load_data` primitive does for cairo-lang
 /// and is needed to implement os hints like `vm_load_program`.
 pub type ExtensiveHintImpl =
     fn(&mut VirtualMachine, &mut ExecutionScopes, &HintProcessorData, &HashMap<String, Felt252>) -> Result<HintExtension, HintError>;
@@ -52,6 +52,7 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(rlp::processed_words::HINT_PROCESSED_WORDS_RLP.into(), rlp::processed_words::hint_processed_words_rlp);
     hints.insert(rlp::processed_words::HINT_PROCESSED_WORDS.into(), rlp::processed_words::hint_processed_words);
     hints.insert(segments::MMR_METAS_LEN_COUNTER.into(), segments::mmr_metas_len_counter);
+    hints.insert(segments::RETDATA_SIZE_COUNTER.into(), segments::retdata_size_counter);
     hints.insert(segments::SEGMENTS_ADD_EVM_MEMORIZER_OFFSET.into(), segments::segments_add_evm_memorizer_offset);
     hints.insert(segments::SEGMENTS_ADD_EVM_MEMORIZER_SEGMENT_INDEX.into(), segments::segments_add_evm_memorizer_segment_index);
     hints.insert(segments::SEGMENTS_ADD_EVM_STARKNET_MEMORIZER_INDEX.into(), segments::segments_add_evm_starknet_memorizer_index);

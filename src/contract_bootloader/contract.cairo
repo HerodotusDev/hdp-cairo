@@ -36,7 +36,7 @@ func compute_contract{
     starknet_memorizer: DictAccess*,
     starknet_decoder_ptr: felt***,
     starknet_key_hasher_ptr: felt**,
-}() -> (result: Uint256, program_hash: felt) {
+}() -> (program_hash: felt, retdata: felt*, retdata_size: felt) {
     alloc_locals;
 
     local params_len: felt;
@@ -89,25 +89,5 @@ func compute_contract{
         );
     }
 
-    tempvar low;
-    tempvar high;
-
-    if (retdata_size == 0) {
-        low = 0x0;
-        high = 0x0;
-    }
-    if (retdata_size == 1) {
-        low = retdata[0];
-        high = 0x0;
-    }
-    if (retdata_size == 2) {
-        low = retdata[0];
-        high = retdata[1];
-    }
-
-    local result: Uint256 = Uint256(low=low, high=high);
-
-    %{ print(f"Task Result: {hex(ids.result.high * 2 ** 128 + ids.result.low)}") %}
-
-    return (result=result, program_hash=program_hash);
+    return (program_hash=program_hash, retdata=retdata, retdata_size=retdata_size);
 }

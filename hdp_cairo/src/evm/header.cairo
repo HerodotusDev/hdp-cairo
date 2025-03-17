@@ -57,6 +57,13 @@ pub impl HeaderImpl of HeaderTrait {
         let result = self.call_memorizer(HEADER_GET_RECEIPT_ROOT, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
+    fn header_get_bloom(self: @EvmMemorizer, key: @HeaderKey) -> ByteArray {
+        let mut result: ByteArray = "";
+        for element in self.call_memorizer(HEADER_GET_BLOOM, key) {
+            result.append_word(*element, 16);
+        };
+        result
+    }
     fn header_get_difficulty(self: @EvmMemorizer, key: @HeaderKey) -> u256 {
         let result = self.call_memorizer(HEADER_GET_DIFFICULTY, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }

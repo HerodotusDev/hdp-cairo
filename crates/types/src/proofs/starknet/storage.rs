@@ -24,7 +24,7 @@ impl Storage {
 // following implementations:
 // - https://github.com/keep-starknet-strange/snos/tree/main/crates/rpc-client/src/pathfinder
 // - https://github.com/eqlabs/pathfinder/blob/main/crates/rpc/src/pathfinder/methods/get_proof.rs
-// Both fo these implementations essentially force us to follow the cairo-vm versions that are used,
+// Both of these implementations essentially force us to follow the cairo-vm versions that are used,
 // which is a bad idea for us to do. We should aim for finding an implementation that we can simply
 // update instead of manageing it ourself. This is a temporary solution that we should aim to
 // replace.
@@ -39,7 +39,7 @@ use starknet_types_core::hash::StarkHash;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash, Default)]
 #[skip_serializing_none]
 pub struct GetProofOutput {
-    /// The global state commitment for Starknet 0.11.0 blocks onwards, if
+    /// The global state commitment for Starknet 0.11.0 blocks onward, if
     /// absent the hash of the first node in the
     /// [contract_proof](GetProofOutput#contract_proof) is the global state
     /// commitment.
@@ -47,7 +47,7 @@ pub struct GetProofOutput {
     /// Required to verify that the hash of the class commitment and the root of
     /// the [contract_proof](GetProofOutput::contract_proof) matches the
     /// [state_commitment](Self#state_commitment). Present only for Starknet
-    /// blocks 0.11.0 onwards.
+    /// blocks 0.11.0 onward.
     pub class_commitment: Option<Felt252>,
 
     /// Membership / Non-membership proof for the queried contract
@@ -103,7 +103,7 @@ pub struct ContractData {
     /// Root of the Contract state tree
     pub root: Felt252,
 
-    /// This is currently just a constant = 0, however it might change in the
+    /// This is currently just a constant value 0, however it might change in the
     /// future.
     pub contract_state_hash_version: Felt252,
 

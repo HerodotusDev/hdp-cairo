@@ -11,13 +11,14 @@ use dry_hint_processor::syscall_handler::{evm, starknet};
 use dry_run::{Args, DRY_RUN_COMPILED_JSON};
 use hints as _;
 use syscall_handler::SyscallHandler;
-use tracing::info;
+use tracing as _;
+use tracing_subscriber::EnvFilter;
 use types::{error::Error, param::Param, CasmContractClass, HDPDryRunInput};
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 1)]
 async fn main() -> Result<(), Error> {
     dotenvy::dotenv().ok();
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init();
 
     let args = Args::try_parse_from(std::env::args()).map_err(Error::Cli)?;
 
@@ -34,7 +35,7 @@ async fn main() -> Result<(), Error> {
     )?;
 
     if args.print_output {
-        info!("{:#?}", output);
+        println!("{:#?}", output);
     }
 
     std::fs::write(

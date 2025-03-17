@@ -10,7 +10,7 @@ from starkware.cairo.common.cairo_builtins import (
     SignatureBuiltin,
 )
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.uint256 import Uint256
+from starkware.cairo.common.uint256 import Uint256, felt_to_uint256
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
@@ -20,6 +20,8 @@ from src.contract_bootloader.contract_bootloader import (
     compute_program_hash,
 )
 from starkware.cairo.common.memcpy import memcpy
+from src.utils.merkle import compute_merkle_root
+from src.utils.utils import felt_array_to_uint256s
 
 struct DryRunOutput {
     program_hash: felt,
@@ -113,31 +115,15 @@ func main{
         );
     }
 
-    tempvar low;
-    tempvar high;
-
-    if (retdata_size == 0) {
-        low = 0x0;
-        high = 0x0;
-    }
-    if (retdata_size == 1) {
-        low = retdata[0];
-        high = 0x0;
-    }
-    if (retdata_size == 2) {
-        low = retdata[0];
-        high = retdata[1];
-    }
-
-    local result: Uint256 = Uint256(low=low, high=high);
-
-    %{ print(f"Task Result: {hex(ids.result.high * 2 ** 128 + ids.result.low)}") %}
-
-    // Write DryRunOutput to output.
-    assert [cast(output_ptr, DryRunOutput*)] = DryRunOutput(
-        program_hash=program_hash, result=result
-    );
-    let output_ptr = output_ptr + DryRunOutput.SIZE;
+    assert[output_ptr] = program_hash;
+    let output_ptr = output_ptr + 1;
+    
+    let (leafs: Uint256*) = alloc();
+    felt_array_to_uint256s(counter=retdata_size, retdata=retdata, leafs=leafs);
+    let output_root = compute_merkle_root(leafs, retdata_size);
+    assert[output_ptr + 0] = output_root.low;
+    assert[output_ptr + 1] = output_root.high;
+    let output_ptr = output_ptr + 2;
 
     return ();
 }

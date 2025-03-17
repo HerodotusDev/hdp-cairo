@@ -362,7 +362,7 @@ impl StarknetBlock0_13_2 {
         }
     }
 
-    // we offset by 1, as the lenght is the first element
+    // we offset by 1, as the length is the first element
     pub fn from_memorizer(fields: Vec<Felt252>) -> Self {
         Self {
             block_hash_version: fields[1],

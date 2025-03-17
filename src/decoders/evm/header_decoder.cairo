@@ -80,8 +80,12 @@ namespace HeaderDecoder {
             return (res_array=&result, res_len=2);
         }
         if (field == HeaderField.BLOOM) {
-            // not implemented
-            assert 1 = 0;
+            let (res, res_len, bytes_len) = get_bloom_filter(rlp);
+
+            let (local res_array: felt*) = alloc();
+            bloom_to_uint256_array(res, res_len, bytes_len, res_array);
+            
+            return (res_array=res_array, res_len=bytes_len / 0x20 * 2);
         }
         if (field == HeaderField.EXTRA_DATA) {
             assert 1 = 0;
@@ -111,6 +115,20 @@ namespace HeaderDecoder {
         );
 
         return (value=res, value_len=res_len, bytes_len=bytes_len);
+    }
+
+    func bloom_to_uint256_array{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(res: felt*, res_len: felt, bytes_len: felt, res_array: felt*) {
+        alloc_locals;
+
+        if (bytes_len == 0) {
+            return ();
+        }
+
+        let (local result) = le_chunks_to_be_uint256(res, 4, 0x20);
+        assert [res_array + 1] = result.low;
+        assert [res_array + 0] = result.high;
+        
+        return bloom_to_uint256_array(res + 4, res_len - 4, bytes_len - 0x20, res_array + 2);
     }
 }
 

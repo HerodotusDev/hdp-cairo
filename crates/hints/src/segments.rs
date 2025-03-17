@@ -98,3 +98,20 @@ pub fn mmr_metas_len_counter(
 
     insert_value_into_ap(vm, insert)
 }
+
+pub const RETDATA_SIZE_COUNTER: &str = "memory[ap] = 1 if (ids.retdata_size == ids.counter) else 0";
+
+pub fn retdata_size_counter(
+    vm: &mut VirtualMachine,
+    _exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let retdata_size = get_integer_from_var_name("retdata_size", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let counter = get_integer_from_var_name("counter", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+
+    let insert = if retdata_size == counter { Felt252::ONE } else { Felt252::ZERO };
+    println!("{}", retdata_size);
+    println!("{}", counter);
+    insert_value_into_ap(vm, insert)
+}

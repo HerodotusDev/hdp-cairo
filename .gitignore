@@ -38,5 +38,5 @@ target
 .snfoundry_cache/
 .cargo/config.toml
 
-!examples/*.json
+!examples/**/*.json
 !crates/server/tests/*.json

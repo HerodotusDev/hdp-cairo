@@ -151,7 +151,7 @@ fn get_ptr_from_res_operand(vm: &mut VirtualMachine, res: &ResOperand) -> Result
         }) => (a, Felt252::from(&b.value)),
         _ => {
             return Err(HintError::CustomHint(
-                "Failed to extract buffer, expected ResOperand of BinOp type to have Inmediate b value"
+                "Failed to extract buffer, expected ResOperand of BinOp type to have Immediate b value"
                     .to_owned()
                     .into_boxed_str(),
             ));

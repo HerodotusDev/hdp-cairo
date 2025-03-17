@@ -1,5 +1,5 @@
 [package]
-name = "example_hello_world"
+name = "example_compliance"
 version = "0.1.0"
 edition = "2023_11"
 
@@ -15,5 +15,8 @@ casm = true
 casm-add-pythonic-hints = true
 allowed-libfuncs = false
 
-[scripts]
-test = "snforge test"
+[dev-dependencies]
+cairo_test = { workspace = true }
+
+[tool]
+fmt.workspace = true

@@ -3,9 +3,8 @@ version = "0.1.0"
 edition = "2023_11"
 
 members = [
-    "examples/average",
-    "examples/events",
-    "examples/hello_world",
+    "examples/blacklist",
+    "examples/compliance",
     "examples/starkgate",
     "hdp_cairo",
     "tests",

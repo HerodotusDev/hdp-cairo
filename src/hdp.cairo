@@ -19,8 +19,9 @@ from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash_many,
 
 from src.verifiers.verify import run_state_verification
 from src.module import init_module
+from src.utils.merkle import compute_merkle_root
 from src.types import MMRMeta
-from src.utils.utils import write_output_ptr
+from src.utils.utils import mmr_metas_write_output_ptr, felt_array_to_uint256s
 from src.memorizers.evm.memorizer import EvmMemorizer
 from src.memorizers.starknet.memorizer import StarknetMemorizer
 from src.memorizers.bare import BareMemorizer, SingleBareMemorizer
@@ -112,7 +113,7 @@ func run{
     let starknet_key_hasher_ptr = StarknetStateAccess.init();
     let starknet_decoder_ptr = StarknetDecoder.init();
 
-    let (result, program_hash) = compute_contract{
+    let (program_hash, retdata, retdata_size) = compute_contract{
         pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
         ecdsa_ptr=ecdsa_ptr,
@@ -138,8 +139,19 @@ func run{
         starknet_memorizer_start, starknet_memorizer, BareMemorizer.DEFAULT_VALUE
     );
 
-    write_output_ptr{output_ptr=output_ptr}(
-        mmr_metas=mmr_metas, mmr_metas_len=mmr_metas_len, program_hash=program_hash, result=result
+    assert [output_ptr] = program_hash;
+    let output_ptr = output_ptr + 1;
+
+    let (local leafs: Uint256*) = alloc();
+    felt_array_to_uint256s(counter=retdata_size, retdata=retdata, leafs=leafs);
+
+    let output_root = compute_merkle_root(leafs, retdata_size);
+    assert [output_ptr + 0] = output_root.low;
+    assert [output_ptr + 1] = output_root.high;
+    let output_ptr = output_ptr + 2;
+
+    mmr_metas_write_output_ptr{output_ptr=output_ptr}(
+        mmr_metas=mmr_metas, mmr_metas_len=mmr_metas_len
     );
 
     return ();

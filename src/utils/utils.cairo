@@ -1,8 +1,7 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
-from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
+from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian, felt_to_uint256
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.builtin_keccak.keccak import keccak
-from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256s
 from packages.eth_essentials.lib.rlp_little import array_copy
 from packages.eth_essentials.lib.utils import (
     word_reverse_endian_16_RC,
@@ -17,18 +16,15 @@ from packages.eth_essentials.lib.utils import (
 )
 
 from src.types import MMRMeta
+from starkware.cairo.common.memcpy import memcpy
+from src.utils.merkle import compute_merkle_root
 
 // Writes all required fields to the output_ptr.
 // The first 4 words are reserved for the tasks and results root.
 // The rest of the words are reserved for the MMR metas. Each MMR will contain 4 fields, and we can add an arbitrary amount of them.
-func write_output_ptr{output_ptr: felt*}(
-    mmr_metas: MMRMeta*, mmr_metas_len: felt, program_hash: felt, result: Uint256
-) {
-    assert [output_ptr + 0] = program_hash;
-    assert [output_ptr + 1] = result.low;
-    assert [output_ptr + 2] = result.high;
-    let output_ptr = output_ptr + 3;
-
+func mmr_metas_write_output_ptr{output_ptr: felt*}(
+    mmr_metas: MMRMeta*, mmr_metas_len: felt
+) {    
     tempvar counter = 0;
 
     loop:
@@ -52,37 +48,6 @@ func write_output_ptr{output_ptr: felt*}(
     let output_ptr = output_ptr + mmr_metas_len * 4;
 
     return ();
-}
-
-// computes the result entry. This maps the result to a task_hash/id. It computes h(task_hash, result), which is a leaf in the results tree.
-// Inputs:
-// - task_hash: the task hash
-// - result: the result
-// Outputs:
-// - the result entry
-func compute_results_entry{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
-}(task_hash: Uint256, result: Uint256) -> Uint256 {
-    alloc_locals;
-
-    // before hashing we need to reverse the endianness
-    let (result_le) = uint256_reverse_endian(result);
-
-    let (values_uint: Uint256*) = alloc();
-    assert [values_uint] = task_hash;
-    assert [values_uint + Uint256.SIZE] = result_le;
-
-    let (values_felt) = alloc();
-    let values_felt_start = values_felt;
-
-    // convert to felts
-    keccak_add_uint256s{
-        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, inputs=values_felt
-    }(n_elements=2, elements=values_uint, bigend=0);
-
-    let (res_id) = keccak(values_felt_start, 64);
-
-    return (res_id);
 }
 
 // reverses the endianness of chunk up to 56 bytes long
@@ -165,4 +130,14 @@ func get_felt_bytes_len{range_check_ptr, pow2_array: felt*}(x: felt) -> felt {
     } else {
         return (bytes + 1);
     }
+}
+
+func felt_array_to_uint256s{range_check_ptr}(counter: felt, retdata: felt*, leafs: Uint256*) {
+    if (counter == 0) {
+        return ();
+    }
+
+    let res = felt_to_uint256([retdata]);
+    assert[leafs] = res;
+    return felt_array_to_uint256s(counter=counter - 1, retdata=retdata + 1, leafs=leafs + 2);
 }
