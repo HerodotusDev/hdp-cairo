@@ -110,6 +110,7 @@ mod module {
                                 // Withdrawal (address: to) field.
                                 let address: EthAddress = encoded.decode(ref offset);
                                 res.append(address.into());
+                                println!("Blacklisted address: {:x}", address);
                                 break;
                             }
 
