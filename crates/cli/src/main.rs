@@ -137,7 +137,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
 
             if let Some(ref file_name) = args.cairo_pie_output {
-                pie.write_zip_file(file_name)?
+                pie.write_zip_file(file_name, true)?
             }
 
             println!("Sound run completed successfully.");

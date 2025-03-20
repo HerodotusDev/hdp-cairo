@@ -66,6 +66,7 @@ mod test_utils {
             None,
             runner_mode.clone(),
             cairo_run_config.trace_enabled,
+            cairo_run_config.disable_trace_padding,
         )
         .unwrap();
 
@@ -136,8 +137,15 @@ mod test_utils {
         .unwrap();
 
         // Init cairo runner
-        let mut cairo_runner =
-            CairoRunner::new_v2(&program, cairo_run_config.layout, None, runner_mode, cairo_run_config.trace_enabled).unwrap();
+        let mut cairo_runner = CairoRunner::new_v2(
+            &program,
+            cairo_run_config.layout,
+            None,
+            runner_mode,
+            cairo_run_config.trace_enabled,
+            cairo_run_config.disable_trace_padding,
+        )
+        .unwrap();
 
         // Init the Cairo VM
         let end = cairo_runner
