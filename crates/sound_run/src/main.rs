@@ -42,7 +42,7 @@ async fn main() -> Result<(), Error> {
     }
 
     if let Some(ref file_name) = args.cairo_pie_output {
-        pie.write_zip_file(file_name)?
+        pie.write_zip_file(file_name, true)?
     }
 
     Ok(())

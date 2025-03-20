@@ -21,10 +21,10 @@ alloy = { version = "0.12.5", features = ["full"] }
 alloy-rlp = { version = "0.3.5", features = ["derive"] }
 anyhow = "1.0.95"
 axum = { version = "0.8", features = ["tracing"] }
-bincode = { version = "2.0.0-rc.3", default-features = false, features = ["serde"]}
-cairo-lang-casm = { version = "2.10.0-rc.1", default-features = false }
-cairo-lang-starknet-classes = "2.10.0-rc.1"
-cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", tag = "v2.0.0-rc4", features = ["extensive_hints", "clap", "cairo-1-hints", "mod_builtin"] }
+bincode = { version = "2.0.1", default-features = false, features = ["serde"]}
+cairo-lang-casm = { version = "2.11.2", default-features = false }
+cairo-lang-starknet-classes = "2.11.2"
+cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", tag = "v2.0.1", features = ["extensive_hints", "clap", "cairo-1-hints", "mod_builtin"] }
 clap = { version = "4.3.10", features = ["derive"] }
 dotenvy = "0.15.7"
 eth-trie-proofs = "0.1.2"
