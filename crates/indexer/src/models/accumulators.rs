@@ -35,10 +35,10 @@ pub struct IndexerQuery {
 }
 
 impl IndexerQuery {
-    pub fn new(chain_id: u128, from_block: BlockNumber, to_block: BlockNumber) -> Self {
+    pub fn new(deployed_on_chain_id: u128, accumulates_chain_id: u128, from_block: BlockNumber, to_block: BlockNumber) -> Self {
         Self {
-            deployed_on_chain: 11155111,
-            accumulates_chain: chain_id,
+            deployed_on_chain: deployed_on_chain_id,
+            accumulates_chain: accumulates_chain_id,
             hashing_function: HashingFunction::Poseidon,
             contract_type: ContractType::Mmr,
             from_block_number_inclusive: from_block,

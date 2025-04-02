@@ -25,12 +25,21 @@ impl ProofKeys {
         format!("{:0>width$}", hex_str, width = (hex_str.len() + 1) / 2 * 2)
     }
 
-    pub async fn fetch_mmr_proof(chain_id: u128, block_number: u64) -> Result<(accumulators::MMRProof, MmrMeta), FetcherError> {
+    pub async fn fetch_mmr_proof(
+        deployed_on_chain_id: u128,
+        accumulates_chain_id: u128,
+        block_number: u64,
+    ) -> Result<(accumulators::MMRProof, MmrMeta), FetcherError> {
         let provider = Indexer::default();
 
         // Fetch proof response
         let response = provider
-            .get_headers_proof(accumulators::IndexerQuery::new(chain_id, block_number, block_number))
+            .get_headers_proof(accumulators::IndexerQuery::new(
+                deployed_on_chain_id,
+                accumulates_chain_id,
+                block_number,
+                block_number,
+            ))
             .await?;
 
         // Extract MMR metadata
@@ -38,7 +47,7 @@ impl ProofKeys {
             id: Self::normalize_hex(&response.mmr_meta.mmr_id).parse()?,
             size: response.mmr_meta.mmr_size,
             root: Self::normalize_hex(&response.mmr_meta.mmr_root).parse()?,
-            chain_id,
+            chain_id: accumulates_chain_id,
             peaks: response
                 .mmr_meta
                 .mmr_peaks

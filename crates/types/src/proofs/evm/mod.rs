@@ -23,8 +23,15 @@ pub struct Proofs {
 }
 
 impl Proofs {
-    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.headers_with_mmr.len() + self.accounts.len() + self.storages.len() + self.transactions.len() + self.transaction_receipts.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.headers_with_mmr.is_empty()
+            && self.accounts.is_empty()
+            && self.storages.is_empty()
+            && self.transactions.is_empty()
+            && self.transaction_receipts.is_empty()
     }
 }

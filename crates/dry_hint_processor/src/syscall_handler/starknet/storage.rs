@@ -1,5 +1,3 @@
-use std::env;
-
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
 use starknet::{
     core::types::BlockId,
@@ -11,8 +9,10 @@ use starknet::{
 use syscall_handler::{traits::CallHandler, SyscallExecutionError, SyscallResult};
 use types::{
     cairo::{evm::storage::FunctionId, structs::CairoFelt, traits::CairoType},
-    keys::starknet::storage::{CairoKey, Key},
-    RPC_URL_STARKNET,
+    keys::starknet::{
+        get_corresponding_rpc_url,
+        storage::{CairoKey, Key},
+    },
 };
 
 #[derive(Debug, Default)]
@@ -43,7 +43,8 @@ impl CallHandler for StorageCallHandler {
     }
 
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
-        let provider = JsonRpcClient::new(HttpTransport::new(Url::parse(&env::var(RPC_URL_STARKNET).unwrap()).unwrap()));
+        let rpc_url = get_corresponding_rpc_url(&key).map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
+        let provider = JsonRpcClient::new(HttpTransport::new(Url::parse(&rpc_url).unwrap()));
         let block_id = BlockId::Number(key.block_number);
         let value = match function_id {
             FunctionId::Storage => provider

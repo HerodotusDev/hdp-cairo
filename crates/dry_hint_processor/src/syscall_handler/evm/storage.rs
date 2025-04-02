@@ -1,5 +1,3 @@
-use std::env;
-
 use alloy::{
     network::Ethereum,
     providers::{Provider, RootProvider},
@@ -9,8 +7,10 @@ use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Fel
 use syscall_handler::{traits::CallHandler, SyscallExecutionError, SyscallResult};
 use types::{
     cairo::{evm::storage::FunctionId, structs::Uint256, traits::CairoType},
-    keys::evm::storage::{CairoKey, Key},
-    RPC_URL_ETHEREUM,
+    keys::evm::{
+        get_corresponding_rpc_url,
+        storage::{CairoKey, Key},
+    },
 };
 
 #[derive(Debug, Default)]
@@ -41,7 +41,8 @@ impl CallHandler for StorageCallHandler {
     }
 
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
-        let provider = RootProvider::<Ethereum>::new_http(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap());
+        let rpc_url = get_corresponding_rpc_url(&key).map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
+        let provider = RootProvider::<Ethereum>::new_http(Url::parse(&rpc_url).unwrap());
         let value = match function_id {
             FunctionId::Storage => provider
                 .get_storage_at(key.address, key.storage_slot.into())

@@ -1,5 +1,3 @@
-use std::env;
-
 use alloy::{
     eips::{BlockId, BlockNumberOrTag},
     network::Ethereum,
@@ -14,8 +12,10 @@ use types::{
         structs::Uint256,
         traits::CairoType,
     },
-    keys::evm::transaction::{CairoKey, Key},
-    RPC_URL_ETHEREUM,
+    keys::evm::{
+        get_corresponding_rpc_url,
+        transaction::{CairoKey, Key},
+    },
 };
 
 #[derive(Debug, Default)]
@@ -45,7 +45,8 @@ impl CallHandler for TransactionCallHandler {
     }
 
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
-        let provider = RootProvider::<Ethereum>::new_http(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap());
+        let rpc_url = get_corresponding_rpc_url(&key).map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
+        let provider = RootProvider::<Ethereum>::new_http(Url::parse(&rpc_url).unwrap());
 
         let block = provider
             .get_block(BlockId::Number(BlockNumberOrTag::Number(key.block_number)))

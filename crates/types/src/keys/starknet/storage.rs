@@ -6,7 +6,7 @@ use cairo_vm::{
 use serde::{Deserialize, Serialize};
 use starknet_crypto::poseidon_hash_many;
 
-use super::KeyError;
+use super::{ChainIdentifiable, KeyError};
 use crate::cairo::traits::CairoType;
 
 #[derive(Debug, Clone)]
@@ -52,6 +52,12 @@ pub struct Key {
     pub block_number: u64,
     pub address: Felt252,
     pub storage_slot: Felt252,
+}
+
+impl ChainIdentifiable for Key {
+    fn chain_id(&self) -> u128 {
+        self.chain_id
+    }
 }
 
 impl TryFrom<CairoKey> for Key {

@@ -1,11 +1,11 @@
-use std::{collections::HashSet, env};
+use std::collections::HashSet;
 
 use cairo_vm::Felt252;
 use indexer::models::BlockHeader;
 use reqwest::Url;
 use starknet_types_core::felt::FromStrError;
 use types::{
-    keys,
+    keys::{self, starknet::get_corresponding_rpc_url},
     proofs::{
         header::{HeaderMmrMeta, HeaderProof},
         starknet::{
@@ -13,7 +13,6 @@ use types::{
             storage::{GetProofOutput, Storage},
         },
     },
-    RPC_URL_STARKNET,
 };
 
 use super::FlattenedKey;
@@ -26,8 +25,12 @@ pub struct ProofKeys {
 }
 
 impl ProofKeys {
-    pub async fn fetch_header_proof(chain_id: u128, block_number: u64) -> Result<HeaderMmrMeta<Header>, FetcherError> {
-        let (mmr_proof, meta) = super::ProofKeys::fetch_mmr_proof(chain_id, block_number).await?;
+    pub async fn fetch_header_proof(
+        deployed_on_chain_id: u128,
+        accumulates_chain_id: u128,
+        block_number: u64,
+    ) -> Result<HeaderMmrMeta<Header>, FetcherError> {
+        let (mmr_proof, meta) = super::ProofKeys::fetch_mmr_proof(deployed_on_chain_id, accumulates_chain_id, block_number).await?;
 
         let proof = HeaderProof {
             leaf_idx: mmr_proof.element_index,
@@ -55,8 +58,9 @@ impl ProofKeys {
     }
 
     pub async fn fetch_storage_proof(key: &keys::starknet::storage::Key) -> Result<Storage, FetcherError> {
+        let rpc_url = get_corresponding_rpc_url(key).map_err(|e| FetcherError::InternalError(e.to_string()))?;
         let response = reqwest::Client::new()
-            .post(Url::parse(&env::var(RPC_URL_STARKNET).unwrap()).unwrap())
+            .post(Url::parse(&rpc_url).unwrap())
             .json(&serde_json::json!({
                 "jsonrpc": "2.0",
                 "method": "pathfinder_getProof",
@@ -85,21 +89,25 @@ impl ProofKeys {
         Ok(storage)
     }
 
-    pub fn to_flattened_keys(&self) -> HashSet<FlattenedKey> {
+    pub fn to_flattened_keys(&self, chain_id: u128) -> HashSet<FlattenedKey> {
         let mut flattened = HashSet::new();
 
         for key in &self.header_keys {
-            flattened.insert(FlattenedKey {
-                chain_id: key.chain_id,
-                block_number: key.block_number,
-            });
+            if key.chain_id == chain_id {
+                flattened.insert(FlattenedKey {
+                    chain_id: key.chain_id,
+                    block_number: key.block_number,
+                });
+            }
         }
 
         for key in &self.storage_keys {
-            flattened.insert(FlattenedKey {
-                chain_id: key.chain_id,
-                block_number: key.block_number,
-            });
+            if key.chain_id == chain_id {
+                flattened.insert(FlattenedKey {
+                    chain_id: key.chain_id,
+                    block_number: key.block_number,
+                });
+            }
         }
 
         flattened

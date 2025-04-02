@@ -19,7 +19,7 @@ use reqwest as _;
 use starknet_types_core as _;
 use syscall_handler::SyscallHandler;
 use thiserror as _;
-use types::ChainProofs;
+use types::{ChainProofs, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID};
 
 #[tokio::main]
 async fn main() -> Result<(), fetcher::FetcherError> {
@@ -31,10 +31,17 @@ async fn main() -> Result<(), fetcher::FetcherError> {
     let proof_keys = parse_syscall_handler(syscall_handler)?;
 
     let fetcher = Fetcher::new(&proof_keys);
-    let (evm_proofs, starknet_proofs) = tokio::try_join!(fetcher.collect_evm_proofs(), fetcher.collect_starknet_proofs())?;
+    let (evm_proofs_mainnet, evm_proofs_sepolia, starknet_proofs_mainnet, starknet_proofs_sepolia) = tokio::try_join!(
+        fetcher.collect_evm_proofs(ETHEREUM_MAINNET_CHAIN_ID),
+        fetcher.collect_evm_proofs(ETHEREUM_TESTNET_CHAIN_ID),
+        fetcher.collect_starknet_proofs(STARKNET_MAINNET_CHAIN_ID),
+        fetcher.collect_starknet_proofs(STARKNET_TESTNET_CHAIN_ID)
+    )?;
     let chain_proofs = vec![
-        ChainProofs::EthereumSepolia(evm_proofs),
-        ChainProofs::StarknetSepolia(starknet_proofs),
+        ChainProofs::EthereumMainnet(evm_proofs_mainnet),
+        ChainProofs::EthereumSepolia(evm_proofs_sepolia),
+        ChainProofs::StarknetMainnet(starknet_proofs_mainnet),
+        ChainProofs::StarknetSepolia(starknet_proofs_sepolia),
     ];
 
     fs::write(

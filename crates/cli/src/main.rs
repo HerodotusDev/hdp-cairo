@@ -10,7 +10,7 @@ use cairo_vm::{cairo_run, program_hash::compute_program_hash_chain};
 use clap::{Parser, Subcommand};
 use dry_hint_processor::syscall_handler::{evm, starknet};
 use dry_run::{Program, DRY_RUN_COMPILED_JSON};
-use fetcher::{parse_syscall_handler, Fetcher};
+use fetcher::run_fetcher;
 use sound_run::HDP_COMPILED_JSON;
 use syscall_handler::SyscallHandler;
 use types::{error::Error, param::Param, ChainProofs, HDPDryRunInput, HDPInput};
@@ -89,14 +89,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             let syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler> =
                 serde_json::from_slice(&input_file)?;
-            let proof_keys = parse_syscall_handler(syscall_handler)?;
 
-            let fetcher = Fetcher::new(&proof_keys);
-            let (evm_proofs, starknet_proofs) = tokio::try_join!(fetcher.collect_evm_proofs(), fetcher.collect_starknet_proofs())?;
-            let chain_proofs = vec![
-                ChainProofs::EthereumSepolia(evm_proofs),
-                ChainProofs::StarknetSepolia(starknet_proofs),
-            ];
+            let chain_proofs = run_fetcher(syscall_handler).await?;
 
             println!("Writing proofs to: {}", args.output.display());
             fs::write(
@@ -158,7 +152,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn check_env() -> Result<(), Box<dyn std::error::Error>> {
     // Check required environment variables
-    for env_var in ["RPC_URL_ETHEREUM", "RPC_URL_STARKNET", "RPC_URL_HERODOTUS_INDEXER"] {
+    for env_var in [
+        "RPC_URL_ETHEREUM",
+        "RPC_URL_ETHEREUM_SEPOLIA",
+        "RPC_URL_STARKNET",
+        "RPC_URL_STARKNET_SEPOLIA",
+        "RPC_URL_HERODOTUS_INDEXER",
+    ] {
         if std::env::var(env_var).is_err() {
             return Err(format!("Missing required environment variable: {}", env_var).into());
         }
