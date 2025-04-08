@@ -152,7 +152,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn check_env() -> Result<(), Box<dyn std::error::Error>> {
     // Check required environment variables
-    for env_var in ["RPC_URL_ETHEREUM", "RPC_URL_STARKNET", "RPC_URL_HERODOTUS_INDEXER"] {
+    for env_var in ["RPC_URL_HERODOTUS_INDEXER"] {
         if std::env::var(env_var).is_err() {
             return Err(format!("Missing required environment variable: {}", env_var).into());
         }
