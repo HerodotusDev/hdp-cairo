@@ -20,10 +20,8 @@ use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
 
 pub const RPC_URL_ETHEREUM: &str = "RPC_URL_ETHEREUM";
-pub const RPC_URL_ETHEREUM_SEPOLIA: &str = "RPC_URL_ETHEREUM_SEPOLIA";
 pub const RPC_URL_HERODOTUS_INDEXER: &str = "RPC_URL_HERODOTUS_INDEXER";
 pub const RPC_URL_STARKNET: &str = "RPC_URL_STARKNET";
-pub const RPC_URL_STARKNET_SEPOLIA: &str = "RPC_URL_STARKNET_SEPOLIA";
 
 pub const ETHEREUM_MAINNET_CHAIN_ID: u128 = 0x1;
 pub const ETHEREUM_TESTNET_CHAIN_ID: u128 = 0xaa36a7;

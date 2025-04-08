@@ -4,9 +4,9 @@ from web3 import Web3
 
 def main():    
     # Retrieve the RPC URL from the environment variable
-    rpc_url = os.getenv("RPC_URL_ETHEREUM_SEPOLIA")
+    rpc_url = os.getenv("RPC_URL_ETHEREUM")
     if not rpc_url:
-        print("RPC_URL_ETHEREUM_SEPOLIA not found in the env")
+        print("RPC_URL_ETHEREUM not found in the env")
         return
 
     # Connect to the Ethereum node using the provided RPC URL
@@ -14,7 +14,7 @@ def main():
 
     # Check if the connection is successful
     if not w3.is_connected():
-        print("Failed to connect to the Ethereum node using RPC_URL_ETHEREUM_SEPOLIA.")
+        print("Failed to connect to the Ethereum node using RPC_URL_ETHEREUM.")
         return
 
     # Define the starting block and the range (100 blocks inclusive)

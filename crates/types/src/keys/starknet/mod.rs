@@ -5,7 +5,7 @@ use std::env;
 
 use thiserror::Error;
 
-use crate::{RPC_URL_STARKNET, RPC_URL_STARKNET_SEPOLIA, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID};
+use crate::{RPC_URL_STARKNET, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID};
 
 #[derive(Error, Debug)]
 pub enum KeyError {
@@ -20,7 +20,7 @@ pub trait ChainIdentifiable {
 pub fn get_corresponding_rpc_url<T: ChainIdentifiable>(key: &T) -> Result<String, KeyError> {
     match key.chain_id() {
         STARKNET_MAINNET_CHAIN_ID => Ok(env::var(RPC_URL_STARKNET).unwrap()),
-        STARKNET_TESTNET_CHAIN_ID => Ok(env::var(RPC_URL_STARKNET_SEPOLIA).unwrap()),
+        STARKNET_TESTNET_CHAIN_ID => Ok(env::var(RPC_URL_STARKNET).unwrap()),
         _ => Err(KeyError::ConversionError("Unsupported starknet chain id".into())),
     }
 }
