@@ -163,49 +163,39 @@ impl ProofKeys {
     pub fn to_flattened_keys(&self, chain_id: u128) -> HashSet<FlattenedKey> {
         let mut flattened = HashSet::new();
 
-        for key in &self.header_keys {
-            if key.chain_id == chain_id {
-                flattened.insert(FlattenedKey {
-                    chain_id: key.chain_id,
-                    block_number: key.block_number,
-                });
-            }
+        for key in self.header_keys.iter().filter(|k| k.chain_id == chain_id) {
+            flattened.insert(FlattenedKey {
+                chain_id: key.chain_id,
+                block_number: key.block_number,
+            });
         }
 
-        for key in &self.account_keys {
-            if key.chain_id == chain_id {
-                flattened.insert(FlattenedKey {
-                    chain_id: key.chain_id,
-                    block_number: key.block_number,
-                });
-            }
+        for key in self.account_keys.iter().filter(|k| k.chain_id == chain_id) {
+            flattened.insert(FlattenedKey {
+                chain_id: key.chain_id,
+                block_number: key.block_number,
+            });
         }
 
-        for key in &self.storage_keys {
-            if key.chain_id == chain_id {
-                flattened.insert(FlattenedKey {
-                    chain_id: key.chain_id,
-                    block_number: key.block_number,
-                });
-            }
+        for key in self.storage_keys.iter().filter(|k| k.chain_id == chain_id) {
+            flattened.insert(FlattenedKey {
+                chain_id: key.chain_id,
+                block_number: key.block_number,
+            });
         }
 
-        for key in &self.receipt_keys {
-            if key.chain_id == chain_id {
-                flattened.insert(FlattenedKey {
-                    chain_id: key.chain_id,
-                    block_number: key.block_number,
-                });
-            }
+        for key in self.receipt_keys.iter().filter(|k| k.chain_id == chain_id) {
+            flattened.insert(FlattenedKey {
+                chain_id: key.chain_id,
+                block_number: key.block_number,
+            });
         }
 
-        for key in &self.transaction_keys {
-            if key.chain_id == chain_id {
-                flattened.insert(FlattenedKey {
-                    chain_id: key.chain_id,
-                    block_number: key.block_number,
-                });
-            }
+        for key in self.transaction_keys.iter().filter(|k| k.chain_id == chain_id) {
+            flattened.insert(FlattenedKey {
+                chain_id: key.chain_id,
+                block_number: key.block_number,
+            });
         }
 
         flattened

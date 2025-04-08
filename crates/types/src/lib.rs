@@ -19,9 +19,13 @@ use proofs::{evm, starknet};
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
 
-pub const RPC_URL_ETHEREUM: &str = "RPC_URL_ETHEREUM";
+pub const RPC_URL_ETHEREUM_MAINNET: &str = "RPC_URL_ETHEREUM_MAINNET";
+pub const RPC_URL_ETHEREUM_TESTNET: &str = "RPC_URL_ETHEREUM_TESTNET";
+
+pub const RPC_URL_STARKNET_MAINNET: &str = "RPC_URL_STARKNET_MAINNET";
+pub const RPC_URL_STARKNET_TESTNET: &str = "RPC_URL_STARKNET_TESTNET";
+
 pub const RPC_URL_HERODOTUS_INDEXER: &str = "RPC_URL_HERODOTUS_INDEXER";
-pub const RPC_URL_STARKNET: &str = "RPC_URL_STARKNET";
 
 pub const ETHEREUM_MAINNET_CHAIN_ID: u128 = 0x1;
 pub const ETHEREUM_TESTNET_CHAIN_ID: u128 = 0xaa36a7;
