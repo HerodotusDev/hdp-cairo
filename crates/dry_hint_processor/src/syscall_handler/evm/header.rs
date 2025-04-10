@@ -1,5 +1,3 @@
-use std::env;
-
 use alloy::{
     network::Ethereum,
     providers::{Provider, RootProvider},
@@ -12,8 +10,10 @@ use types::{
         evm::header::{CairoHeader, FunctionId},
         traits::CairoType,
     },
-    keys::evm::header::{CairoKey, Key},
-    RPC_URL_ETHEREUM,
+    keys::evm::{
+        get_corresponding_rpc_url,
+        header::{CairoKey, Key},
+    },
 };
 
 #[derive(Debug, Default)]
@@ -44,7 +44,8 @@ impl CallHandler for HeaderCallHandler {
     }
 
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
-        let provider = RootProvider::<Ethereum>::new_http(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap());
+        let rpc_url = get_corresponding_rpc_url(&key).map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
+        let provider = RootProvider::<Ethereum>::new_http(Url::parse(&rpc_url).unwrap());
         let value = provider
             .get_block_by_number(key.block_number.into())
             .await

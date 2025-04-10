@@ -27,7 +27,10 @@ mod test_utils {
     use fetcher::{proof_keys::ProofKeys, Fetcher};
     use hints::vars;
     use syscall_handler::{SyscallHandler, SyscallHandlerWrapper};
-    use types::{ChainProofs, HDPDryRunInput, HDPInput};
+    use types::{
+        ChainProofs, HDPDryRunInput, HDPInput, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID,
+        STARKNET_TESTNET_CHAIN_ID,
+    };
 
     pub async fn run(compiled_class: CasmContractClass) {
         // Init CairoRunConfig
@@ -118,12 +121,20 @@ mod test_utils {
         }
 
         let fetcher = Fetcher::new(&proof_keys);
-        let (evm_proofs, starknet_proofs) = tokio::try_join!(fetcher.collect_evm_proofs(), fetcher.collect_starknet_proofs()).unwrap();
+        let (evm_proofs_mainnet, evm_proofs_sepolia, starknet_proofs_mainnet, starknet_proofs_sepolia) = tokio::try_join!(
+            fetcher.collect_evm_proofs(ETHEREUM_MAINNET_CHAIN_ID),
+            fetcher.collect_evm_proofs(ETHEREUM_TESTNET_CHAIN_ID),
+            fetcher.collect_starknet_proofs(STARKNET_MAINNET_CHAIN_ID),
+            fetcher.collect_starknet_proofs(STARKNET_TESTNET_CHAIN_ID)
+        )
+        .unwrap();
 
         let program_inputs = HDPInput {
             chain_proofs: vec![
-                ChainProofs::EthereumSepolia(evm_proofs),
-                ChainProofs::StarknetSepolia(starknet_proofs),
+                ChainProofs::EthereumMainnet(evm_proofs_mainnet),
+                ChainProofs::EthereumSepolia(evm_proofs_sepolia),
+                ChainProofs::StarknetMainnet(starknet_proofs_mainnet),
+                ChainProofs::StarknetSepolia(starknet_proofs_sepolia),
             ],
             params: vec![],
             compiled_class,

@@ -56,7 +56,7 @@ jobs:
 
       - name: Run clippy check
         run: cargo clippy -- -D warnings
-      
+
       - name: Run Cairo fmt check
         run: make format-check
 
@@ -113,7 +113,9 @@ jobs:
 
       - name: Run Nextest Tests
         env:
-          RPC_URL_ETHEREUM: ${{ secrets.RPC_URL_ETHEREUM }}
+          RPC_URL_ETHEREUM_MAINNET: ${{ secrets.RPC_URL_ETHEREUM_MAINNET }}
+          RPC_URL_ETHEREUM_TESTNET: ${{ secrets.RPC_URL_ETHEREUM_TESTNET }}
           RPC_URL_HERODOTUS_INDEXER: ${{ secrets.RPC_URL_HERODOTUS_INDEXER }}
-          RPC_URL_STARKNET: ${{ secrets.RPC_URL_STARKNET }}
+          RPC_URL_STARKNET_MAINNET: ${{ secrets.RPC_URL_STARKNET_MAINNET }}
+          RPC_URL_STARKNET_TESTNET: ${{ secrets.RPC_URL_STARKNET_TESTNET }}
         run: cargo nextest run

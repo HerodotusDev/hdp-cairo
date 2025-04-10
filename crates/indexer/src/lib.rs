@@ -107,7 +107,7 @@ mod tests {
     async fn test_get_headers_proof() {
         dotenvy::dotenv().ok();
         let response = Indexer::default()
-            .get_headers_proof(accumulators::IndexerQuery::new(11155111, 7692344, 7692344))
+            .get_headers_proof(accumulators::IndexerQuery::new(11155111, 11155111, 7692344, 7692344))
             .await
             .unwrap();
         assert_eq!(response.headers.len(), 1);
@@ -117,7 +117,7 @@ mod tests {
     async fn test_get_headers_proof_multiple_blocks() {
         dotenvy::dotenv().ok();
         let response = Indexer::default()
-            .get_headers_proof(accumulators::IndexerQuery::new(11155111, 7692144, 7692344))
+            .get_headers_proof(accumulators::IndexerQuery::new(11155111, 11155111, 7692144, 7692344))
             .await
             .unwrap();
         assert_eq!(response.headers.len(), 201);

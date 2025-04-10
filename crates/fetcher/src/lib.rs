@@ -5,7 +5,6 @@
 
 use std::{
     collections::{HashMap, HashSet},
-    env,
     num::ParseIntError,
     path::PathBuf,
 };
@@ -24,6 +23,7 @@ use starknet_types_core::felt::FromStrError;
 use syscall_handler::SyscallHandler;
 use thiserror::Error;
 use types::{
+    keys::evm::get_corresponding_rpc_url,
     proofs::{
         evm::{
             account::Account, header::Header as EvmHeader, receipt::Receipt, storage::Storage, transaction::Transaction,
@@ -33,7 +33,7 @@ use types::{
         mmr::MmrMeta,
         starknet::{header::Header as StarknetHeader, storage::Storage as StarknetStorage, Proofs as StarknetProofs},
     },
-    ChainProofs, RPC_URL_ETHEREUM,
+    ChainProofs, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
 };
 
 pub mod proof_keys;
@@ -179,7 +179,7 @@ impl<'a> Fetcher<'a> {
         let mut header_fut = futures::stream::iter(
             flattened_keys
                 .iter()
-                .map(|key| EvmProofKeys::fetch_header_proof(key.chain_id, key.block_number)),
+                .map(|key| EvmProofKeys::fetch_header_proof(key.chain_id, key.chain_id, key.block_number)),
         )
         .buffer_unordered(BUFFER_UNORDERED)
         .boxed();
@@ -198,13 +198,13 @@ impl<'a> Fetcher<'a> {
         Ok(headers_with_mmr)
     }
 
-    pub async fn collect_evm_proofs(&self) -> Result<EvmProofs, FetcherError> {
+    pub async fn collect_evm_proofs(&self, chain_id: u128) -> Result<EvmProofs, FetcherError> {
         let mut accounts: HashSet<Account> = HashSet::default();
         let mut storages: HashSet<Storage> = HashSet::default();
         let mut receipts: HashSet<Receipt> = HashSet::default();
         let mut transactions: HashSet<Transaction> = HashSet::default();
 
-        let flattened_keys = self.proof_keys.evm.to_flattened_keys();
+        let flattened_keys = self.proof_keys.evm.to_flattened_keys(chain_id);
 
         // Collect required header proofs for all keys
         let headers_with_mmr = self.collect_evm_headers_proofs(&flattened_keys).await?;
@@ -213,7 +213,8 @@ impl<'a> Fetcher<'a> {
         self.progress_bars.evm_header.safe_finish_with_message("evm header keys - finished");
 
         // Collect account proofs
-        let mut account_fut = futures::stream::iter(self.proof_keys.evm.account_keys.iter().map(EvmProofKeys::fetch_account_proof))
+        let chain_account_keys_iter = self.proof_keys.evm.account_keys.iter().filter(|key| key.chain_id == chain_id);
+        let mut account_fut = futures::stream::iter(chain_account_keys_iter.map(EvmProofKeys::fetch_account_proof))
             .buffer_unordered(BUFFER_UNORDERED)
             .boxed();
 
@@ -230,7 +231,8 @@ impl<'a> Fetcher<'a> {
             .safe_finish_with_message("evm account keys - finished");
 
         // Collect storage proofs
-        let mut storage_fut = futures::stream::iter(self.proof_keys.evm.storage_keys.iter().map(EvmProofKeys::fetch_storage_proof))
+        let chain_storage_keys_iter = self.proof_keys.evm.storage_keys.iter().filter(|key| key.chain_id == chain_id);
+        let mut storage_fut = futures::stream::iter(chain_storage_keys_iter.map(EvmProofKeys::fetch_storage_proof))
             .buffer_unordered(BUFFER_UNORDERED)
             .boxed();
 
@@ -250,14 +252,15 @@ impl<'a> Fetcher<'a> {
 
         // For each block, we need to create a mpt_handler
         let mut receipt_mpt_handlers: HashMap<u64, TxReceiptsMptHandler> = HashMap::default();
-
-        for block_number in self.proof_keys.evm.receipt_keys.iter().map(|key| key.block_number) {
-            if let std::collections::hash_map::Entry::Vacant(entry) = receipt_mpt_handlers.entry(block_number) {
-                let mut mpt_handler = TxReceiptsMptHandler::new(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap())
-                    .map_err(|e| FetcherError::InternalError(e.to_string()))?;
+        let chain_receipt_keys_iter = self.proof_keys.evm.receipt_keys.iter().filter(|key| key.chain_id == chain_id);
+        for key in chain_receipt_keys_iter.clone() {
+            if let std::collections::hash_map::Entry::Vacant(entry) = receipt_mpt_handlers.entry(key.block_number) {
+                let rpc_url = get_corresponding_rpc_url(key).map_err(|e| FetcherError::InternalError(e.to_string()))?;
+                let mut mpt_handler =
+                    TxReceiptsMptHandler::new(Url::parse(&rpc_url).unwrap()).map_err(|e| FetcherError::InternalError(e.to_string()))?;
 
                 mpt_handler
-                    .build_tx_receipts_tree_from_block(block_number)
+                    .build_tx_receipts_tree_from_block(key.block_number)
                     .await
                     .map_err(|e| FetcherError::InternalError(e.to_string()))?;
 
@@ -269,10 +272,7 @@ impl<'a> Fetcher<'a> {
         }
 
         receipts.extend(
-            self.proof_keys
-                .evm
-                .receipt_keys
-                .iter()
+            chain_receipt_keys_iter
                 .map(|key| EvmProofKeys::compute_receipt_proof(key, receipt_mpt_handlers.get_mut(&key.block_number).unwrap()).unwrap()),
         );
 
@@ -283,11 +283,12 @@ impl<'a> Fetcher<'a> {
 
         // For each tx block, we need to create a mpt_handler
         let mut tx_mpt_handlers: HashMap<u64, TxsMptHandler> = HashMap::default();
-
-        for key in self.proof_keys.evm.transaction_keys.iter() {
+        let chain_tx_keys_iter = self.proof_keys.evm.transaction_keys.iter().filter(|key| key.chain_id == chain_id);
+        for key in chain_tx_keys_iter.clone() {
             if let std::collections::hash_map::Entry::Vacant(entry) = tx_mpt_handlers.entry(key.block_number) {
-                let mut mpt_handler = TxsMptHandler::new(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap())
-                    .map_err(|e| FetcherError::InternalError(e.to_string()))?;
+                let rpc_url = get_corresponding_rpc_url(key).map_err(|e| FetcherError::InternalError(e.to_string()))?;
+                let mut mpt_handler =
+                    TxsMptHandler::new(Url::parse(&rpc_url).unwrap()).map_err(|e| FetcherError::InternalError(e.to_string()))?;
 
                 mpt_handler
                     .build_tx_tree_from_block(key.block_number)
@@ -302,10 +303,7 @@ impl<'a> Fetcher<'a> {
         }
 
         transactions.extend(
-            self.proof_keys
-                .evm
-                .transaction_keys
-                .iter()
+            chain_tx_keys_iter
                 .map(|key| EvmProofKeys::compute_transaction_proof(key, tx_mpt_handlers.get_mut(&key.block_number).unwrap()).unwrap()),
         );
 
@@ -331,7 +329,8 @@ impl<'a> Fetcher<'a> {
         let mut header_fut = futures::stream::iter(
             flattened_keys
                 .iter()
-                .map(|key| StarknetProofKeys::fetch_header_proof(key.chain_id, key.block_number)),
+                // TODO: handle `deployed_on_chain_id` in a better way
+                .map(|key| StarknetProofKeys::fetch_header_proof(11155111, key.chain_id, key.block_number)),
         )
         .buffer_unordered(BUFFER_UNORDERED)
         .boxed();
@@ -350,10 +349,10 @@ impl<'a> Fetcher<'a> {
         Ok(headers_with_mmr)
     }
 
-    pub async fn collect_starknet_proofs(&self) -> Result<StarknetProofs, FetcherError> {
+    pub async fn collect_starknet_proofs(&self, chain_id: u128) -> Result<StarknetProofs, FetcherError> {
         let mut storages: HashSet<StarknetStorage> = HashSet::default();
 
-        let flattened_keys = self.proof_keys.starknet.to_flattened_keys();
+        let flattened_keys = self.proof_keys.starknet.to_flattened_keys(chain_id);
 
         let headers_with_mmr = self.collect_starknet_headers_proofs(&flattened_keys).await?;
 
@@ -363,15 +362,10 @@ impl<'a> Fetcher<'a> {
             .safe_finish_with_message("starknet header keys - finished");
 
         // Collect storage proofs
-        let mut storage_fut = futures::stream::iter(
-            self.proof_keys
-                .starknet
-                .storage_keys
-                .iter()
-                .map(StarknetProofKeys::fetch_storage_proof),
-        )
-        .buffer_unordered(BUFFER_UNORDERED)
-        .boxed();
+        let chain_storage_keys_iter = self.proof_keys.starknet.storage_keys.iter().filter(|key| key.chain_id == chain_id);
+        let mut storage_fut = futures::stream::iter(chain_storage_keys_iter.map(StarknetProofKeys::fetch_storage_proof))
+            .buffer_unordered(BUFFER_UNORDERED)
+            .boxed();
 
         while let Some(result) = storage_fut.next().await {
             storages.insert(result?);
@@ -396,10 +390,17 @@ pub async fn run_fetcher(
 ) -> Result<Vec<ChainProofs>, FetcherError> {
     let proof_keys = parse_syscall_handler(syscall_handler)?;
     let fetcher = Fetcher::new(&proof_keys);
-    let (evm_proofs, starknet_proofs) = tokio::try_join!(fetcher.collect_evm_proofs(), fetcher.collect_starknet_proofs())?;
+    let (evm_proofs_mainnet, evm_proofs_sepolia, starknet_proofs_mainnet, starknet_proofs_sepolia) = tokio::try_join!(
+        fetcher.collect_evm_proofs(ETHEREUM_MAINNET_CHAIN_ID),
+        fetcher.collect_evm_proofs(ETHEREUM_TESTNET_CHAIN_ID),
+        fetcher.collect_starknet_proofs(STARKNET_MAINNET_CHAIN_ID),
+        fetcher.collect_starknet_proofs(STARKNET_TESTNET_CHAIN_ID)
+    )?;
     let chain_proofs = vec![
-        ChainProofs::EthereumSepolia(evm_proofs),
-        ChainProofs::StarknetSepolia(starknet_proofs),
+        ChainProofs::EthereumMainnet(evm_proofs_mainnet),
+        ChainProofs::EthereumSepolia(evm_proofs_sepolia),
+        ChainProofs::StarknetMainnet(starknet_proofs_mainnet),
+        ChainProofs::StarknetSepolia(starknet_proofs_sepolia),
     ];
 
     Ok(chain_proofs)

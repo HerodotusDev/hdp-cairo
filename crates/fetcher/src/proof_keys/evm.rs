@@ -1,4 +1,4 @@
-use std::{collections::HashSet, env};
+use std::collections::HashSet;
 
 use alloy::{
     hex::FromHexError,
@@ -12,13 +12,12 @@ use eth_trie_proofs::{tx_receipt_trie::TxReceiptsMptHandler, tx_trie::TxsMptHand
 use indexer::models::BlockHeader;
 use starknet_types_core::felt::FromStrError;
 use types::{
-    keys,
+    keys::{self, evm::get_corresponding_rpc_url},
     proofs::{
         evm::{account::Account, header::Header, receipt::Receipt, storage::Storage, transaction::Transaction},
         header::{HeaderMmrMeta, HeaderProof},
         mpt::MPTProof,
     },
-    RPC_URL_ETHEREUM,
 };
 
 use super::FlattenedKey;
@@ -39,8 +38,12 @@ impl ProofKeys {
         format!("{:0>width$}", hex_str, width = (hex_str.len() + 1) / 2 * 2)
     }
 
-    pub async fn fetch_header_proof(chain_id: u128, block_number: u64) -> Result<HeaderMmrMeta<Header>, FetcherError> {
-        let (mmr_proof, meta) = super::ProofKeys::fetch_mmr_proof(chain_id, block_number).await?;
+    pub async fn fetch_header_proof(
+        deployed_on_chain_id: u128,
+        accumulates_chain_id: u128,
+        block_number: u64,
+    ) -> Result<HeaderMmrMeta<Header>, FetcherError> {
+        let (mmr_proof, meta) = super::ProofKeys::fetch_mmr_proof(deployed_on_chain_id, accumulates_chain_id, block_number).await?;
 
         let proof = HeaderProof {
             leaf_idx: mmr_proof.element_index,
@@ -73,7 +76,8 @@ impl ProofKeys {
     }
 
     pub async fn fetch_account_proof(key: &keys::evm::account::Key) -> Result<Account, FetcherError> {
-        let provider = RootProvider::<Ethereum>::new_http(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap());
+        let rpc_url = get_corresponding_rpc_url(key).map_err(|e| FetcherError::InternalError(e.to_string()))?;
+        let provider = RootProvider::<Ethereum>::new_http(Url::parse(&rpc_url).unwrap());
         let value = provider
             .get_proof(key.address, vec![])
             .block_id(key.block_number.into())
@@ -86,7 +90,8 @@ impl ProofKeys {
     }
 
     pub async fn fetch_storage_proof(key: &keys::evm::storage::Key) -> Result<(Account, Storage), FetcherError> {
-        let provider = RootProvider::<Ethereum>::new_http(Url::parse(&env::var(RPC_URL_ETHEREUM).unwrap()).unwrap());
+        let rpc_url = get_corresponding_rpc_url(key).map_err(|e| FetcherError::InternalError(e.to_string()))?;
+        let provider = RootProvider::<Ethereum>::new_http(Url::parse(&rpc_url).unwrap());
         let value = provider
             .get_proof(key.address, vec![key.storage_slot])
             .block_id(key.block_number.into())
@@ -110,7 +115,6 @@ impl ProofKeys {
         block_number: u64,
         tx_index: u64,
     ) -> Result<MPTProof, FetcherError> {
-        println!("tx_index: {}", tx_index);
         let trie_proof = tx_receipts_mpt_handler
             .get_proof(tx_index)
             .map_err(|e| FetcherError::InternalError(e.to_string()))?;
@@ -156,38 +160,38 @@ impl ProofKeys {
         Ok(Transaction::new(U256::from_be_slice(&rlp_encoded_key), tx_proof))
     }
 
-    pub fn to_flattened_keys(&self) -> HashSet<FlattenedKey> {
+    pub fn to_flattened_keys(&self, chain_id: u128) -> HashSet<FlattenedKey> {
         let mut flattened = HashSet::new();
 
-        for key in &self.header_keys {
+        for key in self.header_keys.iter().filter(|k| k.chain_id == chain_id) {
             flattened.insert(FlattenedKey {
                 chain_id: key.chain_id,
                 block_number: key.block_number,
             });
         }
 
-        for key in &self.account_keys {
+        for key in self.account_keys.iter().filter(|k| k.chain_id == chain_id) {
             flattened.insert(FlattenedKey {
                 chain_id: key.chain_id,
                 block_number: key.block_number,
             });
         }
 
-        for key in &self.storage_keys {
+        for key in self.storage_keys.iter().filter(|k| k.chain_id == chain_id) {
             flattened.insert(FlattenedKey {
                 chain_id: key.chain_id,
                 block_number: key.block_number,
             });
         }
 
-        for key in &self.receipt_keys {
+        for key in self.receipt_keys.iter().filter(|k| k.chain_id == chain_id) {
             flattened.insert(FlattenedKey {
                 chain_id: key.chain_id,
                 block_number: key.block_number,
             });
         }
 
-        for key in &self.transaction_keys {
+        for key in self.transaction_keys.iter().filter(|k| k.chain_id == chain_id) {
             flattened.insert(FlattenedKey {
                 chain_id: key.chain_id,
                 block_number: key.block_number,
