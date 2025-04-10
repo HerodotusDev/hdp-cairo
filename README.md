@@ -70,3 +70,9 @@ Tests require chain nodes RPC calls. Ensure an environment variables [.env](exam
    ```bash
    cargo nextest run
    ```
+
+## Note on on-chain finality
+
+Even if all stages work successfully (dry run, proof fetching, sound run), for the on-chain settlement to be completed, the MMR (Merkle Mountain Range) data of all accessed values must be present in the MMR core module we use to settle. This means that the blocks containing the data you're accessing must have been included in the MMR that the settlement contract uses, which isn't always the case when mixing testnet and mainnet or for cross-chain data access within the same HDP module.
+
+If you encounter issues during on-chain settlement despite successful local execution, verify that the block numbers you're accessing have been properly included in the on-chain MMR data structure.

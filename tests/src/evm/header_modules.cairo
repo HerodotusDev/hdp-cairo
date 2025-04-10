@@ -177,6 +177,34 @@ mod evm_header_get_number {
 }
 
 #[starknet::contract]
+mod evm_header_get_number_multi_evm_chains {
+    use hdp_cairo::evm::header::HeaderTrait;
+    use hdp_cairo::evm::{ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID};
+    use hdp_cairo::{HDP, evm::header::{HeaderImpl, HeaderKey}};
+
+    #[storage]
+    struct Storage {}
+
+    #[external(v0)]
+    pub fn main(ref self: ContractState, hdp: HDP) {
+        assert!(
+            hdp
+                .evm
+                .header_get_number(
+                    @HeaderKey { chain_id: ETHEREUM_TESTNET_CHAIN_ID, block_number: 7692344 },
+                ) == u256 { low: 0x756038, high: 0x0 },
+        );
+        assert!(
+            hdp
+                .evm
+                .header_get_number(
+                    @HeaderKey { chain_id: ETHEREUM_MAINNET_CHAIN_ID, block_number: 21000405 },
+                ) == u256 { low: 0x14070D5, high: 0x0 },
+        )
+    }
+}
+
+#[starknet::contract]
 mod evm_header_get_gas_limit {
     use hdp_cairo::evm::header::HeaderTrait;
     use hdp_cairo::{HDP, evm::header::{HeaderImpl, HeaderKey}};
