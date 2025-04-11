@@ -3,38 +3,62 @@ use std::collections::HashMap;
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData,
-        hint_utils::{get_ptr_from_var_name, insert_value_from_var_name},
+        hint_utils::{get_ptr_from_var_name, insert_value_into_ap},
     },
-    types::{exec_scope::ExecutionScopes, relocatable::Relocatable},
+    types::{exec_scope::ExecutionScopes, relocatable::MaybeRelocatable},
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use types::param::Param;
 
 use crate::vars;
 
-pub const LOAD_PARMAS: &str = "ids.params_len = len(params)\nsegments.write_arg(ids.params, [param.value for param in params])";
+pub const LOAD_PUBLIC_INPUTS: &str = "segments.write_arg(ids.public_inputs, public_inputs)";
+pub const LOAD_PUBLIC_INPUTS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(public_inputs))";
+pub const LOAD_PRIVATE_INPUTS: &str = "segments.write_arg(ids.private_inputs, private_inputs)";
+pub const LOAD_PRIVATE_INPUTS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(private_inputs))";
 
-pub fn load_parmas(
+pub fn load_public_inputs(
     vm: &mut VirtualMachine,
     exec_scopes: &mut ExecutionScopes,
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let params = exec_scopes.get::<Vec<Param>>(vars::scopes::PARAMS)?;
-    insert_value_from_var_name(vars::ids::PARAMS_LEN, params.len(), vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-
-    let params_base = get_ptr_from_var_name(vars::ids::PARAMS, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-
-    write_params(vm, params_base, params)?;
-
+    let inputs = exec_scopes.get::<Vec<Felt252>>(vars::scopes::PUBLIC_INPUTS)?;
+    let inputs_base = get_ptr_from_var_name(vars::ids::PUBLIC_INPUTS, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    vm.load_data(inputs_base, &inputs.iter().map(MaybeRelocatable::from).collect::<Vec<_>>())?;
     Ok(())
 }
 
-pub fn write_params(vm: &mut VirtualMachine, ptr: Relocatable, params: Vec<Param>) -> Result<(), HintError> {
-    for (idx, param) in params.into_iter().enumerate() {
-        vm.insert_value((ptr + idx)?, param.value)?;
-    }
+pub fn load_public_inputs_len(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    _hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let inputs = exec_scopes.get::<Vec<Felt252>>(vars::scopes::PUBLIC_INPUTS)?;
+    insert_value_into_ap(vm, inputs.len())?;
+    Ok(())
+}
 
+pub fn load_private_inputs(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let inputs = exec_scopes.get::<Vec<Felt252>>(vars::scopes::PRIVATE_INPUTS)?;
+    let inputs_base = get_ptr_from_var_name(vars::ids::PRIVATE_INPUTS, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    vm.load_data(inputs_base, &inputs.iter().map(MaybeRelocatable::from).collect::<Vec<_>>())?;
+    Ok(())
+}
+
+pub fn load_private_inputs_len(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    _hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let inputs = exec_scopes.get::<Vec<Felt252>>(vars::scopes::PRIVATE_INPUTS)?;
+    insert_value_into_ap(vm, inputs.len())?;
     Ok(())
 }
