@@ -36,19 +36,11 @@ func compute_contract{
     starknet_memorizer: DictAccess*,
     starknet_decoder_ptr: felt***,
     starknet_key_hasher_ptr: felt**,
-}() -> (program_hash: felt, retdata: felt*, retdata_size: felt) {
+}(module_inputs: felt*, module_inputs_len: felt) -> (program_hash: felt, retdata: felt*, retdata_size: felt) {
     alloc_locals;
 
-    local params_len: felt;
-    let (params) = alloc();
     local compiled_class: CompiledClass*;
-
     %{ ids.compiled_class = segments.gen_arg(get_compiled_class_struct(compiled_class=compiled_class)) %}
-
-    %{
-        ids.params_len = len(params)
-        segments.write_arg(ids.params, [param.value for param in params])
-    %}
 
     let (builtin_costs: felt*) = alloc();
     assert builtin_costs[0] = 0;
@@ -80,8 +72,8 @@ func compute_contract{
     assert calldata[2] = nondet %{ ids.starknet_memorizer.address_.segment_index %};
     assert calldata[3] = nondet %{ ids.starknet_memorizer.address_.offset %};
 
-    memcpy(dst=calldata + 4, src=params, len=params_len);
-    let calldata_size = 4 + params_len;
+    memcpy(dst=calldata + 4, src=module_inputs, len=module_inputs_len);
+    let calldata_size = 4 + module_inputs_len;
 
     with evm_memorizer, starknet_memorizer, pow2_array {
         let (retdata_size, retdata) = run_contract_bootloader(

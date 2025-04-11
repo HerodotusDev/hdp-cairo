@@ -13,7 +13,7 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, felt_to_uint256
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
-from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_bigend
+from starkware.cairo.common.builtin_keccak.keccak import keccak_felts
 from src.contract_bootloader.contract_class.compiled_class import CompiledClass, compiled_class_hash
 from src.contract_bootloader.contract_bootloader import (
     run_contract_bootloader,
@@ -49,16 +49,21 @@ func main{
         compiled_class = dry_run_input.compiled_class
     %}
 
-    local params_len: felt;
-    let (params) = alloc();
+    let (public_inputs) = alloc();
+    %{ segments.write_arg(ids.public_inputs, public_inputs) %}
+    tempvar public_inputs_len: felt = nondet %{ len(public_inputs) %};
+
+    let (private_inputs) = alloc();
+    %{ segments.write_arg(ids.private_inputs, private_inputs) %}
+    tempvar private_inputs_len: felt = nondet %{ len(private_inputs) %};
+
+    let (module_inputs) = alloc();
+    memcpy(dst=module_inputs, src=public_inputs, len=public_inputs_len);
+    memcpy(dst=module_inputs + public_inputs_len, src=private_inputs, len=private_inputs_len);
+    tempvar module_inputs_len: felt = public_inputs_len + private_inputs_len;
+
     local compiled_class: CompiledClass*;
-
     %{ ids.compiled_class = segments.gen_arg(get_compiled_class_struct(compiled_class=compiled_class)) %}
-
-    %{
-        ids.params_len = len(params)
-        segments.write_arg(ids.params, [param.value for param in params])
-    %}
 
     let (builtin_costs: felt*) = alloc();
     assert builtin_costs[0] = 0;
@@ -101,8 +106,8 @@ func main{
     assert calldata[2] = nondet %{ ids.starknet_memorizer.address_.segment_index %};
     assert calldata[3] = nondet %{ ids.starknet_memorizer.address_.offset %};
 
-    memcpy(dst=calldata + 4, src=params, len=params_len);
-    let calldata_size = 4 + params_len;
+    memcpy(dst=calldata + 4, src=module_inputs, len=module_inputs_len);
+    let calldata_size = 4 + module_inputs_len;
 
     let (evm_decoder_ptr: felt**) = alloc();
     let (starknet_decoder_ptr: felt***) = alloc();
@@ -115,8 +120,16 @@ func main{
         );
     }
 
-    assert[output_ptr] = program_hash;
-    let output_ptr = output_ptr + 1;
+    let (task_hash_preimage) = alloc();
+    assert task_hash_preimage[0] = program_hash;
+    memcpy(dst=task_hash_preimage + 1, src=public_inputs, len=public_inputs_len);
+    tempvar task_hash_preimage_len: felt = 1 + public_inputs_len;
+
+    let (taskHash) = keccak_felts(task_hash_preimage_len, task_hash_preimage);
+
+    assert[output_ptr] = taskHash.low;
+    assert[output_ptr + 1] = taskHash.high;
+    let output_ptr = output_ptr + 2;
     
     let (leafs: Uint256*) = alloc();
     felt_array_to_uint256s(counter=retdata_size, retdata=retdata, leafs=leafs);

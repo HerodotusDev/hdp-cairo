@@ -31,7 +31,7 @@ use tokio::{runtime::Handle, task};
 use types::HDPDryRunInput;
 
 pub struct CustomHintProcessor {
-    private_inputs: HDPDryRunInput,
+    inputs: HDPDryRunInput,
     builtin_hint_proc: BuiltinHintProcessor,
     cairo1_builtin_hint_proc: Cairo1HintProcessor,
     hints: HashMap<String, HintImpl>,
@@ -39,9 +39,9 @@ pub struct CustomHintProcessor {
 }
 
 impl CustomHintProcessor {
-    pub fn new(private_inputs: HDPDryRunInput) -> Self {
+    pub fn new(inputs: HDPDryRunInput) -> Self {
         Self {
-            private_inputs,
+            inputs,
             builtin_hint_proc: BuiltinHintProcessor::new_empty(),
             cairo1_builtin_hint_proc: Cairo1HintProcessor::new(Default::default(), Default::default(), true),
             hints: Self::hints(),
