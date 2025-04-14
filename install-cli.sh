@@ -54,7 +54,7 @@ if [ -f "$BIN_DIR/hdp-cli" ] || [ -f "$BASE_DIR/dry_run_compiled.json" ] || [ -f
     echo "Existing HDP installation found."
     read -p "Do you want to overwrite the existing installation? (y/N) " -n 1 -r
     echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    if [[ "$REPLY" != [Yy] ]]; then
         echo "Installation cancelled."
         exit 1
     fi
