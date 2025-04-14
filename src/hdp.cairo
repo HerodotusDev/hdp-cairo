@@ -126,7 +126,7 @@ func run{
     let starknet_key_hasher_ptr = StarknetStateAccess.init();
     let starknet_decoder_ptr = StarknetDecoder.init();
 
-    let (program_hash, retdata, retdata_size) = compute_contract{
+    let (module_hash, retdata, retdata_size) = compute_contract{
         pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
         ecdsa_ptr=ecdsa_ptr,
@@ -153,7 +153,7 @@ func run{
     );
 
     let (task_hash_preimage) = alloc();
-    assert task_hash_preimage[0] = program_hash;
+    assert task_hash_preimage[0] = module_hash;
     memcpy(dst=task_hash_preimage + 1, src=public_inputs, len=public_inputs_len);
     tempvar task_hash_preimage_len: felt = 1 + public_inputs_len;
 

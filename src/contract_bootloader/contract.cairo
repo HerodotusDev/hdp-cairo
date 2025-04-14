@@ -36,7 +36,7 @@ func compute_contract{
     starknet_memorizer: DictAccess*,
     starknet_decoder_ptr: felt***,
     starknet_key_hasher_ptr: felt**,
-}(module_inputs: felt*, module_inputs_len: felt) -> (program_hash: felt, retdata: felt*, retdata_size: felt) {
+}(module_inputs: felt*, module_inputs_len: felt) -> (module_hash: felt, retdata: felt*, retdata_size: felt) {
     alloc_locals;
 
     local compiled_class: CompiledClass*;
@@ -54,9 +54,9 @@ func compute_contract{
         builtin_costs, felt
     );
 
-    let (local program_hash) = compiled_class_hash(compiled_class=compiled_class);
+    let (local module_hash) = compiled_class_hash(compiled_class=compiled_class);
 
-    %{ print("program_hash", hex(ids.program_hash)) %}
+    %{ print("module_hash", hex(ids.module_hash)) %}
 
     %{
         vm_load_program(
@@ -81,5 +81,5 @@ func compute_contract{
         );
     }
 
-    return (program_hash=program_hash, retdata=retdata, retdata_size=retdata_size);
+    return (module_hash=module_hash, retdata=retdata, retdata_size=retdata_size);
 }

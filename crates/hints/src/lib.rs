@@ -47,7 +47,7 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(merkle::HINT_IS_LEFT_SMALLER.into(), merkle::hint_is_left_smaller);
     hints.insert(merkle::HINT_TARGET_TASK_HASH.into(), merkle::hint_target_task_hash);
     hints.insert(print::HINT_PRINT_TASK_RESULT.into(), print::hint_print_task_result);
-    hints.insert(print::PROGRAM_HASH.into(), print::program_hash);
+    hints.insert(print::MODULE_HASH.into(), print::module_hash);
     hints.insert(rlp::divmod::HINT_DIVMOD_RLP.into(), rlp::divmod::hint_divmod_rlp);
     hints.insert(rlp::divmod::HINT_DIVMOD_VALUE.into(), rlp::divmod::hint_divmod_value);
     hints.insert(rlp::item_type::HINT_IS_LONG.into(), rlp::item_type::hint_is_long);

@@ -24,7 +24,7 @@ from src.utils.merkle import compute_merkle_root
 from src.utils.utils import felt_array_to_uint256s
 
 struct DryRunOutput {
-    program_hash: felt,
+    module_hash: felt,
     result: Uint256,
 }
 
@@ -77,9 +77,9 @@ func main{
         builtin_costs, felt
     );
 
-    let (local program_hash) = compiled_class_hash(compiled_class=compiled_class);
+    let (local module_hash) = compiled_class_hash(compiled_class=compiled_class);
 
-    %{ print("program_hash", hex(ids.program_hash)) %}
+    %{ print("module_hash", hex(ids.module_hash)) %}
 
     %{
         vm_load_program(
@@ -121,7 +121,7 @@ func main{
     }
 
     let (task_hash_preimage) = alloc();
-    assert task_hash_preimage[0] = program_hash;
+    assert task_hash_preimage[0] = module_hash;
     memcpy(dst=task_hash_preimage + 1, src=public_inputs, len=public_inputs_len);
     tempvar task_hash_preimage_len: felt = 1 + public_inputs_len;
 

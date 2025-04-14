@@ -14,17 +14,17 @@ use tracing::debug;
 
 use crate::vars;
 
-pub const PROGRAM_HASH: &str = "print(\"program_hash\", hex(ids.program_hash))";
+pub const MODULE_HASH: &str = "print(\"module_hash\", hex(ids.module_hash))";
 
-pub fn program_hash(
+pub fn module_hash(
     vm: &mut VirtualMachine,
     _exec_scopes: &mut ExecutionScopes,
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let program_hash = get_integer_from_var_name(vars::ids::PROGRAM_HASH, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let module_hash = get_integer_from_var_name(vars::ids::MODULE_HASH, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    debug!("program_hash: {}", program_hash);
+    debug!("module_hash: {}", module_hash);
     Ok(())
 }
 

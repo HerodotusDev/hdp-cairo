@@ -62,7 +62,7 @@ pub mod ids {
     pub const N_SELECTED_BUILTINS: &str = "n_selected_builtins";
     pub const PARAMS_LEN: &str = "params_len";
     pub const PARAMS: &str = "params";
-    pub const PROGRAM_HASH: &str = "program_hash";
+    pub const MODULE_HASH: &str = "module_hash";
     pub const Q: &str = "q";
     pub const R: &str = "r";
     pub const RESULT: &str = "result";
