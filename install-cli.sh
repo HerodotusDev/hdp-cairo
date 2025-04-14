@@ -52,7 +52,7 @@ mkdir -p "$BIN_DIR"
 # Check for existing installation
 if [ -f "$BIN_DIR/hdp-cli" ] || [ -f "$BASE_DIR/dry_run_compiled.json" ] || [ -f "$BASE_DIR/sound_run_compiled.json" ]; then
     echo "Existing HDP installation found."
-    read -p "Do you want to overwrite the existing installation? (y/N) " -n 1 -r
+    read -p "Do you want to overwrite the existing installation? (y/N) " -n 1 -r < /dev/tty
     echo
     if [[ "$REPLY" != [Yy] ]]; then
         echo "Installation cancelled."
