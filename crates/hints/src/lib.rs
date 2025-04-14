@@ -35,7 +35,10 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(contract_bootloader::builtins::UPDATE_BUILTIN_PTRS.into(), contract_bootloader::builtins::update_builtin_ptrs);
     hints.insert(contract_bootloader::contract_class::LOAD_CONTRACT_CLASS.into(), contract_bootloader::contract_class::load_contract_class);
     hints.insert(contract_bootloader::dict_manager::DICT_MANAGER_CREATE.into(), contract_bootloader::dict_manager::dict_manager_create);
-    hints.insert(contract_bootloader::params::LOAD_PARMAS.into(), contract_bootloader::params::load_parmas);
+    hints.insert(contract_bootloader::params::LOAD_PRIVATE_INPUTS.into(), contract_bootloader::params::load_private_inputs);
+    hints.insert(contract_bootloader::params::LOAD_PRIVATE_INPUTS_LEN.into(), contract_bootloader::params::load_private_inputs_len);
+    hints.insert(contract_bootloader::params::LOAD_PUBLIC_INPUTS.into(), contract_bootloader::params::load_public_inputs);
+    hints.insert(contract_bootloader::params::LOAD_PUBLIC_INPUTS_LEN.into(), contract_bootloader::params::load_public_inputs_len);
     hints.insert(decoder::evm::has_type_prefix::HINT_HAS_TYPE_PREFIX.into(), decoder::evm::has_type_prefix::hint_has_type_prefix);
     hints.insert(decoder::evm::is_byzantium::HINT_IS_BYZANTIUM.into(), decoder::evm::is_byzantium::hint_is_byzantium);
     hints.insert(decoder::evm::v_is_encoded::HINT_V_IS_ENCODED.into(), decoder::evm::v_is_encoded::hint_v_is_encoded);
@@ -44,7 +47,7 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(merkle::HINT_IS_LEFT_SMALLER.into(), merkle::hint_is_left_smaller);
     hints.insert(merkle::HINT_TARGET_TASK_HASH.into(), merkle::hint_target_task_hash);
     hints.insert(print::HINT_PRINT_TASK_RESULT.into(), print::hint_print_task_result);
-    hints.insert(print::PROGRAM_HASH.into(), print::program_hash);
+    hints.insert(print::MODULE_HASH.into(), print::module_hash);
     hints.insert(rlp::divmod::HINT_DIVMOD_RLP.into(), rlp::divmod::hint_divmod_rlp);
     hints.insert(rlp::divmod::HINT_DIVMOD_VALUE.into(), rlp::divmod::hint_divmod_value);
     hints.insert(rlp::item_type::HINT_IS_LONG.into(), rlp::item_type::hint_is_long);

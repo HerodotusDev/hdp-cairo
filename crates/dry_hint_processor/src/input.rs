@@ -8,7 +8,7 @@ use cairo_vm::{
     Felt252,
 };
 use hints::vars;
-use types::param::Param;
+use types::param;
 
 use super::CustomHintProcessor;
 
@@ -23,8 +23,29 @@ impl CustomHintProcessor {
         _hint_data: &HintProcessorData,
         _constants: &HashMap<String, Felt252>,
     ) -> Result<(), HintError> {
-        exec_scopes.insert_value::<Vec<Param>>(vars::scopes::PARAMS, self.private_inputs.params.to_owned());
-        exec_scopes.insert_value::<CasmContractClass>(vars::scopes::COMPILED_CLASS, self.private_inputs.compiled_class.to_owned());
+        exec_scopes.insert_value::<Vec<Felt252>>(
+            vars::scopes::PUBLIC_INPUTS,
+            self.inputs
+                .params
+                .iter()
+                .filter_map(|f| match f.visibility {
+                    param::Visibility::Public => Some(f.value),
+                    param::Visibility::Private => None,
+                })
+                .collect(),
+        );
+        exec_scopes.insert_value::<Vec<Felt252>>(
+            vars::scopes::PRIVATE_INPUTS,
+            self.inputs
+                .params
+                .iter()
+                .filter_map(|f| match f.visibility {
+                    param::Visibility::Private => Some(f.value),
+                    param::Visibility::Public => None,
+                })
+                .collect(),
+        );
+        exec_scopes.insert_value::<CasmContractClass>(vars::scopes::COMPILED_CLASS, self.inputs.compiled_class.to_owned());
         Ok(())
     }
 }

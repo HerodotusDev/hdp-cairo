@@ -15,7 +15,7 @@ struct MMRMeta {
 }
 
 struct ModuleTask {
-    program_hash: felt,
+    module_hash: felt,
     module_inputs_len: felt,
     module_inputs: felt*,
 }

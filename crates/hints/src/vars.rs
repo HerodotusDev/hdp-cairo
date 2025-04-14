@@ -7,7 +7,8 @@ pub mod scopes {
     pub const HEADER_EVM: &str = "header_evm";
     pub const HEADER_STARKNET: &str = "header_starknet";
     pub const N_SELECTED_BUILTINS: &str = "n_selected_builtins";
-    pub const PARAMS: &str = "params";
+    pub const PUBLIC_INPUTS: &str = "public_inputs";
+    pub const PRIVATE_INPUTS: &str = "private_inputs";
     pub const PROOF: &str = "proof";
     pub const PROOFS: &str = "proofs";
     pub const CHAIN_PROOFS: &str = "chain_proofs";
@@ -21,6 +22,8 @@ pub mod scopes {
 }
 
 pub mod ids {
+    pub const PUBLIC_INPUTS: &str = "public_inputs";
+    pub const PRIVATE_INPUTS: &str = "private_inputs";
     pub const NODES: &str = "nodes";
     pub const NODE: &str = "node";
     pub const N_NODES: &str = "n_nodes";
@@ -59,7 +62,7 @@ pub mod ids {
     pub const N_SELECTED_BUILTINS: &str = "n_selected_builtins";
     pub const PARAMS_LEN: &str = "params_len";
     pub const PARAMS: &str = "params";
-    pub const PROGRAM_HASH: &str = "program_hash";
+    pub const MODULE_HASH: &str = "module_hash";
     pub const Q: &str = "q";
     pub const R: &str = "r";
     pub const RESULT: &str = "result";
