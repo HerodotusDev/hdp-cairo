@@ -25,9 +25,9 @@ func get_rlp_list_meta{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array
 
     local is_long: felt;
     %{
-        if 0xc0 <= ids.first_byte <= 0xf6:
+        if 0xc0 <= ids.first_byte <= 0xf7:
             ids.is_long = 0 # short list
-        elif 0xf7 <= ids.first_byte <= 0xff:
+        elif 0xf8 <= ids.first_byte <= 0xff:
             ids.is_long = 1 # long list
         else:
             assert False, "Invalid RLP list"
@@ -37,12 +37,12 @@ func get_rlp_list_meta{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array
     local bytes_len: felt;
     if (is_long == 0) {
         assert [range_check_ptr] = first_byte - 0xc0;
-        assert [range_check_ptr + 1] = 0xf6 - first_byte;
+        assert [range_check_ptr + 1] = 0xf7 - first_byte;
 
         tempvar range_check_ptr = range_check_ptr + 2;
         return (value_start_offset=rlp_start_offset + 1);
     } else {
-        assert [range_check_ptr] = first_byte - 0xf7;
+        assert [range_check_ptr] = first_byte - 0xf8;
         assert [range_check_ptr + 1] = 0xff - first_byte;
         tempvar range_check_ptr = range_check_ptr + 2;
 
@@ -59,9 +59,9 @@ func get_rlp_list_bytes_len{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_
 
     local is_long: felt;
     %{
-        if 0xc0 <= ids.first_byte <= 0xf6:
+        if 0xc0 <= ids.first_byte <= 0xf7:
             ids.is_long = 0 # short list
-        elif 0xf7 <= ids.first_byte <= 0xff:
+        elif 0xf8 <= ids.first_byte <= 0xff:
             ids.is_long = 1 # long list
         else:
             assert False, "Invalid RLP list"
@@ -71,12 +71,12 @@ func get_rlp_list_bytes_len{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_
     local bytes_len: felt;
     if (is_long == 0) {
         assert [range_check_ptr] = first_byte - 0xc0;
-        assert [range_check_ptr + 1] = 0xf6 - first_byte;
+        assert [range_check_ptr + 1] = 0xf7 - first_byte;
 
         tempvar range_check_ptr = range_check_ptr + 2;
         return (list_bytes_len=first_byte - 0xc0);
     } else {
-        assert [range_check_ptr] = first_byte - 0xf7;
+        assert [range_check_ptr] = first_byte - 0xf8;
         assert [range_check_ptr + 1] = 0xff - first_byte;
         tempvar range_check_ptr = range_check_ptr + 2;
 
@@ -105,39 +105,29 @@ func rlp_list_retrieve{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array
     alloc_locals;
 
     let (item_starts_at_word, item_start_offset) = felt_divmod(item_starts_at_byte, 8);
-    // %{
-    //     print("item_starts_at_word:", ids.item_starts_at_word)
-    //     print("item_start_offset:", ids.item_start_offset)
-    //     print("item_starts_at_byte:", ids.item_starts_at_byte)
-    //     print ("rlp0:", hex(memory[ids.rlp]))
-    // %}
-
     let current_item = extract_byte_at_pos(rlp[item_starts_at_word], item_start_offset, pow2_array);
 
     local item_type: felt;
-    // %{
-    //     #print("current item:", hex(ids.current_item))
-    // %}
+
     %{
         if ids.current_item <= 0x7f:
-            ids.item_type = 0 # single byte
-        elif 0x80 <= ids.current_item <= 0xb6:
-            ids.item_type = 1 # short string
-        elif 0xb7 <= ids.current_item <= 0xbf:
-            ids.item_type = 2 # long string
-        elif 0xc0 <= ids.current_item <= 0xf6:
-            ids.item_type = 3 # short list
-        elif 0xf7 <= ids.current_item <= 0xff:
-            ids.item_type = 4 # long list
+            ids.item_type = 0 # single byte [0x00, 0x7f]
+        elif 0x80 <= ids.current_item <= 0xb7:
+            ids.item_type = 1 # short string [0x80, 0xb7]
+        elif 0xb8 <= ids.current_item <= 0xbf:
+            ids.item_type = 2 # long string [0xb8, 0xbf]
+        elif 0xc0 <= ids.current_item <= 0xf7:
+            ids.item_type = 3 # short list [0xc0, 0xf7]
+        elif 0xf8 <= ids.current_item <= 0xff:
+            ids.item_type = 4 # long list [0xf8, 0xff]
         else:
-            assert False, "Invalid RLP item"
+            assert False, "Invalid RLP item prefix"
     %}
 
     local current_value_len: felt;
     local current_value_starts_at_byte: felt;
     local next_item_starts_at_byte: felt;
 
-    // Single Byte
     if (item_type == 0) {
         assert [range_check_ptr] = 0x7f - current_item;
         assert current_value_len = 1;
@@ -148,22 +138,21 @@ func rlp_list_retrieve{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array
         tempvar range_check_ptr = range_check_ptr;
     }
 
-    // Short String
+    // Short String [0x80, 0xb7]
     if (item_type == 1) {
         assert [range_check_ptr] = current_item - 0x80;
-        assert [range_check_ptr + 1] = 0xb6 - current_item;
+        assert [range_check_ptr + 1] = 0xb7 - current_item;
         assert current_value_len = current_item - 0x80;
         assert current_value_starts_at_byte = item_starts_at_byte + 1;
         assert next_item_starts_at_byte = current_value_starts_at_byte + current_value_len;
-
         tempvar range_check_ptr = range_check_ptr + 2;
     } else {
         tempvar range_check_ptr = range_check_ptr;
     }
 
-    // Long String
+    // Long String [0xb8, 0xbf]
     if (item_type == 2) {
-        assert [range_check_ptr] = current_item - 0xb7;
+        assert [range_check_ptr] = current_item - 0xb8;
         assert [range_check_ptr + 1] = 0xbf - current_item;
         tempvar range_check_ptr = range_check_ptr + 2;
         let len_len = current_item - 0xb7;
@@ -178,27 +167,26 @@ func rlp_list_retrieve{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array
         assert current_value_len = value_len;
         assert current_value_starts_at_byte = item_starts_at_byte + len_len + 1;
         assert next_item_starts_at_byte = current_value_starts_at_byte + current_value_len;
-        tempvar range_check_ptr = range_check_ptr;
+        tempvar range_check_ptr = range_check_ptr; 
     } else {
         tempvar range_check_ptr = range_check_ptr;
     }
 
-    // Short List
+    // Short List [0xc0, 0xf7]
     if (item_type == 3) {
         assert [range_check_ptr] = current_item - 0xc0;
-        assert [range_check_ptr + 1] = 0xf6 - current_item;
+        assert [range_check_ptr + 1] = 0xf7 - current_item;
         assert current_value_len = current_item - 0xc0;
         assert current_value_starts_at_byte = item_starts_at_byte + 1;
         assert next_item_starts_at_byte = current_value_starts_at_byte + current_value_len;
-
         tempvar range_check_ptr = range_check_ptr + 2;
     } else {
         tempvar range_check_ptr = range_check_ptr;
     }
 
-    // Long List
+    // Long List [0xf8, 0xff]
     if (item_type == 4) {
-        assert [range_check_ptr] = current_item - 0xf7;
+        assert [range_check_ptr] = current_item - 0xf8;
         assert [range_check_ptr + 1] = 0xff - current_item;
         tempvar range_check_ptr = range_check_ptr + 2;
         let len_len = current_item - 0xf7;
@@ -212,7 +200,6 @@ func rlp_list_retrieve{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array
         assert current_value_len = item_len;
         assert current_value_starts_at_byte = item_starts_at_byte + len_len + 1;
         assert next_item_starts_at_byte = current_value_starts_at_byte + current_value_len;
-
         tempvar range_check_ptr = range_check_ptr;
     } else {
         tempvar range_check_ptr = range_check_ptr;
@@ -281,7 +268,7 @@ func chunk_to_felt_be{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array:
     // ensure we have a short string
     assert [range_check_ptr] = 8 - bytes_len;
     assert [range_check_ptr + 1] = r - 0x80;
-    assert [range_check_ptr + 2] = 0xb6 - r;
+    assert [range_check_ptr + 2] = 0xb7 - r;
     tempvar range_check_ptr = range_check_ptr + 3;
 
     let result = reverse_chunk_endianess(q, bytes_len - 1);
@@ -313,7 +300,7 @@ func be_chunk_to_felt_be{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_arr
     // ensure we have a short string
     assert [range_check_ptr] = 8 - bytes_len;
     assert [range_check_ptr + 1] = q - 0x80;
-    assert [range_check_ptr + 2] = 0xb6 - q;
+    assert [range_check_ptr + 2] = 0xb7 - q;
     tempvar range_check_ptr = range_check_ptr + 3;
 
     return (r);
@@ -629,17 +616,17 @@ func get_rlp_len{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt
     // %}
     %{
         if ids.current_item <= 0x7f:
-            ids.item_type = 0 # single byte
-        elif 0x80 <= ids.current_item <= 0xb6:
-            ids.item_type = 1 # short string
-        elif 0xb7 <= ids.current_item <= 0xbf:
-            ids.item_type = 2 # long string
-        elif 0xc0 <= ids.current_item <= 0xf6:
-            ids.item_type = 3 # short list
-        elif 0xf7 <= ids.current_item <= 0xff:
-            ids.item_type = 4 # long list
+            ids.item_type = 0 # single byte [0x00, 0x7f]
+        elif 0x80 <= ids.current_item <= 0xb7:
+            ids.item_type = 1 # short string [0x80, 0xb7]
+        elif 0xb8 <= ids.current_item <= 0xbf:
+            ids.item_type = 2 # long string [0xb8, 0xbf]
+        elif 0xc0 <= ids.current_item <= 0xf7:
+            ids.item_type = 3 # short list [0xc0, 0xf7]
+        elif 0xf8 <= ids.current_item <= 0xff:
+            ids.item_type = 4 # long list [0xf8, 0xff]
         else:
-            assert False, "Invalid RLP item"
+            assert False, "Invalid RLP item prefix"
     %}
 
     local current_value_len: felt;
@@ -655,7 +642,7 @@ func get_rlp_len{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt
     // Short String
     if (item_type == 1) {
         assert [range_check_ptr] = current_item - 0x80;
-        assert [range_check_ptr + 1] = 0xb6 - current_item;
+        assert [range_check_ptr + 1] = 0xb7 - current_item;
         assert current_value_len = current_item - 0x80;
         tempvar range_check_ptr = range_check_ptr + 2;
 
@@ -664,7 +651,7 @@ func get_rlp_len{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt
 
     // Long String
     if (item_type == 2) {
-        assert [range_check_ptr] = current_item - 0xb7;
+        assert [range_check_ptr] = current_item - 0xb8;
         assert [range_check_ptr + 1] = 0xbf - current_item;
         tempvar range_check_ptr = range_check_ptr + 2;
         let len_len = current_item - 0xb7;
@@ -682,7 +669,7 @@ func get_rlp_len{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt
     // Short List
     if (item_type == 3) {
         assert [range_check_ptr] = current_item - 0xc0;
-        assert [range_check_ptr + 1] = 0xf6 - current_item;
+        assert [range_check_ptr + 1] = 0xf7 - current_item;
         tempvar range_check_ptr = range_check_ptr + 2;
 
         assert current_value_len = current_item - 0xc0;
@@ -693,7 +680,7 @@ func get_rlp_len{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt
 
     // Long List
     if (item_type == 4) {
-        assert [range_check_ptr] = current_item - 0xf7;
+        assert [range_check_ptr] = current_item - 0xf8;
         assert [range_check_ptr + 1] = 0xff - current_item;
         tempvar range_check_ptr = range_check_ptr + 2;
         let len_len = current_item - 0xf7;
