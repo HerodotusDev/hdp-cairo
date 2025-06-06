@@ -1,14 +1,20 @@
 #![allow(async_fn_in_trait)]
-#![warn(unused_extern_crates)]
-#![warn(unused_crate_dependencies)]
 #![forbid(unsafe_code)]
+#![warn(unused_crate_dependencies)]
+#![warn(unused_extern_crates)]
 
-use std::path::PathBuf;
+use std::{io, path::Path};
 
-use cairo_vm as _;
+use bincode as _;
+use cairo_vm::{
+    self as _,
+    air_public_input::PublicInputError,
+    cairo_run,
+    vm::errors::{cairo_run_errors::CairoRunError, trace_errors::TraceError},
+};
 use clap::Parser;
 use sound_hint_processor as _;
-use sound_run::{Args, HDP_COMPILED_JSON};
+use sound_run::{Args, FileWriter};
 use tracing as _;
 use tracing_subscriber::EnvFilter;
 use types::{error::Error, param::Param, CasmContractClass, ChainProofs, HDPInput};
@@ -20,16 +26,16 @@ async fn main() -> Result<(), Error> {
 
     let args = Args::try_parse_from(std::env::args()).map_err(Error::Cli)?;
 
-    let compiled_class: CasmContractClass = serde_json::from_slice(&std::fs::read(args.compiled_module).map_err(Error::IO)?)?;
-    let params: Vec<Param> = if let Some(input_path) = args.inputs {
+    let compiled_class: CasmContractClass = serde_json::from_slice(&std::fs::read(&args.compiled_module).map_err(Error::IO)?)?;
+    let params: Vec<Param> = if let Some(input_path) = &args.inputs {
         serde_json::from_slice(&std::fs::read(input_path).map_err(Error::IO)?)?
     } else {
         Vec::new()
     };
-    let chain_proofs: Vec<ChainProofs> = serde_json::from_slice(&std::fs::read(args.proofs).map_err(Error::IO)?)?;
+    let chain_proofs: Vec<ChainProofs> = serde_json::from_slice(&std::fs::read(&args.proofs).map_err(Error::IO)?)?;
 
-    let (pie, output) = sound_run::run(
-        args.program.unwrap_or(PathBuf::from(HDP_COMPILED_JSON)),
+    let (cairo_runner, output) = sound_run::run(
+        &args,
         HDPInput {
             chain_proofs,
             compiled_class,
@@ -41,8 +47,65 @@ async fn main() -> Result<(), Error> {
         println!("{:#?}", output);
     }
 
+    if let Some(ref trace_path) = args.trace_file {
+        let relocated_trace = cairo_runner
+            .relocated_trace
+            .as_ref()
+            .ok_or(Error::Trace(TraceError::TraceNotRelocated))?;
+
+        let trace_file = std::fs::File::create(trace_path)?;
+        let mut trace_writer = FileWriter::new(io::BufWriter::with_capacity(3 * 1024 * 1024, trace_file));
+
+        cairo_run::write_encoded_trace(relocated_trace, &mut trace_writer)?;
+        trace_writer.flush()?;
+    }
+
+    if let Some(ref memory_path) = args.memory_file {
+        let memory_file = std::fs::File::create(memory_path)?;
+        let mut memory_writer = FileWriter::new(io::BufWriter::with_capacity(5 * 1024 * 1024, memory_file));
+
+        cairo_run::write_encoded_memory(&cairo_runner.relocated_memory, &mut memory_writer)?;
+        memory_writer.flush()?;
+    }
+
+    if let Some(file_path) = &args.air_public_input {
+        let json = cairo_runner.get_air_public_input()?.serialize_json()?;
+        std::fs::write(file_path, json)?;
+    }
+
+    if let (Some(file_path), Some(ref trace_file), Some(ref memory_file)) = (&args.air_private_input, &args.trace_file, &args.memory_file) {
+        // Get absolute paths of trace_file & memory_file
+        let trace_path = trace_file
+            .as_path()
+            .canonicalize()
+            .unwrap_or(trace_file.clone())
+            .to_string_lossy()
+            .to_string();
+        let memory_path = memory_file
+            .as_path()
+            .canonicalize()
+            .unwrap_or(memory_file.clone())
+            .to_string_lossy()
+            .to_string();
+
+        let json = cairo_runner
+            .get_air_private_input()
+            .to_serializable(trace_path, memory_path)
+            .serialize_json()
+            .map_err(PublicInputError::Serde)?;
+        std::fs::write(file_path, json)?;
+    }
+
     if let Some(ref file_name) = args.cairo_pie_output {
-        pie.write_zip_file(file_name, true)?
+        let file_path = Path::new(file_name);
+        cairo_runner
+            .get_cairo_pie()
+            .map_err(CairoRunError::Runner)?
+            .write_zip_file(file_path, true)?
+    }
+
+    if let Some(ref file_name) = args.cairo_pie_output {
+        cairo_runner.get_cairo_pie().unwrap().write_zip_file(file_name, true)?
     }
 
     Ok(())

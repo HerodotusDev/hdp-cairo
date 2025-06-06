@@ -59,7 +59,7 @@ namespace EvmDecoder {
         pow2_array: felt*,
         evm_decoder_ptr: felt**,
         output_ptr: felt*,
-        keccak_ptr: KeccakBuiltin*,
+        keccak_ptr: felt*,
     }(
         rlp: felt*,
         params: felt*,
@@ -89,7 +89,7 @@ namespace EvmDecoder {
         let pow2_array = cast([ap - 3], felt*);
         let bitwise_ptr = cast([ap - 4], BitwiseBuiltin*);
         let range_check_ptr = [ap - 5];
-        let keccak_ptr = cast([ap - 6], KeccakBuiltin*);
+        let keccak_ptr = cast([ap - 6], felt*);
 
         // Assert correct output_ptr values
         memcpy(dst=output_ptr, src=res_array, len=res_len);
@@ -134,7 +134,7 @@ namespace EvmStateAccess {
         range_check_ptr,
         poseidon_ptr: PoseidonBuiltin*,
         bitwise_ptr: BitwiseBuiltin*,
-        keccak_ptr: KeccakBuiltin*,
+        keccak_ptr: felt*,
         evm_memorizer: DictAccess*,
         evm_decoder_ptr: felt**,
         evm_key_hasher_ptr: felt**,

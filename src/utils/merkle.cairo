@@ -1,17 +1,17 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
-from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_uint256s
+from starkware.cairo.common.cairo_keccak.keccak import cairo_keccak, cairo_keccak_uint256s
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256s
 
 // TODO: it is single task for now
-func compute_tasks_hash{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(
+func compute_tasks_hash{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*}(
     encoded_task: felt*, task_bytes_len: felt
 ) -> Uint256 {
     alloc_locals;
 
-    let (task_hash: Uint256) = keccak(encoded_task, task_bytes_len);
+    let (task_hash: Uint256) = cairo_keccak(encoded_task, task_bytes_len);
     let (task_hash) = uint256_reverse_endian(task_hash);
     %{
         target_task_hash = hex(ids.task_hash.low + ids.task_hash.high*2**128)[2:]
@@ -21,7 +21,7 @@ func compute_tasks_hash{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_pt
     return task_hash;
 }
 
-func compute_tasks_root{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(
+func compute_tasks_root{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*}(
     task_hash: Uint256
 ) -> Uint256 {
     let (leafs: Uint256*) = alloc();
@@ -33,7 +33,7 @@ func compute_tasks_root{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_pt
 }
 
 func compute_results_root{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*
 }(task_hash: Uint256, result: Uint256) -> Uint256 {
     alloc_locals;
     let (local leafs: Uint256*) = alloc();
@@ -46,7 +46,7 @@ func compute_results_root{
     }(leafs=leafs, leafs_len=1);
 }
 
-func compute_merkle_root{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(
+func compute_merkle_root{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*}(
     leafs: Uint256*, leafs_len: felt
 ) -> Uint256 {
     if (leafs_len == 0) {
@@ -58,7 +58,7 @@ func compute_merkle_root{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_p
 
     if (leafs_len == 1) {
         // keccak(leaf)
-        let (res) = keccak_uint256s{range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr}(
+        let (res) = cairo_keccak_uint256s{range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr}(
             n_elements=1, elements=leafs
         );
     
@@ -85,7 +85,7 @@ func compute_merkle_root{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_p
 
 // Implements the merkle tree building logic. This follows the unordered StandardMerkleTree implementation of OpenZeppelin
 func compute_merkle_root_inner{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, tree: Uint256*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*, tree: Uint256*
 }(tree_range: felt, index: felt) {
     if (tree_range + 1 == index) {
         return ();
@@ -103,7 +103,7 @@ func compute_merkle_root_inner{
 // Double hashes the results
 // ToDo: would be nice to have a generic double hash function
 func compute_leaf_hashes{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, tree: Uint256*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*, tree: Uint256*
 }(leafs: Uint256*, leafs_len: felt, tree_len: felt, index: felt) {
     if (index == leafs_len) {
         return ();
@@ -119,7 +119,7 @@ func compute_leaf_hashes{
 
 // Double keccak hashes the leaf to create the leaf hash
 func compute_leaf_hash_inner{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*
 }(leaf: Uint256) -> Uint256 {
     alloc_locals;
     let (first_round_input) = alloc();
@@ -131,7 +131,7 @@ func compute_leaf_hash_inner{
     }(num=leaf, bigend=0);
 
     // hash first round
-    let (first_hash) = keccak(first_round_input_start, 32);
+    let (first_hash) = cairo_keccak(first_round_input_start, 32);
 
     let (second_round_input) = alloc();
     let second_round_input_start = second_round_input;
@@ -139,13 +139,13 @@ func compute_leaf_hash_inner{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, inputs=second_round_input
     }(num=first_hash, bigend=0);
 
-    let (leaf_hash) = keccak(second_round_input_start, 32);
+    let (leaf_hash) = cairo_keccak(second_round_input_start, 32);
     return (leaf_hash);
 }
 
 // Hashes a pair value in the merkle tree.
 // The pair is ordered by the value of the left and right elements.
-func hash_pair{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(
+func hash_pair{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*}(
     left: Uint256, right: Uint256
 ) -> Uint256 {
     alloc_locals;
@@ -187,7 +187,7 @@ func hash_pair{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: Keccak
         assert pair[1] = left;
     }
 
-    let (res) = keccak_uint256s{range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr}(
+    let (res) = cairo_keccak_uint256s{range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr}(
         n_elements=2, elements=pair
     );
 
@@ -201,7 +201,7 @@ func hash_pair{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: Keccak
 // Outputs:
 // - the result entry
 func compute_results_entry{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*
 }(task_hash: Uint256, result: Uint256) -> Uint256 {
     alloc_locals;
 
@@ -220,7 +220,7 @@ func compute_results_entry{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, inputs=values_felt
     }(n_elements=2, elements=values_uint, bigend=0);
 
-    let (res_id) = keccak(values_felt_start, 64);
+    let (res_id) = cairo_keccak(values_felt_start, 64);
 
     return (res_id);
 }

@@ -41,7 +41,7 @@ func run_contract_bootloader{
     ecdsa_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     ec_op_ptr,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     poseidon_ptr: PoseidonBuiltin*,
     range_check96_ptr: felt*,
     add_mod_ptr: ModBuiltin*,
@@ -65,6 +65,7 @@ func run_contract_bootloader{
     // %{ syscall_handler.sha256_segment = ids.sha256_ptr %}
 
     let (__fp__, _) = get_fp_and_pc();
+    let cast_keccak_ptr = cast(keccak_ptr, KeccakBuiltin*);
     local local_builtin_ptrs: BuiltinPointers = BuiltinPointers(
         selectable=SelectableBuiltins(
             pedersen=pedersen_ptr,
@@ -78,7 +79,7 @@ func run_contract_bootloader{
             add_mod=add_mod_ptr,
             mul_mod=mul_mod_ptr,
         ),
-        non_selectable=NonSelectableBuiltins(keccak=keccak_ptr, sha256=sha256_ptr),
+        non_selectable=NonSelectableBuiltins(keccak=cast_keccak_ptr, sha256=sha256_ptr),
     );
     
     let builtin_ptrs = &local_builtin_ptrs;

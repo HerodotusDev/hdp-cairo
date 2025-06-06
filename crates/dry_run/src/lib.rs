@@ -63,13 +63,13 @@ pub fn run(
     Error,
 > {
     let cairo_run_config = cairo_run::CairoRunConfig {
-        layout: LayoutName::all_cairo,
+        layout: LayoutName::all_cairo_stwo,
         secure_run: Some(true),
         allow_missing_builtins: Some(false),
         ..Default::default()
     };
 
-    println!("Program path: {}", program_path.display());
+    debug!("Program path: {}", program_path.display());
     let program_file = std::fs::read(program_path).map_err(Error::IO)?;
     let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))?;
 

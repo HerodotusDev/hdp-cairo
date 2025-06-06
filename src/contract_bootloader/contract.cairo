@@ -24,7 +24,7 @@ func compute_contract{
     ecdsa_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     ec_op_ptr,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     poseidon_ptr: PoseidonBuiltin*,
     range_check96_ptr: felt*,
     add_mod_ptr: ModBuiltin*,

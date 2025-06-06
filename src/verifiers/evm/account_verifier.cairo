@@ -5,7 +5,7 @@ from src.types import ChainInfo
 from src.utils.converter import le_address_chunks_to_felt
 from src.utils.mpt import verify_mpt_proof
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.builtin_keccak.keccak import keccak_bigend
+from starkware.cairo.common.cairo_keccak.keccak import cairo_keccak_bigend
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.registers import get_fp_and_pc
@@ -15,7 +15,7 @@ from starkware.cairo.common.uint256 import Uint256
 func verify_accounts{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     poseidon_ptr: PoseidonBuiltin*,
     evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
@@ -32,7 +32,7 @@ func verify_accounts{
 func verify_accounts_inner{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     poseidon_ptr: PoseidonBuiltin*,
     evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
@@ -56,7 +56,7 @@ func verify_accounts_inner{
     %{ ids.key_leading_zeros = len(account_evm.account_key.lstrip("0x")) - len(account_evm.account_key.lstrip("0x").lstrip("0")) %}
 
     // Validate MPT key matches address
-    let (hash: Uint256) = keccak_bigend(address, 20);
+    let (hash: Uint256) = cairo_keccak_bigend(address, 20);
     assert key.low = hash.low;
     assert key.high = hash.high;
 
@@ -73,7 +73,7 @@ func verify_accounts_inner{
 func verify_account{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     poseidon_ptr: PoseidonBuiltin*,
     evm_memorizer: DictAccess*,
     chain_info: ChainInfo,

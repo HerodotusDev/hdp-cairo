@@ -21,9 +21,11 @@ alloy = { version = "0.12.5", features = ["full"] }
 alloy-rlp = { version = "0.3.5", features = ["derive"] }
 anyhow = "1.0.95"
 axum = { version = "0.8", features = ["tracing"] }
-bincode = { version = "2.0.1", default-features = false, features = ["serde"]}
-cairo-lang-casm = { version = "=2.12.0-dev.0", default-features = false }
-cairo-lang-starknet-classes = "=2.12.0-dev.0"
+bincode = { version = "2.0.0-rc.3", default-features = false, features = [
+    "serde",
+] }
+cairo-lang-casm = { version = "2.12.0-rc.0", default-features = false }
+cairo-lang-starknet-classes = "2.12.0-rc.0"
 cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", ref = "b1a91f929b5fa29a1a2e9e6990a68a1220c0c673", features = ["extensive_hints", "clap", "cairo-1-hints", "mod_builtin"] }
 clap = { version = "4.3.10", features = ["derive"] }
 dotenvy = "0.15.7"
@@ -39,8 +41,11 @@ num-integer = "0.1.46"
 num-traits = "0.2.19"
 rand = "0.8"
 reqwest = "0.12.9"
-serde = "1.0.215"
-serde_json = "1.0.132"
+serde = { version = "1.0", features = ["derive"], default-features = false }
+serde_json = { version = "1.0", features = [
+    "arbitrary_precision",
+    "alloc",
+], default-features = false }
 serde_with = { version = "3.11.0", features = ["hex"] }
 sha3 = "0.10.8"
 starknet = "0.13.0"

@@ -39,6 +39,7 @@ mod module {
         let mut res = array![forbidden_address.into()];
 
         for block in blocks {
+            println!("block number: {:x}", block.block_number);
             res.append(block.block_number.into());
             res.append(block.tx_count.into());
 
@@ -54,6 +55,7 @@ mod module {
                 WITHDRAWAL_EVENT_SIGNATURE,
             ) == true) {
                 for index in 0..block.tx_count {
+                    println!("transaction number: {:x}", index);
                     // Check if the bloom filter in the block receipt contains the specific target
                     // value corresponding to Withdrawal (address to, bytes32 nullifierHash,
                     // index_topic_1 address relayer, uint256 fee) event of

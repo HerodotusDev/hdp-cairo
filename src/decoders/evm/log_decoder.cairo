@@ -34,7 +34,7 @@ namespace LogFieldOffset {
 }
 
 namespace LogDecoder {
-    func get_field{keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    func get_field{keccak_ptr: felt*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
         rlp: felt*,
         field: felt,
         key: LogKey*
@@ -114,7 +114,7 @@ namespace LogDecoder {
         return (res_array=res_array, res_len=0);
     }
 
-    func abi_data_to_uint256_array{keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(res: felt*, res_len: felt, bytes_len: felt, res_array: felt*) {
+    func abi_data_to_uint256_array{keccak_ptr: felt*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(res: felt*, res_len: felt, bytes_len: felt, res_array: felt*) {
         alloc_locals;
 
         if (bytes_len == 0) {

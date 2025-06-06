@@ -32,6 +32,7 @@ fn main() {
     .arg(entrypoint_path.to_str().expect("Failed to convert path to string"))
     .arg("--output")
     .arg(output_file.to_str().expect("Failed to convert path to string"))
+    .arg("--proof_mode")
     .status()
     .expect("Failed to execute cairo-compile");
 

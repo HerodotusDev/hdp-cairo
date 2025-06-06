@@ -1,4 +1,4 @@
-%builtins output pedersen range_check ecdsa bitwise ec_op keccak poseidon range_check96 add_mod mul_mod
+%builtins output pedersen range_check bitwise poseidon
 
 from starkware.cairo.common.cairo_builtins import (
     BitwiseBuiltin,
@@ -13,7 +13,7 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
-from starkware.cairo.common.builtin_keccak.keccak import keccak_felts
+from starkware.cairo.common.cairo_keccak.keccak import cairo_keccak_felts, finalize_keccak
 from starkware.cairo.common.registers import get_label_location
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash_many, poseidon_hash
 
@@ -38,27 +38,15 @@ func main{
     output_ptr: felt*,
     pedersen_ptr: HashBuiltin*,
     range_check_ptr,
-    ecdsa_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    ec_op_ptr,
-    keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    range_check96_ptr: felt*,
-    add_mod_ptr: ModBuiltin*,
-    mul_mod_ptr: ModBuiltin*,
 }() {
     run{
         output_ptr=output_ptr,
         pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
-        ecdsa_ptr=ecdsa_ptr,
         bitwise_ptr=bitwise_ptr,
-        ec_op_ptr=ec_op_ptr,
-        keccak_ptr=keccak_ptr,
         poseidon_ptr=poseidon_ptr,
-        range_check96_ptr=range_check96_ptr,
-        add_mod_ptr=add_mod_ptr,
-        mul_mod_ptr=mul_mod_ptr,
     }();
 
     return ();
@@ -68,14 +56,8 @@ func run{
     output_ptr: felt*,
     pedersen_ptr: HashBuiltin*,
     range_check_ptr,
-    ecdsa_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    ec_op_ptr,
-    keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    range_check96_ptr: felt*,
-    add_mod_ptr: ModBuiltin*,
-    mul_mod_ptr: ModBuiltin*,
 }() {
     alloc_locals;
 
@@ -109,6 +91,14 @@ func run{
     // MMR Params
     let (mmr_metas: MMRMeta*) = alloc();
 
+    let ecdsa_ptr = 0;
+    let ec_op_ptr = 0;
+    let (range_check96_ptr: felt*) = alloc();
+    let (add_mod_ptr: ModBuiltin*) = alloc();
+    let (mul_mod_ptr: ModBuiltin*) = alloc();
+    let (keccak_ptr: felt*) = alloc();
+    local keccak_ptr_start: felt* = keccak_ptr;
+
     let (mmr_metas_len) = run_state_verification{
         range_check_ptr=range_check_ptr,
         pedersen_ptr=pedersen_ptr,
@@ -126,6 +116,7 @@ func run{
     let starknet_key_hasher_ptr = StarknetStateAccess.init();
     let starknet_decoder_ptr = StarknetDecoder.init();
 
+    
     let (module_hash, retdata, retdata_size) = compute_contract{
         pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
@@ -157,7 +148,11 @@ func run{
     memcpy(dst=task_hash_preimage + 1, src=public_inputs, len=public_inputs_len);
     tempvar task_hash_preimage_len: felt = 1 + public_inputs_len;
 
-    let (taskHash) = keccak_felts(task_hash_preimage_len, task_hash_preimage);
+    let (taskHash) = cairo_keccak_felts{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        keccak_ptr=keccak_ptr,
+    }(task_hash_preimage_len, task_hash_preimage);
 
     assert [output_ptr] = taskHash.low;
     assert [output_ptr + 1] = taskHash.high;
@@ -166,7 +161,11 @@ func run{
     let (local leafs: Uint256*) = alloc();
     felt_array_to_uint256s(counter=retdata_size, retdata=retdata, leafs=leafs);
 
-    let output_root = compute_merkle_root(leafs, retdata_size);
+    let output_root = compute_merkle_root{
+        range_check_ptr=range_check_ptr,
+        bitwise_ptr=bitwise_ptr,
+        keccak_ptr=keccak_ptr
+    }(leafs, retdata_size);
     assert [output_ptr + 0] = output_root.low;
     assert [output_ptr + 1] = output_root.high;
     let output_ptr = output_ptr + 2;
@@ -174,6 +173,8 @@ func run{
     mmr_metas_write_output_ptr{output_ptr=output_ptr}(
         mmr_metas=mmr_metas, mmr_metas_len=mmr_metas_len
     );
+
+    finalize_keccak(keccak_ptr_start=keccak_ptr_start, keccak_ptr_end=keccak_ptr);
 
     return ();
 }

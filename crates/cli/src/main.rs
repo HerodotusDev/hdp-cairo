@@ -108,17 +108,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("Reading compiled module from: {}", args.compiled_module.display());
             println!("Reading proofs from: {}", args.proofs.display());
 
-            let compiled_class: CasmContractClass = serde_json::from_slice(&std::fs::read(args.compiled_module).map_err(Error::IO)?)?;
-            let params: Vec<Param> = if let Some(input_path) = args.inputs {
+            let compiled_class: CasmContractClass = serde_json::from_slice(&std::fs::read(&args.compiled_module).map_err(Error::IO)?)?;
+            let params: Vec<Param> = if let Some(input_path) = &args.inputs {
                 serde_json::from_slice(&std::fs::read(input_path).map_err(Error::IO)?)?
             } else {
                 Vec::new()
             };
-            let chain_proofs: Vec<ChainProofs> = serde_json::from_slice(&std::fs::read(args.proofs).map_err(Error::IO)?)?;
+            let chain_proofs: Vec<ChainProofs> = serde_json::from_slice(&std::fs::read(&args.proofs).map_err(Error::IO)?)?;
 
             println!("Executing program...");
-            let (pie, output) = sound_run::run(
-                args.program.unwrap_or(PathBuf::from(HDP_COMPILED_JSON)),
+            let (cairo_runner, output) = sound_run::run(
+                &args,
                 HDPInput {
                     chain_proofs,
                     compiled_class,
@@ -131,7 +131,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
 
             if let Some(ref file_name) = args.cairo_pie_output {
-                pie.write_zip_file(file_name, true)?
+                cairo_runner.get_cairo_pie().unwrap().write_zip_file(file_name, true)?
             }
 
             println!("Sound run completed successfully.");

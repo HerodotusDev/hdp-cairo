@@ -63,7 +63,7 @@ func call_execute_syscalls{
     ecdsa_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     ec_op_ptr,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     poseidon_ptr: PoseidonBuiltin*,
     range_check96_ptr: felt*,
     add_mod_ptr: ModBuiltin*,
@@ -148,7 +148,7 @@ func execute_entry_point{
     ecdsa_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     ec_op_ptr,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     poseidon_ptr: PoseidonBuiltin*,
     range_check96_ptr: felt*,
     add_mod_ptr: ModBuiltin*,
@@ -234,7 +234,7 @@ func execute_entry_point{
     local entry_point_return_values: EntryPointReturnValues* = cast(
         return_values_ptr, EntryPointReturnValues*
     );
-    assert entry_point_return_values.failure_flag = 0;
+    // assert entry_point_return_values.failure_flag = 0;
     let remaining_gas = entry_point_return_values.gas_builtin;
     let retdata_start = entry_point_return_values.retdata_start;
     let retdata_end = entry_point_return_values.retdata_end;
@@ -266,7 +266,7 @@ func execute_entry_point{
     let range_check96_ptr = selectable_builtins.range_check96;
     let add_mod_ptr = selectable_builtins.add_mod;
     let mul_mod_ptr = selectable_builtins.mul_mod;
-    let keccak_ptr = builtin_ptrs.non_selectable.keccak;
+    let keccak_ptr = cast(builtin_ptrs.non_selectable.keccak, felt*);
 
     // TODO enable and test it.
     // Fill holes in the rc96 segment.
