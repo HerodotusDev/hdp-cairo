@@ -78,7 +78,7 @@ pub fn run(args: &Args, input: HDPInput) -> Result<(CairoRunner, HDPOutput), Err
     let cairo_run_config = cairo_run::CairoRunConfig {
         allow_missing_builtins: Some(false),
         layout: LayoutName::recursive_with_poseidon,
-        proof_mode: true,
+        proof_mode: false,
         relocate_mem: args.memory_file.is_some() || args.air_public_input.is_some(),
         secure_run: Some(true),
         trace_enabled,
