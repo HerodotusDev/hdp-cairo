@@ -13,8 +13,12 @@ use cairo_vm::{
 use super::*;
 use crate::vars;
 
-pub const HINT_IS_LONG: &str =
-    "if 0xc0 <= ids.first_byte <= 0xf6:\n    ids.is_long = 0 # short list\nelif 0xf7 <= ids.first_byte <= 0xff:\n    ids.is_long = 1 # long list\nelse:\n    assert False, \"Invalid RLP list\"";
+pub const HINT_IS_LONG: &str = r#"if 0xc0 <= ids.first_byte <= 0xf7:
+    ids.is_long = 0 # short list
+elif 0xf8 <= ids.first_byte <= 0xff:
+    ids.is_long = 1 # long list
+else:
+    assert False, "Invalid RLP list""#;
 
 pub fn hint_is_long(
     vm: &mut VirtualMachine,
@@ -24,9 +28,9 @@ pub fn hint_is_long(
 ) -> Result<(), HintError> {
     let first_byte = get_integer_from_var_name(vars::ids::FIRST_BYTE, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    let insert = if FELT_C0 <= first_byte && first_byte <= FELT_F6 {
+    let insert = if FELT_C0 <= first_byte && first_byte <= FELT_F7 {
         Felt252::ZERO
-    } else if FELT_F7 <= first_byte && first_byte <= FELT_FF {
+    } else if FELT_F8 <= first_byte && first_byte <= FELT_FF {
         Felt252::ONE
     } else {
         return Err(HintError::UnknownIdentifier("Invalid RLP list".to_string().into_boxed_str()));
@@ -41,7 +45,18 @@ pub fn hint_is_long(
     )
 }
 
-pub const HINT_ITEM_TYPE: &str = "if ids.current_item <= 0x7f:\n    ids.item_type = 0 # single byte\nelif 0x80 <= ids.current_item <= 0xb6:\n    ids.item_type = 1 # short string\nelif 0xb7 <= ids.current_item <= 0xbf:\n    ids.item_type = 2 # long string\nelif 0xc0 <= ids.current_item <= 0xf6:\n    ids.item_type = 3 # short list\nelif 0xf7 <= ids.current_item <= 0xff:\n    ids.item_type = 4 # long list\nelse:\n    assert False, \"Invalid RLP item\"";
+pub const HINT_ITEM_TYPE: &str = r#"if ids.current_item <= 0x7f:
+    ids.item_type = 0 # single byte [0x00, 0x7f]
+elif 0x80 <= ids.current_item <= 0xb7:
+    ids.item_type = 1 # short string [0x80, 0xb7]
+elif 0xb8 <= ids.current_item <= 0xbf:
+    ids.item_type = 2 # long string [0xb8, 0xbf]
+elif 0xc0 <= ids.current_item <= 0xf7:
+    ids.item_type = 3 # short list [0xc0, 0xf7]
+elif 0xf8 <= ids.current_item <= 0xff:
+    ids.item_type = 4 # long list [0xf8, 0xff]
+else:
+    assert False, "Invalid RLP item prefix""#;
 
 pub fn hint_item_type(
     vm: &mut VirtualMachine,
@@ -52,14 +67,14 @@ pub fn hint_item_type(
     let current_item = get_integer_from_var_name(vars::ids::CURRENT_ITEM, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     let insert = if current_item <= FELT_7F {
-        Felt252::ZERO
-    } else if FELT_80 <= current_item && current_item <= FELT_B6 {
+        Felt252::ZERO // single byte
+    } else if FELT_80 <= current_item && current_item <= FELT_B7 {
         Felt252::ONE // short string
-    } else if FELT_B7 <= current_item && current_item <= FELT_BF {
+    } else if FELT_B8 <= current_item && current_item <= FELT_BF {
         Felt252::TWO // long string
-    } else if FELT_C0 <= current_item && current_item <= FELT_F6 {
+    } else if FELT_C0 <= current_item && current_item <= FELT_F7 {
         Felt252::THREE // short list
-    } else if FELT_F7 <= current_item && current_item <= FELT_FF {
+    } else if FELT_F8 <= current_item && current_item <= FELT_FF {
         FELT_4 // long list
     } else {
         return Err(HintError::UnknownIdentifier("Invalid RLP item".to_string().into_boxed_str()));
