@@ -141,3 +141,15 @@ func felt_array_to_uint256s{range_check_ptr}(counter: felt, retdata: felt*, leaf
     assert[leafs] = res;
     return felt_array_to_uint256s(counter=counter - 1, retdata=retdata + 1, leafs=leafs + 2);
 }
+
+
+func felt_array_to_le_uint256s{range_check_ptr}(counter: felt, retdata: felt*, leafs: Uint256*) {
+    if (counter == 0) {
+        return ();
+    }
+
+    let res = felt_to_uint256([retdata]);
+    let (res_le) = uint256_reverse_endian(res);
+    assert[leafs] = res_le;
+    return felt_array_to_le_uint256s(counter=counter - 1, retdata=retdata + 1, leafs=leafs + 2);
+}

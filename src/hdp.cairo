@@ -20,7 +20,7 @@ from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash_many,
 from src.verifiers.verify import run_state_verification
 from src.utils.merkle import compute_merkle_root
 from src.types import MMRMeta
-from src.utils.utils import mmr_metas_write_output_ptr, felt_array_to_uint256s
+from src.utils.utils import mmr_metas_write_output_ptr, felt_array_to_le_uint256s
 from src.memorizers.evm.memorizer import EvmMemorizer
 from src.memorizers.starknet.memorizer import StarknetMemorizer
 from src.memorizers.bare import BareMemorizer, SingleBareMemorizer
@@ -164,7 +164,7 @@ func run{
     let output_ptr = output_ptr + 2;
 
     let (local leafs: Uint256*) = alloc();
-    felt_array_to_uint256s(counter=retdata_size, retdata=retdata, leafs=leafs);
+    felt_array_to_le_uint256s(counter=retdata_size, retdata=retdata, leafs=leafs);
 
     let output_root = compute_merkle_root(leafs, retdata_size);
     assert [output_ptr + 0] = output_root.low;
@@ -177,3 +177,8 @@ func run{
 
     return ();
 }
+
+
+[1122, 2211] -> 2211 * 2^128 + 1122
+
+
