@@ -22,6 +22,7 @@ func run_state_verification{
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
     starknet_memorizer: DictAccess*,
+    injected_state_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
     chain_info: ChainInfo,
 }(mmr_meta_idx: felt) -> (mmr_meta_idx: felt) {

@@ -12,7 +12,7 @@ use std::{
 use alloy::hex::FromHexError;
 use clap::Parser;
 use dotenvy as _;
-use dry_hint_processor::syscall_handler::{evm, starknet};
+use dry_hint_processor::syscall_handler::{evm, injected_state, starknet};
 use eth_trie_proofs::{tx_receipt_trie::TxReceiptsMptHandler, tx_trie::TxsMptHandler};
 use futures::StreamExt;
 use indexer::models::IndexerError;
@@ -386,7 +386,7 @@ impl<'a> Fetcher<'a> {
 }
 
 pub async fn run_fetcher(
-    syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler>,
+    syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>,
 ) -> Result<Vec<ChainProofs>, FetcherError> {
     let proof_keys = parse_syscall_handler(syscall_handler)?;
     let fetcher = Fetcher::new(&proof_keys);
@@ -423,7 +423,7 @@ where
 }
 
 pub fn parse_syscall_handler(
-    syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler>,
+    syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>,
 ) -> Result<ProofKeys, FetcherError> {
     let mut proof_keys = ProofKeys::default();
 

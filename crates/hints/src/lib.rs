@@ -61,6 +61,8 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(segments::SEGMENTS_ADD_EVM_STARKNET_MEMORIZER_INDEX.into(), segments::segments_add_evm_starknet_memorizer_index);
     hints.insert(segments::SEGMENTS_ADD_FP.into(), segments::segments_add_fp);
     hints.insert(segments::SEGMENTS_ADD_STARKNET_MEMORIZER_OFFSET.into(), segments::segments_add_starknet_memorizer_offset);
+    hints.insert(segments::SEGMENTS_ADD_INJECTED_STATE_MEMORIZER_INDEX.into(), segments::segments_add_injected_state_memorizer_index);
+    hints.insert(segments::SEGMENTS_ADD_INJECTED_STATE_MEMORIZER_OFFSET.into(), segments::segments_add_injected_state_memorizer_offset);
     hints.insert(segments::SEGMENTS_ADD.into(), segments::segments_add);
     hints.insert(verifiers::evm::account_verifier::HINT_ACCOUNT_KEY_LEADING_ZEROS.into(), verifiers::evm::account_verifier::hint_account_key_leading_zeros);
     hints.insert(verifiers::evm::account_verifier::HINT_ACCOUNT_KEY.into(), verifiers::evm::account_verifier::hint_account_key);
@@ -187,6 +189,7 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(utils::debug::PRINT_FELT.into(), utils::debug::print_felt);
     hints.insert(utils::debug::PRINT_STRING.into(), utils::debug::print_string);
     hints.insert(utils::debug::PRINT_FELT_HEX.into(), utils::debug::print_felt_hex);
+    hints.insert(utils::debug::PRINT_DEBUG_BREAKPOINT.into(), utils::debug::print_debug_breakpoint);
 
     hints
 }

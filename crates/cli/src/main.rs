@@ -8,7 +8,7 @@ use std::{fs, path::PathBuf};
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use cairo_vm::{cairo_run, program_hash::compute_program_hash_chain};
 use clap::{Parser, Subcommand};
-use dry_hint_processor::syscall_handler::{evm, starknet};
+use dry_hint_processor::syscall_handler::{evm, injected_state, starknet};
 use dry_run::{Program, DRY_RUN_COMPILED_JSON};
 use fetcher::run_fetcher;
 use sound_run::HDP_COMPILED_JSON;
@@ -73,8 +73,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             std::fs::write(
                 args.output,
-                serde_json::to_vec::<SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler>>(&syscall_handler)
-                    .map_err(|e| Error::IO(e.into()))?,
+                serde_json::to_vec::<
+                    SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>,
+                >(&syscall_handler)
+                .map_err(|e| Error::IO(e.into()))?,
             )
             .map_err(Error::IO)?;
 
@@ -87,8 +89,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("Reading input file from: {}", args.inputs.display());
             let input_file = fs::read(&args.inputs)?;
 
-            let syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler> =
-                serde_json::from_slice(&input_file)?;
+            let syscall_handler: SyscallHandler<
+                evm::CallContractHandler,
+                starknet::CallContractHandler,
+                injected_state::CallContractHandler,
+            > = serde_json::from_slice(&input_file)?;
 
             let chain_proofs = run_fetcher(syscall_handler).await?;
 

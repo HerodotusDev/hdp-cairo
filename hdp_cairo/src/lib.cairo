@@ -8,7 +8,7 @@ pub mod starknet;
 pub struct HDP {
     pub evm: EvmMemorizer,
     pub starknet: StarknetMemorizer,
-    // pub injected_state: InjectedState --  TODO: uncomment when ready
+    pub injected_state: InjectedStateMemorizer,
 }
 
 #[derive(Serde, Drop)]
@@ -28,6 +28,6 @@ struct StarknetMemorizer {
 }
 
 #[derive(Serde, Drop)]
-pub struct InjectedState {
+struct InjectedStateMemorizer {
     pub dict: RelocatableValue,
 }

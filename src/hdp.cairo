@@ -26,6 +26,7 @@ from src.memorizers.starknet.memorizer import StarknetMemorizer
 from src.memorizers.bare import BareMemorizer, SingleBareMemorizer
 from src.memorizers.evm.state_access import EvmStateAccess, EvmDecoder
 from src.memorizers.starknet.state_access import StarknetStateAccess, StarknetDecoder
+from src.memorizers.injected_state.memorizer import InjectedStateMemorizer
 from src.utils.chain_info import Layout
 from src.utils.merkle import compute_tasks_hash, compute_tasks_root, compute_results_root
 from src.utils.chain_info import fetch_chain_info
@@ -102,6 +103,7 @@ func run{
     // Memorizers
     let (evm_memorizer, evm_memorizer_start) = EvmMemorizer.init();
     let (starknet_memorizer, starknet_memorizer_start) = StarknetMemorizer.init();
+    let (injected_state_memorizer, injected_state_memorizer_start) = InjectedStateMemorizer.init();
 
     // Misc
     let pow2_array: felt* = pow2alloc251();
@@ -118,6 +120,7 @@ func run{
         pow2_array=pow2_array,
         evm_memorizer=evm_memorizer,
         starknet_memorizer=starknet_memorizer,
+        injected_state_memorizer=injected_state_memorizer,
         mmr_metas=mmr_metas,
     }();
 
@@ -144,12 +147,16 @@ func run{
         starknet_memorizer=starknet_memorizer,
         starknet_decoder_ptr=starknet_decoder_ptr,
         starknet_key_hasher_ptr=starknet_key_hasher_ptr,
+        injected_state_memorizer=injected_state_memorizer,
     }(module_inputs, module_inputs_len);
 
     // Post Verification Checks: Ensure dict consistency
     default_dict_finalize(evm_memorizer_start, evm_memorizer, BareMemorizer.DEFAULT_VALUE);
     default_dict_finalize(
         starknet_memorizer_start, starknet_memorizer, BareMemorizer.DEFAULT_VALUE
+    );
+    default_dict_finalize(
+        injected_state_memorizer_start, injected_state_memorizer, BareMemorizer.DEFAULT_VALUE
     );
 
     let (task_hash_preimage) = alloc();
