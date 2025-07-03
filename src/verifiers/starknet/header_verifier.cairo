@@ -146,15 +146,18 @@ func compute_blockhash{
     if (blockhash_preimage[0] == 0x535441524B4E45545F424C4F434B5F4841534830) {
         let (blockhash) = poseidon_hash_many(n=17, elements=blockhash_preimage);
         return (res=blockhash);
-    } else {
-        let initial_hash = [blockhash_preimage];
-        let hash_ptr = pedersen_ptr;
-        with hash_ptr {
-            let (blockhash) = hash_felts_no_padding(
-                data_ptr=blockhash_preimage + 1, data_length=12, initial_hash=initial_hash
-            );
-        }
-        let pedersen_ptr = hash_ptr;
+    }
+    if (blockhash_preimage[0] == 0x535441524B4E45545F424C4F434B5F4841534831) {
+        let (blockhash) = poseidon_hash_many(n=14, elements=blockhash_preimage);
         return (res=blockhash);
     }
+    let initial_hash = [blockhash_preimage];
+    let hash_ptr = pedersen_ptr;
+    with hash_ptr {
+        let (blockhash) = hash_felts_no_padding(
+            data_ptr=blockhash_preimage + 1, data_length=12, initial_hash=initial_hash
+        );
+    }
+    let pedersen_ptr = hash_ptr;
+    return (res=blockhash);
 }
