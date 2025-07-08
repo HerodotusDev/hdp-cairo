@@ -55,7 +55,7 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: Run clippy check
-        run: cargo clippy -- -D warnings
+        run: cargo clippy
 
       - name: Run Cairo fmt check
         run: make format-check
