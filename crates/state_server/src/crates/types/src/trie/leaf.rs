@@ -21,18 +21,12 @@ pub struct LeafUpdate {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LeafData {
-    pub has_delegated: bool,
-    pub voting_power: Felt,
-    pub commitment: Felt,
+    pub value: Felt,
 }
 
 impl LeafData {
-    pub fn new(has_delegated: bool, voting_power: Felt) -> Self {
-        Self {
-            has_delegated,
-            voting_power,
-            commitment: keccak_hash_truncated(Felt::from(has_delegated as u64), voting_power),
-        }
+    pub fn new(value: Felt) -> Self {
+        Self { value }
     }
 }
 
@@ -56,33 +50,19 @@ impl LeafUpdate {
     }
 }
 impl TrieLeaf {
-    pub fn new(address: Felt, has_delegated: bool, voting_power: Felt) -> Self {
-        let data = LeafData::new(has_delegated, voting_power);
+    pub fn new(address: Felt, value: Felt) -> Self {
+        let data = LeafData::new(value);
         Self { address, data }
     }
 
     pub fn empty(address: Felt) -> Self {
-        let data = LeafData {
-            has_delegated: false,
-            voting_power: Felt::ZERO,
-            commitment: Felt::ZERO,
-        };
+        let data = LeafData::new(Felt::ZERO);
 
         Self { address, data }
     }
 
-    pub fn set_has_delegated(&self) -> LeafUpdate {
-        let new_data = LeafData::new(true, self.data.voting_power);
-        LeafUpdate {
-            address: self.address,
-            old_data: self.data.clone(),
-            new_data,
-        }
-    }
-
-    pub fn increase_voting_power(&self, amount: Felt) -> LeafUpdate {
-        let new_data = LeafData::new(self.data.has_delegated, self.data.voting_power + amount);
-
+    pub fn set_value(&self, value: Felt) -> LeafUpdate {
+        let new_data = LeafData::new(value);
         LeafUpdate {
             address: self.address,
             old_data: self.data.clone(),
@@ -91,7 +71,7 @@ impl TrieLeaf {
     }
 
     pub fn commitment(&self) -> Felt {
-        self.data.commitment
+        self.data.value
     }
 
     pub fn get_key(&self) -> Felt {
@@ -108,20 +88,14 @@ impl TrieLeaf {
     }
 }
 
-pub fn generate_preimage<H: FeltHash>(
-    preimage: &mut HashMap<String, Vec<String>>,
-    proof: Vec<(TrieNode, Felt)>,
-) {
+pub fn generate_preimage<H: FeltHash>(preimage: &mut HashMap<String, Vec<String>>, proof: Vec<(TrieNode, Felt)>) {
     proof.iter().for_each(|(node, _)| {
         let hash = node.hash::<H>();
         match node {
             TrieNode::Binary { left, right } => {
                 let _ = preimage.insert(
                     hex::encode(hash.to_be_bytes()),
-                    vec![
-                        hex::encode(left.to_be_bytes()),
-                        hex::encode(right.to_be_bytes()),
-                    ],
+                    vec![hex::encode(left.to_be_bytes()), hex::encode(right.to_be_bytes())],
                 );
             }
             TrieNode::Edge { child, path } => {

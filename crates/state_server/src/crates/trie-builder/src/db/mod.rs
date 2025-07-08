@@ -25,8 +25,11 @@ impl ConnectionManager {
     }
 
     pub fn create_table(&self) -> Result<(), Error> {
+        // Drop existing tables first to ensure clean schema
+        let _ = self.delete_tables();
+
         self.get_connection()?.execute(
-            "CREATE TABLE IF NOT EXISTS trie_nodes (
+            "CREATE TABLE trie_nodes (
                 idx INTEGER PRIMARY KEY,
                 hash BLOB NOT NULL,
                 data BLOB,
@@ -36,12 +39,10 @@ impl ConnectionManager {
         )?;
 
         self.get_connection()?.execute(
-            "CREATE TABLE IF NOT EXISTS leafs (
+            "CREATE TABLE leafs (
                 idx INTEGER PRIMARY KEY,
                 key BLOB NOT NULL,
-                commitment BLOB NOT NULL,
-                has_delegated INTEGER NOT NULL,
-                voting_power BLOB NOT NULL
+                value BLOB NOT NULL
             )",
             [],
         )?;

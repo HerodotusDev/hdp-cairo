@@ -12,11 +12,13 @@ use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
-use tracing::info;
+use tracing::{debug, info};
 use uuid;
 
 pub mod merkle_tree;
 
+use pathfinder_common::hash::TruncatedKeccakHash;
+use pathfinder_merkle_tree::tree::MerkleTree;
 use trie_builder::{
     db::{trie::TrieDB, ConnectionManager},
     state_server_types::trie::leaf::TrieLeaf,
@@ -52,25 +54,34 @@ impl StateServerTrie {
         }
 
         let conn = self.db_connection_manager.get_connection()?;
-        let (storage, mut trie) = Trie::load(self.root_idx, &conn);
 
         // Convert key and value to Felt
         let key_felt = self.string_to_felt(&key)?;
         let value_felt = self.string_to_felt(&value)?;
 
         // Create a new leaf with the key-value pair
-        let leaf = TrieLeaf::new(key_felt, false, value_felt);
+        let leaf = TrieLeaf::new(key_felt, value_felt);
+
+        // For the first insertion (root_idx is from init with zero leaf), create a fresh trie
+        // For subsequent insertions, load the existing trie
+        let (storage, mut trie) = if self.root_hash == pathfinder_crypto::Felt::ZERO {
+            // First real insertion - create fresh trie
+            (TrieDB::new(&conn), MerkleTree::<TruncatedKeccakHash, 251>::empty())
+        } else {
+            // Load existing trie
+            Trie::load(self.root_idx, &conn)
+        };
 
         // Set the leaf in the trie
         trie.set(&storage, leaf.get_path(), leaf.commitment())?;
 
         // Commit the changes
         let update = trie.commit(&storage)?;
-        Trie::persist_updates(&storage, &update, &vec![leaf])?;
+        let new_root_idx = Trie::persist_updates(&storage, &update, &vec![leaf])?;
 
         // Update our root hash and index
         self.root_hash = update.root_commitment;
-        self.root_idx = pathfinder_storage::TrieStorageIndex::from(storage.get_node_idx_by_hash(update.root_commitment)?.unwrap());
+        self.root_idx = new_root_idx;
 
         Ok(())
     }
@@ -81,8 +92,8 @@ impl StateServerTrie {
             if let Ok(key_felt) = self.string_to_felt(key) {
                 if let Ok(leaf) = storage.get_leaf(key_felt) {
                     // Check if the leaf has actual data (non-zero voting power)
-                    if leaf.data.voting_power != pathfinder_crypto::Felt::ZERO {
-                        return Some(self.felt_to_string(leaf.data.voting_power));
+                    if leaf.data.value != pathfinder_crypto::Felt::ZERO {
+                        return Some(self.felt_to_string(leaf.data.value));
                     }
                 }
             }
@@ -103,7 +114,7 @@ impl StateServerTrie {
         match storage.get_leaf(key_felt) {
             Ok(leaf) => {
                 // Check if the leaf has actual data
-                if leaf.data.voting_power == pathfinder_crypto::Felt::ZERO {
+                if leaf.data.value == pathfinder_crypto::Felt::ZERO {
                     return Ok(Vec::new());
                 }
 
@@ -285,7 +296,8 @@ async fn get_proof(
 ) -> Result<Json<serde_json::Value>, StatusCode> {
     if let Some(trie) = state.tries.get(&trie_id) {
         if trie.string_to_felt(&params.key).is_err() {
-            return Err(StatusCode::BAD_REQUEST);
+            debug!("Invalid key: {:?}", params.key);
+            return Err(StatusCode::NOT_FOUND);
         }
         let value = trie.get(&params.key);
         let proof = trie.generate_proof(&params.key).unwrap_or_default();
@@ -301,6 +313,14 @@ async fn get_proof(
     }
 }
 
+async fn check_trie_exists(State(state): State<AppState>, Path(trie_id): Path<String>) -> Result<Json<serde_json::Value>, StatusCode> {
+    let exists = state.tries.contains_key(&trie_id);
+    Ok(Json(serde_json::json!({
+        "trie_id": trie_id,
+        "exists": exists
+    })))
+}
+
 // Router setup
 pub fn create_router() -> Router {
     let state = AppState::new();
@@ -310,6 +330,7 @@ pub fn create_router() -> Router {
         .route("/update-trie/:trie_id", post(update_trie))
         .route("/get-root-hash/:trie_id", get(get_root_hash))
         .route("/get-proof/:trie_id", get(get_proof))
+        .route("/check-trie/:trie_id", get(check_trie_exists))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(state)
@@ -329,6 +350,7 @@ pub async fn start_server(port: u16) -> anyhow::Result<()> {
     info!("  POST /update-trie/{{trie_id}} - Update an existing trie");
     info!("  GET /get-root-hash/{{trie_id}} - Get root hash of a trie");
     info!("  GET /get-proof/{{trie_id}}?key=<key> - Get inclusion proof for a key");
+    info!("  GET /check-trie/{{trie_id}} - Check if a trie exists");
 
     axum::serve(listener, app).await?;
     Ok(())
@@ -351,6 +373,7 @@ mod tests {
             .route("/update-trie/:trie_id", post(update_trie))
             .route("/get-root-hash/:trie_id", get(get_root_hash))
             .route("/get-proof/:trie_id", get(get_proof))
+            .route("/check-trie/:trie_id", get(check_trie_exists))
             .layer(CorsLayer::permissive())
             .layer(TraceLayer::new_for_http())
             .with_state(state)
@@ -359,12 +382,13 @@ mod tests {
     #[tokio::test]
     async fn test_new_trie_with_id() {
         let app = create_router();
+        let trie_id = format!("test-new-trie-{}", uuid::Uuid::new_v4());
 
         let request = Request::builder()
             .method("POST")
             .uri("/new-trie")
             .header("content-type", "application/json")
-            .body(Body::from(r#"{"id": "test-trie"}"#))
+            .body(Body::from(format!(r#"{{"id": "{}"}}"#, trie_id)))
             .unwrap();
 
         let response = app.oneshot(request).await.unwrap();
@@ -376,7 +400,7 @@ mod tests {
         let response_text = String::from_utf8(body_bytes.to_vec()).unwrap();
         let response_body: serde_json::Value = serde_json::from_str(&response_text).unwrap();
 
-        assert_eq!(response_body["trie_id"], "test-trie");
+        assert_eq!(response_body["trie_id"], trie_id);
         assert!(!response_body["root_hash"].is_null());
         assert!(response_body["root_hash"].is_string());
     }
@@ -410,6 +434,7 @@ mod tests {
     #[tokio::test]
     async fn test_update_trie_success() {
         let state = AppState::new();
+        let trie_id = format!("test-update-trie-{}", uuid::Uuid::new_v4());
 
         // First create a trie
         let app = create_test_router_with_state(state.clone());
@@ -417,7 +442,7 @@ mod tests {
             .method("POST")
             .uri("/new-trie")
             .header("content-type", "application/json")
-            .body(Body::from(r#"{"id": "test-trie"}"#))
+            .body(Body::from(format!(r#"{{"id": "{}"}}"#, trie_id)))
             .unwrap();
 
         let create_response = app.oneshot(create_request).await.unwrap();
@@ -427,7 +452,7 @@ mod tests {
         let app = create_test_router_with_state(state);
         let update_request = Request::builder()
             .method("POST")
-            .uri("/update-trie/test-trie")
+            .uri(&format!("/update-trie/{}", trie_id))
             .header("content-type", "application/json")
             .body(Body::from(r#"{"key": "0x1", "value": "0x42"}"#))
             .unwrap();
@@ -441,7 +466,7 @@ mod tests {
         let response_text = String::from_utf8(body_bytes.to_vec()).unwrap();
         let response_body: serde_json::Value = serde_json::from_str(&response_text).unwrap();
 
-        assert_eq!(response_body["trie_id"], "test-trie");
+        assert_eq!(response_body["trie_id"], trie_id);
         assert!(!response_body["new_root_hash"].is_null());
         assert!(response_body["new_root_hash"].is_string());
     }
@@ -464,6 +489,7 @@ mod tests {
     #[tokio::test]
     async fn test_update_trie_invalid_key() {
         let state = AppState::new();
+        let trie_id = format!("test-invalid-key-{}", uuid::Uuid::new_v4());
 
         // First create a trie
         let app = create_test_router_with_state(state.clone());
@@ -471,7 +497,7 @@ mod tests {
             .method("POST")
             .uri("/new-trie")
             .header("content-type", "application/json")
-            .body(Body::from(r#"{"id": "test-trie"}"#))
+            .body(Body::from(format!(r#"{{"id": "{}"}}"#, trie_id)))
             .unwrap();
 
         app.oneshot(create_request).await.unwrap();
@@ -480,7 +506,7 @@ mod tests {
         let app = create_test_router_with_state(state);
         let update_request = Request::builder()
             .method("POST")
-            .uri("/update-trie/test-trie")
+            .uri(&format!("/update-trie/{}", trie_id))
             .header("content-type", "application/json")
             .body(Body::from(r#"{"key": "invalid_key", "value": "0x42"}"#))
             .unwrap();
@@ -492,6 +518,7 @@ mod tests {
     #[tokio::test]
     async fn test_update_trie_empty_key() {
         let state = AppState::new();
+        let trie_id = format!("test-empty-key-{}", uuid::Uuid::new_v4());
 
         // First create a trie
         let app = create_test_router_with_state(state.clone());
@@ -499,7 +526,7 @@ mod tests {
             .method("POST")
             .uri("/new-trie")
             .header("content-type", "application/json")
-            .body(Body::from(r#"{"id": "test-trie"}"#))
+            .body(Body::from(format!(r#"{{"id": "{}"}}"#, trie_id)))
             .unwrap();
 
         app.oneshot(create_request).await.unwrap();
@@ -508,7 +535,7 @@ mod tests {
         let app = create_test_router_with_state(state);
         let update_request = Request::builder()
             .method("POST")
-            .uri("/update-trie/test-trie")
+            .uri(&format!("/update-trie/{}", trie_id))
             .header("content-type", "application/json")
             .body(Body::from(r#"{"key": "", "value": "0x42"}"#))
             .unwrap();
@@ -520,6 +547,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_root_hash_success() {
         let state = AppState::new();
+        let trie_id = format!("test-get-root-hash-{}", uuid::Uuid::new_v4());
 
         // First create a trie
         let app = create_test_router_with_state(state.clone());
@@ -527,7 +555,7 @@ mod tests {
             .method("POST")
             .uri("/new-trie")
             .header("content-type", "application/json")
-            .body(Body::from(r#"{"id": "test-trie"}"#))
+            .body(Body::from(format!(r#"{{"id": "{}"}}"#, trie_id)))
             .unwrap();
 
         app.oneshot(create_request).await.unwrap();
@@ -536,7 +564,7 @@ mod tests {
         let app = create_test_router_with_state(state);
         let request = Request::builder()
             .method("GET")
-            .uri("/get-root-hash/test-trie")
+            .uri(&format!("/get-root-hash/{}", trie_id))
             .body(Body::empty())
             .unwrap();
 
@@ -547,7 +575,7 @@ mod tests {
         let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
         let response_body: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
 
-        assert_eq!(response_body["trie_id"], "test-trie");
+        assert_eq!(response_body["trie_id"], trie_id);
         assert!(!response_body["root_hash"].is_null());
     }
 
@@ -568,6 +596,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_proof_success() {
         let state = AppState::new();
+        let trie_id = format!("test-get-proof-{}", uuid::Uuid::new_v4());
 
         // First create a trie
         let app = create_test_router_with_state(state.clone());
@@ -575,7 +604,7 @@ mod tests {
             .method("POST")
             .uri("/new-trie")
             .header("content-type", "application/json")
-            .body(Body::from(r#"{"id": "test-trie"}"#))
+            .body(Body::from(format!(r#"{{"id": "{}"}}"#, trie_id)))
             .unwrap();
 
         app.oneshot(create_request).await.unwrap();
@@ -584,7 +613,7 @@ mod tests {
         let app = create_test_router_with_state(state.clone());
         let update_request = Request::builder()
             .method("POST")
-            .uri("/update-trie/test-trie")
+            .uri(&format!("/update-trie/{}", trie_id))
             .header("content-type", "application/json")
             .body(Body::from(r#"{"key": "0x1", "value": "0x42"}"#))
             .unwrap();
@@ -595,7 +624,7 @@ mod tests {
         let app = create_test_router_with_state(state);
         let request = Request::builder()
             .method("GET")
-            .uri("/get-proof/test-trie?key=0x1")
+            .uri(&format!("/get-proof/{}?key=0x1", trie_id))
             .body(Body::empty())
             .unwrap();
 
@@ -606,7 +635,7 @@ mod tests {
         let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
         let response_body: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
 
-        assert_eq!(response_body["trie_id"], "test-trie");
+        assert_eq!(response_body["trie_id"], trie_id);
         assert_eq!(response_body["key"], "0x1");
         assert!(!response_body["value"].is_null());
         assert_eq!(response_body["value"], "0x42");
@@ -616,6 +645,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_proof_nonexistent_key() {
         let state = AppState::new();
+        let trie_id = format!("test-nonexistent-key-{}", uuid::Uuid::new_v4());
 
         // First create a trie
         let app = create_test_router_with_state(state.clone());
@@ -623,7 +653,7 @@ mod tests {
             .method("POST")
             .uri("/new-trie")
             .header("content-type", "application/json")
-            .body(Body::from(r#"{"id": "test-trie"}"#))
+            .body(Body::from(format!(r#"{{"id": "{}"}}"#, trie_id)))
             .unwrap();
 
         app.oneshot(create_request).await.unwrap();
@@ -632,7 +662,7 @@ mod tests {
         let app = create_test_router_with_state(state);
         let request = Request::builder()
             .method("GET")
-            .uri("/get-proof/test-trie?key=0x999")
+            .uri(&format!("/get-proof/{}?key=0x999", trie_id))
             .body(Body::empty())
             .unwrap();
 
@@ -643,7 +673,7 @@ mod tests {
         let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
         let response_body: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
 
-        assert_eq!(response_body["trie_id"], "test-trie");
+        assert_eq!(response_body["trie_id"], trie_id);
         assert_eq!(response_body["key"], "0x999");
         assert!(response_body["value"].is_null());
         assert!(response_body["proof"].as_array().unwrap().is_empty());
@@ -652,6 +682,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_proof_invalid_key() {
         let state = AppState::new();
+        let trie_id = format!("test-invalid-proof-key-{}", uuid::Uuid::new_v4());
 
         // First create a trie
         let app = create_test_router_with_state(state.clone());
@@ -659,7 +690,7 @@ mod tests {
             .method("POST")
             .uri("/new-trie")
             .header("content-type", "application/json")
-            .body(Body::from(r#"{"id": "test-trie"}"#))
+            .body(Body::from(format!(r#"{{"id": "{}"}}"#, trie_id)))
             .unwrap();
 
         app.oneshot(create_request).await.unwrap();
@@ -668,12 +699,12 @@ mod tests {
         let app = create_test_router_with_state(state);
         let request = Request::builder()
             .method("GET")
-            .uri("/get-proof/test-trie?key=invalid_key")
+            .uri(&format!("/get-proof/{}?key=invalid_key", trie_id))
             .body(Body::empty())
             .unwrap();
 
         let response = app.oneshot(request).await.unwrap();
-        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]
@@ -799,5 +830,252 @@ mod tests {
 
         let proof_empty = trie.generate_proof("0x999").unwrap();
         assert!(proof_empty.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_check_trie_exists() {
+        let state = AppState::new();
+        let trie_id = format!("test-check-exists-{}", uuid::Uuid::new_v4());
+
+        // First check that a non-existent trie returns exists: false
+        let app = create_test_router_with_state(state.clone());
+        let check_request = Request::builder()
+            .method("GET")
+            .uri(&format!("/check-trie/{}", trie_id))
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(check_request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = response.into_body();
+        let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let response_body: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
+
+        assert_eq!(response_body["trie_id"], trie_id);
+        assert_eq!(response_body["exists"], false);
+
+        // Now create a trie
+        let app = create_test_router_with_state(state.clone());
+        let create_request = Request::builder()
+            .method("POST")
+            .uri("/new-trie")
+            .header("content-type", "application/json")
+            .body(Body::from(format!(r#"{{"id": "{}"}}"#, trie_id)))
+            .unwrap();
+
+        let create_response = app.oneshot(create_request).await.unwrap();
+        assert_eq!(create_response.status(), StatusCode::OK);
+
+        // Now check that the trie exists
+        let app = create_test_router_with_state(state);
+        let check_request = Request::builder()
+            .method("GET")
+            .uri(&format!("/check-trie/{}", trie_id))
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(check_request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = response.into_body();
+        let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let response_body: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
+
+        assert_eq!(response_body["trie_id"], trie_id);
+        assert_eq!(response_body["exists"], true);
+    }
+
+    #[tokio::test]
+    async fn test_check_trie_exists_edge_cases() {
+        let state = AppState::new();
+
+        // Test with empty trie ID
+        let app = create_test_router_with_state(state.clone());
+        let check_request = Request::builder().method("GET").uri("/check-trie/").body(Body::empty()).unwrap();
+
+        let response = app.oneshot(check_request).await.unwrap();
+        // Should return 404 due to missing path parameter
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+
+        // Test with special characters in trie ID
+        let special_trie_id = "test-special-chars-äöü-!@#$%^&*()";
+        let app = create_test_router_with_state(state.clone());
+        let check_request = Request::builder()
+            .method("GET")
+            .uri(&format!("/check-trie/{}", urlencoding::encode(special_trie_id)))
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(check_request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = response.into_body();
+        let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let response_body: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
+
+        assert_eq!(response_body["exists"], false);
+
+        // Test with very long trie ID
+        let long_trie_id = "a".repeat(1000);
+        let app = create_test_router_with_state(state);
+        let check_request = Request::builder()
+            .method("GET")
+            .uri(&format!("/check-trie/{}", long_trie_id))
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(check_request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = response.into_body();
+        let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let response_body: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
+
+        assert_eq!(response_body["trie_id"], long_trie_id);
+        assert_eq!(response_body["exists"], false);
+    }
+
+    #[tokio::test]
+    async fn test_check_trie_exists_after_operations() {
+        let state = AppState::new();
+        let trie_id = format!("test-check-after-ops-{}", uuid::Uuid::new_v4());
+
+        // Create a trie
+        let app = create_test_router_with_state(state.clone());
+        let create_request = Request::builder()
+            .method("POST")
+            .uri("/new-trie")
+            .header("content-type", "application/json")
+            .body(Body::from(format!(r#"{{"id": "{}"}}"#, trie_id)))
+            .unwrap();
+
+        let create_response = app.oneshot(create_request).await.unwrap();
+        assert_eq!(create_response.status(), StatusCode::OK);
+
+        // Check it exists initially
+        let app = create_test_router_with_state(state.clone());
+        let check_request = Request::builder()
+            .method("GET")
+            .uri(&format!("/check-trie/{}", trie_id))
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(check_request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = response.into_body();
+        let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let response_body: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
+
+        assert_eq!(response_body["exists"], true);
+
+        // Update the trie with data
+        let app = create_test_router_with_state(state.clone());
+        let update_request = Request::builder()
+            .method("POST")
+            .uri(&format!("/update-trie/{}", trie_id))
+            .header("content-type", "application/json")
+            .body(Body::from(r#"{"key": "0x1", "value": "0x42"}"#))
+            .unwrap();
+
+        let update_response = app.oneshot(update_request).await.unwrap();
+        assert_eq!(update_response.status(), StatusCode::OK);
+
+        // Check it still exists after update
+        let app = create_test_router_with_state(state.clone());
+        let check_request = Request::builder()
+            .method("GET")
+            .uri(&format!("/check-trie/{}", trie_id))
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(check_request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = response.into_body();
+        let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let response_body: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
+
+        assert_eq!(response_body["exists"], true);
+
+        // Get a proof (another operation)
+        let app = create_test_router_with_state(state.clone());
+        let proof_request = Request::builder()
+            .method("GET")
+            .uri(&format!("/get-proof/{}?key=0x1", trie_id))
+            .body(Body::empty())
+            .unwrap();
+
+        let proof_response = app.oneshot(proof_request).await.unwrap();
+        assert_eq!(proof_response.status(), StatusCode::OK);
+
+        // Check it still exists after proof generation
+        let app = create_test_router_with_state(state);
+        let check_request = Request::builder()
+            .method("GET")
+            .uri(&format!("/check-trie/{}", trie_id))
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(check_request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = response.into_body();
+        let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let response_body: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
+
+        assert_eq!(response_body["exists"], true);
+    }
+
+    #[tokio::test]
+    async fn test_check_multiple_tries_exist() {
+        let state = AppState::new();
+        let trie_id_1 = format!("test-multiple-1-{}", uuid::Uuid::new_v4());
+        let trie_id_2 = format!("test-multiple-2-{}", uuid::Uuid::new_v4());
+        let trie_id_3 = format!("test-multiple-3-{}", uuid::Uuid::new_v4());
+
+        // Create first two tries
+        let app = create_test_router_with_state(state.clone());
+        let create_request_1 = Request::builder()
+            .method("POST")
+            .uri("/new-trie")
+            .header("content-type", "application/json")
+            .body(Body::from(format!(r#"{{"id": "{}"}}"#, trie_id_1)))
+            .unwrap();
+
+        app.oneshot(create_request_1).await.unwrap();
+
+        let app = create_test_router_with_state(state.clone());
+        let create_request_2 = Request::builder()
+            .method("POST")
+            .uri("/new-trie")
+            .header("content-type", "application/json")
+            .body(Body::from(format!(r#"{{"id": "{}"}}"#, trie_id_2)))
+            .unwrap();
+
+        app.oneshot(create_request_2).await.unwrap();
+
+        // Check all three tries - two should exist, one should not
+        let test_cases = vec![(trie_id_1.clone(), true), (trie_id_2.clone(), true), (trie_id_3.clone(), false)];
+
+        for (trie_id, expected_exists) in test_cases {
+            let app = create_test_router_with_state(state.clone());
+            let check_request = Request::builder()
+                .method("GET")
+                .uri(&format!("/check-trie/{}", trie_id))
+                .body(Body::empty())
+                .unwrap();
+
+            let response = app.oneshot(check_request).await.unwrap();
+            assert_eq!(response.status(), StatusCode::OK);
+
+            let body = response.into_body();
+            let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+            let response_body: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
+
+            assert_eq!(response_body["trie_id"], trie_id);
+            assert_eq!(response_body["exists"], expected_exists);
+        }
     }
 }

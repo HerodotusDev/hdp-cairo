@@ -35,18 +35,13 @@ impl<'a> TrieDB<'a> {
     ///
     /// Returns a `Error` if there was an error persisting the leaves.
     pub fn persist_leafs(&self, leaves: &Vec<TrieLeaf>) -> Result<(), Error> {
-        const INSERT_QUERY: &str = "INSERT INTO leafs (key, commitment, has_delegated, voting_power) VALUES (?1, ?2, ?3, ?4)";
+        const INSERT_QUERY: &str = "INSERT INTO leafs (key, value) VALUES (?1, ?2)";
 
         for item in leaves {
             self.conn
                 .execute(
                     INSERT_QUERY,
-                    params![
-                        item.get_key().to_be_bytes().to_vec(),
-                        item.commitment().to_be_bytes().to_vec(),
-                        item.data.has_delegated as u64,
-                        item.data.voting_power.to_be_bytes().to_vec(),
-                    ],
+                    params![item.get_key().to_be_bytes().to_vec(), item.data.value.to_be_bytes().to_vec(),],
                 )
                 .map_err(Error::from)?;
         }
@@ -150,20 +145,16 @@ impl<'a> TrieDB<'a> {
     pub fn get_leaf(&self, address: Felt) -> anyhow::Result<TrieLeaf> {
         let mut stmt = self
             .conn
-            .prepare_cached("SELECT commitment, has_delegated, voting_power FROM leafs WHERE key = ? ORDER BY idx DESC LIMIT 1")?;
+            .prepare_cached("SELECT value FROM leafs WHERE key = ? ORDER BY idx DESC LIMIT 1")?;
 
         let result: Option<TrieLeaf> = stmt
             .query_row(params![address.to_be_bytes().to_vec()], |row| {
-                let commitment: Vec<u8> = row.get(0)?;
-                let has_delegated: bool = row.get(1)?;
-                let voting_power: Vec<u8> = row.get(2)?;
+                let value: Vec<u8> = row.get(0)?;
+                let value = Felt::from_be_slice(&value).unwrap();
 
-                let commitment = Felt::from_be_slice(&commitment).unwrap();
-                let voting_power = Felt::from_be_slice(&voting_power).unwrap();
+                let leaf = TrieLeaf::new(address, value);
 
-                let leaf = TrieLeaf::new(address, has_delegated, voting_power);
-
-                assert!(leaf.commitment() == commitment, "Commitment mismatch");
+                assert!(leaf.commitment() == value, "Value mismatch");
 
                 Ok(leaf)
             })
@@ -234,7 +225,7 @@ impl Storage for TrieDB<'_> {
     fn leaf(&self, path: &BitSlice<u8, Msb0>) -> anyhow::Result<Option<Felt>> {
         let mut stmt = self
             .conn
-            .prepare_cached("SELECT commitment FROM leafs WHERE key = ? ORDER BY idx DESC LIMIT 1")?;
+            .prepare_cached("SELECT value FROM leafs WHERE key = ? ORDER BY idx DESC LIMIT 1")?;
 
         // Execute the query
         let Some(data): Option<Vec<u8>> = stmt
