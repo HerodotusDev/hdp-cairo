@@ -23,7 +23,7 @@ mod test_utils {
         types::{layout_name::LayoutName, program::Program},
         vm::runners::cairo_runner::{CairoRunner, RunnerMode},
     };
-    use dry_hint_processor::syscall_handler::{evm, starknet};
+    use dry_hint_processor::syscall_handler::{evm, injected_state, starknet};
     use fetcher::{proof_keys::ProofKeys, Fetcher};
     use hints::vars;
     use syscall_handler::{SyscallHandler, SyscallHandlerWrapper};
@@ -82,14 +82,17 @@ mod test_utils {
         let mut hint_processor = dry_hint_processor::CustomHintProcessor::new(program_inputs);
         cairo_runner.run_until_pc(end, &mut hint_processor).unwrap();
 
-        let syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler> = cairo_runner
-            .exec_scopes
-            .get::<SyscallHandlerWrapper<evm::CallContractHandler, starknet::CallContractHandler>>(vars::scopes::SYSCALL_HANDLER)
-            .unwrap()
-            .syscall_handler
-            .try_read()
-            .unwrap()
-            .clone();
+        let syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler> =
+            cairo_runner
+                .exec_scopes
+                .get::<SyscallHandlerWrapper<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>>(
+                    vars::scopes::SYSCALL_HANDLER,
+                )
+                .unwrap()
+                .syscall_handler
+                .try_read()
+                .unwrap()
+                .clone();
 
         let mut proof_keys = ProofKeys::default();
         for key in syscall_handler.call_contract_handler.evm_call_contract_handler.key_set {
