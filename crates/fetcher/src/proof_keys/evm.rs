@@ -35,7 +35,7 @@ pub struct ProofKeys {
 impl ProofKeys {
     fn normalize_hex(input: &str) -> String {
         let hex_str = input.trim_start_matches("0x");
-        format!("{:0>width$}", hex_str, width = hex_str.len().div_ceil(2))
+        format!("{:0>width$}", hex_str, width = hex_str.len().div_ceil(2) * 2)
     }
 
     pub async fn fetch_header_proof(
