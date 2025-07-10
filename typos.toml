@@ -1,0 +1,77 @@
+# typos Configuration for the Herodotus Data Processor (HDP) Repository
+#
+# This file configures the 'typos' spell-checker to understand the
+# domain-specific terminology used in this project.
+# See https://github.com/crate-ci/typos for more configuration options.
+
+[files]
+# By default, typos respects .gitignore, so 'target/', 'venv/', and other
+# ignored paths are already excluded. No further file-level configuration is necessary.
+
+# Add words that are considered correct for this project to the dictionary.
+[default.extend-words]
+# --- Blockchain & Cryptography Acronyms/Terms ---
+EVM = "EVM"                 # Ethereum Virtual Machine
+MMR = "MMR"                 # Merkle Mountain Range
+MPT = "MPT"                 # Merkle Patricia Trie
+RLP = "RLP"                 # Recursive Length Prefix
+HDP = "HDP"                 # Herodotus Data Processor
+L1 = "L1"                   # Layer 1
+L2 = "L2"                   # Layer 2
+
+# --- Hashing Algorithms ---
+keccak = "keccak"
+pedersen = "pedersen"
+poseidon = "poseidon"
+
+# --- Blockchain & EVM Specific Terms ---
+byzantium = "byzantium"       # Ethereum hard fork name
+calldata = "calldata"
+coinbase = "coinbase"
+endianess = "endianess"
+eth = "eth"                 # Common prefix for Ethereum-related terms
+getproof = "getproof"       # As in eth_getProof
+jsonrpc = "jsonrpc"
+merkle = "merkle"
+ommers = "ommers"           # Also known as "uncles"
+retdata = "retdata"
+sepolia = "sepolia"         # Ethereum testnet
+syscall = "syscall"
+syscalls = "syscalls"
+trie = "trie"
+tx = "tx"                   # Abbreviation for transaction
+txs = "txs"                 # Plural of tx
+uint = "uint"               # Common prefix for unsigned integers
+wei = "wei"                 # Unit of Ether
+fri = "fri"                 # Unit of L1 gas price on Starknet
+
+# --- Cairo & Starknet Specific Terms ---
+cairo = "cairo"
+casm = "casm"               # Cairo Assembly
+felt = "felt"               # Field Element
+felts = "felts"             # Plural of felt
+leaf = "leaf"
+leafs = "leafs"             # Plural of leaf
+libfuncs = "libfuncs"       # Library Functions
+pathfinder = "pathfinder"   # Starknet client
+scarb = "scarb"             # Cairo package manager
+sierra = "sierra"           # Cairo intermediate representation
+snforge = "snforge"         # Starknet testing framework
+snos = "snos"               # StarkNet OS
+starknet = "starknet"
+dw = "dw"                   # "define word" in Cairo 0
+
+# --- Project Specific Terms ---
+bootloader = "bootloader"
+decoders = "decoders"
+dryrun = "dryrun"
+herodotus = "herodotus"
+memorizer = "memorizer"
+memorizers = "memorizers"
+verifiers = "verifiers"
+
+# --- Technical Abbreviations & Contractions ---
+addr = "addr"
+be = "be"                   # Big-endian
+divmod = "divmod"
+le = "le"                   # Little-endian

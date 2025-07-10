@@ -70,7 +70,7 @@ func verify_storage_items_inner{
     assert key.low = hash.low;
     assert key.high = hash.high;
 
-    // convertes chunks to LE uint256
+    // converts chunks to LE uint256
     let slot_le = le_chunks_to_uint256(slot, 4, 32);
     let (slot_be) = uint256_reverse_endian(slot_le);
 
