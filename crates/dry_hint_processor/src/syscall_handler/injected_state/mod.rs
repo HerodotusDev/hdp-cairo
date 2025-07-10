@@ -37,8 +37,6 @@ pub struct CallContractHandler {
     pub upsert_actions: Vec<String>,
     #[serde(skip)]
     local_storage: HashMap<String, String>,
-    #[serde(skip)]
-    key_to_action_index: HashMap<String, usize>,
 }
 
 impl Default for CallContractHandler {
@@ -58,7 +56,6 @@ impl CallContractHandler {
             trie_ids: vec![],
             local_storage: HashMap::new(),
             upsert_actions: vec![],
-            key_to_action_index: HashMap::new(),
         })
     }
 
@@ -110,19 +107,8 @@ impl CallContractHandler {
         // Format the action as "rootHash;key;value" (use original key, not prefixed)
         let action = format!("{};{};{}", root_hash, key, value);
 
-        // Create a unique key for the action index (includes tree id to handle same key in different trees)
-        let action_key = format!("{}:{}", root_hash, key);
-
-        // Check if we already have an action for this key in this tree
-        if let Some(&index) = self.key_to_action_index.get(&action_key) {
-            // Update existing action (optimization: keep only latest value)
-            self.upsert_actions[index] = action;
-        } else {
-            // Add new action
-            let index = self.upsert_actions.len();
-            self.upsert_actions.push(action);
-            self.key_to_action_index.insert(action_key, index);
-        }
+        // Always add the action (store all intermediary updates)
+        self.upsert_actions.push(action);
     }
 
     async fn get_key(&mut self, key: &str) -> Result<Option<String>, anyhow::Error> {
@@ -182,7 +168,6 @@ impl CallContractHandler {
     /// Clear all upsert actions (useful for testing or resetting state)
     pub fn clear_upsert_actions(&mut self) {
         self.upsert_actions.clear();
-        self.key_to_action_index.clear();
     }
 }
 
