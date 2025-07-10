@@ -3179,12 +3179,16 @@ name = "dry_hint_processor"
 version = "0.1.0"
 dependencies = [
  "alloy 0.12.5",
+ "anyhow",
  "cairo-lang-casm",
  "cairo-lang-starknet-classes",
  "cairo-vm",
+ "chrono",
  "hints",
  "indexer",
+ "reqwest 0.12.12",
  "serde",
+ "serde_json",
  "starknet",
  "starknet-types-core",
  "strum_macros 0.26.4",
@@ -6631,11 +6635,14 @@ name = "sound_hint_processor"
 version = "0.1.0"
 dependencies = [
  "alloy-rlp",
+ "anyhow",
  "cairo-lang-casm",
  "cairo-lang-starknet-classes",
  "cairo-vm",
  "hints",
+ "reqwest 0.12.12",
  "serde",
+ "serde_json",
  "starknet-types-core",
  "strum_macros 0.26.4",
  "syscall_handler",
@@ -6959,6 +6966,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "trie-builder",
+ "urlencoding",
  "uuid 1.16.0",
 ]
 
@@ -7832,6 +7840,12 @@ dependencies = [
  "idna",
  "percent-encoding",
 ]
+
+[[package]]
+name = "urlencoding"
+version = "2.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "daf8dba3b7eb870caf1ddeed7bc9d2a049f3cfdfae7cb521b087cc33ae4c49da"
 
 [[package]]
 name = "utf-8"

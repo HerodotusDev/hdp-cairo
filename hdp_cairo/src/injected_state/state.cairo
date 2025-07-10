@@ -7,16 +7,14 @@ const INJECTED_STATE_CONTRACT_ADDRESS: felt252 = 'injected_state';
 const READ_KEY: felt252 = 0;
 const UPSERT_KEY: felt252 = 1;
 const DOES_KEY_EXIST: felt252 = 2;
-const SET_TREE_ID: felt252 = 3;
+const SET_TREE_ROOT: felt252 = 3;
 
 #[generate_trait]
 pub impl InjectedStateMemorizerImpl of InjectedStateMemorizerTrait {
     fn read_key(self: @InjectedStateMemorizer, key: felt252) -> (felt252, bool) {
-        let msg: ByteArray = format!("{}", key);
-        let mut output_array = array![];
-        msg.serialize(ref output_array);
+        let calldata = array![*self.dict.segment_index, *self.dict.offset, key];
         let ret_data = call_contract_syscall(
-            INJECTED_STATE_CONTRACT_ADDRESS.try_into().unwrap(), READ_KEY, output_array.span(),
+            INJECTED_STATE_CONTRACT_ADDRESS.try_into().unwrap(), READ_KEY, calldata.span(),
         )
             .unwrap_syscall();
 
@@ -43,10 +41,10 @@ pub impl InjectedStateMemorizerImpl of InjectedStateMemorizerTrait {
         *ret_data.at(0) == 1
     }
 
-    fn set_injected_state_tree(self: @InjectedStateMemorizer, tree_id: felt252) -> bool {
-        let calldata = array![*self.dict.segment_index, *self.dict.offset, tree_id];
+    fn set_injected_state_root(self: @InjectedStateMemorizer, root: felt252) -> bool {
+        let calldata = array![*self.dict.segment_index, *self.dict.offset, root];
         let ret_data = call_contract_syscall(
-            INJECTED_STATE_CONTRACT_ADDRESS.try_into().unwrap(), SET_TREE_ID, calldata.span(),
+            INJECTED_STATE_CONTRACT_ADDRESS.try_into().unwrap(), SET_TREE_ROOT, calldata.span(),
         )
             .unwrap_syscall();
         *ret_data.at(0) == 1

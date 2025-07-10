@@ -10,9 +10,9 @@ mod module {
     pub fn main(ref self: ContractState, hdp: HDP) -> Array<felt252> {
         // Example: Basic usage of injected state memorizer primitives
 
-        // 0. Set the persistent tree id
-        let success = hdp.injected_state.set_injected_state_tree('my_tree');
-        assert!(success, "Failed to set tree id");
+        // 0. Set the persistent tree root
+        let success = hdp.injected_state.set_injected_state_root(0x424242);
+        assert!(success, "Failed to set tree root");
 
         // 1. Store a key-value pair
         let success = hdp.injected_state.upsert_key('my_key', 12345);

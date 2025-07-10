@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use cairo_vm::{
     types::relocatable::Relocatable,
@@ -9,9 +9,7 @@ use chrono::Utc;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use strum_macros::FromRepr;
-use syscall_handler::{
-    call_contract::debug::decode_byte_array_felts, traits::SyscallHandler, SyscallExecutionError, SyscallResult, WriteResponseResult,
-};
+use syscall_handler::{traits::SyscallHandler, SyscallExecutionError, SyscallResult, WriteResponseResult};
 use types::cairo::{
     new_syscalls::{CallContractRequest, CallContractResponse},
     structs::CairoFelt,
@@ -23,7 +21,7 @@ pub enum CallHandlerId {
     ReadKey = 0,
     UpsertKey = 1,
     DoesKeyExist = 2,
-    SetTreeId = 3,
+    SetTreeRoot = 3,
 }
 
 fn default_client() -> Arc<Client> {
@@ -36,6 +34,11 @@ pub struct CallContractHandler {
     client: Arc<Client>,
     base_url: String,
     pub trie_ids: Vec<String>,
+    pub upsert_actions: Vec<String>,
+    #[serde(skip)]
+    local_storage: HashMap<String, String>,
+    #[serde(skip)]
+    key_to_action_index: HashMap<String, usize>,
 }
 
 impl Default for CallContractHandler {
@@ -53,6 +56,9 @@ impl CallContractHandler {
             client: Arc::new(client),
             base_url: base_url.to_string(),
             trie_ids: vec![],
+            local_storage: HashMap::new(),
+            upsert_actions: vec![],
+            key_to_action_index: HashMap::new(),
         })
     }
 
@@ -93,26 +99,40 @@ impl CallContractHandler {
         }
     }
 
-    async fn upsert_key(&mut self, key: &str, value: &str) -> Result<(), anyhow::Error> {
-        self.ensure_trie_exists().await?;
+    fn upsert_key_locally(&mut self, key: &str, value: &str) {
+        // Update local storage with prefixed key
+        let prefixed_key = self.create_prefixed_key(key);
+        self.local_storage.insert(prefixed_key, value.to_string());
 
-        let url = format!("{}/update-trie/{}", self.base_url, self.trie_ids[self.trie_ids.len() - 1]);
+        // Get current root hash (use current trie ID)
+        let root_hash = self.get_current_tree_id();
 
-        let request_body = serde_json::json!({
-            "key": key,
-            "value": value
-        });
+        // Format the action as "rootHash;key;value" (use original key, not prefixed)
+        let action = format!("{};{};{}", root_hash, key, value);
 
-        let response = self.client.post(&url).json(&request_body).send().await?;
+        // Create a unique key for the action index (includes tree id to handle same key in different trees)
+        let action_key = format!("{}:{}", root_hash, key);
 
-        if response.status().is_success() {
-            Ok(())
+        // Check if we already have an action for this key in this tree
+        if let Some(&index) = self.key_to_action_index.get(&action_key) {
+            // Update existing action (optimization: keep only latest value)
+            self.upsert_actions[index] = action;
         } else {
-            Err(anyhow::anyhow!("Failed to upsert key: {}", response.status()))
+            // Add new action
+            let index = self.upsert_actions.len();
+            self.upsert_actions.push(action);
+            self.key_to_action_index.insert(action_key, index);
         }
     }
 
     async fn get_key(&mut self, key: &str) -> Result<Option<String>, anyhow::Error> {
+        // First check local storage with prefixed key
+        let prefixed_key = self.create_prefixed_key(key);
+        if let Some(value) = self.local_storage.get(&prefixed_key) {
+            return Ok(Some(value.clone()));
+        }
+
+        // If not found locally, fetch from external API and store locally
         self.ensure_trie_exists().await?;
 
         let url = format!("{}/get-proof/{}", self.base_url, self.trie_ids[self.trie_ids.len() - 1]);
@@ -121,7 +141,10 @@ impl CallContractHandler {
         if response.status().is_success() {
             let proof_response: serde_json::Value = response.json().await?;
             if let Some(value) = proof_response["value"].as_str() {
-                Ok(Some(value.to_string()))
+                let value_str = value.to_string();
+                // Store in local cache with prefixed key
+                self.local_storage.insert(prefixed_key, value_str.clone());
+                Ok(Some(value_str))
             } else {
                 Ok(None)
             }
@@ -130,24 +153,36 @@ impl CallContractHandler {
         }
     }
 
-    async fn key_exists(&mut self, key: &str) -> Result<bool, anyhow::Error> {
-        self.ensure_trie_exists().await?;
-
-        let url = format!("{}/get-proof/{}", self.base_url, self.trie_ids[self.trie_ids.len() - 1]);
-        let response = self.client.get(&url).query(&[("key", key)]).send().await?;
-
-        if response.status().is_success() {
-            let proof_response: serde_json::Value = response.json().await?;
-            Ok(proof_response["exists"].as_bool().unwrap_or(false))
-        } else {
-            Err(anyhow::anyhow!("Failed to check key existence: {}", response.status()))
-        }
+    fn key_exists(&self, key: &str) -> bool {
+        let prefixed_key = self.create_prefixed_key(key);
+        self.local_storage.contains_key(&prefixed_key)
     }
 
-    async fn set_tree_id(&mut self, tree_id: &str) -> Result<(), anyhow::Error> {
-        self.trie_ids.push(tree_id.to_string());
+    async fn set_tree_root(&mut self, tree_root: &str) -> Result<(), anyhow::Error> {
+        self.trie_ids.push(tree_root.to_string());
         self.ensure_trie_exists().await?;
         Ok(())
+    }
+
+    /// Get the current tree id (or default if none exists)
+    fn get_current_tree_id(&self) -> &str {
+        self.trie_ids.last().map(|id| id.as_str()).unwrap_or("default")
+    }
+
+    /// Create a prefixed key for local storage using current tree id
+    fn create_prefixed_key(&self, key: &str) -> String {
+        format!("{}:{}", self.get_current_tree_id(), key)
+    }
+
+    /// Get all upsert actions for dumping to dry_run_output.json
+    pub fn get_upsert_actions(&self) -> &Vec<String> {
+        &self.upsert_actions
+    }
+
+    /// Clear all upsert actions (useful for testing or resetting state)
+    pub fn clear_upsert_actions(&mut self) {
+        self.upsert_actions.clear();
+        self.key_to_action_index.clear();
     }
 }
 
@@ -173,9 +208,15 @@ impl SyscallHandler for CallContractHandler {
                     .map(|f| (*f.as_ref()))
                     .collect::<Vec<Felt252>>();
 
-                let key = decode_byte_array_felts(fields);
+                if fields.len() < 3 {
+                    return Err(SyscallExecutionError::InvalidSyscallInput {
+                        input: Felt252::ZERO,
+                        info: "ReadKey requires at least key".to_string(),
+                    });
+                }
+                let key = fields[2].to_string();
 
-                // Get value from state server API
+                // Get value from local storage first, then from state server API if not found
                 let (value, exists) = match self.get_key(&key).await {
                     Ok(Some(val)) => {
                         // Try to parse the value as a hex string and convert to Felt252
@@ -220,13 +261,8 @@ impl SyscallHandler for CallContractHandler {
                 let key = fields[2].to_string();
                 let value = fields[3].to_string();
 
-                // Insert/update via state server API
-                if let Err(e) = self.upsert_key(&key, &value).await {
-                    return Err(SyscallExecutionError::InvalidSyscallInput {
-                        input: Felt252::ZERO,
-                        info: format!("Failed to upsert key: {}", e),
-                    });
-                }
+                // Insert/update in local storage
+                self.upsert_key_locally(&key, &value);
 
                 let output = UpsertKeyResponseTypeOutput { success: Felt252::ONE };
 
@@ -255,20 +291,8 @@ impl SyscallHandler for CallContractHandler {
 
                 let key = fields[2].to_string();
 
-                // Check if key exists via state server API
-                let exists = match self.key_exists(&key).await {
-                    Ok(exists) => {
-                        if exists {
-                            Felt252::ONE
-                        } else {
-                            Felt252::ZERO
-                        }
-                    }
-                    Err(e) => {
-                        println!("Error checking key existence: {}", e);
-                        Felt252::ZERO
-                    }
-                };
+                // Check if key exists in local storage
+                let exists = if self.key_exists(&key) { Felt252::ONE } else { Felt252::ZERO };
 
                 let output = DoesKeyExistResponseTypeOutput { exists };
 
@@ -280,7 +304,7 @@ impl SyscallHandler for CallContractHandler {
                     retdata_end,
                 })
             }
-            CallHandlerId::SetTreeId => {
+            CallHandlerId::SetTreeRoot => {
                 let field_len = (request.calldata_end - request.calldata_start)?;
                 let fields = vm
                     .get_integer_range(request.calldata_start, field_len)?
@@ -291,13 +315,13 @@ impl SyscallHandler for CallContractHandler {
                 if fields.len() < 3 {
                     return Err(SyscallExecutionError::InvalidSyscallInput {
                         input: Felt252::ZERO,
-                        info: "SetTreeId requires at least tree_id".to_string(),
+                        info: "SetTreeRoot requires at least tree_root".to_string(),
                     });
                 }
 
-                let tree_id = fields[2].to_string();
+                let tree_root = fields[2].to_string();
                 // Set the tree id via state server API
-                if let Err(e) = self.set_tree_id(&tree_id).await {
+                if let Err(e) = self.set_tree_root(&tree_root).await {
                     return Err(SyscallExecutionError::InvalidSyscallInput {
                         input: Felt252::ZERO,
                         info: format!("Failed to set tree id: {}", e),
