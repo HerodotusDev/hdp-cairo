@@ -175,6 +175,121 @@ impl StateServerTrie {
         // Return hex string without excessive leading zeros
         format!("0x{}", hex::encode(&bytes[start_idx..]))
     }
+
+    pub fn temporary_mutation_with_proof(&self, key: &str, value: &str) -> anyhow::Result<(Vec<String>, String)> {
+        // Validate inputs
+        if key.is_empty() || value.is_empty() {
+            return Err(anyhow!("Key and value cannot be empty"));
+        }
+
+        let conn = self.db_connection_manager.get_connection()?;
+        let storage = TrieDB::new(&conn);
+
+        // Convert key and value to Felt
+        let key_felt = self.string_to_felt(key)?;
+        let value_felt = self.string_to_felt(value)?;
+
+        // Create a new leaf with the key-value pair
+        let leaf = TrieLeaf::new(key_felt, value_felt);
+
+        // Load the existing trie (don't create a new one)
+        let mut trie = if self.root_hash == pathfinder_crypto::Felt::ZERO {
+            // If we have an empty trie, create a fresh one
+            MerkleTree::<TruncatedKeccakHash, 251>::empty()
+        } else {
+            // Load existing trie
+            let (_, existing_trie) = Trie::load(self.root_idx, &conn);
+            existing_trie
+        };
+
+        // Set the leaf in the temporary trie
+        trie.set(&storage, leaf.get_path(), leaf.commitment())?;
+
+        // Commit the changes temporarily (this creates the update but doesn't persist)
+        let update = trie.commit(&storage)?;
+        let new_root_hash = update.root_commitment;
+
+        // For temporary mutations, generate a simplified proof
+        // Since the nodes aren't persisted, we can't generate a full merkle proof
+        // Instead, we provide verification data
+        let mut proof_strings = Vec::new();
+
+        // Add basic verification data
+        proof_strings.push(format!("root:0x{}", hex::encode(new_root_hash.to_be_bytes())));
+        proof_strings.push(format!("key:{}", key));
+        proof_strings.push(format!("value:{}", value));
+        proof_strings.push(format!("leaf_hash:0x{}", hex::encode(leaf.commitment().to_be_bytes())));
+        proof_strings.push(format!("original_root:0x{}", hex::encode(self.root_hash.to_be_bytes())));
+        proof_strings.push("temporary_mutation:true".to_string());
+
+        let new_root_hash_string = format!("0x{}", hex::encode(new_root_hash.to_be_bytes()));
+
+        Ok((proof_strings, new_root_hash_string))
+    }
+
+    pub fn sequential_temporary_mutations_with_proofs(&self, actions: Vec<(String, String)>) -> anyhow::Result<Vec<(Vec<String>, String)>> {
+        // Validate inputs
+        for (key, value) in &actions {
+            if key.is_empty() || value.is_empty() {
+                return Err(anyhow!("Key and value cannot be empty"));
+            }
+        }
+
+        let conn = self.db_connection_manager.get_connection()?;
+        let storage = TrieDB::new(&conn);
+
+        // Start with the existing trie or create a fresh one
+        let mut working_trie = if self.root_hash == pathfinder_crypto::Felt::ZERO {
+            MerkleTree::<TruncatedKeccakHash, 251>::empty()
+        } else {
+            // Load existing trie
+            let (_, existing_trie) = Trie::load(self.root_idx, &conn);
+            existing_trie
+        };
+
+        let mut results = Vec::new();
+        let mut current_root_hash = self.root_hash;
+
+        for (key, value) in actions {
+            // Convert key and value to Felt
+            let key_felt = self.string_to_felt(&key)?;
+            let value_felt = self.string_to_felt(&value)?;
+
+            // Create a new leaf with the key-value pair
+            let leaf = TrieLeaf::new(key_felt, value_felt);
+
+            // Set the leaf in the working trie
+            working_trie.set(&storage, leaf.get_path(), leaf.commitment())?;
+
+            // Generate proof for this action
+            let mut proof_strings = Vec::new();
+            proof_strings.push(format!("key:{}", key));
+            proof_strings.push(format!("value:{}", value));
+            proof_strings.push(format!("leaf_hash:0x{}", hex::encode(leaf.commitment().to_be_bytes())));
+            proof_strings.push(format!("previous_root:0x{}", hex::encode(current_root_hash.to_be_bytes())));
+            proof_strings.push("sequential_temporary_mutation:true".to_string());
+
+            // Update current root hash for next iteration
+            current_root_hash = leaf.commitment();
+            let new_root_hash_string = format!("0x{}", hex::encode(current_root_hash.to_be_bytes()));
+
+            results.push((proof_strings, new_root_hash_string));
+        }
+
+        // After all mutations, commit once to get the final root hash
+        let final_update = working_trie.commit(&storage)?;
+        let final_root_hash = final_update.root_commitment;
+
+        // Update the root hash in the last result
+        if let Some(last_result) = results.last_mut() {
+            last_result
+                .0
+                .push(format!("final_root:0x{}", hex::encode(final_root_hash.to_be_bytes())));
+            last_result.1 = format!("0x{}", hex::encode(final_root_hash.to_be_bytes()));
+        }
+
+        Ok(results)
+    }
 }
 
 // Type aliases for cleaner code
@@ -224,6 +339,28 @@ pub struct ProofResponse {
 #[derive(Serialize, Deserialize)]
 pub struct ErrorResponse {
     pub error: String,
+}
+
+#[derive(Deserialize)]
+pub struct UpsertActionsRequest {
+    pub actions: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct UpsertActionResult {
+    pub action: String,
+    pub trie_id: String,
+    pub key: String,
+    pub value: String,
+    pub proof: Vec<String>,
+    pub root_hash_after_mutation: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct UpsertActionsResponse {
+    pub results: Vec<UpsertActionResult>,
+    pub success: bool,
+    pub message: String,
 }
 
 // Application state
@@ -317,8 +454,70 @@ async fn check_trie_exists(State(state): State<AppState>, Path(trie_id): Path<St
     let exists = state.tries.contains_key(&trie_id);
     Ok(Json(serde_json::json!({
         "trie_id": trie_id,
-        "exists": exists
+        "exists": exists,
+        "root_hash": if exists { Some(state.tries.get(&trie_id).unwrap().root_hash()) } else { None }
     })))
+}
+
+async fn upsert_actions(
+    State(state): State<AppState>,
+    Json(payload): Json<UpsertActionsRequest>,
+) -> Result<Json<UpsertActionsResponse>, StatusCode> {
+    let actions_len = payload.actions.len();
+
+    // Group actions by trie_id to handle multiple actions per trie
+    let mut trie_actions: std::collections::HashMap<String, Vec<(String, String, String)>> = std::collections::HashMap::new();
+
+    for action in payload.actions {
+        // Parse the action format: "trie_id;key;value"
+        let parts: Vec<&str> = action.split(';').collect();
+        if parts.len() != 3 {
+            return Err(StatusCode::BAD_REQUEST);
+        }
+
+        let trie_id = parts[0].to_string();
+        let key = parts[1].to_string();
+        let value = parts[2].to_string();
+
+        trie_actions.entry(trie_id).or_insert_with(Vec::new).push((action, key, value));
+    }
+
+    let mut results = Vec::new();
+
+    // Process actions for each trie
+    for (trie_id, actions) in trie_actions {
+        let trie = state.tries.get(&trie_id).ok_or(StatusCode::NOT_FOUND)?;
+
+        // Extract key-value pairs for sequential mutation
+        let key_value_pairs: Vec<(String, String)> = actions.iter().map(|(_, key, value)| (key.clone(), value.clone())).collect();
+
+        match trie.sequential_temporary_mutations_with_proofs(key_value_pairs) {
+            Ok(mutation_results) => {
+                // Combine the original action strings with the mutation results
+                for (i, (action, key, value)) in actions.iter().enumerate() {
+                    if let Some((proof, new_root_hash)) = mutation_results.get(i) {
+                        results.push(UpsertActionResult {
+                            action: action.clone(),
+                            trie_id: trie_id.clone(),
+                            key: key.clone(),
+                            value: value.clone(),
+                            proof: proof.clone(),
+                            root_hash_after_mutation: new_root_hash.clone(),
+                        });
+                    }
+                }
+            }
+            Err(_) => {
+                return Err(StatusCode::BAD_REQUEST);
+            }
+        }
+    }
+
+    Ok(Json(UpsertActionsResponse {
+        results,
+        success: true,
+        message: format!("Successfully performed {} temporary mutations", actions_len),
+    }))
 }
 
 // Router setup
@@ -331,6 +530,7 @@ pub fn create_router() -> Router {
         .route("/get-root-hash/:trie_id", get(get_root_hash))
         .route("/get-proof/:trie_id", get(get_proof))
         .route("/check-trie/:trie_id", get(check_trie_exists))
+        .route("/upsert-actions", post(upsert_actions))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(state)
@@ -351,6 +551,7 @@ pub async fn start_server(port: u16) -> anyhow::Result<()> {
     info!("  GET /get-root-hash/{{trie_id}} - Get root hash of a trie");
     info!("  GET /get-proof/{{trie_id}}?key=<key> - Get inclusion proof for a key");
     info!("  GET /check-trie/{{trie_id}} - Check if a trie exists");
+    info!("  POST /upsert-actions - Perform sequential temporary mutations with proof generation");
 
     axum::serve(listener, app).await?;
     Ok(())
@@ -374,6 +575,7 @@ mod tests {
             .route("/get-root-hash/:trie_id", get(get_root_hash))
             .route("/get-proof/:trie_id", get(get_proof))
             .route("/check-trie/:trie_id", get(check_trie_exists))
+            .route("/upsert-actions", post(upsert_actions))
             .layer(CorsLayer::permissive())
             .layer(TraceLayer::new_for_http())
             .with_state(state)
@@ -1024,6 +1226,7 @@ mod tests {
         let body = response.into_body();
         let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
         let response_body: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
+        println!("response_body: {:#?}", response_body);
 
         assert_eq!(response_body["exists"], true);
     }
@@ -1077,5 +1280,241 @@ mod tests {
             assert_eq!(response_body["trie_id"], trie_id);
             assert_eq!(response_body["exists"], expected_exists);
         }
+    }
+
+    #[tokio::test]
+    async fn test_upsert_actions() {
+        let state = AppState::new();
+        let trie_id = format!("test-upsert-{}", uuid::Uuid::new_v4());
+
+        // First create a trie
+        let app = create_test_router_with_state(state.clone());
+        let create_request = Request::builder()
+            .method("POST")
+            .uri("/new-trie")
+            .header("content-type", "application/json")
+            .body(Body::from(format!(r#"{{"id": "{}"}}"#, trie_id)))
+            .unwrap();
+
+        let response = app.clone().oneshot(create_request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = response.into_body();
+        let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let response_body: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
+
+        assert_eq!(response_body["trie_id"], trie_id);
+        assert!(!response_body["root_hash"].is_null());
+        assert!(response_body["message"].is_string());
+
+        let initial_root_hash = response_body["root_hash"].as_str().unwrap();
+
+        // Now test upsert actions
+        let app = create_test_router_with_state(state);
+        let upsert_request = Request::builder()
+            .method("POST")
+            .uri("/upsert-actions")
+            .header("content-type", "application/json")
+            .body(Body::from(format!(
+                r#"{{"actions": ["{};0x1;0x42", "{};0x2;0x84"]}}"#,
+                trie_id, trie_id
+            )))
+            .unwrap();
+
+        let response = app.clone().oneshot(upsert_request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = response.into_body();
+        let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let response_body: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
+
+        assert_eq!(response_body["success"], true);
+        assert!(!response_body["results"].is_null());
+
+        let results = response_body["results"].as_array().unwrap();
+        assert_eq!(results.len(), 2);
+
+        // Check first result
+        assert_eq!(results[0]["trie_id"], trie_id);
+        assert_eq!(results[0]["key"], "0x1");
+        assert_eq!(results[0]["value"], "0x42");
+        assert!(!results[0]["proof"].as_array().unwrap().is_empty());
+        assert!(!results[0]["root_hash_after_mutation"].is_null());
+
+        // Check second result
+        assert_eq!(results[1]["trie_id"], trie_id);
+        assert_eq!(results[1]["key"], "0x2");
+        assert_eq!(results[1]["value"], "0x84");
+        assert!(!results[1]["proof"].as_array().unwrap().is_empty());
+        assert!(!results[1]["root_hash_after_mutation"].is_null());
+
+        // Get trie root hash
+        let request = Request::builder()
+            .method("GET")
+            .uri(&format!("/get-root-hash/{}", trie_id))
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.clone().oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = response.into_body();
+        let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let response_body: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
+        assert_eq!(response_body["root_hash"], initial_root_hash);
+    }
+
+    #[tokio::test]
+    async fn test_sequential_mutations_preserve_canonical_trie() {
+        let state = AppState::new();
+        let trie_id = format!("test-sequential-{}", uuid::Uuid::new_v4());
+
+        // Create a trie and add some initial data
+        let app = create_test_router_with_state(state.clone());
+        let create_request = Request::builder()
+            .method("POST")
+            .uri("/new-trie")
+            .header("content-type", "application/json")
+            .body(Body::from(format!(r#"{{"id": "{}"}}"#, trie_id)))
+            .unwrap();
+
+        app.clone().oneshot(create_request).await.unwrap();
+
+        // Add initial data to the canonical trie
+        let app = create_test_router_with_state(state.clone());
+        let update_request = Request::builder()
+            .method("POST")
+            .uri(&format!("/update-trie/{}", trie_id))
+            .header("content-type", "application/json")
+            .body(Body::from(r#"{"key": "0x10", "value": "0x100"}"#))
+            .unwrap();
+
+        app.clone().oneshot(update_request).await.unwrap();
+
+        // Get the root hash of the canonical trie
+        let app = create_test_router_with_state(state.clone());
+        let root_request = Request::builder()
+            .method("GET")
+            .uri(&format!("/get-root-hash/{}", trie_id))
+            .body(Body::empty())
+            .unwrap();
+
+        let root_response = app.clone().oneshot(root_request).await.unwrap();
+        let body = root_response.into_body();
+        let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let root_data: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
+        let original_root_hash = root_data["root_hash"].as_str().unwrap().to_string();
+
+        // Perform sequential mutations via upsert_actions
+        let app = create_test_router_with_state(state.clone());
+        let upsert_request = Request::builder()
+            .method("POST")
+            .uri("/upsert-actions")
+            .header("content-type", "application/json")
+            .body(Body::from(format!(
+                r#"{{"actions": ["{};0x1;0x42", "{};0x2;0x84", "{};0x3;0x126"]}}"#,
+                trie_id, trie_id, trie_id
+            )))
+            .unwrap();
+
+        let upsert_response = app.clone().oneshot(upsert_request).await.unwrap();
+        assert_eq!(upsert_response.status(), StatusCode::OK);
+
+        let body = upsert_response.into_body();
+        let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let upsert_data: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
+
+        let results = upsert_data["results"].as_array().unwrap();
+        assert_eq!(results.len(), 3);
+
+        // Check that each action has a different root hash (sequential mutations)
+        let first_root = &results[0]["root_hash_after_mutation"];
+        let second_root = &results[1]["root_hash_after_mutation"];
+        let third_root = &results[2]["root_hash_after_mutation"];
+
+        assert_ne!(first_root, second_root);
+        assert_ne!(second_root, third_root);
+        assert_ne!(first_root, third_root);
+
+        // Most importantly, verify the canonical trie is unchanged
+        let app = create_test_router_with_state(state.clone());
+        let final_root_request = Request::builder()
+            .method("GET")
+            .uri(&format!("/get-root-hash/{}", trie_id))
+            .body(Body::empty())
+            .unwrap();
+
+        let final_root_response = app.clone().oneshot(final_root_request).await.unwrap();
+        let body = final_root_response.into_body();
+        let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let final_root_data: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
+        let final_root_hash = final_root_data["root_hash"].as_str().unwrap().to_string();
+
+        // The canonical trie should be unchanged
+        assert_eq!(original_root_hash, final_root_hash);
+
+        // Verify that the temporary mutations don't actually exist in the canonical trie
+        let app = create_test_router_with_state(state.clone());
+        let proof_request = Request::builder()
+            .method("GET")
+            .uri(&format!("/get-proof/{}?key=0x1", trie_id))
+            .body(Body::empty())
+            .unwrap();
+
+        let proof_response = app.clone().oneshot(proof_request).await.unwrap();
+        let body = proof_response.into_body();
+        let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let proof_data: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
+
+        // The key should not exist in the canonical trie
+        assert!(proof_data["value"].is_null());
+        assert!(proof_data["proof"].as_array().unwrap().is_empty());
+        assert_eq!(proof_data["exists"], false);
+
+        // But the original key should still exist
+        let app = create_test_router_with_state(state);
+        let original_proof_request = Request::builder()
+            .method("GET")
+            .uri(&format!("/get-proof/{}?key=0x10", trie_id))
+            .body(Body::empty())
+            .unwrap();
+
+        let original_proof_response = app.clone().oneshot(original_proof_request).await.unwrap();
+        let body = original_proof_response.into_body();
+        let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+        let original_proof_data: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
+
+        assert_eq!(original_proof_data["value"], "0x0100");
+        assert_eq!(original_proof_data["exists"], true);
+    }
+
+    #[tokio::test]
+    async fn test_upsert_actions_invalid_format() {
+        let app = create_router();
+
+        let upsert_request = Request::builder()
+            .method("POST")
+            .uri("/upsert-actions")
+            .header("content-type", "application/json")
+            .body(Body::from(r#"{"actions": ["invalid_format"]}"#))
+            .unwrap();
+
+        let response = app.clone().oneshot(upsert_request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn test_upsert_actions_nonexistent_trie() {
+        let app = create_router();
+
+        let upsert_request = Request::builder()
+            .method("POST")
+            .uri("/upsert-actions")
+            .header("content-type", "application/json")
+            .body(Body::from(r#"{"actions": ["nonexistent;0x1;0x42"]}"#))
+            .unwrap();
+
+        let response = app.clone().oneshot(upsert_request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 }

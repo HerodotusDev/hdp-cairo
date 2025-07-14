@@ -2728,6 +2728,8 @@ dependencies = [
  "dry_hint_processor",
  "dry_run",
  "fetcher",
+ "reqwest 0.12.12",
+ "serde",
  "serde_json",
  "sound_run",
  "syscall_handler",

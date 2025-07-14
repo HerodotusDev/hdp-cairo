@@ -53,6 +53,55 @@ curl http://localhost:3000/get-root-hash/my_trie_id
 curl "http://localhost:3000/get-proof/my_trie_id?key=0x1"
 ```
 
+### Upsert Actions with Temporary Mutations
+
+Performs sequential temporary mutations on tries and generates proofs for each mutation without persisting the changes to the database.
+
+```bash
+curl -X POST http://localhost:3000/upsert-actions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "actions": [
+      "trie_id_1;0x1;0x42",
+      "trie_id_1;0x2;0x84",
+      "trie_id_2;0x5;0x123"
+    ]
+  }'
+```
+
+**Request Format:**
+
+- `actions`: Array of strings in the format `"trie_id;key;value"`
+- Each action specifies a temporary mutation to apply
+
+**Response Format:**
+
+```json
+{
+  "results": [
+    {
+      "action": "trie_id_1;0x1;0x42",
+      "trie_id": "trie_id_1",
+      "key": "0x1",
+      "value": "0x42",
+      "proof": [
+        "root:0x...",
+        "key:0x1",
+        "value:0x42",
+        "leaf_hash:0x...",
+        "original_root:0x...",
+        "temporary_mutation:true"
+      ],
+      "root_hash_after_mutation": "0x..."
+    }
+  ],
+  "success": true,
+  "message": "Successfully performed 2 temporary mutations"
+}
+```
+
+**Note:** The mutations are temporary and do not alter the original trie in the database. Each mutation is applied independently, and proofs are generated for each individual mutation.
+
 ## Usage with HDP Injected State
 
 The state server is designed to work with HDP's injected state syscall handlers. When using the `dry_hint_processor` or `sound_hint_processor`, the syscall handlers will automatically interact with the state server API.

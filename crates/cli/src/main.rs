@@ -11,9 +11,28 @@ use clap::{Parser, Subcommand};
 use dry_hint_processor::syscall_handler::{evm, injected_state, starknet};
 use dry_run::{Program, DRY_RUN_COMPILED_JSON};
 use fetcher::run_fetcher;
+use serde::{Deserialize, Serialize};
 use sound_run::HDP_COMPILED_JSON;
 use syscall_handler::SyscallHandler;
 use types::{error::Error, param::Param, ChainProofs, HDPDryRunInput, HDPInput};
+
+#[derive(Deserialize)]
+struct FetcherInput {
+    #[serde(flatten)]
+    syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>,
+}
+
+#[derive(Serialize, Debug)]
+struct FetcherOutput {
+    chain_proofs: Vec<ChainProofs>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    upsert_results: Option<serde_json::Value>,
+}
+
+#[derive(Serialize, Debug)]
+struct UpsertActionsRequest {
+    actions: Vec<String>,
+}
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about)]
@@ -89,18 +108,69 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("Reading input file from: {}", args.inputs.display());
             let input_file = fs::read(&args.inputs)?;
 
-            let syscall_handler: SyscallHandler<
-                evm::CallContractHandler,
-                starknet::CallContractHandler,
-                injected_state::CallContractHandler,
-            > = serde_json::from_slice(&input_file)?;
+            let fetcher_input: FetcherInput = serde_json::from_slice(&input_file)?;
 
-            let chain_proofs = run_fetcher(syscall_handler).await?;
+            let chain_proofs = run_fetcher(fetcher_input.syscall_handler.clone()).await?;
+
+            // Extract upsert_actions from injected_state_call_contract_handler
+            let upsert_actions = &fetcher_input
+                .syscall_handler
+                .call_contract_handler
+                .injected_state_call_contract_handler
+                .upsert_actions;
+
+            // Process upsert_actions if present
+            let upsert_results = if !upsert_actions.is_empty() {
+                println!("Processing {} upsert actions...", upsert_actions.len());
+
+                let state_server_url = std::env::var("INJECTED_STATE_BASE_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
+
+                let client = reqwest::Client::new();
+                let upsert_request = UpsertActionsRequest {
+                    actions: upsert_actions.clone(),
+                };
+
+                match client
+                    .post(&format!("{}/upsert-actions", state_server_url))
+                    .json(&upsert_request)
+                    .send()
+                    .await
+                {
+                    Ok(response) => {
+                        if response.status().is_success() {
+                            match response.json::<serde_json::Value>().await {
+                                Ok(result) => {
+                                    println!("Upsert actions processed successfully.");
+                                    Some(result)
+                                }
+                                Err(e) => {
+                                    eprintln!("Failed to parse upsert response: {}", e);
+                                    None
+                                }
+                            }
+                        } else {
+                            eprintln!("Upsert actions failed with status: {}", response.status());
+                            None
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to send upsert request: {}", e);
+                        None
+                    }
+                }
+            } else {
+                None
+            };
+
+            let output = FetcherOutput {
+                chain_proofs,
+                upsert_results,
+            };
 
             println!("Writing proofs to: {}", args.output.display());
             fs::write(
                 args.output,
-                serde_json::to_string_pretty(&chain_proofs)
+                serde_json::to_string_pretty(&output)
                     .map_err(|e| fetcher::FetcherError::IO(e.into()))?
                     .as_bytes(),
             )?;
