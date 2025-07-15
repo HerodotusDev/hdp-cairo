@@ -21,3 +21,4 @@ syscall_handler.workspace = true
 tokio.workspace = true
 types.workspace = true
 chrono.workspace = true
+state_server.workspace = true

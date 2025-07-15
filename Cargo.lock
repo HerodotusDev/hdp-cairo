@@ -3193,6 +3193,7 @@ dependencies = [
  "serde_json",
  "starknet",
  "starknet-types-core",
+ "state_server",
  "strum_macros 0.26.4",
  "syscall_handler",
  "tokio",
@@ -6637,14 +6638,11 @@ name = "sound_hint_processor"
 version = "0.1.0"
 dependencies = [
  "alloy-rlp",
- "anyhow",
  "cairo-lang-casm",
  "cairo-lang-starknet-classes",
  "cairo-vm",
  "hints",
- "reqwest 0.12.12",
  "serde",
- "serde_json",
  "starknet-types-core",
  "strum_macros 0.26.4",
  "syscall_handler",
@@ -6934,6 +6932,7 @@ dependencies = [
  "serde_with 3.12.0",
  "thiserror 1.0.69",
  "tiny-keccak",
+ "types",
 ]
 
 [[package]]

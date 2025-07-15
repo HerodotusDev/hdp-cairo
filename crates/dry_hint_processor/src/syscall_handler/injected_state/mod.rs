@@ -15,6 +15,7 @@ use types::cairo::{
     structs::CairoFelt,
     traits::CairoType,
 };
+use types::trie::{action::Action, key::Key, root_hash::RootHash, value::Value};
 
 #[derive(FromRepr, Debug)]
 pub enum CallHandlerId {
@@ -33,10 +34,10 @@ pub struct CallContractHandler {
     #[serde(skip, default = "default_client")]
     client: Arc<Client>,
     base_url: String,
-    pub trie_ids: Vec<String>,
-    pub upsert_actions: Vec<String>,
+    pub trie_ids: Vec<RootHash>,
+    pub upsert_actions: Vec<Action>,
     #[serde(skip)]
-    local_storage: HashMap<String, String>,
+    local_storage: HashMap<Key, Value>,
 }
 
 impl Default for CallContractHandler {
@@ -62,7 +63,7 @@ impl CallContractHandler {
     async fn ensure_trie_exists(&mut self) -> Result<(), anyhow::Error> {
         if self.trie_ids.is_empty() {
             let new_trie_id = format!("injected_state_trie_dry_{}", Utc::now().timestamp_millis());
-            self.trie_ids.push(new_trie_id);
+            self.trie_ids.push(RootHash::from(pathfinder_crypto::Felt::from_hex_str(&new_trie_id).unwrap_or(pathfinder_crypto::Felt::from_hex_str(&format!("0x{}", hex::encode(new_trie_id.as_bytes()))).unwrap())));
         }
 
         let current_trie_id = &self.trie_ids[self.trie_ids.len() - 1];
@@ -96,22 +97,21 @@ impl CallContractHandler {
         }
     }
 
-    fn upsert_key_locally(&mut self, key: &str, value: &str) {
+    fn upsert_key_locally(&mut self, key: Key, value: Value) {
         // Update local storage with prefixed key
         let prefixed_key = self.create_prefixed_key(key);
-        self.local_storage.insert(prefixed_key, value.to_string());
+        self.local_storage.insert(key, value);
 
         // Get current root hash (use current trie ID)
         let root_hash = self.get_current_tree_id();
 
         // Format the action as "rootHash;key;value" (use original key, not prefixed)
-        let action = format!("{};{};{}", root_hash, key, value);
-
+        let action = Action::new(format!("{};{};{}", root_hash, key, value));
         // Always add the action (store all intermediary updates)
         self.upsert_actions.push(action);
     }
 
-    async fn get_key(&mut self, key: &str) -> Result<Option<String>, anyhow::Error> {
+    async fn get_key(&mut self, key: Key) -> Result<Option<String>, anyhow::Error> {
         // First check local storage with prefixed key
         let prefixed_key = self.create_prefixed_key(key);
         if let Some(value) = self.local_storage.get(&prefixed_key) {
@@ -139,25 +139,25 @@ impl CallContractHandler {
         }
     }
 
-    fn key_exists(&self, key: &str) -> bool {
+    fn key_exists(&self, key: Key) -> bool {
         let prefixed_key = self.create_prefixed_key(key);
         self.local_storage.contains_key(&prefixed_key)
     }
 
     async fn set_tree_root(&mut self, tree_root: &str) -> Result<(), anyhow::Error> {
-        self.trie_ids.push(tree_root.to_string());
+        self.trie_ids.push(RootHash::from(pathfinder_crypto::Felt::from_hex_str(tree_root).unwrap_or(pathfinder_crypto::Felt::from_hex_str(&format!("0x{}", hex::encode(tree_root.as_bytes()))).unwrap())));
         self.ensure_trie_exists().await?;
         Ok(())
     }
 
     /// Get the current tree id (or default if none exists)
-    fn get_current_tree_id(&self) -> &str {
-        self.trie_ids.last().map(|id| id.as_str()).unwrap_or("default")
+    fn get_current_tree_id(&self) -> RootHash {
+        self.trie_ids.last().copied().unwrap_or(RootHash::zero())
     }
 
     /// Create a prefixed key for local storage using current tree id
-    fn create_prefixed_key(&self, key: &str) -> String {
-        format!("{}:{}", self.get_current_tree_id(), key)
+    fn create_prefixed_key(&self, key: Key) -> Key {
+        Key::new(format!("{}:{}", self.get_current_tree_id(), key))
     }
 
     /// Get all upsert actions for dumping to dry_run_output.json

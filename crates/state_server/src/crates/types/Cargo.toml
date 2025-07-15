@@ -19,3 +19,5 @@ alloy-rlp = { workspace = true }
 eth_trie = { workspace = true }
 bincode = { workspace = true }
 hex = { workspace = true }
+types = { workspace = true }
+trie = { workspace = true }
