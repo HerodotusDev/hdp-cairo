@@ -31,7 +31,7 @@ use types::{
         },
         header::HeaderMmrMeta,
         mmr::MmrMeta,
-        starknet::{header::Header as StarknetHeader, storage::Storage as StarknetStorage, Proofs as StarknetProofs},
+        starknet::{header::Header as StarknetHeader, storage::Storage as StarknetStorage, Proofs as StarknetProofs}, state::StateProofs,
     },
     ChainProofs, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
 };
@@ -382,6 +382,10 @@ impl<'a> Fetcher<'a> {
             headers_with_mmr: process_headers(headers_with_mmr),
             storages: storages.into_iter().collect(),
         })
+    }
+
+    pub async fn collect_state_proofs(&self) -> Result<StateProofs, FetcherError> {
+        todo!()
     }
 }
 
