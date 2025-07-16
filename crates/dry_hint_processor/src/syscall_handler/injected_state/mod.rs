@@ -15,7 +15,12 @@ use types::cairo::{
     structs::CairoFelt,
     traits::CairoType,
 };
-use types::trie::{action::Action, key::Key, root_hash::RootHash, value::Value};
+use pathfinder_crypto::Felt;
+use types::trie::action::Action;
+
+pub type RootHash = Felt;
+pub type Value = Felt;
+pub type Key = Felt;
 
 #[derive(FromRepr, Debug)]
 pub enum CallHandlerId {

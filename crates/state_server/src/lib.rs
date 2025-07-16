@@ -24,6 +24,7 @@ use trie_builder::{
     state_server_types::trie::leaf::TrieLeaf,
     trie::Trie,
 };
+use crate::vm::syscall_handler::injected_state::{RootHash, Key, Value};
 
 #[derive(Debug, Clone)]
 pub struct StateServerTrie {
@@ -47,20 +48,16 @@ impl StateServerTrie {
         })
     }
 
-    pub fn insert(&mut self, key: String, value: String) -> anyhow::Result<()> {
-        // Validate inputs
-        if key.is_empty() || value.is_empty() {
+    pub fn insert(&mut self, key: Key, value: Value) -> anyhow::Result<()> {
+        //Do we need to validate the inputs?
+        if key == Felt::ZERO || value == Felt::ZERO {
             return Err(anyhow!("Key and value cannot be empty"));
         }
 
         let conn = self.db_connection_manager.get_connection()?;
 
-        // Convert key and value to Felt
-        let key_felt = self.string_to_felt(&key)?;
-        let value_felt = self.string_to_felt(&value)?;
-
         // Create a new leaf with the key-value pair
-        let leaf = TrieLeaf::new(key_felt, value_felt);
+        let leaf = TrieLeaf::new(key, value);
 
         // For the first insertion (root_idx is from init with zero leaf), create a fresh trie
         // For subsequent insertions, load the existing trie
