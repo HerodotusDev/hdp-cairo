@@ -22,7 +22,7 @@ pub enum Error {
     #[error(transparent)]
     PublicInput(#[from] PublicInputError),
     #[error(transparent)]
-    CairoRunError(#[from] CairoRunError),
+    CairoRunError(#[from] Box<CairoRunError>),
     #[error("Failed to compile to cairo_pie:\n {0}")]
     CairoPie(String),
     #[error(transparent)]
@@ -40,9 +40,9 @@ pub enum Error {
     #[error("Function param {param_index} only partially contains argument {arg_index}.")]
     ArgumentUnaligned { param_index: usize, arg_index: usize },
     #[error("Only programs returning `Array<Felt252>` can be currently proven. Try serializing the final values before returning them")]
-    IlegalReturnValue,
-    #[error("Only programs with `Array<Felt252>` as an input can be currently proven. Try inputing the serialized version of the input and deserializing it on main")]
-    IlegalInputValue,
+    IllegalReturnValue,
+    #[error("Only programs with `Array<Felt252>` as an input can be currently proven. Try inputting the serialized version of the input and deserializing it on main")]
+    IllegalInputValue,
     #[error(transparent)]
     SerdeJson(#[from] serde_json::Error),
 }
