@@ -70,7 +70,7 @@ pub fn hint_is_left_smaller(
     let left_flipped =
         BigUint::from_bytes_le(&left[0].to_bytes_be()) * FELT_TWO_POW_128.to_biguint() + BigUint::from_bytes_le(&left[1].to_bytes_be());
     let right_flipped =
-        BigUint::from_bytes_le(&right[1].to_bytes_be()) * FELT_TWO_POW_128.to_biguint() + BigUint::from_bytes_le(&right[1].to_bytes_be());
+        BigUint::from_bytes_le(&right[0].to_bytes_be()) * FELT_TWO_POW_128.to_biguint() + BigUint::from_bytes_le(&right[1].to_bytes_be());
 
     let insert = if left_flipped < right_flipped {
         Felt252::ONE
