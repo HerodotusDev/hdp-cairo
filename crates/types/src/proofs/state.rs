@@ -5,6 +5,15 @@ use starknet_types_core::felt::Felt;
 
 pub type StateProofs = Vec<StateProof>;
 
+impl StateProof {
+    pub fn action(&self) -> u128 {
+        match self {
+            StateProof::Inclusion(_) => 0,
+            StateProof::Update(_) => 1,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
 pub enum StateProof {
     Inclusion(Vec<TrieNodeSerde>),

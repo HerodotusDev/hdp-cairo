@@ -17,7 +17,8 @@ from starkware.cairo.common.builtin_keccak.keccak import keccak_felts
 from starkware.cairo.common.registers import get_label_location
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash_many, poseidon_hash
 
-from src.verifiers.verify import run_state_verification
+from src.verifiers.verify import run_chain_state_verification
+from src.verifiers.verify import run_injected_state_verification
 from src.utils.merkle import compute_merkle_root
 from src.types import MMRMeta
 from src.utils.utils import mmr_metas_write_output_ptr, felt_array_to_uint256s
@@ -85,6 +86,7 @@ func run{
         chain_proofs = run_input.proofs
         params = run_input.params
         compiled_class = run_input.compiled_class
+        state_proofs = run_input.state_proofs
     %}
 
     let (public_inputs) = alloc();
@@ -111,7 +113,7 @@ func run{
     // MMR Params
     let (mmr_metas: MMRMeta*) = alloc();
 
-    let (mmr_metas_len) = run_state_verification{
+    let (mmr_metas_len) = run_chain_state_verification{
         range_check_ptr=range_check_ptr,
         pedersen_ptr=pedersen_ptr,
         poseidon_ptr=poseidon_ptr,

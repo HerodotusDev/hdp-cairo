@@ -15,7 +15,7 @@ use std::{fmt, str::FromStr};
 pub use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 pub use cairo_vm::{vm::runners::cairo_pie::CairoPie, Felt252};
 use param::Param;
-use proofs::{evm, starknet};
+use proofs::{evm, starknet, state::StateProofs};
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
 
@@ -43,6 +43,7 @@ pub struct HDPInput {
     pub chain_proofs: Vec<ChainProofs>,
     pub params: Vec<Param>,
     pub compiled_class: CasmContractClass,
+    pub state_proofs: StateProofs,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]

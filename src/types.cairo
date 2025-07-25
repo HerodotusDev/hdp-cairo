@@ -7,6 +7,11 @@ struct ChainInfo {
     layout: felt,
 }
 
+struct ActionInfo {
+    id: felt,
+    action: felt,
+}
+
 struct MMRMeta {
     id: felt,
     root: felt,

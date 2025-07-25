@@ -19,6 +19,8 @@ pub mod scopes {
     pub const TRANSACTION: &str = "transaction";
     pub const HEADER_WITH_MMR_EVM: &str = "header_with_mmr";
     pub const HEADER_WITH_MMR_STARKNET: &str = "header_with_mmr_starknet";
+    pub const STATE_PROOFS: &str = "state_proofs";
+    pub const BATCH_SERVER: &str = "batch_server";
 }
 
 pub mod ids {
