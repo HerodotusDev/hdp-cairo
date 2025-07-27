@@ -38,6 +38,9 @@ bitvec = { workspace = true }
 primitive-types = { workspace = true }
 state-server-types = { path = "src/crates/types" }
 trie-builder = { path = "src/crates/trie-builder" }
+dry_hint_processor = { path = "../dry_hint_processor" }
+types = { workspace = true }
+starknet-types-core = { workspace = true }
 
 http-body-util = { workspace = true }
 

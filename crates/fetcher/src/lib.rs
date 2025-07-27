@@ -12,7 +12,11 @@ use std::{
 use alloy::hex::FromHexError;
 use clap::Parser;
 use dotenvy as _;
-use dry_hint_processor::syscall_handler::{evm, injected_state, starknet};
+use dry_hint_processor::syscall_handler::{
+    evm,
+    injected_state::{self, Action},
+    starknet,
+};
 use eth_trie_proofs::{tx_receipt_trie::TxReceiptsMptHandler, tx_trie::TxsMptHandler};
 use futures::StreamExt;
 use indexer::models::IndexerError;
@@ -20,6 +24,7 @@ use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use proof_keys::{evm::ProofKeys as EvmProofKeys, starknet::ProofKeys as StarknetProofKeys, FlattenedKey, ProofKeys};
 use reqwest::Url;
 use starknet_types_core::felt::FromStrError;
+use state_server::GetStateProofsResponse;
 use syscall_handler::SyscallHandler;
 use thiserror::Error;
 use types::{
@@ -31,7 +36,8 @@ use types::{
         },
         header::HeaderMmrMeta,
         mmr::MmrMeta,
-        starknet::{header::Header as StarknetHeader, storage::Storage as StarknetStorage, Proofs as StarknetProofs}, state::StateProofs,
+        starknet::{header::Header as StarknetHeader, storage::Storage as StarknetStorage, Proofs as StarknetProofs},
+        state::StateProofs,
     },
     ChainProofs, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
 };
@@ -385,7 +391,39 @@ impl<'a> Fetcher<'a> {
     }
 
     pub async fn collect_state_proofs(&self) -> Result<StateProofs, FetcherError> {
-        todo!()
+        let actions = self.proof_keys.injected_state_actions.clone();
+
+        if actions.is_empty() {
+            return Ok(StateProofs::default());
+        }
+
+        let action_strings: Vec<String> = actions.iter().map(|action| action.serialize()).collect();
+
+        let state_server_url = std::env::var("INJECTED_STATE_BASE_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
+
+        let client = reqwest::Client::new();
+
+        let request_payload = serde_json::json!({
+            "actions": action_strings
+        });
+
+        let response = client
+            .post(&format!("{}/get-state-proofs", state_server_url))
+            .header("content-type", "application/json")
+            .json(&request_payload)
+            .send()
+            .await?;
+
+        if response.status().is_success() {
+            let response_body: GetStateProofsResponse = response.json().await?;
+            let state_proofs: StateProofs = response_body.results.into_iter().map(|result| result.proof.state_proof).collect();
+
+            Ok(state_proofs)
+        } else {
+            Err(FetcherError::RequestError(reqwest::Error::from(
+                response.error_for_status().unwrap_err(),
+            )))
+        }
     }
 }
 
@@ -448,6 +486,11 @@ pub fn parse_syscall_handler(
             starknet::DryRunKey::Header(value) => proof_keys.starknet.header_keys.insert(value),
             starknet::DryRunKey::Storage(value) => proof_keys.starknet.storage_keys.insert(value),
         };
+    }
+
+    // Process injected state keys
+    for action in &syscall_handler.call_contract_handler.injected_state_call_contract_handler.actions {
+        proof_keys.injected_state_actions.push(Action::deserialize(action).unwrap());
     }
 
     Ok(proof_keys)

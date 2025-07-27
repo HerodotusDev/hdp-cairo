@@ -24,6 +24,29 @@ impl ConnectionManager {
         Ok(self.pool.get()?)
     }
 
+    pub fn create_tables_if_not_exists(&self) -> Result<(), Error> {
+        self.get_connection()?.execute(
+            "CREATE TABLE IF NOT EXISTS trie_nodes (
+                idx INTEGER PRIMARY KEY,
+                hash BLOB NOT NULL,
+                data BLOB,
+                trie_idx INTEGER UNIQUE NOT NULL
+            )",
+            [],
+        )?;
+
+        self.get_connection()?.execute(
+            "CREATE TABLE IF NOT EXISTS leafs (
+                idx INTEGER PRIMARY KEY,
+                key BLOB NOT NULL,
+                value BLOB NOT NULL
+            )",
+            [],
+        )?;
+
+        Ok(())
+    }
+
     pub fn create_table(&self) -> Result<(), Error> {
         // Drop existing tables first to ensure clean schema
         let _ = self.delete_tables();

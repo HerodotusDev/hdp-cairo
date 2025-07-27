@@ -1,22 +1,15 @@
-use std::collections::HashMap;
-
-use bitvec::{order::Msb0, slice::BitSlice, vec::BitVec};
+use bitvec::{order::Msb0, slice::BitSlice};
 use pathfinder_common::{hash::TruncatedKeccakHash, trie::TrieNode};
 use pathfinder_crypto::Felt;
-use pathfinder_merkle_tree::{merkle_node::Direction, tree::MerkleTree};
+use pathfinder_merkle_tree::{
+    merkle_node::Direction,
+    tree::{MerkleTree, TrieNodeWithHash},
+};
 use pathfinder_storage::{Node, NodeRef, StoredNode, TrieStorageIndex, TrieUpdate};
-use primitive_types::U256;
 use r2d2::PooledConnection;
 use r2d2_sqlite::SqliteConnectionManager;
 
-use crate::{
-    db::trie::TrieDB,
-    error::Error,
-    state_server_types::trie::{
-        contract::VerificationCallData,
-        leaf::{LeafUpdate, TrieLeaf, generate_preimage},
-    },
-};
+use crate::{db::trie::TrieDB, error::Error, state_server_types::trie::leaf::TrieLeaf};
 
 pub struct Trie {}
 
@@ -61,62 +54,6 @@ impl Trie {
         Ok((storage, trie, root_idx))
     }
 
-    pub fn init(conn: &PooledConnection<SqliteConnectionManager>) -> (TrieDB, Felt, TrieStorageIndex) {
-        let mut trie = MerkleTree::<TruncatedKeccakHash, 251>::empty();
-        let storage = TrieDB::new(conn);
-
-        let item = TrieLeaf::new(Felt::ZERO, Felt::ZERO);
-        let _ = trie.set(&storage, item.get_path(), item.commitment());
-        let update = trie.clone().commit(&storage).unwrap();
-        let root_idx = Trie::persist_updates(&storage, &update, &vec![item]).unwrap();
-
-        (storage, update.root_commitment, root_idx)
-    }
-
-    #[allow(clippy::type_complexity)]
-    pub fn generate_update_proofs(
-        trie: &mut MerkleTree<TruncatedKeccakHash, 251>,
-        storage: &mut TrieDB,
-        updates: &[LeafUpdate],
-        root_idx: TrieStorageIndex,
-    ) -> Result<(HashMap<String, Vec<String>>, Felt, Vec<VerificationCallData>), Error> {
-        let pre_root = storage.get_node_hash_by_idx(root_idx.into())?.unwrap();
-        let mut pre_proofs: Vec<Vec<(TrieNode, Felt)>> = Vec::new();
-        let mut post_proofs: Vec<Vec<(TrieNode, Felt)>> = Vec::new();
-        let mut verification_call_data: Vec<VerificationCallData> = Vec::new();
-
-        for update in updates {
-            let proof = Trie::get_leaf_proof(storage, pre_root, update.as_old_leaf())?;
-            let pre_ok = Trie::verify_proof(&proof.clone(), pre_root, update.as_old_leaf());
-
-            assert!(pre_ok.is_some(), "Pre proof verification failed");
-            pre_proofs.push(proof.clone());
-            let verification_data = VerificationCallData::from_proof(&proof, &update.as_old_leaf(), pre_root);
-            verification_call_data.push(verification_data);
-        }
-
-        let updated_leafs = updates.to_owned().iter().map(|u| u.as_new_leaf()).collect();
-        let update = Trie::persist_changes(storage, trie, updated_leafs)?;
-        let post_root = update.root_commitment;
-
-        for update in updates {
-            let proof = Trie::get_leaf_proof(storage, post_root, update.as_new_leaf())?;
-            let post_ok = Trie::verify_proof(&proof.clone(), post_root, update.as_new_leaf());
-
-            assert!(post_ok.is_some(), "Post proof verification failed");
-            post_proofs.push(proof.clone());
-            let verification_data = VerificationCallData::from_proof(&proof, &update.as_new_leaf(), post_root);
-            verification_call_data.push(verification_data);
-        }
-
-        let mut preimage = HashMap::new();
-        for (pre_proof, post_proof) in pre_proofs.iter().zip(post_proofs.iter()) {
-            generate_preimage::<TruncatedKeccakHash>(&mut preimage, pre_proof.clone());
-            generate_preimage::<TruncatedKeccakHash>(&mut preimage, post_proof.clone());
-        }
-        Ok((preimage, post_root, verification_call_data))
-    }
-
     pub fn persist_changes(
         storage: &mut TrieDB,
         trie: &MerkleTree<TruncatedKeccakHash, 251>,
@@ -128,7 +65,7 @@ impl Trie {
         Ok(update)
     }
 
-    pub fn get_leaf_proof(storage: &TrieDB, root: Felt, leaf: TrieLeaf) -> Result<Vec<(TrieNode, Felt)>, Error> {
+    pub fn get_leaf_proof(storage: &TrieDB, root: Felt, leaf: TrieLeaf) -> Result<Vec<TrieNodeWithHash>, Error> {
         // Convert the key to a bitvec for the trie
         let key_bits = leaf.get_path();
         let root_idx = storage.get_node_idx_by_hash(root)?.unwrap();
@@ -136,35 +73,7 @@ impl Trie {
         MerkleTree::<TruncatedKeccakHash, 251>::get_proof(root_idx.into(), storage, &key_bits).map_err(Error::GetProof)
     }
 
-    pub fn get_proof(storage: &TrieDB, root_idx: TrieStorageIndex, address: Felt) -> Result<Vec<[U256; 3]>, Error> {
-        let key_bits = address.view_bits().to_bitvec();
-        let proof = MerkleTree::<TruncatedKeccakHash, 251>::get_proof(root_idx, storage, &key_bits).map_err(Error::GetProof)?;
-
-        let mut packed_nodes = Vec::with_capacity(proof.len());
-        for (node, _hash) in proof {
-            let packed_node = match node {
-                TrieNode::Binary { left, right } => [
-                    U256::from_big_endian(&left.to_be_bytes()),
-                    U256::from_big_endian(&right.to_be_bytes()),
-                    U256::from(0),
-                ],
-                TrieNode::Edge { child, path } => {
-                    let path_len = path.len();
-
-                    [
-                        U256::from_big_endian(&child.to_be_bytes()),
-                        bits_to_u256(&path),
-                        U256([0, 0, 0, 1u64 << 63]) | U256::from(path_len),
-                    ]
-                }
-            };
-            packed_nodes.push(packed_node);
-        }
-
-        Ok(packed_nodes)
-    }
-
-    pub fn verify_proof(proof: &[(TrieNode, Felt)], root: Felt, leaf: TrieLeaf) -> Option<Membership> {
+    pub fn verify_proof(proof: &[TrieNodeWithHash], root: Felt, leaf: TrieLeaf) -> Option<Membership> {
         let key = leaf.get_path();
         // Protect from ill-formed keys
         if key.len() != 251 {
@@ -175,6 +84,10 @@ impl Trie {
         let mut remaining_path: &BitSlice<u8, Msb0> = key.as_bitslice();
         for (proof_node, _) in proof.iter() {
             if proof_node.hash::<TruncatedKeccakHash>() != expected_hash {
+                println!("~~~~~~~~~~~~~PROOF VERIFICATION FAILED~~~~~~~~~~~~");
+                println!("Expected hash: {:?}", expected_hash);
+                println!("Proof node hash: {:?}", proof_node.hash::<TruncatedKeccakHash>());
+                println!("_______________________________");
                 return None;
             }
             match proof_node {
@@ -206,7 +119,6 @@ impl Trie {
             println!("Used Root: {:?}", root);
             println!("expected hash: {:?}", expected_hash);
             println!("leaf hash    : {:?}", leaf.commitment());
-            println!("proof: {:?}", proof);
             println!("_______________________________");
             None
         }
@@ -287,16 +199,4 @@ impl Trie {
         storage.persist_nodes(nodes_for_empty_root)?;
         Ok(TrieStorageIndex::from(root_idx))
     }
-}
-
-/// Converts a BitSlice (using Msb0 order) to a U256 (big-endian).
-/// The bits are right-aligned (padded with leading zeros) in the resulting U256.
-fn bits_to_u256(bits: &BitVec<u8, Msb0>) -> U256 {
-    let felt = Felt::from_bits(bits).expect("Failed to convert bits to Felt; check bit length compatibility.");
-
-    // Convert the Felt to its big-endian byte representation ([u8; 32]).
-    let felt_bytes = felt.to_be_bytes();
-
-    // Create the U256 directly from the big-endian bytes provided by Felt.
-    U256::from_big_endian(&felt_bytes)
 }
