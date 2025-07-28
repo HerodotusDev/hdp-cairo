@@ -34,6 +34,7 @@ async fn main() -> Result<(), Error> {
             chain_proofs,
             compiled_class,
             params,
+            //state_proofs
         },
     )?;
 

@@ -20,7 +20,9 @@ pub mod scopes {
     pub const HEADER_WITH_MMR_EVM: &str = "header_with_mmr";
     pub const HEADER_WITH_MMR_STARKNET: &str = "header_with_mmr_starknet";
     pub const STATE_PROOFS: &str = "state_proofs";
-    pub const BATCH_SERVER: &str = "batch_server";
+    pub const BATCH_STATE_SERVER: &str = "batch_state_server";
+    pub const INCLUSION_PROOF: &str = "inclusion_proof";
+    pub const UPDATE_PROOF: &str = "update_proof";
 }
 
 pub mod ids {
@@ -79,4 +81,6 @@ pub mod ids {
     pub const TASK_HASH: &str = "task_hash";
     pub const VALUE_LEN: &str = "value_len";
     pub const VALUE: &str = "value";
+    pub const INCLUSION_PROOF_BYTES: &str = "inclusion_proof_bytes";
+    pub const UPDATE_PROOF_BYTES: &str = "update_proof_bytes";
 }

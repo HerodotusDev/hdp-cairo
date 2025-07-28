@@ -7,9 +7,9 @@ struct ChainInfo {
     layout: felt,
 }
 
-struct ActionInfo {
+struct InjectedStateInfo {
     id: felt,
-    action: felt,
+    proof_type: felt,
 }
 
 struct MMRMeta {

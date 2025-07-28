@@ -6,10 +6,11 @@ use starknet_types_core::felt::Felt;
 pub type StateProofs = Vec<StateProof>;
 
 impl StateProof {
-    pub fn action(&self) -> u128 {
+    pub fn proof_type(&self) -> u128 {
         match self {
             StateProof::Inclusion(_) => 0,
-            StateProof::Update(_) => 1,
+            // StateProof::NonInclusion(_) => 1,
+            StateProof::Update(_) => 2,
         }
     }
 }
@@ -17,6 +18,7 @@ impl StateProof {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
 pub enum StateProof {
     Inclusion(Vec<TrieNodeSerde>),
+    // NonInclusion(Vec<TrieNodeSerde>),
     Update((Vec<TrieNodeSerde>, Vec<TrieNodeSerde>)),
 }
 
@@ -24,6 +26,15 @@ pub enum StateProof {
 pub enum TrieNodeSerde {
     Binary { left: Felt, right: Felt },
     Edge { child: Felt, path: Vec<u8> },
+}
+
+impl TrieNodeSerde {
+    pub fn len(&self) -> usize {
+        match self {
+            TrieNodeSerde::Binary { .. } => 2,
+            TrieNodeSerde::Edge { path, .. } => 1 + path.len(),
+        }
+    }
 }
 
 impl From<TrieNode> for TrieNodeSerde {

@@ -198,6 +198,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     chain_proofs,
                     compiled_class,
                     params,
+                    //state_proofs
                 },
             )?;
 

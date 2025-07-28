@@ -1,6 +1,6 @@
 from src.verifiers.evm.verify import run_state_verification as evm_run_state_verification
 from src.verifiers.starknet.verify import run_state_verification as starknet_run_state_verification
-from src.verifiers.injected_state.verify import inclusion_state_verification, update_state_verification
+from src.verifiers.injected_state.verify import inclusion_state_verification, non_inclusion_state_verification, update_state_verification
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.cairo_builtins import (
     HashBuiltin,
@@ -11,9 +11,9 @@ from starkware.cairo.common.cairo_builtins import (
     EcOpBuiltin,
 )
 
-from src.types import MMRMeta, ChainInfo, ActionInfo
+from src.types import MMRMeta, ChainInfo, InjectedStateInfo
 from src.utils.chain_info import fetch_chain_info, Layout
-from src.utils.action_info import fetch_action_info, Action
+from src.utils.injected_state_info import fetch_injected_state_info, ProofType
 
 func run_chain_state_verification{
     range_check_ptr,
@@ -85,12 +85,11 @@ func run_injected_state_verification(
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
     injected_state_memorizer: DictAccess*,
-)() -> (){
+)(){
     tempvar state_proofs_len: felt = nondet %{ len(state_proofs) %};
-    let (_) = run_chain_state_verification_inner(idx=chain_proofs_len);
+    let (_) = run_injected_state_verification_inner(idx=state_proofs_len);
     return ();
 }
-
 
 func run_injected_state_verification_inner{
     range_check_ptr,
@@ -107,26 +106,36 @@ func run_injected_state_verification_inner{
         return (idx=idx);
     }
 
-    tempvar action: felt = nondet %{ state_proofs[ids.idx - 1].action %};
-    let (local action_info) = fetch_action_info(action);
+    tempvar proof_type: felt = nondet %{ state_proofs[ids.idx - 1].proof_type %};
+    let (local proof_info) = fetch_injected_state_info(proof_type);
 
-    if (action_info.action == Action.INCLUSION) {
-        with action_info {
-            %{ vm_enter_scope({'state_proof': state_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
+    if (proof_info.proof_type == ProofType.INCLUSION) {
+        with proof_info {
+            %{ vm_enter_scope({'batch_state_server': state_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
             let (_) = inclusion_state_verification();
             %{ vm_exit_scope() %}
 
-            return run_server_state_verification_inner(idx=idx - 1);
+            return run_injected_state_verification_inner(idx=idx - 1);
         }
     }
 
-    if (action_info.action == Action.UPDATE) {
-        with action_info {
-            %{ vm_enter_scope({'state_proof': state_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
+    // if (proof_info.proof_type == ProofType.NON_INCLUSION) {
+    //     with proof_info {
+    //         %{ vm_enter_scope({'batch_state_server': state_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
+    //         let (_) = non_inclusion_state_verification();
+    //         %{ vm_exit_scope() %}
+    //     }
+
+    //     return run_injected_state_verification_inner(idx=idx - 1);
+    // }
+
+    if (proof_info.proof_type == ProofType.UPDATE) {
+        with proof_info {
+            %{ vm_enter_scope({'batch_state_server': state_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
             let (_) = update_state_verification();
             %{ vm_exit_scope() %}
 
-            return run_server_state_verification_inner(idx=idx - 1);
+            return run_injected_state_verification_inner(idx=idx - 1);
         }
     }
 
