@@ -1,4 +1,5 @@
 use alloy::{hex::FromHexError, primitives::Bytes};
+use dry_hint_processor::syscall_handler::injected_state::Action;
 use indexer::{models::accumulators, Indexer};
 use types::proofs::mmr::MmrMeta;
 
@@ -17,6 +18,7 @@ pub struct FlattenedKey {
 pub struct ProofKeys {
     pub evm: evm::ProofKeys,
     pub starknet: starknet::ProofKeys,
+    pub injected_state_actions: Vec<Action>,
 }
 
 impl ProofKeys {

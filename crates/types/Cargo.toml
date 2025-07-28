@@ -21,3 +21,5 @@ starknet-types-core.workspace = true
 strum_macros.workspace = true
 thiserror.workspace = true
 version-compare.workspace = true
+state-server-types = { path = "../state_server/src/crates/types" }
+pathfinder-crypto.workspace = true

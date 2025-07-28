@@ -17,6 +17,7 @@ use indexer as _;
 use indicatif as _;
 use reqwest as _;
 use starknet_types_core as _;
+use state_server as _;
 use syscall_handler::SyscallHandler;
 use thiserror as _;
 use types::{ChainProofs, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID};

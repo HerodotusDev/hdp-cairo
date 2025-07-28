@@ -42,8 +42,8 @@ async fn main() {
     println!("  POST /new-trie - Create a new trie");
     println!("  POST /update-trie/{{trie_id}} - Update an existing trie");
     println!("  GET /get-root-hash/{{trie_id}} - Get root hash of a trie");
-    println!("  GET /get-proof/{{trie_id}}?key=<key> - Get inclusion proof for a key");
-    println!("  POST /upsert-actions - Perform sequential temporary mutations with proof generation");
+    println!("  GET /get-key/{{trie_id}}?key=<key> - Get value of a key");
+    println!("  POST /insert-initial-data - Insert initial data into a trie");
     println!();
 
     if let Err(e) = start_server(port).await {

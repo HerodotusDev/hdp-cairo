@@ -112,23 +112,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             let chain_proofs = run_fetcher(fetcher_input.syscall_handler.clone()).await?;
 
-            // Extract upsert_actions from injected_state_call_contract_handler
-            let upsert_actions = &fetcher_input
+            // Extract actions from injected_state_call_contract_handler
+            let actions = &fetcher_input
                 .syscall_handler
                 .call_contract_handler
                 .injected_state_call_contract_handler
-                .upsert_actions;
+                .actions;
 
-            // Process upsert_actions if present
-            let upsert_results = if !upsert_actions.is_empty() {
-                println!("Processing {} upsert actions...", upsert_actions.len());
+            // Process actions if present
+            let upsert_results = if !actions.is_empty() {
+                println!("Processing {} actions...", actions.len());
 
                 let state_server_url = std::env::var("INJECTED_STATE_BASE_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
 
                 let client = reqwest::Client::new();
-                let upsert_request = UpsertActionsRequest {
-                    actions: upsert_actions.clone(),
-                };
+                let upsert_request = UpsertActionsRequest { actions: actions.clone() };
 
                 match client
                     .post(&format!("{}/upsert-actions", state_server_url))

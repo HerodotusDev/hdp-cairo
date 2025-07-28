@@ -49,6 +49,14 @@ impl<'a> TrieDB<'a> {
         Ok(())
     }
 
+    pub fn delete_leaf(&self, key: Felt) -> Result<(), Error> {
+        const DELETE_QUERY: &str = "DELETE FROM leafs WHERE key = ?";
+        self.conn
+            .execute(DELETE_QUERY, params![key.to_be_bytes().to_vec()])
+            .map_err(Error::from)?;
+        Ok(())
+    }
+
     /// Persists the nodes in the database.
     ///
     /// # Arguments
@@ -142,17 +150,17 @@ impl<'a> TrieDB<'a> {
         }
     }
 
-    pub fn get_leaf(&self, address: Felt) -> anyhow::Result<TrieLeaf> {
+    pub fn get_leaf(&self, key: Felt) -> anyhow::Result<TrieLeaf> {
         let mut stmt = self
             .conn
             .prepare_cached("SELECT value FROM leafs WHERE key = ? ORDER BY idx DESC LIMIT 1")?;
 
         let result: Option<TrieLeaf> = stmt
-            .query_row(params![address.to_be_bytes().to_vec()], |row| {
+            .query_row(params![key.to_be_bytes().to_vec()], |row| {
                 let value: Vec<u8> = row.get(0)?;
                 let value = Felt::from_be_slice(&value).unwrap();
 
-                let leaf = TrieLeaf::new(address, value);
+                let leaf = TrieLeaf::new(key, value);
 
                 assert!(leaf.commitment() == value, "Value mismatch");
 
@@ -162,7 +170,7 @@ impl<'a> TrieDB<'a> {
 
         match result {
             Some(leaf) => Ok(leaf),
-            None => Ok(TrieLeaf::empty(address)),
+            None => Ok(TrieLeaf::empty(key)),
         }
     }
 }
