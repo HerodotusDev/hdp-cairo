@@ -20,9 +20,8 @@ pub struct StateProofWrapper {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
 pub enum StateProof {
     Inclusion(Vec<TrieNodeSerde>),
-    // NonInclusion(Vec<TrieNodeSerde>),
-    Update((Vec<TrieNodeSerde>, Vec<TrieNodeSerde>)),
     NonInclusion(Vec<TrieNodeSerde>),
+    Update((Vec<TrieNodeSerde>, Vec<TrieNodeSerde>)),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
@@ -31,6 +30,15 @@ pub enum TrieNodeSerde {
     // Stores both the raw bytes which back the bit-vector *and* the
     // original bit-length so it can be reconstructed losslessly.
     Edge { child: Felt, path: Vec<u8>, bit_len: usize },
+}
+
+impl TrieNodeSerde {
+    pub fn byte_len(&self) -> usize {
+        match self {
+            TrieNodeSerde::Binary { .. } => 64, // 2 Felts * 32 bytes each
+            TrieNodeSerde::Edge { path, .. } => 32 + path.len(), // 1 Felt + path bytes
+        }
+    }
 }
 
 impl From<TrieNode> for TrieNodeSerde {

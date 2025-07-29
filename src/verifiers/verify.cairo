@@ -65,7 +65,7 @@ func run_chain_state_verification_inner{
 
     if (chain_info.layout == Layout.STARKNET) {
         with chain_info {
-            %{ vm_enter_scope({'batch_starknet': chain_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
+            %{ vm_enter_scope({'batch_starknet': c1hain_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
             let (mmr_meta_idx) = starknet_run_state_verification(mmr_meta_idx);
             %{ vm_exit_scope() %}
 
@@ -119,15 +119,15 @@ func run_injected_state_verification_inner{
         }
     }
 
-    // if (proof_info.proof_type == ProofType.NON_INCLUSION) {
-    //     with proof_info {
-    //         %{ vm_enter_scope({'batch_state_server': state_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
-    //         let (_) = non_inclusion_state_verification();
-    //         %{ vm_exit_scope() %}
-    //     }
+    if (proof_info.proof_type == ProofType.NON_INCLUSION) {
+        with proof_info {
+            %{ vm_enter_scope({'batch_state_server': state_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
+            let (_) = non_inclusion_state_verification();
+            %{ vm_exit_scope() %}
+        }
 
-    //     return run_injected_state_verification_inner(idx=idx - 1);
-    // }
+        return run_injected_state_verification_inner(idx=idx - 1);
+    }
 
     if (proof_info.proof_type == ProofType.UPDATE) {
         with proof_info {

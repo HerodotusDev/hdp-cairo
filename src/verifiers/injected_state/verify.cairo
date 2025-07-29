@@ -25,27 +25,21 @@ func inclusion_state_verification{
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
     injected_state_memorizer: DictAccess*,
-}(
-    key_be_leading_zeroes_nibbles: felt,
-    root: Uint256, // Expecting Big Endian root here
-    pow2_array: felt*,
-) {
+}(){
     
-    %{ state_proofs = state_proof.inclusion %}
-    tempvar proof_len: felt = nondet %{ len(state_proofs) %};
-    tempvar key_be: Uint256 = nondet %{ state_proofs[proof_len - 1].child %}; //this might be the state_proofs[len].child, check later
+    %{ inclusion = state_proof_wrapper.state_proof.inclusion %}
+    tempvar key_be: Uint256 = nondet %{ state_proof_wrapper.leaf.key %}; 
     tempvar key_be_leading_zeroes_nibbles: felt = nondet %{ len(key_be.lstrip("0x")) - len(key_be.lstrip("0x").lstrip("0")) %};
-    tempvar root: Uint256 = nondet %{ state_proofs[0] %}; //fix this -> ask how to get the root
+    tempvar root: Uint256 = nondet %{ state_proof_wrapper.root_hash %}; 
 
     let (proof_bytes_len: felt*) = alloc();
-    %{ segments.write_arg(ids.inclusion_proof_bytes, proof.inclusion_proof_bytes_len) %}
+    %{ segments.write_arg(ids.inclusion_proof_bytes, inclusion.proof_bytes_len) %}
 
     let (proof_len: felt*) = alloc();
-    %{ memory[ap] = to_felt_or_relocatable(len(state_proof.inclusion)) %}
+    %{ memory[ap] = to_felt_or_relocatable(len(inclusion)) %}
 
     let (mpt_proof: felt**) = alloc();
-    %{ segments.write_arg(ids.mpt_proof, [int(x, 16) for x in proof.inclusion]) %}
-    //the mpt proof might be the Vec<StateProof>
+    %{ segments.write_arg(ids.mpt_proof, [int(x, 16) for x in ]) %}
 
     // Call the underlying MPT verification library function
     let (rlp: felt*, value_len: felt) = verify_mpt_proof_lib(
@@ -94,5 +88,5 @@ func update_state_verification{
     pow2_array: felt*,
     injected_state_memorizer: DictAccess*,
 }() -> (){
-    todo!();
+    // todo!();
 }
