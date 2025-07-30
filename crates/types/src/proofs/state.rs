@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 use state_server_types::trie::leaf::TrieLeaf;
 
-pub type StateProofs = Vec<StateProof>;
+pub type StateProofs = Vec<StateProofWrapper>; //should be wrapper
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StateProofWrapper {
@@ -16,6 +16,8 @@ pub struct StateProofWrapper {
     pub post_proof_root_hash: Option<PathfinderFelt>,
     pub post_proof_leaf: Option<TrieLeaf>,
 }
+
+//mv the optional fields -> stateproofwrapper enum to either inclusion or noninclusion
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
 pub enum StateProof {

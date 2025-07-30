@@ -34,7 +34,7 @@ func inclusion_state_verification{
     tempvar key_be_leading_zeroes_nibbles: felt = nondet %{ len(key_be.lstrip("0x")) - len(key_be.lstrip("0x").lstrip("0")) %};
 
     let (proof_bytes_len: felt*) = alloc();
-    %{ segments.write_arg(ids.inclusion_proof_bytes, inclusion.proof_bytes_len) %}
+    %{ segments.write_arg(ids.proof_bytes_len, inclusion.proof_bytes_len) %}
 
     let (proof_len: felt*) = alloc();
     %{ memory[ap] = to_felt_or_relocatable(len(inclusion)) %}
@@ -93,5 +93,5 @@ func update_state_verification{
     tempvar key_be: Uint256 = nondet %{ state_proof_wrapper.leaf.key %}; 
     tempvar prev_root: Uint256 = nondet %{ update.0 %}; //shouldnt this be the stateproofwrapper so we can get the root 
     tempvar new_root: Uint256 = nondet %{ update.1 %}; 
-
+    //todo()!
 }

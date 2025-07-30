@@ -1,32 +1,35 @@
-use std::{any::Any, collections::HashMap};
+use std::collections::HashMap;
 
 use cairo_vm::{
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData,
-        hint_utils::{get_integer_from_var_name, insert_value_into_ap, get_ptr_from_var_name},
+        hint_utils::{insert_value_into_ap, get_ptr_from_var_name, get_integer_from_var_name},
     },
     types::exec_scope::ExecutionScopes,
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine, errors::memory_errors::MemoryError},
     Felt252, types::relocatable::MaybeRelocatable,
 };
-use types::proofs::{mpt::MPTProof, state::{StateProof, StateProofs, TrieNodeSerde, StateProofWrapper}};
+use types::proofs::{mpt::MPTProof, state::{TrieNodeSerde, StateProofWrapper}};
 
-use crate::vars;
+use crate::{vars, utils::{count_leading_zero_nibbles_from_hex}};
 
-// pub const HINT_INCLUSION_PROOF_AT: &str = "segments.write_arg(ids.mpt_proof, [int(x, 16) for x in proof.inclusion])";
+pub const HINT_INCLUSION_PROOF_AT: &str = "inclusion = state_proof_wrapper.state_proof.inclusion";
 
-// pub fn hint_inclusion_proof_at(
-//     vm: &mut VirtualMachine,
-//     exec_scopes: &mut ExecutionScopes,
-//     hint_data: &HintProcessorData,
-//     _constants: &HashMap<String, Felt252>,
-// ) -> Result<(), HintError> {
-//     let inclusion = exec_scopes.get::<Vec<TrieNodeSerde>>(vars::scopes::INCLUSION_PROOF)?;
-//     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
-//         .try_into()
-//         .unwrap();
-//     let proof = inclusion[idx].clone();
-// }
+pub fn hint_inclusion_proof_at(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let inclusion = exec_scopes.get::<Vec<TrieNodeSerde>>(vars::scopes::INCLUSION_PROOF)?;
+    let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
+        .try_into()
+        .unwrap();
+
+    exec_scopes.insert_value::<TrieNodeSerde>(vars::scopes::PROOF, inclusion[idx].clone());
+
+    Ok(())
+}
 
 pub const HINT_INCLUSION_PROOFS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(inclusion))";
 
@@ -41,7 +44,7 @@ pub fn hint_inclusion_proofs_len(
     insert_value_into_ap(vm, Felt252::from(inclusion.len()))
 }
 
-pub const HINT_INCLUSION_PROOF_BYTES_LEN: &str = "segments.write_arg(ids.inclusion_proof_bytes, inclusion.proof_bytes_len)";
+pub const HINT_INCLUSION_PROOF_BYTES_LEN: &str = "segments.write_arg(ids.proof_bytes_len, inclusion.proof_bytes_len)";
 
 pub fn hint_inclusion_proof_bytes_len(
     vm: &mut VirtualMachine,
@@ -50,9 +53,57 @@ pub fn hint_inclusion_proof_bytes_len(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let inclusion = exec_scopes.get::<Vec<TrieNodeSerde>>(vars::scopes::INCLUSION_PROOF)?;
-    let proof_bytes_len_ptr = get_ptr_from_var_name(vars::ids::INCLUSION_PROOF_BYTES_LEN, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let proof_bytes_len_ptr = get_ptr_from_var_name(vars::ids::PROOF_BYTES_LEN, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     let proof_len: Vec<MaybeRelocatable> = inclusion.into_iter().map(|f| f.byte_len().into()).collect();
     vm.load_data(proof_bytes_len_ptr, &proof_len)?;
+    Ok(())
+}
+
+pub const HINT_GET_LEAF_KEY: &str = "memory[ap] = to_felt_or_relocatable(state_proof_wrapper.leaf.key)";
+
+pub fn hint_get_leaf_key(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let state_proof_wrapper = exec_scopes.get::<StateProofWrapper>(vars::scopes::STATE_PROOF_WRAPPER)?;
+    let leaf_key_ptr = get_ptr_from_var_name(vars::ids::LEAF_KEY, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let key_be = state_proof_wrapper.leaf.data.value;
+    let key_felt252 = MaybeRelocatable::from(Felt252::from_bytes_be(&key_be.as_be_bytes()));
+    vm.load_data(leaf_key_ptr, &[key_felt252])?;
+
+    Ok(())
+}
+
+pub const HINT_GET_ROOT_HASH: &str = "memory[ap] = to_felt_or_relocatable(state_proof_wrapper.root_hash)";
+
+pub fn hint_get_root_hash(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let state_proof_wrapper = exec_scopes.get::<StateProofWrapper>(vars::scopes::STATE_PROOF_WRAPPER)?;
+    let root_hash_ptr = get_ptr_from_var_name(vars::ids::ROOT_HASH, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let root_hash_felt252 = MaybeRelocatable::from(Felt252::from_bytes_be(&state_proof_wrapper.root_hash.as_be_bytes()));
+    vm.load_data(root_hash_ptr, &[root_hash_felt252])?;
+    Ok(())
+}
+
+pub const HINT_GET_KEY_LEADING_ZEROES_NIBBLES: &str = "memory[ap] = to_felt_or_relocatable(len(key_be.lstrip('0x')) - len(key_be.lstrip('0x').lstrip('0')))";
+
+pub fn hint_get_key_leading_zeroes_nibbles(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let state_proof_wrapper = exec_scopes.get::<StateProofWrapper>(vars::scopes::STATE_PROOF_WRAPPER)?;
+    let key_be = state_proof_wrapper.leaf.data.value;   
+    let key_be_leading_zeroes_nibbles = count_leading_zero_nibbles_from_hex(&key_be.to_string());
+    let key_be_leading_zeroes_nibbles_ptr = get_ptr_from_var_name(vars::ids::KEY_LEADING_ZEROS_NIBBLES, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    vm.load_data(key_be_leading_zeroes_nibbles_ptr, &[MaybeRelocatable::from(Felt252::from(key_be_leading_zeroes_nibbles))])?;
     Ok(())
 }
 
