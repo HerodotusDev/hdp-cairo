@@ -5,6 +5,7 @@ from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian, uint
 from starkware.cairo.common.default_dict import default_dict_finalize
 from src.memorizers.injected_state.memorizer import InjectedStateMemorizer
 from packages.eth_essentials.lib.mpt import verify_mpt_proof as verify_mpt_proof_lib
+from src.utils.patricia_with_keccak import patricia_update
 
 // Wraps the MPT library function to handle non-inclusion proofs gracefully.
 // If the library function indicates non-inclusion (returns value_len = -1),
@@ -29,8 +30,8 @@ func inclusion_state_verification{
     
     %{ inclusion = state_proof_wrapper.state_proof.inclusion %}
     tempvar key_be: Uint256 = nondet %{ state_proof_wrapper.leaf.key %}; 
-    tempvar key_be_leading_zeroes_nibbles: felt = nondet %{ len(key_be.lstrip("0x")) - len(key_be.lstrip("0x").lstrip("0")) %};
     tempvar root: Uint256 = nondet %{ state_proof_wrapper.root_hash %}; 
+    tempvar key_be_leading_zeroes_nibbles: felt = nondet %{ len(key_be.lstrip("0x")) - len(key_be.lstrip("0x").lstrip("0")) %};
 
     let (proof_bytes_len: felt*) = alloc();
     %{ segments.write_arg(ids.inclusion_proof_bytes, inclusion.proof_bytes_len) %}
@@ -88,5 +89,9 @@ func update_state_verification{
     pow2_array: felt*,
     injected_state_memorizer: DictAccess*,
 }() -> (){
-    // todo!();
+    %{ update = state_proof_wrapper.state_proof.update %}
+    tempvar key_be: Uint256 = nondet %{ state_proof_wrapper.leaf.key %}; 
+    tempvar prev_root: Uint256 = nondet %{ update.0 %}; //shouldnt this be the stateproofwrapper so we can get the root 
+    tempvar new_root: Uint256 = nondet %{ update.1 %}; 
+
 }

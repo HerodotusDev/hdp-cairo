@@ -10,6 +10,8 @@ struct ChainInfo {
 struct InjectedStateInfo {
     id: felt,
     proof_type: felt,
+    current_root_hash: felt,
+    initial_root_hash: felt,
 }
 
 struct MMRMeta {

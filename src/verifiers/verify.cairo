@@ -65,7 +65,7 @@ func run_chain_state_verification_inner{
 
     if (chain_info.layout == Layout.STARKNET) {
         with chain_info {
-            %{ vm_enter_scope({'batch_starknet': c1hain_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
+            %{ vm_enter_scope({'batch_starknet': chain_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
             let (mmr_meta_idx) = starknet_run_state_verification(mmr_meta_idx);
             %{ vm_exit_scope() %}
 
