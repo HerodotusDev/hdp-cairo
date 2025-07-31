@@ -1,3 +1,5 @@
+from src.types import InjectedStateInfo
+
 namespace ProofType {
     const INCLUSION = 0;
     const NON_INCLUSION = 1;

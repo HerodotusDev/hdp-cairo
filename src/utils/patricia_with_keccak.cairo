@@ -18,8 +18,8 @@ from starkware.cairo.common.patricia_utils import (
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, KeccakBuiltin, BitwiseBuiltin
 
 
-from src.keccak import keccak160 as hash2
-from src.keccak import TruncatedKeccak as HashBuiltin
+from src.utils.keccak import keccak160 as hash2
+from src.utils.keccak import TruncatedKeccak as HashBuiltin
 
 // Given an edge node hash, opens the hash using the preimage hint, and returns a NodeEdge object.
 func open_edge{hash_ptr: HashBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(globals: ParticiaGlobals*, node: felt) -> (

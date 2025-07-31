@@ -85,9 +85,17 @@ func run_injected_state_verification(
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
     injected_state_memorizer: DictAccess*,
-)(){
+){
     tempvar state_proofs_len: felt = nondet %{ len(state_proofs) %};
-    let (_) = run_injected_state_verification_inner(idx=state_proofs_len);
+    let (idx) = run_injected_state_verification_inner{
+        range_check_ptr=range_check_ptr,
+        pedersen_ptr=pedersen_ptr,
+        poseidon_ptr=poseidon_ptr,
+        keccak_ptr=keccak_ptr,
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array,
+        injected_state_memorizer=injected_state_memorizer,
+    }(idx=state_proofs_len);
     return ();
 }
 
@@ -112,7 +120,7 @@ func run_injected_state_verification_inner{
     if (proof_info.proof_type == ProofType.INCLUSION) {
         with proof_info {
             %{ vm_enter_scope({'batch_state_server': state_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
-            let (_) = inclusion_state_verification();
+            let (value, value_len) = inclusion_state_verification();
             %{ vm_exit_scope() %}
 
             return run_injected_state_verification_inner(idx=idx - 1);
@@ -122,17 +130,17 @@ func run_injected_state_verification_inner{
     if (proof_info.proof_type == ProofType.NON_INCLUSION) {
         with proof_info {
             %{ vm_enter_scope({'batch_state_server': state_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
-            let (_) = non_inclusion_state_verification();
+            let (value, value_len) = non_inclusion_state_verification();
             %{ vm_exit_scope() %}
-        }
 
-        return run_injected_state_verification_inner(idx=idx - 1);
+            return run_injected_state_verification_inner(idx=idx - 1);
+        }
     }
 
     if (proof_info.proof_type == ProofType.UPDATE) {
         with proof_info {
             %{ vm_enter_scope({'batch_state_server': state_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
-            let (_) = update_state_verification();
+            let (value, value_len) = update_state_verification();
             %{ vm_exit_scope() %}
 
             return run_injected_state_verification_inner(idx=idx - 1);

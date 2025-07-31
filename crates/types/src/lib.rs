@@ -33,6 +33,12 @@ pub const STARKNET_MAINNET_CHAIN_ID: u128 = 0x534e5f4d41494e;
 pub const STARKNET_TESTNET_CHAIN_ID: u128 = 0x534e5f5345504f4c4941;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ProofsData {
+    pub chain_proofs: Vec<ChainProofs>,
+    pub state_proofs: StateProofs,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct HDPDryRunInput {
     pub params: Vec<Param>,
     pub compiled_class: CasmContractClass,
@@ -44,6 +50,7 @@ pub struct HDPInput {
     pub params: Vec<Param>,
     pub compiled_class: CasmContractClass,
     pub state_proofs: StateProofs,
+    // pub proofs_data: ProofsData, -> refactor to this if considered good approach
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]

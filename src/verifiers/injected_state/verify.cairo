@@ -3,8 +3,8 @@ from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian, uint256_to_felt
 from starkware.cairo.common.default_dict import default_dict_finalize
-from src.memorizers.injected_state.memorizer import InjectedStateMemorizer
 from packages.eth_essentials.lib.mpt import verify_mpt_proof as verify_mpt_proof_lib
+from src.memorizers.injected_state.memorizer import InjectedStateMemorizer
 from src.utils.patricia_with_keccak import patricia_update
 
 // Wraps the MPT library function to handle non-inclusion proofs gracefully.
@@ -26,17 +26,22 @@ func inclusion_state_verification{
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
     injected_state_memorizer: DictAccess*,
-}(){
+}() -> (value: felt*, value_len: felt){
+    alloc_locals;
     
     %{ inclusion = state_proof_wrapper.state_proof.inclusion %}
-    tempvar key_be: Uint256 = nondet %{ state_proof_wrapper.leaf.key %}; 
-    tempvar root: Uint256 = nondet %{ state_proof_wrapper.root_hash %}; 
+
+    local key_be: Uint256;
+    %{ ids.key_be = state_proof_wrapper.leaf.key %}
+    local root: Uint256;
+    %{ ids.root = state_proof_wrapper.root_hash %}
+    
     tempvar key_be_leading_zeroes_nibbles: felt = nondet %{ len(key_be.lstrip("0x")) - len(key_be.lstrip("0x").lstrip("0")) %};
 
     let (proof_bytes_len: felt*) = alloc();
     %{ segments.write_arg(ids.proof_bytes_len, inclusion.proof_bytes_len) %}
 
-    let (proof_len: felt*) = alloc();
+    let (proof_len: felt) = alloc();
     %{ memory[ap] = to_felt_or_relocatable(len(inclusion)) %}
 
     let (mpt_proof: felt**) = alloc();
@@ -68,17 +73,22 @@ func inclusion_state_verification{
     //todo()! -> memorizer, save the keys
 }
 
-// func non_inclusion_state_verification{
-//     range_check_ptr,
-//     pedersen_ptr: HashBuiltin*,
-//     poseidon_ptr: PoseidonBuiltin*,
-//     keccak_ptr: KeccakBuiltin*,
-//     bitwise_ptr: BitwiseBuiltin*,
-//     pow2_array: felt*,
-//     injected_state_memorizer: DictAccess*,
-// }() -> (){
-//     todo!();
-// }
+func non_inclusion_state_verification{
+    range_check_ptr,
+    pedersen_ptr: HashBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
+    bitwise_ptr: BitwiseBuiltin*,
+    pow2_array: felt*,
+    injected_state_memorizer: DictAccess*,
+}() -> (value: felt*, value_len: felt){
+    alloc_locals;
+
+    // todo!();
+    assert 1 = 0;
+    let (res: felt*) = alloc();
+    return (value=res, value_len=0);
+}
 
 func update_state_verification{
     range_check_ptr,
@@ -88,10 +98,16 @@ func update_state_verification{
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
     injected_state_memorizer: DictAccess*,
-}() -> (){
+}() -> (value: felt*, value_len: felt){
+    alloc_locals;
+
     %{ update = state_proof_wrapper.state_proof.update %}
-    tempvar key_be: Uint256 = nondet %{ state_proof_wrapper.leaf.key %}; 
-    tempvar prev_root: Uint256 = nondet %{ update.0 %}; //shouldnt this be the stateproofwrapper so we can get the root 
-    tempvar new_root: Uint256 = nondet %{ update.1 %}; 
+    // tempvar key_be: Uint256 = nondet %{ state_proof_wrapper.leaf.key %}; 
+    // tempvar prev_root: Uint256 = nondet %{ update.0 %}; //shouldnt this be the stateproofwrapper so we can get the root 
+    // tempvar new_root: Uint256 = nondet %{ update.1 %}; 
+
     //todo()!
+    assert 1 = 0;
+    let (res: felt*) = alloc();
+    return (value=res, value_len=0);
 }

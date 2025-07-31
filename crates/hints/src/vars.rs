@@ -59,6 +59,7 @@ pub mod ids {
     pub const IS_LONG: &str = "is_long";
     pub const ITEM_TYPE: &str = "item_type";
     pub const KEY: &str = "key";
+    pub const KEY_LEADING_ZEROS: &str = "key_leading_zeros";
     pub const KEY_LEADING_ZEROS_NIBBLES: &str = "key_leading_zeros_nibbles";
     pub const LEFT: &str = "left";
     pub const MMR_PATH: &str = "mmr_path";
