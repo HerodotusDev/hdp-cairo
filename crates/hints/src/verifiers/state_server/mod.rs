@@ -30,7 +30,7 @@ pub fn hint_vm_enter_scope(
         .try_into()
         .unwrap();
 
-    let batch: Box<dyn Any> = match state_proofs[idx - 1].clone() {
+    let batch: Box<dyn Any> = match state_proofs[idx - 1].state_proof.clone() {
         StateProof::Inclusion(proofs) => Box::new(proofs),
         StateProof::NonInclusion(proofs) => Box::new(proofs),
         StateProof::Update(proofs) => Box::new(proofs),

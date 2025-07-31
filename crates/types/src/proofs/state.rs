@@ -7,7 +7,7 @@ use state_server_types::trie::leaf::TrieLeaf;
 
 pub type StateProofs = Vec<StateProofWrapper>; //should be wrapper
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct StateProofWrapper {
     pub trie_id: String,
     pub state_proof: StateProof,
@@ -17,6 +17,18 @@ pub struct StateProofWrapper {
     pub post_proof_leaf: Option<TrieLeaf>,
 }
 
+impl Default for StateProofWrapper {
+    fn default() -> Self {
+        Self {
+            trie_id: String::default(),
+            state_proof: StateProof::Inclusion(Vec::new()),
+            root_hash: PathfinderFelt::ZERO,
+            leaf: TrieLeaf::new(PathfinderFelt::ZERO, PathfinderFelt::ZERO),
+            post_proof_root_hash: None,
+            post_proof_leaf: None,
+        }
+    }
+}
 //mv the optional fields -> stateproofwrapper enum to either inclusion or noninclusion
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]

@@ -416,7 +416,7 @@ impl<'a> Fetcher<'a> {
 
         if response.status().is_success() {
             let response_body: GetStateProofsResponse = response.json().await?;
-            let state_proofs: StateProofs = response_body.results.into_iter().map(|result| result.proof.state_proof).collect();
+            let state_proofs: StateProofs = response_body.results.into_iter().map(|result| result.proof).collect();
 
             Ok(state_proofs)
         } else {
