@@ -390,7 +390,7 @@ fn handle_read_action(
     // Retrieve leaf from db
     let leaf = match db.get_leaf(key_felt) {
         Ok(leaf) => leaf,
-        Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR),
+        Err(_) => TrieLeaf::new(key_felt, pathfinder_crypto::Felt::ZERO),
     };
 
     match Trie::get_leaf_proof(&db, current_root, leaf) {
