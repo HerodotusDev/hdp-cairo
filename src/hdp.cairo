@@ -83,10 +83,10 @@ func run{
 
     %{
         run_input = HDPInput.Schema().load(program_input)
-        chain_proofs = run_input.proofs
+        chain_proofs = run_input.proofs_data.chain_proofs
         params = run_input.params
         compiled_class = run_input.compiled_class
-        state_proofs = run_input.state_proofs
+        state_proofs = run_input.proofs_data.state_proofs
     %}
 
     let (public_inputs) = alloc();
