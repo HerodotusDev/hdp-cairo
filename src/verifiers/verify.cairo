@@ -79,34 +79,25 @@ func run_chain_state_verification_inner{
 
 func run_injected_state_verification(
     range_check_ptr,
-    pedersen_ptr: HashBuiltin*,
-    poseidon_ptr: PoseidonBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
-    injected_state_memorizer: DictAccess*,
 ){
     tempvar state_proofs_len: felt = nondet %{ len(state_proofs) %};
     let (idx) = run_injected_state_verification_inner{
         range_check_ptr=range_check_ptr,
-        pedersen_ptr=pedersen_ptr,
-        poseidon_ptr=poseidon_ptr,
         keccak_ptr=keccak_ptr,
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array,
-        injected_state_memorizer=injected_state_memorizer,
     }(idx=state_proofs_len);
     return ();
 }
 
 func run_injected_state_verification_inner{
     range_check_ptr,
-    pedersen_ptr: HashBuiltin*,
-    poseidon_ptr: PoseidonBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
-    injected_state_memorizer: DictAccess*,
 }(idx: felt) -> (idx: felt) {
     alloc_locals;
 
