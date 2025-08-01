@@ -82,6 +82,7 @@ func run_injected_state_verification(
     keccak_ptr: KeccakBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
+    injected_state_memorizer: DictAccess*,
 ){
     tempvar state_proofs_len: felt = nondet %{ len(state_proofs) %};
     let (idx) = run_injected_state_verification_inner{
@@ -89,6 +90,7 @@ func run_injected_state_verification(
         keccak_ptr=keccak_ptr,
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array,
+        injected_state_memorizer=injected_state_memorizer,
     }(idx=state_proofs_len);
     return ();
 }
@@ -98,6 +100,7 @@ func run_injected_state_verification_inner{
     keccak_ptr: KeccakBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
+    injected_state_memorizer: DictAccess*,
 }(idx: felt) -> (idx: felt) {
     alloc_locals;
 
