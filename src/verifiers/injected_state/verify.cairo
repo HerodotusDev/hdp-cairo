@@ -20,12 +20,9 @@ from src.utils.patricia_with_keccak import patricia_update
 
 func inclusion_state_verification{
     range_check_ptr,
-    pedersen_ptr: HashBuiltin*,
-    poseidon_ptr: PoseidonBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
-    injected_state_memorizer: DictAccess*,
 }() -> (value: felt*, value_len: felt){
     alloc_locals;
     
@@ -73,15 +70,7 @@ func inclusion_state_verification{
     //todo()! -> memorizer, save the keys
 }
 
-func non_inclusion_state_verification{
-    range_check_ptr,
-    pedersen_ptr: HashBuiltin*,
-    poseidon_ptr: PoseidonBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*,
-    injected_state_memorizer: DictAccess*,
-}() -> (value: felt*, value_len: felt){
+func non_inclusion_state_verification() -> (value: felt*, value_len: felt){
     alloc_locals;
 
     // todo!();
@@ -90,15 +79,7 @@ func non_inclusion_state_verification{
     return (value=res, value_len=0);
 }
 
-func update_state_verification{
-    range_check_ptr,
-    pedersen_ptr: HashBuiltin*,
-    poseidon_ptr: PoseidonBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
-    bitwise_ptr: BitwiseBuiltin*,
-    pow2_array: felt*,
-    injected_state_memorizer: DictAccess*,
-}() -> (value: felt*, value_len: felt){
+func update_state_verification() -> (value: felt*, value_len: felt){
     alloc_locals;
 
     %{ update = state_proof_wrapper.state_proof.update %}
