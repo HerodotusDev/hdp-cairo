@@ -14,7 +14,7 @@ use fetcher::run_fetcher;
 use serde::{Deserialize, Serialize};
 use sound_run::HDP_COMPILED_JSON;
 use syscall_handler::SyscallHandler;
-use types::{error::Error, param::Param, ChainProofs, HDPDryRunInput, HDPInput};
+use types::{actions::action::Action, error::Error, param::Param, ChainProofs, HDPDryRunInput, HDPInput};
 
 #[derive(Deserialize)]
 struct FetcherInput {
@@ -31,7 +31,7 @@ struct FetcherOutput {
 
 #[derive(Serialize, Debug)]
 struct UpsertActionsRequest {
-    actions: Vec<String>,
+    actions: Vec<Action>,
 }
 
 #[derive(Parser, Debug)]

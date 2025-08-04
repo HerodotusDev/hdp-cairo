@@ -4,6 +4,7 @@
 #![forbid(unsafe_code)]
 #![feature(iter_next_chunk)]
 
+pub mod actions;
 pub mod cairo;
 pub mod error;
 pub mod keys;

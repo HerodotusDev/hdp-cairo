@@ -1,19 +1,18 @@
 use bitvec::{order::Msb0, vec::BitVec};
 use pathfinder_common::trie::TrieNode;
-use pathfinder_crypto::Felt as PathfinderFelt;
+use pathfinder_crypto::Felt;
 use serde::{Deserialize, Serialize};
-use starknet_types_core::felt::Felt;
 use state_server_types::trie::leaf::TrieLeaf;
 
 pub type StateProofs = Vec<StateProof>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StateProofWrapper {
-    pub trie_id: String,
+    pub trie_id: Felt,
     pub state_proof: StateProof,
-    pub root_hash: PathfinderFelt,
+    pub root_hash: Felt,
     pub leaf: TrieLeaf,
-    pub post_proof_root_hash: Option<PathfinderFelt>,
+    pub post_proof_root_hash: Option<Felt>,
     pub post_proof_leaf: Option<TrieLeaf>,
 }
 
@@ -36,8 +35,8 @@ impl From<TrieNode> for TrieNodeSerde {
     fn from(value: TrieNode) -> Self {
         match value {
             TrieNode::Binary { left, right } => Self::Binary {
-                left: Felt::from_bytes_be(left.as_be_bytes()),
-                right: Felt::from_bytes_be(right.as_be_bytes()),
+                left: left.to_be_bytes().into(),
+                right: right.to_be_bytes().into(),
             },
             TrieNode::Edge { child, path } => {
                 // Preserve the exact bit length so the path can be faithfully
@@ -49,7 +48,7 @@ impl From<TrieNode> for TrieNodeSerde {
                 let vec_path = path.into_vec();
 
                 Self::Edge {
-                    child: Felt::from_bytes_be(child.as_be_bytes()),
+                    child: child.to_be_bytes().into(),
                     path: vec_path,
                     bit_len,
                 }
@@ -62,11 +61,11 @@ impl From<TrieNodeSerde> for TrieNode {
     fn from(value: TrieNodeSerde) -> Self {
         match value {
             TrieNodeSerde::Binary { left, right } => Self::Binary {
-                left: left.to_bytes_be().into(),
-                right: right.to_bytes_be().into(),
+                left: left.to_be_bytes().into(),
+                right: right.to_be_bytes().into(),
             },
             TrieNodeSerde::Edge { child, path, bit_len } => Self::Edge {
-                child: child.to_bytes_be().into(),
+                child: child.to_be_bytes().into(),
                 path: {
                     let mut bitvec = BitVec::<u8, Msb0>::from_slice(&path);
                     // Restore the original bit-length (max 251 for Starknet)

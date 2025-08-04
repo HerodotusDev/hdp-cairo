@@ -3,161 +3,20 @@ use std::{collections::HashMap, sync::Arc};
 use cairo_vm::{
     types::relocatable::Relocatable,
     vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
-    Felt252,
 };
+use pathfinder_crypto::Felt;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use strum_macros::FromRepr;
 use syscall_handler::{traits::SyscallHandler, SyscallExecutionError, SyscallResult, WriteResponseResult};
-use types::cairo::{
-    new_syscalls::{CallContractRequest, CallContractResponse},
-    structs::CairoFelt,
-    traits::CairoType,
+use types::{
+    actions::action::{Action, ActionTracker, ActionType, CallHandlerId},
+    cairo::{
+        new_syscalls::{CallContractRequest, CallContractResponse},
+        structs::CairoFelt,
+        traits::CairoType,
+    },
+    Felt252,
 };
-
-#[derive(FromRepr, Debug)]
-pub enum CallHandlerId {
-    ReadKey = 0,
-    UpsertKey = 1,
-    DoesKeyExist = 2,
-    SetTreeRoot = 3,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub enum ActionType {
-    Read = 0,
-    Write = 1,
-}
-
-impl ActionType {
-    fn as_u8(self) -> u8 {
-        self as u8
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Action {
-    pub root_hash: String,
-    pub action_type: ActionType,
-    pub key: String,
-    pub value: Option<String>,
-}
-
-impl Action {
-    pub fn new(root_hash: String, action_type: ActionType, key: String, value: Option<String>) -> Self {
-        Self {
-            root_hash,
-            action_type,
-            key,
-            value,
-        }
-    }
-
-    /// Serialize action to string format: "root_hash;action_type;key[;value]"
-    pub fn serialize(&self) -> String {
-        match self.action_type {
-            ActionType::Read => format!("{};{};{}", self.root_hash, self.action_type.as_u8(), self.key),
-            ActionType::Write => match &self.value {
-                Some(val) => format!("{};{};{};{}", self.root_hash, self.action_type.as_u8(), self.key, val),
-                None => format!("{};{};{}", self.root_hash, self.action_type.as_u8(), self.key),
-            },
-        }
-    }
-
-    /// Deserialize action from string format: "root_hash;action_type;key[;value]"
-    pub fn deserialize(action_str: &str) -> Result<Self, anyhow::Error> {
-        let parts: Vec<&str> = action_str.split(';').collect();
-
-        if parts.len() < 3 {
-            return Err(anyhow::anyhow!(
-                "Invalid action format: expected at least 3 parts, got {}",
-                parts.len()
-            ));
-        }
-
-        let root_hash = parts[0].to_string();
-        let action_type = match parts[1].parse::<u8>()? {
-            0 => ActionType::Read,
-            1 => ActionType::Write,
-            _ => return Err(anyhow::anyhow!("Invalid action type: {}", parts[1])),
-        };
-        let key = parts[2].to_string();
-        let value = if parts.len() > 3 && !parts[3].is_empty() {
-            Some(parts[3].to_string())
-        } else {
-            None
-        };
-
-        Ok(Self::new(root_hash, action_type, key, value))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_action_serialize_deserialize() {
-        // Test Read action
-        let read_action = Action::new(
-            "test_root".to_string(),
-            ActionType::Read,
-            "0x1234".to_string(),
-            Some("0x5678".to_string()),
-        );
-        let serialized = read_action.serialize();
-        assert_eq!(serialized, "test_root;0;0x1234");
-
-        // Test Write action with value
-        let write_action = Action::new(
-            "test_root".to_string(),
-            ActionType::Write,
-            "0x1234".to_string(),
-            Some("0x5678".to_string()),
-        );
-        let serialized = write_action.serialize();
-        assert_eq!(serialized, "test_root;1;0x1234;0x5678");
-
-        // Test Write action without value
-        let write_action_no_val = Action::new("test_root".to_string(), ActionType::Write, "0x1234".to_string(), None);
-        let serialized = write_action_no_val.serialize();
-        assert_eq!(serialized, "test_root;1;0x1234");
-
-        // Test deserialization
-        let deserialized = Action::deserialize("test_root;1;0x1234;0x5678").unwrap();
-        assert_eq!(deserialized.root_hash, "test_root");
-        assert_eq!(deserialized.action_type.as_u8(), 1);
-        assert_eq!(deserialized.key, "0x1234");
-        assert_eq!(deserialized.value, Some("0x5678".to_string()));
-
-        // Test round-trip
-        let original = Action::new("root_hash".to_string(), ActionType::Read, "key123".to_string(), None);
-        let serialized = original.serialize();
-        let deserialized = Action::deserialize(&serialized).unwrap();
-        assert_eq!(original.root_hash, deserialized.root_hash);
-        assert_eq!(original.action_type.as_u8(), deserialized.action_type.as_u8());
-        assert_eq!(original.key, deserialized.key);
-        assert_eq!(original.value, deserialized.value);
-    }
-}
-
-/// Trait for tracking actions in the injected state system
-pub trait ActionTracker {
-    /// Record an action with its type, root hash, key, and optional value
-    fn record_action(&mut self, action_type: ActionType, root_hash: &str, key: &str, value: Option<&str>);
-
-    /// Record an action using the Action type
-    fn record_action_typed(&mut self, action: Action);
-
-    /// Get all recorded actions as strings
-    fn get_actions(&self) -> &Vec<String>;
-
-    /// Get all recorded actions as Action objects
-    fn get_actions_typed(&self) -> Result<Vec<Action>, anyhow::Error>;
-
-    /// Clear all recorded actions
-    fn clear_actions(&mut self);
-}
 
 fn default_client() -> Arc<Client> {
     Arc::new(Client::new())
@@ -168,29 +27,19 @@ pub struct CallContractHandler {
     #[serde(skip, default = "default_client")]
     client: Arc<Client>,
     base_url: String,
-    pub trie_ids: Vec<String>,
-    pub actions: Vec<String>,
+    pub trie_ids: Vec<Felt>,
+    pub actions: Vec<Action>,
     #[serde(skip)]
-    local_storage: HashMap<String, String>,
+    local_storage: HashMap<String, Felt>,
 }
 
 impl ActionTracker for CallContractHandler {
-    fn record_action(&mut self, action_type: ActionType, root_hash: &str, key: &str, value: Option<&str>) {
-        let action = Action::new(root_hash.to_string(), action_type, key.to_string(), value.map(|v| v.to_string()));
-        self.record_action_typed(action);
+    fn record_action(&mut self, action: Action) {
+        self.actions.push(action);
     }
 
-    fn record_action_typed(&mut self, action: Action) {
-        let action_str = action.serialize();
-        self.actions.push(action_str);
-    }
-
-    fn get_actions(&self) -> &Vec<String> {
+    fn get_actions(&self) -> &Vec<Action> {
         &self.actions
-    }
-
-    fn get_actions_typed(&self) -> Result<Vec<Action>, anyhow::Error> {
-        self.actions.iter().map(|action_str| Action::deserialize(action_str)).collect()
     }
 
     fn clear_actions(&mut self) {
@@ -240,24 +89,24 @@ impl CallContractHandler {
         }
     }
 
-    fn upsert_key_locally(&mut self, key: &str, value: &str) {
+    fn upsert_key_locally(&mut self, key: Felt, value: Felt) {
         // Update local storage with prefixed key
         let prefixed_key = self.create_prefixed_key(key);
-        self.local_storage.insert(prefixed_key, value.to_string());
+        self.local_storage.insert(prefixed_key, value);
 
         // Record the upsert action
-        let root_hash = self.get_current_tree_id().to_string();
-        self.record_action(ActionType::Write, &root_hash, key, Some(value));
+        let root_hash = self.get_current_tree_id();
+        self.record_action(Action::new(*root_hash, ActionType::Write, key, Some(value)));
     }
 
-    async fn get_key(&mut self, key: &str) -> Result<Option<String>, anyhow::Error> {
+    async fn get_key(&mut self, key: Felt) -> Result<Option<Felt>, anyhow::Error> {
         // First check local storage with prefixed key
         let prefixed_key = self.create_prefixed_key(key);
         if let Some(value) = self.local_storage.get(&prefixed_key) {
             // Record the read action
-            let root_hash = self.get_current_tree_id().to_string();
+            let root_hash = self.get_current_tree_id();
             let value_clone = value.clone();
-            self.record_action(ActionType::Read, &root_hash, key, Some(&value_clone));
+            self.record_action(Action::new(*root_hash, ActionType::Read, key, Some(value_clone)));
             return Ok(Some(value_clone));
         }
 
@@ -270,55 +119,55 @@ impl CallContractHandler {
         if response.status().is_success() {
             let proof_response: serde_json::Value = response.json().await?;
             if let Some(value) = proof_response["value"].as_str() {
-                let value_str = value.to_string();
+                let value_felt = Felt::from_hex_str(value).unwrap_or(Felt::ZERO);
                 // Store in local cache with prefixed key
-                self.local_storage.insert(prefixed_key, value_str.clone());
+                self.local_storage.insert(prefixed_key, value_felt);
 
                 // Record the read action
-                let root_hash = self.get_current_tree_id().to_string();
-                self.record_action(ActionType::Read, &root_hash, key, Some(&value_str));
+                let root_hash = self.get_current_tree_id();
+                self.record_action(Action::new(*root_hash, ActionType::Read, key, Some(value_felt)));
 
-                Ok(Some(value_str))
+                Ok(Some(value_felt))
             } else {
                 // Record the read action with no value found
-                let root_hash = self.get_current_tree_id().to_string();
-                self.record_action(ActionType::Read, &root_hash, key, None);
+                let root_hash = self.get_current_tree_id();
+                self.record_action(Action::new(*root_hash, ActionType::Read, key, None));
                 Ok(None)
             }
         } else {
             // Record the read action with error (no value)
-            let root_hash = self.get_current_tree_id().to_string();
-            self.record_action(ActionType::Read, &root_hash, key, None);
+            let root_hash = self.get_current_tree_id();
+            self.record_action(Action::new(*root_hash, ActionType::Read, key, None));
             Err(anyhow::anyhow!("Failed to get key: {}", response.status()))
         }
     }
 
-    fn key_exists(&mut self, key: &str) -> bool {
+    fn key_exists(&mut self, key: Felt) -> bool {
         let prefixed_key = self.create_prefixed_key(key);
         let exists = self.local_storage.contains_key(&prefixed_key);
 
         // Record the existence check action
-        let root_hash = self.get_current_tree_id().to_string();
-        let exists_str = if exists { "1" } else { "0" };
-        self.record_action(ActionType::Read, &root_hash, key, Some(exists_str));
+        let root_hash = self.get_current_tree_id();
+        let exists_felt = if exists { Felt::ONE } else { Felt::ZERO };
+        self.record_action(Action::new(*root_hash, ActionType::Read, key, Some(exists_felt)));
 
         exists
     }
 
-    async fn set_tree_root(&mut self, tree_root: &str) -> Result<(), anyhow::Error> {
-        self.trie_ids.push(tree_root.to_string());
+    async fn set_tree_root(&mut self, tree_root: Felt) -> Result<(), anyhow::Error> {
+        self.trie_ids.push(tree_root);
 
         self.ensure_trie_exists().await?;
         Ok(())
     }
 
     /// Get the current tree id
-    fn get_current_tree_id(&self) -> &str {
-        self.trie_ids.last().expect("No tree root hash has been set in module").as_str()
+    fn get_current_tree_id(&self) -> &Felt {
+        self.trie_ids.last().expect("No tree root hash has been set in module")
     }
 
     /// Create a prefixed key for local storage using current tree id
-    fn create_prefixed_key(&self, key: &str) -> String {
+    fn create_prefixed_key(&self, key: Felt) -> String {
         format!("{}:{}", self.get_current_tree_id(), key)
     }
 }
@@ -334,9 +183,9 @@ impl SyscallHandler for CallContractHandler {
     }
 
     async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
-        let call_handler_id = CallHandlerId::try_from(request.selector)?;
+        let call_handler_id = CallHandlerIdWrapper::try_from(request.selector)?;
 
-        match call_handler_id {
+        match call_handler_id.0 {
             CallHandlerId::ReadKey => {
                 let field_len = (request.calldata_end - request.calldata_start)?;
                 let fields = vm
@@ -351,23 +200,14 @@ impl SyscallHandler for CallContractHandler {
                         info: "ReadKey requires at least key".to_string(),
                     });
                 }
-                let key = fields[2].to_string();
 
+                let value = fields[2].to_bytes_be().into();
                 // Get value from local storage first, then from state server API if not found
-                let (value, exists) = match self.get_key(&key).await {
-                    Ok(Some(val)) => {
-                        // Try to parse the value as a hex string and convert to Felt252
-                        let value_felt = if val.starts_with("0x") {
-                            Felt252::from_hex(&val).unwrap_or(Felt252::ZERO)
-                        } else {
-                            val.parse::<u64>().map(Felt252::from).unwrap_or(Felt252::ZERO)
-                        };
-                        (value_felt, Felt252::ONE)
-                    }
+                let (value, exists) = match self.get_key(value).await {
+                    Ok(Some(val)) => (Felt252::from_bytes_be(&val.to_be_bytes()), Felt252::ONE),
                     Ok(None) => (Felt252::ZERO, Felt252::ZERO),
                     Err(e) => {
-                        println!("Error getting key: {}", e);
-                        (Felt252::ZERO, Felt252::ZERO)
+                        panic!("Error retrieving key: {}", e);
                     }
                 };
 
@@ -395,11 +235,11 @@ impl SyscallHandler for CallContractHandler {
                         info: "UpsertKey requires at least key and value".to_string(),
                     });
                 }
-                let key = fields[2].to_string();
-                let value = fields[3].to_string();
+                let key = fields[2].to_bytes_be().into();
+                let value = fields[3].to_bytes_be().into();
 
                 // Insert/update in local storage
-                self.upsert_key_locally(&key, &value);
+                self.upsert_key_locally(key, value);
 
                 let output = UpsertKeyResponseTypeOutput { success: Felt252::ONE };
 
@@ -426,10 +266,10 @@ impl SyscallHandler for CallContractHandler {
                     });
                 }
 
-                let key = fields[2].to_string();
+                let key = fields[2].to_bytes_be().into();
 
                 // Check if key exists in local storage
-                let exists = if self.key_exists(&key) { Felt252::ONE } else { Felt252::ZERO };
+                let exists = if self.key_exists(key) { Felt252::ONE } else { Felt252::ZERO };
 
                 let output = DoesKeyExistResponseTypeOutput { exists };
 
@@ -456,9 +296,9 @@ impl SyscallHandler for CallContractHandler {
                     });
                 }
 
-                let tree_root = fields[2].to_string();
+                let tree_root = fields[2].to_bytes_be().into();
                 // Set the tree id via state server API
-                if let Err(e) = self.set_tree_root(&tree_root).await {
+                if let Err(e) = self.set_tree_root(tree_root).await {
                     return Err(SyscallExecutionError::InvalidSyscallInput {
                         input: Felt252::ZERO,
                         info: format!("Failed to set tree id: {}", e),
@@ -573,16 +413,19 @@ impl CairoType for SetTreeIdResponseTypeOutput {
     }
 }
 
-impl TryFrom<Felt252> for CallHandlerId {
+pub struct CallHandlerIdWrapper(CallHandlerId);
+
+impl TryFrom<Felt252> for CallHandlerIdWrapper {
     type Error = SyscallExecutionError;
     fn try_from(value: Felt252) -> Result<Self, Self::Error> {
-        Self::from_repr(value.try_into().map_err(|e| Self::Error::InvalidSyscallInput {
+        let id = CallHandlerId::from_repr(value.try_into().map_err(|e| Self::Error::InvalidSyscallInput {
             input: value,
             info: format!("{}", e),
         })?)
         .ok_or(Self::Error::InvalidSyscallInput {
             input: value,
             info: "Invalid function identifier".to_string(),
-        })
+        })?;
+        Ok(Self(id))
     }
 }

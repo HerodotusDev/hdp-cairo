@@ -14,7 +14,7 @@ use clap::Parser;
 use dotenvy as _;
 use dry_hint_processor::syscall_handler::{
     evm,
-    injected_state::{self, Action},
+    injected_state::{self},
     starknet,
 };
 use eth_trie_proofs::{tx_receipt_trie::TxReceiptsMptHandler, tx_trie::TxsMptHandler};
@@ -417,7 +417,7 @@ impl<'a> Fetcher<'a> {
         if response.status().is_success() {
             let response_body: GetStateProofsResponse = response.json().await?;
             let state_proofs: StateProofs = response_body.results.into_iter().map(|result| result.proof.state_proof).collect();
-
+            println!("State proofs: {:?}", state_proofs);
             Ok(state_proofs)
         } else {
             Err(FetcherError::RequestError(reqwest::Error::from(
@@ -490,7 +490,7 @@ pub fn parse_syscall_handler(
 
     // Process injected state keys
     for action in &syscall_handler.call_contract_handler.injected_state_call_contract_handler.actions {
-        proof_keys.injected_state_actions.push(Action::deserialize(action).unwrap());
+        proof_keys.injected_state_actions.push(action.clone());
     }
 
     Ok(proof_keys)

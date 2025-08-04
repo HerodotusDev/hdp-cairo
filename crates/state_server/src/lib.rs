@@ -1,6 +1,5 @@
 use std::{collections::HashMap, sync::Arc};
 
-use anyhow::anyhow;
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
@@ -9,6 +8,7 @@ use axum::{
     Router,
 };
 use dashmap::DashMap;
+use pathfinder_crypto::Felt;
 use pathfinder_storage::{TrieStorageIndex, TrieUpdate};
 use r2d2::PooledConnection;
 use r2d2_sqlite::SqliteConnectionManager;
@@ -31,8 +31,8 @@ use types::proofs::state::{StateProof, StateProofWrapper, TrieNodeSerde};
 #[derive(Debug, Clone)]
 pub struct StateServerTrie {
     db_connection_manager: Arc<ConnectionManager>,
-    pub root_hash: pathfinder_crypto::Felt,
-    pub root_idx: pathfinder_storage::TrieStorageIndex,
+    pub root_hash: Felt,
+    pub root_idx: TrieStorageIndex,
 }
 
 impl StateServerTrie {
@@ -44,9 +44,7 @@ impl StateServerTrie {
         let conn = db_connection_manager.get_connection()?;
         let storage = TrieDB::new(&conn);
         let root_idx: TrieStorageIndex = storage.get_node_idx().unwrap_or(0).into();
-        let root_hash = storage
-            .get_node_hash_by_idx(root_idx.into())?
-            .unwrap_or(pathfinder_crypto::Felt::ZERO);
+        let root_hash = storage.get_node_hash_by_idx(root_idx.into())?.unwrap_or(Felt::ZERO);
 
         Ok(Self {
             db_connection_manager,
@@ -55,15 +53,15 @@ impl StateServerTrie {
         })
     }
 
-    pub fn get_key(&self, key: &str) -> Option<String> {
+    pub fn get_key(&self, key: Felt) -> Option<Felt> {
         let conn = self.db_connection_manager.get_connection().unwrap();
         let (storage, _) = self.get_storage_and_trie(&conn);
-        match storage.get_leaf(self.string_to_felt(key).unwrap()) {
+        match storage.get_leaf(key) {
             Ok(leaf) => {
                 if leaf.is_empty() {
                     return None;
                 }
-                Some(leaf.data.value.to_string())
+                Some(leaf.data.value)
             }
             Err(_) => None,
         }
@@ -85,18 +83,9 @@ impl StateServerTrie {
         }
     }
 
-    fn insert(&mut self, key: String, value: String) -> anyhow::Result<TrieUpdate> {
-        // Validate inputs
-        if key.is_empty() || value.is_empty() {
-            return Err(anyhow!("Key and value cannot be empty"));
-        }
-
-        // Convert key and value to Felt
-        let key_felt = self.string_to_felt(&key)?;
-        let value_felt = self.string_to_felt(&value)?;
-
+    fn insert(&mut self, key: Felt, value: Felt) -> anyhow::Result<TrieUpdate> {
         // Create a new leaf with the key-value pair
-        let leaf = TrieLeaf::new(key_felt, value_felt);
+        let leaf = TrieLeaf::new(key, value);
 
         let conn = self.db_connection_manager.get_connection()?;
         let (storage, mut trie) = self.get_storage_and_trie(&conn);
@@ -112,25 +101,15 @@ impl StateServerTrie {
 
         Ok(update)
     }
-
-    // Helper function to convert a string to a Felt
-    fn string_to_felt(&self, s: &str) -> anyhow::Result<pathfinder_crypto::Felt> {
-        if s.starts_with("0x") || s.starts_with("0X") {
-            pathfinder_crypto::Felt::from_hex_str(s).map_err(|e| anyhow!("Invalid hex string: {}", e))
-        } else {
-            let num = s.parse::<u64>()?;
-            Ok(pathfinder_crypto::Felt::from(num))
-        }
-    }
 }
 
-type TrieId = String;
+type TrieId = Felt;
 type TrieStorage = Arc<DashMap<TrieId, StateServerTrie>>;
 
 // API request/response types
 #[derive(Deserialize)]
 pub struct NewTrieRequest {
-    id: Option<String>,
+    id: Option<Felt>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -138,13 +117,13 @@ pub struct GetStateProofsRequest {
     pub actions: Vec<String>, // Action strings in serialized format
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StateProofResult {
-    pub action: String, // Action string in serialized format
+    pub action: types::actions::action::Action,
     pub proof: StateProofWrapper,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GetStateProofsResponse {
     pub results: Vec<StateProofResult>,
 }
@@ -171,25 +150,29 @@ impl Default for AppState {
 
 #[derive(Deserialize, Serialize)]
 pub struct InsertInitialDataRequest {
-    trie_id: String,
-    keys: Vec<String>,
-    values: Vec<String>,
+    trie_id: Felt,
+    keys: Vec<Felt>,
+    values: Vec<Felt>,
 }
 
 #[derive(Deserialize)]
 pub struct GetKeyParams {
-    key: String,
+    key: Felt,
 }
 
 // API handlers
 async fn new_trie(State(state): State<AppState>, Json(payload): Json<NewTrieRequest>) -> Result<Json<serde_json::Value>, StatusCode> {
-    let trie_id = payload.id.unwrap_or_else(|| format!("trie_{}", uuid::Uuid::new_v4()));
-    let db_path = format!("/tmp/{}.db", trie_id);
+    if payload.id.is_none() {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    let trie_id = payload.id.unwrap();
+    let db_path = format!("/tmp/{}.db", trie_id.to_hex_str());
 
     let trie = StateServerTrie::new(&db_path).map_err(|_e| StatusCode::INTERNAL_SERVER_ERROR)?;
     let root_hash = trie.root_hash;
 
-    state.tries.insert(trie_id.clone(), trie);
+    state.tries.insert(trie_id, trie);
 
     Ok(Json(serde_json::json!({
         "trie_id": trie_id,
@@ -199,11 +182,11 @@ async fn new_trie(State(state): State<AppState>, Json(payload): Json<NewTrieRequ
 
 async fn get_key(
     State(state): State<AppState>,
-    Path(trie_id): Path<String>,
+    Path(trie_id): Path<Felt>,
     Query(params): Query<GetKeyParams>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
     let state_trie = state.tries.get(&trie_id).ok_or(StatusCode::NOT_FOUND)?;
-    let value = state_trie.get_key(&params.key).ok_or(StatusCode::NOT_FOUND)?;
+    let value = state_trie.get_key(params.key).ok_or(StatusCode::NOT_FOUND)?;
 
     Ok(Json(serde_json::json!({
         "trie_id": trie_id,
@@ -219,9 +202,7 @@ pub async fn insert_initial_data(
     let mut state_trie = state.tries.get_mut(&payload.trie_id).ok_or(StatusCode::NOT_FOUND)?;
 
     for (key, value) in payload.keys.iter().zip(payload.values.iter()).take(50) {
-        state_trie
-            .insert(key.clone(), value.clone())
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        state_trie.insert(*key, *value).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     }
 
     Ok(Json(serde_json::json!({
@@ -230,7 +211,7 @@ pub async fn insert_initial_data(
     })))
 }
 
-async fn get_root_hash(State(state): State<AppState>, Path(trie_id): Path<String>) -> Result<Json<serde_json::Value>, StatusCode> {
+async fn get_root_hash(State(state): State<AppState>, Path(trie_id): Path<Felt>) -> Result<Json<serde_json::Value>, StatusCode> {
     let state_trie = state.tries.get(&trie_id).ok_or(StatusCode::NOT_FOUND)?;
 
     Ok(Json(serde_json::json!({
@@ -245,22 +226,22 @@ async fn get_state_proofs(
     Json(payload): Json<GetStateProofsRequest>,
 ) -> Result<Json<GetStateProofsResponse>, StatusCode> {
     // Parse actions
-    let actions: Vec<dry_hint_processor::syscall_handler::injected_state::Action> = match payload
+    let actions: Vec<types::actions::action::Action> = match payload
         .actions
         .iter()
-        .map(|action| dry_hint_processor::syscall_handler::injected_state::Action::deserialize(action.as_str()))
-        .collect::<Result<Vec<dry_hint_processor::syscall_handler::injected_state::Action>, _>>()
+        .map(|action| types::actions::action::Action::deserialize(action.as_str()))
+        .collect::<Result<Vec<types::actions::action::Action>, _>>()
     {
         Ok(actions) => actions,
         Err(_) => return Err(StatusCode::BAD_REQUEST),
     };
 
     // Initialize cur_roots for tracking state changes within this request
-    let mut cur_roots = HashMap::<String, pathfinder_crypto::Felt>::new();
-    let trie_ids: Vec<String> = actions.iter().map(|action| action.root_hash.clone()).collect();
+    let mut cur_roots = HashMap::<Felt, Felt>::new();
+    let trie_ids: Vec<Felt> = actions.iter().map(|action| action.root_hash).collect();
 
     // Store original roots
-    let mut original_roots = HashMap::<String, (pathfinder_crypto::Felt, TrieStorageIndex)>::new();
+    let mut original_roots = HashMap::<Felt, (Felt, TrieStorageIndex)>::new();
     for trie_id in &trie_ids {
         ensure_trie_exists(&mut state, trie_id, &mut cur_roots, &mut original_roots).map_err(|_| StatusCode::NOT_FOUND)?;
     }
@@ -268,25 +249,21 @@ async fn get_state_proofs(
     let mut results = Vec::new();
 
     // Process each action
-    for (idx, action) in actions.iter().enumerate() {
-        let trie_id = action.root_hash.clone();
+    for action in actions.iter() {
+        let trie_id = action.root_hash;
 
         // Process the action
         let proof = if let Some(mut trie) = state.tries.get_mut(&trie_id) {
             match action.action_type {
-                dry_hint_processor::syscall_handler::injected_state::ActionType::Read => {
-                    handle_read_action(&trie, action, &trie_id, &cur_roots)?
-                }
-                dry_hint_processor::syscall_handler::injected_state::ActionType::Write => {
-                    handle_write_action(&mut trie, action, &trie_id, &mut cur_roots)?
-                }
+                types::actions::action::ActionType::Read => handle_read_action(&trie, action, &trie_id, &cur_roots)?,
+                types::actions::action::ActionType::Write => handle_write_action(&mut trie, action, &trie_id, &mut cur_roots)?,
             }
         } else {
             return Err(StatusCode::INTERNAL_SERVER_ERROR);
         };
 
         results.push(StateProofResult {
-            action: payload.actions[idx].clone(),
+            action: action.clone(),
             proof,
         });
     }
@@ -323,25 +300,25 @@ async fn get_state_proofs(
 // Helper function to ensure a trie exists, creating it if necessary
 fn ensure_trie_exists(
     state: &mut AppState,
-    trie_id: &str,
-    cur_roots: &mut HashMap<String, pathfinder_crypto::Felt>,
-    original_roots: &mut HashMap<String, (pathfinder_crypto::Felt, TrieStorageIndex)>,
+    trie_id: &Felt,
+    cur_roots: &mut HashMap<Felt, Felt>,
+    original_roots: &mut HashMap<Felt, (Felt, TrieStorageIndex)>,
 ) -> Result<(), String> {
     if !state.tries.contains_key(trie_id) {
         let db_path = format!("/tmp/{}.db", trie_id);
         match StateServerTrie::new(&db_path) {
             Ok(new_trie) => {
-                cur_roots.insert(trie_id.to_string(), new_trie.root_hash);
-                original_roots.insert(trie_id.to_string(), (new_trie.root_hash, new_trie.root_idx));
-                state.tries.insert(trie_id.to_string(), new_trie);
+                cur_roots.insert(*trie_id, new_trie.root_hash);
+                original_roots.insert(*trie_id, (new_trie.root_hash, new_trie.root_idx));
+                state.tries.insert(*trie_id, new_trie);
                 Ok(())
             }
             Err(e) => Err(format!("Failed to create trie {}: {}", trie_id, e)),
         }
     } else {
         let trie = state.tries.get(trie_id).unwrap();
-        cur_roots.insert(trie_id.to_string(), trie.root_hash);
-        original_roots.insert(trie_id.to_string(), (trie.root_hash, trie.root_idx));
+        cur_roots.insert(*trie_id, trie.root_hash);
+        original_roots.insert(*trie_id, (trie.root_hash, trie.root_idx));
         Ok(())
     }
 }
@@ -349,22 +326,17 @@ fn ensure_trie_exists(
 // Helper function to handle Read actions
 fn handle_read_action(
     trie: &StateServerTrie,
-    action: &dry_hint_processor::syscall_handler::injected_state::Action,
-    trie_id: &str,
-    cur_roots: &HashMap<String, pathfinder_crypto::Felt>,
+    action: &types::actions::action::Action,
+    trie_id: &Felt,
+    cur_roots: &HashMap<Felt, Felt>,
 ) -> Result<StateProofWrapper, StatusCode> {
-    let key_felt = match trie.string_to_felt(&action.key) {
-        Ok(felt) => felt,
-        Err(_) => return Err(StatusCode::BAD_REQUEST),
-    };
-
     let conn = &trie
         .db_connection_manager
         .get_connection()
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     // Get the current root hash for this trie
-    let current_root = match cur_roots.get(trie_id) {
+    let current_root = match cur_roots.get(&trie_id) {
         Some(root) => *root,
         None => return Err(StatusCode::INTERNAL_SERVER_ERROR),
     };
@@ -372,11 +344,11 @@ fn handle_read_action(
     // Handle empty trie case
     if current_root == pathfinder_crypto::Felt::ZERO {
         return Ok(StateProofWrapper {
-            trie_id: trie_id.to_string(),
+            trie_id: *trie_id,
             state_proof: StateProof::NonInclusion(vec![]),
             root_hash: pathfinder_crypto::Felt::ZERO,
             leaf: TrieLeaf {
-                key: key_felt,
+                key: action.key,
                 data: LeafData {
                     value: pathfinder_crypto::Felt::ZERO,
                 },
@@ -388,15 +360,15 @@ fn handle_read_action(
 
     let (db, _) = Trie::load(trie.root_idx, conn);
     // Retrieve leaf from db
-    let leaf = match db.get_leaf(key_felt) {
+    let leaf = match db.get_leaf(action.key) {
         Ok(leaf) => leaf,
-        Err(_) => TrieLeaf::new(key_felt, pathfinder_crypto::Felt::ZERO),
+        Err(_) => TrieLeaf::new(action.key, pathfinder_crypto::Felt::ZERO),
     };
 
     match Trie::get_leaf_proof(&db, current_root, leaf) {
         Ok(trie_proof) => {
             let key_exists = db
-                .get_leaf(key_felt)
+                .get_leaf(action.key)
                 .map(|stored_value| stored_value.data.value != pathfinder_crypto::Felt::ZERO)
                 .unwrap_or(false);
 
@@ -404,7 +376,7 @@ fn handle_read_action(
 
             if key_exists {
                 Ok(StateProofWrapper {
-                    trie_id: trie_id.to_string(),
+                    trie_id: *trie_id,
                     state_proof: StateProof::Inclusion(proof_nodes),
                     root_hash: current_root,
                     leaf,
@@ -413,7 +385,7 @@ fn handle_read_action(
                 })
             } else {
                 Ok(StateProofWrapper {
-                    trie_id: trie_id.to_string(),
+                    trie_id: *trie_id,
                     state_proof: StateProof::NonInclusion(proof_nodes),
                     root_hash: current_root,
                     leaf,
@@ -429,8 +401,8 @@ fn handle_read_action(
 // Helper function to generate a local leaf proof
 fn generate_local_leaf_proof(
     storage: &TrieDB,
-    cur_roots: &HashMap<String, pathfinder_crypto::Felt>,
-    trie_id: &str,
+    cur_roots: &HashMap<Felt, Felt>,
+    trie_id: &Felt,
     leaf: TrieLeaf,
 ) -> Result<Vec<(TrieNodeSerde, pathfinder_crypto::Felt)>, StatusCode> {
     let current_root = *cur_roots.get(trie_id).unwrap();
@@ -447,18 +419,10 @@ fn generate_local_leaf_proof(
 // Helper function to handle Write actions
 fn handle_write_action(
     trie: &mut StateServerTrie,
-    action: &dry_hint_processor::syscall_handler::injected_state::Action,
-    trie_id: &str,
-    cur_roots: &mut HashMap<String, pathfinder_crypto::Felt>,
+    action: &types::actions::action::Action,
+    trie_id: &Felt,
+    cur_roots: &mut HashMap<Felt, Felt>,
 ) -> Result<StateProofWrapper, StatusCode> {
-    let (key_felt, value_felt) = match (
-        trie.string_to_felt(&action.key),
-        trie.string_to_felt(action.value.as_ref().unwrap_or(&String::new())),
-    ) {
-        (Ok(k), Ok(v)) => (k, v),
-        _ => return Err(StatusCode::BAD_REQUEST),
-    };
-
     let conn = &trie
         .db_connection_manager
         .get_connection()
@@ -474,11 +438,11 @@ fn handle_write_action(
     };
 
     // Get pre-proof
-    let pre_proof_leaf = storage.get_leaf(key_felt).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let pre_proof_leaf = storage.get_leaf(action.key).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let pre_proof = generate_local_leaf_proof(&storage, cur_roots, trie_id, pre_proof_leaf)?;
     let pre_proof_root_hash = *cur_roots.get(trie_id).unwrap();
 
-    let leaf = TrieLeaf::new(key_felt, value_felt);
+    let leaf = TrieLeaf::new(action.key, action.value.unwrap_or(pathfinder_crypto::Felt::ZERO));
     let key = leaf.get_path();
 
     // Execute the write operation
@@ -500,7 +464,7 @@ fn handle_write_action(
             trie.root_hash = new_root;
 
             // Update cur_roots for subsequent actions in this request
-            cur_roots.insert(trie_id.to_string(), new_root);
+            cur_roots.insert(*trie_id, new_root);
 
             // Generate post-proof
             let post_proof = generate_local_leaf_proof(&storage, cur_roots, trie_id, leaf)?;
@@ -511,7 +475,7 @@ fn handle_write_action(
             }
 
             Ok(StateProofWrapper {
-                trie_id: trie_id.to_string(),
+                trie_id: *trie_id,
                 state_proof: StateProof::Update((
                     pre_proof.into_iter().map(|(node, _)| node).collect(),
                     post_proof.into_iter().map(|(node, _)| node).collect(),
@@ -553,9 +517,9 @@ pub async fn start_server(port: u16) -> anyhow::Result<()> {
     info!("Available endpoints:");
     info!("  POST /new-trie - Create a new trie");
     info!("  POST /insert-initial-data - Insert initial data into a trie");
-    info!("  POST /get-state-proofs - Generate structured StateProof objects for actions (read=inclusion, write=update)");
-    info!("  GET /get-key/{{trie_id}}?key=<key> - Get value of a key");
     info!("  GET /get-root-hash/{{trie_id}} - Get root hash of a trie");
+    info!("  GET /get-key/{{trie_id}}?key=<key> - Get value of a key");
+    info!("  GET /get-state-proofs - Generate structured StateProof objects for actions (read=inclusion|non-inclusion, write=update)");
 
     axum::serve(listener, app).await?;
     Ok(())
@@ -574,44 +538,33 @@ mod tests {
 
     use super::*;
 
-    // Convert key/value decimal or hex string -> Felt
-    fn str_to_felt(s: &str) -> pathfinder_crypto::Felt {
-        if s.starts_with("0x") || s.starts_with("0X") {
-            pathfinder_crypto::Felt::from_hex_str(s).unwrap()
-        } else {
-            let num = s.parse::<u128>().unwrap();
-            let num_bytes = num.to_be_bytes();
-            let mut full = [0u8; 32];
-            full[16..].copy_from_slice(&num_bytes); // place in lower 16 bytes
-            pathfinder_crypto::Felt::from_be_bytes(full).unwrap()
-        }
-    }
-
-    fn build_request_new_trie(trie_id: &str) -> Request<Body> {
+    fn build_request_new_trie(trie_id: &Felt) -> Request<Body> {
         Request::builder()
             .method("POST")
             .uri("/new-trie")
             .header("content-type", "application/json")
-            .body(Body::from(format!(r#"{{"id": "{}"}}"#, trie_id)))
+            .body(Body::from(format!(r#"{{"id": "{}"}}"#, trie_id.to_hex_str())))
             .unwrap()
     }
 
-    fn build_request_insert_initial_data(trie_id: &str, keys: &[&str], values: &[&str]) -> Request<Body> {
+    fn build_request_insert_initial_data(trie_id: &Felt, keys: &[Felt], values: &[Felt]) -> Request<Body> {
+        let body = serde_json::json!({
+            "trie_id": trie_id.to_hex_str(),
+            "keys": keys,
+            "values": values
+        });
         Request::builder()
             .method("POST")
             .uri("/insert-initial-data")
             .header("content-type", "application/json")
-            .body(Body::from(format!(
-                r#"{{"trie_id": "{}", "keys": {:?}, "values": {:?}}}"#,
-                trie_id, keys, values
-            )))
+            .body(Body::from(serde_json::to_string(&body).unwrap()))
             .unwrap()
     }
 
     #[tokio::test]
     async fn test_new_trie_with_id() {
         let app = create_router();
-        let trie_id = format!("test-new-trie-{}", uuid::Uuid::new_v4());
+        let trie_id = Felt::random(&mut rand::thread_rng());
 
         let response = app.oneshot(build_request_new_trie(&trie_id)).await.unwrap();
         assert_eq!(response.status(), StatusCode::OK);
@@ -622,7 +575,7 @@ mod tests {
         let response_text = String::from_utf8(body_bytes.to_vec()).unwrap();
         let response_body: serde_json::Value = serde_json::from_str(&response_text).unwrap();
 
-        assert_eq!(response_body["trie_id"], trie_id);
+        assert_eq!(response_body["trie_id"].as_str().unwrap(), trie_id.to_hex_str());
         assert!(!response_body["root_hash"].is_null());
         assert!(response_body["root_hash"].is_string());
     }
@@ -633,31 +586,31 @@ mod tests {
 
         let mut app = create_router();
 
-        let trie_id = format!("test_get_state_proofs_read_only_{}", uuid::Uuid::new_v4());
+        let trie_id = Felt::random(&mut rand::thread_rng());
         let response = app.clone().oneshot(build_request_new_trie(&trie_id)).await.unwrap();
         assert_eq!(response.status(), StatusCode::OK);
 
-        let keys = vec!["120368059344249".to_string(), "42".to_string(), "100000000000000".to_string()];
-        let values = vec!["555".to_string(), "777".to_string(), "999".to_string()];
+        let keys = vec![
+            Felt::from_u128(120368059344249),
+            Felt::from_u128(42),
+            Felt::from_u128(100000000000000),
+        ];
+        let values = vec![Felt::from_u128(555), Felt::from_u128(777), Felt::from_u128(999)];
 
         let response = app
             .clone()
-            .oneshot(build_request_insert_initial_data(
-                &trie_id,
-                &keys.iter().map(|k| k.as_str()).collect::<Vec<&str>>(),
-                &values.iter().map(|v| v.as_str()).collect::<Vec<&str>>(),
-            ))
+            .oneshot(build_request_insert_initial_data(&trie_id, &keys, &values))
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::OK);
 
         let combined_actions = vec![
             // Read existing keys
-            format!("{};0;120368059344249", trie_id),
-            format!("{};0;42", trie_id),
-            format!("{};0;100000000000000", trie_id),
+            format!("{};0;{}", trie_id, keys[0].to_hex_str()),
+            format!("{};0;{}", trie_id, keys[1].to_hex_str()),
+            format!("{};0;{}", trie_id, keys[2].to_hex_str()),
             // Read non-existing key
-            format!("{};0;999999999999999", trie_id),
+            format!("{};0;{}", trie_id, Felt::from_u128(999999999999999).to_hex_str()),
         ];
 
         let request_payload = GetStateProofsRequest {
@@ -687,19 +640,12 @@ mod tests {
 
         // Verify all proofs
         for (i, proof) in response_body.results.iter().enumerate() {
-            let key = match i {
-                0 => str_to_felt("120368059344249"),
-                1 => str_to_felt("42"),
-                2 => str_to_felt("100000000000000"),
-                3 => str_to_felt("999999999999999"), // Non-existing
-                _ => panic!("Unexpected proof index"),
-            };
-            let value = match i {
-                0 => str_to_felt("555"),
-                1 => str_to_felt("777"),
-                2 => str_to_felt("999"),
-                3 => str_to_felt("0"), // Non-existing
-                _ => panic!("Unexpected proof index"),
+            let (key, value) = if i < 3 {
+                (keys[i], values[i])
+            } else if i == 3 {
+                (Felt::from_u128(999999999999999), Felt::ZERO) // Non-existing
+            } else {
+                panic!("Unexpected proof index")
             };
             let leaf = TrieLeaf::new(key, value);
 
@@ -734,10 +680,10 @@ mod tests {
         }
     }
 
-    fn build_request_get_key(trie_id: &str, key: &str) -> Request<Body> {
+    fn build_request_get_key(trie_id: &Felt, key: &Felt) -> Request<Body> {
         Request::builder()
             .method("GET")
-            .uri(format!("/get-key/{}?key={}", trie_id, key))
+            .uri(format!("/get-key/{}?key={}", trie_id.to_hex_str(), key.to_hex_str()))
             .body(Body::from(""))
             .unwrap()
     }
@@ -748,21 +694,28 @@ mod tests {
 
         let mut app = create_router();
 
-        let trie_id = format!("test_get_state_proofs_read_write{}", uuid::Uuid::new_v4());
+        let trie_id = Felt::random(&mut rand::thread_rng());
+
+        let keys = vec![
+            Felt::from_u128(120368059344249),
+            Felt::from_u128(42),
+            Felt::from_u128(100000000000000),
+        ];
+        let values = vec![Felt::from_u128(555), Felt::from_u128(777), Felt::from_u128(999)];
 
         let combined_actions = vec![
             // Write existing keys
-            format!("{};1;120368059344249;555", trie_id),
-            format!("{};1;42;777", trie_id),
-            format!("{};1;100000000000000;999", trie_id),
+            format!("{};1;{};{}", trie_id, keys[0].to_hex_str(), values[0].to_hex_str()),
+            format!("{};1;{};{}", trie_id, keys[1].to_hex_str(), values[1].to_hex_str()),
+            format!("{};1;{};{}", trie_id, keys[2].to_hex_str(), values[2].to_hex_str()),
             // Read existing keys
-            format!("{};0;120368059344249", trie_id),
-            format!("{};0;42", trie_id),
-            format!("{};0;100000000000000", trie_id),
+            format!("{};0;{}", trie_id, keys[0].to_hex_str()),
+            format!("{};0;{}", trie_id, keys[1].to_hex_str()),
+            format!("{};0;{}", trie_id, keys[2].to_hex_str()),
             // Read non-existing key
-            format!("{};0;999999999999999", trie_id),
+            format!("{};0;{}", trie_id, Felt::from_u128(999999999999999).to_hex_str()),
             // Overwrite 42 key
-            format!("{};1;42;1000", trie_id),
+            format!("{};1;{};{}", trie_id, keys[1].to_hex_str(), values[1].to_hex_str()),
         ];
 
         let request_payload = GetStateProofsRequest {
@@ -792,27 +745,29 @@ mod tests {
 
         // Verify all proofs
         for (i, proof) in response_body.results.iter().enumerate() {
-            let key = match i {
-                0 => str_to_felt("120368059344249"),
-                1 => str_to_felt("42"),
-                2 => str_to_felt("100000000000000"),
-                3 => str_to_felt("120368059344249"),
-                4 => str_to_felt("42"),
-                5 => str_to_felt("100000000000000"),
-                6 => str_to_felt("999999999999999"), // Non-existing
-                7 => str_to_felt("42"),
-                _ => panic!("Unexpected proof index"),
+            let keys = keys.clone();
+            let key = if i == 6 {
+                Felt::from_u128(999999999999999) // Non-existing
+            } else {
+                let key_idx = match i {
+                    0..=2 => i,
+                    3..=5 => i - 3,
+                    7 => 1,
+                    _ => panic!("Unexpected proof index"),
+                };
+                keys[key_idx].clone()
             };
-            let value = match i {
-                0 => str_to_felt("555"),
-                1 => str_to_felt("777"),
-                2 => str_to_felt("999"),
-                3 => str_to_felt("555"),
-                4 => str_to_felt("777"),
-                5 => str_to_felt("999"),
-                6 => str_to_felt("0"), // Non-existing
-                7 => str_to_felt("1000"),
-                _ => panic!("Unexpected proof index"),
+
+            let value = if i == 6 {
+                Felt::ZERO // Non-existing
+            } else {
+                let value_idx = match i {
+                    0..=2 => i,
+                    3..=5 => i - 3,
+                    7 => 1,
+                    _ => panic!("Unexpected proof index"),
+                };
+                values[value_idx]
             };
             let leaf = TrieLeaf::new(key, value);
 
@@ -862,12 +817,8 @@ mod tests {
             }
 
             // Check that all keys have been deleted by calling get-key on each
-            for key in ["120368059344249", "42", "100000000000000"] {
-                let response = app
-                    .clone()
-                    .oneshot(build_request_get_key(&trie_id, &key.to_string()))
-                    .await
-                    .unwrap();
+            for key in keys {
+                let response = app.clone().oneshot(build_request_get_key(&trie_id, &key)).await.unwrap();
                 assert_eq!(response.status(), StatusCode::NOT_FOUND);
             }
         }
@@ -879,15 +830,22 @@ mod tests {
 
         let mut app = create_router();
 
-        let trie_id = format!("test_get_state_proofs_read_write_with_data{}", uuid::Uuid::new_v4());
+        let trie_id = Felt::random(&mut rand::thread_rng());
+
+        let keys = vec![
+            Felt::from_u128(120368059344249),
+            Felt::from_u128(42),
+            Felt::from_u128(100000000000000),
+        ];
+        let values = vec![Felt::from_u128(555), Felt::from_u128(777), Felt::from_u128(999)];
 
         let combined_actions = vec![
-            format!("{};1;120368059344249;12345", trie_id),
-            format!("{};0;120368059344249", trie_id),
-            format!("{};0;120368059344249", trie_id),
-            format!("{};0;121424621299065", trie_id),
-            format!("{};1;120368059344249;54321", trie_id),
-            format!("{};0;120368059344249", trie_id),
+            format!("{};1;{};{}", trie_id, keys[0].to_hex_str(), values[0].to_hex_str()),
+            format!("{};0;{}", trie_id, keys[0].to_hex_str()),
+            format!("{};0;{}", trie_id, keys[0].to_hex_str()),
+            format!("{};0;{}", trie_id, keys[1].to_hex_str()),
+            format!("{};1;{};{}", trie_id, keys[0].to_hex_str(), values[0].to_hex_str()),
+            format!("{};0;{}", trie_id, keys[0].to_hex_str()),
         ];
 
         let request_payload = GetStateProofsRequest {
