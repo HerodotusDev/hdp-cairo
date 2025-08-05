@@ -40,10 +40,10 @@ async fn main() {
     println!();
     println!("Available endpoints:");
     println!("  POST /new-trie - Create a new trie");
-    println!("  POST /update-trie/{{trie_id}} - Update an existing trie");
+    println!("  POST /insert-initial-data - Insert initial data into a trie");
     println!("  GET /get-root-hash/{{trie_id}} - Get root hash of a trie");
     println!("  GET /get-key/{{trie_id}}?key=<key> - Get value of a key");
-    println!("  POST /insert-initial-data - Insert initial data into a trie");
+    println!("  GET /get-state-proofs - Generate structured StateProof objects for actions (read=inclusion|non-inclusion, write=update)");
     println!();
 
     if let Err(e) = start_server(port).await {

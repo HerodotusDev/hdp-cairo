@@ -9,10 +9,12 @@ This server exposes endpoints to create, update, and query Merkle tries, leverag
 - Create new Merkle tries with custom or auto-generated IDs
 - Update tries with key-value pairs (hex or decimal)
 - Retrieve root hashes of tries (Keccak256)
-- Generate inclusion proofs for keys
+- Generate inclusion/non-inclusion proofs for keys
+- Generate update proofs for state changes
 - Access to multiple tries (via DashMap)
-- Persistent storage using SQLite (via trie-builder and pathfinder-storage) and a custom implementation of the `TrieDB` trait.
+- Persistent storage using SQLite
 - JSON API with robust error handling
+- Support for temporary mutations with proof generation
 
 ## Implementation
 
@@ -33,103 +35,63 @@ curl -X POST http://localhost:3000/new-trie \
   -d '{"id": "my_trie_id"}'
 ```
 
-### Update a Trie
+### Get Key Value
 
 ```bash
-curl -X POST http://localhost:3000/update-trie/my_trie_id \
-  -H "Content-Type: application/json" \
-  -d '{"key": "0x1", "value": "0x42"}'
+curl "http://localhost:3000/get-key/{trie_id}?key=<key>"
 ```
 
 ### Get Root Hash
 
 ```bash
-curl http://localhost:3000/get-root-hash/my_trie_id
+curl http://localhost:3000/get-root-hash/{trie_id}
 ```
 
-### Get Proof (Check if key exists and get value)
+### Insert Initial Data
 
 ```bash
-curl "http://localhost:3000/get-proof/my_trie_id?key=0x1"
+curl -X POST http://localhost:3000/insert-initial-data \
+  -H "Content-Type: application/json" \
+  -d '{
+    "trie_id": "my_trie_id",
+    "keys": ["0x1", "0x2"],
+    "values": ["0x42", "0x84"]
+  }'
 ```
 
-### Upsert Actions with Temporary Mutations
-
-Performs sequential temporary mutations on tries and generates proofs for each mutation without persisting the changes to the database.
+### Get State Proofs
 
 ```bash
-curl -X POST http://localhost:3000/upsert-actions \
+curl -X POST http://localhost:3000/get-state-proofs \
   -H "Content-Type: application/json" \
   -d '{
     "actions": [
-      "trie_id_1;0x1;0x42",
-      "trie_id_1;0x2;0x84",
-      "trie_id_2;0x5;0x123"
+      "trie_id;0;key",           # Read action (inclusion/non-inclusion proof)
+      "trie_id;1;key;value"      # Write action (update proof)
     ]
   }'
 ```
 
-**Request Format:**
-
-- `actions`: Array of strings in the format `"trie_id;key;value"`
-- Each action specifies a temporary mutation to apply
-
-**Response Format:**
-
-```json
-{
-  "results": [
-    {
-      "action": "trie_id_1;0x1;0x42",
-      "trie_id": "trie_id_1",
-      "key": "0x1",
-      "value": "0x42",
-      "proof": [
-        "root:0x...",
-        "key:0x1",
-        "value:0x42",
-        "leaf_hash:0x...",
-        "original_root:0x...",
-        "temporary_mutation:true"
-      ],
-      "root_hash_after_mutation": "0x..."
-    }
-  ],
-  "success": true,
-  "message": "Successfully performed 2 temporary mutations"
-}
-```
-
-**Note:** The mutations are temporary and do not alter the original trie in the database. Each mutation is applied independently, and proofs are generated for each individual mutation.
-
 ## Usage with HDP Injected State
 
-The state server is designed to work with HDP's injected state syscall handlers. When using the `dry_hint_processor` or `sound_hint_processor`, the syscall handlers will automatically interact with the state server API.
+The state server integrates with HDP's injected state syscall handlers. The syscall handlers automatically interact with the state server API.
 
-### Starting the State Server
+### Starting the Server
 
 ```bash
-# Start the state server on port 3000
 cargo run --bin state_server -- --port 3000
 ```
 
 ### Syscall Handler Integration
 
-The injected state syscall handlers (`CallContractHandler`) automatically:
+The injected state syscall handlers support three operations:
 
-1. **Create trie on first use**: When the handler is initialized, it creates a trie with a unique ID:
-
-   - `dry_hint_processor`: Uses trie ID `"injected_state_trie_dry"`
-   - `sound_hint_processor`: Uses trie ID `"injected_state_trie_sound"`
-
-2. **Handle three operations**:
-   - **ReadKey** (`selector = 0`): Reads a value from the trie
-   - **UpsertKey** (`selector = 1`): Inserts or updates a key-value pair
-   - **DoesKeyExist** (`selector = 2`): Checks if a key exists
+- **ReadKey** (`selector = 0`): Reads a value and generates inclusion/non-inclusion proof
+- **UpsertKey** (`selector = 1`): Inserts/updates a key-value pair and generates update proof
+- **DoesKeyExist** (`selector = 2`): Checks key existence
+- **SetTreeRoot** (`selector = 3`): Sets the current tree root for state operations
 
 ### Configuration
-
-The syscall handlers can be configured to use different state server URLs:
 
 ```rust
 use dry_hint_processor::syscall_handler::injected_state::CallContractHandler;
@@ -138,44 +100,7 @@ use dry_hint_processor::syscall_handler::injected_state::CallContractHandler;
 let handler = CallContractHandler::default();
 
 // Custom configuration
-let handler = CallContractHandler::new(
-    "http://my-state-server:8080",  // Custom URL
-    "my_custom_trie_id"             // Custom trie ID
-)?;
-```
-
-### Example Usage Flow
-
-1. **Start the state server**:
-
-   ```bash
-   cargo run --bin state_server -- --port 3000
-   ```
-
-2. **Run HDP program** with injected state syscalls:
-
-   ```bash
-   # The syscall handlers will automatically:
-   # 1. Create a trie (POST /new-trie)
-   # 2. Handle read/write operations via API calls
-   # 3. Persist all state changes in the server
-   ```
-
-3. **Query state directly** (optional):
-   ```bash
-   curl "http://localhost:3000/get-proof/injected_state_trie_dry?key=my_key"
-   ```
-
-## Building
-
-```bash
-cargo build --release
-```
-
-## Running tests
-
-```bash
-cargo nextest run
+let handler = CallContractHandler::new("http://my-state-server:8080")?;
 ```
 
 ## Error Handling
@@ -183,14 +108,23 @@ cargo nextest run
 The API returns appropriate HTTP status codes:
 
 - `200 OK`: Successful operations
-- `400 Bad Request`: Invalid input (e.g., malformed keys)
-- `404 Not Found`: Trie not found
-- `409 Conflict`: Trie already exists (when creating)
+- `400 Bad Request`: Invalid input
+- `404 Not Found`: Trie/key not found
 - `500 Internal Server Error`: Server-side errors
 
 ## Security Considerations
 
-- The state server should be run in a secure environment
-- Consider using authentication/authorization for production deployments
-- Database files are stored locally and should be backed up appropriately
-- Network communication is unencrypted by default (consider using HTTPS in production)
+- Run the state server in a secure environment
+- Consider using authentication/authorization for production
+- Database files are stored locally and should be backed up
+- Network communication is unencrypted by default (use HTTPS in production)
+
+## Building and Testing
+
+```bash
+# Build
+cargo build --release
+
+# Run tests
+cargo nextest run
+```

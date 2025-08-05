@@ -3212,6 +3212,7 @@ dependencies = [
  "cairo-vm",
  "hints",
  "indexer",
+ "pathfinder-crypto 0.16.2",
  "reqwest 0.12.22",
  "serde",
  "serde_json",
@@ -7200,6 +7201,7 @@ dependencies = [
  "primitive-types 0.13.1",
  "r2d2",
  "r2d2_sqlite",
+ "rand 0.8.5",
  "reqwest 0.12.22",
  "rusqlite",
  "serde",
@@ -8031,6 +8033,7 @@ version = "0.1.0"
 dependencies = [
  "alloy 0.12.6",
  "alloy-rlp",
+ "anyhow",
  "bitvec",
  "cairo-lang-starknet-classes",
  "cairo-vm",

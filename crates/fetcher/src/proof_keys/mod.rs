@@ -1,7 +1,6 @@
 use alloy::{hex::FromHexError, primitives::Bytes};
-use dry_hint_processor::syscall_handler::injected_state::Action;
 use indexer::{models::accumulators, Indexer};
-use types::proofs::mmr::MmrMeta;
+use types::{actions::action::Action, proofs::mmr::MmrMeta};
 
 use crate::FetcherError;
 

@@ -43,6 +43,7 @@ types = { workspace = true }
 starknet-types-core = { workspace = true }
 
 http-body-util = { workspace = true }
+rand.workspace = true
 
 [dev-dependencies]
 tower = { workspace = true }
