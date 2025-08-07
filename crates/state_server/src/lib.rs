@@ -58,7 +58,7 @@ impl StateServerTrie {
         let (storage, _) = self.get_storage_and_trie(&conn);
         match storage.get_leaf(key) {
             Ok(leaf) => {
-                if leaf.is_empty() {
+                if leaf.data.value == pathfinder_crypto::Felt::ZERO {
                     return None;
                 }
                 Some(leaf.data.value)
@@ -456,7 +456,7 @@ fn handle_write_action(
             let new_root = update.root_commitment;
 
             // Persist changes to get valid proof
-            let new_root_idx = match Trie::persist_updates(&storage, &update, &vec![leaf]) {
+            let new_root_idx = match Trie::persist_updates(&storage, &update, &vec![leaf.clone()]) {
                 Ok(idx) => idx,
                 Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR),
             };
@@ -467,7 +467,7 @@ fn handle_write_action(
             cur_roots.insert(*trie_id, new_root);
 
             // Generate post-proof
-            let post_proof = generate_local_leaf_proof(&storage, cur_roots, trie_id, leaf)?;
+            let post_proof = generate_local_leaf_proof(&storage, cur_roots, trie_id, leaf.clone())?;
 
             // Don't allow empty proofs for both pre and post unless it's a first write to empty trie
             if pre_proof.is_empty() && post_proof.is_empty() && trie.root_hash != pathfinder_crypto::Felt::ZERO {

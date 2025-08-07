@@ -8,11 +8,11 @@ use cairo_vm::{
     Felt252,
 };
 use hints::vars;
-use types::{param, ChainProofs};
+use types::{param, ChainProofs, proofs::state::StateProofs};
 
 use super::CustomHintProcessor;
 
-pub const HINT_INPUT: &str = "run_input = HDPInput.Schema().load(program_input)\nchain_proofs = run_input.proofs\nparams = run_input.params\ncompiled_class = run_input.compiled_class";
+pub const HINT_INPUT: &str = "run_input = HDPInput.Schema().load(program_input)\nchain_proofs = run_input.proofs\nparams = run_input.params\ncompiled_class = run_input.compiled_class\nstate_proofs = run_input.state_proofs";
 
 impl CustomHintProcessor {
     pub fn hint_input(
@@ -46,6 +46,7 @@ impl CustomHintProcessor {
                 .collect(),
         );
         exec_scopes.insert_value::<CasmContractClass>(vars::scopes::COMPILED_CLASS, self.inputs.compiled_class.to_owned());
+        exec_scopes.insert_value::<StateProofs>(vars::scopes::STATE_PROOFS, self.inputs.state_proofs.to_owned());
         Ok(())
     }
 }

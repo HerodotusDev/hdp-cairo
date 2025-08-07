@@ -141,6 +141,7 @@ mod test_utils {
             ],
             params: vec![],
             compiled_class,
+            //state_proofs
         };
 
         // Load the Program
