@@ -4,9 +4,9 @@ use pathfinder_crypto::Felt;
 use serde::{Deserialize, Serialize};
 use state_server_types::trie::leaf::TrieLeaf;
 
-pub type StateProofs = Vec<StateProof>;
+pub type StateProofs = Vec<StateProofWrapper>; // should be wrapper
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct StateProofWrapper {
     pub trie_id: Felt,
     pub state_proof: StateProof,
@@ -16,11 +16,25 @@ pub struct StateProofWrapper {
     pub post_proof_leaf: Option<TrieLeaf>,
 }
 
+impl Default for StateProofWrapper {
+    fn default() -> Self {
+        Self {
+            trie_id: Felt::ZERO,
+            state_proof: StateProof::NonInclusion(Vec::new()),
+            root_hash: Felt::ZERO,
+            leaf: TrieLeaf::new(Felt::ZERO, Felt::ZERO),
+            post_proof_root_hash: None,
+            post_proof_leaf: None,
+        }
+    }
+}
+// mv the optional fields -> stateproofwrapper enum to either inclusion or noninclusion
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
 pub enum StateProof {
     Inclusion(Vec<TrieNodeSerde>),
-    Update((Vec<TrieNodeSerde>, Vec<TrieNodeSerde>)),
     NonInclusion(Vec<TrieNodeSerde>),
+    Update((Vec<TrieNodeSerde>, Vec<TrieNodeSerde>)),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
@@ -29,6 +43,15 @@ pub enum TrieNodeSerde {
     // Stores both the raw bytes which back the bit-vector *and* the
     // original bit-length so it can be reconstructed losslessly.
     Edge { child: Felt, path: Vec<u8>, bit_len: usize },
+}
+
+impl TrieNodeSerde {
+    pub fn byte_len(&self) -> usize {
+        match self {
+            TrieNodeSerde::Binary { .. } => 64,                  // 2 Felts * 32 bytes each
+            TrieNodeSerde::Edge { path, .. } => 32 + path.len(), // 1 Felt + path bytes
+        }
+    }
 }
 
 impl From<TrieNode> for TrieNodeSerde {

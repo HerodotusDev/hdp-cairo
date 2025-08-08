@@ -3,7 +3,7 @@ pub use pathfinder_common::hash::keccak_hash as keccak_hash_truncated;
 use pathfinder_crypto::Felt;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct TrieLeaf {
     pub key: Felt,
     pub data: LeafData,
@@ -16,7 +16,7 @@ pub struct LeafUpdate {
     pub new_data: LeafData,
 }
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct LeafData {
     pub value: Felt,
 }

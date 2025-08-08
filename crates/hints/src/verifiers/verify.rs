@@ -9,7 +9,10 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use types::ChainProofs;
+use types::{
+    proofs::state::{StateProof, StateProofs},
+    ChainProofs,
+};
 
 use crate::vars;
 
@@ -38,4 +41,36 @@ pub fn hint_chain_proofs_chain_id(
         .try_into()
         .unwrap();
     insert_value_into_ap(vm, Felt252::from(chain_proofs[idx - 1].chain_id()))
+}
+
+pub const HINT_STATE_PROOFS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(state_proofs))";
+
+pub fn hint_state_proofs_len(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    _hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let state_proofs = exec_scopes.get::<StateProofs>(vars::scopes::STATE_PROOFS)?;
+    insert_value_into_ap(vm, Felt252::from(state_proofs.len()))
+}
+
+pub const HINT_STATE_PROOFS_PROOF_TYPE: &str = "memory[ap] = to_felt_or_relocatable(state_proofs[ids.idx - 1].proof_type)";
+
+pub fn hint_state_proofs_proof_type(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let state_proofs = exec_scopes.get::<StateProofs>(vars::scopes::STATE_PROOFS)?;
+    let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
+        .try_into()
+        .unwrap();
+    let proof_wrapper = &state_proofs[idx - 1];
+    match &proof_wrapper.state_proof {
+        StateProof::Inclusion(_) => insert_value_into_ap(vm, Felt252::from(0)),
+        StateProof::NonInclusion(_) => insert_value_into_ap(vm, Felt252::from(1)),
+        StateProof::Update(_) => insert_value_into_ap(vm, Felt252::from(2)),
+    }
 }

@@ -58,7 +58,7 @@ impl StateServerTrie {
         let (storage, _) = self.get_storage_and_trie(&conn);
         match storage.get_leaf(key) {
             Ok(leaf) => {
-                if leaf.is_empty() {
+                if leaf.data.value == pathfinder_crypto::Felt::ZERO {
                     return None;
                 }
                 Some(leaf.data.value)
@@ -86,6 +86,7 @@ impl StateServerTrie {
     fn insert(&mut self, key: Felt, value: Felt) -> anyhow::Result<TrieUpdate> {
         // Create a new leaf with the key-value pair
         let leaf = TrieLeaf::new(key, value);
+        println!("Inserting leaf: {:?}", leaf);
 
         let conn = self.db_connection_manager.get_connection()?;
         let (storage, mut trie) = self.get_storage_and_trie(&conn);
@@ -169,10 +170,19 @@ async fn new_trie(State(state): State<AppState>, Json(payload): Json<NewTrieRequ
     let trie_id = payload.id.unwrap();
     let db_path = format!("/tmp/{}.db", trie_id.to_hex_str());
 
-    let trie = StateServerTrie::new(&db_path).map_err(|_e| StatusCode::INTERNAL_SERVER_ERROR)?;
-    let root_hash = trie.root_hash;
+    println!("DB path: {}", db_path);
 
-    state.tries.insert(trie_id, trie);
+    let mut trie = StateServerTrie::new(&db_path).map_err(|_e| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let root_hash = trie.root_hash;
+    println!("Root hash: {}", root_hash.to_hex_str());
+
+    // Insert initial key pair (for testing purposes)
+    let key = Felt::from_hex_str("0x6d795f6b6579").unwrap();
+    if trie.get_key(key).is_none() {
+        trie.insert(key, Felt::from_u128(54321)).unwrap();
+
+        state.tries.insert(trie_id, trie);
+    }
 
     Ok(Json(serde_json::json!({
         "trie_id": trie_id,
@@ -456,7 +466,7 @@ fn handle_write_action(
             let new_root = update.root_commitment;
 
             // Persist changes to get valid proof
-            let new_root_idx = match Trie::persist_updates(&storage, &update, &vec![leaf]) {
+            let new_root_idx = match Trie::persist_updates(&storage, &update, &vec![leaf.clone()]) {
                 Ok(idx) => idx,
                 Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR),
             };
@@ -467,7 +477,7 @@ fn handle_write_action(
             cur_roots.insert(*trie_id, new_root);
 
             // Generate post-proof
-            let post_proof = generate_local_leaf_proof(&storage, cur_roots, trie_id, leaf)?;
+            let post_proof = generate_local_leaf_proof(&storage, cur_roots, trie_id, leaf.clone())?;
 
             // Don't allow empty proofs for both pre and post unless it's a first write to empty trie
             if pre_proof.is_empty() && post_proof.is_empty() && trie.root_hash != pathfinder_crypto::Felt::ZERO {

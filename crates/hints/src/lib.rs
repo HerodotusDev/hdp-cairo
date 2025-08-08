@@ -156,6 +156,15 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(verifiers::verify::HINT_CHAIN_PROOFS_LEN.into(), verifiers::verify::hint_chain_proofs_len);
     hints.insert(verifiers::verify::HINT_CHAIN_PROOFS_CHAIN_ID.into(), verifiers::verify::hint_chain_proofs_chain_id);
     hints.insert(verifiers::verify::HINT_CHAIN_PROOFS_LEN.into(), verifiers::verify::hint_chain_proofs_len);
+    hints.insert(verifiers::verify::HINT_STATE_PROOFS_LEN.into(), verifiers::verify::hint_state_proofs_len);
+    hints.insert(verifiers::verify::HINT_STATE_PROOFS_PROOF_TYPE.into(), verifiers::verify::hint_state_proofs_proof_type);
+    hints.insert(verifiers::state_server::HINT_STATE_PROOF_ENTER_SCOPE.into(), verifiers::state_server::hint_state_proof_enter_scope);
+    hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_KEY_BE.into(), verifiers::state_server::inclusion_verifier::hint_get_key_be);
+    hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_ROOT.into(), verifiers::state_server::inclusion_verifier::hint_get_root);
+    hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_KEY_BE_LEADING_ZEROES_NIBBLES.into(), verifiers::state_server::inclusion_verifier::hint_get_key_be_leading_zeroes_nibbles);
+    hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_PROOF_BYTES_LEN.into(), verifiers::state_server::inclusion_verifier::hint_get_proof_bytes_len);
+    hints.insert(verifiers::state_server::inclusion_verifier::HINT_INCLUSION_PROOF_LEN.into(), verifiers::state_server::inclusion_verifier::hint_inclusion_proof_len);
+    hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_MPT_PROOF.into(), verifiers::state_server::inclusion_verifier::hint_get_mpt_proof);
 
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::bit_length::HINT_BIT_LENGTH.into(), eth_essentials_cairo_vm_hints::hints::lib::bit_length::hint_bit_length);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::mmr::bit_length::MMR_BIT_LENGTH.into(), eth_essentials_cairo_vm_hints::hints::lib::mmr::bit_length::mmr_bit_length);

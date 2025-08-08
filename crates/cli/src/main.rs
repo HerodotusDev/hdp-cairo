@@ -14,7 +14,7 @@ use fetcher::run_fetcher;
 use serde::{Deserialize, Serialize};
 use sound_run::HDP_COMPILED_JSON;
 use syscall_handler::SyscallHandler;
-use types::{actions::action::Action, error::Error, param::Param, ChainProofs, HDPDryRunInput, HDPInput};
+use types::{actions::action::Action, error::Error, param::Param, ChainProofs, HDPDryRunInput, HDPInput, ProofsData};
 
 #[derive(Deserialize)]
 struct FetcherInput {
@@ -187,15 +187,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             } else {
                 Vec::new()
             };
-            let chain_proofs: Vec<ChainProofs> = serde_json::from_slice(&std::fs::read(args.proofs).map_err(Error::IO)?)?;
+            println!("Readings proofs data");
+            let proofs_data: ProofsData = serde_json::from_slice(&std::fs::read(args.proofs).map_err(Error::IO)?)?;
 
             println!("Executing program...");
             let (pie, output) = sound_run::run(
                 args.program.unwrap_or(PathBuf::from(HDP_COMPILED_JSON)),
                 HDPInput {
-                    chain_proofs,
+                    chain_proofs: proofs_data.chain_proofs,
                     compiled_class,
                     params,
+                    state_proofs: proofs_data.state_proofs,
                 },
             )?;
 

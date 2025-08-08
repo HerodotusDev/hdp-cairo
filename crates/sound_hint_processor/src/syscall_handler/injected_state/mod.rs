@@ -22,6 +22,7 @@ pub enum CallHandlerId {
     ReadKey = 0,
     UpsertKey = 1,
     DoesKeyExist = 2,
+    GetTrieRootHash = 3,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -386,6 +387,17 @@ impl SyscallHandler for CallContractHandler {
                     retdata_end,
                 })
             }
+            CallHandlerId::GetTrieRootHash => {
+                let output = GetTrieRootHashResponseTypeOutput {
+                    root_hash: self.trie_id.clone(),
+                };
+                let retdata_start = vm.add_memory_segment();
+                let retdata_end = output.to_memory(vm, retdata_start)?;
+                Ok(Self::Response {
+                    retdata_start,
+                    retdata_end,
+                })
+            }
         }
     }
 
@@ -403,6 +415,11 @@ pub struct ReadKeyResponseTypeOutput {
 #[derive(Default, Debug, Clone)]
 pub struct DoesKeyExistResponseTypeOutput {
     pub exists: Felt252,
+}
+
+#[derive(Default, Debug, Clone)]
+pub struct GetTrieRootHashResponseTypeOutput {
+    pub root_hash: String,
 }
 
 impl CairoType for ReadKeyResponseTypeOutput {
@@ -435,6 +452,22 @@ impl CairoType for DoesKeyExistResponseTypeOutput {
 
     fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
         CairoFelt::from(self.exists).to_memory(vm, address)
+    }
+
+    fn n_fields(vm: &VirtualMachine, address: Relocatable) -> Result<usize, MemoryError> {
+        CairoFelt::n_fields(vm, address)
+    }
+}
+
+impl CairoType for GetTrieRootHashResponseTypeOutput {
+    fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
+        let root_hash = Felt252::ZERO.to_string();
+        Ok(Self { root_hash })
+    }
+
+    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
+        let root_hash = Felt252::ZERO;
+        CairoFelt::from(root_hash).to_memory(vm, address)
     }
 
     fn n_fields(vm: &VirtualMachine, address: Relocatable) -> Result<usize, MemoryError> {

@@ -37,7 +37,7 @@ use types::{
         header::HeaderMmrMeta,
         mmr::MmrMeta,
         starknet::{header::Header as StarknetHeader, storage::Storage as StarknetStorage, Proofs as StarknetProofs},
-        state::StateProofs,
+        state::{StateProofWrapper, StateProofs},
     },
     ChainProofs, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
 };
@@ -416,7 +416,11 @@ impl<'a> Fetcher<'a> {
 
         if response.status().is_success() {
             let response_body: GetStateProofsResponse = response.json().await?;
-            let state_proofs: StateProofs = response_body.results.into_iter().map(|result| result.proof.state_proof).collect();
+            let state_proofs = response_body
+                .results
+                .into_iter()
+                .map(|result| result.proof)
+                .collect::<Vec<StateProofWrapper>>();
             println!("State proofs: {:?}", state_proofs);
             Ok(state_proofs)
         } else {

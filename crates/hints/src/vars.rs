@@ -19,6 +19,13 @@ pub mod scopes {
     pub const TRANSACTION: &str = "transaction";
     pub const HEADER_WITH_MMR_EVM: &str = "header_with_mmr";
     pub const HEADER_WITH_MMR_STARKNET: &str = "header_with_mmr_starknet";
+    pub const STATE_PROOFS: &str = "state_proofs";
+    pub const STATE_PROOF: &str = "state_proof";
+    pub const BATCH_STATE_SERVER: &str = "batch_state_server";
+    pub const INCLUSION_PROOF: &str = "inclusion_proof";
+    pub const NON_INCLUSION_PROOF: &str = "non_inclusion_proof";
+    pub const UPDATE_PROOF: &str = "update_proof";
+    pub const STATE_PROOF_WRAPPER: &str = "state_proof_wrapper";
 }
 
 pub mod ids {
@@ -52,7 +59,9 @@ pub mod ids {
     pub const IS_LONG: &str = "is_long";
     pub const ITEM_TYPE: &str = "item_type";
     pub const KEY: &str = "key";
+    pub const KEY_BE: &str = "key_be";
     pub const KEY_LEADING_ZEROS: &str = "key_leading_zeros";
+    pub const KEY_LEADING_ZEROS_NIBBLES: &str = "key_leading_zeros_nibbles";
     pub const LEFT: &str = "left";
     pub const MMR_PATH: &str = "mmr_path";
     pub const MPT_PROOF: &str = "mpt_proof";
@@ -77,4 +86,7 @@ pub mod ids {
     pub const TASK_HASH: &str = "task_hash";
     pub const VALUE_LEN: &str = "value_len";
     pub const VALUE: &str = "value";
+    pub const LEAF_KEY: &str = "leaf_key";
+    pub const ROOT_HASH: &str = "root_hash";
+    pub const ROOT: &str = "root";
 }
