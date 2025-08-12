@@ -22,8 +22,11 @@ from src.types import ChainInfo, TrieNode, TrieNodeBinary, TrieNodeEdge
 // This function can be used for inclusion or non-inclusion proofs. In case of non-inclusion,
 // the function will return the root and a zero value.
 func traverse{
-    hash_binary_node_ptr: felt*, hash_edge_node_ptr: felt*, hash_ptr: HashBuiltin*,
-    bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
+    hash_binary_node_ptr: felt*,
+    hash_edge_node_ptr: felt*,
+    hash_ptr: HashBuiltin*,
+    bitwise_ptr: BitwiseBuiltin*,
+    pow2_array: felt*,
 }(nodes: TrieNode**, n_nodes: felt, expected_path: felt) -> (root: felt, value: felt) {
     alloc_locals;
 
@@ -39,8 +42,11 @@ func traverse{
 // Traverse a proof, where the last proof node is an edge node.
 // This could be an inclusion or non-inclusion proof.
 func traverse_edge_leaf{
-    hash_binary_node_ptr: felt*, hash_edge_node_ptr: felt*, hash_ptr: HashBuiltin*,
-    bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
+    hash_binary_node_ptr: felt*,
+    hash_edge_node_ptr: felt*,
+    hash_ptr: HashBuiltin*,
+    bitwise_ptr: BitwiseBuiltin*,
+    pow2_array: felt*,
 }(nodes: TrieNode**, n_nodes: felt, expected_path: felt) -> (root: felt, value: felt) {
     alloc_locals;
 
@@ -98,8 +104,11 @@ func traverse_edge_leaf{
 // Traverse a proof, where the last proof node is a binary node.
 // This is always an inclusion proof.
 func traverse_binary_leaf{
-    hash_binary_node_ptr: felt*, hash_edge_node_ptr: felt*, hash_ptr: HashBuiltin*,
-    bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
+    hash_binary_node_ptr: felt*,
+    hash_edge_node_ptr: felt*,
+    hash_ptr: HashBuiltin*,
+    bitwise_ptr: BitwiseBuiltin*,
+    pow2_array: felt*,
 }(nodes: TrieNode**, n_nodes: felt, expected_path: felt) -> (root: felt, value: felt) {
     alloc_locals;
 
@@ -136,8 +145,12 @@ func traverse_binary_leaf{
 // Inner traverse function used to traverse the nodes.
 // This function will return the path is took through the tree, along with the computed root.
 func traverse_inner{
-    hash_binary_node_ptr: felt*, hash_edge_node_ptr: felt*, hash_ptr: HashBuiltin*,
-    bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, nodes: TrieNode**
+    hash_binary_node_ptr: felt*,
+    hash_edge_node_ptr: felt*,
+    hash_ptr: HashBuiltin*,
+    bitwise_ptr: BitwiseBuiltin*,
+    pow2_array: felt*,
+    nodes: TrieNode**,
 }(
     n_nodes: felt,
     expected_path: felt,
@@ -172,7 +185,9 @@ func traverse_inner{
         new_path = traversed_path + path_length_pow2;
     }
     let next_path_length_pow2 = path_length_pow2 * 2;
-    let next_hash = hash_node{func_ptr=hash_binary_node_ptr, hash_ptr=hash_ptr}(cast(node_binary, felt*));
+    let next_hash = hash_node{func_ptr=hash_binary_node_ptr, hash_ptr=hash_ptr}(
+        cast(node_binary, felt*)
+    );
 
     return traverse_inner(
         n_nodes - 1,
@@ -188,7 +203,9 @@ func traverse_inner{
     assert hash_value = node_edge.child;
     let next_path = traversed_path + node_edge.value * path_length_pow2;
     let next_path_length_pow2 = path_length_pow2 * pow2_array[node_edge.len];
-    let next_hash = hash_node{func_ptr=hash_edge_node_ptr, hash_ptr=hash_ptr}(cast(node_edge, felt*));
+    let next_hash = hash_node{func_ptr=hash_edge_node_ptr, hash_ptr=hash_ptr}(
+        cast(node_edge, felt*)
+    );
 
     return traverse_inner(
         n_nodes - 1,
@@ -251,12 +268,7 @@ func assert_subpath{bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
 
 // Hash function for nodes. (abstract version)
 func hash_node{func_ptr: felt*, hash_ptr: HashBuiltin*}(node: felt*) -> felt {
-    tempvar invoke_params = cast(
-        new (
-            hash_ptr, node,
-        ),
-        felt*,
-    );
+    tempvar invoke_params = cast(new (hash_ptr, node), felt*);
     invoke(func_ptr, 2, invoke_params);
 
     let node_hash = [ap - 1];

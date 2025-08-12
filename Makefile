@@ -17,3 +17,4 @@ format:
 # Run cairo-format check
 format-check:
 	./venv/bin/cairo-format -c src/*.cairo
+	./venv/bin/cairo-format -c src/**/*.cairo

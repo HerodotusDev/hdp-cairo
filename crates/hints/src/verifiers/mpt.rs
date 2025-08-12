@@ -21,7 +21,7 @@ pub fn hint_keccak160_binary_node(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let node_ptr = get_ptr_from_var_name(vars::ids::NODE, &vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let node_ptr = get_ptr_from_var_name(vars::ids::NODE, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     let node_left = vm.get_integer((node_ptr + 1)?)?.into_owned();
     let node_right = vm.get_integer((node_ptr + 2)?)?.into_owned();
     insert_value_into_ap(
@@ -44,7 +44,7 @@ pub fn hint_keccak160_edge_node(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let node_ptr = get_ptr_from_var_name(vars::ids::NODE, &vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let node_ptr = get_ptr_from_var_name(vars::ids::NODE, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     let node_child = vm.get_integer((node_ptr + 1)?)?.into_owned();
     let node_value = vm.get_integer((node_ptr + 2)?)?.into_owned();
     insert_value_into_ap(
