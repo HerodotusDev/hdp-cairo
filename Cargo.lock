@@ -2981,12 +2981,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f90f7dce0722e95104fcb095585910c0977252f286e354b5e3bd38902cd99988"
 
 [[package]]
-name = "futures-timer"
-version = "3.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f288b0a4f20f9a56b5d1da57e2227c661b7b16168e2f72365f57b63326e29b24"
-
-[[package]]
 name = "futures-util"
 version = "0.3.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3222,6 +3216,8 @@ dependencies = [
  "hex",
  "num-bigint",
  "num-traits",
+ "pathfinder-common",
+ "pathfinder-crypto",
  "rand 0.8.5",
  "reqwest 0.12.12",
  "serde",
@@ -4406,27 +4402,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17359afc20d7ab31fdb42bb844c8b3bb1dabd7dcf7e68428492da7f16966fcef"
 
 [[package]]
-name = "pathfinder-class-hash"
-version = "0.15.3"
-source = "git+https://github.com/eqlabs/pathfinder#55a18f740964354a1d00a65b6c0c1ce360310246"
-dependencies = [
- "anyhow",
- "pathfinder-common",
- "pathfinder-crypto",
- "pathfinder-serde",
- "primitive-types",
- "serde",
- "serde_json",
- "serde_with 3.12.0",
- "sha3",
- "thiserror 1.0.69",
- "tokio",
-]
-
-[[package]]
 name = "pathfinder-common"
-version = "0.15.3"
-source = "git+https://github.com/eqlabs/pathfinder#55a18f740964354a1d00a65b6c0c1ce360310246"
+version = "0.16.2"
+source = "git+https://github.com/petscheit/pathfinder#7f5ae1985537148600d897030cc60d63b839022b"
 dependencies = [
  "anyhow",
  "bitvec",
@@ -4445,13 +4423,14 @@ dependencies = [
  "serde_with 3.12.0",
  "sha3",
  "thiserror 1.0.69",
+ "tiny-keccak",
  "vergen",
 ]
 
 [[package]]
 name = "pathfinder-crypto"
-version = "0.15.3"
-source = "git+https://github.com/eqlabs/pathfinder#55a18f740964354a1d00a65b6c0c1ce360310246"
+version = "0.16.2"
+source = "git+https://github.com/petscheit/pathfinder#7f5ae1985537148600d897030cc60d63b839022b"
 dependencies = [
  "bitvec",
  "fake",
@@ -4461,8 +4440,8 @@ dependencies = [
 
 [[package]]
 name = "pathfinder-serde"
-version = "0.15.3"
-source = "git+https://github.com/eqlabs/pathfinder#55a18f740964354a1d00a65b6c0c1ce360310246"
+version = "0.16.2"
+source = "git+https://github.com/petscheit/pathfinder#7f5ae1985537148600d897030cc60d63b839022b"
 dependencies = [
  "anyhow",
  "num-bigint",
@@ -4477,7 +4456,7 @@ dependencies = [
 [[package]]
 name = "pathfinder-tagged"
 version = "0.1.0"
-source = "git+https://github.com/eqlabs/pathfinder#55a18f740964354a1d00a65b6c0c1ce360310246"
+source = "git+https://github.com/petscheit/pathfinder#7f5ae1985537148600d897030cc60d63b839022b"
 dependencies = [
  "fake",
 ]
@@ -4485,7 +4464,7 @@ dependencies = [
 [[package]]
 name = "pathfinder-tagged-debug-derive"
 version = "0.1.0"
-source = "git+https://github.com/eqlabs/pathfinder#55a18f740964354a1d00a65b6c0c1ce360310246"
+source = "git+https://github.com/petscheit/pathfinder#7f5ae1985537148600d897030cc60d63b839022b"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5088,35 +5067,6 @@ checksum = "bb919243f34364b6bd2fc10ef797edbfa75f33c252e7998527479c6d6b47e1ec"
 dependencies = [
  "bytes",
  "rustc-hex",
-]
-
-[[package]]
-name = "rstest"
-version = "0.18.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97eeab2f3c0a199bc4be135c36c924b6590b88c377d416494288c14f2db30199"
-dependencies = [
- "futures",
- "futures-timer",
- "rstest_macros",
- "rustc_version 0.4.1",
-]
-
-[[package]]
-name = "rstest_macros"
-version = "0.18.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d428f8247852f894ee1be110b375111b586d4fa431f6c46e64ba5a0dcccbe605"
-dependencies = [
- "cfg-if",
- "glob",
- "proc-macro2",
- "quote",
- "regex",
- "relative-path",
- "rustc_version 0.4.1",
- "syn 2.0.98",
- "unicode-ident",
 ]
 
 [[package]]
@@ -5973,19 +5923,17 @@ dependencies = [
 
 [[package]]
 name = "starknet-gateway-types"
-version = "0.15.3"
-source = "git+https://github.com/eqlabs/pathfinder#55a18f740964354a1d00a65b6c0c1ce360310246"
+version = "0.16.2"
+source = "git+https://github.com/petscheit/pathfinder#7f5ae1985537148600d897030cc60d63b839022b"
 dependencies = [
  "anyhow",
  "fake",
- "pathfinder-class-hash",
  "pathfinder-common",
  "pathfinder-crypto",
  "pathfinder-serde",
  "primitive-types",
  "rand 0.8.5",
  "reqwest 0.12.12",
- "rstest",
  "serde",
  "serde_json",
  "serde_with 3.12.0",

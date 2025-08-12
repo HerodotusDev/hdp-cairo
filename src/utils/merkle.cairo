@@ -61,7 +61,7 @@ func compute_merkle_root{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_p
         let (res) = keccak_uint256s{range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr}(
             n_elements=1, elements=leafs
         );
-    
+
         return (res);
     }
 

@@ -160,9 +160,7 @@ func execute_call_contract{
     if (layout == Layout.EVM) {
         with output_ptr {
             EvmStateAccess.read_and_decode(
-                params=request.calldata_start + 2,
-                state_access_type=state_access_type,
-                field=field,
+                params=request.calldata_start + 2, state_access_type=state_access_type, field=field
             );
 
             return ();

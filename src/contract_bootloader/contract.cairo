@@ -36,7 +36,9 @@ func compute_contract{
     starknet_memorizer: DictAccess*,
     starknet_decoder_ptr: felt***,
     starknet_key_hasher_ptr: felt**,
-}(module_inputs: felt*, module_inputs_len: felt) -> (module_hash: felt, retdata: felt*, retdata_size: felt) {
+}(module_inputs: felt*, module_inputs_len: felt) -> (
+    module_hash: felt, retdata: felt*, retdata_size: felt
+) {
     alloc_locals;
 
     local compiled_class: CompiledClass*;
