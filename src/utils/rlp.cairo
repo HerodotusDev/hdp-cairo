@@ -167,7 +167,7 @@ func rlp_list_retrieve{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array
         assert current_value_len = value_len;
         assert current_value_starts_at_byte = item_starts_at_byte + len_len + 1;
         assert next_item_starts_at_byte = current_value_starts_at_byte + current_value_len;
-        tempvar range_check_ptr = range_check_ptr; 
+        tempvar range_check_ptr = range_check_ptr;
     } else {
         tempvar range_check_ptr = range_check_ptr;
     }

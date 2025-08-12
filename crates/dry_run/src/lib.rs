@@ -74,7 +74,7 @@ pub fn run(
     let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))?;
 
     let mut hint_processor = CustomHintProcessor::new(input);
-    let mut cairo_runner = cairo_run_program(&program, &cairo_run_config, &mut hint_processor)?;
+    let mut cairo_runner = cairo_run_program(&program, &cairo_run_config, &mut hint_processor).map_err(Box::new)?;
     debug!("{:?}", cairo_runner.get_execution_resources());
 
     let syscall_handler = cairo_runner

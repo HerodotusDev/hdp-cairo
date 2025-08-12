@@ -276,7 +276,7 @@ func execute_entry_point{
     //     segment_size = rc96_ptr.offset
     //     base = rc96_ptr - segment_size
 
-    //     for i in range(segment_size):
+    // for i in range(segment_size):
     //         memory.setdefault(base + i, 0)
     // %}
 

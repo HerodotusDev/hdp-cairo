@@ -59,7 +59,7 @@ impl CallHandler for StorageCallHandler {
             alloy_rlp::Header::decode(&mut data.as_slice()).map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?;
         let length = header.length_with_payload();
         let rlp = vm
-            .get_integer_range(ptr, (length + 7) / 8)?
+            .get_integer_range(ptr, length.div_ceil(8))?
             .into_iter()
             .flat_map(|f| f.to_bytes_le().into_iter().take(8))
             .take(length)

@@ -36,6 +36,10 @@ namespace StarknetHeaderDecoder {
         if (fields[1] == 0x535441524b4e45545f424c4f434b5f4841534830) {
             return StarknetHeaderVersion.VERSION_2;
         }
+        // 0x535441524b4e45545f424c4f434b5f4841534831 = to_hex("STARKNET_BLOCK_HASH1")
+        if (fields[1] == 0x535441524b4e45545f424c4f434b5f4841534831) {
+            return StarknetHeaderVersion.VERSION_2;
+        }
 
         return StarknetHeaderVersion.VERSION_1;
     }

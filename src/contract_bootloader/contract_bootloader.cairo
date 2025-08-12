@@ -81,7 +81,7 @@ func run_contract_bootloader{
         ),
         non_selectable=NonSelectableBuiltins(keccak=keccak_ptr, sha256=sha256_ptr),
     );
-    
+
     let builtin_ptrs = &local_builtin_ptrs;
     let sha256_ptr_start = builtin_ptrs.non_selectable.sha256;
 

@@ -59,7 +59,7 @@ pub fn run(program_path: PathBuf, input: HDPInput) -> Result<(CairoPie, HDPOutpu
     let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))?;
 
     let mut hint_processor = CustomHintProcessor::new(input);
-    let mut cairo_runner = cairo_run_program(&program, &cairo_run_config, &mut hint_processor)?;
+    let mut cairo_runner = cairo_run_program(&program, &cairo_run_config, &mut hint_processor).map_err(Box::new)?;
     debug!("{:?}", cairo_runner.get_execution_resources());
 
     let pie = cairo_runner.get_cairo_pie().map_err(|e| Error::CairoPie(e.to_string()))?;

@@ -26,7 +26,7 @@ impl Storage {
 // - https://github.com/eqlabs/pathfinder/blob/main/crates/rpc/src/pathfinder/methods/get_proof.rs
 // Both of these implementations essentially force us to follow the cairo-vm versions that are used,
 // which is a bad idea for us to do. We should aim for finding an implementation that we can simply
-// update instead of manageing it ourself. This is a temporary solution that we should aim to
+// update instead of managing it ourself. This is a temporary solution that we should aim to
 // replace.
 
 use cairo_vm::Felt252;

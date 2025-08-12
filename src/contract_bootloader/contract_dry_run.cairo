@@ -131,15 +131,15 @@ func main{
 
     let (taskHash) = keccak_felts(task_hash_preimage_len, task_hash_preimage);
 
-    assert[output_ptr] = taskHash.low;
-    assert[output_ptr + 1] = taskHash.high;
+    assert [output_ptr] = taskHash.low;
+    assert [output_ptr + 1] = taskHash.high;
     let output_ptr = output_ptr + 2;
-    
+
     let (leafs: Uint256*) = alloc();
     felt_array_to_uint256s(counter=retdata_size, retdata=retdata, leafs=leafs);
     let output_root = compute_merkle_root(leafs, retdata_size);
-    assert[output_ptr + 0] = output_root.low;
-    assert[output_ptr + 1] = output_root.high;
+    assert [output_ptr + 0] = output_root.low;
+    assert [output_ptr + 1] = output_root.high;
     let output_ptr = output_ptr + 2;
 
     return ();
