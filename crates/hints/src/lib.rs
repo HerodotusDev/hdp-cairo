@@ -61,6 +61,8 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(segments::SEGMENTS_ADD_EVM_STARKNET_MEMORIZER_INDEX.into(), segments::segments_add_evm_starknet_memorizer_index);
     hints.insert(segments::SEGMENTS_ADD_FP.into(), segments::segments_add_fp);
     hints.insert(segments::SEGMENTS_ADD_STARKNET_MEMORIZER_OFFSET.into(), segments::segments_add_starknet_memorizer_offset);
+    hints.insert(segments::SEGMENTS_ADD_INJECTED_STATE_MEMORIZER_INDEX.into(), segments::segments_add_injected_state_memorizer_index);
+    hints.insert(segments::SEGMENTS_ADD_INJECTED_STATE_MEMORIZER_OFFSET.into(), segments::segments_add_injected_state_memorizer_offset);
     hints.insert(segments::SEGMENTS_ADD.into(), segments::segments_add);
     hints.insert(verifiers::evm::account_verifier::HINT_ACCOUNT_KEY_LEADING_ZEROS.into(), verifiers::evm::account_verifier::hint_account_key_leading_zeros);
     hints.insert(verifiers::evm::account_verifier::HINT_ACCOUNT_KEY.into(), verifiers::evm::account_verifier::hint_account_key);
@@ -155,7 +157,16 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(verifiers::starknet::storage_verifier::HINT_SET_STORAGE_STARKNET_PROOF_CONTRACT_PROOF_LEN.into(), verifiers::starknet::storage_verifier::hint_set_storage_starknet_proof_contract_proof_len);
     hints.insert(verifiers::verify::HINT_CHAIN_PROOFS_CHAIN_ID.into(), verifiers::verify::hint_chain_proofs_chain_id);
     hints.insert(verifiers::verify::HINT_CHAIN_PROOFS_LEN.into(), verifiers::verify::hint_chain_proofs_len);
-    hints.insert(verifiers::verify::HINT_CHAIN_PROOFS_LEN.into(), verifiers::verify::hint_chain_proofs_len);
+    hints.insert(verifiers::verify::HINT_STATE_PROOFS_LEN.into(), verifiers::verify::hint_state_proofs_len);
+    hints.insert(verifiers::verify::HINT_STATE_PROOFS_PROOF_TYPE.into(), verifiers::verify::hint_state_proofs_proof_type);
+    hints.insert(verifiers::state_server::HINT_STATE_PROOF_ENTER_SCOPE.into(), verifiers::state_server::hint_state_proof_enter_scope);
+    hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_KEY_BE.into(), verifiers::state_server::inclusion_verifier::hint_get_key_be);
+    hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_ROOT.into(), verifiers::state_server::inclusion_verifier::hint_get_root);
+    hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_KEY_BE_LEADING_ZEROES_NIBBLES.into(), verifiers::state_server::inclusion_verifier::hint_get_key_be_leading_zeroes_nibbles);
+    hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_PROOF_BYTES_LEN.into(), verifiers::state_server::inclusion_verifier::hint_get_proof_bytes_len);
+    hints.insert(verifiers::state_server::inclusion_verifier::HINT_INCLUSION_PROOF_LEN.into(), verifiers::state_server::inclusion_verifier::hint_inclusion_proof_len);
+    hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_MPT_PROOF.into(), verifiers::state_server::inclusion_verifier::hint_get_mpt_proof);
+
 
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::bit_length::HINT_BIT_LENGTH.into(), eth_essentials_cairo_vm_hints::hints::lib::bit_length::hint_bit_length);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::mmr::bit_length::MMR_BIT_LENGTH.into(), eth_essentials_cairo_vm_hints::hints::lib::mmr::bit_length::mmr_bit_length);
@@ -189,6 +200,8 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(utils::debug::PRINT_FELT_HEX.into(), utils::debug::print_felt_hex);
     hints.insert(utils::debug::PRINT_FELT.into(), utils::debug::print_felt);
     hints.insert(utils::debug::PRINT_STRING.into(), utils::debug::print_string);
+    hints.insert(utils::debug::PRINT_FELT_HEX.into(), utils::debug::print_felt_hex);
+    hints.insert(utils::debug::PRINT_DEBUG_BREAKPOINT.into(), utils::debug::print_debug_breakpoint);
 
     hints
 }

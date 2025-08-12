@@ -36,9 +36,8 @@ func compute_contract{
     starknet_memorizer: DictAccess*,
     starknet_decoder_ptr: felt***,
     starknet_key_hasher_ptr: felt**,
-}(module_inputs: felt*, module_inputs_len: felt) -> (
-    module_hash: felt, retdata: felt*, retdata_size: felt
-) {
+    injected_state_memorizer: DictAccess*,
+}(module_inputs: felt*, module_inputs_len: felt) -> (module_hash: felt, retdata: felt*, retdata_size: felt) {
     alloc_locals;
 
     local compiled_class: CompiledClass*;
@@ -73,11 +72,13 @@ func compute_contract{
     assert calldata[1] = nondet %{ ids.evm_memorizer.address_.offset %};
     assert calldata[2] = nondet %{ ids.starknet_memorizer.address_.segment_index %};
     assert calldata[3] = nondet %{ ids.starknet_memorizer.address_.offset %};
+    assert calldata[4] = nondet %{ ids.injected_state_memorizer.address_.segment_index %};
+    assert calldata[5] = nondet %{ ids.injected_state_memorizer.address_.offset %};
 
-    memcpy(dst=calldata + 4, src=module_inputs, len=module_inputs_len);
-    let calldata_size = 4 + module_inputs_len;
+    memcpy(dst=calldata + 6, src=module_inputs, len=module_inputs_len);
+    let calldata_size = 6 + module_inputs_len;
 
-    with evm_memorizer, starknet_memorizer, pow2_array {
+    with evm_memorizer, starknet_memorizer, injected_state_memorizer, pow2_array {
         let (retdata_size, retdata) = run_contract_bootloader(
             compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata, dry_run=0
         );

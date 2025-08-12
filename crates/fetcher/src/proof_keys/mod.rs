@@ -1,6 +1,6 @@
 use alloy::{hex::FromHexError, primitives::Bytes};
 use indexer::{models::accumulators, Indexer};
-use types::proofs::mmr::MmrMeta;
+use types::{actions::action::Action, proofs::mmr::MmrMeta};
 
 use crate::FetcherError;
 
@@ -17,6 +17,7 @@ pub struct FlattenedKey {
 pub struct ProofKeys {
     pub evm: evm::ProofKeys,
     pub starknet: starknet::ProofKeys,
+    pub injected_state_actions: Vec<Action>,
 }
 
 impl ProofKeys {
