@@ -260,6 +260,7 @@ func hash_node{func_ptr: felt*, hash_ptr: HashBuiltin*}(node: felt*) -> felt {
     invoke(func_ptr, 2, invoke_params);
 
     let node_hash = [ap - 1];
+    let hash_ptr = cast([ap - 2], HashBuiltin*);
 
     return node_hash;
 }
