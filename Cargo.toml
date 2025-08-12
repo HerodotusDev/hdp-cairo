@@ -65,7 +65,9 @@ eth_essentials_cairo_vm_hints = { path = "packages/eth_essentials/cairo_vm_hints
 fetcher = { path = "crates/fetcher" }
 hints = { path = "crates/hints" }
 indexer = { path = "crates/indexer" }
-pathfinder_gateway_types = { git = "https://github.com/eqlabs/pathfinder", package = "starknet-gateway-types" }
+pathfinder_gateway_types = { git = "https://github.com/petscheit/pathfinder", package = "starknet-gateway-types" }
+pathfinder-common = { git = "https://github.com/petscheit/pathfinder"}
+pathfinder-crypto = { git = "https://github.com/petscheit/pathfinder"}
 sound_hint_processor = { path = "crates/sound_hint_processor" }
 sound_run = { path = "crates/sound_run" }
 syscall_handler = { path = "crates/syscall_handler" }

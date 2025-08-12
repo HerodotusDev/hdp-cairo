@@ -282,14 +282,14 @@ namespace HashNodeBuiltin {
 namespace HashNodeTruncatedKeccak {
     // Hash function for binary nodes. (truncated_keccak version)
     func hash_binary_node{hash_ptr: HashBuiltin*}(node: TrieNodeBinary*) -> felt {
-        %{ ids.hash_ptr.result = keccak(ids.node.left, ids.node.right) >> 96 %}
+        hash_ptr.result = nondet %{ keccak160(ids.node.left, ids.node.right) %};
         let (node_hash) = hash2{hash_ptr=hash_ptr}(node.left, node.right);
         return node_hash;
     }
 
     // Hash function for edge nodes. (truncated_keccak version)
     func hash_edge_node{hash_ptr: HashBuiltin*}(node: TrieNodeEdge*) -> felt {
-        %{ ids.hash_ptr.result = keccak(ids.node.left, ids.node.right) >> 96 %}
+        hash_ptr.result = nondet %{ keccak160(ids.node.child, ids.node.value) %};
         let (node_hash) = hash2{hash_ptr=hash_ptr}(node.child, node.value);
         return node_hash + node.len;
     }
