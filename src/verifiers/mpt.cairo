@@ -1,3 +1,23 @@
+from starkware.cairo.common.alloc import alloc
+from starkware.cairo.common.hash import hash2
+from starkware.cairo.common.sponge_as_hash import SpongeHashBuiltin
+from starkware.cairo.common.registers import get_label_location
+from starkware.cairo.common.invoke import invoke
+from starkware.cairo.common.bitwise import bitwise_and
+from starkware.cairo.common.cairo_builtins import HashBuiltin, PoseidonBuiltin, BitwiseBuiltin
+from starkware.cairo.common.dict_access import DictAccess
+from starkware.cairo.common.dict import dict_new, dict_update, dict_squash
+from starkware.cairo.common.builtin_poseidon.poseidon import (
+    poseidon_hash_single,
+    poseidon_hash,
+    poseidon_hash_many,
+)
+
+from packages.eth_essentials.lib.utils import bitwise_divmod
+from src.memorizers.starknet.memorizer import StarknetMemorizer, StarknetHashParams
+from src.decoders.starknet.header_decoder import StarknetHeaderDecoder, StarknetHeaderFields
+from src.types import ChainInfo, TrieNode, TrieNodeBinary, TrieNodeEdge
+
 // Function used to traverse the passed nodes. The nodes are hashed from the leaf to the root.
 // This function can be used for inclusion or non-inclusion proofs. In case of non-inclusion,
 // the function will return the root and a zero value.
@@ -25,7 +45,7 @@ func traverse_edge_leaf{
     alloc_locals;
 
     let leaf: TrieNodeEdge* = cast(nodes[n_nodes - 1], TrieNodeEdge*);
-    let leaf_hash = hash_node{func_ptr=hash_edge_node_ptr, hash_ptr=hash_ptr}(leaf);
+    let leaf_hash = hash_node{func_ptr=hash_edge_node_ptr, hash_ptr=hash_ptr}(cast(leaf, felt*));
     let node_path = leaf.value;
 
     // First we precompute the eval depth of the proof via hint.
@@ -84,7 +104,7 @@ func traverse_binary_leaf{
     alloc_locals;
 
     let leaf: TrieNodeBinary* = cast(nodes[n_nodes - 1], TrieNodeBinary*);
-    let leaf_hash = hash_node{func_ptr=hash_binary_node_ptr, hash_ptr=hash_ptr}(leaf);
+    let leaf_hash = hash_node{func_ptr=hash_binary_node_ptr, hash_ptr=hash_ptr}(cast(leaf, felt*));
 
     // In this case, the initial path is the least significant bit of the expected path.
     // This value is also used for retrieving the value from the leaf.
@@ -152,7 +172,7 @@ func traverse_inner{
         new_path = traversed_path + path_length_pow2;
     }
     let next_path_length_pow2 = path_length_pow2 * 2;
-    let next_hash = hash_node{func_ptr=hash_binary_node_ptr, hash_ptr=hash_ptr}(node_binary);
+    let next_hash = hash_node{func_ptr=hash_binary_node_ptr, hash_ptr=hash_ptr}(cast(node_binary, felt*));
 
     return traverse_inner(
         n_nodes - 1,
@@ -168,7 +188,7 @@ func traverse_inner{
     assert hash_value = node_edge.child;
     let next_path = traversed_path + node_edge.value * path_length_pow2;
     let next_path_length_pow2 = path_length_pow2 * pow2_array[node_edge.len];
-    let next_hash = hash_node{func_ptr=hash_edge_node_ptr, hash_ptr=hash_ptr}(node_edge);
+    let next_hash = hash_node{func_ptr=hash_edge_node_ptr, hash_ptr=hash_ptr}(cast(node_edge, felt*));
 
     return traverse_inner(
         n_nodes - 1,
@@ -230,7 +250,7 @@ func assert_subpath{bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
 }
 
 // Hash function for nodes. (abstract version)
-func hash_node{func_ptr: felt*, hash_ptr: HashBuiltin*}(node: TrieNodeBinary*) -> felt {
+func hash_node{func_ptr: felt*, hash_ptr: HashBuiltin*}(node: felt*) -> felt {
     tempvar invoke_params = cast(
         new (
             hash_ptr, node,
@@ -244,28 +264,32 @@ func hash_node{func_ptr: felt*, hash_ptr: HashBuiltin*}(node: TrieNodeBinary*) -
     return node_hash;
 }
 
-// Hash function for binary nodes. (pedersen version)
-func hash_binary_node_builtin{hash_ptr: HashBuiltin*}(node: TrieNodeBinary*) -> felt {
-    let (node_hash) = hash2{hash_ptr=hash_ptr}(node.left, node.right);
-    return node_hash;
+namespace HashNodeBuiltin {
+    // Hash function for binary nodes. (pedersen version)
+    func hash_binary_node{hash_ptr: HashBuiltin*}(node: TrieNodeBinary*) -> felt {
+        let (node_hash) = hash2{hash_ptr=hash_ptr}(node.left, node.right);
+        return node_hash;
+    }
+
+    // Hash function for edge nodes. (pedersen version)
+    func hash_edge_node{hash_ptr: HashBuiltin*}(node: TrieNodeEdge*) -> felt {
+        let (node_hash) = hash2{hash_ptr=hash_ptr}(node.child, node.value);
+        return node_hash + node.len;
+    }
 }
 
-// Hash function for edge nodes. (pedersen version)
-func hash_edge_node_builtin{hash_ptr: HashBuiltin*}(node: TrieNodeEdge*) -> felt {
-    let (node_hash) = hash2{hash_ptr=hash_ptr}(node.child, node.value);
-    return node_hash + node.len;
-}
+namespace HashNodeTruncatedKeccak {
+    // Hash function for binary nodes. (truncated_keccak version)
+    func hash_binary_node{hash_ptr: HashBuiltin*}(node: TrieNodeBinary*) -> felt {
+        %{ ids.hash_ptr.result = keccak(ids.node.left, ids.node.right) >> 96 %}
+        let (node_hash) = hash2{hash_ptr=hash_ptr}(node.left, node.right);
+        return node_hash;
+    }
 
-// Hash function for binary nodes. (truncated_keccak version)
-func hash_binary_node_truncated_keccak{hash_ptr: HashBuiltin*}(node: TrieNodeBinary*) -> felt {
-    %{ ids.hash_ptr.result = keccak(ids.node.left, ids.node.right) >> 96 %}
-    let (node_hash) = hash2{hash_ptr=hash_ptr}(node.left, node.right);
-    return node_hash;
-}
-
-// Hash function for edge nodes. (truncated_keccak version)
-func hash_edge_node_truncated_keccak{hash_ptr: HashBuiltin*}(node: TrieNodeEdge*) -> felt {
-    %{ ids.hash_ptr.result = keccak(ids.node.left, ids.node.right) >> 96 %}
-    let (node_hash) = hash2{hash_ptr=hash_ptr}(node.child, node.value);
-    return node_hash + node.len;
+    // Hash function for edge nodes. (truncated_keccak version)
+    func hash_edge_node{hash_ptr: HashBuiltin*}(node: TrieNodeEdge*) -> felt {
+        %{ ids.hash_ptr.result = keccak(ids.node.left, ids.node.right) >> 96 %}
+        let (node_hash) = hash2{hash_ptr=hash_ptr}(node.child, node.value);
+        return node_hash + node.len;
+    }
 }

@@ -17,6 +17,7 @@ from packages.eth_essentials.lib.utils import bitwise_divmod
 from src.memorizers.starknet.memorizer import StarknetMemorizer, StarknetHashParams
 from src.decoders.starknet.header_decoder import StarknetHeaderDecoder, StarknetHeaderFields
 from src.types import ChainInfo, TrieNode, TrieNodeBinary, TrieNodeEdge
+from src.verifiers.mpt import HashNodeBuiltin, traverse
 
 const STARKNET_STATE_V0 = 28355430774503553497671514844211693180464;
 
@@ -32,6 +33,9 @@ func verify_proofs{
     alloc_locals;
 
     tempvar n_storage_items: felt = nondet %{ len(batch_starknet.storages) %};
+    
+    let (hash_binary_node_ptr) = get_label_location(HashNodeBuiltin.hash_binary_node);
+    let (hash_edge_node_ptr) = get_label_location(HashNodeBuiltin.hash_edge_node);
     with hash_binary_node_ptr, hash_edge_node_ptr {
         verify_proofs_loop(n_storage_items, 0);
     }
@@ -48,7 +52,8 @@ func verify_proofs_loop{
     starknet_memorizer: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
-    hash_binary_node_ptr: felt*, hash_edge_node_ptr: felt*,
+    hash_binary_node_ptr: felt*,
+    hash_edge_node_ptr: felt*,
 }(n_storage_items: felt, idx: felt) {
     alloc_locals;
 
@@ -81,7 +86,8 @@ func verify_proofs_inner{
     starknet_memorizer: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
-    hash_binary_node_ptr: felt*, hash_edge_node_ptr: felt*,
+    hash_binary_node_ptr: felt*,
+    hash_edge_node_ptr: felt*,
 }(state_root: felt, block_number: felt, index: felt) {
     alloc_locals;
 
@@ -113,7 +119,7 @@ func verify_proofs_inner{
     %{ segments.write_arg(ids.contract_nodes, storage_starknet.proof.contract_proof) %}
 
     let (contract_tree_root, expected_contract_state_hash) = traverse{
-        hash_binary_node_ptr=hash_binary_node_ptr, hash_edge_node_ptr=hash_edge_node_ptr, hash_ptr=poseidon_ptr,
+        hash_binary_node_ptr=hash_binary_node_ptr, hash_edge_node_ptr=hash_edge_node_ptr, hash_ptr=pedersen_ptr,
         bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(
         cast(contract_nodes, TrieNode**), contract_nodes_len, contract_address
@@ -146,7 +152,8 @@ func validate_storage_proofs{
     contract_address: felt,
     storage_addresses: felt*,
     block_number: felt,
-    hash_binary_node_ptr: felt*, hash_edge_node_ptr: felt*,
+    hash_binary_node_ptr: felt*,
+    hash_edge_node_ptr: felt*,
 }(contract_root: felt, storage_count: felt, idx: felt) -> (root: felt) {
     alloc_locals;
 
@@ -160,7 +167,7 @@ func validate_storage_proofs{
     %{ segments.write_arg(ids.contract_state_nodes, storage_starknet.proof.contract_data.storage_proofs[ids.idx]) %}
 
     let (new_contract_root, value) = traverse{
-        hash_binary_node_ptr=hash_binary_node_ptr, hash_edge_node_ptr=hash_edge_node_ptr, hash_ptr=poseidon_ptr,
+        hash_binary_node_ptr=hash_binary_node_ptr, hash_edge_node_ptr=hash_edge_node_ptr, hash_ptr=pedersen_ptr,
         bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(
         cast(contract_state_nodes, TrieNode**), contract_state_nodes_len, storage_addresses[idx]
