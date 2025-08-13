@@ -40,5 +40,3 @@ target
 
 !examples/**/*.json
 !crates/server/tests/*.json
-
-examples/json/

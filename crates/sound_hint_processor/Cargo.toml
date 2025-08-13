@@ -5,14 +5,11 @@ edition = "2021"
 
 [dependencies]
 alloy-rlp.workspace = true
-anyhow.workspace = true
 cairo-lang-casm.workspace = true
 cairo-lang-starknet-classes.workspace = true
 cairo-vm.workspace = true
 hints.workspace = true
-reqwest.workspace = true
 serde.workspace = true
-serde_json.workspace = true
 starknet-types-core.workspace = true
 strum_macros.workspace = true
 syscall_handler.workspace = true

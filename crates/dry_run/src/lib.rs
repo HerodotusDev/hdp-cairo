@@ -13,7 +13,7 @@ use cairo_vm::{
 use clap::Parser;
 use dotenvy as _;
 use dry_hint_processor::{
-    syscall_handler::{evm, injected_state, starknet},
+    syscall_handler::{evm, starknet},
     CustomHintProcessor,
 };
 use hints::vars;
@@ -57,7 +57,7 @@ pub fn run(
     input: HDPDryRunInput,
 ) -> Result<
     (
-        SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>,
+        SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler>,
         HDPDryRunOutput,
     ),
     Error,
@@ -79,9 +79,7 @@ pub fn run(
 
     let syscall_handler = cairo_runner
         .exec_scopes
-        .get::<SyscallHandlerWrapper<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>>(
-            vars::scopes::SYSCALL_HANDLER,
-        )
+        .get::<SyscallHandlerWrapper<evm::CallContractHandler, starknet::CallContractHandler>>(vars::scopes::SYSCALL_HANDLER)
         .unwrap()
         .syscall_handler
         .try_read()

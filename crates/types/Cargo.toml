@@ -6,13 +6,11 @@ edition = "2021"
 [dependencies]
 alloy-rlp.workspace = true
 alloy.workspace = true
-bitvec.workspace = true
 cairo_type_derive.workspace = true
 cairo-lang-starknet-classes.workspace = true
 cairo-vm.workspace = true
 clap.workspace = true
 pathfinder_gateway_types.workspace = true
-pathfinder-common.workspace = true
 serde_json.workspace = true
 serde_with.workspace = true
 serde.workspace = true
@@ -21,6 +19,3 @@ starknet-types-core.workspace = true
 strum_macros.workspace = true
 thiserror.workspace = true
 version-compare.workspace = true
-state-server-types = { path = "../state_server/src/crates/types" }
-pathfinder-crypto.workspace = true
-anyhow.workspace = true

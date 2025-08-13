@@ -7,7 +7,7 @@ use std::path::PathBuf;
 
 use cairo_vm as _;
 use clap::Parser;
-use dry_hint_processor::syscall_handler::{evm, injected_state, starknet};
+use dry_hint_processor::syscall_handler::{evm, starknet};
 use dry_run::{Args, DRY_RUN_COMPILED_JSON};
 use hints as _;
 use syscall_handler::SyscallHandler;
@@ -40,10 +40,8 @@ async fn main() -> Result<(), Error> {
 
     std::fs::write(
         args.output,
-        serde_json::to_vec::<SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>>(
-            &syscall_handler,
-        )
-        .map_err(|e| Error::IO(e.into()))?,
+        serde_json::to_vec::<SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler>>(&syscall_handler)
+            .map_err(|e| Error::IO(e.into()))?,
     )
     .map_err(Error::IO)?;
 

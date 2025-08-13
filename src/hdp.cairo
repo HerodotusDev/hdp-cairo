@@ -17,8 +17,7 @@ from starkware.cairo.common.builtin_keccak.keccak import keccak_felts
 from starkware.cairo.common.registers import get_label_location
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash_many, poseidon_hash
 
-from src.verifiers.verify import run_chain_state_verification
-from src.verifiers.verify import run_injected_state_verification
+from src.verifiers.verify import run_state_verification
 from src.utils.merkle import compute_merkle_root
 from src.types import MMRMeta
 from src.utils.utils import mmr_metas_write_output_ptr, felt_array_to_uint256s
@@ -27,7 +26,6 @@ from src.memorizers.starknet.memorizer import StarknetMemorizer
 from src.memorizers.bare import BareMemorizer, SingleBareMemorizer
 from src.memorizers.evm.state_access import EvmStateAccess, EvmDecoder
 from src.memorizers.starknet.state_access import StarknetStateAccess, StarknetDecoder
-from src.memorizers.injected_state.memorizer import InjectedStateMemorizer
 from src.utils.chain_info import Layout
 from src.utils.merkle import compute_tasks_hash, compute_tasks_root, compute_results_root
 from src.utils.chain_info import fetch_chain_info
@@ -83,10 +81,9 @@ func run{
 
     %{
         run_input = HDPInput.Schema().load(program_input)
-        chain_proofs = run_input.proofs_data.chain_proofs
+        chain_proofs = run_input.proofs
         params = run_input.params
         compiled_class = run_input.compiled_class
-        state_proofs = run_input.proofs_data.state_proofs
     %}
 
     let (public_inputs) = alloc();
@@ -105,7 +102,6 @@ func run{
     // Memorizers
     let (evm_memorizer, evm_memorizer_start) = EvmMemorizer.init();
     let (starknet_memorizer, starknet_memorizer_start) = StarknetMemorizer.init();
-    let (injected_state_memorizer, injected_state_memorizer_start) = InjectedStateMemorizer.init();
 
     // Misc
     let pow2_array: felt* = pow2alloc251();
@@ -113,7 +109,7 @@ func run{
     // MMR Params
     let (mmr_metas: MMRMeta*) = alloc();
 
-    let (mmr_metas_len) = run_chain_state_verification{
+    let (mmr_metas_len) = run_state_verification{
         range_check_ptr=range_check_ptr,
         pedersen_ptr=pedersen_ptr,
         poseidon_ptr=poseidon_ptr,
@@ -122,75 +118,62 @@ func run{
         pow2_array=pow2_array,
         evm_memorizer=evm_memorizer,
         starknet_memorizer=starknet_memorizer,
-        injected_state_memorizer=injected_state_memorizer,
         mmr_metas=mmr_metas,
     }();
 
-    run_injected_state_verification{
+    let evm_key_hasher_ptr = EvmStateAccess.init();
+    let evm_decoder_ptr = EvmDecoder.init();
+    let starknet_key_hasher_ptr = StarknetStateAccess.init();
+    let starknet_decoder_ptr = StarknetDecoder.init();
+
+    let (module_hash, retdata, retdata_size) = compute_contract{
+        pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
-        keccak_ptr=keccak_ptr,
+        ecdsa_ptr=ecdsa_ptr,
         bitwise_ptr=bitwise_ptr,
+        ec_op_ptr=ec_op_ptr,
+        keccak_ptr=keccak_ptr,
+        poseidon_ptr=poseidon_ptr,
+        range_check96_ptr=range_check96_ptr,
+        add_mod_ptr=add_mod_ptr,
+        mul_mod_ptr=mul_mod_ptr,
         pow2_array=pow2_array,
-        injected_state_memorizer=injected_state_memorizer,
-    }();
+        evm_memorizer=evm_memorizer,
+        evm_decoder_ptr=evm_decoder_ptr,
+        evm_key_hasher_ptr=evm_key_hasher_ptr,
+        starknet_memorizer=starknet_memorizer,
+        starknet_decoder_ptr=starknet_decoder_ptr,
+        starknet_key_hasher_ptr=starknet_key_hasher_ptr,
+    }(module_inputs, module_inputs_len);
 
-    // let evm_key_hasher_ptr = EvmStateAccess.init();
-    // let evm_decoder_ptr = EvmDecoder.init();
-    // let starknet_key_hasher_ptr = StarknetStateAccess.init();
-    // let starknet_decoder_ptr = StarknetDecoder.init();
+    // Post Verification Checks: Ensure dict consistency
+    default_dict_finalize(evm_memorizer_start, evm_memorizer, BareMemorizer.DEFAULT_VALUE);
+    default_dict_finalize(
+        starknet_memorizer_start, starknet_memorizer, BareMemorizer.DEFAULT_VALUE
+    );
 
-    // let (module_hash, retdata, retdata_size) = compute_contract{
-    //     pedersen_ptr=pedersen_ptr,
-    //     range_check_ptr=range_check_ptr,
-    //     ecdsa_ptr=ecdsa_ptr,
-    //     bitwise_ptr=bitwise_ptr,
-    //     ec_op_ptr=ec_op_ptr,
-    //     keccak_ptr=keccak_ptr,
-    //     poseidon_ptr=poseidon_ptr,
-    //     range_check96_ptr=range_check96_ptr,
-    //     add_mod_ptr=add_mod_ptr,
-    //     mul_mod_ptr=mul_mod_ptr,
-    //     pow2_array=pow2_array,
-    //     evm_memorizer=evm_memorizer,
-    //     evm_decoder_ptr=evm_decoder_ptr,
-    //     evm_key_hasher_ptr=evm_key_hasher_ptr,
-    //     starknet_memorizer=starknet_memorizer,
-    //     starknet_decoder_ptr=starknet_decoder_ptr,
-    //     starknet_key_hasher_ptr=starknet_key_hasher_ptr,
-    //     injected_state_memorizer=injected_state_memorizer,
-    // }(module_inputs, module_inputs_len);
+    let (task_hash_preimage) = alloc();
+    assert task_hash_preimage[0] = module_hash;
+    memcpy(dst=task_hash_preimage + 1, src=public_inputs, len=public_inputs_len);
+    tempvar task_hash_preimage_len: felt = 1 + public_inputs_len;
 
-    // // Post Verification Checks: Ensure dict consistency
-    // default_dict_finalize(evm_memorizer_start, evm_memorizer, BareMemorizer.DEFAULT_VALUE);
-    // default_dict_finalize(
-    //     starknet_memorizer_start, starknet_memorizer, BareMemorizer.DEFAULT_VALUE
-    // );
-    // default_dict_finalize(
-    //     injected_state_memorizer_start, injected_state_memorizer, BareMemorizer.DEFAULT_VALUE
-    // );
+    let (taskHash) = keccak_felts(task_hash_preimage_len, task_hash_preimage);
 
-    // let (task_hash_preimage) = alloc();
-    // assert task_hash_preimage[0] = module_hash;
-    // memcpy(dst=task_hash_preimage + 1, src=public_inputs, len=public_inputs_len);
-    // tempvar task_hash_preimage_len: felt = 1 + public_inputs_len;
+    assert [output_ptr] = taskHash.low;
+    assert [output_ptr + 1] = taskHash.high;
+    let output_ptr = output_ptr + 2;
 
-    // let (taskHash) = keccak_felts(task_hash_preimage_len, task_hash_preimage);
+    let (local leafs: Uint256*) = alloc();
+    felt_array_to_uint256s(counter=retdata_size, retdata=retdata, leafs=leafs);
 
-    // assert [output_ptr] = taskHash.low;
-    // assert [output_ptr + 1] = taskHash.high;
-    // let output_ptr = output_ptr + 2;
+    let output_root = compute_merkle_root(leafs, retdata_size);
+    assert [output_ptr + 0] = output_root.low;
+    assert [output_ptr + 1] = output_root.high;
+    let output_ptr = output_ptr + 2;
 
-    // let (local leafs: Uint256*) = alloc();
-    // felt_array_to_uint256s(counter=retdata_size, retdata=retdata, leafs=leafs);
-
-    // let output_root = compute_merkle_root(leafs, retdata_size);
-    // assert [output_ptr + 0] = output_root.low;
-    // assert [output_ptr + 1] = output_root.high;
-    // let output_ptr = output_ptr + 2;
-
-    // mmr_metas_write_output_ptr{output_ptr=output_ptr}(
-    //     mmr_metas=mmr_metas, mmr_metas_len=mmr_metas_len
-    // );
+    mmr_metas_write_output_ptr{output_ptr=output_ptr}(
+        mmr_metas=mmr_metas, mmr_metas_len=mmr_metas_len
+    );
 
     return ();
 }

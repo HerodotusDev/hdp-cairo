@@ -47,15 +47,3 @@ pub fn print_string(
     println!("String: {}", ascii);
     Ok(())
 }
-
-pub const PRINT_DEBUG_BREAKPOINT: &str = "print('DEBUG BREAKPOINT')";
-
-pub fn print_debug_breakpoint(
-    _vm: &mut VirtualMachine,
-    _exec_scopes: &mut ExecutionScopes,
-    _hint_data: &HintProcessorData,
-    _constants: &HashMap<String, Felt252>,
-) -> Result<(), HintError> {
-    println!("DEBUG BREAKPOINT");
-    Ok(())
-}

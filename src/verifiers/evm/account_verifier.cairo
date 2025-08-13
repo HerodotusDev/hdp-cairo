@@ -46,7 +46,7 @@ func verify_accounts_inner{
     let (address: felt*) = alloc();
     %{
         account_evm = batch_evm.accounts[ids.idx]
-        segments.write_arg(ids.address, [int(x, 16) for x in account_evm.address])
+        segments.write_arg(ids.address, [int(x, 16) for x in account_evm.address]))
     %}
 
     local key: Uint256;
