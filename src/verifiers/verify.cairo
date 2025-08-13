@@ -114,7 +114,7 @@ func run_injected_state_verification_inner{
     if (proof_info.proof_type == ProofType.INCLUSION) {
         with proof_info {
             %{ vm_enter_scope({'state_proof_wrapper': state_proofs[ids.idx - 1], '__dict_manager': __dict_manager}) %}
-            let (value, value_len) = inclusion_state_verification();
+            let (root, value) = inclusion_state_verification();
             %{ vm_exit_scope() %}
 
             return run_injected_state_verification_inner(idx=idx - 1);

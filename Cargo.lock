@@ -3212,7 +3212,7 @@ dependencies = [
  "cairo-vm",
  "hints",
  "indexer",
- "pathfinder-crypto 0.16.2",
+ "pathfinder-crypto",
  "reqwest 0.12.22",
  "serde",
  "serde_json",
@@ -3958,6 +3958,8 @@ dependencies = [
  "hex",
  "num-bigint",
  "num-traits",
+ "pathfinder-common",
+ "pathfinder-crypto",
  "rand 0.8.5",
  "reqwest 0.12.22",
  "serde",
@@ -5220,8 +5222,8 @@ version = "0.16.2"
 source = "git+https://github.com/petscheit/pathfinder#7f5ae1985537148600d897030cc60d63b839022b"
 dependencies = [
  "anyhow",
- "pathfinder-common 0.16.2",
- "pathfinder-crypto 0.16.2",
+ "pathfinder-common",
+ "pathfinder-crypto",
  "primitive-types 0.12.2",
  "serde",
  "serde_json",
@@ -5243,9 +5245,9 @@ dependencies = [
  "num-bigint",
  "num-traits",
  "paste",
- "pathfinder-crypto 0.16.2",
- "pathfinder-tagged 0.1.0 (git+https://github.com/petscheit/pathfinder)",
- "pathfinder-tagged-debug-derive 0.1.0 (git+https://github.com/petscheit/pathfinder)",
+ "pathfinder-crypto",
+ "pathfinder-tagged",
+ "pathfinder-tagged-debug-derive",
  "primitive-types 0.12.2",
  "rand 0.8.5",
  "serde",
@@ -5258,45 +5260,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "pathfinder-common"
-version = "0.18.0"
-source = "git+https://github.com/eqlabs/pathfinder#2f8bceaffa9d93a8b2be0510cadf85700c669532"
-dependencies = [
- "anyhow",
- "bitvec",
- "fake",
- "metrics",
- "num-bigint",
- "num-traits",
- "paste",
- "pathfinder-crypto 0.18.0",
- "pathfinder-tagged 0.1.0 (git+https://github.com/eqlabs/pathfinder)",
- "pathfinder-tagged-debug-derive 0.1.0 (git+https://github.com/eqlabs/pathfinder)",
- "primitive-types 0.12.2",
- "rand 0.8.5",
- "serde",
- "serde_json",
- "serde_with 3.14.0",
- "sha3",
- "thiserror 1.0.69",
- "vergen",
-]
-
-[[package]]
 name = "pathfinder-crypto"
 version = "0.16.2"
 source = "git+https://github.com/petscheit/pathfinder#7f5ae1985537148600d897030cc60d63b839022b"
-dependencies = [
- "bitvec",
- "fake",
- "rand 0.8.5",
- "serde",
-]
-
-[[package]]
-name = "pathfinder-crypto"
-version = "0.18.0"
-source = "git+https://github.com/eqlabs/pathfinder#2f8bceaffa9d93a8b2be0510cadf85700c669532"
 dependencies = [
  "bitvec",
  "fake",
@@ -5315,8 +5281,8 @@ dependencies = [
  "const-decoder",
  "futures",
  "hex",
- "pathfinder-common 0.16.2",
- "pathfinder-crypto 0.16.2",
+ "pathfinder-common",
+ "pathfinder-crypto",
  "primitive-types 0.12.2",
  "reqwest 0.12.22",
  "serde_json",
@@ -5332,8 +5298,8 @@ source = "git+https://github.com/petscheit/pathfinder#7f5ae1985537148600d897030c
 dependencies = [
  "anyhow",
  "bitvec",
- "pathfinder-common 0.16.2",
- "pathfinder-crypto 0.16.2",
+ "pathfinder-common",
+ "pathfinder-crypto",
  "pathfinder-storage",
  "rand 0.8.5",
  "rayon",
@@ -5348,23 +5314,8 @@ source = "git+https://github.com/petscheit/pathfinder#7f5ae1985537148600d897030c
 dependencies = [
  "anyhow",
  "num-bigint",
- "pathfinder-common 0.16.2",
- "pathfinder-crypto 0.16.2",
- "primitive-types 0.12.2",
- "serde",
- "serde_json",
- "serde_with 3.14.0",
-]
-
-[[package]]
-name = "pathfinder-serde"
-version = "0.18.0"
-source = "git+https://github.com/eqlabs/pathfinder#2f8bceaffa9d93a8b2be0510cadf85700c669532"
-dependencies = [
- "anyhow",
- "num-bigint",
- "pathfinder-common 0.18.0",
- "pathfinder-crypto 0.18.0",
+ "pathfinder-common",
+ "pathfinder-crypto",
  "primitive-types 0.12.2",
  "serde",
  "serde_json",
@@ -5389,10 +5340,10 @@ dependencies = [
  "metrics",
  "paste",
  "pathfinder-class-hash",
- "pathfinder-common 0.16.2",
- "pathfinder-crypto 0.16.2",
+ "pathfinder-common",
+ "pathfinder-crypto",
  "pathfinder-ethereum",
- "pathfinder-serde 0.16.2",
+ "pathfinder-serde",
  "primitive-types 0.12.2",
  "r2d2",
  "r2d2_sqlite",
@@ -5413,27 +5364,9 @@ dependencies = [
 [[package]]
 name = "pathfinder-tagged"
 version = "0.1.0"
-source = "git+https://github.com/eqlabs/pathfinder#2f8bceaffa9d93a8b2be0510cadf85700c669532"
-dependencies = [
- "fake",
-]
-
-[[package]]
-name = "pathfinder-tagged"
-version = "0.1.0"
 source = "git+https://github.com/petscheit/pathfinder#7f5ae1985537148600d897030cc60d63b839022b"
 dependencies = [
  "fake",
-]
-
-[[package]]
-name = "pathfinder-tagged-debug-derive"
-version = "0.1.0"
-source = "git+https://github.com/eqlabs/pathfinder#2f8bceaffa9d93a8b2be0510cadf85700c669532"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
 ]
 
 [[package]]
@@ -7074,14 +7007,14 @@ dependencies = [
 
 [[package]]
 name = "starknet-gateway-types"
-version = "0.18.0"
-source = "git+https://github.com/eqlabs/pathfinder#2f8bceaffa9d93a8b2be0510cadf85700c669532"
+version = "0.16.2"
+source = "git+https://github.com/petscheit/pathfinder#7f5ae1985537148600d897030cc60d63b839022b"
 dependencies = [
  "anyhow",
  "fake",
- "pathfinder-common 0.18.0",
- "pathfinder-crypto 0.18.0",
- "pathfinder-serde 0.18.0",
+ "pathfinder-common",
+ "pathfinder-crypto",
+ "pathfinder-serde",
  "primitive-types 0.12.2",
  "rand 0.8.5",
  "reqwest 0.12.22",
@@ -7171,8 +7104,8 @@ dependencies = [
  "bitvec",
  "eth_trie 0.5.0",
  "hex",
- "pathfinder-common 0.16.2",
- "pathfinder-crypto 0.16.2",
+ "pathfinder-common",
+ "pathfinder-crypto",
  "primitive-types 0.13.1",
  "serde",
  "serde_json",
@@ -7194,8 +7127,8 @@ dependencies = [
  "dry_hint_processor",
  "hex",
  "http-body-util",
- "pathfinder-common 0.16.2",
- "pathfinder-crypto 0.16.2",
+ "pathfinder-common",
+ "pathfinder-crypto",
  "pathfinder-merkle-tree",
  "pathfinder-storage",
  "primitive-types 0.13.1",
@@ -7945,8 +7878,8 @@ dependencies = [
  "hex-literal",
  "num_cpus",
  "once_cell",
- "pathfinder-common 0.16.2",
- "pathfinder-crypto 0.16.2",
+ "pathfinder-common",
+ "pathfinder-crypto",
  "pathfinder-merkle-tree",
  "pathfinder-storage",
  "primitive-types 0.13.1",
@@ -8039,8 +7972,8 @@ dependencies = [
  "cairo-vm",
  "cairo_type_derive",
  "clap",
- "pathfinder-common 0.16.2",
- "pathfinder-crypto 0.16.2",
+ "pathfinder-common",
+ "pathfinder-crypto",
  "serde",
  "serde_json",
  "serde_with 3.14.0",

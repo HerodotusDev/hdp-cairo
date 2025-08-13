@@ -93,9 +93,7 @@ tower = { version = "0.4", features = ["util"] }
 chrono = { version = "0.4", features = ["serde"] }
 
 pathfinder-merkle-tree = { git = "https://github.com/petscheit/pathfinder" }
-pathfinder-common = { git = "https://github.com/petscheit/pathfinder" }
 pathfinder-storage = { git = "https://github.com/petscheit/pathfinder" }
-pathfinder-crypto = { git = "https://github.com/petscheit/pathfinder" }
 cairo-type-derive = { git = "https://github.com/keep-starknet-strange/snos.git", branch = "main" }
 bitvec = "1.0.1"
 eth_trie = "0.5.0"

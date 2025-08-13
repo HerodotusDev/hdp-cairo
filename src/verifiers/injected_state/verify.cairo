@@ -3,9 +3,12 @@ from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian, uint256_to_felt
 from starkware.cairo.common.default_dict import default_dict_finalize
+from starkware.cairo.common.registers import get_label_location
 from packages.eth_essentials.lib.mpt import verify_mpt_proof as verify_mpt_proof_lib
 from src.memorizers.injected_state.memorizer import InjectedStateMemorizer
 from src.utils.patricia_with_keccak import patricia_update
+from src.verifiers.mpt import traverse
+from src.verifiers.mpt import HashNodeTruncatedKeccak
 
 // Wraps the MPT library function to handle non-inclusion proofs gracefully.
 // If the library function indicates non-inclusion (returns value_len = -1),
@@ -27,47 +30,37 @@ func inclusion_state_verification{
 }() -> (value: felt*, value_len: felt){
     alloc_locals;
     
-    // %{ inclusion = state_proof_wrapper.state_proof.inclusion %}
-
     local key_be: Uint256;
     %{ ids.key_be = state_proof_wrapper.leaf.key %}
     local root: Uint256;
     %{ ids.root = state_proof_wrapper.root_hash %}
     
-    tempvar key_be_leading_zeroes_nibbles: felt = nondet %{ len(key_be.lstrip("0x")) - len(key_be.lstrip("0x").lstrip("0")) %};
-
     let (proof_bytes_len: felt*) = alloc();
     %{ segments.write_arg(ids.proof_bytes_len, state_proof.inclusion.proof_bytes_len) %}
 
     tempvar proof_len: felt = nondet %{ len(state_proof) %};
 
-    let (mpt_proof: felt**) = alloc();
-    %{ segments.write_arg(ids.mpt_proof, [int(x, 16) for x in state_proof.inclusion]) %}
+    let (nodes_ptr: felt**) = alloc();
+    %{ segments.write_arg(ids.nodes_ptr, trie_node_proof) %}
 
-    // Call the underlying MPT verification library function
-    let (value: felt*, value_len: felt) = verify_mpt_proof_lib(
-        mpt_proof=mpt_proof,
-        mpt_proof_bytes_len=proof_bytes_len,
-        mpt_proof_len=proof_len,
-        key_be=key_be,
-        key_be_leading_zeroes_nibbles=key_be_leading_zeroes_nibbles,
-        root=root,
-        pow2_array=pow2_array,
+    let (hash_binary_node_ptr) = get_label_location(HashNodeTruncatedKeccak.hash_binary_node);
+    let (hash_edge_node_ptr) = get_label_location(HashNodeTruncatedKeccak.hash_edge_node);
+
+    tempvar expected_path: felt = nondet %{ expected_path %};
+    //todo: change this expected path to essentially use the key to fetch the corresponding path in vec<trienodeserde>
+
+    let (root, value) = traverse{
+        hash_binary_node_ptr=hash_binary_node_ptr, hash_edge_node_ptr=hash_edge_node_ptr, hash_ptr=keccak_ptr,
+        bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
+    }(
+        cast(nodes_ptr, TrieNode**), proof_len, expected_path
     );
 
-    // Handle non-inclusion case signaled by the library
-    // if (value_len == -1) {
-    //     // Allocate memory for RLP null (0x80)
-    //     let (res: felt*) = alloc();
-    //     assert res[0] = 0x80;
-    //     // Return pointer to [0x80] and length 1
-    //     return (value=res, value_len=1);
-    // } else {
-    //     // Inclusion proof successful, return the RLP data and its length
-    //     return (value=rlp, value_len=value_len);
-    // }
+    if (value == 0) {
+        //non inclusion proof case -> handle it
+    } 
 
-    return (value=value, value_len=value_len);
+    return (root=root, value=value);
     //todo()! -> memorizer, save the keys
 }
 

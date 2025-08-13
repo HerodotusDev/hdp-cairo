@@ -113,18 +113,18 @@ func run{
     // MMR Params
     let (mmr_metas: MMRMeta*) = alloc();
 
-    let (mmr_metas_len) = run_chain_state_verification{
-        range_check_ptr=range_check_ptr,
-        pedersen_ptr=pedersen_ptr,
-        poseidon_ptr=poseidon_ptr,
-        keccak_ptr=keccak_ptr,
-        bitwise_ptr=bitwise_ptr,
-        pow2_array=pow2_array,
-        evm_memorizer=evm_memorizer,
-        starknet_memorizer=starknet_memorizer,
-        injected_state_memorizer=injected_state_memorizer,
-        mmr_metas=mmr_metas,
-    }();
+    // let (mmr_metas_len) = run_chain_state_verification{
+    //     range_check_ptr=range_check_ptr,
+    //     pedersen_ptr=pedersen_ptr,
+    //     poseidon_ptr=poseidon_ptr,
+    //     keccak_ptr=keccak_ptr,
+    //     bitwise_ptr=bitwise_ptr,
+    //     pow2_array=pow2_array,
+    //     evm_memorizer=evm_memorizer,
+    //     starknet_memorizer=starknet_memorizer,
+    //     injected_state_memorizer=injected_state_memorizer,
+    //     mmr_metas=mmr_metas,
+    // }();
 
     run_injected_state_verification{
         range_check_ptr=range_check_ptr,

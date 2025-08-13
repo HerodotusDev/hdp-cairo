@@ -13,7 +13,7 @@ use cairo_vm::{
     Felt252,
 };
 use num_bigint::BigUint;
-use types::proofs::state::{StateProof, StateProofWrapper, TrieNodeSerde};
+use types::proofs::state::{StateProof, StateProofWrapper, StateProofs, TrieNodeSerde, TrieNode};
 
 use crate::{
     utils::{count_leading_zero_nibbles_from_hex, split_128},
@@ -185,6 +185,70 @@ pub fn hint_get_mpt_proof(
         .collect();
 
     vm.load_data(mpt_proof_ptr, &proof_le_chunks?)?;
+
+    Ok(())
+}
+
+pub const HINT_GET_TRIE_NODE_PROOF: &str = "segments.write_arg(ids.nodes_ptr, trie_node_proof)";
+
+pub fn hint_get_trie_node_proof(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let state_proof_wrapper: Vec<StateProofWrapper> = exec_scopes.get::<StateProofs>(vars::scopes::STATE_PROOFS)?;
+    let total_paths: usize = state_proof_wrapper.iter()
+    .map(|w| if matches!(w.state_proof, StateProof::Update(_)) { 2 } else { 1 })
+    .sum();
+
+    let mut trie_node_proof: Vec<Vec<TrieNode>> = Vec::with_capacity(total_paths);
+
+    for w in state_proof_wrapper {
+        match w.state_proof {
+            StateProof::Inclusion(v) | StateProof::NonInclusion(v) => {
+                trie_node_proof.push(v.into_iter().map(Into::into).collect());
+            }
+            StateProof::Update((pre, post)) => {
+                trie_node_proof.push(pre.into_iter().map(Into::into).collect());
+                trie_node_proof.push(post.into_iter().map(Into::into).collect());
+            }
+        }
+    }
+    let trie_node_proof_ptr = get_ptr_from_var_name(vars::ids::TRIE_NODE_PROOF, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+
+    let data = trie_node_proof
+    .into_iter()
+    .map(|n| n.into_iter().map(MaybeRelocatable::from).collect::<Vec<MaybeRelocatable>>())
+    .collect::<Vec<Vec<MaybeRelocatable>>>();
+
+    vm.load_data(trie_node_proof_ptr, &data)?;
+    Ok(())
+}
+
+pub const HINT_GET_EXPECTED_PATH: &str = "memory[ap] = to_felt_or_relocatable(expected_path)";
+
+pub fn hint_get_expected_path(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let trie_node_serde = exec_scopes.get::<TrieNodeSerde>(vars::scopes::EXPECTED_PATH)?;
+    let expected_path: Vec<u8> = match trie_node_serde {
+        TrieNodeSerde::Binary { left, right } => {
+            // let mut expected_path = left.to_be_bytes().to_vec();
+            // expected_path.extend_from_slice(&right.to_be_bytes());
+            // expected_path
+            vec![0]
+        },
+        TrieNodeSerde::Edge { child, path, .. } => {
+            path
+        }
+    };
+    
+    //TODO: convert this vec<u8> to felt252
+    let expected_path_ptr = get_ptr_from_var_name(vars::ids::EXPECTED_PATH, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     Ok(())
 }

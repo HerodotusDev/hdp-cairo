@@ -28,7 +28,6 @@ impl Default for StateProofWrapper {
         }
     }
 }
-// mv the optional fields -> stateproofwrapper enum to either inclusion or noninclusion
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
 pub enum StateProof {
@@ -99,3 +98,4 @@ impl From<TrieNodeSerde> for TrieNode {
         }
     }
 }
+

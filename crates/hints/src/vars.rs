@@ -21,11 +21,11 @@ pub mod scopes {
     pub const HEADER_WITH_MMR_STARKNET: &str = "header_with_mmr_starknet";
     pub const STATE_PROOFS: &str = "state_proofs";
     pub const STATE_PROOF: &str = "state_proof";
-    pub const BATCH_STATE_SERVER: &str = "batch_state_server";
     pub const INCLUSION_PROOF: &str = "inclusion_proof";
     pub const NON_INCLUSION_PROOF: &str = "non_inclusion_proof";
     pub const UPDATE_PROOF: &str = "update_proof";
     pub const STATE_PROOF_WRAPPER: &str = "state_proof_wrapper";
+    pub const EXPECTED_PATH: &str = "expected_path";
 }
 
 pub mod ids {
@@ -84,9 +84,11 @@ pub mod ids {
     pub const SLOT: &str = "slot";
     pub const SYSCALL_PTR: &str = "syscall_ptr";
     pub const TASK_HASH: &str = "task_hash";
+    pub const TRIE_NODE_PROOF: &str = "trie_node_proof";
     pub const VALUE_LEN: &str = "value_len";
     pub const VALUE: &str = "value";
     pub const LEAF_KEY: &str = "leaf_key";
     pub const ROOT_HASH: &str = "root_hash";
     pub const ROOT: &str = "root";
+    pub const EXPECTED_PATH: &str = "expected_path";
 }
