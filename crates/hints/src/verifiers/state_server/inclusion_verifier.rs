@@ -12,8 +12,13 @@ use cairo_vm::{
     },
     Felt252,
 };
+
+// PathfinderTrieNode import removed - we now convert directly from TrieNodeSerde
 use num_bigint::BigUint;
-use types::proofs::state::{StateProof, StateProofWrapper, StateProofs, TrieNodeSerde, TrieNode};
+use types::proofs::state::{StateProof, StateProofWrapper, StateProofs, TrieNodeSerde};
+use types::cairo::starknet::storage::CairoTrieNode;
+use types::proofs::starknet::storage::TrieNode;
+
 
 use crate::{
     utils::{count_leading_zero_nibbles_from_hex, split_128},
@@ -32,17 +37,13 @@ pub fn hint_get_key_be(
     let state_proof_wrapper = exec_scopes.get::<StateProofWrapper>(vars::scopes::STATE_PROOF_WRAPPER)?;
     let key_be = state_proof_wrapper.leaf.data.value;
     println!("Key BE: {:?}", key_be);
-    let (key_be_low, key_be_high) = split_128(&BigUint::from_bytes_be(key_be.as_be_bytes()));
-    println!("Key BE low: {:?}, Key BE high: {:?}", key_be_low, key_be_high);
     let key_ptr = get_address_from_var_name(vars::ids::KEY_BE, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+
     vm.insert_value(
         (key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 0)?,
-        Felt252::from(key_be_low),
+        Felt252::from_bytes_be(&key_be.as_be_bytes()),
     )?;
-    vm.insert_value(
-        (key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 1)?,
-        Felt252::from(key_be_high),
-    )?;
+
     Ok(())
 }
 
@@ -203,15 +204,29 @@ pub fn hint_get_trie_node_proof(
     .sum();
 
     let mut trie_node_proof: Vec<Vec<TrieNode>> = Vec::with_capacity(total_paths);
-
+    
+    //todo()! -> futurely unify the structs
+    
     for w in state_proof_wrapper {
         match w.state_proof {
             StateProof::Inclusion(v) | StateProof::NonInclusion(v) => {
-                trie_node_proof.push(v.into_iter().map(Into::into).collect());
+                trie_node_proof.push(
+                    v.into_iter()
+                        .map(|node_serde| node_serde.into())
+                        .collect()
+                );
             }
             StateProof::Update((pre, post)) => {
-                trie_node_proof.push(pre.into_iter().map(Into::into).collect());
-                trie_node_proof.push(post.into_iter().map(Into::into).collect());
+                trie_node_proof.push(
+                    pre.into_iter()
+                        .map(|node_serde| node_serde.into())
+                        .collect()
+                );
+                trie_node_proof.push(
+                    post.into_iter()
+                        .map(|node_serde| node_serde.into())
+                        .collect()
+                );
             }
         }
     }
@@ -219,36 +234,22 @@ pub fn hint_get_trie_node_proof(
 
     let data = trie_node_proof
     .into_iter()
-    .map(|n| n.into_iter().map(MaybeRelocatable::from).collect::<Vec<MaybeRelocatable>>())
-    .collect::<Vec<Vec<MaybeRelocatable>>>();
+    .map(|nodes| {
+        let segment = vm.add_memory_segment();
+        let cairo_nodes: Vec<MaybeRelocatable> = nodes
+            .into_iter()
+            .flat_map(|node| {
+                CairoTrieNode(node)
+                    .into_iter()
+                    .map(MaybeRelocatable::from)
+            })
+            .collect();
+        vm.load_data(segment, &cairo_nodes).unwrap();
+        segment
+    })
+    .map(MaybeRelocatable::from)
+    .collect::<Vec<MaybeRelocatable>>();
 
     vm.load_data(trie_node_proof_ptr, &data)?;
-    Ok(())
-}
-
-pub const HINT_GET_EXPECTED_PATH: &str = "memory[ap] = to_felt_or_relocatable(expected_path)";
-
-pub fn hint_get_expected_path(
-    vm: &mut VirtualMachine,
-    exec_scopes: &mut ExecutionScopes,
-    hint_data: &HintProcessorData,
-    _constants: &HashMap<String, Felt252>,
-) -> Result<(), HintError> {
-    let trie_node_serde = exec_scopes.get::<TrieNodeSerde>(vars::scopes::EXPECTED_PATH)?;
-    let expected_path: Vec<u8> = match trie_node_serde {
-        TrieNodeSerde::Binary { left, right } => {
-            // let mut expected_path = left.to_be_bytes().to_vec();
-            // expected_path.extend_from_slice(&right.to_be_bytes());
-            // expected_path
-            vec![0]
-        },
-        TrieNodeSerde::Edge { child, path, .. } => {
-            path
-        }
-    };
-    
-    //TODO: convert this vec<u8> to felt252
-    let expected_path_ptr = get_ptr_from_var_name(vars::ids::EXPECTED_PATH, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-
     Ok(())
 }

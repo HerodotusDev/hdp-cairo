@@ -30,8 +30,8 @@ func inclusion_state_verification{
 }() -> (value: felt*, value_len: felt){
     alloc_locals;
     
-    local key_be: Uint256;
-    %{ ids.key_be = state_proof_wrapper.leaf.key %}
+    local key_be: felt; 
+    %{ ids.key_be = state_proof_wrapper.leaf.key %} //essentially lets say make a simpler hint for just getting the felt
     local root: Uint256;
     %{ ids.root = state_proof_wrapper.root_hash %}
     
@@ -46,14 +46,11 @@ func inclusion_state_verification{
     let (hash_binary_node_ptr) = get_label_location(HashNodeTruncatedKeccak.hash_binary_node);
     let (hash_edge_node_ptr) = get_label_location(HashNodeTruncatedKeccak.hash_edge_node);
 
-    tempvar expected_path: felt = nondet %{ expected_path %};
-    //todo: change this expected path to essentially use the key to fetch the corresponding path in vec<trienodeserde>
-
     let (root, value) = traverse{
         hash_binary_node_ptr=hash_binary_node_ptr, hash_edge_node_ptr=hash_edge_node_ptr, hash_ptr=keccak_ptr,
         bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(
-        cast(nodes_ptr, TrieNode**), proof_len, expected_path
+        cast(nodes_ptr, TrieNode**), proof_len, key_be
     );
 
     if (value == 0) {

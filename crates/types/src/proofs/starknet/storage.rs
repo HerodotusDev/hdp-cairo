@@ -33,6 +33,10 @@ use cairo_vm::Felt252;
 use serde_with::skip_serializing_none;
 use starknet_types_core::hash::StarkHash;
 
+// Type alias to avoid naming collision when importing both TrieNode types
+pub use pathfinder_common::trie::TrieNode as PathfinderTrieNode;
+use crate::proofs::state::TrieNodeSerde;
+
 /// Codebase is from <https://github.com/eqlabs/pathfinder/tree/ae81d84b7c4157891069bd02ef810a29b60a94e3>
 /// Holds the membership/non-membership of a contract and its associated
 /// contract contract if the contract exists.
@@ -87,6 +91,65 @@ impl TrieNode {
                 let length = Felt252::from_bytes_be(&length);
                 let path = Felt252::from_bytes_be(&bytes);
                 H::hash(child, &path) + length
+            }
+        }
+    }
+
+    pub fn from_pathfinder(pathfinder_node: PathfinderTrieNode) -> Self {
+        match pathfinder_node {
+            PathfinderTrieNode::Binary { left, right } => {
+                TrieNode::Binary {
+                    left: Felt252::from_bytes_be(&left.to_be_bytes()),
+                    right: Felt252::from_bytes_be(&right.to_be_bytes()),
+                }
+            }
+            PathfinderTrieNode::Edge { child, path } => {
+
+                let path_bytes = path.as_raw_slice();
+                let path_len = path.len() as u64;
+                
+                let mut path_value = String::new();
+                for byte in path_bytes {
+                    path_value.push_str(&format!("{:02x}", byte));
+                }
+                
+                TrieNode::Edge {
+                    child: Felt252::from_bytes_be(&child.to_be_bytes()),
+                    path: Path {
+                        len: path_len,
+                        value: path_value,
+                    },
+                }
+            }
+        }
+    }
+}
+
+/// Direct conversion from TrieNodeSerde to Starknet storage TrieNode
+/// This bypasses the intermediate pathfinder conversion step for efficiency
+impl From<TrieNodeSerde> for TrieNode {
+    fn from(node_serde: TrieNodeSerde) -> Self {
+        match node_serde {
+            TrieNodeSerde::Binary { left, right } => {
+                TrieNode::Binary {
+                    left: Felt252::from_bytes_be(&left.to_be_bytes()),
+                    right: Felt252::from_bytes_be(&right.to_be_bytes()),
+                }
+            }
+            TrieNodeSerde::Edge { child, path, bit_len } => {
+                // Convert path bytes to hex string
+                let mut path_value = String::new();
+                for byte in &path {
+                    path_value.push_str(&format!("{:02x}", byte));
+                }
+                
+                TrieNode::Edge {
+                    child: Felt252::from_bytes_be(&child.to_be_bytes()),
+                    path: Path {
+                        len: bit_len as u64,
+                        value: path_value,
+                    },
+                }
             }
         }
     }
