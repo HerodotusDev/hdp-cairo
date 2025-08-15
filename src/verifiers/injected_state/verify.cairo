@@ -4,11 +4,11 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian, uint256_to_felt
 from starkware.cairo.common.default_dict import default_dict_finalize
 from starkware.cairo.common.registers import get_label_location
-from packages.eth_essentials.lib.mpt import verify_mpt_proof as verify_mpt_proof_lib
 from src.memorizers.injected_state.memorizer import InjectedStateMemorizer
 from src.utils.patricia_with_keccak import patricia_update
-from src.verifiers.mpt import traverse
-from src.verifiers.mpt import HashNodeTruncatedKeccak
+from src.utils.keccak import TruncatedKeccak, finalize_truncated_keccak
+from src.verifiers.mpt import HashNodeTruncatedKeccak, traverse
+from src.types import TrieNode
 
 // Wraps the MPT library function to handle non-inclusion proofs gracefully.
 // If the library function indicates non-inclusion (returns value_len = -1),
@@ -23,17 +23,15 @@ from src.verifiers.mpt import HashNodeTruncatedKeccak
 
 func inclusion_state_verification{
     range_check_ptr,
-    keccak_ptr: KeccakBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
     pow2_array: felt*,
     injected_state_memorizer: DictAccess*,
-}() -> (value: felt*, value_len: felt){
+}() -> (root: felt, value: felt){
     alloc_locals;
     
     local key_be: felt; 
-    %{ ids.key_be = state_proof_wrapper.leaf.key %} //essentially lets say make a simpler hint for just getting the felt
-    local root: Uint256;
-    %{ ids.root = state_proof_wrapper.root_hash %}
+    %{ ids.key_be = state_proof_wrapper.leaf.key %} 
     
     let (proof_bytes_len: felt*) = alloc();
     %{ segments.write_arg(ids.proof_bytes_len, state_proof.inclusion.proof_bytes_len) %}
@@ -41,17 +39,37 @@ func inclusion_state_verification{
     tempvar proof_len: felt = nondet %{ len(state_proof) %};
 
     let (nodes_ptr: felt**) = alloc();
-    %{ segments.write_arg(ids.nodes_ptr, trie_node_proof) %}
+    // %{ trie_node_proof = state_proofs %}
+    %{ segments.write_arg(ids.nodes_ptr, state_proofs) %}
 
     let (hash_binary_node_ptr) = get_label_location(HashNodeTruncatedKeccak.hash_binary_node);
     let (hash_edge_node_ptr) = get_label_location(HashNodeTruncatedKeccak.hash_edge_node);
 
+    let (keccak_ptr_seg: TruncatedKeccak*) = alloc();
+    local keccak_ptr_seg_start: TruncatedKeccak* = keccak_ptr_seg;
+    let hash_ptr = cast(keccak_ptr_seg, HashBuiltin*);
+    // local keccak_ptr_seg_start: HashBuiltin* = cast(keccak_ptr_seg, HashBuiltin*);
+    
     let (root, value) = traverse{
-        hash_binary_node_ptr=hash_binary_node_ptr, hash_edge_node_ptr=hash_edge_node_ptr, hash_ptr=keccak_ptr,
+        hash_binary_node_ptr=hash_binary_node_ptr, hash_edge_node_ptr=hash_edge_node_ptr, hash_ptr=hash_ptr,
         bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(
         cast(nodes_ptr, TrieNode**), proof_len, key_be
     );
+
+
+    with keccak_ptr_seg{
+        finalize_truncated_keccak{
+            range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
+        }(ptr_start=keccak_ptr_seg_start, ptr_end=keccak_ptr_seg);
+    }
+
+
+    with keccak_ptr_seg{
+        finalize_truncated_keccak{
+            range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
+        }(ptr_start=keccak_ptr_seg_start, ptr_end=keccak_ptr_seg);
+    }
 
     if (value == 0) {
         //non inclusion proof case -> handle it

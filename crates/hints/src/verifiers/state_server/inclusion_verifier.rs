@@ -104,6 +104,7 @@ pub fn hint_get_proof_bytes_len(
 ) -> Result<(), HintError> {
     println!("Getting proof bytes len");
     let state_proof_wrapper = exec_scopes.get::<StateProofWrapper>(vars::scopes::STATE_PROOF_WRAPPER)?;
+    println!("State proof wrapper: {:?}", state_proof_wrapper);
     let nodes: Vec<TrieNodeSerde> = match state_proof_wrapper.state_proof {
         StateProof::Inclusion(inclusion) => inclusion,
         StateProof::NonInclusion(non_inclusion) => non_inclusion,
@@ -124,12 +125,15 @@ pub fn hint_inclusion_proof_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    println!("Getting inclusion proof len");
     let state_proof_wrapper = exec_scopes.get::<StateProofWrapper>(vars::scopes::STATE_PROOF_WRAPPER)?;
+    println!("State proof wrapper: {:?}", state_proof_wrapper);
     let state_proof_len = match state_proof_wrapper.state_proof {
         StateProof::Inclusion(inclusion) => inclusion.len(),
         StateProof::NonInclusion(non_inclusion) => non_inclusion.len(),
         StateProof::Update(update) => update.0.len() + update.1.len(),
     };
+    println!("State proof len: {:?}", state_proof_len);
     insert_value_into_ap(vm, Felt252::from(state_proof_len))
 }
 
@@ -141,7 +145,7 @@ pub fn hint_get_mpt_proof(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let state_proof_wrapper = exec_scopes.get::<StateProofWrapper>(vars::scopes::STATE_PROOF_WRAPPER)?;
+    let state_proof_wrapper = exec_scopes.get::<StateProofWrapper>(vars::scopes::STATE_PROOFS)?;
     let proof = match state_proof_wrapper.state_proof {
         StateProof::Inclusion(inclusion) => inclusion,
         StateProof::NonInclusion(non_inclusion) => non_inclusion,
@@ -190,15 +194,19 @@ pub fn hint_get_mpt_proof(
     Ok(())
 }
 
-pub const HINT_GET_TRIE_NODE_PROOF: &str = "segments.write_arg(ids.nodes_ptr, trie_node_proof)";
+pub const HINT_GET_TRIE_NODE_PROOF: &str = "segments.write_arg(ids.nodes_ptr, state_proofs)";
 
 pub fn hint_get_trie_node_proof(
     vm: &mut VirtualMachine,
     exec_scopes: &mut ExecutionScopes,
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
-) -> Result<(), HintError> {
-    let state_proof_wrapper: Vec<StateProofWrapper> = exec_scopes.get::<StateProofs>(vars::scopes::STATE_PROOFS)?;
+) -> Result<(), HintError> {    
+    println!("Getting trie node proof");
+    let state_proofs = exec_scopes.get::<StateProofs>(vars::scopes::STATE_PROOFS)?;
+    println!("State proofs in Hint Get Node Trie Proof: {:?}", state_proofs);
+    let state_proof_wrapper = state_proofs.iter().map(|w| w.clone()).collect::<Vec<StateProofWrapper>>();
+    println!("State proof wrapper 2: {:?}", state_proof_wrapper);
     let total_paths: usize = state_proof_wrapper.iter()
     .map(|w| if matches!(w.state_proof, StateProof::Update(_)) { 2 } else { 1 })
     .sum();
@@ -251,5 +259,6 @@ pub fn hint_get_trie_node_proof(
     .collect::<Vec<MaybeRelocatable>>();
 
     vm.load_data(trie_node_proof_ptr, &data)?;
+
     Ok(())
 }
