@@ -160,6 +160,7 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(verifiers::verify::HINT_STATE_PROOFS_LEN.into(), verifiers::verify::hint_state_proofs_len);
     hints.insert(verifiers::verify::HINT_STATE_PROOFS_PROOF_TYPE.into(), verifiers::verify::hint_state_proofs_proof_type);
     hints.insert(verifiers::state_server::HINT_STATE_PROOF_ENTER_SCOPE.into(), verifiers::state_server::hint_state_proof_enter_scope);
+    hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_TRIE_NODE_PROOF.into(), verifiers::state_server::inclusion_verifier::hint_get_trie_node_proof);
     hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_KEY_BE.into(), verifiers::state_server::inclusion_verifier::hint_get_key_be);
     hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_ROOT.into(), verifiers::state_server::inclusion_verifier::hint_get_root);
     hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_KEY_BE_LEADING_ZEROES_NIBBLES.into(), verifiers::state_server::inclusion_verifier::hint_get_key_be_leading_zeroes_nibbles);

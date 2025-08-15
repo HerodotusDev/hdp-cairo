@@ -95,7 +95,7 @@ func verify_proofs_inner{
     tempvar contract_address: felt = nondet %{ storage_starknet.contract_address %};
 
     let (storage_addresses: felt*) = alloc();
-    %{ segments.write_arg(ids.storage_addresses, [int(x, 16) for x in storage_starknet.storage_addresses])) %}
+    %{ segments.write_arg(ids.storage_addresses, [int(x, 16) for x in storage_starknet.storage_addresses]) %}
 
     // Compute contract_root and write values to memorizer
     with contract_address, storage_addresses, block_number {

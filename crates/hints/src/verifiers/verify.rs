@@ -51,7 +51,9 @@ pub fn hint_state_proofs_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    println!("Getting state proofs len");
     let state_proofs = exec_scopes.get::<StateProofs>(vars::scopes::STATE_PROOFS)?;
+    println!("State proofs len: {:?}", state_proofs.len());
     insert_value_into_ap(vm, Felt252::from(state_proofs.len()))
 }
 
