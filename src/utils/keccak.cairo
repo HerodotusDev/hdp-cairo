@@ -8,6 +8,7 @@ from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.memset import memset
 from starkware.cairo.common.registers import get_label_location
 
+// Specifies the hash memory structure. Same as struct HashBuiltin for compatibility
 struct TruncatedKeccak {
     x: felt,
     y: felt,
@@ -44,11 +45,11 @@ func keccak160{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: Keccak
     return (res=result);
 }
 
-func finalize_truncated_keccak{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(
-    ptr_start: TruncatedKeccak*, ptr_end: TruncatedKeccak*
-) {
+func finalize_truncated_keccak{
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
+}(ptr_start: TruncatedKeccak*, ptr_end: TruncatedKeccak*) {
     alloc_locals;
-    
+
     // Check if we've processed all elements
     if (ptr_start == ptr_end) {
         return ();
@@ -56,10 +57,10 @@ func finalize_truncated_keccak{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, ke
 
     // Compute the truncated keccak hash of x and y
     let (expected_result) = keccak160(ptr_start.x, ptr_start.y);
-    
+
     // Verify that the computed hash matches the stored result
     assert expected_result = ptr_start.result;
-    
+
     // Process the next element
     finalize_truncated_keccak(ptr_start + TruncatedKeccak.SIZE, ptr_end);
     return ();
