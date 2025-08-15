@@ -1,8 +1,13 @@
+use std::vec::IntoIter;
+
 use bitvec::{order::Msb0, vec::BitVec};
+use cairo_vm::Felt252;
 use pathfinder_common::trie::TrieNode;
 use pathfinder_crypto::Felt;
 use serde::{Deserialize, Serialize};
 use state_server_types::trie::leaf::TrieLeaf;
+
+use crate::cairo::{FELT_0, FELT_1};
 
 pub type StateProofs = Vec<StateProofWrapper>; // should be wrapper
 
@@ -99,3 +104,33 @@ impl From<TrieNodeSerde> for TrieNode {
     }
 }
 
+pub struct CairoTrieNodeSerde(pub TrieNodeSerde);
+
+impl IntoIterator for CairoTrieNodeSerde {
+    type Item = Felt252;
+    type IntoIter = IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        match self.0 {
+            TrieNodeSerde::Binary { left, right } => vec![
+                FELT_0,
+                Felt252::from_hex(&left.to_hex_str()).unwrap(),
+                Felt252::from_hex(&right.to_hex_str()).unwrap(),
+                FELT_0,
+            ]
+            .into_iter(),
+            TrieNodeSerde::Edge { child, path, bit_len } => {
+                let mut bytes = [0u8; 32];
+                let len = path.len().min(32);
+                bytes[..len].copy_from_slice(&path[..len]);
+                vec![
+                    FELT_1,
+                    Felt252::from_hex(&child.to_hex_str()).unwrap(),
+                    Felt252::from_bytes_be_slice(&bytes),
+                    Felt252::from(bit_len as u64),
+                ]
+                .into_iter()
+            }
+        }
+    }
+}

@@ -12,13 +12,15 @@ use cairo_vm::{
     },
     Felt252,
 };
-
 // PathfinderTrieNode import removed - we now convert directly from TrieNodeSerde
 use num_bigint::BigUint;
-use types::proofs::state::{StateProof, StateProofWrapper, StateProofs, TrieNodeSerde};
-use types::cairo::starknet::storage::CairoTrieNode;
-use types::proofs::starknet::storage::TrieNode;
-
+use types::{
+    cairo::starknet::storage::CairoTrieNode,
+    proofs::{
+        starknet::storage::TrieNode,
+        state::{CairoTrieNodeSerde, StateProof, StateProofWrapper, StateProofs, TrieNodeSerde},
+    },
+};
 
 use crate::{
     utils::{count_leading_zero_nibbles_from_hex, split_128},
@@ -35,7 +37,7 @@ pub fn hint_get_key_be(
 ) -> Result<(), HintError> {
     println!("Getting key BE");
     let state_proof_wrapper = exec_scopes.get::<StateProofWrapper>(vars::scopes::STATE_PROOF_WRAPPER)?;
-    let key_be = state_proof_wrapper.leaf.data.value;
+    let key_be = state_proof_wrapper.leaf.key;
     println!("Key BE: {:?}", key_be);
     let key_ptr = get_address_from_var_name(vars::ids::KEY_BE, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
@@ -91,29 +93,6 @@ pub fn hint_get_key_be_leading_zeroes_nibbles(
     println!("Key BE leading zeroes nibbles: {:?}", key_be_leading_zeroes_nibbles);
     insert_value_into_ap(vm, Felt252::from(key_be_leading_zeroes_nibbles))?;
     println!("Key BE leading zeroes nibbles inserted into ap");
-    Ok(())
-}
-
-pub const HINT_GET_PROOF_BYTES_LEN: &str = "segments.write_arg(ids.proof_bytes_len, state_proof.inclusion.proof_bytes_len)";
-
-pub fn hint_get_proof_bytes_len(
-    vm: &mut VirtualMachine,
-    exec_scopes: &mut ExecutionScopes,
-    hint_data: &HintProcessorData,
-    _constants: &HashMap<String, Felt252>,
-) -> Result<(), HintError> {
-    println!("Getting proof bytes len");
-    let state_proof_wrapper = exec_scopes.get::<StateProofWrapper>(vars::scopes::STATE_PROOF_WRAPPER)?;
-    println!("State proof wrapper: {:?}", state_proof_wrapper);
-    let nodes: Vec<TrieNodeSerde> = match state_proof_wrapper.state_proof {
-        StateProof::Inclusion(inclusion) => inclusion,
-        StateProof::NonInclusion(non_inclusion) => non_inclusion,
-        StateProof::Update(update) => update.0, // align with nodes used in hint_get_mpt_proof
-    };
-    let lens: Vec<MaybeRelocatable> = nodes.into_iter().map(|n| n.byte_len().into()).collect();
-    println!("Proof bytes lens: {:?}", lens.len());
-    let proof_bytes_len_ptr = get_ptr_from_var_name(vars::ids::PROOF_BYTES_LEN, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    vm.load_data(proof_bytes_len_ptr, &lens)?;
     Ok(())
 }
 
@@ -194,71 +173,44 @@ pub fn hint_get_mpt_proof(
     Ok(())
 }
 
-pub const HINT_GET_TRIE_NODE_PROOF: &str = "segments.write_arg(ids.nodes_ptr, state_proofs)";
+pub const HINT_GET_TRIE_NODE_PROOF: &str = "segments.write_arg(ids.nodes_ptr, state_proof_wrapper)";
 
 pub fn hint_get_trie_node_proof(
     vm: &mut VirtualMachine,
     exec_scopes: &mut ExecutionScopes,
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
-) -> Result<(), HintError> {    
+) -> Result<(), HintError> {
     println!("Getting trie node proof");
-    let state_proofs = exec_scopes.get::<StateProofs>(vars::scopes::STATE_PROOFS)?;
-    println!("State proofs in Hint Get Node Trie Proof: {:?}", state_proofs);
-    let state_proof_wrapper = state_proofs.iter().map(|w| w.clone()).collect::<Vec<StateProofWrapper>>();
+    let state_proof_wrapper = exec_scopes.get::<StateProofWrapper>(vars::scopes::STATE_PROOF_WRAPPER)?;
     println!("State proof wrapper 2: {:?}", state_proof_wrapper);
-    let total_paths: usize = state_proof_wrapper.iter()
-    .map(|w| if matches!(w.state_proof, StateProof::Update(_)) { 2 } else { 1 })
-    .sum();
 
-    let mut trie_node_proof: Vec<Vec<TrieNode>> = Vec::with_capacity(total_paths);
-    
-    //todo()! -> futurely unify the structs
-    
-    for w in state_proof_wrapper {
-        match w.state_proof {
-            StateProof::Inclusion(v) | StateProof::NonInclusion(v) => {
-                trie_node_proof.push(
-                    v.into_iter()
-                        .map(|node_serde| node_serde.into())
-                        .collect()
-                );
-            }
-            StateProof::Update((pre, post)) => {
-                trie_node_proof.push(
-                    pre.into_iter()
-                        .map(|node_serde| node_serde.into())
-                        .collect()
-                );
-                trie_node_proof.push(
-                    post.into_iter()
-                        .map(|node_serde| node_serde.into())
-                        .collect()
-                );
-            }
-        }
-    }
-    let trie_node_proof_ptr = get_ptr_from_var_name(vars::ids::TRIE_NODE_PROOF, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let trie_nodes = match state_proof_wrapper.state_proof {
+        StateProof::Inclusion(inclusion) => inclusion,
+        StateProof::NonInclusion(non_inclusion) => non_inclusion,
+        StateProof::Update(_) => todo!("Update proof not supported yet"),
+    };
 
-    let data = trie_node_proof
-    .into_iter()
-    .map(|nodes| {
-        let segment = vm.add_memory_segment();
-        let cairo_nodes: Vec<MaybeRelocatable> = nodes
-            .into_iter()
-            .flat_map(|node| {
-                CairoTrieNode(node)
+    let nodes_ptr = get_ptr_from_var_name(vars::ids::NODES_PTR, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+
+    let data = trie_nodes
+        .into_iter()
+        .map(|node| {
+            let segment = vm.add_memory_segment();
+            vm.load_data(
+                segment,
+                &CairoTrieNodeSerde(node)
                     .into_iter()
                     .map(MaybeRelocatable::from)
-            })
-            .collect();
-        vm.load_data(segment, &cairo_nodes).unwrap();
-        segment
-    })
-    .map(MaybeRelocatable::from)
-    .collect::<Vec<MaybeRelocatable>>();
+                    .collect::<Vec<MaybeRelocatable>>(),
+            )
+            .unwrap();
+            segment
+        })
+        .map(MaybeRelocatable::from)
+        .collect::<Vec<MaybeRelocatable>>();
 
-    vm.load_data(trie_node_proof_ptr, &data)?;
+    vm.load_data(nodes_ptr, &data)?;
 
     Ok(())
 }

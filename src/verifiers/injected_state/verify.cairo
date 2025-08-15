@@ -20,7 +20,6 @@ from src.types import TrieNode
 // Returns:
 //   value: Pointer to the RLP-encoded value (or [0x80] for non-inclusion).
 //   value_len: Length of the RLP value (1 for non-inclusion).
-
 func inclusion_state_verification{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
@@ -32,15 +31,11 @@ func inclusion_state_verification{
     
     local key_be: felt; 
     %{ ids.key_be = state_proof_wrapper.leaf.key %} 
-    
-    let (proof_bytes_len: felt*) = alloc();
-    %{ segments.write_arg(ids.proof_bytes_len, state_proof.inclusion.proof_bytes_len) %}
 
     tempvar proof_len: felt = nondet %{ len(state_proof) %};
 
     let (nodes_ptr: felt**) = alloc();
-    // %{ trie_node_proof = state_proofs %}
-    %{ segments.write_arg(ids.nodes_ptr, state_proofs) %}
+    %{ segments.write_arg(ids.nodes_ptr, state_proof_wrapper) %}
 
     let (hash_binary_node_ptr) = get_label_location(HashNodeTruncatedKeccak.hash_binary_node);
     let (hash_edge_node_ptr) = get_label_location(HashNodeTruncatedKeccak.hash_edge_node);
@@ -56,14 +51,6 @@ func inclusion_state_verification{
     }(
         cast(nodes_ptr, TrieNode**), proof_len, key_be
     );
-
-
-    with keccak_ptr_seg{
-        finalize_truncated_keccak{
-            range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
-        }(ptr_start=keccak_ptr_seg_start, ptr_end=keccak_ptr_seg);
-    }
-
 
     with keccak_ptr_seg{
         finalize_truncated_keccak{

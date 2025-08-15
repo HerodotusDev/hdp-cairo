@@ -91,4 +91,5 @@ pub mod ids {
     pub const ROOT_HASH: &str = "root_hash";
     pub const ROOT: &str = "root";
     pub const EXPECTED_PATH: &str = "expected_path";
+    pub const NODES_PTR: &str = "nodes_ptr";
 }

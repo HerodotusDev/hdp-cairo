@@ -28,11 +28,6 @@ pub fn hint_state_proof_enter_scope(
         .try_into()
         .unwrap();
 
-    // let batch: Box<dyn Any> = match state_proofs[idx - 1].state_proof.clone() {
-    //     StateProof::Inclusion(proofs) => Box::new(proofs),
-    //     StateProof::NonInclusion(proofs) => Box::new(proofs),
-    //     StateProof::Update(proofs) => Box::new(proofs),
-    // };
     let state_proof_wrapper: Box<dyn Any> = Box::new(state_proofs[idx - 1].clone());
     let dict_manager: Box<dyn Any> = Box::new(exec_scopes.get_dict_manager()?);
 
@@ -41,5 +36,19 @@ pub fn hint_state_proof_enter_scope(
         (String::from(vars::scopes::DICT_MANAGER), dict_manager),
     ]));
 
+    Ok(())
+}
+
+pub const HINT_PRINT_ROOT_AND_VALUE: &str = "print(root, value)";
+
+pub fn hint_print_root_and_value(
+    vm: &mut VirtualMachine,
+    _exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let root: Felt252 = get_integer_from_var_name(vars::ids::ROOT, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let value: Felt252 = get_integer_from_var_name(vars::ids::VALUE, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    println!("Root: {:?}, Value: {:?}", root, value);
     Ok(())
 }
