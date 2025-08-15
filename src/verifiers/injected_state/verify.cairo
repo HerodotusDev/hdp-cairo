@@ -30,15 +30,8 @@ func inclusion_state_verification{
 }() -> (root: felt, value: felt){
     alloc_locals;
     
-<<<<<<< Updated upstream
-    local key_be: Uint256;
-    %{ ids.key_be = state_proof_wrapper.leaf.key %}
-    local root: Uint256;
-    %{ ids.root = state_proof_wrapper.root_hash %}
-=======
     local key_be: felt; 
     %{ ids.key_be = state_proof_wrapper.leaf.key %} 
->>>>>>> Stashed changes
     
     let (proof_bytes_len: felt*) = alloc();
     %{ segments.write_arg(ids.proof_bytes_len, state_proof.inclusion.proof_bytes_len) %}
@@ -52,17 +45,11 @@ func inclusion_state_verification{
     let (hash_binary_node_ptr) = get_label_location(HashNodeTruncatedKeccak.hash_binary_node);
     let (hash_edge_node_ptr) = get_label_location(HashNodeTruncatedKeccak.hash_edge_node);
 
-<<<<<<< Updated upstream
-    tempvar expected_path: felt = nondet %{ expected_path %};
-    //todo: change this expected path to essentially use the key to fetch the corresponding path in vec<trienodeserde>
-
-=======
     let (keccak_ptr_seg: TruncatedKeccak*) = alloc();
     local keccak_ptr_seg_start: TruncatedKeccak* = keccak_ptr_seg;
     let hash_ptr = cast(keccak_ptr_seg, HashBuiltin*);
     // local keccak_ptr_seg_start: HashBuiltin* = cast(keccak_ptr_seg, HashBuiltin*);
     
->>>>>>> Stashed changes
     let (root, value) = traverse{
         hash_binary_node_ptr=hash_binary_node_ptr, hash_edge_node_ptr=hash_edge_node_ptr, hash_ptr=hash_ptr,
         bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
