@@ -165,7 +165,6 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_KEY_BE.into(), verifiers::state_server::inclusion_verifier::hint_get_key_be);
     hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_ROOT.into(), verifiers::state_server::inclusion_verifier::hint_get_root);
     hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_KEY_BE_LEADING_ZEROES_NIBBLES.into(), verifiers::state_server::inclusion_verifier::hint_get_key_be_leading_zeroes_nibbles);
-    hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_PROOF_BYTES_LEN.into(), verifiers::state_server::inclusion_verifier::hint_get_proof_bytes_len);
     hints.insert(verifiers::state_server::inclusion_verifier::HINT_INCLUSION_PROOF_LEN.into(), verifiers::state_server::inclusion_verifier::hint_inclusion_proof_len);
     hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_MPT_PROOF.into(), verifiers::state_server::inclusion_verifier::hint_get_mpt_proof);
 
