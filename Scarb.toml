@@ -6,6 +6,7 @@ members = [
     "examples/blacklist",
     "examples/compliance",
     "examples/starkgate",
+    "examples/injected_state",
     "hdp_cairo",
     "tests",
 ]

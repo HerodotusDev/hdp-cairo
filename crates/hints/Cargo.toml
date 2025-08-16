@@ -28,3 +28,5 @@ thiserror.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 types.workspace = true
+pathfinder-common.workspace = true
+pathfinder-crypto.workspace = true

@@ -162,6 +162,7 @@ func execute_entry_point{
     starknet_memorizer: DictAccess*,
     starknet_decoder_ptr: felt***,
     starknet_key_hasher_ptr: felt**,
+    injected_state_memorizer: DictAccess*,
 }(compiled_class: CompiledClass*, execution_context: ExecutionContext*, dry_run: felt) -> (
     retdata_size: felt, retdata: felt*
 ) {
@@ -275,7 +276,7 @@ func execute_entry_point{
     //     segment_size = rc96_ptr.offset
     //     base = rc96_ptr - segment_size
 
-    //     for i in range(segment_size):
+    // for i in range(segment_size):
     //         memory.setdefault(base + i, 0)
     // %}
 

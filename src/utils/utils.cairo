@@ -22,9 +22,7 @@ from src.utils.merkle import compute_merkle_root
 // Writes all required fields to the output_ptr.
 // The first 4 words are reserved for the tasks and results root.
 // The rest of the words are reserved for the MMR metas. Each MMR will contain 4 fields, and we can add an arbitrary amount of them.
-func mmr_metas_write_output_ptr{output_ptr: felt*}(
-    mmr_metas: MMRMeta*, mmr_metas_len: felt
-) {    
+func mmr_metas_write_output_ptr{output_ptr: felt*}(mmr_metas: MMRMeta*, mmr_metas_len: felt) {
     tempvar counter = 0;
 
     loop:
@@ -138,6 +136,6 @@ func felt_array_to_uint256s{range_check_ptr}(counter: felt, retdata: felt*, leaf
     }
 
     let res = felt_to_uint256([retdata]);
-    assert[leafs] = res;
+    assert [leafs] = res;
     return felt_array_to_uint256s(counter=counter - 1, retdata=retdata + 1, leafs=leafs + 2);
 }

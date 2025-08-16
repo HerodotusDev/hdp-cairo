@@ -53,6 +53,7 @@ func run_contract_bootloader{
     starknet_memorizer: DictAccess*,
     starknet_decoder_ptr: felt***,
     starknet_key_hasher_ptr: felt**,
+    injected_state_memorizer: DictAccess*,
 }(compiled_class: CompiledClass*, calldata_size: felt, calldata: felt*, dry_run: felt) -> (
     retdata_size: felt, retdata: felt*
 ) {
@@ -80,7 +81,7 @@ func run_contract_bootloader{
         ),
         non_selectable=NonSelectableBuiltins(keccak=keccak_ptr, sha256=sha256_ptr),
     );
-    
+
     let builtin_ptrs = &local_builtin_ptrs;
     let sha256_ptr_start = builtin_ptrs.non_selectable.sha256;
 

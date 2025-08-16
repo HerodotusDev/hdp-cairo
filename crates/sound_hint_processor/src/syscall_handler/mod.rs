@@ -19,6 +19,7 @@ use syscall_handler::{SyscallHandlerWrapper, SyscallResult};
 use types::cairo::traits::CairoType;
 
 pub mod evm;
+pub mod injected_state;
 pub mod starknet;
 
 #[derive(Debug)]
@@ -76,13 +77,18 @@ pub fn syscall_handler_create(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    if let Err(HintError::VariableNotInScopeError(_)) =
-        exec_scopes.get::<SyscallHandlerWrapper<evm::CallContractHandler, starknet::CallContractHandler>>(vars::scopes::SYSCALL_HANDLER)
+    if let Err(HintError::VariableNotInScopeError(_)) = exec_scopes.get::<SyscallHandlerWrapper<
+        evm::CallContractHandler,
+        starknet::CallContractHandler,
+        injected_state::CallContractHandler,
+    >>(vars::scopes::SYSCALL_HANDLER)
     {
-        let syscall_handler = SyscallHandlerWrapper::<evm::CallContractHandler, starknet::CallContractHandler>::new(
-            evm::CallContractHandler::new(exec_scopes.get_dict_manager()?),
-            starknet::CallContractHandler::new(exec_scopes.get_dict_manager()?),
-        );
+        let syscall_handler =
+            SyscallHandlerWrapper::<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>::new(
+                evm::CallContractHandler::new(exec_scopes.get_dict_manager()?),
+                starknet::CallContractHandler::new(exec_scopes.get_dict_manager()?),
+                injected_state::CallContractHandler::default(),
+            );
         exec_scopes.insert_value(vars::scopes::SYSCALL_HANDLER, syscall_handler);
     }
 
@@ -98,8 +104,11 @@ pub fn syscall_handler_set_syscall_ptr(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let syscall_ptr = get_ptr_from_var_name(vars::ids::SYSCALL_PTR, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let syscall_handler = exec_scopes
-        .get_mut_ref::<SyscallHandlerWrapper<evm::CallContractHandler, starknet::CallContractHandler>>(vars::scopes::SYSCALL_HANDLER)?;
+    let syscall_handler = exec_scopes.get_mut_ref::<SyscallHandlerWrapper<
+        evm::CallContractHandler,
+        starknet::CallContractHandler,
+        injected_state::CallContractHandler,
+    >>(vars::scopes::SYSCALL_HANDLER)?;
     syscall_handler.set_syscall_ptr(syscall_ptr);
 
     Ok(())
@@ -113,9 +122,11 @@ pub fn enter_scope_syscall_handler(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let syscall_handler: Box<dyn Any> = Box::new(
-        exec_scopes.get::<SyscallHandlerWrapper<evm::CallContractHandler, starknet::CallContractHandler>>(vars::scopes::SYSCALL_HANDLER)?,
-    );
+    let syscall_handler: Box<dyn Any> = Box::new(exec_scopes.get::<SyscallHandlerWrapper<
+        evm::CallContractHandler,
+        starknet::CallContractHandler,
+        injected_state::CallContractHandler,
+    >>(vars::scopes::SYSCALL_HANDLER)?);
     exec_scopes.enter_scope(HashMap::from_iter([(vars::scopes::SYSCALL_HANDLER.to_string(), syscall_handler)]));
 
     Ok(())

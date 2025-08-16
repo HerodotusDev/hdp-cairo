@@ -83,6 +83,32 @@ pub fn segments_add_starknet_memorizer_offset(
     insert_value_into_ap(vm, Felt252::from(memorizer.offset))
 }
 
+pub const SEGMENTS_ADD_INJECTED_STATE_MEMORIZER_INDEX: &str =
+    "memory[ap] = to_felt_or_relocatable(ids.injected_state_memorizer.address_.segment_index)";
+
+pub fn segments_add_injected_state_memorizer_index(
+    vm: &mut VirtualMachine,
+    _exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let memorizer = get_ptr_from_var_name("injected_state_memorizer", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    insert_value_into_ap(vm, Felt252::from(memorizer.segment_index))
+}
+
+pub const SEGMENTS_ADD_INJECTED_STATE_MEMORIZER_OFFSET: &str =
+    "memory[ap] = to_felt_or_relocatable(ids.injected_state_memorizer.address_.offset)";
+
+pub fn segments_add_injected_state_memorizer_offset(
+    vm: &mut VirtualMachine,
+    _exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let memorizer = get_ptr_from_var_name("injected_state_memorizer", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    insert_value_into_ap(vm, Felt252::from(memorizer.offset))
+}
+
 pub const MMR_METAS_LEN_COUNTER: &str = "memory[ap] = 1 if (ids.mmr_metas_len == ids.counter) else 0";
 
 pub fn mmr_metas_len_counter(

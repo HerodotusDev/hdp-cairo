@@ -71,7 +71,7 @@ impl traits::SyscallHandler for DebugCallContractHandler {
 }
 
 // Decodes a serialized byte array of felts into a ascii string
-fn decode_byte_array_felts(felts: Vec<Felt252>) -> String {
+pub fn decode_byte_array_felts(felts: Vec<Felt252>) -> String {
     // 1) Parse how many full 31-byte chunks we have.
     let n_full: usize = felts[0].try_into().expect("n_full not convertible");
 
