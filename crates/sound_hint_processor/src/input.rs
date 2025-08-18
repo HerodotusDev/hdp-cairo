@@ -8,7 +8,7 @@ use cairo_vm::{
     Felt252,
 };
 use hints::vars;
-use types::{param, proofs::state::StateProofs, ChainProofs};
+use types::{param, proofs::injected_state::StateProofs, ChainProofs};
 
 use super::CustomHintProcessor;
 
