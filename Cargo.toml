@@ -11,7 +11,6 @@ members = [
     "crates/sound_hint_processor",
     "crates/sound_run",
     "crates/state_server",
-    "crates/state_server/src/crates/trie-builder",
     "crates/syscall_handler",
     "crates/types",
     "crates/cli",
@@ -83,7 +82,6 @@ pathfinder-crypto = { git = "https://github.com/petscheit/pathfinder"}
 sound_hint_processor = { path = "crates/sound_hint_processor" }
 sound_run = { path = "crates/sound_run" }
 state_server = { path = "crates/state_server" }
-trie-builder = { path = "crates/state_server/src/crates/trie-builder" }
 syscall_handler = { path = "crates/syscall_handler" }
 types = { path = "crates/types" }
 
@@ -98,7 +96,7 @@ cairo-type-derive = { git = "https://github.com/keep-starknet-strange/snos.git",
 bitvec = "1.0.1"
 eth_trie = "0.5.0"
 fake = { version = "=2.10.0", features = ["derive", "serde_json"] }
-futures-util = "0.3.31"                                                                            # From trie-builder
+futures-util = "0.3.31"
 hex-literal = "1.0.0"
 num_cpus = "1.16.0"
 once_cell = "1.21.3"
