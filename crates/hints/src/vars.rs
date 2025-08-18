@@ -24,7 +24,6 @@ pub mod scopes {
     pub const INCLUSION_PROOF: &str = "inclusion_proof";
     pub const NON_INCLUSION_PROOF: &str = "non_inclusion_proof";
     pub const UPDATE_PROOF: &str = "update_proof";
-    pub const STATE_PROOF_WRAPPER: &str = "state_proof_wrapper";
     pub const EXPECTED_PATH: &str = "expected_path";
 }
 
