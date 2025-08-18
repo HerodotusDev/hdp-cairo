@@ -156,7 +156,7 @@ pub struct CallContractHandlerRelay<
     STARKNET: CallContractSyscallHandler,
     InjectedState: CallContractSyscallHandler,
 > {
-    #[serde(bound(serialize = "EVM: Serialize", deserialize = "EVM: Deserialize<'de>"))]
+    // #[serde(bound(serialize = "EVM: Serialize", deserialize = "EVM: Deserialize<'de>"))]
     pub evm_call_contract_handler: EVM,
     #[serde(bound(serialize = "STARKNET: Serialize", deserialize = "STARKNET: Deserialize<'de>"))]
     pub starknet_call_contract_handler: STARKNET,
