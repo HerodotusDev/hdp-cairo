@@ -187,13 +187,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             } else {
                 Vec::new()
             };
-            println!("Readings proofs data");
             let proofs_data: ProofsData = serde_json::from_slice(&std::fs::read(args.proofs).map_err(Error::IO)?)?;
-
-            println!("Executing program...");
-
-            println!("chain proofs: {:?}", proofs_data.chain_proofs);
-            println!("state proofs: {:?}", proofs_data.state_proofs);
 
             let (pie, output) = sound_run::run(
                 args.program.unwrap_or(PathBuf::from(HDP_COMPILED_JSON)),

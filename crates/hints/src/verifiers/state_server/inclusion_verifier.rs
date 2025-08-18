@@ -6,26 +6,12 @@ use cairo_vm::{
         hint_utils::{get_address_from_var_name, get_ptr_from_var_name, insert_value_into_ap},
     },
     types::{exec_scope::ExecutionScopes, relocatable::MaybeRelocatable},
-    vm::{
-        errors::{hint_errors::HintError, memory_errors::MemoryError},
-        vm_core::VirtualMachine,
-    },
+    vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-// PathfinderTrieNode import removed - we now convert directly from TrieNodeSerde
-use num_bigint::BigUint;
-use types::{
-    cairo::starknet::storage::CairoTrieNode,
-    proofs::{
-        starknet::storage::TrieNode,
-        state::{CairoTrieNodeSerde, StateProof, StateProofWrapper, StateProofs, TrieNodeSerde},
-    },
-};
+use types::proofs::state::{CairoTrieNodeSerde, StateProof, StateProofWrapper};
 
-use crate::{
-    utils::{count_leading_zero_nibbles_from_hex, split_128},
-    vars,
-};
+use crate::vars;
 
 pub const HINT_GET_KEY_BE: &str = "ids.key_be = state_proof_wrapper.leaf.key";
 
@@ -35,64 +21,15 @@ pub fn hint_get_key_be(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    println!("Getting key BE");
     let state_proof_wrapper = exec_scopes.get::<StateProofWrapper>(vars::scopes::STATE_PROOF_WRAPPER)?;
     let key_be = state_proof_wrapper.leaf.key;
-    println!("Key BE: {:?}", key_be);
     let key_ptr = get_address_from_var_name(vars::ids::KEY_BE, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     vm.insert_value(
         (key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 0)?,
-        Felt252::from_bytes_be(&key_be.as_be_bytes()),
+        Felt252::from_bytes_be(&key_be.to_be_bytes()),
     )?;
 
-    Ok(())
-}
-
-pub const HINT_GET_ROOT: &str = "ids.root = state_proof_wrapper.root_hash";
-
-pub fn hint_get_root(
-    vm: &mut VirtualMachine,
-    exec_scopes: &mut ExecutionScopes,
-    hint_data: &HintProcessorData,
-    _constants: &HashMap<String, Felt252>,
-) -> Result<(), HintError> {
-    let state_proof_wrapper = exec_scopes.get::<StateProofWrapper>(vars::scopes::STATE_PROOF_WRAPPER)?;
-    let root_hash = state_proof_wrapper.root_hash;
-    println!("Root hash: {:?}", root_hash);
-    let (root_hash_low, root_hash_high) = split_128(&BigUint::from_bytes_be(root_hash.as_be_bytes()));
-    println!("Root hash low: {:?}, Root hash high: {:?}", root_hash_low, root_hash_high);
-    let root_ptr = get_address_from_var_name(vars::ids::ROOT, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    vm.insert_value(
-        (root_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 0)?,
-        Felt252::from(root_hash_low),
-    )?;
-    vm.insert_value(
-        (root_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 1)?,
-        Felt252::from(root_hash_high),
-    )?;
-    println!("Root hash inserted into ap");
-    Ok(())
-}
-
-pub const HINT_GET_KEY_BE_LEADING_ZEROES_NIBBLES: &str =
-    "memory[ap] = to_felt_or_relocatable(len(key_be.lstrip(\"0x\")) - len(key_be.lstrip(\"0x\").lstrip(\"0\")))";
-
-pub fn hint_get_key_be_leading_zeroes_nibbles(
-    vm: &mut VirtualMachine,
-    exec_scopes: &mut ExecutionScopes,
-    _hint_data: &HintProcessorData,
-    _constants: &HashMap<String, Felt252>,
-) -> Result<(), HintError> {
-    println!("Getting key BE leading zeroes nibbles");
-
-    let state_proof_wrapper = exec_scopes.get::<StateProofWrapper>(vars::scopes::STATE_PROOF_WRAPPER)?;
-    let key_be = state_proof_wrapper.leaf.data.value;
-
-    let key_be_leading_zeroes_nibbles = count_leading_zero_nibbles_from_hex(&key_be.to_string());
-    println!("Key BE leading zeroes nibbles: {:?}", key_be_leading_zeroes_nibbles);
-    insert_value_into_ap(vm, Felt252::from(key_be_leading_zeroes_nibbles))?;
-    println!("Key BE leading zeroes nibbles inserted into ap");
     Ok(())
 }
 
@@ -104,73 +41,14 @@ pub fn hint_inclusion_proof_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    println!("Getting inclusion proof len");
     let state_proof_wrapper = exec_scopes.get::<StateProofWrapper>(vars::scopes::STATE_PROOF_WRAPPER)?;
-    println!("State proof wrapper: {:?}", state_proof_wrapper);
     let state_proof_len = match state_proof_wrapper.state_proof {
         StateProof::Inclusion(inclusion) => inclusion.len(),
         StateProof::NonInclusion(non_inclusion) => non_inclusion.len(),
         StateProof::Update(update) => update.0.len() + update.1.len(),
     };
-    println!("State proof len: {:?}", state_proof_len);
+
     insert_value_into_ap(vm, Felt252::from(state_proof_len))
-}
-
-pub const HINT_GET_MPT_PROOF: &str = "segments.write_arg(ids.mpt_proof, [int(x, 16) for x in state_proof.inclusion])";
-
-pub fn hint_get_mpt_proof(
-    vm: &mut VirtualMachine,
-    exec_scopes: &mut ExecutionScopes,
-    hint_data: &HintProcessorData,
-    _constants: &HashMap<String, Felt252>,
-) -> Result<(), HintError> {
-    let state_proof_wrapper = exec_scopes.get::<StateProofWrapper>(vars::scopes::STATE_PROOFS)?;
-    let proof = match state_proof_wrapper.state_proof {
-        StateProof::Inclusion(inclusion) => inclusion,
-        StateProof::NonInclusion(non_inclusion) => non_inclusion,
-        StateProof::Update(update) => update.0,
-    };
-
-    let mpt_proof_ptr = get_ptr_from_var_name(vars::ids::MPT_PROOF, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-
-    println!("Proof: {:?}", proof);
-    // Convert each TrieNodeSerde into its byte representation and then into
-    // 8-byte little-endian chunks loaded into Cairo memory.
-    let proof_le_chunks: Result<Vec<MaybeRelocatable>, MemoryError> = proof
-        .into_iter()
-        .map(|node| {
-            // Serialize node to bytes
-            let mut node_bytes: Vec<u8> = Vec::new();
-            match node {
-                TrieNodeSerde::Binary { left, right } => {
-                    node_bytes.extend_from_slice(&left.to_be_bytes());
-                    node_bytes.extend_from_slice(&right.to_be_bytes());
-                }
-                TrieNodeSerde::Edge { child, path, .. } => {
-                    node_bytes.extend_from_slice(&child.to_be_bytes());
-                    node_bytes.extend_from_slice(&path);
-                }
-            }
-
-            // Chunk into 8-byte little-endian words (represented as BE when constructing the felt)
-            let node_le_chunks: Vec<MaybeRelocatable> = node_bytes
-                .chunks(8)
-                .map(|chunk| {
-                    let mut reversed = chunk.to_vec();
-                    reversed.reverse();
-                    MaybeRelocatable::from(Felt252::from_bytes_be_slice(&reversed))
-                })
-                .collect();
-
-            // Allocate a segment per node and load the chunks
-            let segment = vm.add_memory_segment();
-            vm.load_data(segment, &node_le_chunks).map(|_| MaybeRelocatable::from(segment))
-        })
-        .collect();
-
-    vm.load_data(mpt_proof_ptr, &proof_le_chunks?)?;
-
-    Ok(())
 }
 
 pub const HINT_GET_TRIE_NODE_PROOF: &str = "segments.write_arg(ids.nodes_ptr, state_proof_wrapper)";
@@ -181,9 +59,7 @@ pub fn hint_get_trie_node_proof(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    println!("Getting trie node proof");
     let state_proof_wrapper = exec_scopes.get::<StateProofWrapper>(vars::scopes::STATE_PROOF_WRAPPER)?;
-    println!("State proof wrapper 2: {:?}", state_proof_wrapper);
 
     let trie_nodes = match state_proof_wrapper.state_proof {
         StateProof::Inclusion(inclusion) => inclusion,
@@ -197,14 +73,11 @@ pub fn hint_get_trie_node_proof(
         .into_iter()
         .map(|node| {
             let segment = vm.add_memory_segment();
-            vm.load_data(
-                segment,
-                &CairoTrieNodeSerde(node)
-                    .into_iter()
-                    .map(MaybeRelocatable::from)
-                    .collect::<Vec<MaybeRelocatable>>(),
-            )
-            .unwrap();
+            let data = &CairoTrieNodeSerde(node)
+                .into_iter()
+                .map(MaybeRelocatable::from)
+                .collect::<Vec<MaybeRelocatable>>();
+            vm.load_data(segment, data).unwrap();
             segment
         })
         .map(MaybeRelocatable::from)

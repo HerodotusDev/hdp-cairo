@@ -10,16 +10,6 @@ from src.utils.keccak import TruncatedKeccak, finalize_truncated_keccak
 from src.verifiers.mpt import HashNodeTruncatedKeccak, traverse
 from src.types import TrieNode
 
-// Wraps the MPT library function to handle non-inclusion proofs gracefully.
-// If the library function indicates non-inclusion (returns value_len = -1),
-// this wrapper returns a pointer to RLP-encoded null (0x80) and length 1.
-// Otherwise, it returns the RLP data and length provided by the library.
-// Args:
-//   (Same as verify_mpt_proof_lib, except root is expected in Big Endian)
-//   root: The MPT root hash (Uint256, Big Endian).
-// Returns:
-//   value: Pointer to the RLP-encoded value (or [0x80] for non-inclusion).
-//   value_len: Length of the RLP value (1 for non-inclusion).
 func inclusion_state_verification{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,

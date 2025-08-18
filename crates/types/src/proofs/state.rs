@@ -9,7 +9,7 @@ use state_server_types::trie::leaf::TrieLeaf;
 
 use crate::cairo::{FELT_0, FELT_1};
 
-pub type StateProofs = Vec<StateProofWrapper>; // should be wrapper
+pub type StateProofs = Vec<StateProofWrapper>;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct StateProofWrapper {
@@ -47,15 +47,6 @@ pub enum TrieNodeSerde {
     // Stores both the raw bytes which back the bit-vector *and* the
     // original bit-length so it can be reconstructed losslessly.
     Edge { child: Felt, path: Vec<u8>, bit_len: usize },
-}
-
-impl TrieNodeSerde {
-    pub fn byte_len(&self) -> usize {
-        match self {
-            TrieNodeSerde::Binary { .. } => 64,                  // 2 Felts * 32 bytes each
-            TrieNodeSerde::Edge { path, .. } => 32 + path.len(), // 1 Felt + path bytes
-        }
-    }
 }
 
 impl From<TrieNode> for TrieNodeSerde {
@@ -120,13 +111,13 @@ impl IntoIterator for CairoTrieNodeSerde {
             ]
             .into_iter(),
             TrieNodeSerde::Edge { child, path, bit_len } => {
-                let mut bytes = [0u8; 32];
-                let len = path.len().min(32);
-                bytes[..len].copy_from_slice(&path[..len]);
+                let mut bitvec = BitVec::<u8, Msb0>::from_slice(&path);
+                bitvec.truncate(bit_len.min(251));
+                let path = Felt::from_bits(&bitvec).unwrap();
                 vec![
                     FELT_1,
-                    Felt252::from_hex(&child.to_hex_str()).unwrap(),
-                    Felt252::from_bytes_be_slice(&bytes),
+                    Felt252::from_bytes_be(&child.to_be_bytes()),
+                    Felt252::from_hex(&path.to_hex_str()).unwrap(),
                     Felt252::from(bit_len as u64),
                 ]
                 .into_iter()
