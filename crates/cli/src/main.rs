@@ -10,29 +10,13 @@ use cairo_vm::{cairo_run, program_hash::compute_program_hash_chain};
 use clap::{Parser, Subcommand};
 use dry_hint_processor::syscall_handler::{evm, injected_state, starknet};
 use dry_run::{Program, DRY_RUN_COMPILED_JSON};
-use fetcher::run_fetcher;
-use serde::{Deserialize, Serialize};
+use fetcher::{parse_syscall_handler, Fetcher};
 use sound_run::HDP_COMPILED_JSON;
 use syscall_handler::SyscallHandler;
-use types::{actions::action::Action, error::Error, param::Param, ChainProofs, HDPDryRunInput, HDPInput, ProofsData};
-
-#[derive(Deserialize)]
-struct FetcherInput {
-    #[serde(flatten)]
-    syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>,
-}
-
-#[derive(Serialize, Debug)]
-struct FetcherOutput {
-    chain_proofs: Vec<ChainProofs>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    upsert_results: Option<serde_json::Value>,
-}
-
-#[derive(Serialize, Debug)]
-struct UpsertActionsRequest {
-    actions: Vec<Action>,
-}
+use types::{
+    error::Error, param::Param, ChainProofs, HDPDryRunInput, HDPInput, ProofsData, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID,
+    STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
+};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about)]
@@ -108,67 +92,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("Reading input file from: {}", args.inputs.display());
             let input_file = fs::read(&args.inputs)?;
 
-            let fetcher_input: FetcherInput = serde_json::from_slice(&input_file)?;
+            let syscall_handler: SyscallHandler<
+                evm::CallContractHandler,
+                starknet::CallContractHandler,
+                injected_state::CallContractHandler,
+            > = serde_json::from_slice(&input_file)?;
+            let proof_keys = parse_syscall_handler(syscall_handler)?;
 
-            let chain_proofs = run_fetcher(fetcher_input.syscall_handler.clone()).await?;
-
-            // Extract actions from injected_state_call_contract_handler
-            let actions = &fetcher_input
-                .syscall_handler
-                .call_contract_handler
-                .injected_state_call_contract_handler
-                .actions;
-
-            // Process actions if present
-            let upsert_results = if !actions.is_empty() {
-                println!("Processing {} actions...", actions.len());
-
-                let state_server_url = std::env::var("INJECTED_STATE_BASE_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
-
-                let client = reqwest::Client::new();
-                let upsert_request = UpsertActionsRequest { actions: actions.clone() };
-
-                match client
-                    .post(&format!("{}/upsert-actions", state_server_url))
-                    .json(&upsert_request)
-                    .send()
-                    .await
-                {
-                    Ok(response) => {
-                        if response.status().is_success() {
-                            match response.json::<serde_json::Value>().await {
-                                Ok(result) => {
-                                    println!("Upsert actions processed successfully.");
-                                    Some(result)
-                                }
-                                Err(e) => {
-                                    eprintln!("Failed to parse upsert response: {}", e);
-                                    None
-                                }
-                            }
-                        } else {
-                            eprintln!("Upsert actions failed with status: {}", response.status());
-                            None
-                        }
-                    }
-                    Err(e) => {
-                        eprintln!("Failed to send upsert request: {}", e);
-                        None
-                    }
-                }
-            } else {
-                None
-            };
-
-            let output = FetcherOutput {
-                chain_proofs,
-                upsert_results,
-            };
+            let fetcher = Fetcher::new(&proof_keys);
+            let (evm_proofs_mainnet, evm_proofs_sepolia, starknet_proofs_mainnet, starknet_proofs_sepolia, state_proofs) = tokio::try_join!(
+                fetcher.collect_evm_proofs(ETHEREUM_MAINNET_CHAIN_ID),
+                fetcher.collect_evm_proofs(ETHEREUM_TESTNET_CHAIN_ID),
+                fetcher.collect_starknet_proofs(STARKNET_MAINNET_CHAIN_ID),
+                fetcher.collect_starknet_proofs(STARKNET_TESTNET_CHAIN_ID),
+                fetcher.collect_state_proofs(),
+            )?;
+            let chain_proofs = vec![
+                ChainProofs::EthereumMainnet(evm_proofs_mainnet),
+                ChainProofs::EthereumSepolia(evm_proofs_sepolia),
+                ChainProofs::StarknetMainnet(starknet_proofs_mainnet),
+                ChainProofs::StarknetSepolia(starknet_proofs_sepolia),
+            ];
 
             println!("Writing proofs to: {}", args.output.display());
+
             fs::write(
                 args.output,
-                serde_json::to_string_pretty(&output)
+                serde_json::to_string_pretty(&(chain_proofs, state_proofs))
                     .map_err(|e| fetcher::FetcherError::IO(e.into()))?
                     .as_bytes(),
             )?;
