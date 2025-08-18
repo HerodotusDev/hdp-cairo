@@ -17,14 +17,16 @@ from starkware.cairo.common.patricia_utils import (
 
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, KeccakBuiltin, BitwiseBuiltin
 
-
 from src.utils.keccak import keccak160 as hash2
 from src.utils.keccak import TruncatedKeccak as HashBuiltin
 
 // Given an edge node hash, opens the hash using the preimage hint, and returns a NodeEdge object.
-func open_edge{hash_ptr: HashBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(globals: ParticiaGlobals*, node: felt) -> (
-    edge: NodeEdge*
-) {
+func open_edge{
+    hash_ptr: HashBuiltin*,
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
+}(globals: ParticiaGlobals*, node: felt) -> (edge: NodeEdge*) {
     alloc_locals;
     local edge: NodeEdge*;
 
@@ -154,7 +156,12 @@ func traverse_empty{update_ptr: DictAccess*, range_check_ptr, siblings: felt*}(
 
 // Traverses a subtree rooted at the given NodeEdge.
 func traverse_edge{
-    hash_ptr: HashBuiltin*, range_check_ptr, update_ptr: DictAccess*, siblings: felt*, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
+    hash_ptr: HashBuiltin*,
+    range_check_ptr,
+    update_ptr: DictAccess*,
+    siblings: felt*,
+    bitwise_ptr: BitwiseBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
 }(globals: ParticiaGlobals*, height: felt, path: felt, edge: NodeEdge) {
     alloc_locals;
 
@@ -307,7 +314,12 @@ func traverse_edge{
 
 // Traverses a subtree rooted at the given binary or leaf node with given hash/value.
 func traverse_binary_or_leaf{
-    hash_ptr: HashBuiltin*, range_check_ptr, update_ptr: DictAccess*, siblings: felt*, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
+    hash_ptr: HashBuiltin*,
+    range_check_ptr,
+    update_ptr: DictAccess*,
+    siblings: felt*,
+    bitwise_ptr: BitwiseBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
 }(globals: ParticiaGlobals*, height: felt, path: felt, node: felt) {
     if (height == 0) {
         // Leaf.
@@ -389,7 +401,12 @@ func traverse_binary_or_leaf{
 
 // Traverses some of the leaves in the subtree rooted at node.
 func traverse_node{
-    hash_ptr: HashBuiltin*, range_check_ptr, update_ptr: DictAccess*, siblings: felt*, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
+    hash_ptr: HashBuiltin*,
+    range_check_ptr,
+    update_ptr: DictAccess*,
+    siblings: felt*,
+    bitwise_ptr: BitwiseBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
 }(globals: ParticiaGlobals*, height: felt, path: felt, node: felt) {
     if (node == 0) {
         // Empty:
@@ -402,7 +419,12 @@ func traverse_node{
 
 // Same as traverse_node, but disallows empty nodes.
 func traverse_non_empty{
-    hash_ptr: HashBuiltin*, range_check_ptr, update_ptr: DictAccess*, siblings: felt*, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
+    hash_ptr: HashBuiltin*,
+    range_check_ptr,
+    update_ptr: DictAccess*,
+    siblings: felt*,
+    bitwise_ptr: BitwiseBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
 }(globals: ParticiaGlobals*, height: felt, path: felt, node: felt) {
     %{ memory[ap] = 1 if ids.height == 0 or len(preimage[ids.node]) == 2 else 0 %}
     jmp binary if [ap] != 0, ap++;
@@ -468,7 +490,12 @@ func patricia_update_constants_new() -> (patricia_update_constants: PatriciaUpda
     return (patricia_update_constants=new PatriciaUpdateConstants(globals_pow2=globals_pow2));
 }
 
-func patricia_update_using_update_constants{hash_ptr: HashBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(
+func patricia_update_using_update_constants{
+    hash_ptr: HashBuiltin*,
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
+}(
     patricia_update_constants: PatriciaUpdateConstants*,
     update_ptr: DictAccess*,
     n_updates: felt,

@@ -1,6 +1,9 @@
 from src.verifiers.evm.verify import run_state_verification as evm_run_state_verification
 from src.verifiers.starknet.verify import run_state_verification as starknet_run_state_verification
-from src.verifiers.injected_state.verify import inclusion_state_verification, update_state_verification
+from src.verifiers.injected_state.verify import (
+    inclusion_state_verification,
+    update_state_verification,
+)
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.cairo_builtins import (
     HashBuiltin,
@@ -28,7 +31,9 @@ func run_chain_state_verification{
     mmr_metas: MMRMeta*,
 }() -> (mmr_metas_len: felt) {
     tempvar chain_proofs_len: felt = nondet %{ len(chain_proofs) %};
-    let (mmr_meta_idx, _) = run_chain_state_verification_inner(mmr_meta_idx=0, idx=chain_proofs_len);
+    let (mmr_meta_idx, _) = run_chain_state_verification_inner(
+        mmr_meta_idx=0, idx=chain_proofs_len
+    );
     return (mmr_metas_len=mmr_meta_idx);
 }
 
@@ -130,7 +135,7 @@ func run_injected_state_verification_inner{
     //         let (value, value_len) = non_inclusion_state_verification(0);
     //         %{ vm_exit_scope() %}
 
-    //         return run_injected_state_verification_inner(idx=idx - 1);
+    // return run_injected_state_verification_inner(idx=idx - 1);
     //     }
     // }
 
@@ -140,7 +145,7 @@ func run_injected_state_verification_inner{
     //         let (value, value_len) = update_state_verification();
     //         %{ vm_exit_scope() %}
 
-    //         return run_injected_state_verification_inner(idx=idx - 1);
+    // return run_injected_state_verification_inner(idx=idx - 1);
     //     }
     // }
 
