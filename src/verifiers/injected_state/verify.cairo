@@ -48,23 +48,8 @@ func inclusion_state_verification{
         }(ptr_start=keccak_ptr_seg_start, ptr_end=keccak_ptr_seg);
     }
 
-    if (value == 0) {
-        //non inclusion proof case -> handle it
-    } 
-
     return (root=root, value=value);
     //todo()! -> memorizer, save the keys
-}
-
-func non_inclusion_state_verification(
-    injected_state_memorizer: DictAccess*,
-) -> (value: felt*, value_len: felt){
-    alloc_locals;
-
-    // todo!();
-    assert 1 = 0;
-    let (res: felt*) = alloc();
-    return (value=res, value_len=0);
 }
 
 func update_state_verification(
