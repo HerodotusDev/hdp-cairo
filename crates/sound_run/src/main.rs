@@ -28,7 +28,7 @@ async fn main() -> Result<(), Error> {
     };
 
     let proofs_data: ProofsData = serde_json::from_slice(&std::fs::read(args.proofs).map_err(Error::IO)?)?;
-    
+
     let (pie, output) = sound_run::run(
         args.program.unwrap_or(PathBuf::from(HDP_COMPILED_JSON)),
         HDPInput {
