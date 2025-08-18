@@ -9,7 +9,7 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use types::proofs::state::{CairoTrieNodeSerde, StateProof, StateProofWrapper};
+use types::proofs::injected_state::{CairoTrieNodeSerde, StateProofRead};
 
 use crate::vars;
 
@@ -21,8 +21,8 @@ pub fn hint_get_key_be(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let state_proof_wrapper = exec_scopes.get::<StateProofWrapper>(vars::scopes::STATE_PROOF_WRAPPER)?;
-    let key_be = state_proof_wrapper.leaf.key;
+    let state_proof = exec_scopes.get::<StateProofRead>(vars::scopes::STATE_PROOF)?;
+    let key_be = state_proof.leaf.key;
     let key_ptr = get_address_from_var_name(vars::ids::KEY_BE, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     vm.insert_value(
@@ -41,17 +41,11 @@ pub fn hint_inclusion_proof_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let state_proof_wrapper = exec_scopes.get::<StateProofWrapper>(vars::scopes::STATE_PROOF_WRAPPER)?;
-    let state_proof_len = match state_proof_wrapper.state_proof {
-        StateProof::Inclusion(inclusion) => inclusion.len(),
-        StateProof::NonInclusion(non_inclusion) => non_inclusion.len(),
-        StateProof::Update(update) => update.0.len() + update.1.len(),
-    };
-
-    insert_value_into_ap(vm, Felt252::from(state_proof_len))
+    let state_proof = exec_scopes.get::<StateProofRead>(vars::scopes::STATE_PROOF)?;
+    insert_value_into_ap(vm, Felt252::from(state_proof.state_proof.len()))
 }
 
-pub const HINT_GET_TRIE_NODE_PROOF: &str = "segments.write_arg(ids.nodes_ptr, state_proof_wrapper)";
+pub const HINT_GET_TRIE_NODE_PROOF: &str = "segments.write_arg(ids.nodes_ptr, state_proof)";
 
 pub fn hint_get_trie_node_proof(
     vm: &mut VirtualMachine,
@@ -59,17 +53,12 @@ pub fn hint_get_trie_node_proof(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let state_proof_wrapper = exec_scopes.get::<StateProofWrapper>(vars::scopes::STATE_PROOF_WRAPPER)?;
-
-    let trie_nodes = match state_proof_wrapper.state_proof {
-        StateProof::Inclusion(inclusion) => inclusion,
-        StateProof::NonInclusion(non_inclusion) => non_inclusion,
-        StateProof::Update(_) => todo!("Update proof not supported yet"),
-    };
+    let state_proof = exec_scopes.get::<StateProofRead>(vars::scopes::STATE_PROOF)?;
 
     let nodes_ptr = get_ptr_from_var_name(vars::ids::NODES_PTR, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    let data = trie_nodes
+    let data = state_proof
+        .state_proof
         .into_iter()
         .map(|node| {
             let segment = vm.add_memory_segment();
