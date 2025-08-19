@@ -9,27 +9,27 @@ use crate::cairo::traits::CairoType;
 
 #[derive(Debug, Clone)]
 pub struct CairoKey {
-    root: Felt252,
-    key: Felt252,
-    value: Felt252,
+    pub trie_root: Felt252,
+    pub key: Felt252,
+    pub value: Felt252,
 }
 
 impl CairoKey {
     pub fn hash(&self) -> Felt252 {
-        poseidon_hash_many(&[self.root, self.key, self.value])
+        poseidon_hash_many(&[self.trie_root, self.key, self.value])
     }
 }
 
 impl CairoType for CairoKey {
     fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
         Ok(Self {
-            root: *vm.get_integer((address + 0)?)?,
+            trie_root: *vm.get_integer((address + 0)?)?,
             key: *vm.get_integer((address + 1)?)?,
             value: *vm.get_integer((address + 2)?)?,
         })
     }
     fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
-        vm.insert_value((address + 0)?, self.root)?;
+        vm.insert_value((address + 0)?, self.trie_root)?;
         vm.insert_value((address + 1)?, self.key)?;
         vm.insert_value((address + 2)?, self.value)?;
         Ok((address + 3)?)

@@ -397,9 +397,9 @@ impl<'a> Fetcher<'a> {
         let actions = self.proof_keys.injected_state.clone();
         let mut result = StateProofs::new();
 
-        for (root_hash, actions) in actions.into_iter() {
+        for (trie_root, actions) in actions.into_iter() {
             let request_payload = GetStateProofsRequest {
-                root_hash: pathfinder_crypto::Felt::from(root_hash.to_bytes_be()),
+                trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
                 actions,
             };
 
