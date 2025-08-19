@@ -6,17 +6,17 @@ use types::{cairo::traits::CairoType, Felt252};
 
 #[derive(Default, Debug, Clone)]
 pub struct Response {
-    pub root: Felt252,
+    pub trie_root: Felt252,
 }
 
 impl CairoType for Response {
     fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
-        let root = *vm.get_integer((address + 0)?)?;
-        Ok(Self { root })
+        let trie_root = *vm.get_integer((address + 0)?)?;
+        Ok(Self { trie_root })
     }
 
     fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
-        vm.insert_value((address + 0)?, self.root)?;
+        vm.insert_value((address + 0)?, self.trie_root)?;
         Ok((address + 1)?)
     }
 
