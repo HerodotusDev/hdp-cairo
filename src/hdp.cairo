@@ -113,7 +113,7 @@ func run{
             __dict_manager = DictManager()
     %}
 
-    %{ injected_state_memorizer.set_key(key, value) for (key, value) in injected_states %}
+    %{ injected_state_memorizer.set_key(poseidon_hash_single(key), value) for (key, value) in injected_states %}
     %{ syscall_handler = SyscallHandler(segments=segments, dict_manager=__dict_manager) %}
 
     // Misc

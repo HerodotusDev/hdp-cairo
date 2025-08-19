@@ -9,6 +9,7 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
+use starknet_crypto::poseidon_hash_single;
 use types::InjectedState;
 
 use crate::vars;
@@ -64,7 +65,7 @@ pub fn load_private_inputs_len(
     Ok(())
 }
 
-pub const LOAD_INJECTED_STATES: &str = "injected_state_memorizer.set_key(key, value) for (key, value) in injected_states";
+pub const LOAD_INJECTED_STATES: &str = "injected_state_memorizer.set_key(poseidon_hash_single(key), value) for (key, value) in injected_states";
 
 pub fn load_injected_states(
     vm: &mut VirtualMachine,
@@ -81,7 +82,7 @@ pub fn load_injected_states(
         dict_manager
             .borrow_mut()
             .get_tracker_mut(injected_state_memorizer_ptr)?
-            .insert_value(&MaybeRelocatable::Int(key), &MaybeRelocatable::Int(val));
+            .insert_value(&MaybeRelocatable::Int(poseidon_hash_single(key)), &MaybeRelocatable::Int(val));
     }
 
     Ok(())
