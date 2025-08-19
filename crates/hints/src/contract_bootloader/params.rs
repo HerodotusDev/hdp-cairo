@@ -65,7 +65,8 @@ pub fn load_private_inputs_len(
     Ok(())
 }
 
-pub const LOAD_INJECTED_STATES: &str = "injected_state_memorizer.set_key(poseidon_hash_single(key), value) for (key, value) in injected_states";
+pub const LOAD_INJECTED_STATES: &str =
+    "injected_state_memorizer.set_key(poseidon_hash_single(key), value) for (key, value) in injected_states";
 
 pub fn load_injected_states(
     vm: &mut VirtualMachine,
