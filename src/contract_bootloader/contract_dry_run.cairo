@@ -22,6 +22,7 @@ from src.contract_bootloader.contract_bootloader import (
 from starkware.cairo.common.memcpy import memcpy
 from src.utils.merkle import compute_merkle_root
 from src.utils.utils import felt_array_to_uint256s
+from packages.eth_essentials.lib.utils import pow2alloc251
 
 struct DryRunOutput {
     module_hash: felt,
@@ -44,9 +45,10 @@ func main{
     alloc_locals;
 
     %{
-        dry_run_input = HDPDryRunInput.Schema().load(program_input)
-        params = dry_run_input.params
-        compiled_class = dry_run_input.compiled_class
+        run_input = HDPDryRunInput.Schema().load(program_input)
+        params = run_input.params
+        compiled_class = run_input.compiled_class
+        injected_state = run_input.injected_state
     %}
 
     let (public_inputs) = alloc();
@@ -91,14 +93,17 @@ func main{
     let (local evm_memorizer) = default_dict_new(default_value=7);
     let (local starknet_memorizer) = default_dict_new(default_value=7);
     let (local injected_state_memorizer) = default_dict_new(default_value=7);
-    tempvar pow2_array: felt* = nondet %{ segments.add() %};
 
     %{
         if '__dict_manager' not in globals():
             __dict_manager = DictManager()
     %}
 
+    %{ injected_state_memorizer.set_key(key, value) for (key, value) in injected_states %}
     %{ syscall_handler = DryRunSyscallHandler(segments=segments, dict_manager=__dict_manager) %}
+
+    // Misc
+    let pow2_array: felt* = pow2alloc251();
 
     tempvar calldata: felt* = nondet %{ segments.add() %};
 

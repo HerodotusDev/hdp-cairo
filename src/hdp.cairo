@@ -83,9 +83,10 @@ func run{
 
     %{
         run_input = HDPInput.Schema().load(program_input)
-        chain_proofs = run_input.proofs_data.chain_proofs
         params = run_input.params
         compiled_class = run_input.compiled_class
+        injected_state = run_input.injected_state
+        chain_proofs = run_input.proofs_data.chain_proofs
         state_proofs = run_input.proofs_data.state_proofs
     %}
 
@@ -106,6 +107,14 @@ func run{
     let (evm_memorizer, evm_memorizer_start) = EvmMemorizer.init();
     let (starknet_memorizer, starknet_memorizer_start) = StarknetMemorizer.init();
     let (injected_state_memorizer, injected_state_memorizer_start) = InjectedStateMemorizer.init();
+
+    %{
+        if '__dict_manager' not in globals():
+            __dict_manager = DictManager()
+    %}
+
+    %{ injected_state_memorizer.set_key(key, value) for (key, value) in injected_states %}
+    %{ syscall_handler = SyscallHandler(segments=segments, dict_manager=__dict_manager) %}
 
     // Misc
     let pow2_array: felt* = pow2alloc251();

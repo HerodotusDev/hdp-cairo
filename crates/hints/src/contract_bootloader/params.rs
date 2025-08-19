@@ -9,6 +9,7 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
+use types::InjectedState;
 
 use crate::vars;
 
@@ -60,5 +61,28 @@ pub fn load_private_inputs_len(
 ) -> Result<(), HintError> {
     let inputs = exec_scopes.get::<Vec<Felt252>>(vars::scopes::PRIVATE_INPUTS)?;
     insert_value_into_ap(vm, inputs.len())?;
+    Ok(())
+}
+
+pub const LOAD_INJECTED_STATES: &str = "injected_state_memorizer.set_key(key, value) for (key, value) in injected_states";
+
+pub fn load_injected_states(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let dict_manager = exec_scopes.get_dict_manager()?;
+    let injected_states = exec_scopes.get::<InjectedState>(vars::scopes::INJECTED_STATE)?;
+    let injected_state_memorizer_ptr =
+        get_ptr_from_var_name(vars::ids::INJECTED_STATE_MEMORIZER, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+
+    for (key, val) in injected_states.0 {
+        dict_manager
+            .borrow_mut()
+            .get_tracker_mut(injected_state_memorizer_ptr)?
+            .insert_value(&MaybeRelocatable::Int(key), &MaybeRelocatable::Int(val));
+    }
+
     Ok(())
 }
