@@ -14,8 +14,8 @@ use fetcher::{parse_syscall_handler, Fetcher};
 use sound_run::HDP_COMPILED_JSON;
 use syscall_handler::SyscallHandler;
 use types::{
-    error::Error, param::Param, ChainProofs, HDPDryRunInput, HDPInput, ProofsData, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID,
-    STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
+    error::Error, param::Param, ChainProofs, HDPDryRunInput, HDPInput, InjectedState, ProofsData, ETHEREUM_MAINNET_CHAIN_ID,
+    ETHEREUM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
 };
 
 #[derive(Parser, Debug)]
@@ -63,11 +63,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             } else {
                 Vec::new()
             };
+            let injected_state: InjectedState = if let Some(path) = args.injected_state {
+                serde_json::from_slice(&std::fs::read(path).map_err(Error::IO)?)?
+            } else {
+                InjectedState::default()
+            };
 
             println!("Executing program...");
             let (syscall_handler, output) = dry_run::run(
                 args.program.unwrap_or(PathBuf::from(DRY_RUN_COMPILED_JSON)),
-                HDPDryRunInput { compiled_class, params },
+                HDPDryRunInput {
+                    compiled_class,
+                    params,
+                    injected_state,
+                },
             )?;
 
             if args.print_output {
@@ -137,6 +146,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             } else {
                 Vec::new()
             };
+            let injected_state: InjectedState = if let Some(path) = args.injected_state {
+                serde_json::from_slice(&std::fs::read(path).map_err(Error::IO)?)?
+            } else {
+                InjectedState::default()
+            };
             let proofs_data: ProofsData = serde_json::from_slice(&std::fs::read(args.proofs).map_err(Error::IO)?)?;
 
             let (pie, output) = sound_run::run(
@@ -146,6 +160,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     compiled_class,
                     params,
                     state_proofs: proofs_data.state_proofs,
+                    injected_state,
                 },
             )?;
 

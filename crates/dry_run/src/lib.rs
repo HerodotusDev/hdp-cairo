@@ -36,6 +36,12 @@ pub struct Args {
     #[arg(short = 'i', long = "inputs", help = "Path to the JSON file containing input parameters")]
     pub inputs: Option<PathBuf>,
     #[arg(
+        short = 's',
+        long = "injected_state",
+        help = "Path to the JSON file containing injected_state parameters"
+    )]
+    pub injected_state: Option<PathBuf>,
+    #[arg(
         short = 'o',
         long = "output",
         default_value = "dry_run_output.json",
