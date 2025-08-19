@@ -5,10 +5,7 @@ use serde::{Deserialize, Serialize};
 use strum_macros::FromRepr;
 use syscall_handler::{traits::SyscallHandler, SyscallExecutionError, SyscallResult, WriteResponseResult};
 use types::{
-    cairo::{
-        new_syscalls::{CallContractRequest, CallContractResponse},
-        traits::CairoType,
-    },
+    cairo::new_syscalls::{CallContractRequest, CallContractResponse},
     proofs::injected_state::Action,
     Felt252,
 };
@@ -20,8 +17,8 @@ pub mod write;
 
 #[derive(FromRepr, Debug)]
 pub enum CallHandlerId {
-    ReadKey = 0,
-    WriteKey = 1,
+    Read = 0,
+    Write = 1,
     IdToRoot = 2,
     RootToId = 3,
 }
@@ -35,20 +32,18 @@ impl SyscallHandler for CallContractHandler {
     type Request = CallContractRequest;
     type Response = CallContractResponse;
 
-    fn read_request(&mut self, vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Request> {
-        let ret = Self::Request::from_memory(vm, *ptr)?;
-        *ptr = (*ptr + Self::Request::cairo_size())?;
-        Ok(ret)
+    fn read_request(&mut self, _vm: &VirtualMachine, _ptr: &mut Relocatable) -> SyscallResult<Self::Request> {
+        unreachable!()
     }
 
     async fn execute(&mut self, request: Self::Request, _vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
         let call_handler_id = CallHandlerId::try_from(request.selector)?;
 
         match call_handler_id {
-            CallHandlerId::ReadKey => {
+            CallHandlerId::Read => {
                 todo!()
             }
-            CallHandlerId::WriteKey => {
+            CallHandlerId::Write => {
                 todo!()
             }
             CallHandlerId::RootToId => {
@@ -61,7 +56,7 @@ impl SyscallHandler for CallContractHandler {
     }
 
     fn write_response(&mut self, _response: Self::Response, _vm: &mut VirtualMachine, _ptr: &mut Relocatable) -> WriteResponseResult {
-        Ok(())
+        unreachable!()
     }
 }
 
