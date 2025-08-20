@@ -24,8 +24,8 @@ pub impl InjectedStateMemorizerImpl of InjectedStateMemorizerTrait {
         (root, exists)
     }
 
-    fn read_key(self: @InjectedStateMemorizer, key: felt252) -> (felt252, bool) {
-        let calldata = array![*self.dict.segment_index, *self.dict.offset, key];
+    fn read_key(self: @InjectedStateMemorizer, label: felt252, key: felt252) -> (felt252, bool) {
+        let calldata = array![*self.dict.segment_index, *self.dict.offset, label, key];
         let ret_data = call_contract_syscall(
             INJECTED_STATE_CONTRACT_ADDRESS.try_into().unwrap(), READ_KEY, calldata.span(),
         )
@@ -36,12 +36,14 @@ pub impl InjectedStateMemorizerImpl of InjectedStateMemorizerTrait {
         (value, exists)
     }
 
-    fn does_key_exist(self: @InjectedStateMemorizer, key: felt252) -> bool {
-        let (_value, exists) = self.read_key(key);
+    fn does_key_exist(self: @InjectedStateMemorizer, label: felt252, key: felt252) -> bool {
+        let (_value, exists) = self.read_key(label, key);
         exists
     }
 
-    fn write_key(self: @InjectedStateMemorizer, key: felt252, value: felt252) -> bool {
+    fn write_key(
+        self: @InjectedStateMemorizer, label: felt252, key: felt252, value: felt252,
+    ) -> bool {
         let calldata = array![*self.dict.segment_index, *self.dict.offset, key, value];
         let ret_data = call_contract_syscall(
             INJECTED_STATE_CONTRACT_ADDRESS.try_into().unwrap(), WRITE_KEY, calldata.span(),

@@ -35,11 +35,56 @@ pub enum CallHandlerId {
     Write = 2,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CacheKey {
+    trie_label: Felt252,
+    key: Felt252,
+}
+
+#[derive(Debug, Clone)]
+pub struct CacheEntry {
+    exists: bool,
+    value: Felt252,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct CallContractHandler {
     pub key_set: HashMap<Felt252, Vec<Action>>,
     #[serde(skip)]
     pub dict_manager: Rc<RefCell<DictManager>>,
+    #[serde(skip)]
+    pub read_cache: HashMap<CacheKey, CacheEntry>,
+}
+
+impl CallContractHandler {
+    fn get_base_url() -> String {
+        std::env::var("INJECTED_STATE_BASE_URL").unwrap_or_else(|_| "http://0.0.0.0:3000".to_string())
+    }
+
+    async fn get_trie_root(&self, memorizer: &Memorizer, label: Felt252) -> Result<Option<Felt252>, HintError> {
+        let key = MaybeRelocatable::Int(poseidon_hash_single(label));
+        match memorizer.read_key_int(&key, self.dict_manager.clone()) {
+            Ok(trie_root) if trie_root == Felt252::MAX => Ok(None),
+            Ok(trie_root) => Ok(Some(trie_root)),
+            Err(ref e) if matches!(e, HintError::NoValueForKey(_)) => Ok(None),
+            Err(e) => return Err(e),
+        }
+    }
+
+    fn get_from_cache(&self, trie_label: Felt252, key: Felt252) -> Option<CacheEntry> {
+        let cache_key = CacheKey { trie_label, key };
+        self.read_cache.get(&cache_key).cloned()
+    }
+
+    fn insert_to_cache(&mut self, trie_label: Felt252, key: Felt252, exists: bool, value: Felt252) {
+        let cache_key = CacheKey { trie_label, key };
+        let cache_entry = CacheEntry { exists, value };
+        self.read_cache.insert(cache_key, cache_entry);
+    }
+
+    fn update_cache_on_write(&mut self, trie_label: Felt252, key: Felt252, exists: bool, value: Felt252) {
+        self.insert_to_cache(trie_label, key, exists, value);
+    }
 }
 
 impl SyscallHandler for CallContractHandler {
@@ -62,61 +107,77 @@ impl SyscallHandler for CallContractHandler {
         match call_handler_id {
             CallHandlerId::ReadTrieRoot => {
                 let key = keys::injected_state::label::CairoKey::from_memory(vm, calldata)?;
-                let key = MaybeRelocatable::Int(poseidon_hash_single(key.trie_label));
-                let trie_root_result = memorizer.read_key_int(&key, self.dict_manager.clone());
-                let (trie_root, exists) = match trie_root_result {
-                    // MAX == unset key (-1)
-                    Ok(trie_root) if trie_root == Felt252::MAX => (Felt252::ZERO, Felt252::ZERO),
-                    Ok(trie_root) => (trie_root, Felt252::ONE),
-                    Err(ref e) if matches!(e, HintError::NoValueForKey(_)) => (Felt252::ZERO, Felt252::ZERO),
-                    Err(e) => return Err(e.into()),
+                let trie_root = self.get_trie_root(&memorizer, key.trie_label).await?;
+                let result = label::Response {
+                    trie_root: trie_root.unwrap_or(Felt252::ZERO),
+                    exists: trie_root.is_some().into(),
                 };
-                let result = label::Response { trie_root, exists };
 
                 retdata_end = result.to_memory(vm, retdata_end)?;
             }
             CallHandlerId::Read => {
-                let client = reqwest::Client::new();
-
                 let key = keys::injected_state::read::CairoKey::from_memory(vm, calldata)?;
-                let ptr = memorizer.read_key(
-                    &MaybeRelocatable::Int(poseidon_hash_single(key.trie_label)),
-                    self.dict_manager.clone(),
-                )?;
-                let trie_root = vm.get_integer(ptr)?;
 
-                let request_payload = ReadRequest {
-                    trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
-                    key: pathfinder_crypto::Felt::from(key.key.to_bytes_be()),
-                };
-                let endpoint = format!("{}/read", "0.0.0.0:3000");
+                // Check cache first
+                if let Some(cached_entry) = self.get_from_cache(key.trie_label, key.key) {
+                    let result = read::Response {
+                        exist: cached_entry.exists.into(),
+                        value: cached_entry.value,
+                    };
+                    retdata_end = result.to_memory(vm, retdata_end)?;
+                } else {
+                    // Cache miss - fetch from state server
+                    let trie_root = self.get_trie_root(&memorizer, key.trie_label).await?.unwrap_or(Felt252::ZERO);
+                    let request_payload = ReadRequest {
+                        trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
+                        key: pathfinder_crypto::Felt::from(key.key.to_bytes_be()),
+                    };
 
-                let response = client
-                    .get(endpoint)
-                    .query(&request_payload)
-                    .send()
-                    .await
-                    .map_err(|e| SyscallExecutionError::InternalError(format!("Network request failed: {}", e).into()))?;
+                    let client = reqwest::Client::new();
+                    let endpoint = format!("{}/read", Self::get_base_url());
+                    let response = client
+                        .get(endpoint)
+                        .query(&request_payload)
+                        .send()
+                        .await
+                        .map_err(|e| SyscallExecutionError::InternalError(format!("Network request failed: {}", e).into()))?;
 
-                match response.status() {
-                    StatusCode::OK => {
-                        let response = response
-                            .json::<ReadResponse>()
-                            .await
-                            .map_err(|e| SyscallExecutionError::InternalError(format!("Network request failed: {}", e).into()))?;
+                    match response.status() {
+                        StatusCode::OK => {
+                            let response = response
+                                .json::<ReadResponse>()
+                                .await
+                                .map_err(|e| SyscallExecutionError::InternalError(format!("Network request failed: {}", e).into()))?;
 
-                        let result = read::Response {
-                            exist: response.value.is_some().into(),
-                            value: Felt252::from_bytes_be(&response.value.unwrap_or_default().to_be_bytes()),
-                        };
+                            let exists = response.value.is_some();
+                            let value = Felt252::from_bytes_be(&response.value.unwrap_or_default().to_be_bytes());
 
-                        retdata_end = result.to_memory(vm, retdata_end)?;
-                    }
-                    status => {
-                        let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
-                        Err(SyscallExecutionError::InternalError(
-                            format!("Network request failed: {}: {}", status, error_text).into(),
-                        ))?;
+                            // Cache the result
+                            self.insert_to_cache(key.trie_label, key.key, exists, value);
+
+                            let result = read::Response {
+                                exist: exists.into(),
+                                value,
+                            };
+
+                            retdata_end = result.to_memory(vm, retdata_end)?;
+                        }
+                        StatusCode::NOT_FOUND => {
+                            // Cache the not found result
+                            self.insert_to_cache(key.trie_label, key.key, false, Felt252::ZERO);
+
+                            let result = read::Response {
+                                exist: false.into(),
+                                value: Felt252::ZERO,
+                            };
+                            retdata_end = result.to_memory(vm, retdata_end)?;
+                        }
+                        status => {
+                            let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+                            Err(SyscallExecutionError::InternalError(
+                                format!("Network request failed: {}: {}", status, error_text).into(),
+                            ))?;
+                        }
                     }
                 }
             }
@@ -135,7 +196,7 @@ impl SyscallHandler for CallContractHandler {
                     key: pathfinder_crypto::Felt::from(key.key.to_bytes_be()),
                     value: pathfinder_crypto::Felt::from(key.value.to_bytes_be()),
                 };
-                let endpoint = format!("{}/write", "0.0.0.0:3000");
+                let endpoint = format!("{}/write", Self::get_base_url());
 
                 let response = client
                     .get(endpoint)
@@ -157,10 +218,17 @@ impl SyscallHandler for CallContractHandler {
                             self.dict_manager.clone(),
                         )?;
 
+                        let new_trie_root = Felt252::from_bytes_be(&response.trie_root.to_be_bytes());
+                        let exists = response.value.is_some();
+                        let value = Felt252::from_bytes_be(&response.value.unwrap_or_default().to_be_bytes());
+
+                        // Update local cache
+                        self.update_cache_on_write(key.trie_label, key.key, exists, value);
+
                         let result: write::Response = write::Response {
-                            exist: response.value.is_some().into(),
-                            value: Felt252::from_bytes_be(&response.value.unwrap_or_default().to_be_bytes()),
-                            trie_root: Felt252::from_bytes_be(&response.trie_root.to_be_bytes()),
+                            exist: exists.into(),
+                            value,
+                            trie_root: new_trie_root,
                         };
 
                         retdata_end = result.to_memory(vm, retdata_end)?;

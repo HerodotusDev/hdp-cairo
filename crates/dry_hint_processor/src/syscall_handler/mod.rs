@@ -28,6 +28,7 @@ pub fn syscall_handler_create(
             injected_state::CallContractHandler {
                 key_set: HashMap::new(),
                 dict_manager: exec_scopes.get_dict_manager()?,
+                read_cache: HashMap::new(),
             },
         );
     exec_scopes.insert_value(vars::scopes::SYSCALL_HANDLER, syscall_handler);
