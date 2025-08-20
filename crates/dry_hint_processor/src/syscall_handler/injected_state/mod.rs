@@ -32,8 +32,7 @@ pub mod write;
 pub enum CallHandlerId {
     ReadTrieRoot = 0,
     Read = 1,
-    DoesKeyExist = 2,
-    Write = 3,
+    Write = 2,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -120,9 +119,6 @@ impl SyscallHandler for CallContractHandler {
                         ))?;
                     }
                 }
-            }
-            CallHandlerId::DoesKeyExist => {
-                unimplemented!("DoesKeyExist is not yet implemented");
             }
             CallHandlerId::Write => {
                 let client = reqwest::Client::new();

@@ -6,8 +6,7 @@ const INJECTED_STATE_CONTRACT_ADDRESS: felt252 = 'injected_state';
 
 const READ_TRIE_ROOT: felt252 = 0;
 const READ_KEY: felt252 = 1;
-const DOES_KEY_EXIST: felt252 = 2;
-const WRITE_KEY: felt252 = 3;
+const WRITE_KEY: felt252 = 2;
 
 #[generate_trait]
 pub impl InjectedStateMemorizerImpl of InjectedStateMemorizerTrait {
