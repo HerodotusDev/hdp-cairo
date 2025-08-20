@@ -56,6 +56,25 @@ impl Trie {
         Ok((storage, trie, root_idx))
     }
 
+    /// Creates a new empty trie.
+    ///
+    /// # Arguments
+    ///
+    /// * `conn` - The database connection.
+    ///
+    /// # Returns
+    ///
+    /// A new empty Trie instance with storage, trie, and root index.
+    pub fn create_empty(
+        conn: &PooledConnection<SqliteConnectionManager>,
+    ) -> Result<(TrieDB, MerkleTree<TruncatedKeccakHash, 251>, TrieStorageIndex), Error> {
+        let storage = TrieDB::new(conn);
+        let trie = MerkleTree::<TruncatedKeccakHash, 251>::empty();
+        let root_idx = TrieStorageIndex::from(0);
+
+        Ok((storage, trie, root_idx))
+    }
+
     pub fn persist_changes(
         storage: &mut TrieDB,
         trie: &MerkleTree<TruncatedKeccakHash, 251>,

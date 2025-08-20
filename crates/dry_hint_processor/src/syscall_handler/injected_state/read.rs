@@ -6,20 +6,20 @@ use types::{cairo::traits::CairoType, Felt252};
 
 #[derive(Default, Debug, Clone)]
 pub struct Response {
-    pub exist: Felt252,
     pub value: Felt252,
+    pub exist: Felt252,
 }
 
 impl CairoType for Response {
     fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
-        let exist = *vm.get_integer((address + 1)?)?;
         let value = *vm.get_integer((address + 0)?)?;
-        Ok(Self { exist, value })
+        let exist = *vm.get_integer((address + 1)?)?;
+        Ok(Self { value, exist })
     }
 
     fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
-        vm.insert_value((address + 0)?, self.exist)?;
-        vm.insert_value((address + 1)?, self.value)?;
+        vm.insert_value((address + 0)?, self.value)?;
+        vm.insert_value((address + 1)?, self.exist)?;
         Ok((address + 2)?)
     }
 

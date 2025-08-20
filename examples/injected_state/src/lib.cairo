@@ -23,6 +23,12 @@ mod module {
         let key_exists = hdp.injected_state.does_key_exist('my_trie', 'my_key');
         assert!(!key_exists, "Key should not exist");
 
+        hdp.injected_state.write_key('my_trie', 'my_key', 42);
+
+        let (value, exists) = hdp.injected_state.read_key('my_trie', 'my_key');
+        assert!(exists, "Key should exist");
+        assert!(value == 42, "Value should be 42");
+
         array![root]
     }
 }

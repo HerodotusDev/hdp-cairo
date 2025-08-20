@@ -41,14 +41,15 @@ pub impl InjectedStateMemorizerImpl of InjectedStateMemorizerTrait {
         exists
     }
 
+    // @notice Returns the updated trie root
     fn write_key(
         self: @InjectedStateMemorizer, label: felt252, key: felt252, value: felt252,
-    ) -> bool {
-        let calldata = array![*self.dict.segment_index, *self.dict.offset, key, value];
+    ) -> felt252 {
+        let calldata = array![*self.dict.segment_index, *self.dict.offset, label, key, value];
         let ret_data = call_contract_syscall(
             INJECTED_STATE_CONTRACT_ADDRESS.try_into().unwrap(), WRITE_KEY, calldata.span(),
         )
             .unwrap_syscall();
-        *ret_data.at(0) == 1
+        *ret_data.at(0)
     }
 }

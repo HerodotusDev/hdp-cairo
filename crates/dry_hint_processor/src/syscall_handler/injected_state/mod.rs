@@ -121,8 +121,8 @@ impl SyscallHandler for CallContractHandler {
                 // Check cache first
                 if let Some(cached_entry) = self.get_from_cache(key.trie_label, key.key) {
                     let result = read::Response {
-                        exist: cached_entry.exists.into(),
                         value: cached_entry.value,
+                        exist: cached_entry.exists.into(),
                     };
                     retdata_end = result.to_memory(vm, retdata_end)?;
                 } else {
@@ -182,22 +182,16 @@ impl SyscallHandler for CallContractHandler {
                 }
             }
             CallHandlerId::Write => {
-                let client = reqwest::Client::new();
-
                 let key = keys::injected_state::write::CairoKey::from_memory(vm, calldata)?;
-                let ptr = memorizer.read_key(
-                    &MaybeRelocatable::Int(poseidon_hash_single(key.trie_label)),
-                    self.dict_manager.clone(),
-                )?;
-                let trie_root = vm.get_integer(ptr)?;
-
+                let trie_root = self.get_trie_root(&memorizer, key.trie_label).await?.unwrap_or(Felt252::ZERO);
                 let request_payload = WriteRequest {
                     trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
                     key: pathfinder_crypto::Felt::from(key.key.to_bytes_be()),
                     value: pathfinder_crypto::Felt::from(key.value.to_bytes_be()),
                 };
-                let endpoint = format!("{}/write", Self::get_base_url());
 
+                let client = reqwest::Client::new();
+                let endpoint = format!("{}/write", Self::get_base_url());
                 let response = client
                     .get(endpoint)
                     .query(&request_payload)
@@ -219,17 +213,12 @@ impl SyscallHandler for CallContractHandler {
                         )?;
 
                         let new_trie_root = Felt252::from_bytes_be(&response.trie_root.to_be_bytes());
-                        let exists = response.value.is_some();
-                        let value = Felt252::from_bytes_be(&response.value.unwrap_or_default().to_be_bytes());
+                        let value = Felt252::from_bytes_be(&response.value.to_be_bytes());
 
                         // Update local cache
-                        self.update_cache_on_write(key.trie_label, key.key, exists, value);
+                        self.update_cache_on_write(key.trie_label, key.key, true, value);
 
-                        let result: write::Response = write::Response {
-                            exist: exists.into(),
-                            value,
-                            trie_root: new_trie_root,
-                        };
+                        let result: write::Response = write::Response { trie_root: new_trie_root };
 
                         retdata_end = result.to_memory(vm, retdata_end)?;
                     }
