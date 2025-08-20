@@ -3,7 +3,7 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 use cairo_vm::{
     hint_processor::builtin_hint_processor::dict_manager::DictManager,
     types::relocatable::{MaybeRelocatable, Relocatable},
-    vm::vm_core::VirtualMachine,
+    vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
 };
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
@@ -30,9 +30,10 @@ pub mod write;
 
 #[derive(FromRepr, Debug)]
 pub enum CallHandlerId {
-    Read = 0,
-    Write = 1,
-    Label = 2,
+    ReadTrieRoot = 0,
+    Read = 1,
+    DoesKeyExist = 2,
+    Write = 3,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -60,6 +61,21 @@ impl SyscallHandler for CallContractHandler {
         let mut retdata_end = retdata_start;
 
         match call_handler_id {
+            CallHandlerId::ReadTrieRoot => {
+                let key = keys::injected_state::label::CairoKey::from_memory(vm, calldata)?;
+                let key = MaybeRelocatable::Int(poseidon_hash_single(key.trie_label));
+                let trie_root_result = memorizer.read_key_int(&key, self.dict_manager.clone());
+                let (trie_root, exists) = match trie_root_result {
+                    // MAX == unset key (-1)
+                    Ok(trie_root) if trie_root == Felt252::MAX => (Felt252::ZERO, Felt252::ZERO),
+                    Ok(trie_root) => (trie_root, Felt252::ONE),
+                    Err(ref e) if matches!(e, HintError::NoValueForKey(_)) => (Felt252::ZERO, Felt252::ZERO),
+                    Err(e) => return Err(e.into()),
+                };
+                let result = label::Response { trie_root, exists };
+
+                retdata_end = result.to_memory(vm, retdata_end)?;
+            }
             CallHandlerId::Read => {
                 let client = reqwest::Client::new();
 
@@ -104,6 +120,9 @@ impl SyscallHandler for CallContractHandler {
                         ))?;
                     }
                 }
+            }
+            CallHandlerId::DoesKeyExist => {
+                unimplemented!("DoesKeyExist is not yet implemented");
             }
             CallHandlerId::Write => {
                 let client = reqwest::Client::new();
@@ -157,19 +176,6 @@ impl SyscallHandler for CallContractHandler {
                         ))?;
                     }
                 }
-            }
-            CallHandlerId::Label => {
-                let key = keys::injected_state::label::CairoKey::from_memory(vm, calldata)?;
-                let ptr = memorizer.read_key(
-                    &MaybeRelocatable::Int(poseidon_hash_single(key.trie_label)),
-                    self.dict_manager.clone(),
-                )?;
-
-                let result: label::Response = label::Response {
-                    trie_root: *vm.get_integer(ptr)?,
-                };
-
-                retdata_end = result.to_memory(vm, retdata_end)?;
             }
         }
 

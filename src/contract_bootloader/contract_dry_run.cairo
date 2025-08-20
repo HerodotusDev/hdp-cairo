@@ -92,7 +92,7 @@ func main{
 
     let (local evm_memorizer) = default_dict_new(default_value=7);
     let (local starknet_memorizer) = default_dict_new(default_value=7);
-    let (local injected_state_memorizer) = default_dict_new(default_value=7);
+    let (local injected_state_memorizer) = default_dict_new(default_value=-1);
 
     %{
         if '__dict_manager' not in globals():

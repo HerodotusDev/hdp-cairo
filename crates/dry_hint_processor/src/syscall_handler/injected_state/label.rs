@@ -7,20 +7,23 @@ use types::{cairo::traits::CairoType, Felt252};
 #[derive(Default, Debug, Clone)]
 pub struct Response {
     pub trie_root: Felt252,
+    pub exists: Felt252,
 }
 
 impl CairoType for Response {
     fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
         let trie_root = *vm.get_integer((address + 0)?)?;
-        Ok(Self { trie_root })
+        let exists = *vm.get_integer((address + 1)?)?;
+        Ok(Self { trie_root, exists })
     }
 
     fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
         vm.insert_value((address + 0)?, self.trie_root)?;
-        Ok((address + 1)?)
+        vm.insert_value((address + 1)?, self.exists)?;
+        Ok((address + 2)?)
     }
 
     fn n_fields(_vm: &VirtualMachine, _address: Relocatable) -> Result<usize, MemoryError> {
-        Ok(1)
+        Ok(2)
     }
 }

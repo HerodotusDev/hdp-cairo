@@ -28,6 +28,15 @@ impl Memorizer {
         Ok(ret)
     }
 
+    pub fn read_key_int(&self, key: &MaybeRelocatable, dict_manager: Rc<RefCell<DictManager>>) -> Result<Felt252, HintError> {
+        dict_manager
+            .borrow_mut()
+            .get_tracker_mut(self.dict_ptr)?
+            .get_value(key)?
+            .get_int()
+            .ok_or(HintError::NoValueForKey(Box::new(key.clone())))
+    }
+
     pub fn read_key(&self, key: &MaybeRelocatable, dict_manager: Rc<RefCell<DictManager>>) -> Result<Relocatable, HintError> {
         dict_manager
             .borrow_mut()
