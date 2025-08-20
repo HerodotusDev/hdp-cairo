@@ -28,8 +28,8 @@ mod test_utils {
     use hints::vars;
     use syscall_handler::{SyscallHandler, SyscallHandlerWrapper};
     use types::{
-        ChainProofs, HDPDryRunInput, HDPInput, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID,
-        STARKNET_TESTNET_CHAIN_ID,
+        ChainProofs, HDPDryRunInput, HDPInput, InjectedState, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID,
+        STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
     };
 
     pub async fn run(compiled_class: CasmContractClass) {
@@ -53,6 +53,7 @@ mod test_utils {
         let program_inputs = HDPDryRunInput {
             params: vec![],
             compiled_class: compiled_class.clone(),
+            injected_state: InjectedState::default(),
         };
 
         // Load the Program
@@ -143,6 +144,7 @@ mod test_utils {
             params: vec![],
             compiled_class,
             state_proofs,
+            injected_state: InjectedState::default(),
         };
 
         // Load the Program

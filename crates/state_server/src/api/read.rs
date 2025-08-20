@@ -16,7 +16,6 @@ pub struct ReadRequest {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ReadResponse {
-    pub trie_root: Felt,
     pub key: Felt,
     pub value: Option<Felt>,
 }
@@ -32,7 +31,6 @@ pub async fn read(State(state): State<AppState>, Query(payload): Query<ReadReque
     let leaf = storage.get_leaf(payload.key).ok();
 
     Ok(Json(ReadResponse {
-        trie_root: payload.trie_root,
         key: payload.key,
         value: leaf.map(|leaf| leaf.data.value),
     }))

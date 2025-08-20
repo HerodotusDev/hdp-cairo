@@ -9,7 +9,7 @@ use cairo_vm::{
 };
 use serde::{Deserialize, Serialize};
 use strum_macros::FromRepr;
-use syscall_handler::{traits, traits::CallHandler, SyscallExecutionError, SyscallResult, WriteResponseResult};
+use syscall_handler::{memorizer::Memorizer, traits, traits::CallHandler, SyscallExecutionError, SyscallResult, WriteResponseResult};
 use types::{
     cairo::{
         new_syscalls::{CallContractRequest, CallContractResponse},
@@ -17,8 +17,6 @@ use types::{
     },
     keys::starknet,
 };
-
-use super::Memorizer;
 
 #[derive(FromRepr)]
 pub enum CallHandlerId {

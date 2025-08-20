@@ -6,6 +6,7 @@
 
 pub mod call_contract;
 pub mod keccak;
+pub mod memorizer;
 pub mod traits;
 
 use std::{fmt::Debug, rc::Rc};

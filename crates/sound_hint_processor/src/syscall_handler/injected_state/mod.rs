@@ -1,31 +1,40 @@
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine};
+use cairo_vm::{
+    hint_processor::builtin_hint_processor::dict_manager::DictManager,
+    types::relocatable::{MaybeRelocatable, Relocatable},
+    vm::vm_core::VirtualMachine,
+};
 use serde::{Deserialize, Serialize};
+use starknet_crypto::poseidon_hash_single;
 use strum_macros::FromRepr;
-use syscall_handler::{traits::SyscallHandler, SyscallExecutionError, SyscallResult, WriteResponseResult};
+use syscall_handler::{memorizer::Memorizer, traits::SyscallHandler, SyscallExecutionError, SyscallResult, WriteResponseResult};
 use types::{
-    cairo::new_syscalls::{CallContractRequest, CallContractResponse},
+    cairo::{
+        new_syscalls::{CallContractRequest, CallContractResponse},
+        traits::CairoType,
+    },
+    keys,
     proofs::injected_state::Action,
     Felt252,
 };
 
-pub mod id_to_root;
+pub mod label;
 pub mod read;
-pub mod root_to_id;
 pub mod write;
 
 #[derive(FromRepr, Debug)]
 pub enum CallHandlerId {
     Read = 0,
     Write = 1,
-    IdToRoot = 2,
-    RootToId = 3,
+    Label = 2,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct CallContractHandler {
     pub key_set: HashMap<Felt252, Vec<Action>>,
+    #[serde(skip)]
+    pub dict_manager: Rc<RefCell<DictManager>>,
 }
 
 impl SyscallHandler for CallContractHandler {
@@ -36,23 +45,46 @@ impl SyscallHandler for CallContractHandler {
         unreachable!()
     }
 
-    async fn execute(&mut self, request: Self::Request, _vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
+    async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
         let call_handler_id = CallHandlerId::try_from(request.selector)?;
+
+        let mut calldata = request.calldata_start;
+        let memorizer = Memorizer::derive(vm, &mut calldata)?;
+
+        let retdata_start = vm.add_memory_segment();
+        let retdata_end = retdata_start;
 
         match call_handler_id {
             CallHandlerId::Read => {
-                todo!()
+                let key = keys::injected_state::read::CairoKey::from_memory(vm, calldata)?;
+                let ptr = memorizer.read_key(
+                    &MaybeRelocatable::Int(poseidon_hash_single(key.trie_label)),
+                    self.dict_manager.clone(),
+                )?;
+                let _trie_root = vm.get_integer(ptr)?;
             }
             CallHandlerId::Write => {
-                todo!()
+                let key = keys::injected_state::write::CairoKey::from_memory(vm, calldata)?;
+                let ptr = memorizer.read_key(
+                    &MaybeRelocatable::Int(poseidon_hash_single(key.trie_label)),
+                    self.dict_manager.clone(),
+                )?;
+                let _trie_root = vm.get_integer(ptr)?;
             }
-            CallHandlerId::RootToId => {
-                todo!()
-            }
-            CallHandlerId::IdToRoot => {
-                todo!()
+            CallHandlerId::Label => {
+                let key = keys::injected_state::label::CairoKey::from_memory(vm, calldata)?;
+                let ptr = memorizer.read_key(
+                    &MaybeRelocatable::Int(poseidon_hash_single(key.trie_label)),
+                    self.dict_manager.clone(),
+                )?;
+                let _trie_root = vm.get_integer(ptr)?;
             }
         }
+
+        Ok(Self::Response {
+            retdata_start,
+            retdata_end,
+        })
     }
 
     fn write_response(&mut self, _response: Self::Response, _vm: &mut VirtualMachine, _ptr: &mut Relocatable) -> WriteResponseResult {
