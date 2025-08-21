@@ -62,9 +62,11 @@ jobs:
 
       - name: Set up Cairo (macOS)
         if: runner.os == 'macOS'
-        run: |
-          GMP_PREFIX=$(brew --prefix gmp)
-          uv sync --config-setting=--build-option="--include-dirs=${GMP_PREFIX}/include" --config-setting=--build-option="--library-dirs=${GMP_PREFIX}/lib"
+        env:
+          # For macOS, explicitly tell the compiler where to find the gmp library installed by Homebrew
+          CFLAGS: "-I$(brew --prefix gmp)/include"
+          LDFLAGS: "-L$(brew --prefix gmp)/lib"
+        run: uv sync
 
       - name: Run fmt check
         run: cargo fmt --all -- --check
@@ -134,9 +136,11 @@ jobs:
 
       - name: Set up Cairo (macOS)
         if: runner.os == 'macOS'
-        run: |
-          GMP_PREFIX=$(brew --prefix gmp)
-          uv sync --config-setting=--build-option="--include-dirs=${GMP_PREFIX}/include" --config-setting=--build-option="--library-dirs=${GMP_PREFIX}/lib"
+        env:
+          # For macOS, explicitly tell the compiler where to find the gmp library installed by Homebrew
+          CFLAGS: "-I$(brew --prefix gmp)/include"
+          LDFLAGS: "-L$(brew --prefix gmp)/lib"
+        run: uv sync
 
       - name: Build Test Contracts
         run: scarb build
