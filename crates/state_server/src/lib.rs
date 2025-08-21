@@ -4,7 +4,7 @@ use axum::{routing::get, Router};
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
 use crate::{
-    api::{id_to_root::get_trie_root_by_id, proof::get_state_proofs, read::read, root_to_id::get_id_by_trie_root, write::write},
+    api::{proof::get_state_proofs, read::read, root_to_id::get_id_by_trie_root, write::write},
     mpt::db::ConnectionManager,
 };
 
@@ -33,7 +33,6 @@ pub fn create_router() -> Router {
     Router::new()
         .route("/get_id_by_trie_root", get(get_id_by_trie_root))
         .route("/get_state_proofs", get(get_state_proofs))
-        .route("/get_trie_root_by_id", get(get_trie_root_by_id))
         .route("/read", get(read))
         .route("/write", get(write))
         .layer(CorsLayer::permissive())
