@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{env, sync::Arc};
 
 use axum::{routing::get, Router};
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
@@ -28,7 +28,8 @@ impl AppState {
 }
 
 pub fn create_router() -> Router {
-    let state = AppState::new("a.db").unwrap();
+    let db_path = env::var("STATE_SERVER_DB_PATH").unwrap_or_else(|_| "postgres://postgres:postgres@localhost:5432/state_server".to_string());
+    let state = AppState::new(&db_path).unwrap();
 
     Router::new()
         .route("/get_id_by_trie_root", get(get_id_by_trie_root))
