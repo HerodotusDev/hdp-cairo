@@ -46,6 +46,8 @@ impl SyscallHandler for CallContractHandler {
     }
 
     async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
+        unimplemented!("injected state syscall handler not yet implemented");
+
         let call_handler_id = CallHandlerId::try_from(request.selector)?;
 
         let mut calldata = request.calldata_start;

@@ -150,8 +150,8 @@ pub struct ActionRead {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ActionWrite {
-    pub prev_trie_root: Felt,
-    pub new_trie_root: Felt,
+    // Root hash before write operation is applied
+    pub trie_root: Felt,
     pub key: Felt,
     pub value: Felt,
 }

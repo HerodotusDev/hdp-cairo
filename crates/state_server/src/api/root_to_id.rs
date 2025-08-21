@@ -28,6 +28,13 @@ pub async fn get_id_by_trie_root(
         .get_connection()
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
+    if payload.trie_root == Felt::ZERO {
+        return Ok(Json(GetIdResponse {
+            trie_id: 0,
+            trie_root: Felt::ZERO,
+        }));
+    }
+
     let trie_id = TrieDB::new(&conn)
         .get_node_idx_by_hash(payload.trie_root)
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?

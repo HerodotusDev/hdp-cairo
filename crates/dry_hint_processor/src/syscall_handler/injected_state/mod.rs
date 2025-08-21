@@ -94,10 +94,9 @@ impl CallContractHandler {
         self.key_set.entry(trie_label).or_insert_with(Vec::new).push(action);
     }
 
-    fn record_write_action(&mut self, trie_label: Felt252, prev_trie_root: Felt252, new_trie_root: Felt252, key: Felt252, value: Felt252) {
+    fn record_write_action(&mut self, trie_label: Felt252, trie_root: Felt252, key: Felt252, value: Felt252) {
         let action = Action::Write(ActionWrite {
-            prev_trie_root: pathfinder_crypto::Felt::from(prev_trie_root.to_bytes_be()),
-            new_trie_root: pathfinder_crypto::Felt::from(new_trie_root.to_bytes_be()),
+            trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
             key: pathfinder_crypto::Felt::from(key.to_bytes_be()),
             value: pathfinder_crypto::Felt::from(value.to_bytes_be()),
         });
@@ -244,7 +243,7 @@ impl SyscallHandler for CallContractHandler {
                         let value = Felt252::from_bytes_be(&response.value.to_be_bytes());
 
                         // Record the write action
-                        self.record_write_action(key.trie_label, trie_root, new_trie_root, key.key, key.value);
+                        self.record_write_action(key.trie_label, trie_root, key.key, key.value);
 
                         // Update local cache
                         self.update_cache_on_write(key.trie_label, key.key, true, value);

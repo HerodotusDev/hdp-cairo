@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use axum::{routing::get, Router};
+use axum::{
+    routing::{get, post},
+    Router,
+};
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
 use crate::{
@@ -32,7 +35,7 @@ pub fn create_router() -> Router {
 
     Router::new()
         .route("/get_id_by_trie_root", get(get_id_by_trie_root))
-        .route("/get_state_proofs", get(get_state_proofs))
+        .route("/get_state_proofs", post(get_state_proofs))
         .route("/read", get(read))
         .route("/write", get(write))
         .layer(CorsLayer::permissive())

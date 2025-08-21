@@ -13,7 +13,7 @@ use types::proofs::injected_state::{CairoTrieNodeSerde, StateProofRead};
 
 use crate::vars;
 
-pub const HINT_GET_KEY_BE: &str = "ids.key_be = state_proof_wrapper.leaf.key";
+pub const HINT_GET_KEY_BE: &str = "ids.key_be = state_proof.leaf.key";
 
 pub fn hint_get_key_be(
     vm: &mut VirtualMachine,
