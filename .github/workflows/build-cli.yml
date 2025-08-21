@@ -37,18 +37,18 @@ jobs:
         with:
           submodules: true
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.9"
+          enable-cache: true
 
       - name: Set up Cairo
-        run: make
+        run: uv sync
       
       - name: Build
         run: |
-          venv/bin/cairo-compile --cairo_path=packages/eth_essentials src/hdp.cairo --output sound_run_compiled.json --no_debug_info
-          venv/bin/cairo-compile --cairo_path=packages/eth_essentials src/contract_bootloader/contract_dry_run.cairo --output dry_run_compiled.json --no_debug_info
+          .venv/bin/cairo-compile --cairo_path=packages/eth_essentials src/hdp.cairo --output sound_run_compiled.json --no_debug_info
+          .venv/bin/cairo-compile --cairo_path=packages/eth_essentials src/contract_bootloader/contract_dry_run.cairo --output dry_run_compiled.json --no_debug_info
 
       - name: Upload to release
         uses: svenstaro/upload-release-action@v2
@@ -96,10 +96,10 @@ jobs:
         with:
           submodules: true
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.9"
+          enable-cache: true
 
       - name: Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -119,7 +119,7 @@ jobs:
             ${{ runner.os }}-${{ matrix.platform.os }}-cargo-
 
       - name: Set up Cairo
-        run: make
+        run: uv sync
       
       - name: Build
         uses: actions-rs/cargo@v1
