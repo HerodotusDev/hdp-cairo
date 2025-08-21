@@ -64,8 +64,8 @@ jobs:
         if: runner.os == 'macOS'
         env:
           # For macOS, explicitly tell the compiler where to find the gmp library installed by Homebrew
-          CFLAGS: "-I$(brew --prefix gmp)/include"
-          LDFLAGS: "-L$(brew --prefix gmp)/lib"
+          CFLAGS: -I/opt/homebrew/opt/gmp/include
+          LDFLAGS: -L/opt/homebrew/opt/gmp/lib
         run: uv sync
 
       - name: Run fmt check
@@ -138,8 +138,8 @@ jobs:
         if: runner.os == 'macOS'
         env:
           # For macOS, explicitly tell the compiler where to find the gmp library installed by Homebrew
-          CFLAGS: "-I$(brew --prefix gmp)/include"
-          LDFLAGS: "-L$(brew --prefix gmp)/lib"
+          CFLAGS: -I/opt/homebrew/opt/gmp/include
+          LDFLAGS: -L/opt/homebrew/opt/gmp/lib
         run: uv sync
 
       - name: Build Test Contracts
