@@ -1,4 +1,4 @@
-FROM rust:slim
+FROM rust:1.89.0
 
 # Install uv, the Python package manager.
 COPY --from=ghcr.io/astral-sh/uv:0.8.13 /uv /uvx /bin/
