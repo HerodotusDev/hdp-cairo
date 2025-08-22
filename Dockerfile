@@ -1,42 +1,30 @@
-# Use the official Python 3.9 image from the Docker Hub
-FROM python:3.9-slim
+FROM rust:slim
 
-# Set the default shell to bash and the working directory in the container
-SHELL ["/bin/bash", "-c"]
+# Install uv, the Python package manager.
+COPY --from=ghcr.io/astral-sh/uv:0.8.13 /uv /uvx /bin/
+
+# Set the working directory for all subsequent commands.
 WORKDIR /hdp-cairo
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    pkg-config \
-    libssl-dev \
-    curl \
-    git \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Rust using rustup
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
-
-# Install uv, the Python package manager
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.local/bin:${PATH}"
-
-# Copy dependency definition files AND the local package before installation
+# Copy dependency files FIRST to leverage Docker's layer caching.
+# If these files don't change, Docker won't re-run the `uv sync` step.
 COPY pyproject.toml uv.lock ./
 COPY packages/cairo-lang-0.13.3.zip ./packages/cairo-lang-0.13.3.zip
 
-# Set up Python virtual environment and install dependencies using uv
+# Synchronize and install project dependencies using uv.
 RUN uv sync
 
-# Copy the rest of the project files into the container
+# Copy the rest of the application source code into the container.
 COPY . .
 
-# Set path to include venv binaries, so they can be called directly
-ENV PATH="/hdp-cairo/.venv/bin:${PATH}"
+# Install the specific Rust binary from the local crate.
+# We use the `--locked` flag to ensure the build uses the exact versions
+# specified in Cargo.lock, for reproducibility.
+RUN cargo install --path ./crates/cli --locked
 
-# Install specific Rust binaries
-RUN cargo install --path ./crates/cli
+# Set the default executable for the container.
+ENTRYPOINT ["/hdp-cairo/target/release/hdp-cli"]
 
-ENTRYPOINT ["hdp-cli"]
+# Set the default command when the container is run without any arguments.
+# This provides a default action for the entrypoint.
 CMD ["program-hash"]
