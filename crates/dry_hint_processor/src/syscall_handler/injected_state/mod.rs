@@ -57,6 +57,14 @@ pub struct CallContractHandler {
 }
 
 impl CallContractHandler {
+    pub fn new(dict_manager: Rc<RefCell<DictManager>>) -> Self {
+        Self {
+            key_set: HashMap::new(),
+            dict_manager,
+            read_cache: HashMap::new(),
+        }
+    }
+
     fn get_base_url() -> String {
         std::env::var("INJECTED_STATE_BASE_URL").unwrap_or_else(|_| "http://0.0.0.0:3000".to_string())
     }
@@ -67,40 +75,8 @@ impl CallContractHandler {
             Ok(trie_root) if trie_root == Felt252::MAX => Ok(None),
             Ok(trie_root) => Ok(Some(trie_root)),
             Err(ref e) if matches!(e, HintError::NoValueForKey(_)) => Ok(None),
-            Err(e) => return Err(e),
+            Err(e) => Err(e),
         }
-    }
-
-    fn get_from_cache(&self, trie_label: Felt252, key: Felt252) -> Option<CacheEntry> {
-        let cache_key = CacheKey { trie_label, key };
-        self.read_cache.get(&cache_key).cloned()
-    }
-
-    fn insert_to_cache(&mut self, trie_label: Felt252, key: Felt252, exists: bool, value: Felt252) {
-        let cache_key = CacheKey { trie_label, key };
-        let cache_entry = CacheEntry { exists, value };
-        self.read_cache.insert(cache_key, cache_entry);
-    }
-
-    fn update_cache_on_write(&mut self, trie_label: Felt252, key: Felt252, exists: bool, value: Felt252) {
-        self.insert_to_cache(trie_label, key, exists, value);
-    }
-
-    fn record_read_action(&mut self, trie_label: Felt252, trie_root: Felt252, key: Felt252) {
-        let action = Action::Read(ActionRead {
-            trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
-            key: pathfinder_crypto::Felt::from(key.to_bytes_be()),
-        });
-        self.key_set.entry(trie_label).or_insert_with(Vec::new).push(action);
-    }
-
-    fn record_write_action(&mut self, trie_label: Felt252, trie_root: Felt252, key: Felt252, value: Felt252) {
-        let action = Action::Write(ActionWrite {
-            trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
-            key: pathfinder_crypto::Felt::from(key.to_bytes_be()),
-            value: pathfinder_crypto::Felt::from(value.to_bytes_be()),
-        });
-        self.key_set.entry(trie_label).or_insert_with(Vec::new).push(action);
     }
 }
 
@@ -135,19 +111,20 @@ impl SyscallHandler for CallContractHandler {
             CallHandlerId::Read => {
                 let key = keys::injected_state::read::CairoKey::from_memory(vm, calldata)?;
 
-                // Check cache first
-                if let Some(cached_entry) = self.get_from_cache(key.trie_label, key.key) {
-                    // Record the read action even for cache hits
-                    let trie_root = self.get_trie_root(&memorizer, key.trie_label).await?.unwrap_or(Felt252::ZERO);
-                    self.record_read_action(key.trie_label, trie_root, key.key);
-
+                if let Some(cached_entry) = self
+                    .read_cache
+                    .get(&CacheKey {
+                        trie_label: key.trie_label,
+                        key: key.key,
+                    })
+                    .cloned()
+                {
                     let result = read::Response {
                         value: cached_entry.value,
                         exist: cached_entry.exists.into(),
                     };
                     retdata_end = result.to_memory(vm, retdata_end)?;
                 } else {
-                    // Cache miss - fetch from state server
                     let trie_root = self.get_trie_root(&memorizer, key.trie_label).await?.unwrap_or(Felt252::ZERO);
                     let request_payload = ReadRequest {
                         trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
@@ -174,10 +151,18 @@ impl SyscallHandler for CallContractHandler {
                             let value = Felt252::from_bytes_be(&response.value.unwrap_or_default().to_be_bytes());
 
                             // Record the read action
-                            self.record_read_action(key.trie_label, trie_root, key.key);
+                            self.key_set.entry(key.trie_label).or_default().push(Action::Read(ActionRead {
+                                trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
+                                key: pathfinder_crypto::Felt::from(key.key.to_bytes_be()),
+                            }));
 
-                            // Cache the result
-                            self.insert_to_cache(key.trie_label, key.key, exists, value);
+                            self.read_cache.insert(
+                                CacheKey {
+                                    trie_label: key.trie_label,
+                                    key: key.key,
+                                },
+                                CacheEntry { exists, value },
+                            );
 
                             let result = read::Response {
                                 exist: exists.into(),
@@ -187,11 +172,21 @@ impl SyscallHandler for CallContractHandler {
                             retdata_end = result.to_memory(vm, retdata_end)?;
                         }
                         StatusCode::NOT_FOUND => {
-                            // Record the read action
-                            self.record_read_action(key.trie_label, trie_root, key.key);
+                            self.key_set.entry(key.trie_label).or_default().push(Action::Read(ActionRead {
+                                trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
+                                key: pathfinder_crypto::Felt::from(key.key.to_bytes_be()),
+                            }));
 
-                            // Cache the not found result
-                            self.insert_to_cache(key.trie_label, key.key, false, Felt252::ZERO);
+                            self.read_cache.insert(
+                                CacheKey {
+                                    trie_label: key.trie_label,
+                                    key: key.key,
+                                },
+                                CacheEntry {
+                                    exists: false,
+                                    value: Felt252::ZERO,
+                                },
+                            );
 
                             let result = read::Response {
                                 exist: false.into(),
@@ -243,10 +238,19 @@ impl SyscallHandler for CallContractHandler {
                         let value = Felt252::from_bytes_be(&response.value.to_be_bytes());
 
                         // Record the write action
-                        self.record_write_action(key.trie_label, trie_root, key.key, key.value);
+                        self.key_set.entry(key.trie_label).or_default().push(Action::Write(ActionWrite {
+                            trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
+                            key: pathfinder_crypto::Felt::from(key.key.to_bytes_be()),
+                            value: pathfinder_crypto::Felt::from(key.value.to_bytes_be()),
+                        }));
 
-                        // Update local cache
-                        self.update_cache_on_write(key.trie_label, key.key, true, value);
+                        self.read_cache.insert(
+                            CacheKey {
+                                trie_label: key.trie_label,
+                                key: key.key,
+                            },
+                            CacheEntry { exists: true, value },
+                        );
 
                         let result: write::Response = write::Response { trie_root: new_trie_root };
 
