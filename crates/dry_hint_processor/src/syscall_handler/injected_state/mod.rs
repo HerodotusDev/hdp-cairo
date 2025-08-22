@@ -75,7 +75,7 @@ impl CallContractHandler {
             Ok(trie_root) if trie_root == Felt252::MAX => Ok(None),
             Ok(trie_root) => Ok(Some(trie_root)),
             Err(ref e) if matches!(e, HintError::NoValueForKey(_)) => Ok(None),
-            Err(e) => return Err(e),
+            Err(e) => Err(e),
         }
     }
 }
