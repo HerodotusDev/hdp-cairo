@@ -6,6 +6,7 @@
 
 pub mod call_contract;
 pub mod keccak;
+pub mod memorizer;
 pub mod traits;
 
 use std::{fmt::Debug, rc::Rc};
@@ -34,8 +35,6 @@ use types::{
     },
     ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
 };
-
-pub const INJECTED_STATE_CONTRACT_ADDRESS: Felt252 = Felt252::from_hex_unchecked("0x696e6a65637465645f7374617465"); // 'injected_state' in hex
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SyscallSelector {
@@ -202,7 +201,9 @@ impl<EVM: CallContractSyscallHandler, STARKNET: CallContractSyscallHandler, Inje
         match request.contract_address {
             v if v == call_contract::debug::CONTRACT_ADDRESS => self.debug_call_contract_handler.execute(request, vm).await,
             v if v == call_contract::arbitrary_type::CONTRACT_ADDRESS => self.any_type_call_contract_handler.execute(request, vm).await,
-            v if v == INJECTED_STATE_CONTRACT_ADDRESS => self.injected_state_call_contract_handler.execute(request, vm).await,
+            v if v == call_contract::injected_state::CONTRACT_ADDRESS => {
+                self.injected_state_call_contract_handler.execute(request, vm).await
+            }
             _ => {
                 let chain_id = <Felt252 as TryInto<u128>>::try_into(*vm.get_integer((request.calldata_start + 2)?)?)
                     .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;

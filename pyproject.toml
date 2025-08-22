@@ -1,0 +1,14 @@
+# This is the new central configuration file for your Python tooling.
+# It defines project metadata and dependencies.
+[project]
+name = "hdp-cairo"
+version = "0.1.0"
+description = "Python tools for HDP Cairo."
+requires-python = "==3.9.0"
+dependencies = [
+    # This now points to your local package using an absolute path relative to the project root.
+    "cairo-lang @ file://${PROJECT_ROOT}/packages/cairo-lang-0.13.3.zip",
+]
+
+[tool.uv]
+# Future configuration for uv can be placed here.

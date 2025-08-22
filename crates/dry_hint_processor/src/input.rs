@@ -8,12 +8,12 @@ use cairo_vm::{
     Felt252,
 };
 use hints::vars;
-use types::param;
+use types::{param, InjectedState};
 
 use super::CustomHintProcessor;
 
 pub const HINT_INPUT: &str =
-    "dry_run_input = HDPDryRunInput.Schema().load(program_input)\nparams = dry_run_input.params\ncompiled_class = dry_run_input.compiled_class";
+    "run_input = HDPDryRunInput.Schema().load(program_input)\nparams = run_input.params\ncompiled_class = run_input.compiled_class\ninjected_state = run_input.injected_state";
 
 impl CustomHintProcessor {
     pub fn hint_input(
@@ -46,6 +46,7 @@ impl CustomHintProcessor {
                 .collect(),
         );
         exec_scopes.insert_value::<CasmContractClass>(vars::scopes::COMPILED_CLASS, self.inputs.compiled_class.to_owned());
+        exec_scopes.insert_value::<InjectedState>(vars::scopes::INJECTED_STATE, self.inputs.injected_state.to_owned());
         Ok(())
     }
 }

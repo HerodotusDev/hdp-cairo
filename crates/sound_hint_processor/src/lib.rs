@@ -28,7 +28,7 @@ use hints::{extensive_hints, hints, vars, ExtensiveHintImpl, HintImpl};
 use starknet_types_core::felt::Felt;
 use syscall_handler::{evm, starknet};
 use tokio::{runtime::Handle, task};
-use types::{HDPInput};
+use types::HDPInput;
 
 use crate::syscall_handler::injected_state;
 

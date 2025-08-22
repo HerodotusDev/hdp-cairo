@@ -28,8 +28,8 @@ mod test_utils {
     use hints::vars;
     use syscall_handler::{SyscallHandler, SyscallHandlerWrapper};
     use types::{
-        ChainProofs, HDPDryRunInput, HDPInput, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID,
-        STARKNET_TESTNET_CHAIN_ID,
+        ChainProofs, HDPDryRunInput, HDPInput, InjectedState, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID,
+        STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
     };
 
     pub async fn run(compiled_class: CasmContractClass) {
@@ -53,6 +53,7 @@ mod test_utils {
         let program_inputs = HDPDryRunInput {
             params: vec![],
             compiled_class: compiled_class.clone(),
+            injected_state: InjectedState::default(),
         };
 
         // Load the Program
@@ -124,11 +125,12 @@ mod test_utils {
         }
 
         let fetcher = Fetcher::new(&proof_keys);
-        let (evm_proofs_mainnet, evm_proofs_sepolia, starknet_proofs_mainnet, starknet_proofs_sepolia) = tokio::try_join!(
+        let (evm_proofs_mainnet, evm_proofs_sepolia, starknet_proofs_mainnet, starknet_proofs_sepolia, state_proofs) = tokio::try_join!(
             fetcher.collect_evm_proofs(ETHEREUM_MAINNET_CHAIN_ID),
             fetcher.collect_evm_proofs(ETHEREUM_TESTNET_CHAIN_ID),
             fetcher.collect_starknet_proofs(STARKNET_MAINNET_CHAIN_ID),
-            fetcher.collect_starknet_proofs(STARKNET_TESTNET_CHAIN_ID)
+            fetcher.collect_starknet_proofs(STARKNET_TESTNET_CHAIN_ID),
+            fetcher.collect_state_proofs(),
         )
         .unwrap();
 
@@ -141,7 +143,8 @@ mod test_utils {
             ],
             params: vec![],
             compiled_class,
-            //state_proofs
+            state_proofs,
+            injected_state: InjectedState::default(),
         };
 
         // Load the Program

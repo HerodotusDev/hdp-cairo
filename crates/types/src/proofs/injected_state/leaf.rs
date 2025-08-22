@@ -3,31 +3,31 @@ pub use pathfinder_common::hash::keccak_hash as keccak_hash_truncated;
 use pathfinder_crypto::Felt;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, PartialEq, Hash)]
 pub struct TrieLeaf {
     pub key: Felt,
-    pub data: LeafData,
+    pub data: TrieLeafData,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LeafUpdate {
+pub struct TrieLeafUpdate {
     pub key: Felt,
-    pub old_data: LeafData,
-    pub new_data: LeafData,
+    pub old_data: TrieLeafData,
+    pub new_data: TrieLeafData,
 }
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, PartialEq)]
-pub struct LeafData {
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, PartialEq, Hash)]
+pub struct TrieLeafData {
     pub value: Felt,
 }
 
-impl LeafData {
+impl TrieLeafData {
     pub fn new(value: Felt) -> Self {
         Self { value }
     }
 }
 
-impl LeafUpdate {
+impl TrieLeafUpdate {
     pub fn get_path(&self) -> BitVec<u8, Msb0> {
         self.key.view_bits().to_bitvec()
     }
@@ -49,19 +49,19 @@ impl LeafUpdate {
 
 impl TrieLeaf {
     pub fn new(key: Felt, value: Felt) -> Self {
-        let data = LeafData::new(value);
+        let data = TrieLeafData::new(value);
         Self { key, data }
     }
 
     pub fn empty(key: Felt) -> Self {
-        let data = LeafData::new(Felt::ZERO);
+        let data = TrieLeafData::new(Felt::ZERO);
 
         Self { key, data }
     }
 
-    pub fn set_value(&self, value: Felt) -> LeafUpdate {
-        let new_data = LeafData::new(value);
-        LeafUpdate {
+    pub fn set_value(&self, value: Felt) -> TrieLeafUpdate {
+        let new_data = TrieLeafData::new(value);
+        TrieLeafUpdate {
             key: self.key,
             old_data: self.data,
             new_data,

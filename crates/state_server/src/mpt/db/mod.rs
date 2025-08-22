@@ -4,7 +4,7 @@ pub mod trie;
 use r2d2::{Pool, PooledConnection};
 use r2d2_sqlite::SqliteConnectionManager;
 
-use crate::error::Error;
+use crate::mpt::error::Error;
 
 #[derive(Debug)]
 pub struct ConnectionManager {

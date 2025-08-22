@@ -1,5 +1,4 @@
 pub mod inclusion_verifier;
-pub mod non_inclusion_verifier;
 pub mod update_verifier;
 
 use std::{any::Any, collections::HashMap};
@@ -10,12 +9,12 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use types::proofs::state::StateProofs;
+use types::proofs::injected_state::{StateProof, StateProofs};
 
 use crate::vars;
 
 pub const HINT_STATE_PROOF_ENTER_SCOPE: &str =
-    "vm_enter_scope({'state_proof_wrapper': state_proofs[ids.idx - 1], '__dict_manager': __dict_manager})";
+    "vm_enter_scope({'state_proof': state_proofs[ids.idx - 1], '__dict_manager': __dict_manager})";
 
 pub fn hint_state_proof_enter_scope(
     vm: &mut VirtualMachine,
@@ -28,11 +27,14 @@ pub fn hint_state_proof_enter_scope(
         .try_into()
         .unwrap();
 
-    let state_proof_wrapper: Box<dyn Any> = Box::new(state_proofs[idx - 1].clone());
+    let state_proof: Box<dyn Any> = match state_proofs[idx - 1].to_owned() {
+        StateProof::Read(state_proof) => Box::new(state_proof),
+        StateProof::Write(state_proof) => Box::new(state_proof),
+    };
     let dict_manager: Box<dyn Any> = Box::new(exec_scopes.get_dict_manager()?);
 
     exec_scopes.enter_scope(HashMap::from([
-        (String::from(vars::scopes::STATE_PROOF_WRAPPER), state_proof_wrapper),
+        (String::from(vars::scopes::STATE_PROOF), state_proof),
         (String::from(vars::scopes::DICT_MANAGER), dict_manager),
     ]));
 

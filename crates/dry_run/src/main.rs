@@ -13,7 +13,7 @@ use hints as _;
 use syscall_handler::SyscallHandler;
 use tracing as _;
 use tracing_subscriber::EnvFilter;
-use types::{error::Error, param::Param, CasmContractClass, HDPDryRunInput};
+use types::{error::Error, param::Param, CasmContractClass, HDPDryRunInput, InjectedState};
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 1)]
 async fn main() -> Result<(), Error> {
@@ -23,15 +23,24 @@ async fn main() -> Result<(), Error> {
     let args = Args::try_parse_from(std::env::args()).map_err(Error::Cli)?;
 
     let compiled_class: CasmContractClass = serde_json::from_slice(&std::fs::read(args.compiled_module).map_err(Error::IO)?)?;
-    let params: Vec<Param> = if let Some(input_path) = args.inputs {
-        serde_json::from_slice(&std::fs::read(input_path).map_err(Error::IO)?)?
+    let params: Vec<Param> = if let Some(path) = args.inputs {
+        serde_json::from_slice(&std::fs::read(path).map_err(Error::IO)?)?
     } else {
         Vec::new()
+    };
+    let injected_state: InjectedState = if let Some(path) = args.injected_state {
+        serde_json::from_slice(&std::fs::read(path).map_err(Error::IO)?)?
+    } else {
+        InjectedState::default()
     };
 
     let (syscall_handler, output) = dry_run::run(
         args.program.unwrap_or(PathBuf::from(DRY_RUN_COMPILED_JSON)),
-        HDPDryRunInput { compiled_class, params },
+        HDPDryRunInput {
+            compiled_class,
+            params,
+            injected_state,
+        },
     )?;
 
     if args.print_output {

@@ -27,25 +27,26 @@ chrono = { workspace = true }
 thiserror = { workspace = true }
 
 # Pathfinder dependencies
-pathfinder-crypto = { workspace = true }
-pathfinder-common = { workspace = true }
-pathfinder-merkle-tree = { workspace = true }
-pathfinder-storage = { workspace = true }
-r2d2 = { workspace = true }
-r2d2_sqlite = { workspace = true }
-rusqlite = { workspace = true }
-bitvec = { workspace = true }
-primitive-types = { workspace = true }
-state-server-types = { path = "src/crates/types" }
-trie-builder = { path = "src/crates/trie-builder" }
-dry_hint_processor = { path = "../dry_hint_processor" }
-types = { workspace = true }
-starknet-types-core = { workspace = true }
-
-http-body-util = { workspace = true }
+alloy-rlp.workspace = true
+alloy.workspace = true
+bincode.workspace = true
+bitvec.workspace = true
+eth_trie.workspace = true
+http-body-util.workspace = true
+pathfinder-common.workspace = true
+pathfinder-crypto.workspace = true
+pathfinder-merkle-tree.workspace = true
+pathfinder-storage.workspace = true
+primitive-types.workspace = true
+r2d2_sqlite.workspace = true
+r2d2.workspace = true
 rand.workspace = true
+reqwest.workspace = true
+rusqlite.workspace = true
+serde_with.workspace = true
+starknet-types-core.workspace = true
+types.workspace = true
 
 [dev-dependencies]
-tower = { workspace = true }
-reqwest = { workspace = true }
+tower.workspace = true
 urlencoding = "2.1"

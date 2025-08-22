@@ -1,3 +1,6 @@
+pub mod leaf;
+pub mod proof;
+
 use std::vec::IntoIter;
 
 use bitvec::{order::Msb0, vec::BitVec};
@@ -5,40 +8,47 @@ use cairo_vm::Felt252;
 use pathfinder_common::trie::TrieNode;
 use pathfinder_crypto::Felt;
 use serde::{Deserialize, Serialize};
-use state_server_types::trie::leaf::TrieLeaf;
 
-use crate::cairo::{FELT_0, FELT_1};
+use crate::{
+    cairo::{FELT_0, FELT_1},
+    proofs::injected_state::leaf::TrieLeaf,
+};
 
-pub type StateProofs = Vec<StateProofWrapper>;
+pub type StateProofs = Vec<StateProof>;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct StateProofWrapper {
-    pub trie_id: Felt,
-    pub state_proof: StateProof,
-    pub root_hash: Felt,
-    pub leaf: TrieLeaf,
-    pub post_proof_root_hash: Option<Felt>,
-    pub post_proof_leaf: Option<TrieLeaf>,
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
+pub enum StateProof {
+    Read(StateProofRead),
+    Write(StateProofWrite),
 }
 
-impl Default for StateProofWrapper {
-    fn default() -> Self {
-        Self {
-            trie_id: Felt::ZERO,
-            state_proof: StateProof::NonInclusion(Vec::new()),
-            root_hash: Felt::ZERO,
-            leaf: TrieLeaf::new(Felt::ZERO, Felt::ZERO),
-            post_proof_root_hash: None,
-            post_proof_leaf: None,
+impl StateProof {
+    pub fn get_type(&self) -> Felt252 {
+        match self {
+            Self::Read(_) => FELT_0,
+            Self::Write(_) => FELT_1,
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
-pub enum StateProof {
-    Inclusion(Vec<TrieNodeSerde>),
-    NonInclusion(Vec<TrieNodeSerde>),
-    Update((Vec<TrieNodeSerde>, Vec<TrieNodeSerde>)),
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct StateProofRead {
+    pub trie_id: u64,
+    pub trie_root: Felt,
+    pub state_proof: Vec<TrieNodeSerde>,
+    pub leaf: TrieLeaf,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct StateProofWrite {
+    pub trie_id_prev: u64,
+    pub trie_root_prev: Felt,
+    pub state_proof_prev: Vec<TrieNodeSerde>,
+    pub leaf_prev: TrieLeaf,
+    pub trie_id_post: u64,
+    pub trie_root_post: Felt,
+    pub state_proof_post: Vec<TrieNodeSerde>,
+    pub leaf_post: TrieLeaf,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
@@ -124,4 +134,24 @@ impl IntoIterator for CairoTrieNodeSerde {
             }
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Action {
+    Read(ActionRead),
+    Write(ActionWrite),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ActionRead {
+    pub trie_root: Felt,
+    pub key: Felt,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ActionWrite {
+    // Root hash before write operation is applied
+    pub trie_root: Felt,
+    pub key: Felt,
+    pub value: Felt,
 }

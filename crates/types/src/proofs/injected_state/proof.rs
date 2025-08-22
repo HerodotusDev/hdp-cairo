@@ -3,6 +3,9 @@ use alloy_rlp::RlpEncodable;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
+const MPT_CHUNK_SIZE: usize = 8;
+type MptChunk = [u8; MPT_CHUNK_SIZE];
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash, RlpEncodable)]
 #[serde_as]
 pub struct MPTProof(pub Vec<Bytes>);
@@ -12,8 +15,6 @@ impl MPTProof {
         Self(proof)
     }
 }
-
-type MptChunk = [u8; 8];
 
 #[serde_as]
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -32,9 +33,9 @@ impl From<MPTProof> for MPTProofCairo {
             .map(|node_bytes| {
                 let len = node_bytes.len() as u64;
                 let chunks = node_bytes
-                    .chunks(8)
+                    .chunks(MPT_CHUNK_SIZE)
                     .map(|chunk| {
-                        let mut chunk_array = [0u8; 8];
+                        let mut chunk_array = [0u8; MPT_CHUNK_SIZE];
                         chunk_array[..chunk.len()].copy_from_slice(chunk);
                         chunk_array.reverse();
                         chunk_array

@@ -4,9 +4,10 @@ use pathfinder_merkle_tree::storage::Storage;
 use pathfinder_storage::{StoredNode, TrieStorageIndex};
 use r2d2::PooledConnection;
 use r2d2_sqlite::SqliteConnectionManager;
-use rusqlite::{OptionalExtension, params};
+use rusqlite::{params, OptionalExtension};
+use types::proofs::injected_state::leaf::TrieLeaf;
 
-use crate::{error::Error, state_server_types::trie::leaf::TrieLeaf};
+use crate::mpt::error::Error;
 
 /// Represents a Trie database.
 #[derive(Debug, Clone, Copy)]
@@ -24,26 +25,32 @@ impl<'a> TrieDB<'a> {
         Self { conn }
     }
 
-    /// Persists the leaves in the database.
+    /// Persists the leaves in the database, skipping any (key, value) pairs that already exist.
     ///
     /// # Arguments
     ///
-    /// * `leaves` - A vector of `CachedItem` representing the leaves to be persisted.
-    /// * `batch_id` - The ID of the batch to which the leaves belong.
+    /// * `leaves` - A vector of `TrieLeaf` representing the leaves to be persisted.
     ///
     /// # Errors
     ///
     /// Returns a `Error` if there was an error persisting the leaves.
     pub fn persist_leafs(&self, leaves: &Vec<TrieLeaf>) -> Result<(), Error> {
+        const SELECT_QUERY: &str = "SELECT 1 FROM leafs WHERE key = ?1 AND value = ?2";
         const INSERT_QUERY: &str = "INSERT INTO leafs (key, value) VALUES (?1, ?2)";
 
         for item in leaves {
-            self.conn
-                .execute(
-                    INSERT_QUERY,
-                    params![item.get_key().to_be_bytes().to_vec(), item.data.value.to_be_bytes().to_vec(),],
-                )
-                .map_err(Error::from)?;
+            let key_bytes = item.get_key().to_be_bytes().to_vec();
+            let value_bytes = item.data.value.to_be_bytes().to_vec();
+
+            // Check if the (key, value) pair already exists
+            let mut stmt = self.conn.prepare_cached(SELECT_QUERY)?;
+            let exists: Option<u8> = stmt.query_row(params![&key_bytes, &value_bytes], |row| row.get(0)).optional()?;
+
+            if exists.is_none() {
+                self.conn
+                    .execute(INSERT_QUERY, params![&key_bytes, &value_bytes])
+                    .map_err(Error::from)?;
+            }
         }
 
         Ok(())
@@ -68,16 +75,25 @@ impl<'a> TrieDB<'a> {
     ///
     /// Returns a `Error` if there was an error persisting the nodes.
     pub fn persist_nodes(&self, nodes: Vec<(StoredNode, Felt, u64)>) -> Result<(), Error> {
+        // We'll check for existence before inserting to avoid duplicates.
+        const SELECT_QUERY: &str = "SELECT 1 FROM trie_nodes WHERE hash = ? AND data = ?";
         const INSERT_QUERY: &str = "INSERT INTO trie_nodes (hash, data, trie_idx) VALUES (?1, ?2, ?3)";
         let mut write_buffer = [0u8; 256];
         for (node, hash, trie_idx) in nodes {
             let length = node.encode(&mut write_buffer)?;
-            self.conn
-                .execute(
-                    INSERT_QUERY,
-                    params![hash.to_be_bytes().to_vec(), write_buffer[..length].to_vec(), trie_idx,],
-                )
-                .map_err(Error::from)?;
+            let hash_bytes = hash.to_be_bytes().to_vec();
+            let data_bytes = write_buffer[..length].to_vec();
+
+            // Check if a node with the same hash and data already exists
+            let mut stmt = self.conn.prepare_cached(SELECT_QUERY)?;
+            let exists: Option<u8> = stmt.query_row(params![&hash_bytes, &data_bytes], |row| row.get(0)).optional()?;
+
+            if exists.is_none() {
+                // Only insert if not already present
+                self.conn
+                    .execute(INSERT_QUERY, params![&hash_bytes, &data_bytes, trie_idx])
+                    .map_err(Error::from)?;
+            }
         }
 
         Ok(())

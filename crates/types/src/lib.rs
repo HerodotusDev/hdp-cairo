@@ -4,7 +4,6 @@
 #![forbid(unsafe_code)]
 #![feature(iter_next_chunk)]
 
-pub mod actions;
 pub mod cairo;
 pub mod error;
 pub mod keys;
@@ -13,10 +12,11 @@ pub mod proofs;
 
 use std::{fmt, str::FromStr};
 
+use alloy::primitives::map::HashMap;
 pub use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 pub use cairo_vm::{vm::runners::cairo_pie::CairoPie, Felt252};
 use param::Param;
-use proofs::{evm, starknet, state::StateProofs};
+use proofs::{evm, injected_state::StateProofs, starknet};
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
 
@@ -43,16 +43,20 @@ pub struct ProofsData {
 pub struct HDPDryRunInput {
     pub params: Vec<Param>,
     pub compiled_class: CasmContractClass,
+    pub injected_state: InjectedState,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct HDPInput {
-    pub chain_proofs: Vec<ChainProofs>,
     pub params: Vec<Param>,
     pub compiled_class: CasmContractClass,
+    pub injected_state: InjectedState,
+    pub chain_proofs: Vec<ChainProofs>,
     pub state_proofs: StateProofs,
-    // pub proofs_data: ProofsData, -> refactor to this if considered good approach
 }
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default)]
+pub struct InjectedState(pub HashMap<Felt252, Felt252>);
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ChainProofs {
@@ -182,37 +186,26 @@ pub struct HDPOutput {
 }
 
 impl FromIterator<Felt252> for HDPOutput {
-    // fn from_iter<T: IntoIterator<Item = Felt252>>(iter: T) -> Self {
-    //     let mut i = iter.into_iter();
-
-    //     let task_hash_low = i.next().unwrap();
-    //     let task_hash_high = i.next().unwrap();
-    //     let output_tree_root_low = i.next().unwrap();
-    //     let output_tree_root_high = i.next().unwrap();
-
-    //     let mut mmr_metas = Vec::<MmrMetaOutput>::new();
-
-    //     while let Ok([id, size, chain_id, root]) = i.next_chunk::<4>() {
-    //         mmr_metas.push(MmrMetaOutput { id, size, chain_id, root });
-    //     }
-
-    //     Self {
-    //         task_hash_low,
-    //         task_hash_high,
-    //         output_tree_root_low,
-    //         output_tree_root_high,
-    //         mmr_metas,
-    //     }
-    // }
-    // FILL WITH EMPTY VALUES
     fn from_iter<T: IntoIterator<Item = Felt252>>(iter: T) -> Self {
-        // TODO: remove
+        let mut i = iter.into_iter();
+
+        let task_hash_low = i.next().unwrap();
+        let task_hash_high = i.next().unwrap();
+        let output_tree_root_low = i.next().unwrap();
+        let output_tree_root_high = i.next().unwrap();
+
+        let mut mmr_metas = Vec::<MmrMetaOutput>::new();
+
+        while let Ok([id, size, chain_id, root]) = i.next_chunk::<4>() {
+            mmr_metas.push(MmrMetaOutput { id, size, chain_id, root });
+        }
+
         Self {
-            task_hash_low: Felt252::ZERO,
-            task_hash_high: Felt252::ZERO,
-            output_tree_root_low: Felt252::ZERO,
-            output_tree_root_high: Felt252::ZERO,
-            mmr_metas: Vec::new(),
+            task_hash_low,
+            task_hash_high,
+            output_tree_root_low,
+            output_tree_root_high,
+            mmr_metas,
         }
     }
 }

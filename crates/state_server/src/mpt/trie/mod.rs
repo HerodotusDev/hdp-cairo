@@ -8,8 +8,10 @@ use pathfinder_merkle_tree::{
 use pathfinder_storage::{Node, NodeRef, StoredNode, TrieStorageIndex, TrieUpdate};
 use r2d2::PooledConnection;
 use r2d2_sqlite::SqliteConnectionManager;
+use tracing::debug;
+use types::proofs::injected_state::leaf::TrieLeaf;
 
-use crate::{db::trie::TrieDB, error::Error, state_server_types::trie::leaf::TrieLeaf};
+use crate::mpt::{db::trie::TrieDB, error::Error};
 
 pub struct Trie {}
 
@@ -54,6 +56,25 @@ impl Trie {
         Ok((storage, trie, root_idx))
     }
 
+    /// Creates a new empty trie.
+    ///
+    /// # Arguments
+    ///
+    /// * `conn` - The database connection.
+    ///
+    /// # Returns
+    ///
+    /// A new empty Trie instance with storage, trie, and root index.
+    pub fn create_empty(
+        conn: &PooledConnection<SqliteConnectionManager>,
+    ) -> Result<(TrieDB, MerkleTree<TruncatedKeccakHash, 251>, TrieStorageIndex), Error> {
+        let storage = TrieDB::new(conn);
+        let trie = MerkleTree::<TruncatedKeccakHash, 251>::empty();
+        let root_idx = TrieStorageIndex::from(0);
+
+        Ok((storage, trie, root_idx))
+    }
+
     pub fn persist_changes(
         storage: &mut TrieDB,
         trie: &MerkleTree<TruncatedKeccakHash, 251>,
@@ -73,6 +94,7 @@ impl Trie {
         MerkleTree::<TruncatedKeccakHash, 251>::get_proof(root_idx.into(), storage, &key_bits).map_err(Error::GetProof)
     }
 
+    // TODO this should return result not option
     pub fn verify_proof(proof: &[TrieNodeWithHash], root: Felt, leaf: TrieLeaf) -> Option<Membership> {
         let key = leaf.get_path();
         // Protect from ill-formed keys
@@ -84,10 +106,10 @@ impl Trie {
         let mut remaining_path: &BitSlice<u8, Msb0> = key.as_bitslice();
         for (proof_node, _) in proof.iter() {
             if proof_node.hash::<TruncatedKeccakHash>() != expected_hash {
-                println!("~~~~~~~~~~~~~PROOF VERIFICATION FAILED~~~~~~~~~~~~");
-                println!("Expected hash: {:?}", expected_hash);
-                println!("Proof node hash: {:?}", proof_node.hash::<TruncatedKeccakHash>());
-                println!("_______________________________");
+                debug!("~~~~~~~~~~~~~PROOF VERIFICATION FAILED~~~~~~~~~~~~");
+                debug!("Expected hash: {:?}", expected_hash);
+                debug!("Proof node hash: {:?}", proof_node.hash::<TruncatedKeccakHash>());
+                debug!("_______________________________");
                 return None;
             }
             match proof_node {
@@ -115,11 +137,11 @@ impl Trie {
         if expected_hash == leaf.commitment() {
             Some(Membership::Member)
         } else {
-            println!("~~~~~~~~~~~~~PROOF VERIFICATION FAILED~~~~~~~~~~~~");
-            println!("Used Root: {:?}", root);
-            println!("expected hash: {:?}", expected_hash);
-            println!("leaf hash    : {:?}", leaf.commitment());
-            println!("_______________________________");
+            debug!("~~~~~~~~~~~~~PROOF VERIFICATION FAILED~~~~~~~~~~~~");
+            debug!("Used Root: {:?}", root);
+            debug!("expected hash: {:?}", expected_hash);
+            debug!("leaf hash    : {:?}", leaf.commitment());
+            debug!("_______________________________");
             None
         }
     }

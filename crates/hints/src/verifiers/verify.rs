@@ -9,10 +9,7 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use types::{
-    proofs::state::{StateProof, StateProofs},
-    ChainProofs,
-};
+use types::{proofs::injected_state::StateProofs, ChainProofs};
 
 use crate::vars;
 
@@ -68,10 +65,6 @@ pub fn hint_state_proofs_proof_type(
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
         .unwrap();
-    let proof_wrapper = &state_proofs[idx - 1];
-    match &proof_wrapper.state_proof {
-        StateProof::Inclusion(_) => insert_value_into_ap(vm, Felt252::from(0)),
-        StateProof::NonInclusion(_) => insert_value_into_ap(vm, Felt252::from(1)),
-        StateProof::Update(_) => insert_value_into_ap(vm, Felt252::from(2)),
-    }
+
+    insert_value_into_ap(vm, state_proofs[idx - 1].get_type())
 }

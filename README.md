@@ -20,69 +20,100 @@ HDP (Herodotus Data Processor) is a modular framework for validating on-chain da
 
 ## Installation
 
-### Option 1: Install CLI Directly
+This project uses `uv` for Python package management and `cargo` for Rust.
 
-You can install the CLI using install script:
+### Prerequisites
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
-```
+1.  **Install Rust**: If you don't have Rust, install it via `rustup`.
 
-### Option 2: Build from Source
+    ```sh
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    ```
 
-To install the required dependencies and set up the Python virtual environment, run:
+2.  **Install uv**: Install the `uv` Python package manager.
 
-```bash
-make
-```
+    ```sh
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    ```
+
+### Build from Source
+
+1.  **Clone the Repository**: Clone the repository and initialize the submodules.
+
+    ```sh
+    git submodule update --init
+    ```
+
+2.  **Create Virtual Environment**: This command creates a `.venv` directory and installs all Python packages specified in `pyproject.toml`.
+
+    ```sh
+    uv sync
+    ```
+
+3.  **Activate Virtual Environment**: To use tools like `cairo-format`, you need to activate the environment.
+
+    ```sh
+    source .venv/bin/activate
+    ```
+
+---
 
 ## Running
 
-Runtime require chain nodes RPC calls, ensure an environment variables [.env](example.env) are set.
+The runtime requires RPC calls to blockchain nodes. Ensure you create an environment variables file from the example and set the required values.
 
-### Steps to Execute:
+```sh
+cp example.env .env
+```
 
-1. **Simulate Cairo1 Module and Collect Proofs Information:**
+### Steps to Execute
 
-   ```bash
-   cargo run --release --bin hdp-cli -- dry-run -m module_contract_class.json --print_output
-   ```
+1.  **Simulate Cairo1 Module & Collect Proof Information**:
+    This step performs a dry run of your Cairo module. `module_contract_class.json` is a compiled contract from a Scarb build.
 
-   `module_contract_class.json` is built contract code from `Scarb` build, more specific example in [DOCS](./docs/src/getting_started.md)
+    ```sh
+    cargo run --release --bin hdp-cli -- dry-run -m module_contract_class.json --print_output
+    ```
 
-2. **Fetch On-Chain Proofs Needed for the HDP Run:**
+2.  **Fetch On-Chain Proofs**:
+    This command fetches the necessary on-chain proofs required for the HDP run.
 
-   ```bash
-   cargo run --release --bin hdp-cli --features progress_bars -- fetch-proofs
-   ```
+    ```sh
+    cargo run --release --bin hdp-cli --features progress_bars -- fetch-proofs
+    ```
 
-3. **Run Cairo1 Module with Verified On-Chain Data:**
+3.  **Run Cairo1 Module with Verified Data**:
+    This executes the module with verified on-chain data.
 
-   ```bash
-   cargo run --release --bin hdp-cli -- sound-run -m module_contract_class.json --print_output
-   ```
+    ```sh
+    cargo run --release --bin hdp-cli -- sound-run -m module_contract_class.json --print_output
+    ```
 
-   `module_contract_class.json` is built contract code from `Scarb` build, more specific example in [DOCS](./docs/src/getting_started.md)
+    The program will output the **results root** and **tasks root**, which can be used to extract the results from the on-chain contract.
 
-The program will output the results root and tasks root. These roots can be used to extract the results from the on-chain contract.
+---
 
 ## Testing
 
-Tests require chain nodes RPC calls. Ensure an environment variables [.env](example.env) are set.
+Tests also require chain node RPC calls, so make sure your `.env` file is set up correctly.
 
-1. **Build Cairo1 Modules:**
+1.  **Build Cairo1 Modules**:
 
-   ```bash
-   scarb build
-   ```
+    ```sh
+    scarb build
+    ```
 
-2. **Run Tests with [nextest](https://nexte.st/):**
-   ```bash
-   cargo nextest run
-   ```
+2.  **Run Tests**:
+    Execute the test suite using `nextest`.
 
-## Note on on-chain finality
+    ```sh
+    cargo nextest run
+    ```
 
-Even if all stages work successfully (dry run, proof fetching, sound run), for the on-chain settlement to be completed, the MMR (Merkle Mountain Range) data of all accessed values must be present in the MMR core module we use to settle. This means that the blocks containing the data you're accessing must have been included in the MMR that the settlement contract uses, which isn't always the case when mixing testnet and mainnet or for cross-chain data access within the same HDP module.
+---
 
-If you encounter issues during on-chain settlement despite successful local execution, verify that the block numbers you're accessing have been properly included in the on-chain MMR data structure.
+## Note on On-Chain Finality
+
+Even if all local stages (dry run, proof fetching, sound run) succeed, on-chain settlement depends on the **MMR (Merkle Mountain Range)**. The data for all accessed values must be present in the MMR core module used for settlement.
+
+This means the blocks you are accessing must have been included in the settlement contract's MMR. This is a critical consideration, especially when mixing testnet and mainnet data or for cross-chain access within the same HDP module. If you encounter issues during on-chain settlement, verify that the relevant block numbers have been included in the on-chain MMR.
