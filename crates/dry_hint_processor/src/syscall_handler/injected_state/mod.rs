@@ -20,7 +20,7 @@ use types::{
         traits::CairoType,
     },
     keys,
-    proofs::injected_state::Action,
+    proofs::injected_state::{Action, ActionRead, ActionWrite},
     Felt252,
 };
 
@@ -120,8 +120,8 @@ impl SyscallHandler for CallContractHandler {
                     .cloned()
                 {
                     let result = read::Response {
-                        exist: cached_entry.exists.into(),
                         value: cached_entry.value,
+                        exist: cached_entry.exists.into(),
                     };
                     retdata_end = result.to_memory(vm, retdata_end)?;
                 } else {
@@ -150,6 +150,12 @@ impl SyscallHandler for CallContractHandler {
                             let exists = response.value.is_some();
                             let value = Felt252::from_bytes_be(&response.value.unwrap_or_default().to_be_bytes());
 
+                            // Record the read action
+                            self.key_set.entry(key.trie_label).or_default().push(Action::Read(ActionRead {
+                                trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
+                                key: pathfinder_crypto::Felt::from(key.key.to_bytes_be()),
+                            }));
+
                             self.read_cache.insert(
                                 CacheKey {
                                     trie_label: key.trie_label,
@@ -166,6 +172,11 @@ impl SyscallHandler for CallContractHandler {
                             retdata_end = result.to_memory(vm, retdata_end)?;
                         }
                         StatusCode::NOT_FOUND => {
+                            self.key_set.entry(key.trie_label).or_default().push(Action::Read(ActionRead {
+                                trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
+                                key: pathfinder_crypto::Felt::from(key.key.to_bytes_be()),
+                            }));
+
                             self.read_cache.insert(
                                 CacheKey {
                                     trie_label: key.trie_label,
@@ -193,22 +204,16 @@ impl SyscallHandler for CallContractHandler {
                 }
             }
             CallHandlerId::Write => {
-                let client = reqwest::Client::new();
-
                 let key = keys::injected_state::write::CairoKey::from_memory(vm, calldata)?;
-                let ptr = memorizer.read_key(
-                    &MaybeRelocatable::Int(poseidon_hash_single(key.trie_label)),
-                    self.dict_manager.clone(),
-                )?;
-                let trie_root = vm.get_integer(ptr)?;
-
+                let trie_root = self.get_trie_root(&memorizer, key.trie_label).await?.unwrap_or(Felt252::ZERO);
                 let request_payload = WriteRequest {
                     trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
                     key: pathfinder_crypto::Felt::from(key.key.to_bytes_be()),
                     value: pathfinder_crypto::Felt::from(key.value.to_bytes_be()),
                 };
-                let endpoint = format!("{}/write", Self::get_base_url());
 
+                let client = reqwest::Client::new();
+                let endpoint = format!("{}/write", Self::get_base_url());
                 let response = client
                     .get(endpoint)
                     .query(&request_payload)
@@ -230,22 +235,24 @@ impl SyscallHandler for CallContractHandler {
                         )?;
 
                         let new_trie_root = Felt252::from_bytes_be(&response.trie_root.to_be_bytes());
-                        let exists = response.value.is_some();
-                        let value = Felt252::from_bytes_be(&response.value.unwrap_or_default().to_be_bytes());
+                        let value = Felt252::from_bytes_be(&response.value.to_be_bytes());
+
+                        // Record the write action
+                        self.key_set.entry(key.trie_label).or_default().push(Action::Write(ActionWrite {
+                            trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
+                            key: pathfinder_crypto::Felt::from(key.key.to_bytes_be()),
+                            value: pathfinder_crypto::Felt::from(key.value.to_bytes_be()),
+                        }));
 
                         self.read_cache.insert(
                             CacheKey {
                                 trie_label: key.trie_label,
                                 key: key.key,
                             },
-                            CacheEntry { exists, value },
+                            CacheEntry { exists: true, value },
                         );
 
-                        let result: write::Response = write::Response {
-                            exist: exists.into(),
-                            value,
-                            trie_root: new_trie_root,
-                        };
+                        let result: write::Response = write::Response { trie_root: new_trie_root };
 
                         retdata_end = result.to_memory(vm, retdata_end)?;
                     }

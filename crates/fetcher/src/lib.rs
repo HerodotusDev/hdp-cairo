@@ -397,14 +397,11 @@ impl<'a> Fetcher<'a> {
         let actions = self.proof_keys.injected_state.clone();
         let mut result = StateProofs::new();
 
-        for (trie_root, actions) in actions.into_iter() {
-            let request_payload = GetStateProofsRequest {
-                trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
-                actions,
-            };
+        for (_trie_label, actions) in actions.into_iter() {
+            let request_payload = GetStateProofsRequest { actions };
 
             let response = client
-                .post(format!("{}/get-state-proofs", state_server_url))
+                .post(format!("{}/get_state_proofs", state_server_url))
                 .header("content-type", "application/json")
                 .json(&request_payload)
                 .send()

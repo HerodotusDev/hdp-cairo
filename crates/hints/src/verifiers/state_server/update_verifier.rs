@@ -10,7 +10,7 @@ use types::proofs::injected_state::StateProofWrite;
 
 use crate::vars;
 
-pub const HINT_GET_UPDATE_PROOF_AT: &str = "ids.update = state_proof_wrapper.state_proof.update";
+pub const HINT_GET_UPDATE_PROOF_AT: &str = "ids.update = state_proof.state_proof.update";
 
 pub fn hint_get_update_proof_at(
     vm: &mut VirtualMachine,

@@ -20,12 +20,12 @@ func inclusion_state_verification{
     alloc_locals;
     
     local key_be: felt; 
-    %{ ids.key_be = state_proof_wrapper.leaf.key %} 
+    %{ ids.key_be = state_proof.leaf.key %} 
 
     tempvar proof_len: felt = nondet %{ len(state_proof) %};
 
     let (nodes_ptr: felt**) = alloc();
-    %{ segments.write_arg(ids.nodes_ptr, state_proof_wrapper) %}
+    %{ segments.write_arg(ids.nodes_ptr, state_proof) %}
 
     let (hash_binary_node_ptr) = get_label_location(HashNodeTruncatedKeccak.hash_binary_node);
     let (hash_edge_node_ptr) = get_label_location(HashNodeTruncatedKeccak.hash_edge_node);
@@ -57,8 +57,8 @@ func update_state_verification(
 ) -> (value: felt*, value_len: felt){
     alloc_locals;
 
-    %{ update = state_proof_wrapper.state_proof.update %}
-    // tempvar key_be: Uint256 = nondet %{ state_proof_wrapper.leaf.key %}; 
+    %{ update = state_proof.state_proof.update %}
+    // tempvar key_be: Uint256 = nondet %{ state_proof.leaf.key %}; 
     // tempvar prev_root: Uint256 = nondet %{ update.0 %}; //shouldnt this be the stateproofwrapper so we can get the root 
     // tempvar new_root: Uint256 = nondet %{ update.1 %}; 
 

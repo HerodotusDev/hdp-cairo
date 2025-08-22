@@ -14,7 +14,7 @@ use types::proofs::injected_state::{StateProof, StateProofs};
 use crate::vars;
 
 pub const HINT_STATE_PROOF_ENTER_SCOPE: &str =
-    "vm_enter_scope({'state_proof_wrapper': state_proofs[ids.idx - 1], '__dict_manager': __dict_manager})";
+    "vm_enter_scope({'state_proof': state_proofs[ids.idx - 1], '__dict_manager': __dict_manager})";
 
 pub fn hint_state_proof_enter_scope(
     vm: &mut VirtualMachine,
