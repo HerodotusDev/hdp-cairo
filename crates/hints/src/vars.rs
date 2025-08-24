@@ -91,6 +91,7 @@ pub mod ids {
     pub const SYSCALL_PTR: &str = "syscall_ptr";
     pub const TASK_HASH: &str = "task_hash";
     pub const TRIE_NODE_PROOF: &str = "trie_node_proof";
+    pub const TRIE_ID: &str = "trie_id";
     pub const VALUE_LEN: &str = "value_len";
     pub const VALUE: &str = "value";
 }

@@ -13,7 +13,7 @@ use types::proofs::injected_state::{CairoTrieNodeSerde, StateProofRead};
 
 use crate::vars;
 
-pub const HINT_GET_KEY_BE: &str = "ids.key_be = state_proof_wrapper.leaf.key";
+pub const HINT_GET_KEY_BE: &str = "ids.key_be = state_proof_read.leaf.key";
 
 pub fn hint_get_key_be(
     vm: &mut VirtualMachine,
@@ -43,6 +43,26 @@ pub fn hint_inclusion_proof_len(
 ) -> Result<(), HintError> {
     let state_proof = exec_scopes.get::<StateProofRead>(vars::scopes::STATE_PROOF)?;
     insert_value_into_ap(vm, Felt252::from(state_proof.state_proof.len()))
+}
+
+pub const HINT_GET_TRIE_ID: &str = "ids.trie_id = state_proof_read.trie_id";
+
+pub fn hint_get_trie_id(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let state_proof = exec_scopes.get::<StateProofRead>(vars::scopes::STATE_PROOF)?;
+    let trie_id = state_proof.trie_id;
+    let trie_id_ptr = get_address_from_var_name(vars::ids::TRIE_ID, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+
+    vm.insert_value(
+        (trie_id_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 0)?,
+        Felt252::from(trie_id),
+    )?;
+
+    Ok(())
 }
 
 pub const HINT_GET_TRIE_NODE_PROOF: &str = "segments.write_arg(ids.nodes_ptr, state_proof)";

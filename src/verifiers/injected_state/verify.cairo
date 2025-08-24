@@ -19,8 +19,11 @@ func inclusion_state_verification{
 }() -> (root: felt, value: felt){
     alloc_locals;
     
+    local trie_id: felt;
+    %{ ids.trie_id = state_proof_read.trie_id %}
+
     local key_be: felt; 
-    %{ ids.key_be = state_proof_wrapper.leaf.key %} 
+    %{ ids.key_be = state_proof_read.leaf.key %} 
 
     tempvar proof_len: felt = nondet %{ len(state_proof) %};
 
@@ -31,9 +34,8 @@ func inclusion_state_verification{
     let (hash_edge_node_ptr) = get_label_location(HashNodeTruncatedKeccak.hash_edge_node);
 
     let (keccak_ptr_seg: TruncatedKeccak*) = alloc();
-    local keccak_ptr_seg_start: TruncatedKeccak* = keccak_ptr_seg;
     let hash_ptr = cast(keccak_ptr_seg, HashBuiltin*);
-    // local keccak_ptr_seg_start: HashBuiltin* = cast(keccak_ptr_seg, HashBuiltin*);
+    local keccak_ptr_seg_start: TruncatedKeccak* = keccak_ptr_seg;
     
     let (root, value) = traverse{
         hash_binary_node_ptr=hash_binary_node_ptr, hash_edge_node_ptr=hash_edge_node_ptr, hash_ptr=hash_ptr,
@@ -48,19 +50,16 @@ func inclusion_state_verification{
         }(ptr_start=keccak_ptr_seg_start, ptr_end=keccak_ptr_seg);
     }
 
+    InjectedStateMemorizer.add(key=trie_id, data=cast(key_be, felt*));
+
     return (root=root, value=value);
-    //todo()! -> memorizer, save the keys
+
 }
 
 func update_state_verification(
     injected_state_memorizer: DictAccess*,
 ) -> (value: felt*, value_len: felt){
     alloc_locals;
-
-    %{ update = state_proof_wrapper.state_proof.update %}
-    // tempvar key_be: Uint256 = nondet %{ state_proof_wrapper.leaf.key %}; 
-    // tempvar prev_root: Uint256 = nondet %{ update.0 %}; //shouldnt this be the stateproofwrapper so we can get the root 
-    // tempvar new_root: Uint256 = nondet %{ update.1 %}; 
 
     //todo()!
     assert 1 = 0;

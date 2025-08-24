@@ -123,7 +123,6 @@ func run_injected_state_verification_inner{
             keccak_ptr=keccak_ptr,
             pow2_array=pow2_array,
         }();
-        %{ print(root, value) %}
         %{ vm_exit_scope() %}
 
         return run_injected_state_verification_inner(idx=idx - 1);

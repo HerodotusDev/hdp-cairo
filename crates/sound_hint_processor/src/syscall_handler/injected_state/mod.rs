@@ -12,7 +12,7 @@ use syscall_handler::{memorizer::Memorizer, traits::SyscallHandler, SyscallExecu
 use types::{
     cairo::{
         new_syscalls::{CallContractRequest, CallContractResponse},
-        traits::CairoType,
+        traits::CairoType, FELT_0, FELT_1
     },
     keys,
     proofs::injected_state::Action,
@@ -52,7 +52,7 @@ impl SyscallHandler for CallContractHandler {
         let memorizer = Memorizer::derive(vm, &mut calldata)?;
 
         let retdata_start = vm.add_memory_segment();
-        let retdata_end = retdata_start;
+        let mut retdata_end = retdata_start;
 
         match call_handler_id {
             CallHandlerId::Read => {
@@ -61,7 +61,12 @@ impl SyscallHandler for CallContractHandler {
                     &MaybeRelocatable::Int(poseidon_hash_single(key.trie_label)),
                     self.dict_manager.clone(),
                 )?;
-                let _trie_root = vm.get_integer(ptr)?;
+                let leaf_key = vm.get_integer(ptr)?;
+                let result = read::Response {
+                    exist: FELT_1,
+                    value: *leaf_key,
+                };
+                retdata_end = result.to_memory(vm, retdata_end)?;
             }
             CallHandlerId::Write => {
                 let key = keys::injected_state::write::CairoKey::from_memory(vm, calldata)?;
@@ -69,7 +74,7 @@ impl SyscallHandler for CallContractHandler {
                     &MaybeRelocatable::Int(poseidon_hash_single(key.trie_label)),
                     self.dict_manager.clone(),
                 )?;
-                let _trie_root = vm.get_integer(ptr)?;
+                let trie_root = vm.get_integer(ptr)?;
             }
             CallHandlerId::Label => {
                 let key = keys::injected_state::label::CairoKey::from_memory(vm, calldata)?;
@@ -77,7 +82,12 @@ impl SyscallHandler for CallContractHandler {
                     &MaybeRelocatable::Int(poseidon_hash_single(key.trie_label)),
                     self.dict_manager.clone(),
                 )?;
-                let _trie_root = vm.get_integer(ptr)?;
+                let trie_root = vm.get_integer(ptr)?;
+                let result = label::Response {
+                    trie_root: *trie_root,
+                };
+
+                retdata_end = result.to_memory(vm, retdata_end)?;
             }
         }
 
