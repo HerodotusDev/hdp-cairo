@@ -85,6 +85,7 @@ func run_chain_state_verification_inner{
 func run_injected_state_verification{
     range_check_ptr,
     keccak_ptr: KeccakBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
     injected_state_memorizer: DictAccess*,
@@ -93,6 +94,7 @@ func run_injected_state_verification{
     let (idx) = run_injected_state_verification_inner{
         range_check_ptr=range_check_ptr,
         keccak_ptr=keccak_ptr,
+        poseidon_ptr=poseidon_ptr,
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array,
         injected_state_memorizer=injected_state_memorizer,
@@ -103,6 +105,7 @@ func run_injected_state_verification{
 func run_injected_state_verification_inner{
     range_check_ptr,
     keccak_ptr: KeccakBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
     injected_state_memorizer: DictAccess*,
@@ -119,6 +122,7 @@ func run_injected_state_verification_inner{
         %{ vm_enter_scope({'state_proof': state_proofs[ids.idx - 1], '__dict_manager': __dict_manager}) %}
         let (root, value) = inclusion_state_verification{
             range_check_ptr=range_check_ptr,
+            poseidon_ptr=poseidon_ptr,
             bitwise_ptr=bitwise_ptr,
             keccak_ptr=keccak_ptr,
             pow2_array=pow2_array,

@@ -12,6 +12,7 @@ from src.types import TrieNode
 
 func inclusion_state_verification{
     range_check_ptr,
+    poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     pow2_array: felt*,
