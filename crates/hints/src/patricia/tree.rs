@@ -14,6 +14,8 @@ use std::{
 use cairo_vm::types::errors::math_errors::MathError;
 use num_bigint::BigUint;
 use num_traits::{One, ToPrimitive, Zero};
+use pathfinder_common::{hash::FeltHash, trie::TrieNode};
+use pathfinder_crypto::Felt;
 use types::Felt252;
 
 use crate::patricia::{
@@ -300,4 +302,27 @@ where
     let node_new = preimage_tree(height, preimage, canonic(preimage, Felt252::from(new_root)));
 
     get_descents::<LF>(height, NodePath(BigUint::zero()), &node, Some(node_prev), Some(node_new))
+}
+
+pub fn generate_preimage<H: FeltHash>(proof: Vec<TrieNode>) -> Preimage {
+    HashMap::from_iter(proof.into_iter().map(|node| {
+        let hash = node.hash::<H>();
+        match node {
+            TrieNode::Binary { left, right } => (
+                Felt252::from_bytes_be(&hash.to_be_bytes()),
+                vec![
+                    Felt252::from_bytes_be(&left.to_be_bytes()),
+                    Felt252::from_bytes_be(&right.to_be_bytes()),
+                ],
+            ),
+            TrieNode::Edge { child, path } => (
+                Felt252::from_bytes_be(&hash.to_be_bytes()),
+                vec![
+                    Felt252::from_bytes_be(&Felt::from_u64(path.len() as u64).to_be_bytes()),
+                    Felt252::from_bytes_be(&Felt::from_bits(&path).unwrap().to_be_bytes()),
+                    Felt252::from_bytes_be(&child.to_be_bytes()),
+                ],
+            ),
+        }
+    }))
 }
