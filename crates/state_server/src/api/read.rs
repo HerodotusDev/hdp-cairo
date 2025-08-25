@@ -25,9 +25,11 @@ pub async fn read(State(state): State<AppState>, Query(payload): Query<ReadReque
         .connection_manager
         .get_connection()
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    let (storage, _trie, _root_idx) = Trie::load_from_root(payload.trie_root, &conn).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
+    let (storage, _trie, _root_idx) = if payload.trie_root == Felt::ZERO {
+        Trie::create_empty(&conn).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    } else {
+        Trie::load_from_root(payload.trie_root, &conn).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    };
     let leaf = storage.get_leaf(payload.key).ok();
 
     Ok(Json(ReadResponse {

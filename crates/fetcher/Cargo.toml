@@ -22,7 +22,6 @@ serde_json.workspace = true
 starknet-types-core.workspace = true
 state_server.workspace = true
 syscall_handler.workspace = true
-pathfinder-crypto.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 types.workspace = true

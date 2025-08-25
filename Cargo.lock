@@ -3051,7 +3051,6 @@ dependencies = [
  "futures",
  "indexer",
  "indicatif",
- "pathfinder-crypto",
  "reqwest 0.12.22",
  "serde_json",
  "starknet-types-core",

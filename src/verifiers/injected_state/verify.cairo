@@ -29,7 +29,7 @@ func inclusion_state_verification{
     tempvar proof_len: felt = nondet %{ len(state_proof) %};
 
     let (nodes_ptr: felt**) = alloc();
-    %{ segments.write_arg(ids.nodes_ptr, state_proof_wrapper) %}
+    %{ segments.write_arg(ids.nodes_ptr, state_proof) %}
 
     let (hash_binary_node_ptr) = get_label_location(HashNodeTruncatedKeccak.hash_binary_node);
     let (hash_edge_node_ptr) = get_label_location(HashNodeTruncatedKeccak.hash_edge_node);

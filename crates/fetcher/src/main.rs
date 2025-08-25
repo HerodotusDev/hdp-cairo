@@ -15,7 +15,6 @@ use fetcher::{parse_syscall_handler, Args, Fetcher};
 use futures as _;
 use indexer as _;
 use indicatif as _;
-use pathfinder_crypto as _;
 use reqwest as _;
 use starknet_types_core as _;
 use state_server as _;
