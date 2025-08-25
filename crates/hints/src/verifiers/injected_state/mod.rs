@@ -1,5 +1,5 @@
-pub mod inclusion_verifier;
-pub mod update_verifier;
+pub mod inclusion;
+pub mod update;
 
 use std::{any::Any, collections::HashMap};
 
@@ -38,19 +38,5 @@ pub fn hint_state_proof_enter_scope(
         (String::from(vars::scopes::DICT_MANAGER), dict_manager),
     ]));
 
-    Ok(())
-}
-
-pub const HINT_PRINT_ROOT_AND_VALUE: &str = "print(root, value)";
-
-pub fn hint_print_root_and_value(
-    vm: &mut VirtualMachine,
-    _exec_scopes: &mut ExecutionScopes,
-    hint_data: &HintProcessorData,
-    _constants: &HashMap<String, Felt252>,
-) -> Result<(), HintError> {
-    let root: Felt252 = get_integer_from_var_name(vars::ids::ROOT, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let value: Felt252 = get_integer_from_var_name(vars::ids::VALUE, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    println!("Root: {:?}, Value: {:?}", root, value);
     Ok(())
 }
