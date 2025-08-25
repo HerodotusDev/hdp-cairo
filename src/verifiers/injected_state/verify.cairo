@@ -5,7 +5,7 @@ from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian, uint
 from starkware.cairo.common.default_dict import default_dict_finalize
 from starkware.cairo.common.registers import get_label_location
 from src.memorizers.injected_state.memorizer import InjectedStateMemorizer
-from src.utils.patricia_with_keccak import patricia_update
+from src.utils.patricia_with_keccak import patricia_update_using_update_constants, patricia_update_constants_new
 from src.utils.keccak import TruncatedKeccak, finalize_truncated_keccak
 from src.verifiers.mpt import HashNodeTruncatedKeccak, traverse
 from src.types import TrieNode
@@ -33,7 +33,6 @@ func inclusion_state_verification{
     let (keccak_ptr_seg: TruncatedKeccak*) = alloc();
     local keccak_ptr_seg_start: TruncatedKeccak* = keccak_ptr_seg;
     let hash_ptr = cast(keccak_ptr_seg, HashBuiltin*);
-    // local keccak_ptr_seg_start: HashBuiltin* = cast(keccak_ptr_seg, HashBuiltin*);
     
     let (root, value) = traverse{
         hash_binary_node_ptr=hash_binary_node_ptr, hash_edge_node_ptr=hash_edge_node_ptr, hash_ptr=hash_ptr,
@@ -52,18 +51,55 @@ func inclusion_state_verification{
     //todo()! -> memorizer, save the keys
 }
 
-func update_state_verification(
+func update_state_verification{
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    keccak_ptr: KeccakBuiltin*,
+    pow2_array: felt*,
     injected_state_memorizer: DictAccess*,
-) -> (value: felt*, value_len: felt){
+}() -> (root: felt, value: felt){
     alloc_locals;
 
-    %{ update = state_proof.state_proof.update %}
-    // tempvar key_be: Uint256 = nondet %{ state_proof.leaf.key %}; 
-    // tempvar prev_root: Uint256 = nondet %{ update.0 %}; //shouldnt this be the stateproofwrapper so we can get the root 
-    // tempvar new_root: Uint256 = nondet %{ update.1 %}; 
+    tempvar n_updates = 1;
 
-    //todo()!
-    assert 1 = 0;
-    let (res: felt*) = alloc();
-    return (value=res, value_len=0);
+    tempvar prev_root = nondet %{ state_proof.trie_root_prev %};
+    tempvar new_root = nondet %{ state_proof.trie_root_post %};
+
+    let (local update_dict: DictAccess*) = alloc();
+    let update_dict_start = update_dict;
+
+    assert update_dict.key = nondet %{ state_proof.leaf_prev.key %};
+    assert update_dict.prev_value = nondet %{ state_proof.leaf_prev.data.value %};
+    assert update_dict.new_value = nondet %{ state_proof.leaf_post.data.value %};
+
+    let update_dict = update_dict + DictAccess.SIZE;
+
+    let (consts) = patricia_update_constants_new();
+
+    let (keccak_ptr_seg: TruncatedKeccak*) = alloc();
+    local keccak_ptr_seg_start: TruncatedKeccak* = keccak_ptr_seg;
+
+    %{
+        preimage = {
+            *generate_preimage(state_proof.state_proof_prev)
+            *generate_preimage(state_proof.state_proof_post)
+        }
+    %}
+
+    patricia_update_using_update_constants{hash_ptr=keccak_ptr_seg}(
+        patricia_update_constants=consts,
+        update_ptr=update_dict_start,
+        n_updates=n_updates,
+        height=251,
+        prev_root=prev_root,
+        new_root=new_root,
+    );
+
+    with keccak_ptr_seg{
+        finalize_truncated_keccak{
+            range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
+        }(ptr_start=keccak_ptr_seg_start, ptr_end=keccak_ptr_seg);
+    }
+    
+    return (root=0, value=0);
 }

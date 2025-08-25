@@ -122,32 +122,26 @@ func run_injected_state_verification_inner{
             bitwise_ptr=bitwise_ptr,
             keccak_ptr=keccak_ptr,
             pow2_array=pow2_array,
+            injected_state_memorizer=injected_state_memorizer,
         }();
-        %{ print(root, value) %}
         %{ vm_exit_scope() %}
 
         return run_injected_state_verification_inner(idx=idx - 1);
     }
 
-    // if (proof_info.proof_type == ProofType.NON_INCLUSION) {
-    //     with proof_info {
-    //         %{ vm_enter_scope({'batch_state_server': state_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
-    //         let (value, value_len) = non_inclusion_state_verification(0);
-    //         %{ vm_exit_scope() %}
+    if (proof_type == ProofType.WRITE) {
+        %{ vm_enter_scope({'state_proof': state_proofs[ids.idx - 1], '__dict_manager': __dict_manager}) %}
+        let (root, value) = update_state_verification{
+            range_check_ptr=range_check_ptr,
+            bitwise_ptr=bitwise_ptr,
+            keccak_ptr=keccak_ptr,
+            pow2_array=pow2_array,
+            injected_state_memorizer=injected_state_memorizer,
+        }();
+        %{ vm_exit_scope() %}
 
-    // return run_injected_state_verification_inner(idx=idx - 1);
-    //     }
-    // }
-
-    // if (proof_info.proof_type == ProofType.UPDATE) {
-    //     with proof_info {
-    //         %{ vm_enter_scope({'batch_state_server': state_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
-    //         let (value, value_len) = update_state_verification();
-    //         %{ vm_exit_scope() %}
-
-    // return run_injected_state_verification_inner(idx=idx - 1);
-    //     }
-    // }
+        return run_injected_state_verification_inner(idx=idx - 1);
+    }
 
     assert 0 = 1;
     return (idx=0);
