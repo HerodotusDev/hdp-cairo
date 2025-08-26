@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 use cairo_vm::{
     hint_processor::builtin_hint_processor::dict_manager::DictManager,
@@ -6,25 +6,21 @@ use cairo_vm::{
     vm::vm_core::VirtualMachine,
 };
 use serde::{Deserialize, Serialize};
-use starknet_crypto::{poseidon_hash_single, poseidon_hash_many};
+use starknet_crypto::{poseidon_hash_many, poseidon_hash_single};
 use strum_macros::FromRepr;
 use syscall_handler::{memorizer::Memorizer, traits::SyscallHandler, SyscallExecutionError, SyscallResult, WriteResponseResult};
 use types::{
     cairo::{
+        injected_state::{label, read},
         new_syscalls::{CallContractRequest, CallContractResponse},
-        traits::CairoType, FELT_1
+        traits::CairoType,
+        FELT_1,
     },
-    keys,
-    proofs::injected_state::Action,
-    Felt252,
+    keys, Felt252,
 };
 
-pub mod label;
-pub mod read;
-pub mod write;
-
-// pub const INCLUSION: Felt252 = Felt252::from_str("inclusion").unwrap();
-// pub const NON_INCLUSION: Felt252 = Felt252::from_str("non_inclusion").unwrap();
+pub const INCLUSION: Felt252 = Felt252::from_hex_unchecked("0x696E636C7573696F6E");
+pub const NON_INCLUSION: Felt252 = Felt252::from_hex_unchecked("0x6E6F6E5F696E636C7573696F6E");
 
 #[derive(FromRepr, Debug)]
 pub enum CallHandlerId {
@@ -35,9 +31,14 @@ pub enum CallHandlerId {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct CallContractHandler {
-    pub key_set: HashMap<Felt252, Vec<Action>>,
     #[serde(skip)]
     pub dict_manager: Rc<RefCell<DictManager>>,
+}
+
+impl CallContractHandler {
+    pub fn new(dict_manager: Rc<RefCell<DictManager>>) -> Self {
+        Self { dict_manager }
+    }
 }
 
 impl SyscallHandler for CallContractHandler {
@@ -49,8 +50,6 @@ impl SyscallHandler for CallContractHandler {
     }
 
     async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
-        // TODO: implement correctly
-
         let call_handler_id = CallHandlerId::try_from(request.selector)?;
 
         let mut calldata = request.calldata_start;
@@ -62,39 +61,28 @@ impl SyscallHandler for CallContractHandler {
         match call_handler_id {
             CallHandlerId::Label => {
                 let key = keys::injected_state::label::CairoKey::from_memory(vm, calldata)?;
-                let ptr = memorizer.read_key(
+                let trie_root = memorizer.read_key_int(
                     &MaybeRelocatable::Int(poseidon_hash_single(key.trie_label)),
                     self.dict_manager.clone(),
                 )?;
-                let trie_root = vm.get_integer(ptr)?;
                 let result = label::Response {
-                    trie_root: *trie_root,
+                    trie_root,
+                    exists: Felt252::ONE,
                 };
-
                 retdata_end = result.to_memory(vm, retdata_end)?;
             }
             CallHandlerId::Read => {
-                println!("Read");
                 let key = keys::injected_state::read::CairoKey::from_memory(vm, calldata)?;
-                println!("key: {:?}", key);
-                let ptr = memorizer.read_key(
+                let trie_root = memorizer.read_key_int(
                     &MaybeRelocatable::Int(poseidon_hash_single(key.trie_label)),
                     self.dict_manager.clone(),
                 )?;
-                println!("ptr: {:?}", ptr);
-                let trie_root = vm.get_integer(ptr)?;
-                
-                println!("trie_root: {:?}", trie_root);
 
-                //handle inclusion and non-inclusion differentiation
-                
                 let ptr = memorizer.read_key(
-                    &MaybeRelocatable::Int(poseidon_hash_many([&trie_root, &key.key])),
+                    &MaybeRelocatable::Int(poseidon_hash_many([&INCLUSION, &trie_root, &key.key])),
                     self.dict_manager.clone(),
                 )?;
-                println!("ptr: {:?}", ptr);
                 let leaf_key = vm.get_integer(ptr)?;
-                println!("leaf_key: {:?}", leaf_key);
                 let result = read::Response {
                     exist: FELT_1,
                     value: *leaf_key,
