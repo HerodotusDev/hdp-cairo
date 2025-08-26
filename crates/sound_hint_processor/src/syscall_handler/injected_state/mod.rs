@@ -6,13 +6,13 @@ use cairo_vm::{
     vm::vm_core::VirtualMachine,
 };
 use serde::{Deserialize, Serialize};
-use starknet_crypto::poseidon_hash_single;
+use starknet_crypto::{poseidon_hash_single, poseidon_hash_many};
 use strum_macros::FromRepr;
 use syscall_handler::{memorizer::Memorizer, traits::SyscallHandler, SyscallExecutionError, SyscallResult, WriteResponseResult};
 use types::{
     cairo::{
         new_syscalls::{CallContractRequest, CallContractResponse},
-        traits::CairoType, FELT_0, FELT_1
+        traits::CairoType, FELT_1
     },
     keys,
     proofs::injected_state::Action,
@@ -60,7 +60,7 @@ impl SyscallHandler for CallContractHandler {
             CallHandlerId::Read => {
                 let key = keys::injected_state::read::CairoKey::from_memory(vm, calldata)?;
                 let ptr = memorizer.read_key(
-                    &MaybeRelocatable::Int(poseidon_hash_single(key.trie_label)),
+                    &MaybeRelocatable::Int(poseidon_hash_many([&key.trie_label, &key.key])),
                     self.dict_manager.clone(),
                 )?;
                 let leaf_key = vm.get_integer(ptr)?;
@@ -76,7 +76,7 @@ impl SyscallHandler for CallContractHandler {
                     &MaybeRelocatable::Int(poseidon_hash_single(key.trie_label)),
                     self.dict_manager.clone(),
                 )?;
-                let trie_root = vm.get_integer(ptr)?;
+                let _trie_root = vm.get_integer(ptr)?;
             }
             CallHandlerId::Label => {
                 let key = keys::injected_state::label::CairoKey::from_memory(vm, calldata)?;

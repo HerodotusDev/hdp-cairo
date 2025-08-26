@@ -7,6 +7,32 @@ from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.alloc import alloc
 from src.memorizers.bare import BareMemorizer
 
+namespace InjectedStatePackParams {
+    func read(root_hash: felt, key_be: felt) -> (params: felt*, params_len: felt) {
+        alloc_locals;
+
+        local params: felt* = nondet %{ segments.add() %};
+        assert params[0] = root_hash;
+        assert params[1] = key_be;
+
+        return (params=params, params_len=2);
+    }
+}
+
+namespace InjectedStateHashParams {
+    func read{poseidon_ptr: PoseidonBuiltin*}(root_hash: felt, key_be: felt) -> felt {
+        let (params, params_len) = InjectedStatePackParams.read(
+            root_hash=root_hash, key_be=key_be
+        );
+        return hash_memorizer_key(params, params_len);
+    }
+}
+
+func hash_memorizer_key{poseidon_ptr: PoseidonBuiltin*}(params: felt*, params_len: felt) -> felt {
+    let (res) = poseidon_hash_many(params_len, params);
+    return res;
+}
+
 namespace InjectedStateMemorizer {
     func init() -> (dict_ptr: DictAccess*, dict_ptr_start: DictAccess*) {
         alloc_locals;

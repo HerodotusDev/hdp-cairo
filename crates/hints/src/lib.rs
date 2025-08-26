@@ -165,7 +165,7 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_TRIE_NODE_PROOF.into(), verifiers::state_server::inclusion_verifier::hint_get_trie_node_proof);
     hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_KEY_BE.into(), verifiers::state_server::inclusion_verifier::hint_get_key_be);
     hints.insert(verifiers::state_server::inclusion_verifier::HINT_INCLUSION_PROOF_LEN.into(), verifiers::state_server::inclusion_verifier::hint_inclusion_proof_len);
-    hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_TRIE_ID.into(), verifiers::state_server::inclusion_verifier::hint_get_trie_id);
+    hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_TRIE_ROOT_HASH.into(), verifiers::state_server::inclusion_verifier::hint_get_trie_root_hash);
 
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::bit_length::HINT_BIT_LENGTH.into(), eth_essentials_cairo_vm_hints::hints::lib::bit_length::hint_bit_length);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::mmr::bit_length::MMR_BIT_LENGTH.into(), eth_essentials_cairo_vm_hints::hints::lib::mmr::bit_length::mmr_bit_length);

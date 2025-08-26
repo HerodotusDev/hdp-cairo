@@ -20,8 +20,8 @@ func inclusion_state_verification{
 }() -> (root: felt, value: felt){
     alloc_locals;
     
-    local trie_id: felt;
-    %{ ids.trie_id = state_proof_read.trie_id %}
+    local root_hash: felt;
+    %{ ids.root_hash = state_proof_read.trie_root %}
 
     local key_be: felt; 
     %{ ids.key_be = state_proof_read.leaf.key %} 
@@ -51,7 +51,8 @@ func inclusion_state_verification{
         }(ptr_start=keccak_ptr_seg_start, ptr_end=keccak_ptr_seg);
     }
 
-    InjectedStateMemorizer.add(key=trie_id, data=cast(key_be, felt*));
+    let memorizer_key = InjectedStateHashParams.read{poseidon_ptr=poseidon_ptr}(root_hash=root_hash, key_be=key_be);
+    InjectedStateMemorizer.add(key=memorizer_key, data=cast(key_be, felt*));
 
     return (root=root, value=value);
 
