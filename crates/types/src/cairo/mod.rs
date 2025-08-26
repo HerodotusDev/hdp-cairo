@@ -2,6 +2,7 @@ use cairo_vm::Felt252;
 use starknet_crypto::Felt;
 
 pub mod evm;
+pub mod injected_state;
 pub mod new_syscalls;
 pub mod starknet;
 pub mod structs;
