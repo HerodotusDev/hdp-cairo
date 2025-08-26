@@ -44,12 +44,13 @@ impl Trie {
         (storage, trie)
     }
 
-    pub fn load_from_root(
+    pub fn load_from_root<'a>(
         root: Felt,
-        conn: &PooledConnection<SqliteConnectionManager>,
-    ) -> Result<(TrieDB, MerkleTree<TruncatedKeccakHash, 251>, TrieStorageIndex), Error> {
+        trie_label: &str,
+        conn: &'a PooledConnection<SqliteConnectionManager>,
+    ) -> Result<(TrieDB<'a>, MerkleTree<TruncatedKeccakHash, 251>, TrieStorageIndex), Error> {
         let storage = TrieDB::new(conn);
-        let root_idx_u64 = storage.get_node_idx_by_hash(root)?.ok_or(Error::MissingNodeIndex)?;
+        let root_idx_u64 = storage.get_node_idx_by_hash(root, trie_label)?.ok_or(Error::MissingNodeIndex)?;
         let root_idx = TrieStorageIndex::from(root_idx_u64);
         let trie = MerkleTree::<TruncatedKeccakHash, 251>::new(root_idx);
 
@@ -75,21 +76,10 @@ impl Trie {
         Ok((storage, trie, root_idx))
     }
 
-    pub fn persist_changes(
-        storage: &mut TrieDB,
-        trie: &MerkleTree<TruncatedKeccakHash, 251>,
-        leafs: Vec<TrieLeaf>,
-    ) -> Result<TrieUpdate, Error> {
-        let update = trie.clone().commit(storage)?;
-        let _root_idx = Trie::persist_updates(storage, &update, &leafs)?;
-
-        Ok(update)
-    }
-
-    pub fn get_leaf_proof(storage: &TrieDB, root: Felt, leaf: TrieLeaf) -> Result<Vec<TrieNodeWithHash>, Error> {
+    pub fn get_leaf_proof(storage: &TrieDB, root: Felt, leaf: TrieLeaf, trie_label: &str) -> Result<Vec<TrieNodeWithHash>, Error> {
         // Convert the key to a bitvec for the trie
         let key_bits = leaf.get_path();
-        let root_idx = storage.get_node_idx_by_hash(root)?.unwrap();
+        let root_idx = storage.get_node_idx_by_hash(root, trie_label)?.unwrap();
 
         MerkleTree::<TruncatedKeccakHash, 251>::get_proof(root_idx.into(), storage, &key_bits).map_err(Error::GetProof)
     }
@@ -153,12 +143,19 @@ impl Trie {
     /// * `storage` - The TrieDB.
     /// * `update` - The TrieUpdate.
     /// * `items` - The items to be persisted.
+    /// * `starting_index` - Optional starting index to replay from. If None, uses the maximum index + 1.
     ///
     /// # Returns
     ///
     /// A Result containing the root node index or an error.
-    pub fn persist_updates(storage: &TrieDB, update: &TrieUpdate, items: &Vec<TrieLeaf>) -> Result<TrieStorageIndex, Error> {
-        let next_index = storage.get_node_idx()? + 1;
+    pub fn persist_updates(
+        storage: &TrieDB,
+        update: &TrieUpdate,
+        items: &Vec<TrieLeaf>,
+        starting_index: Option<u64>,
+        trie_label: &str,
+    ) -> Result<TrieStorageIndex, Error> {
+        let next_index = starting_index.unwrap_or_else(|| storage.get_node_idx().unwrap()) + 1;
         let mut nodes_to_persist: Vec<(StoredNode, Felt, u64)> = vec![];
         let mut root_index: Option<TrieStorageIndex> = None;
 
@@ -199,26 +196,28 @@ impl Trie {
             }
         }
 
-        storage.persist_nodes(nodes_to_persist)?;
-        storage.persist_leafs(items)?;
+        storage.persist_nodes(nodes_to_persist, trie_label)?;
 
-        // First, try using the index we tracked while iterating over nodes_added.
-        if let Some(root_idx) = root_index {
-            return Ok(root_idx);
-        }
+        // Determine the final root index before persisting leaves
+        let final_root_idx = if let Some(root_idx) = root_index {
+            root_idx
+        } else if let Some(idx) = storage
+            .get_node_idx_by_hash(update.root_commitment, trie_label)?
+            .map(TrieStorageIndex::from)
+        {
+            idx
+        } else {
+            // Fallback: create a placeholder root node so that subsequent look-ups succeed.
+            let empty_root_node = StoredNode::LeafBinary;
+            let root_idx = storage.get_node_idx()? + 1; // next available index after persistence
+            let nodes_for_empty_root = vec![(empty_root_node, update.root_commitment, root_idx)];
+            storage.persist_nodes(nodes_for_empty_root, trie_label)?;
+            TrieStorageIndex::from(root_idx)
+        };
 
-        // If we didn't find the root in nodes_added, attempt to look it up now that we've
-        // persisted all nodes. This covers the common case where the root already existed in
-        // storage before the update (so it wasn't part of nodes_added).
-        if let Some(idx) = storage.get_node_idx_by_hash(update.root_commitment)?.map(TrieStorageIndex::from) {
-            return Ok(idx);
-        }
+        // Now persist the leaves with the final root index
+        storage.persist_leafs(items, u64::from(final_root_idx), trie_label)?;
 
-        // Fallback: create a placeholder root node so that subsequent look-ups succeed.
-        let empty_root_node = StoredNode::LeafBinary;
-        let root_idx = storage.get_node_idx()? + 1; // next available index after persistence
-        let nodes_for_empty_root = vec![(empty_root_node, update.root_commitment, root_idx)];
-        storage.persist_nodes(nodes_for_empty_root)?;
-        Ok(TrieStorageIndex::from(root_idx))
+        Ok(final_root_idx)
     }
 }

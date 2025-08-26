@@ -119,6 +119,13 @@ impl SyscallHandler for CallContractHandler {
                     })
                     .cloned()
                 {
+                    let trie_root = self.get_trie_root(&memorizer, key.trie_label).await?.unwrap_or(Felt252::ZERO);
+                    self.key_set.entry(key.trie_label).or_default().push(Action::Read(ActionRead {
+                        trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
+                        trie_label: key.trie_label.to_string(),
+                        key: pathfinder_crypto::Felt::from(key.key.to_bytes_be()),
+                    }));
+
                     let result = read::Response {
                         value: cached_entry.value,
                         exist: cached_entry.exists.into(),
@@ -128,6 +135,7 @@ impl SyscallHandler for CallContractHandler {
                     let trie_root = self.get_trie_root(&memorizer, key.trie_label).await?.unwrap_or(Felt252::ZERO);
                     let request_payload = ReadRequest {
                         trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
+                        trie_label: key.trie_label.to_string(),
                         key: pathfinder_crypto::Felt::from(key.key.to_bytes_be()),
                     };
 
@@ -153,6 +161,7 @@ impl SyscallHandler for CallContractHandler {
                             // Record the read action
                             self.key_set.entry(key.trie_label).or_default().push(Action::Read(ActionRead {
                                 trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
+                                trie_label: key.trie_label.to_string(),
                                 key: pathfinder_crypto::Felt::from(key.key.to_bytes_be()),
                             }));
 
@@ -174,6 +183,7 @@ impl SyscallHandler for CallContractHandler {
                         StatusCode::NOT_FOUND => {
                             self.key_set.entry(key.trie_label).or_default().push(Action::Read(ActionRead {
                                 trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
+                                trie_label: key.trie_label.to_string(),
                                 key: pathfinder_crypto::Felt::from(key.key.to_bytes_be()),
                             }));
 
@@ -208,6 +218,7 @@ impl SyscallHandler for CallContractHandler {
                 let trie_root = self.get_trie_root(&memorizer, key.trie_label).await?.unwrap_or(Felt252::ZERO);
                 let request_payload = WriteRequest {
                     trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
+                    trie_label: key.trie_label.to_string(),
                     key: pathfinder_crypto::Felt::from(key.key.to_bytes_be()),
                     value: pathfinder_crypto::Felt::from(key.value.to_bytes_be()),
                 };
@@ -240,6 +251,7 @@ impl SyscallHandler for CallContractHandler {
                         // Record the write action
                         self.key_set.entry(key.trie_label).or_default().push(Action::Write(ActionWrite {
                             trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
+                            trie_label: key.trie_label.to_string(),
                             key: pathfinder_crypto::Felt::from(key.key.to_bytes_be()),
                             value: pathfinder_crypto::Felt::from(key.value.to_bytes_be()),
                         }));
