@@ -1,4 +1,5 @@
-use crate::{ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID};
+use crate::{ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, 
+    STARKNET_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID};
 
 pub mod evm;
 pub mod starknet;
@@ -15,6 +16,8 @@ impl From<u128> for KeyType {
             STARKNET_TESTNET_CHAIN_ID => Self::STARKNET,
             ETHEREUM_MAINNET_CHAIN_ID => Self::EVM,
             ETHEREUM_TESTNET_CHAIN_ID => Self::EVM,
+            OPTIMISM_MAINNET_CHAIN_ID => Self::EVM,
+            OPTIMISM_TESTNET_CHAIN_ID => Self::EVM,
             _ => panic!("Unknown chain id: {}", chain_id),
         }
     }

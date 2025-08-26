@@ -22,6 +22,9 @@ use serde_json::Value;
 pub const RPC_URL_ETHEREUM_MAINNET: &str = "RPC_URL_ETHEREUM_MAINNET";
 pub const RPC_URL_ETHEREUM_TESTNET: &str = "RPC_URL_ETHEREUM_TESTNET";
 
+pub const RPC_URL_OPTIMISM_MAINNET: &str = "RPC_URL_OPTIMISM_MAINNET";
+pub const RPC_URL_OPTIMISM_TESTNET: &str = "RPC_URL_OPTIMISM_TESTNET";
+
 pub const RPC_URL_STARKNET_MAINNET: &str = "RPC_URL_STARKNET_MAINNET";
 pub const RPC_URL_STARKNET_TESTNET: &str = "RPC_URL_STARKNET_TESTNET";
 
@@ -31,8 +34,8 @@ pub const ETHEREUM_MAINNET_CHAIN_ID: u128 = 0x1;
 pub const ETHEREUM_TESTNET_CHAIN_ID: u128 = 0xaa36a7;
 pub const OPTIMISM_MAINNET_CHAIN_ID: u128 = 0xa;
 pub const OPTIMISM_TESTNET_CHAIN_ID: u128 = 0xaa37dc;
-pub const WORLDCHAIN_MAINNET_CHAIN_ID: u128 = 0x1e0;
-pub const WORLDCHAIN_TESTNET_CHAIN_ID: u128 = 0x12c1;
+// pub const WORLDCHAIN_MAINNET_CHAIN_ID: u128 = 0x1e0;
+// pub const WORLDCHAIN_TESTNET_CHAIN_ID: u128 = 0x12c1;
 pub const STARKNET_MAINNET_CHAIN_ID: u128 = 0x534e5f4d41494e;
 pub const STARKNET_TESTNET_CHAIN_ID: u128 = 0x534e5f5345504f4c4941;
 
@@ -55,8 +58,8 @@ pub enum ChainProofs {
     EthereumSepolia(evm::Proofs),
     OptimismMainnet(evm::Proofs),
     OptimismSepolia(evm::Proofs),
-    WorldchainMainnet(evm::Proofs),
-    WorldchainSepolia(evm::Proofs),
+    // WorldchainMainnet(evm::Proofs),
+    // WorldchainSepolia(evm::Proofs),
     StarknetMainnet(starknet::Proofs),
     StarknetSepolia(starknet::Proofs),
 }
@@ -68,8 +71,8 @@ impl ChainProofs {
             ChainProofs::EthereumSepolia(_) => 0xaa36a7,
             ChainProofs::OptimismMainnet(_) => 0xa,
             ChainProofs::OptimismSepolia(_) => 0xaa37dc,
-            ChainProofs::WorldchainMainnet(_) => 0x1e0,
-            ChainProofs::WorldchainSepolia(_) => 0x12c1,
+            // ChainProofs::WorldchainMainnet(_) => 0x1e0,
+            // ChainProofs::WorldchainSepolia(_) => 0x12c1,
             ChainProofs::StarknetMainnet(_) => 0x534e5f4d41494e,
             ChainProofs::StarknetSepolia(_) => 0x534e5f5345504f4c4941,
         }
@@ -82,6 +85,8 @@ pub enum ChainIds {
     EthereumSepolia,
     StarknetMainnet,
     StarknetSepolia,
+    OptimismMainnet,
+    OptimismSepolia,
 }
 
 impl fmt::Display for ChainIds {
@@ -91,6 +96,8 @@ impl fmt::Display for ChainIds {
             ChainIds::EthereumSepolia => write!(f, "ethereum-sepolia"),
             ChainIds::StarknetMainnet => write!(f, "starknet-mainnet"),
             ChainIds::StarknetSepolia => write!(f, "starknet-sepolia"),
+            ChainIds::OptimismMainnet => write!(f, "optimism-mainnet"),
+            ChainIds::OptimismSepolia => write!(f, "optimism-sepolia"),
         }
     }
 }
@@ -104,6 +111,8 @@ impl FromStr for ChainIds {
             "ethereum-sepolia" | "ethereum_sepolia" | "ethereumsepolia" => Ok(Self::EthereumSepolia),
             "starknet-mainnet" | "starknet_mainnet" | "starknetmainnet" => Ok(Self::StarknetMainnet),
             "starknet-sepolia" | "starknet_sepolia" | "starknetsepolia" => Ok(Self::StarknetSepolia),
+            "optimism-mainnet" | "optimism_mainnet" | "optimismmainnet" => Ok(Self::OptimismMainnet),
+            "optimism-sepolia" | "optimism_sepolia" | "optimismsepolia" => Ok(Self::OptimismSepolia),
             _ => Err(format!("Invalid chain ID: {}", s)),
         }
     }
@@ -116,6 +125,8 @@ impl ChainIds {
             ETHEREUM_TESTNET_CHAIN_ID => Some(Self::EthereumSepolia),
             STARKNET_MAINNET_CHAIN_ID => Some(Self::StarknetMainnet),
             STARKNET_TESTNET_CHAIN_ID => Some(Self::StarknetSepolia),
+            OPTIMISM_MAINNET_CHAIN_ID => Some(Self::OptimismMainnet),
+            OPTIMISM_TESTNET_CHAIN_ID => Some(Self::OptimismSepolia),
             _ => None,
         }
     }

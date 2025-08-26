@@ -33,7 +33,8 @@ use types::{
         mmr::MmrMeta,
         starknet::{header::Header as StarknetHeader, storage::Storage as StarknetStorage, Proofs as StarknetProofs},
     },
-    ChainProofs, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
+    ChainProofs, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, 
+    STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID
 };
 
 pub mod proof_keys;
@@ -390,17 +391,28 @@ pub async fn run_fetcher(
 ) -> Result<Vec<ChainProofs>, FetcherError> {
     let proof_keys = parse_syscall_handler(syscall_handler)?;
     let fetcher = Fetcher::new(&proof_keys);
-    let (evm_proofs_mainnet, evm_proofs_sepolia, starknet_proofs_mainnet, starknet_proofs_sepolia) = tokio::try_join!(
+    let (
+        eth_proofs_mainnet, 
+        eth_proofs_sepolia, 
+        starknet_proofs_mainnet, 
+        starknet_proofs_sepolia,
+        optimism_proofs_mainnet, 
+        optimism_proofs_sepolia
+    ) = tokio::try_join!(
         fetcher.collect_evm_proofs(ETHEREUM_MAINNET_CHAIN_ID),
         fetcher.collect_evm_proofs(ETHEREUM_TESTNET_CHAIN_ID),
         fetcher.collect_starknet_proofs(STARKNET_MAINNET_CHAIN_ID),
-        fetcher.collect_starknet_proofs(STARKNET_TESTNET_CHAIN_ID)
+        fetcher.collect_starknet_proofs(STARKNET_TESTNET_CHAIN_ID),
+        fetcher.collect_evm_proofs(OPTIMISM_MAINNET_CHAIN_ID),
+        fetcher.collect_evm_proofs(OPTIMISM_TESTNET_CHAIN_ID),
     )?;
     let chain_proofs = vec![
-        ChainProofs::EthereumMainnet(evm_proofs_mainnet),
-        ChainProofs::EthereumSepolia(evm_proofs_sepolia),
+        ChainProofs::EthereumMainnet(eth_proofs_mainnet),
+        ChainProofs::EthereumSepolia(eth_proofs_sepolia),
         ChainProofs::StarknetMainnet(starknet_proofs_mainnet),
         ChainProofs::StarknetSepolia(starknet_proofs_sepolia),
+        ChainProofs::OptimismMainnet(optimism_proofs_mainnet),
+        ChainProofs::OptimismSepolia(optimism_proofs_sepolia),
     ];
 
     Ok(chain_proofs)

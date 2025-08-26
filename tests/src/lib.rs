@@ -125,7 +125,9 @@ mod test_utils {
             fetcher.collect_evm_proofs(ETHEREUM_MAINNET_CHAIN_ID),
             fetcher.collect_evm_proofs(ETHEREUM_TESTNET_CHAIN_ID),
             fetcher.collect_starknet_proofs(STARKNET_MAINNET_CHAIN_ID),
-            fetcher.collect_starknet_proofs(STARKNET_TESTNET_CHAIN_ID)
+            fetcher.collect_starknet_proofs(STARKNET_TESTNET_CHAIN_ID),
+            fetcher.collect_evm_proofs(OPTIMISM_MAINNET_CHAIN_ID),
+            fetcher.collect_evm_proofs(OPTIMISM_TESTNET_CHAIN_ID),
         )
         .unwrap();
 
@@ -135,6 +137,8 @@ mod test_utils {
                 ChainProofs::EthereumSepolia(evm_proofs_sepolia),
                 ChainProofs::StarknetMainnet(starknet_proofs_mainnet),
                 ChainProofs::StarknetSepolia(starknet_proofs_sepolia),
+                ChainProofs::OptimismMainnet(evm_proofs_mainnet),
+                ChainProofs::OptimismSepolia(evm_proofs_sepolia),
             ],
             params: vec![],
             compiled_class,

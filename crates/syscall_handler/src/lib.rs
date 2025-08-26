@@ -33,6 +33,7 @@ use types::{
         traits::CairoType,
     },
     ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
+    OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID
 };
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -164,7 +165,7 @@ impl<EVM: CallContractSyscallHandler, STARKNET: CallContractSyscallHandler> trai
                     .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
 
                 match chain_id {
-                    ETHEREUM_MAINNET_CHAIN_ID | ETHEREUM_TESTNET_CHAIN_ID => self.evm_call_contract_handler.execute(request, vm).await,
+                    ETHEREUM_MAINNET_CHAIN_ID | ETHEREUM_TESTNET_CHAIN_ID | OPTIMISM_MAINNET_CHAIN_ID | OPTIMISM_TESTNET_CHAIN_ID => self.evm_call_contract_handler.execute(request, vm).await,
                     STARKNET_MAINNET_CHAIN_ID | STARKNET_TESTNET_CHAIN_ID => self.starknet_call_contract_handler.execute(request, vm).await,
                     _ => Err(SyscallExecutionError::InternalError(Box::from("Unknown chain id"))),
                 }
