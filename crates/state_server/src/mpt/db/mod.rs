@@ -39,7 +39,8 @@ impl ConnectionManager {
             "CREATE TABLE IF NOT EXISTS leafs (
                 idx INTEGER PRIMARY KEY,
                 key BLOB NOT NULL,
-                value BLOB NOT NULL
+                value BLOB NOT NULL,
+                root_idx INTEGER NOT NULL
             )",
             [],
         )?;
@@ -65,7 +66,8 @@ impl ConnectionManager {
             "CREATE TABLE leafs (
                 idx INTEGER PRIMARY KEY,
                 key BLOB NOT NULL,
-                value BLOB NOT NULL
+                value BLOB NOT NULL,
+                root_idx INTEGER NOT NULL
             )",
             [],
         )?;

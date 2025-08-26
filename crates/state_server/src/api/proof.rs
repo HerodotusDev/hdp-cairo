@@ -45,7 +45,7 @@ pub async fn get_state_proofs(
                 let (storage, _trie, root_idx) =
                     Trie::load_from_root(action.trie_root, &conn).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-                let leaf = match storage.get_leaf(action.key) {
+                let leaf = match storage.get_leaf(action.key, u64::from(root_idx)) {
                     Ok(leaf) => leaf,
                     Err(_) => TrieLeaf::new(action.key, pathfinder_crypto::Felt::ZERO),
                 };
@@ -66,7 +66,7 @@ pub async fn get_state_proofs(
                     Trie::load_from_root(action.trie_root, &conn).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
                 };
 
-                let pre_leaf = match storage.get_leaf(action.key) {
+                let pre_leaf = match storage.get_leaf(action.key, u64::from(prev_root_idx)) {
                     Ok(leaf) => leaf,
                     Err(_) => TrieLeaf::new(action.key, pathfinder_crypto::Felt::ZERO),
                 };
@@ -80,8 +80,10 @@ pub async fn get_state_proofs(
                 trie.set(&storage, post_leaf.get_path(), post_leaf.data.value)
                     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
                 let update = trie.commit(&storage).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-                let post_root_idx =
-                    Trie::persist_updates(&storage, &update, &vec![post_leaf]).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+                let post_root_idx = storage
+                    .get_node_idx_by_hash(update.root_commitment)
+                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
                 let post_proof =
                     Trie::get_leaf_proof(&storage, update.root_commitment, post_leaf).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
@@ -91,7 +93,7 @@ pub async fn get_state_proofs(
                     trie_root_prev: action.trie_root,
                     state_proof_prev: pre_proof.into_iter().map(|(node, _)| node.into()).collect(),
                     leaf_prev: pre_leaf,
-                    trie_id_post: u64::from(post_root_idx),
+                    trie_id_post: post_root_idx.expect("Could not infer post root idx"),
                     trie_root_post: update.root_commitment,
                     state_proof_post: post_proof.into_iter().map(|(node, _)| node.into()).collect(),
                     leaf_post: post_leaf,

@@ -30,7 +30,7 @@ pub async fn write(State(state): State<AppState>, Query(payload): Query<WriteReq
         .get_connection()
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let (storage, mut trie, _root_idx) = if payload.trie_root == Felt::ZERO {
+    let (storage, mut trie, root_idx) = if payload.trie_root == Felt::ZERO {
         Trie::create_empty(&conn).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
     } else {
         Trie::load_from_root(payload.trie_root, &conn).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
@@ -42,7 +42,8 @@ pub async fn write(State(state): State<AppState>, Query(payload): Query<WriteReq
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let update = trie.commit(&storage).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    let trie_id = Trie::persist_updates(&storage, &update, &vec![leaf]).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let trie_id =
+        Trie::persist_updates(&storage, &update, &vec![leaf], Some(u64::from(root_idx))).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(WriteResponse {
         trie_id: u64::from(trie_id),

@@ -119,6 +119,12 @@ impl SyscallHandler for CallContractHandler {
                     })
                     .cloned()
                 {
+                    let trie_root = self.get_trie_root(&memorizer, key.trie_label).await?.unwrap_or(Felt252::ZERO);
+                    self.key_set.entry(key.trie_label).or_default().push(Action::Read(ActionRead {
+                        trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
+                        key: pathfinder_crypto::Felt::from(key.key.to_bytes_be()),
+                    }));
+
                     let result = read::Response {
                         value: cached_entry.value,
                         exist: cached_entry.exists.into(),
