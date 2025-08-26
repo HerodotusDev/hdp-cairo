@@ -30,7 +30,8 @@ impl ConnectionManager {
                 idx INTEGER PRIMARY KEY,
                 hash BLOB NOT NULL,
                 data BLOB,
-                trie_idx INTEGER UNIQUE NOT NULL
+                trie_idx INTEGER NOT NULL,
+                trie_label TEXT NOT NULL
             )",
             [],
         )?;
@@ -40,7 +41,8 @@ impl ConnectionManager {
                 idx INTEGER PRIMARY KEY,
                 key BLOB NOT NULL,
                 value BLOB NOT NULL,
-                root_idx INTEGER NOT NULL
+                root_idx INTEGER NOT NULL,
+                trie_label TEXT NOT NULL
             )",
             [],
         )?;
@@ -57,7 +59,8 @@ impl ConnectionManager {
                 idx INTEGER PRIMARY KEY,
                 hash BLOB NOT NULL,
                 data BLOB,
-                trie_idx INTEGER UNIQUE NOT NULL
+                trie_idx INTEGER NOT NULL,
+                trie_label TEXT NOT NULL
             )",
             [],
         )?;
@@ -67,7 +70,8 @@ impl ConnectionManager {
                 idx INTEGER PRIMARY KEY,
                 key BLOB NOT NULL,
                 value BLOB NOT NULL,
-                root_idx INTEGER NOT NULL
+                root_idx INTEGER NOT NULL,
+                trie_label TEXT NOT NULL
             )",
             [],
         )?;

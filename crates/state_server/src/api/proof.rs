@@ -43,14 +43,15 @@ pub async fn get_state_proofs(
                 }
 
                 let (storage, _trie, root_idx) =
-                    Trie::load_from_root(action.trie_root, &conn).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                    Trie::load_from_root(action.trie_root, &action.trie_label, &conn).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-                let leaf = match storage.get_leaf(action.key, u64::from(root_idx)) {
+                let leaf = match storage.get_leaf(action.key, u64::from(root_idx), &action.trie_label) {
                     Ok(leaf) => leaf,
                     Err(_) => TrieLeaf::new(action.key, pathfinder_crypto::Felt::ZERO),
                 };
 
-                let proof = Trie::get_leaf_proof(&storage, action.trie_root, leaf).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                let proof = Trie::get_leaf_proof(&storage, action.trie_root, leaf, &action.trie_label)
+                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
                 state_proofs.push(StateProof::Read(StateProofRead {
                     trie_id: u64::from(root_idx),
@@ -63,17 +64,18 @@ pub async fn get_state_proofs(
                 let (storage, mut trie, prev_root_idx) = if action.trie_root == Felt::ZERO {
                     Trie::create_empty(&conn).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
                 } else {
-                    Trie::load_from_root(action.trie_root, &conn).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+                    Trie::load_from_root(action.trie_root, &action.trie_label, &conn).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
                 };
 
-                let pre_leaf = match storage.get_leaf(action.key, u64::from(prev_root_idx)) {
+                let pre_leaf = match storage.get_leaf(action.key, u64::from(prev_root_idx), &action.trie_label) {
                     Ok(leaf) => leaf,
                     Err(_) => TrieLeaf::new(action.key, pathfinder_crypto::Felt::ZERO),
                 };
                 let pre_proof = if action.trie_root == Felt::ZERO {
                     vec![]
                 } else {
-                    Trie::get_leaf_proof(&storage, action.trie_root, pre_leaf).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+                    Trie::get_leaf_proof(&storage, action.trie_root, pre_leaf, &action.trie_label)
+                        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
                 };
 
                 let post_leaf = TrieLeaf::new(action.key, action.value);
@@ -82,11 +84,11 @@ pub async fn get_state_proofs(
                 let update = trie.commit(&storage).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
                 let post_root_idx = storage
-                    .get_node_idx_by_hash(update.root_commitment)
+                    .get_node_idx_by_hash(update.root_commitment, &action.trie_label)
                     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-                let post_proof =
-                    Trie::get_leaf_proof(&storage, update.root_commitment, post_leaf).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                let post_proof = Trie::get_leaf_proof(&storage, update.root_commitment, post_leaf, &action.trie_label)
+                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
                 state_proofs.push(StateProof::Write(StateProofWrite {
                     trie_id_prev: u64::from(prev_root_idx),

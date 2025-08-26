@@ -6,11 +6,12 @@ use clap::Parser;
 use state_server::create_router;
 use tokio::net::TcpListener;
 use tracing::info;
+use tracing_subscriber::EnvFilter;
 
 /// Binds to the given host and port and starts the axum server.
 pub async fn start_server(port: u16, host: &str) -> anyhow::Result<()> {
     // Initialize the logger/subscriber.
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init();
 
     let app = create_router();
     let addr = format!("{}:{}", host, port);
