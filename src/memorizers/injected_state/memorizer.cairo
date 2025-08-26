@@ -7,17 +7,17 @@ from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.alloc import alloc
 from src.memorizers.bare import BareMemorizer
 
-const inclusion = 'inclusion';
-const non_inclusion = 'non_inclusion';
-
 namespace InjectedStatePackParams {
+    const INCLUSION = 1944862448358072610670;
+    const NON_INCLUSION = 8749584145069082368101870825326;
+
     func read_inclusion(root: felt, value: felt) -> (params: felt*, params_len: felt) {
         alloc_locals;
 
         local params: felt* = nondet %{ segments.add() %};
-        assert params[0] = inclusion;
-        assert params[0] = root;
-        assert params[1] = value;
+        assert params[0] = InjectedStatePackParams.INCLUSION;
+        assert params[1] = root;
+        assert params[2] = value;
 
         return (params=params, params_len=3);
     }
@@ -26,9 +26,9 @@ namespace InjectedStatePackParams {
         alloc_locals;
 
         local params: felt* = nondet %{ segments.add() %};
-        assert params[0] = non_inclusion;
-        assert params[0] = root;
-        assert params[1] = value;
+        assert params[0] = InjectedStatePackParams.NON_INCLUSION;
+        assert params[1] = root;
+        assert params[2] = value;
 
         return (params=params, params_len=3);
     }
