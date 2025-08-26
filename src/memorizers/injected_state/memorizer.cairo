@@ -7,22 +7,44 @@ from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.alloc import alloc
 from src.memorizers.bare import BareMemorizer
 
+const inclusion = 'inclusion';
+const non_inclusion = 'non_inclusion';
+
 namespace InjectedStatePackParams {
-    func read(root_hash: felt, key_be: felt) -> (params: felt*, params_len: felt) {
+    func read_inclusion(root: felt, value: felt) -> (params: felt*, params_len: felt) {
         alloc_locals;
 
         local params: felt* = nondet %{ segments.add() %};
-        assert params[0] = root_hash;
-        assert params[1] = key_be;
+        assert params[0] = inclusion;
+        assert params[0] = root;
+        assert params[1] = value;
 
-        return (params=params, params_len=2);
+        return (params=params, params_len=3);
+    }
+
+    func read_non_inclusion(root: felt, value: felt) -> (params: felt*, params_len: felt) {
+        alloc_locals;
+
+        local params: felt* = nondet %{ segments.add() %};
+        assert params[0] = non_inclusion;
+        assert params[0] = root;
+        assert params[1] = value;
+
+        return (params=params, params_len=3);
     }
 }
 
 namespace InjectedStateHashParams {
-    func read{poseidon_ptr: PoseidonBuiltin*}(root_hash: felt, key_be: felt) -> felt {
-        let (params, params_len) = InjectedStatePackParams.read(
-            root_hash=root_hash, key_be=key_be
+    func read_inclusion{poseidon_ptr: PoseidonBuiltin*}(root: felt, value: felt) -> felt {
+        let (params, params_len) = InjectedStatePackParams.read_inclusion(
+            root=root, value=value
+        );
+        return hash_memorizer_key(params, params_len);
+    }
+
+    func read_non_inclusion{poseidon_ptr: PoseidonBuiltin*}(root: felt, value: felt) -> felt {
+        let (params, params_len) = InjectedStatePackParams.read_non_inclusion(
+            root=root, value=value
         );
         return hash_memorizer_key(params, params_len);
     }

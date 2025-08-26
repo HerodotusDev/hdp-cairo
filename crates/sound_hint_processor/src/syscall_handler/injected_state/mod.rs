@@ -23,11 +23,14 @@ pub mod label;
 pub mod read;
 pub mod write;
 
+// pub const INCLUSION: Felt252 = Felt252::from_str("inclusion").unwrap();
+// pub const NON_INCLUSION: Felt252 = Felt252::from_str("non_inclusion").unwrap();
+
 #[derive(FromRepr, Debug)]
 pub enum CallHandlerId {
-    Read = 0,
-    Write = 1,
-    Label = 2,
+    Label = 0,
+    Read = 1,
+    Write = 2,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -57,13 +60,41 @@ impl SyscallHandler for CallContractHandler {
         let mut retdata_end = retdata_start;
 
         match call_handler_id {
-            CallHandlerId::Read => {
-                let key = keys::injected_state::read::CairoKey::from_memory(vm, calldata)?;
+            CallHandlerId::Label => {
+                let key = keys::injected_state::label::CairoKey::from_memory(vm, calldata)?;
                 let ptr = memorizer.read_key(
-                    &MaybeRelocatable::Int(poseidon_hash_many([&key.trie_label, &key.key])),
+                    &MaybeRelocatable::Int(poseidon_hash_single(key.trie_label)),
                     self.dict_manager.clone(),
                 )?;
+                let trie_root = vm.get_integer(ptr)?;
+                let result = label::Response {
+                    trie_root: *trie_root,
+                };
+
+                retdata_end = result.to_memory(vm, retdata_end)?;
+            }
+            CallHandlerId::Read => {
+                println!("Read");
+                let key = keys::injected_state::read::CairoKey::from_memory(vm, calldata)?;
+                println!("key: {:?}", key);
+                let ptr = memorizer.read_key(
+                    &MaybeRelocatable::Int(poseidon_hash_single(key.trie_label)),
+                    self.dict_manager.clone(),
+                )?;
+                println!("ptr: {:?}", ptr);
+                let trie_root = vm.get_integer(ptr)?;
+                
+                println!("trie_root: {:?}", trie_root);
+
+                //handle inclusion and non-inclusion differentiation
+                
+                let ptr = memorizer.read_key(
+                    &MaybeRelocatable::Int(poseidon_hash_many([&trie_root, &key.key])),
+                    self.dict_manager.clone(),
+                )?;
+                println!("ptr: {:?}", ptr);
                 let leaf_key = vm.get_integer(ptr)?;
+                println!("leaf_key: {:?}", leaf_key);
                 let result = read::Response {
                     exist: FELT_1,
                     value: *leaf_key,
@@ -77,19 +108,6 @@ impl SyscallHandler for CallContractHandler {
                     self.dict_manager.clone(),
                 )?;
                 let _trie_root = vm.get_integer(ptr)?;
-            }
-            CallHandlerId::Label => {
-                let key = keys::injected_state::label::CairoKey::from_memory(vm, calldata)?;
-                let ptr = memorizer.read_key(
-                    &MaybeRelocatable::Int(poseidon_hash_single(key.trie_label)),
-                    self.dict_manager.clone(),
-                )?;
-                let trie_root = vm.get_integer(ptr)?;
-                let result = label::Response {
-                    trie_root: *trie_root,
-                };
-
-                retdata_end = result.to_memory(vm, retdata_end)?;
             }
         }
 

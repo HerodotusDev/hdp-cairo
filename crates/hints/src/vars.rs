@@ -93,4 +93,5 @@ pub mod ids {
     pub const TRIE_NODE_PROOF: &str = "trie_node_proof";
     pub const VALUE_LEN: &str = "value_len";
     pub const VALUE: &str = "value";
+    pub const MEMORIZER_KEY: &str = "memorizer_key";
 }

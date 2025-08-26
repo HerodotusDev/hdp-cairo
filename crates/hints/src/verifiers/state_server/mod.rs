@@ -54,3 +54,16 @@ pub fn hint_print_root_and_value(
     println!("Root: {:?}, Value: {:?}", root, value);
     Ok(())
 }
+
+pub const HINT_PRINT_MEMORIZER_KEY: &str = "print(memorizer_key)";
+
+pub fn hint_print_memorizer_key(
+    vm: &mut VirtualMachine,
+    _exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let memorizer_key: Felt252 = get_integer_from_var_name(vars::ids::MEMORIZER_KEY, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    println!("Memorizer key: {:?}", memorizer_key);
+    Ok(())
+}

@@ -4,7 +4,7 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian, uint256_to_felt
 from starkware.cairo.common.default_dict import default_dict_finalize
 from starkware.cairo.common.registers import get_label_location
-from src.memorizers.injected_state.memorizer import InjectedStateMemorizer
+from src.memorizers.injected_state.memorizer import InjectedStateMemorizer, InjectedStateHashParams
 from src.utils.patricia_with_keccak import patricia_update
 from src.utils.keccak import TruncatedKeccak, finalize_truncated_keccak
 from src.verifiers.mpt import HashNodeTruncatedKeccak, traverse
@@ -20,8 +20,8 @@ func inclusion_state_verification{
 }() -> (root: felt, value: felt){
     alloc_locals;
     
-    local root_hash: felt;
-    %{ ids.root_hash = state_proof_read.trie_root %}
+    // local root_hash: felt;
+    // %{ ids.root_hash = state_proof_read.trie_root %}
 
     local key_be: felt; 
     %{ ids.key_be = state_proof_read.leaf.key %} 
@@ -45,14 +45,22 @@ func inclusion_state_verification{
         cast(nodes_ptr, TrieNode**), proof_len, key_be
     );
 
+    
     with keccak_ptr_seg{
         finalize_truncated_keccak{
             range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
         }(ptr_start=keccak_ptr_seg_start, ptr_end=keccak_ptr_seg);
     }
 
-    let memorizer_key = InjectedStateHashParams.read{poseidon_ptr=poseidon_ptr}(root_hash=root_hash, key_be=key_be);
-    InjectedStateMemorizer.add(key=memorizer_key, data=cast(key_be, felt*));
+    let (data_ptr: felt*) = alloc();
+    assert [data_ptr] = value;
+
+    local memorizer_key: felt;
+
+    let memorizer_key = InjectedStateHashParams.read_inclusion{poseidon_ptr=poseidon_ptr}(root=root, value=value);
+    InjectedStateMemorizer.add(key=memorizer_key, data=data_ptr);
+
+    %{ print(memorizer_key) %}
 
     return (root=root, value=value);
 
