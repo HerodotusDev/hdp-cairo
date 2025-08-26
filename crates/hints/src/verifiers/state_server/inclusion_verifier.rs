@@ -67,7 +67,6 @@ pub fn hint_get_trie_root_hash(
     Ok(())
 }
 
-
 pub const HINT_GET_TRIE_NODE_PROOF: &str = "segments.write_arg(ids.nodes_ptr, state_proof)";
 
 pub fn hint_get_trie_node_proof(
