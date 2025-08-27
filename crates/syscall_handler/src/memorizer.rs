@@ -18,6 +18,8 @@ pub struct Memorizer {
 }
 
 impl Memorizer {
+    pub const DEFAULT_VALUE: Felt252 = Felt252::MAX;
+
     pub fn new(dict_ptr: Relocatable) -> Self {
         Self { dict_ptr }
     }
