@@ -4,7 +4,6 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian, uint256_to_felt
 from starkware.cairo.common.default_dict import default_dict_finalize
 from starkware.cairo.common.registers import get_label_location
-from src.memorizers.injected_state.memorizer import InjectedStateMemorizer, InjectedStateHashParams
 from src.utils.patricia_with_keccak import patricia_update_using_update_constants, patricia_update_constants_new
 from src.utils.keccak import TruncatedKeccak, finalize_truncated_keccak
 from src.verifiers.mpt import HashNodeTruncatedKeccak, traverse
@@ -17,7 +16,7 @@ func inclusion_state_verification{
     keccak_ptr: KeccakBuiltin*,
     pow2_array: felt*,
     injected_state_memorizer: DictAccess*,
-}() -> (root: felt, value: felt){
+}() -> (root: felt, key: felt, value: felt){
     alloc_locals;
 
     tempvar key_be: felt = nondet %{ state_proof_read.leaf.key %};
@@ -43,13 +42,7 @@ func inclusion_state_verification{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
     }(ptr_start=keccak_ptr_seg, ptr_end=cast(hash_ptr, TruncatedKeccak*));
 
-    let (data_ptr: felt*) = alloc();
-    assert [data_ptr] = value;
-
-    let memorizer_key = InjectedStateHashParams.read_inclusion{poseidon_ptr=poseidon_ptr}(root=root, value=key_be);
-    InjectedStateMemorizer.add(key=memorizer_key, data=data_ptr);
-
-    return (root=root, value=value);
+    return (root=root, key=key_be, value=value);
 
 }
 
@@ -59,7 +52,7 @@ func update_state_verification{
     keccak_ptr: KeccakBuiltin*,
     pow2_array: felt*,
     injected_state_memorizer: DictAccess*,
-}() -> (root: felt, value: felt){
+}() -> (prev_root:felt, new_root:felt, key:felt, prev_value:felt, new_value:felt){
     alloc_locals;
 
     tempvar n_updates = 1;
@@ -70,9 +63,13 @@ func update_state_verification{
     let (local update_dict: DictAccess*) = alloc();
     let update_dict_start = update_dict;
 
-    assert update_dict.key = nondet %{ state_proof.leaf_prev.key %};
-    assert update_dict.prev_value = nondet %{ state_proof.leaf_prev.data.value %};
-    assert update_dict.new_value = nondet %{ state_proof.leaf_post.data.value %};
+    tempvar key = nondet %{ state_proof.leaf_prev.key %};
+    tempvar prev_value = nondet %{ state_proof.leaf_prev.data.value %};
+    tempvar new_value = nondet %{ state_proof.leaf_post.data.value %};
+
+    assert update_dict.key = key;
+    assert update_dict.prev_value = prev_value;
+    assert update_dict.new_value = new_value;
 
     let update_dict = update_dict + DictAccess.SIZE;
 
@@ -103,5 +100,5 @@ func update_state_verification{
         }(ptr_start=keccak_ptr_seg_start, ptr_end=keccak_ptr_seg);
     }
     
-    return (root=0, value=0);
+    return (prev_root=prev_root, new_root=new_root, key=key, prev_value=prev_value, new_value=new_value);
 }
