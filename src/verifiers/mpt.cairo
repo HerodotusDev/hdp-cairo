@@ -30,6 +30,10 @@ func traverse{
 }(nodes: TrieNode**, n_nodes: felt, expected_path: felt) -> (root: felt, value: felt) {
     alloc_locals;
 
+    if (n_nodes == 0) {
+        return (root=0, value=0);
+    }
+
     local node: TrieNode* = nodes[n_nodes - 1];
     %{ memory[ap] = CairoTrieNode(ids.node).is_edge() %}
     jmp edge_leaf if [ap] != 0, ap++;
