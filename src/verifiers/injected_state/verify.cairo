@@ -20,9 +20,7 @@ func inclusion_state_verification{
 }() -> (root: felt, value: felt){
     alloc_locals;
 
-    local key_be: felt; 
-    %{ ids.key_be = state_proof_read.leaf.key %} 
-
+    tempvar key_be: felt = nondet %{ state_proof_read.leaf.key %};
     tempvar proof_len: felt = nondet %{ len(state_proof) %};
 
     let (nodes_ptr: felt**) = alloc();
