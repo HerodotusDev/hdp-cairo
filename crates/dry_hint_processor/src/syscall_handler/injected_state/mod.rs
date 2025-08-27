@@ -66,10 +66,10 @@ impl CallContractHandler {
         std::env::var("INJECTED_STATE_BASE_URL").unwrap_or_else(|_| "http://0.0.0.0:3000".to_string())
     }
 
-    async fn get_trie_root(&self, memorizer: &Memorizer, label: Felt252) -> Result<Option<Felt252>, HintError> {
+    fn get_trie_root(&self, memorizer: &Memorizer, label: Felt252) -> Result<Option<Felt252>, HintError> {
         let key = MaybeRelocatable::Int(poseidon_hash_single(label));
         match memorizer.read_key_int(&key, self.dict_manager.clone()) {
-            Ok(trie_root) if trie_root == Felt252::MAX => Ok(None),
+            Ok(trie_root) if trie_root == Memorizer::DEFAULT_VALUE => Ok(None),
             Ok(trie_root) => Ok(Some(trie_root)),
             Err(ref e) if matches!(e, HintError::NoValueForKey(_)) => Ok(None),
             Err(e) => Err(e),
@@ -97,7 +97,9 @@ impl SyscallHandler for CallContractHandler {
         match call_handler_id {
             CallHandlerId::ReadTrieRoot => {
                 let key = keys::injected_state::label::CairoKey::from_memory(vm, calldata)?;
-                let trie_root = self.get_trie_root(&memorizer, key.trie_label).await?;
+
+                let trie_root = self.get_trie_root(&memorizer, key.trie_label)?;
+
                 let result = label::Response {
                     trie_root: trie_root.unwrap_or(Felt252::ZERO),
                     exists: trie_root.is_some().into(),
@@ -116,7 +118,10 @@ impl SyscallHandler for CallContractHandler {
                     })
                     .cloned()
                 {
-                    let trie_root = self.get_trie_root(&memorizer, key.trie_label).await?.unwrap_or(Felt252::ZERO);
+                    let trie_root = self
+                        .get_trie_root(&memorizer, key.trie_label)?
+                        .ok_or(HintError::NoValueForKey(Box::new(key.trie_label.into())))?;
+
                     self.key_set.entry(key.trie_label).or_default().push(Action::Read(ActionRead {
                         trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
                         trie_label: pathfinder_crypto::Felt::from(key.trie_label.to_bytes_be()),
@@ -129,7 +134,10 @@ impl SyscallHandler for CallContractHandler {
                     };
                     retdata_end = result.to_memory(vm, retdata_end)?;
                 } else {
-                    let trie_root = self.get_trie_root(&memorizer, key.trie_label).await?.unwrap_or(Felt252::ZERO);
+                    let trie_root = self
+                        .get_trie_root(&memorizer, key.trie_label)?
+                        .ok_or(HintError::NoValueForKey(Box::new(key.trie_label.into())))?;
+
                     let request_payload = ReadRequest {
                         trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
                         trie_label: pathfinder_crypto::Felt::from(key.trie_label.to_bytes_be()),
@@ -152,10 +160,9 @@ impl SyscallHandler for CallContractHandler {
                                 .await
                                 .map_err(|e| SyscallExecutionError::InternalError(format!("Network request failed: {}", e).into()))?;
 
-                            let exists = response.value.is_some();
-                            let value = Felt252::from_bytes_be(&response.value.unwrap_or_default().to_be_bytes());
+                            let exists = !response.value.is_zero();
+                            let value = Felt252::from_bytes_be(&response.value.to_be_bytes());
 
-                            // Record the read action
                             self.key_set.entry(key.trie_label).or_default().push(Action::Read(ActionRead {
                                 trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
                                 trie_label: pathfinder_crypto::Felt::from(key.trie_label.to_bytes_be()),
@@ -212,7 +219,11 @@ impl SyscallHandler for CallContractHandler {
             }
             CallHandlerId::Write => {
                 let key = keys::injected_state::write::CairoKey::from_memory(vm, calldata)?;
-                let trie_root = self.get_trie_root(&memorizer, key.trie_label).await?.unwrap_or(Felt252::ZERO);
+
+                let trie_root = self
+                    .get_trie_root(&memorizer, key.trie_label)?
+                    .ok_or(HintError::NoValueForKey(Box::new(key.trie_label.into())))?;
+
                 let request_payload = WriteRequest {
                     trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
                     trie_label: pathfinder_crypto::Felt::from(key.trie_label.to_bytes_be()),
@@ -242,10 +253,6 @@ impl SyscallHandler for CallContractHandler {
                             self.dict_manager.clone(),
                         )?;
 
-                        let new_trie_root = Felt252::from_bytes_be(&response.trie_root.to_be_bytes());
-                        let value = Felt252::from_bytes_be(&response.value.to_be_bytes());
-
-                        // Record the write action
                         self.key_set.entry(key.trie_label).or_default().push(Action::Write(ActionWrite {
                             trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
                             trie_label: pathfinder_crypto::Felt::from(key.trie_label.to_bytes_be()),
@@ -258,10 +265,15 @@ impl SyscallHandler for CallContractHandler {
                                 trie_label: key.trie_label,
                                 key: key.key,
                             },
-                            CacheEntry { exists: true, value },
+                            CacheEntry {
+                                exists: true,
+                                value: Felt252::from_bytes_be(&response.value.to_be_bytes()),
+                            },
                         );
 
-                        let result: write::Response = write::Response { trie_root: new_trie_root };
+                        let result: write::Response = write::Response {
+                            trie_root: Felt252::from_bytes_be(&response.trie_root.to_be_bytes()),
+                        };
 
                         retdata_end = result.to_memory(vm, retdata_end)?;
                     }
