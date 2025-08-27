@@ -1,8 +1,10 @@
 use cairo_vm::{
     types::relocatable::Relocatable,
     vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
+    Felt252,
 };
-use types::{cairo::traits::CairoType, Felt252};
+
+use crate::cairo::traits::CairoType;
 
 #[derive(Default, Debug, Clone)]
 pub struct Response {

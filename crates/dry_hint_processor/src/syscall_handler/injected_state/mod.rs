@@ -16,6 +16,7 @@ use strum_macros::FromRepr;
 use syscall_handler::{memorizer::Memorizer, traits::SyscallHandler, SyscallExecutionError, SyscallResult, WriteResponseResult};
 use types::{
     cairo::{
+        injected_state::{label, read, write},
         new_syscalls::{CallContractRequest, CallContractResponse},
         traits::CairoType,
     },
@@ -23,10 +24,6 @@ use types::{
     proofs::injected_state::{Action, ActionRead, ActionWrite},
     Felt252,
 };
-
-pub mod label;
-pub mod read;
-pub mod write;
 
 #[derive(FromRepr, Debug)]
 pub enum CallHandlerId {

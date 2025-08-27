@@ -55,12 +55,8 @@ func inclusion_state_verification{
     let (data_ptr: felt*) = alloc();
     assert [data_ptr] = value;
 
-    local memorizer_key: felt;
-
-    let memorizer_key = InjectedStateHashParams.read_inclusion{poseidon_ptr=poseidon_ptr}(root=root, value=value);
+    let memorizer_key = InjectedStateHashParams.read_inclusion{poseidon_ptr=poseidon_ptr}(root=root, value=key_be);
     InjectedStateMemorizer.add(key=memorizer_key, data=data_ptr);
-
-    %{ print(memorizer_key) %}
 
     return (root=root, value=value);
 

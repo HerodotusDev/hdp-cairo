@@ -21,13 +21,9 @@ impl CairoKey {
 
 impl CairoType for CairoKey {
     fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
-        println!("address: {:?}", address);
-        let key = vm.get_integer((address + 1)?)?;
-        println!("key: {:?}", key);
-        Ok(Self {
-            trie_label: *vm.get_integer((address + 0)?)?,
-            key: *key,
-        })
+        let trie_label = *vm.get_integer((address + 0)?)?;
+        let key = *vm.get_integer((address + 1)?)?;
+        Ok(Self { trie_label, key })
     }
     fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
         vm.insert_value((address + 0)?, self.trie_label)?;
