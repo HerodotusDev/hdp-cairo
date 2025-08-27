@@ -14,6 +14,8 @@ from starkware.cairo.common.cairo_builtins import (
     EcOpBuiltin,
 )
 
+from src.memorizers.injected_state.memorizer import InjectedStateMemorizer, InjectedStateHashParams
+from starkware.cairo.common.alloc import alloc
 from src.types import MMRMeta, ChainInfo, InjectedStateInfo
 from src.utils.chain_info import fetch_chain_info, Layout
 from src.utils.injected_state_info import ProofType
@@ -120,7 +122,7 @@ func run_injected_state_verification_inner{
 
     if (proof_type == ProofType.READ) {
         %{ vm_enter_scope({'state_proof': state_proofs[ids.idx - 1], '__dict_manager': __dict_manager}) %}
-        let (root, value) = inclusion_state_verification{
+        let (root, key, value) = inclusion_state_verification{
             range_check_ptr=range_check_ptr,
             poseidon_ptr=poseidon_ptr,
             bitwise_ptr=bitwise_ptr,
@@ -130,12 +132,29 @@ func run_injected_state_verification_inner{
         }();
         %{ vm_exit_scope() %}
 
+        let (data_ptr: felt*) = alloc();
+        assert [data_ptr] = value;
+
+        if (value != 0) {
+            // inclusion proof
+            let memorizer_key = InjectedStateHashParams.read_inclusion{poseidon_ptr=poseidon_ptr}(
+                root=root, value=key
+            );
+            InjectedStateMemorizer.add(key=memorizer_key, data=data_ptr);
+        } else {
+            // non-inclusion proof
+            let memorizer_key = InjectedStateHashParams.read_non_inclusion{
+                poseidon_ptr=poseidon_ptr
+            }(root=root, value=key);
+            InjectedStateMemorizer.add(key=memorizer_key, data=data_ptr);
+        }
+
         return run_injected_state_verification_inner(idx=idx - 1);
     }
 
     if (proof_type == ProofType.WRITE) {
         %{ vm_enter_scope({'state_proof': state_proofs[ids.idx - 1], '__dict_manager': __dict_manager}) %}
-        let (root, value) = update_state_verification{
+        let (prev_root, new_root, key, prev_value, new_value) = update_state_verification{
             range_check_ptr=range_check_ptr,
             bitwise_ptr=bitwise_ptr,
             keccak_ptr=keccak_ptr,

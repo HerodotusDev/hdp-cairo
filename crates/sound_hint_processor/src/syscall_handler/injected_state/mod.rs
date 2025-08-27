@@ -72,41 +72,79 @@ impl SyscallHandler for CallContractHandler {
         match call_handler_id {
             CallHandlerId::Label => {
                 let key = keys::injected_state::label::CairoKey::from_memory(vm, calldata)?;
-                let trie_root = memorizer.read_key_int(
-                    &MaybeRelocatable::Int(poseidon_hash_single(key.trie_label)),
-                    self.dict_manager.clone(),
-                )?;
+
+                let trie_root = self.get_trie_root(&memorizer, key.trie_label)?;
+
                 let result = label::Response {
-                    trie_root,
-                    exists: Felt252::ONE,
+                    trie_root: trie_root.unwrap_or(Felt252::ZERO),
+                    exists: trie_root.is_some().into(),
                 };
+
                 retdata_end = result.to_memory(vm, retdata_end)?;
             }
             CallHandlerId::Read => {
                 let key = keys::injected_state::read::CairoKey::from_memory(vm, calldata)?;
-                let trie_root = memorizer.read_key_int(
-                    &MaybeRelocatable::Int(poseidon_hash_single(key.trie_label)),
-                    self.dict_manager.clone(),
-                )?;
 
-                let ptr = memorizer.read_key(
-                    &MaybeRelocatable::Int(poseidon_hash_many([&INCLUSION, &trie_root, &key.key])),
-                    self.dict_manager.clone(),
-                )?;
-                let leaf_key = vm.get_integer(ptr)?;
-                let result = read::Response {
-                    exist: FELT_1,
-                    value: *leaf_key,
+                let trie_root = self
+                    .get_trie_root(&memorizer, key.trie_label)?
+                    .ok_or(HintError::NoValueForKey(Box::new(key.trie_label.into())))?;
+
+                let maybe_ptr = memorizer
+                    .read_key(
+                        &MaybeRelocatable::Int(poseidon_hash_many([&INCLUSION, &trie_root, &key.key])),
+                        self.dict_manager.clone(),
+                    )
+                    .map(Some)
+                    .or_else(|err| {
+                        if matches!(err, HintError::NoValueForKey(_)) {
+                            memorizer
+                                .read_key(
+                                    &MaybeRelocatable::Int(poseidon_hash_many([&NON_INCLUSION, &trie_root, &key.key])),
+                                    self.dict_manager.clone(),
+                                )
+                                .map(|_| None)
+                        } else {
+                            Err(err)
+                        }
+                    })?;
+
+                let result = match maybe_ptr {
+                    Some(ptr) => {
+                        let leaf_key = vm.get_integer(ptr)?;
+                        read::Response {
+                            exist: FELT_1,
+                            value: *leaf_key,
+                        }
+                    }
+                    None => read::Response {
+                        exist: FELT_0,
+                        value: FELT_0,
+                    },
                 };
+
                 retdata_end = result.to_memory(vm, retdata_end)?;
             }
             CallHandlerId::Write => {
                 let key = keys::injected_state::write::CairoKey::from_memory(vm, calldata)?;
-                let ptr = memorizer.read_key(
+
+                let trie_root = self
+                    .get_trie_root(&memorizer, key.trie_label)?
+                    .ok_or(HintError::NoValueForKey(Box::new(key.trie_label.into())))?;
+
+                let new_root = *vm.get_integer(memorizer.read_key(
+                    &MaybeRelocatable::Int(poseidon_hash_many([&WRITE, &trie_root, &key.key])),
+                    self.dict_manager.clone(),
+                )?)?;
+
+                memorizer.set_key(
                     &MaybeRelocatable::Int(poseidon_hash_single(key.trie_label)),
+                    &MaybeRelocatable::Int(new_root),
                     self.dict_manager.clone(),
                 )?;
-                let _trie_root = vm.get_integer(ptr)?;
+
+                let result = write::Response { trie_root: new_root };
+
+                retdata_end = result.to_memory(vm, retdata_end)?;
             }
         }
 
