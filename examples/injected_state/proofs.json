@@ -1,0 +1,90 @@
+[
+  [
+    {
+      "EthereumMainnet": {
+        "headers_with_mmr": [],
+        "accounts": [],
+        "storages": [],
+        "transactions": [],
+        "transaction_receipts": []
+      }
+    },
+    {
+      "EthereumSepolia": {
+        "headers_with_mmr": [],
+        "accounts": [],
+        "storages": [],
+        "transactions": [],
+        "transaction_receipts": []
+      }
+    },
+    {
+      "StarknetMainnet": {
+        "headers_with_mmr": [],
+        "storages": []
+      }
+    },
+    {
+      "StarknetSepolia": {
+        "headers_with_mmr": [],
+        "storages": []
+      }
+    }
+  ],
+  [
+    {
+      "Read": {
+        "trie_id": 1,
+        "trie_root": "0xf153c6cd2bc40a4ec675068562f4ddefadc23030",
+        "state_proof": [
+          {
+            "Edge": {
+              "child": "0x2a",
+              "path": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                13,
+                175,
+                43,
+                237,
+                108,
+                175,
+                57
+              ],
+              "bit_len": 251
+            }
+          }
+        ],
+        "leaf": {
+          "key": "0x6d795f6b6579",
+          "data": {
+            "value": "0x2a"
+          }
+        }
+      }
+    }
+  ]
+]

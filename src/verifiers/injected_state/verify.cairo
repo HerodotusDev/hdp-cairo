@@ -4,7 +4,7 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian, uint256_to_felt
 from starkware.cairo.common.default_dict import default_dict_finalize
 from starkware.cairo.common.registers import get_label_location
-from src.memorizers.injected_state.memorizer import InjectedStateMemorizer
+from src.memorizers.injected_state.memorizer import InjectedStateMemorizer, InjectedStateHashParams
 from src.utils.patricia_with_keccak import patricia_update_using_update_constants, patricia_update_constants_new
 from src.utils.keccak import TruncatedKeccak, finalize_truncated_keccak
 from src.verifiers.mpt import HashNodeTruncatedKeccak, traverse
@@ -12,16 +12,15 @@ from src.types import TrieNode
 
 func inclusion_state_verification{
     range_check_ptr,
+    poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     keccak_ptr: KeccakBuiltin*,
     pow2_array: felt*,
     injected_state_memorizer: DictAccess*,
 }() -> (root: felt, value: felt){
     alloc_locals;
-    
-    local key_be: felt; 
-    %{ ids.key_be = state_proof.leaf.key %} 
 
+    tempvar key_be: felt = nondet %{ state_proof_read.leaf.key %};
     tempvar proof_len: felt = nondet %{ len(state_proof) %};
 
     let (nodes_ptr: felt**) = alloc();
@@ -31,7 +30,6 @@ func inclusion_state_verification{
     let (hash_edge_node_ptr) = get_label_location(HashNodeTruncatedKeccak.hash_edge_node);
 
     let (keccak_ptr_seg: TruncatedKeccak*) = alloc();
-    local keccak_ptr_seg_start: TruncatedKeccak* = keccak_ptr_seg;
     let hash_ptr = cast(keccak_ptr_seg, HashBuiltin*);
     
     let (root, value) = traverse{
@@ -41,14 +39,18 @@ func inclusion_state_verification{
         cast(nodes_ptr, TrieNode**), proof_len, key_be
     );
 
-    with keccak_ptr_seg{
-        finalize_truncated_keccak{
-            range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
-        }(ptr_start=keccak_ptr_seg_start, ptr_end=keccak_ptr_seg);
-    }
+    finalize_truncated_keccak{
+        range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
+    }(ptr_start=keccak_ptr_seg, ptr_end=cast(hash_ptr, TruncatedKeccak*));
+
+    let (data_ptr: felt*) = alloc();
+    assert [data_ptr] = value;
+
+    let memorizer_key = InjectedStateHashParams.read_inclusion{poseidon_ptr=poseidon_ptr}(root=root, value=key_be);
+    InjectedStateMemorizer.add(key=memorizer_key, data=data_ptr);
 
     return (root=root, value=value);
-    //todo()! -> memorizer, save the keys
+
 }
 
 func update_state_verification{

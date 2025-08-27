@@ -31,7 +31,7 @@ pub fn syscall_handler_create(
             SyscallHandlerWrapper::<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>::new(
                 evm::CallContractHandler::new(exec_scopes.get_dict_manager()?),
                 starknet::CallContractHandler::new(exec_scopes.get_dict_manager()?),
-                injected_state::CallContractHandler::default(),
+                injected_state::CallContractHandler::new(exec_scopes.get_dict_manager()?),
             );
         exec_scopes.insert_value(vars::scopes::SYSCALL_HANDLER, syscall_handler);
     }

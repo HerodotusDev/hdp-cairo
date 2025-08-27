@@ -115,5 +115,6 @@ pub mod ids {
     pub const UPDATE_PTR: &str = "update_ptr";
     pub const VALUE_LEN: &str = "value_len";
     pub const VALUE: &str = "value";
+    pub const MEMORIZER_KEY: &str = "memorizer_key";
     pub const WORD: &str = "word";
 }

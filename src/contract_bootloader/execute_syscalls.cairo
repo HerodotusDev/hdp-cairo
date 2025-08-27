@@ -154,6 +154,11 @@ func execute_call_contract{
         return ();
     }
 
+    // TODO!!!
+    if (request.contract_address == 'injected_state') {
+        return ();
+    }
+
     let layout = chain_id_to_layout(request.calldata_start[2]);
     let output_ptr = response.retdata_start;
 

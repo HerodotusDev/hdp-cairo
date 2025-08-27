@@ -138,6 +138,7 @@ func run{
     run_injected_state_verification{
         range_check_ptr=range_check_ptr,
         keccak_ptr=keccak_ptr,
+        poseidon_ptr=poseidon_ptr,
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array,
         injected_state_memorizer=injected_state_memorizer,

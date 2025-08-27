@@ -144,12 +144,14 @@ pub enum Action {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ActionRead {
+    pub trie_label: Felt,
     pub trie_root: Felt,
     pub key: Felt,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ActionWrite {
+    pub trie_label: Felt,
     // Root hash before write operation is applied
     pub trie_root: Felt,
     pub key: Felt,
