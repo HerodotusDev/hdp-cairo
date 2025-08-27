@@ -6,7 +6,7 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.alloc import alloc
 
-from src.memorizers.bare import BareMemorizer, SingleBareMemorizer
+from src.memorizers.bare import BareMemorizer
 
 namespace StarknetPackParams {
     func header(chain_id: felt, block_number: felt) -> (params: felt*, params_len: felt) {

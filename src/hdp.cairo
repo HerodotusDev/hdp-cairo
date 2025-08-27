@@ -24,7 +24,7 @@ from src.types import MMRMeta
 from src.utils.utils import mmr_metas_write_output_ptr, felt_array_to_uint256s
 from src.memorizers.evm.memorizer import EvmMemorizer
 from src.memorizers.starknet.memorizer import StarknetMemorizer
-from src.memorizers.bare import BareMemorizer, SingleBareMemorizer
+from src.memorizers.bare import BareMemorizer
 from src.memorizers.evm.state_access import EvmStateAccess, EvmDecoder
 from src.memorizers.starknet.state_access import StarknetStateAccess, StarknetDecoder
 from src.memorizers.injected_state.memorizer import InjectedStateMemorizer

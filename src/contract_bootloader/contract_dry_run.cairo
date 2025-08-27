@@ -23,6 +23,10 @@ from starkware.cairo.common.memcpy import memcpy
 from src.utils.merkle import compute_merkle_root
 from src.utils.utils import felt_array_to_uint256s
 from packages.eth_essentials.lib.utils import pow2alloc251
+from src.memorizers.evm.memorizer import EvmMemorizer
+from src.memorizers.starknet.memorizer import StarknetMemorizer
+from src.memorizers.bare import BareMemorizer
+from src.memorizers.injected_state.memorizer import InjectedStateMemorizer
 
 struct DryRunOutput {
     module_hash: felt,
@@ -90,9 +94,10 @@ func main{
         )
     %}
 
-    let (local evm_memorizer) = default_dict_new(default_value=7);
-    let (local starknet_memorizer) = default_dict_new(default_value=7);
-    let (local injected_state_memorizer) = default_dict_new(default_value=-1);
+    // Memorizers
+    let (evm_memorizer, evm_memorizer_start) = EvmMemorizer.init();
+    let (starknet_memorizer, starknet_memorizer_start) = StarknetMemorizer.init();
+    let (injected_state_memorizer, injected_state_memorizer_start) = InjectedStateMemorizer.init();
 
     %{
         if '__dict_manager' not in globals():
@@ -128,6 +133,15 @@ func main{
             compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata, dry_run=1
         );
     }
+
+    // Post Verification Checks: Ensure dict consistency
+    default_dict_finalize(evm_memorizer_start, evm_memorizer, BareMemorizer.DEFAULT_VALUE);
+    default_dict_finalize(
+        starknet_memorizer_start, starknet_memorizer, BareMemorizer.DEFAULT_VALUE
+    );
+    default_dict_finalize(
+        injected_state_memorizer_start, injected_state_memorizer, BareMemorizer.DEFAULT_VALUE
+    );
 
     let (task_hash_preimage) = alloc();
     assert task_hash_preimage[0] = module_hash;
