@@ -46,7 +46,7 @@ impl Trie {
 
     pub fn load_from_root<'a>(
         root: Felt,
-        trie_label: &str,
+        trie_label: Felt,
         conn: &'a PooledConnection<SqliteConnectionManager>,
     ) -> Result<(TrieDB<'a>, MerkleTree<TruncatedKeccakHash, 251>, TrieStorageIndex), Error> {
         let storage = TrieDB::new(conn);
@@ -76,7 +76,7 @@ impl Trie {
         Ok((storage, trie, root_idx))
     }
 
-    pub fn get_leaf_proof(storage: &TrieDB, root: Felt, leaf: TrieLeaf, trie_label: &str) -> Result<Vec<TrieNodeWithHash>, Error> {
+    pub fn get_leaf_proof(storage: &TrieDB, root: Felt, leaf: TrieLeaf, trie_label: Felt) -> Result<Vec<TrieNodeWithHash>, Error> {
         // Convert the key to a bitvec for the trie
         let key_bits = leaf.get_path();
         let root_idx = storage.get_node_idx_by_hash(root, trie_label)?.unwrap();
@@ -153,7 +153,7 @@ impl Trie {
         update: &TrieUpdate,
         items: &Vec<TrieLeaf>,
         starting_index: Option<u64>,
-        trie_label: &str,
+        trie_label: Felt,
     ) -> Result<TrieStorageIndex, Error> {
         let next_index = starting_index.unwrap_or_else(|| storage.get_node_idx().unwrap()) + 1;
         let mut nodes_to_persist: Vec<(StoredNode, Felt, u64)> = vec![];

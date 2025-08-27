@@ -11,7 +11,7 @@ use crate::{mpt::trie::Trie, AppState};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WriteRequest {
-    pub trie_label: String,
+    pub trie_label: Felt,
     pub trie_root: Felt,
     pub key: Felt,
     pub value: Felt,
@@ -34,7 +34,7 @@ pub async fn write(State(state): State<AppState>, Query(payload): Query<WriteReq
     let (storage, mut trie, root_idx) = if payload.trie_root == Felt::ZERO {
         Trie::create_empty(&conn).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
     } else {
-        Trie::load_from_root(payload.trie_root, &payload.trie_label, &conn).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        Trie::load_from_root(payload.trie_root, payload.trie_label, &conn).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
     };
 
     let leaf = TrieLeaf::new(payload.key, payload.value);
@@ -43,7 +43,7 @@ pub async fn write(State(state): State<AppState>, Query(payload): Query<WriteReq
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let update = trie.commit(&storage).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    let trie_id = Trie::persist_updates(&storage, &update, &vec![leaf], Some(u64::from(root_idx)), &payload.trie_label)
+    let trie_id = Trie::persist_updates(&storage, &update, &vec![leaf], Some(u64::from(root_idx)), payload.trie_label)
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(WriteResponse {
