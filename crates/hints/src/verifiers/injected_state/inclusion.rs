@@ -47,9 +47,7 @@ pub fn hint_get_trie_root_hash(
 ) -> Result<(), HintError> {
     let state_proof = exec_scopes.get::<StateProofRead>(vars::scopes::STATE_PROOF)?;
     let root_hash = state_proof.trie_root;
-    println!("root_hash: {:?}", root_hash);
     let root_hash_ptr = get_address_from_var_name(vars::ids::ROOT, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    println!("root_hash_ptr: {:?}", root_hash_ptr);
 
     vm.insert_value(
         (root_hash_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 0)?,
