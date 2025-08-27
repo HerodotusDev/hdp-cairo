@@ -6598,6 +6598,7 @@ dependencies = [
  "chrono",
  "clap",
  "dashmap 5.5.3",
+ "dotenvy",
  "eth_trie 0.5.0",
  "hex",
  "http-body-util",
