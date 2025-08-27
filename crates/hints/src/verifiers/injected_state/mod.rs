@@ -1,5 +1,5 @@
-pub mod inclusion_verifier;
-pub mod update_verifier;
+pub mod inclusion;
+pub mod update;
 
 use std::{any::Any, collections::HashMap};
 
