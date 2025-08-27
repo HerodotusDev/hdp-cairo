@@ -163,6 +163,14 @@ func run_injected_state_verification_inner{
         }();
         %{ vm_exit_scope() %}
 
+        let (data_ptr: felt*) = alloc();
+        assert [data_ptr] = new_root;
+
+        let memorizer_key = InjectedStateHashParams.write{poseidon_ptr=poseidon_ptr}(
+            root=prev_root, value=key
+        );
+        InjectedStateMemorizer.add(key=memorizer_key, data=data_ptr);
+
         return run_injected_state_verification_inner(idx=idx - 1);
     }
 

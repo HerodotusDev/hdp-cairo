@@ -10,6 +10,7 @@ from src.memorizers.bare import BareMemorizer
 namespace InjectedStatePackParams {
     const INCLUSION = 1944862448358072610670;
     const NON_INCLUSION = 8749584145069082368101870825326;
+    const WRITE = 513020621925;
 
     func read_inclusion(root: felt, value: felt) -> (params: felt*, params_len: felt) {
         alloc_locals;
@@ -32,6 +33,17 @@ namespace InjectedStatePackParams {
 
         return (params=params, params_len=3);
     }
+
+    func write(root: felt, value: felt) -> (params: felt*, params_len: felt) {
+        alloc_locals;
+
+        local params: felt* = nondet %{ segments.add() %};
+        assert params[0] = InjectedStatePackParams.WRITE;
+        assert params[1] = root;
+        assert params[2] = value;
+
+        return (params=params, params_len=3);
+    }
 }
 
 namespace InjectedStateHashParams {
@@ -44,6 +56,13 @@ namespace InjectedStateHashParams {
 
     func read_non_inclusion{poseidon_ptr: PoseidonBuiltin*}(root: felt, value: felt) -> felt {
         let (params, params_len) = InjectedStatePackParams.read_non_inclusion(
+            root=root, value=value
+        );
+        return hash_memorizer_key(params, params_len);
+    }
+
+    func write{poseidon_ptr: PoseidonBuiltin*}(root: felt, value: felt) -> felt {
+        let (params, params_len) = InjectedStatePackParams.write(
             root=root, value=value
         );
         return hash_memorizer_key(params, params_len);
