@@ -33,19 +33,6 @@
   ],
   [
     {
-      "Read": {
-        "trie_id": 0,
-        "trie_root": "0x0",
-        "state_proof": [],
-        "leaf": {
-          "key": "0x6d795f6b6579",
-          "data": {
-            "value": "0x0"
-          }
-        }
-      }
-    },
-    {
       "Write": {
         "trie_id_prev": 0,
         "trie_root_prev": "0x0",
