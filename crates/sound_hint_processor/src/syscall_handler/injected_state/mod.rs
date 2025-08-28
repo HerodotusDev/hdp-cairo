@@ -38,7 +38,7 @@ impl CallContractHandler {
     }
 
     fn get_trie_root(&self, memorizer: &Memorizer, label: Felt252) -> Result<Option<Felt252>, HintError> {
-        let key = MaybeRelocatable::Int(poseidon_hash_single(label));
+        let key = MaybeRelocatable::Int(poseidon_hash_many(&[LABEL_RUNTIME, label]));
         match memorizer.read_key_int(&key, self.dict_manager.clone()) {
             Ok(trie_root) if trie_root == Memorizer::DEFAULT_VALUE => Ok(None),
             Ok(trie_root) => Ok(Some(trie_root)),
@@ -133,7 +133,7 @@ impl SyscallHandler for CallContractHandler {
                 )?)?;
 
                 memorizer.set_key(
-                    &MaybeRelocatable::Int(poseidon_hash_single(key.trie_label)),
+                    &MaybeRelocatable::Int(poseidon_hash_many(&[LABEL_RUNTIME, key.trie_label])),
                     &MaybeRelocatable::Int(new_root),
                     self.dict_manager.clone(),
                 )?;

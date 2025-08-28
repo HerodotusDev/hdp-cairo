@@ -7,7 +7,7 @@ use cairo_vm::{
 };
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
-use starknet_crypto::poseidon_hash_single;
+use starknet_crypto::poseidon_hash_many;
 use state_server::api::{
     read::{ReadRequest, ReadResponse},
     write::{WriteRequest, WriteResponse},
@@ -16,7 +16,7 @@ use strum_macros::FromRepr;
 use syscall_handler::{memorizer::Memorizer, traits::SyscallHandler, SyscallExecutionError, SyscallResult, WriteResponseResult};
 use types::{
     cairo::{
-        injected_state::{label, read, write},
+        injected_state::{label, read, write, LABEL_RUNTIME},
         new_syscalls::{CallContractRequest, CallContractResponse},
         traits::CairoType,
     },
@@ -67,7 +67,7 @@ impl CallContractHandler {
     }
 
     fn get_trie_root(&self, memorizer: &Memorizer, label: Felt252) -> Result<Option<Felt252>, HintError> {
-        let key = MaybeRelocatable::Int(poseidon_hash_single(label));
+        let key = MaybeRelocatable::Int(poseidon_hash_many(&[LABEL_RUNTIME, label]));
         match memorizer.read_key_int(&key, self.dict_manager.clone()) {
             Ok(trie_root) if trie_root == Memorizer::DEFAULT_VALUE => Ok(None),
             Ok(trie_root) => Ok(Some(trie_root)),
@@ -248,7 +248,7 @@ impl SyscallHandler for CallContractHandler {
                             .map_err(|e| SyscallExecutionError::InternalError(format!("Network request failed: {}", e).into()))?;
 
                         memorizer.set_key(
-                            &MaybeRelocatable::Int(poseidon_hash_single(key.trie_label)),
+                            &MaybeRelocatable::Int(poseidon_hash_many(&[LABEL_RUNTIME, key.trie_label])),
                             &MaybeRelocatable::Int(Felt252::from_bytes_be(&response.trie_root.to_be_bytes())),
                             self.dict_manager.clone(),
                         )?;
