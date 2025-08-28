@@ -6,7 +6,10 @@ use axum::{
 use http_body_util::BodyExt;
 use pathfinder_crypto::Felt;
 use serde_json::from_slice;
-use state_server::api::create_trie::{CreateTrieRequest, CreateTrieResponse};
+use state_server::api::{
+    create_trie::{CreateTrieRequest, CreateTrieResponse},
+    write::WriteResponse,
+};
 use tower::ServiceExt;
 
 pub async fn create_trie(app: &Router, trie_label: Felt, keys: Vec<Felt>, values: Vec<Felt>) -> CreateTrieResponse {
@@ -20,6 +23,28 @@ pub async fn create_trie(app: &Router, trie_label: Felt, keys: Vec<Felt>, values
                 .uri("/create_trie")
                 .header("content-type", "application/json")
                 .body(Body::from(serde_json::to_vec(&create_payload).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    from_slice(&body).unwrap()
+}
+
+pub async fn write_to_trie(app: &Router, trie_label: Felt, trie_root: Felt, key: Felt, value: Felt) -> WriteResponse {
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!(
+                    "/write?trie_label={}&trie_root={}&key={}&value={}",
+                    trie_label, trie_root, key, value
+                ))
+                .header("content-type", "application/json")
+                .body(Body::empty())
                 .unwrap(),
         )
         .await

@@ -3,6 +3,7 @@ use std::sync::Arc;
 pub mod trie;
 use r2d2::{Pool, PooledConnection};
 use r2d2_sqlite::SqliteConnectionManager;
+use tracing::debug;
 
 use crate::mpt::error::Error;
 
@@ -14,9 +15,20 @@ pub struct ConnectionManager {
 impl ConnectionManager {
     /// Creates a new ConnectionManager with a connection pool to the specified database file.
     pub fn new(file: &str) -> Self {
-        let manager = SqliteConnectionManager::file(file);
-        let pool = Pool::new(manager).unwrap();
-        ConnectionManager { pool: Arc::new(pool) }
+        match file {
+            ":memory:" => {
+                debug!("creating in memory database");
+                let manager = SqliteConnectionManager::memory();
+                let pool = Pool::new(manager).unwrap();
+                ConnectionManager { pool: Arc::new(pool) }
+            }
+            _ => {
+                debug!("creating database at {}", file);
+                let manager = SqliteConnectionManager::file(file);
+                let pool = Pool::new(manager).unwrap();
+                ConnectionManager { pool: Arc::new(pool) }
+            }
+        }
     }
 
     /// Gets a connection from the pool.
