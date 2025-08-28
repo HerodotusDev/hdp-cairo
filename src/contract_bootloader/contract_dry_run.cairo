@@ -105,8 +105,6 @@ func main{
     %}
 
     %{ injected_state_memorizer.set_key(poseidon_hash_many(LABEL_RUNTIME, key), value) for (key, value) in injected_states %}
-    %{ injected_state_memorizer.set_key(poseidon_hash_many(LABEL_EXECUTE, key), value) for (key, value) in injected_states %}
-
     %{ syscall_handler = DryRunSyscallHandler(segments=segments, dict_manager=__dict_manager) %}
 
     // Misc
