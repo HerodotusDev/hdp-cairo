@@ -36,7 +36,9 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(contract_bootloader::builtins::UPDATE_BUILTIN_PTRS.into(), contract_bootloader::builtins::update_builtin_ptrs);
     hints.insert(contract_bootloader::contract_class::LOAD_CONTRACT_CLASS.into(), contract_bootloader::contract_class::load_contract_class);
     hints.insert(contract_bootloader::dict_manager::DICT_MANAGER_CREATE.into(), contract_bootloader::dict_manager::dict_manager_create);
-    hints.insert(contract_bootloader::params::LOAD_INJECTED_STATES.into(), contract_bootloader::params::load_injected_states);
+    hints.insert(contract_bootloader::params::INJECTED_STATES_ENTRIES_LEN.into(), contract_bootloader::params::injected_states_entries_len);
+    hints.insert(contract_bootloader::params::INJECTED_STATES_SET_KEYS.into(), contract_bootloader::params::injected_states_set_keys);
+    hints.insert(contract_bootloader::params::INJECTED_STATES_WRITE_LISTS.into(), contract_bootloader::params::injected_states_write_lists);
     hints.insert(contract_bootloader::params::LOAD_PRIVATE_INPUTS_LEN.into(), contract_bootloader::params::load_private_inputs_len);
     hints.insert(contract_bootloader::params::LOAD_PRIVATE_INPUTS.into(), contract_bootloader::params::load_private_inputs);
     hints.insert(contract_bootloader::params::LOAD_PUBLIC_INPUTS_LEN.into(), contract_bootloader::params::load_public_inputs_len);
