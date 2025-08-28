@@ -36,11 +36,11 @@ impl AppState {
 
 pub fn create_router(state: AppState) -> Router {
     Router::new()
-        .route("/create_trie", post(create_trie))
         .route("/get_trie_root_node_idx", get(get_trie_root_node_idx))
         .route("/get_state_proofs", post(get_state_proofs))
         .route("/read", get(read))
-        .route("/write", get(write))
+        .route("/write", post(write))
+        .route("/create_trie", post(create_trie))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(state)

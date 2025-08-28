@@ -123,14 +123,22 @@ impl Trie {
             }
         }
 
-        assert!(remaining_path.is_empty(), "Proof path should be empty");
-        if expected_hash == leaf.commitment() {
-            Some(Membership::Member)
+        if remaining_path.is_empty() {
+            if expected_hash == leaf.commitment() {
+                Some(Membership::Member)
+            } else {
+                debug!("~~~~~~~~~~~~~PROOF VERIFICATION FAILED~~~~~~~~~~~~");
+                debug!("Used Root: {:?}", root);
+                debug!("expected hash: {:?}", expected_hash);
+                debug!("leaf hash    : {:?}", leaf.commitment());
+                debug!("_______________________________");
+                None
+            }
+        } else if proof.is_empty() && root == Felt::ZERO {
+            Some(Membership::NonMember)
         } else {
             debug!("~~~~~~~~~~~~~PROOF VERIFICATION FAILED~~~~~~~~~~~~");
-            debug!("Used Root: {:?}", root);
-            debug!("expected hash: {:?}", expected_hash);
-            debug!("leaf hash    : {:?}", leaf.commitment());
+            debug!("Path not fully consumed: {:?}", remaining_path);
             debug!("_______________________________");
             None
         }
