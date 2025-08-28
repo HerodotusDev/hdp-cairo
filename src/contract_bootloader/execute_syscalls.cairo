@@ -35,6 +35,7 @@ from src.memorizers.starknet.state_access import (
     StarknetDecoderTarget,
 )
 from src.utils.chain_info import Layout
+from src.memorizers.injected_state.memorizer import InjectedStateMemorizer, InjectedStateHashParams
 
 struct ExecutionInfo {
     selector: felt,
@@ -74,6 +75,7 @@ func execute_syscalls{
     starknet_memorizer: DictAccess*,
     starknet_decoder_ptr: felt***,
     starknet_key_hasher_ptr: felt**,
+    injected_state_memorizer: DictAccess*,
 }(execution_context: ExecutionContext*, syscall_ptr_end: felt*) {
     if (syscall_ptr == syscall_ptr_end) {
         return ();
@@ -127,6 +129,7 @@ func execute_call_contract{
     starknet_memorizer: DictAccess*,
     starknet_decoder_ptr: felt***,
     starknet_key_hasher_ptr: felt**,
+    injected_state_memorizer: DictAccess*,
 }(caller_execution_context: ExecutionContext*) {
     alloc_locals;
     let request_header = cast(syscall_ptr, RequestHeader*);
@@ -141,9 +144,6 @@ func execute_call_contract{
     let response = cast(syscall_ptr, CallContractResponse*);
     let syscall_ptr = syscall_ptr + CallContractResponse.SIZE;
 
-    let state_access_type = request.contract_address;
-    let field = request.selector;
-
     // Debug Contract does not need to be executed
     if (request.contract_address == 'debug') {
         return ();
@@ -156,9 +156,64 @@ func execute_call_contract{
 
     // TODO!!!
     if (request.contract_address == 'injected_state') {
+        let call_handler_id = request.selector;
+
+        if (call_handler_id == 0) {
+            tempvar key_trie_label = request.calldata_start[2];
+
+            let memorizer_key = InjectedStateHashParams.label{poseidon_ptr=poseidon_ptr}(
+                label=key_trie_label
+            );
+            let (trie_root_ptr) = InjectedStateMemorizer.get(key=memorizer_key);
+
+            assert [trie_root_ptr] = response.retdata_start[0];
+            return ();
+        }
+
+        if (call_handler_id == 1) {
+            tempvar key_trie_label = request.calldata_start[2];
+            tempvar key_key = request.calldata_start[3];
+
+            let memorizer_key = InjectedStateHashParams.label{poseidon_ptr=poseidon_ptr}(
+                label=key_trie_label
+            );
+            let (trie_root_ptr) = InjectedStateMemorizer.get(key=memorizer_key);
+
+            let memorizer_key = InjectedStateHashParams.read_inclusion{poseidon_ptr=poseidon_ptr}(
+                root=[trie_root_ptr], value=key_key
+            );
+            let (value_ptr) = InjectedStateMemorizer.get(key=memorizer_key);
+
+            assert [value_ptr] = response.retdata_start[0];
+            return ();
+        }
+
+        if (call_handler_id == 2) {
+            tempvar key_trie_label = request.calldata_start[2];
+            tempvar key_key = request.calldata_start[3];
+
+            let label_memorizer_key = InjectedStateHashParams.label{poseidon_ptr=poseidon_ptr}(
+                label=key_trie_label
+            );
+            let (trie_root_ptr) = InjectedStateMemorizer.get(key=label_memorizer_key);
+
+            let memorizer_key = InjectedStateHashParams.write{poseidon_ptr=poseidon_ptr}(
+                root=[trie_root_ptr], value=key_key
+            );
+            let (new_root_ptr) = InjectedStateMemorizer.get(key=memorizer_key);
+
+            InjectedStateMemorizer.add(key=label_memorizer_key, data=new_root_ptr);
+            return ();
+        }
+
+        // Unknown DictId
+        assert 1 = 0;
+
         return ();
     }
 
+    let state_access_type = request.contract_address;
+    let field = request.selector;
     let layout = chain_id_to_layout(request.calldata_start[2]);
     let output_ptr = response.retdata_start;
 
