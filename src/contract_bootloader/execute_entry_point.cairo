@@ -76,6 +76,7 @@ func call_execute_syscalls{
     starknet_memorizer: DictAccess*,
     starknet_decoder_ptr: felt***,
     starknet_key_hasher_ptr: felt**,
+    injected_state_memorizer: DictAccess*,
 }(execution_context: ExecutionContext*, syscall_ptr_end: felt*, dry_run: felt) {
     alloc_locals;
     let (__fp__, _) = get_fp_and_pc();
