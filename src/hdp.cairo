@@ -116,19 +116,17 @@ func run{
     let (injected_state_keys) = alloc();
     let (injected_state_values) = alloc();
     tempvar injected_state_len: felt = nondet %{ len(injected_states.entries()) %};
-    %{ injected_state_memorizer.set_key(poseidon_hash_many(LABEL_RUNTIME, key), value) for (key, value) in injected_states %}
-
     %{
         segments.write_arg(ids.injected_state_keys, injected_states.keys())
         segments.write_arg(ids.injected_state_values, injected_states.values())
     %}
-
     with injected_state_memorizer {
         injected_state_load_loop(
             keys=injected_state_keys, values=injected_state_values, n=injected_state_len
         );
     }
 
+    %{ injected_state_memorizer.set_key(poseidon_hash_many(LABEL_RUNTIME, key), value) for (key, value) in injected_states %}
     %{ syscall_handler = SyscallHandler(segments=segments, dict_manager=__dict_manager) %}
 
     // Misc
