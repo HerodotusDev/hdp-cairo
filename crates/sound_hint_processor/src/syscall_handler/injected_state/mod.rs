@@ -6,22 +6,18 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
 };
 use serde::{Deserialize, Serialize};
-use starknet_crypto::{poseidon_hash_many, poseidon_hash_single};
+use starknet_crypto::poseidon_hash_many;
 use strum_macros::FromRepr;
 use syscall_handler::{memorizer::Memorizer, traits::SyscallHandler, SyscallExecutionError, SyscallResult, WriteResponseResult};
 use types::{
     cairo::{
-        injected_state::{label, read, write},
+        injected_state::{label, read, write, INCLUSION, LABEL_RUNTIME, NON_INCLUSION, WRITE},
         new_syscalls::{CallContractRequest, CallContractResponse},
         traits::CairoType,
         FELT_0, FELT_1,
     },
     keys, Felt252,
 };
-
-pub const INCLUSION: Felt252 = Felt252::from_hex_unchecked("0x696E636C7573696F6E");
-pub const NON_INCLUSION: Felt252 = Felt252::from_hex_unchecked("0x6E6F6E5F696E636C7573696F6E");
-pub const WRITE: Felt252 = Felt252::from_hex_unchecked("0x7772697465");
 
 #[derive(FromRepr, Debug)]
 pub enum CallHandlerId {
