@@ -43,7 +43,7 @@ async fn main() -> anyhow::Result<()> {
 
     if let Err(e) = start_server(args.port, &args.host, &args.db_path).await {
         eprintln!("💥 Server failed to start: {}", e);
-        return Err(e.into());
+        return Err(e);
     }
 
     Ok(())
