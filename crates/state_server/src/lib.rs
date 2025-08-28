@@ -7,7 +7,7 @@ use axum::{
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
 use crate::{
-    api::{proof::get_state_proofs, read::read, root_to_id::get_id_by_trie_root, write::write},
+    api::{create_trie::create_trie, proof::get_state_proofs, read::read, root_to_node_idx::get_trie_root_node_idx, write::write},
     mpt::db::ConnectionManager,
 };
 
@@ -16,7 +16,7 @@ pub mod mpt;
 
 #[derive(Debug, Clone)]
 pub struct AppState {
-    connection_manager: Arc<ConnectionManager>,
+    pub connection_manager: Arc<ConnectionManager>,
 }
 
 impl AppState {
@@ -28,13 +28,16 @@ impl AppState {
             connection_manager: Arc::new(connection_manager),
         })
     }
+
+    pub fn get_connection(&self) -> anyhow::Result<r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>> {
+        Ok(self.connection_manager.get_connection()?)
+    }
 }
 
-pub fn create_router() -> Router {
-    let state = AppState::new("a.db").unwrap();
-
+pub fn create_router(state: AppState) -> Router {
     Router::new()
-        .route("/get_id_by_trie_root", get(get_id_by_trie_root))
+        .route("/create_trie", post(create_trie))
+        .route("/get_trie_root_node_idx", get(get_trie_root_node_idx))
         .route("/get_state_proofs", post(get_state_proofs))
         .route("/read", get(read))
         .route("/write", get(write))
