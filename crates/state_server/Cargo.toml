@@ -43,3 +43,8 @@ uuid.workspace = true
 [dev-dependencies]
 tower.workspace = true
 urlencoding = "2.1"
+http-body-util = "0.1.2"
+
+[[test]]
+name = "api"
+path = "tests/api/mod.rs"

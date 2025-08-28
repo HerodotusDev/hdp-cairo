@@ -1,0 +1,7 @@
+# See https://doc.rust-lang.org/cargo/reference/config.html for more options.
+
+# Enable debug information for all dependencies in development builds.
+# This allows stepping into library code with a debugger.
+[profile.dev.package."*"]
+opt-level = 0
+debug = 2
