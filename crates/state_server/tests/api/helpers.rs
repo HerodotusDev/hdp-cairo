@@ -7,9 +7,12 @@ use http_body_util::BodyExt;
 use pathfinder_crypto::Felt;
 use serde_json::from_slice;
 use state_server::api::{
-    create_trie::{CreateTrieRequest, CreateTrieResponse},
+    create_trie::{CreateTrieRequest, CreateTrieResponse}, 
+    read::ReadResponse, 
     write::WriteResponse,
+    proof::GetStateProofsResponse
 };
+use types::proofs::injected_state::Action;
 use tower::ServiceExt;
 
 pub async fn create_trie(app: &Router, trie_label: Felt, keys: Vec<Felt>, values: Vec<Felt>) -> CreateTrieResponse {
@@ -66,3 +69,42 @@ pub async fn get_trie_root_node_idx(app: &Router, trie_label: Felt, trie_root: F
         .await
         .unwrap()
 }
+
+pub async fn read_from_trie(app: &Router, trie_label: Felt, trie_root: Felt, key: Felt) -> ReadResponse {
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri(format!("/read?trie_label={}&trie_root={}&key={}", trie_label, trie_root, key))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    from_slice(&body).unwrap()
+}
+
+pub async fn get_state_proofs(app: &Router, actions: Vec<Action>) -> GetStateProofsResponse {
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/get_state_proofs")
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::to_vec(&actions).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    from_slice(&body).unwrap()
+}
+
+
+

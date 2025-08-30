@@ -76,6 +76,12 @@ async fn write_to_existing_trie() {
     assert_eq!(leaf1.data.value, value1);
 }
 
+/// Tests writing to a non-existing trie.
+#[tokio::test]
+async fn write_to_non_existing_trie() {
+    todo!()
+}
+
 /// Tests overriding an existing key.
 #[tokio::test]
 async fn override_existing_key() {
