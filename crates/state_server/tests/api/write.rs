@@ -76,11 +76,23 @@ async fn write_to_existing_trie() {
     assert_eq!(leaf1.data.value, value1);
 }
 
-/// Tests writing to a non-existing trie.
+/// Tests writing to a non-existing trie (wrong root) should fail.
+/// Because `write_to_trie` unwraps the response, we expect a panic.
+/// TODO: Maybe change this later, currently writes return 500 for wrong root
 #[tokio::test]
+#[should_panic]
 async fn write_to_non_existing_trie() {
-    todo!()
-}
+    let (app, _state) = setup().await.unwrap();
+
+    let trie_label = Felt::from_hex_str("0x123").unwrap();
+    let wrong_root = Felt::from_hex_str("0xdeadbeef").unwrap(); // not in DB
+    let key = Felt::from_hex_str("0x1").unwrap();
+    let value = Felt::from_hex_str("0x1").unwrap();
+
+    // This should error inside the endpoint when it tries to load the root,
+    // mapping to 500; since the helper unwraps, the test should panic.
+    let _ = write_to_trie(&app, trie_label, wrong_root, key, value).await;
+}   
 
 /// Tests overriding an existing key.
 #[tokio::test]

@@ -10,7 +10,7 @@ use state_server::api::{
     create_trie::{CreateTrieRequest, CreateTrieResponse}, 
     read::ReadResponse, 
     write::WriteResponse,
-    proof::GetStateProofsResponse
+    proof::{GetStateProofsRequest, GetStateProofsResponse}
 };
 use types::proofs::injected_state::Action;
 use tower::ServiceExt;
@@ -88,6 +88,8 @@ pub async fn read_from_trie(app: &Router, trie_label: Felt, trie_root: Felt, key
 }
 
 pub async fn get_state_proofs(app: &Router, actions: Vec<Action>) -> GetStateProofsResponse {
+    let proof_payload = GetStateProofsRequest { actions };
+
     let response = app
         .clone()
         .oneshot(
@@ -95,15 +97,16 @@ pub async fn get_state_proofs(app: &Router, actions: Vec<Action>) -> GetStatePro
                 .method("POST")
                 .uri("/get_state_proofs")
                 .header("content-type", "application/json")
-                .body(Body::from(serde_json::to_vec(&actions).unwrap()))
+                .body(Body::from(serde_json::to_vec(&proof_payload).unwrap()))
                 .unwrap(),
         )
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::OK);
-    let body = response.into_body().collect().await.unwrap().to_bytes();
-    from_slice(&body).unwrap()
+    assert_eq!(response.status(), StatusCode::OK, "unexpected status from /get_state_proofs");
+
+    let body_bytes = response.into_body().collect().await.unwrap().to_bytes();
+    from_slice::<GetStateProofsResponse>(&body_bytes).unwrap()
 }
 
 
