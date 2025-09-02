@@ -20,3 +20,5 @@ starknet-crypto.workspace = true
 syscall_handler.workspace = true
 tokio.workspace = true
 types.workspace = true
+pathfinder-crypto.workspace = true
+pathfinder-common.workspace = true
