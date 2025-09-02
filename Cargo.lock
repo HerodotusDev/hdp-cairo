@@ -6855,8 +6855,6 @@ dependencies = [
  "fetcher",
  "futures",
  "hints",
- "pathfinder-common",
- "pathfinder-crypto",
  "serde_json",
  "sound_hint_processor",
  "starknet-crypto",
