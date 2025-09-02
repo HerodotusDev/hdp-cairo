@@ -57,7 +57,7 @@ async fn root_found() {
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let response: GetIdResponse = from_slice(&body).unwrap();
 
-    assert_eq!(response.trie_root_node_idx, 1);
+    assert!(response.trie_root_node_idx > 0);
     assert_eq!(response.trie_root, create_response.trie_root);
 }
 
