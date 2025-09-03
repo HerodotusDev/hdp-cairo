@@ -85,38 +85,34 @@ impl SyscallHandler for CallContractHandler {
                     .get_trie_root(&memorizer, key.trie_label)?
                     .ok_or(HintError::NoValueForKey(Box::new(key.trie_label.into())))?;
 
-                let maybe_ptr = memorizer
-                    .read_key(
-                        &MaybeRelocatable::Int(poseidon_hash_many([&INCLUSION, &trie_root, &key.key])),
-                        self.dict_manager.clone(),
-                    )
-                    .map(Some)
-                    .or_else(|err| {
-                        if matches!(err, HintError::NoValueForKey(_)) {
-                            memorizer
-                                .read_key(
-                                    &MaybeRelocatable::Int(poseidon_hash_many([&NON_INCLUSION, &trie_root, &key.key])),
-                                    self.dict_manager.clone(),
-                                )
-                                .map(|_| None)
-                        } else {
-                            Err(err)
-                        }
-                    })?;
+                let value_inclusion = self
+                    .dict_manager
+                    .borrow_mut()
+                    .get_tracker_mut(memorizer.dict_ptr)?
+                    .get_value(&MaybeRelocatable::Int(poseidon_hash_many([&INCLUSION, &trie_root, &key.key])))?
+                    .clone();
 
-                let result = match maybe_ptr {
-                    Some(ptr) => {
-                        let leaf_key = vm.get_integer(ptr)?;
-                        read::Response {
-                            exist: FELT_1,
-                            value: *leaf_key,
-                        }
-                    }
-                    None => read::Response {
-                        exist: FELT_0,
-                        value: FELT_0,
+                let value_non_inclusion = self
+                    .dict_manager
+                    .borrow_mut()
+                    .get_tracker_mut(memorizer.dict_ptr)?
+                    .get_value(&MaybeRelocatable::Int(poseidon_hash_many([&NON_INCLUSION, &trie_root, &key.key])))?
+                    .clone();
+
+                let result = match value_inclusion {
+                    MaybeRelocatable::RelocatableValue(ptr) => Ok(read::Response {
+                        value: *vm.get_integer(ptr)?,
+                        exist: FELT_1,
+                    }),
+                    MaybeRelocatable::Int(value) if value == Memorizer::DEFAULT_VALUE => match value_non_inclusion {
+                        MaybeRelocatable::RelocatableValue(ptr) => Ok(read::Response {
+                            value: *vm.get_integer(ptr)?,
+                            exist: FELT_0,
+                        }),
+                        e => Err(HintError::NoValueForKey(Box::new(e.clone()))),
                     },
-                };
+                    e => Err(HintError::NoValueForKey(Box::new(e.clone()))),
+                }?;
 
                 retdata_end = result.to_memory(vm, retdata_end)?;
             }
@@ -127,7 +123,7 @@ impl SyscallHandler for CallContractHandler {
                     .get_trie_root(&memorizer, key.trie_label)?
                     .ok_or(HintError::NoValueForKey(Box::new(key.trie_label.into())))?;
 
-                let new_root = *vm.get_integer(memorizer.read_key(
+                let new_root = *vm.get_integer(memorizer.read_key_ptr(
                     &MaybeRelocatable::Int(poseidon_hash_many([&WRITE, &trie_root, &key.key])),
                     self.dict_manager.clone(),
                 )?)?;
