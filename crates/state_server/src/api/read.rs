@@ -18,7 +18,7 @@ pub struct ReadRequest {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ReadResponse {
     pub key: Felt,
-    pub value: Felt,
+    pub value: Option<Felt>,
 }
 
 pub async fn read(State(state): State<AppState>, Query(payload): Query<ReadRequest>) -> Result<Json<ReadResponse>, StatusCode> {
@@ -39,6 +39,6 @@ pub async fn read(State(state): State<AppState>, Query(payload): Query<ReadReque
 
     Ok(Json(ReadResponse {
         key: payload.key,
-        value: leaf.data.value,
+        value: leaf.map(|leaf| leaf.data.value),
     }))
 }

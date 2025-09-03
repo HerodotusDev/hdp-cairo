@@ -160,8 +160,10 @@ impl SyscallHandler for CallContractHandler {
                                 .await
                                 .map_err(|e| SyscallExecutionError::InternalError(format!("Network request failed: {}", e).into()))?;
 
-                            let exists = !response.value.is_zero();
-                            let value = Felt252::from_bytes_be(&response.value.to_be_bytes());
+                            let (value, exists) = match response.value {
+                                Some(value) => (Felt252::from_bytes_be(&value.to_be_bytes()), true),
+                                None => (Felt252::ZERO, false),
+                            };
 
                             self.key_set.entry(key.trie_label).or_default().push(Action::Read(ActionRead {
                                 trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),

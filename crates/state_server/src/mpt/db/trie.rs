@@ -223,7 +223,7 @@ impl<'a> TrieDB<'a> {
     /// # Returns
     ///
     /// Returns `Ok(leaf)` if the leaf is found, `Ok(TrieLeaf::empty(key))` otherwise.
-    pub fn get_leaf_at(&self, key: Felt, max_root_idx: u64, trie_label: Felt) -> anyhow::Result<TrieLeaf> {
+    pub fn get_leaf_at(&self, key: Felt, max_root_idx: u64, trie_label: Felt) -> anyhow::Result<Option<TrieLeaf>> {
         let mut stmt = self
             .conn
             .prepare_cached("SELECT value FROM leafs WHERE key = ? AND root_idx <= ? AND trie_label = ? ORDER BY idx DESC LIMIT 1")?;
@@ -244,10 +244,7 @@ impl<'a> TrieDB<'a> {
             )
             .optional()?;
 
-        match result {
-            Some(leaf) => Ok(leaf),
-            None => Ok(TrieLeaf::empty(key)),
-        }
+        Ok(result)
     }
 }
 
