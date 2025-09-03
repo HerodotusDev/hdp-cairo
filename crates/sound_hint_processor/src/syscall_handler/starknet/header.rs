@@ -54,7 +54,7 @@ impl CallHandler for HeaderCallHandler {
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
         let ptr = self
             .memorizer
-            .read_key(&MaybeRelocatable::Int(key.hash()), self.dict_manager.clone())?;
+            .read_key_ptr(&MaybeRelocatable::Int(key.hash()), self.dict_manager.clone())?;
         let field_len: usize = (*vm.get_integer(ptr)?.as_ref()).try_into().unwrap();
 
         let fields = vm
