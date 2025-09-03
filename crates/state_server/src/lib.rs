@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use axum::{
     routing::{get, post},
@@ -16,29 +16,43 @@ pub mod mpt;
 
 #[derive(Debug, Clone)]
 pub struct AppState {
-    pub connection_manager: Arc<ConnectionManager>,
+    pub connection_manager: Arc<Mutex<ConnectionManager>>,
 }
 
 impl AppState {
-    pub fn new(db_path: &str) -> anyhow::Result<Self> {
-        let connection_manager = ConnectionManager::new(db_path);
-        connection_manager.create_tables_if_not_exists()?;
+    pub fn new(db_root_path: &str) -> anyhow::Result<Self> {
+        let connection_manager = ConnectionManager::new(db_root_path);
 
         Ok(Self {
-            connection_manager: Arc::new(connection_manager),
+            connection_manager: Arc::new(Mutex::new(connection_manager)),
         })
     }
 
-    pub fn get_connection(&self) -> anyhow::Result<r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>> {
-        Ok(self.connection_manager.get_connection()?)
+    /// Creates a new AppState for memory mode using in-memory databases.
+    pub fn new_memory() -> anyhow::Result<Self> {
+        let connection_manager = ConnectionManager::new_memory();
+
+        Ok(Self {
+            connection_manager: Arc::new(Mutex::new(connection_manager)),
+        })
+    }
+
+    pub fn get_connection(
+        &self,
+        trie_label: pathfinder_crypto::Felt,
+    ) -> anyhow::Result<r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>> {
+        self.connection_manager.lock().unwrap().create_tables_if_not_exists(trie_label)?;
+        Ok(self.connection_manager.lock().unwrap().get_connection(trie_label)?)
     }
 }
 
 pub fn create_router(state: AppState) -> Router {
     Router::new()
+        // GET
         .route("/get_trie_root_node_idx", get(get_trie_root_node_idx))
-        .route("/get_state_proofs", post(get_state_proofs))
         .route("/read", get(read))
+        // POST
+        .route("/get_state_proofs", post(get_state_proofs))
         .route("/write", post(write))
         .route("/create_trie", post(create_trie))
         .layer(CorsLayer::permissive())

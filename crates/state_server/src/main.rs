@@ -5,11 +5,11 @@ use tracing::info;
 use tracing_subscriber::EnvFilter;
 
 /// Binds to the given host and port and starts the axum server.
-pub async fn start_server(port: u16, host: &str, db_path: &str) -> anyhow::Result<()> {
+pub async fn start_server(port: u16, host: &str, db_root_path: &str) -> anyhow::Result<()> {
     // Initialize the logger/subscriber.
     tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init();
 
-    let state = AppState::new(db_path)?;
+    let state = AppState::new(db_root_path)?;
     let app = create_router(state);
     let addr = format!("{}:{}", host, port);
 
@@ -32,16 +32,16 @@ struct Args {
     #[arg(long, default_value = "0.0.0.0")]
     host: String,
 
-    /// The path to the database file
-    #[arg(long, default_value = "state_server.db")]
-    db_path: String,
+    /// The path to the database root folder
+    #[arg(long, default_value = "db")]
+    db_root_path: String,
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    if let Err(e) = start_server(args.port, &args.host, &args.db_path).await {
+    if let Err(e) = start_server(args.port, &args.host, &args.db_root_path).await {
         eprintln!("💥 Server failed to start: {}", e);
         return Err(e);
     }

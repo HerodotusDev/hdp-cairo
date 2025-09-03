@@ -7,15 +7,22 @@ use state_server::{
         create_trie::{CreateTrieRequest, CreateTrieResponse},
         proof::{GetStateProofsRequest, GetStateProofsResponse},
         read::ReadResponse,
-        write::WriteResponse,
+        write::{WriteRequest, WriteResponse},
     },
+    create_router,
     mpt::trie::{Membership, Trie},
+    AppState,
 };
 use tower::ServiceExt;
 use types::proofs::injected_state::{Action, ActionRead, ActionWrite, StateProof, StateProofRead, StateProofWrite};
 
-pub async fn create_trie(app: &Router, trie_label: Felt, keys: Vec<Felt>, values: Vec<Felt>) -> CreateTrieResponse {
-    let body = app
+pub async fn setup() -> anyhow::Result<(Router, AppState)> {
+    let state = AppState::new_memory()?;
+    Ok((create_router(state.clone()), state))
+}
+
+pub async fn create_trie(router: &Router, trie_label: Felt, keys: Vec<Felt>, values: Vec<Felt>) -> CreateTrieResponse {
+    let body = router
         .clone()
         .oneshot(
             Request::builder()
@@ -37,8 +44,8 @@ pub async fn create_trie(app: &Router, trie_label: Felt, keys: Vec<Felt>, values
     from_slice(&body).unwrap()
 }
 
-pub async fn read_from_trie(app: &Router, trie_label: Felt, trie_root: Felt, key: Felt) -> ReadResponse {
-    let resp = app
+pub async fn read_from_trie(router: &Router, trie_label: Felt, trie_root: Felt, key: Felt) -> ReadResponse {
+    let resp = router
         .clone()
         .oneshot(
             Request::builder()
@@ -55,18 +62,23 @@ pub async fn read_from_trie(app: &Router, trie_label: Felt, trie_root: Felt, key
     from_slice(&body).unwrap()
 }
 
-pub async fn write_to_trie(app: &Router, trie_label: Felt, trie_root: Felt, key: Felt, value: Felt) -> WriteResponse {
-    let resp = app
+pub async fn write_to_trie(router: &Router, trie_label: Felt, trie_root: Felt, key: Felt, value: Felt) -> WriteResponse {
+    let resp = router
         .clone()
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri(format!(
-                    "/write?trie_label={}&trie_root={}&key={}&value={}",
-                    trie_label, trie_root, key, value
-                ))
+                .uri("/write")
                 .header("content-type", "application/json")
-                .body(Body::empty())
+                .body(Body::from(
+                    serde_json::to_vec(&WriteRequest {
+                        trie_label,
+                        trie_root,
+                        key,
+                        value,
+                    })
+                    .unwrap(),
+                ))
                 .unwrap(),
         )
         .await
@@ -76,8 +88,8 @@ pub async fn write_to_trie(app: &Router, trie_label: Felt, trie_root: Felt, key:
     from_slice(&body).unwrap()
 }
 
-pub async fn get_state_proofs(app: &Router, actions: Vec<Action>) -> GetStateProofsResponse {
-    let resp = app
+pub async fn get_state_proofs(router: &Router, actions: Vec<Action>) -> GetStateProofsResponse {
+    let resp = router
         .clone()
         .oneshot(
             Request::builder()
@@ -119,16 +131,16 @@ pub fn write_actions(trie_label: Felt, trie_root: Felt, kv: Vec<(Felt, Felt)>) -
         .collect()
 }
 
-pub async fn build_trie(app: &Router, trie_label: Felt, kv: Vec<(Felt, Felt)>) -> Felt {
+pub async fn build_trie(router: &Router, trie_label: Felt, kv: Vec<(Felt, Felt)>) -> Felt {
     let mut root = Felt::ZERO;
     for (k, v) in kv {
-        root = write_to_trie(app, trie_label, root, k, v).await.trie_root;
+        root = write_to_trie(router, trie_label, root, k, v).await.trie_root;
     }
     root
 }
 
-pub async fn write_proof(app: &Router, trie_label: Felt, trie_root: Felt, key: Felt, value: Felt) -> StateProofWrite {
-    match &get_state_proofs(app, write_actions(trie_label, trie_root, vec![(key, value)]))
+pub async fn write_proof(router: &Router, trie_label: Felt, trie_root: Felt, key: Felt, value: Felt) -> StateProofWrite {
+    match &get_state_proofs(router, write_actions(trie_label, trie_root, vec![(key, value)]))
         .await
         .state_proofs[0]
     {
@@ -223,7 +235,13 @@ pub fn verify_read_proof_with_membership(
 /// - For existing keys, membership must be Member.
 /// - For non-existent keys on a non-empty trie, membership must be NonMember.
 /// - For empty trie, allow NonMember (our verifier returns NonMember for empty trie with empty proof).
-pub fn assert_read_membership_strict(proof: &StateProof, key: Felt, value: Felt, ctx: &str, expected: Option<Membership>) {
+pub fn assert_read_membership_strict(
+    proof: &StateProof,
+    key: Felt,
+    value: Felt,
+    ctx: &str,
+    expected: Option<Membership>,
+) -> Result<(), String> {
     if let StateProof::Read(StateProofRead {
         state_proof,
         trie_root,
@@ -242,13 +260,15 @@ pub fn assert_read_membership_strict(proof: &StateProof, key: Felt, value: Felt,
         } else {
             assert_eq!(membership, expected, "Strict: expected NonMember for absent key {} in {}", key, ctx);
         }
+        Ok(())
     } else {
-        panic!("Expected read proof in {}", ctx);
+        Err(format!("Expected read proof in {}, got {:?}", ctx, proof))
     }
 }
 
-pub async fn get_trie_root_node_idx(app: &Router, trie_label: Felt, trie_root: Felt) -> axum::http::Response<axum::body::Body> {
-    app.clone()
+pub async fn get_trie_root_node_idx(router: &Router, trie_label: Felt, trie_root: Felt) -> axum::http::Response<axum::body::Body> {
+    router
+        .clone()
         .oneshot(
             Request::builder()
                 .uri(format!("/get_trie_root_node_idx?trie_label={}&trie_root={}", trie_label, trie_root))

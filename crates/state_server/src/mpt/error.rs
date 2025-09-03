@@ -31,6 +31,10 @@ pub enum Error {
     FailedToGetLeaf,
     #[error("Failed to parse hex string: {0}")]
     HexParsing(#[from] hex::FromHexError),
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("Pool creation error: {0}")]
+    Pool(r2d2::Error),
     #[error(transparent)]
     Any(#[from] anyhow::Error),
 }

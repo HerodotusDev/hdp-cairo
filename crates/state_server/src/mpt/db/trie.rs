@@ -31,14 +31,13 @@ impl<'a> TrieDB<'a> {
     ///
     /// * `leaves` - A vector of `TrieLeaf` representing the leaves to be persisted.
     /// * `root_idx` - The trie root index to associate with these leaves.
-    /// * `trie_label` - The label to associate with these leaves.
     ///
     /// # Errors
     ///
     /// Returns a `Error` if there was an error persisting the leaves.
-    pub fn persist_leafs(&self, leaves: &Vec<TrieLeaf>, root_idx: u64, trie_label: Felt) -> Result<(), Error> {
+    pub fn persist_leafs(&self, leaves: &Vec<TrieLeaf>, root_idx: u64) -> Result<(), Error> {
         const SELECT_QUERY: &str = "SELECT 1 FROM leafs WHERE key = ?1 AND value = ?2";
-        const INSERT_QUERY: &str = "INSERT INTO leafs (key, value, root_idx, trie_label) VALUES (?1, ?2, ?3, ?4)";
+        const INSERT_QUERY: &str = "INSERT INTO leafs (key, value, root_idx) VALUES (?1, ?2, ?3)";
 
         for item in leaves {
             let key_bytes = item.get_key().to_be_bytes().to_vec();
@@ -50,10 +49,7 @@ impl<'a> TrieDB<'a> {
 
             if exists.is_none() {
                 self.conn
-                    .execute(
-                        INSERT_QUERY,
-                        params![&key_bytes, &value_bytes, root_idx, &trie_label.to_be_bytes().to_vec()],
-                    )
+                    .execute(INSERT_QUERY, params![&key_bytes, &value_bytes, root_idx])
                     .map_err(Error::from)?;
             }
         }
@@ -74,34 +70,29 @@ impl<'a> TrieDB<'a> {
     /// # Arguments
     ///
     /// * `nodes` - A vector of tuples representing the nodes to be persisted. Each tuple contains a `StoredNode`, a `Felt` hash, and a trie
-    /// * `trie_label` - The label to associate with these nodes.
+    ///   index.
     ///
     /// # Errors
     ///
     /// Returns a `Error` if there was an error persisting the nodes.
-    pub fn persist_nodes(&self, nodes: Vec<(StoredNode, Felt, u64)>, trie_label: Felt) -> Result<(), Error> {
+    pub fn persist_nodes(&self, nodes: Vec<(StoredNode, Felt, u64)>) -> Result<(), Error> {
         // We'll check for existence before inserting to avoid duplicates.
-        const SELECT_QUERY: &str = "SELECT 1 FROM trie_nodes WHERE trie_idx = ? AND trie_label = ?";
-        const INSERT_QUERY: &str = "INSERT INTO trie_nodes (hash, data, trie_idx, trie_label) VALUES (?1, ?2, ?3, ?4)";
+        const SELECT_QUERY: &str = "SELECT 1 FROM trie_nodes WHERE trie_idx = ?";
+        const INSERT_QUERY: &str = "INSERT INTO trie_nodes (hash, data, trie_idx) VALUES (?1, ?2, ?3)";
         let mut write_buffer = [0u8; 256];
         for (node, hash, trie_idx) in nodes {
             let length = node.encode(&mut write_buffer)?;
             let hash_bytes = hash.to_be_bytes().to_vec();
             let data_bytes = write_buffer[..length].to_vec();
 
-            // Check if a node with the same hash and data already exists
+            // Check if a node with the same trie_idx already exists
             let mut stmt = self.conn.prepare_cached(SELECT_QUERY)?;
-            let exists: Option<u8> = stmt
-                .query_row(params![trie_idx, &trie_label.to_be_bytes().to_vec()], |row| row.get(0))
-                .optional()?;
+            let exists: Option<u8> = stmt.query_row(params![trie_idx], |row| row.get(0)).optional()?;
 
             if exists.is_none() {
                 // Only insert if not already present
                 self.conn
-                    .execute(
-                        INSERT_QUERY,
-                        params![&hash_bytes, &data_bytes, trie_idx, &trie_label.to_be_bytes().to_vec()],
-                    )
+                    .execute(INSERT_QUERY, params![&hash_bytes, &data_bytes, trie_idx])
                     .map_err(Error::from)?;
             }
         }
@@ -130,7 +121,6 @@ impl<'a> TrieDB<'a> {
     /// # Arguments
     ///
     /// * `hash` - The hash of the node to find the index for.
-    /// * `trie_label` - The label of the trie to search in.
     ///
     /// # Errors
     ///
@@ -139,16 +129,10 @@ impl<'a> TrieDB<'a> {
     /// # Returns
     ///
     /// Returns `Ok(Some(index))` if the hash is found, `Ok(None)` otherwise.
-    pub fn get_node_idx_by_hash(&self, hash: Felt, trie_label: Felt) -> Result<Option<u64>, Error> {
-        let mut stmt = self
-            .conn
-            .prepare_cached("SELECT trie_idx FROM trie_nodes WHERE hash = ? AND trie_label = ?")?;
+    pub fn get_node_idx_by_hash(&self, hash: Felt) -> Result<Option<u64>, Error> {
+        let mut stmt = self.conn.prepare_cached("SELECT trie_idx FROM trie_nodes WHERE hash = ?")?;
 
-        let index: Option<u64> = stmt
-            .query_row(params![hash.to_be_bytes().to_vec(), &trie_label.to_be_bytes().to_vec()], |row| {
-                row.get(0)
-            })
-            .optional()?;
+        let index: Option<u64> = stmt.query_row(params![hash.to_be_bytes().to_vec()], |row| row.get(0)).optional()?;
 
         Ok(index)
     }
@@ -183,22 +167,19 @@ impl<'a> TrieDB<'a> {
         }
     }
 
-    /// Retrieves the leaf at the given key and trie label. This is used to get the latest leaf for a given key.
+    /// Retrieves the leaf at the given key. This is used to get the latest leaf for a given key.
     ///
     /// # Arguments
     ///
     /// * `key` - The key of the leaf to retrieve.
-    /// * `trie_label` - The label of the trie to search in.
     ///
     /// # Returns
     ///
     /// Returns `Ok(leaf)` if the leaf is found, `Ok(TrieLeaf::empty(key))` otherwise.
-    pub fn get_leaf(&self, key: Felt, trie_label: Felt) -> anyhow::Result<TrieLeaf> {
-        let mut stmt = self
-            .conn
-            .prepare_cached("SELECT value FROM leafs WHERE key = ? AND trie_label = ?")?;
+    pub fn get_leaf(&self, key: Felt) -> anyhow::Result<TrieLeaf> {
+        let mut stmt = self.conn.prepare_cached("SELECT value FROM leafs WHERE key = ?")?;
         let result: Option<TrieLeaf> = stmt
-            .query_row(params![key.to_be_bytes().to_vec(), &trie_label.to_be_bytes().to_vec()], |row| {
+            .query_row(params![key.to_be_bytes().to_vec()], |row| {
                 let value: Vec<u8> = row.get(0)?;
                 let value = Felt::from_be_slice(&value).unwrap();
                 Ok(TrieLeaf::new(key, value))
@@ -211,37 +192,33 @@ impl<'a> TrieDB<'a> {
         }
     }
 
-    /// Retrieves the leaf at the given key and root index for a given trie label.
+    /// Retrieves the leaf at the given key and root index.
     /// This is used to get the leaf at a specific trie checkpoint.
     ///
     /// # Arguments
     ///
     /// * `key` - The key of the leaf to retrieve.
     /// * `max_root_idx` - The maximum root index to consider.
-    /// * `trie_label` - The label of the trie to search in.
     ///
     /// # Returns
     ///
     /// Returns `Ok(leaf)` if the leaf is found, `Ok(TrieLeaf::empty(key))` otherwise.
-    pub fn get_leaf_at(&self, key: Felt, max_root_idx: u64, trie_label: Felt) -> anyhow::Result<TrieLeaf> {
+    pub fn get_leaf_at(&self, key: Felt, max_root_idx: u64) -> anyhow::Result<TrieLeaf> {
         let mut stmt = self
             .conn
-            .prepare_cached("SELECT value FROM leafs WHERE key = ? AND root_idx <= ? AND trie_label = ? ORDER BY idx DESC LIMIT 1")?;
+            .prepare_cached("SELECT value FROM leafs WHERE key = ? AND root_idx <= ? ORDER BY idx DESC LIMIT 1")?;
 
         let result: Option<TrieLeaf> = stmt
-            .query_row(
-                params![key.to_be_bytes().to_vec(), max_root_idx, &trie_label.to_be_bytes().to_vec()],
-                |row| {
-                    let value: Vec<u8> = row.get(0)?;
-                    let value = Felt::from_be_slice(&value).unwrap();
+            .query_row(params![key.to_be_bytes().to_vec(), max_root_idx], |row| {
+                let value: Vec<u8> = row.get(0)?;
+                let value = Felt::from_be_slice(&value).unwrap();
 
-                    let leaf = TrieLeaf::new(key, value);
+                let leaf = TrieLeaf::new(key, value);
 
-                    assert!(leaf.commitment() == value, "Value mismatch");
+                assert!(leaf.commitment() == value, "Value mismatch");
 
-                    Ok(leaf)
-                },
-            )
+                Ok(leaf)
+            })
             .optional()?;
 
         match result {
