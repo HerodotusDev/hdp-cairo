@@ -25,8 +25,7 @@ pub async fn get_trie_root_node_idx(
     Query(payload): Query<GetIdRequest>,
 ) -> Result<Json<GetIdResponse>, StatusCode> {
     let conn = state
-        .connection_manager
-        .get_connection()
+        .get_connection(payload.trie_label)
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     if payload.trie_root == Felt::ZERO {
@@ -37,7 +36,7 @@ pub async fn get_trie_root_node_idx(
     }
 
     let trie_root_node_idx = TrieDB::new(&conn)
-        .get_node_idx_by_hash(payload.trie_root, payload.trie_label)
+        .get_node_idx_by_hash(payload.trie_root)
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
         .ok_or(StatusCode::NOT_FOUND)?;
 

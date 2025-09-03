@@ -236,8 +236,8 @@ impl SyscallHandler for CallContractHandler {
                 let client = reqwest::Client::new();
                 let endpoint = format!("{}/write", Self::get_base_url());
                 let response = client
-                    .get(endpoint)
-                    .query(&request_payload)
+                    .post(endpoint)
+                    .json(&request_payload)
                     .send()
                     .await
                     .map_err(|e| SyscallExecutionError::InternalError(format!("Network request failed: {}", e).into()))?;

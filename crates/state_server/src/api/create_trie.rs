@@ -23,8 +23,7 @@ pub async fn create_trie(
     Json(payload): Json<CreateTrieRequest>,
 ) -> Result<Json<CreateTrieResponse>, StatusCode> {
     let conn = state
-        .connection_manager
-        .get_connection()
+        .get_connection(payload.trie_label)
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let (storage, mut trie, root_idx) = Trie::create_empty(&conn).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
@@ -42,8 +41,7 @@ pub async fn create_trie(
     }
 
     let update = trie.commit(&storage).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    Trie::persist_updates(&storage, &update, &leaves, Some(u64::from(root_idx)), payload.trie_label)
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    Trie::persist_updates(&storage, &update, &leaves, Some(u64::from(root_idx))).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(CreateTrieResponse {
         trie_root: update.root_commitment,

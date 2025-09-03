@@ -7,7 +7,7 @@ use state_server::{api::root_to_node_idx::GetIdResponse, create_router, AppState
 use crate::helpers::{create_trie, get_trie_root_node_idx};
 
 async fn setup() -> anyhow::Result<Router> {
-    Ok(create_router(AppState::new(":memory:")?))
+    Ok(create_router(AppState::new_memory()?))
 }
 
 /// Tests that a trie_root of zero returns a trie_root_node_idx of 0.
