@@ -16,7 +16,7 @@ func inclusion_state_verification{
     keccak_ptr: KeccakBuiltin*,
     pow2_array: felt*,
     injected_state_memorizer: DictAccess*,
-}() -> (root: felt, key: felt, value: felt){
+}() -> (root: felt, key: felt, value: felt, inclusion_flag: felt){
     alloc_locals;
 
     tempvar key_be: felt = nondet %{ state_proof_read.leaf.key %};
@@ -31,7 +31,7 @@ func inclusion_state_verification{
     let (keccak_ptr_seg: TruncatedKeccak*) = alloc();
     let hash_ptr = cast(keccak_ptr_seg, HashBuiltin*);
     
-    let (root, value) = traverse{
+    let (root, value, inclusion_flag) = traverse{
         hash_binary_node_ptr=hash_binary_node_ptr, hash_edge_node_ptr=hash_edge_node_ptr, hash_ptr=hash_ptr,
         bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(
@@ -42,7 +42,7 @@ func inclusion_state_verification{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
     }(ptr_start=keccak_ptr_seg, ptr_end=cast(hash_ptr, TruncatedKeccak*));
 
-    return (root=root, key=key_be, value=value);
+    return (root=root, key=key_be, value=value, inclusion_flag=inclusion_flag);
 
 }
 

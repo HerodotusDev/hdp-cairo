@@ -118,12 +118,15 @@ func verify_proofs_inner{
     let (contract_nodes: felt**) = alloc();
     %{ segments.write_arg(ids.contract_nodes, storage_starknet.proof.contract_proof) %}
 
-    let (contract_tree_root, expected_contract_state_hash) = traverse{
+    let (contract_tree_root, expected_contract_state_hash, inclusion_flag) = traverse{
         hash_binary_node_ptr=hash_binary_node_ptr, hash_edge_node_ptr=hash_edge_node_ptr, hash_ptr=pedersen_ptr,
         bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(
         cast(contract_nodes, TrieNode**), contract_nodes_len, contract_address
     );
+
+    // Assert inclusion
+    assert inclusion_flag = 1;
 
     // Assert Validity
     assert contract_state_hash = expected_contract_state_hash;
@@ -166,12 +169,15 @@ func validate_storage_proofs{
     let (contract_state_nodes: felt**) = alloc();
     %{ segments.write_arg(ids.contract_state_nodes, storage_starknet.proof.contract_data.storage_proofs[ids.idx]) %}
 
-    let (new_contract_root, value) = traverse{
+    let (new_contract_root, value, inclusion_flag) = traverse{
         hash_binary_node_ptr=hash_binary_node_ptr, hash_edge_node_ptr=hash_edge_node_ptr, hash_ptr=pedersen_ptr,
         bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
     }(
         cast(contract_state_nodes, TrieNode**), contract_state_nodes_len, storage_addresses[idx]
     );
+
+    // Assert inclusion
+    assert inclusion_flag = 1;
 
     // Assert that the contract root is consistent between storage slots
     if (idx != 0) {

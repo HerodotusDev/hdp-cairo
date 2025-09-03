@@ -122,7 +122,7 @@ func run_injected_state_verification_inner{
 
     if (proof_type == ProofType.READ) {
         %{ vm_enter_scope({'state_proof': state_proofs[ids.idx - 1], '__dict_manager': __dict_manager}) %}
-        let (root, key, value) = inclusion_state_verification{
+        let (root, key, value, inclusion_flag) = inclusion_state_verification{
             range_check_ptr=range_check_ptr,
             poseidon_ptr=poseidon_ptr,
             bitwise_ptr=bitwise_ptr,
@@ -135,14 +135,12 @@ func run_injected_state_verification_inner{
         let (data_ptr: felt*) = alloc();
         assert [data_ptr] = value;
 
-        if (value != 0) {
-            // inclusion proof
+        if (inclusion_flag == 1) {
             let memorizer_key = InjectedStateHashParams.read_inclusion{poseidon_ptr=poseidon_ptr}(
                 root=root, value=key
             );
             InjectedStateMemorizer.add(key=memorizer_key, data=data_ptr);
         } else {
-            // non-inclusion proof
             let memorizer_key = InjectedStateHashParams.read_non_inclusion{
                 poseidon_ptr=poseidon_ptr
             }(root=root, value=key);
