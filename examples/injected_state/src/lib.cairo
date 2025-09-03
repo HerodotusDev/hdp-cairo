@@ -8,9 +8,11 @@ mod module {
 
     #[external(v0)]
     pub fn main(ref self: ContractState, hdp: HDP) -> Array<felt252> {
-        let (root, exists) = hdp.injected_state.read_injected_state_trie_root('my_trie');
+        let root = hdp.injected_state.read_injected_state_trie_root('my_trie').unwrap();
         assert!(root == 0x0, "Trie root should be 0x0");
-        assert!(exists, "Failed to read tree root");
+
+        let value = hdp.injected_state.read_key('my_trie', 'my_key');
+        assert!(value.is_none(), "Value should not exist");
 
         let new_root = hdp.injected_state.write_key('my_trie', 'my_key', 42);
         assert!(
@@ -18,8 +20,7 @@ mod module {
             "Trie root should be 0xf153c6cd2bc40a4ec675068562f4ddefadc23030",
         );
 
-        let (value, exists) = hdp.injected_state.read_key('my_trie', 'my_key');
-        assert!(exists, "Key should exist");
+        let value = hdp.injected_state.read_key('my_trie', 'my_key').unwrap();
         assert!(value == 42, "Value should be 42");
 
         array![new_root]

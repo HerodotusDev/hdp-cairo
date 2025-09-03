@@ -8,13 +8,11 @@ mod injected_state_read_write_single {
 
     #[external(v0)]
     pub fn main(ref self: ContractState, hdp: HDP) {
-        let (root, exists) = hdp.injected_state.read_injected_state_trie_root('my_trie');
+        let root = hdp.injected_state.read_injected_state_trie_root('my_trie').unwrap();
         assert!(root == 0x0, "Trie root should be 0x0");
-        assert!(exists, "Failed to read tree root");
 
-        let (value, exists) = hdp.injected_state.read_key('my_trie', 'my_key');
-        assert!(!exists, "Key should not exist");
-        assert!(value == 0x0, "Value should be 0");
+        let value = hdp.injected_state.read_key('my_trie', 'my_key');
+        assert!(value.is_none(), "Key should not exist");
 
         let new_root = hdp.injected_state.write_key('my_trie', 'my_key', 42);
         assert!(
@@ -22,8 +20,7 @@ mod injected_state_read_write_single {
             "Trie root should be 0xf153c6cd2bc40a4ec675068562f4ddefadc23030",
         );
 
-        let (value, exists) = hdp.injected_state.read_key('my_trie', 'my_key');
-        assert!(exists, "Key should exist");
+        let value = hdp.injected_state.read_key('my_trie', 'my_key').unwrap();
         assert!(value == 42, "Value should be 42");
     }
 }
@@ -38,13 +35,11 @@ mod injected_state_read_write_multiple {
 
     #[external(v0)]
     pub fn main(ref self: ContractState, hdp: HDP) {
-        let (root, exists) = hdp.injected_state.read_injected_state_trie_root('my_trie');
+        let root = hdp.injected_state.read_injected_state_trie_root('my_trie').unwrap();
         assert!(root == 0x0, "Trie root should be 0x0");
-        assert!(exists, "Failed to read tree root");
 
-        let (value, exists) = hdp.injected_state.read_key('my_trie', 'my_key');
-        assert!(!exists, "Key should not exist");
-        assert!(value == 0x0, "Value should be 0");
+        let value = hdp.injected_state.read_key('my_trie', 'my_key');
+        assert!(value.is_none(), "Key should not exist");
 
         let new_root = hdp.injected_state.write_key('my_trie', 'my_key', 42);
         assert!(
@@ -52,8 +47,7 @@ mod injected_state_read_write_multiple {
             "Trie root should be 0xf153c6cd2bc40a4ec675068562f4ddefadc23030",
         );
 
-        let (value, exists) = hdp.injected_state.read_key('my_trie', 'my_key');
-        assert!(exists, "Key should exist");
+        let value = hdp.injected_state.read_key('my_trie', 'my_key').unwrap();
         assert!(value == 42, "Value should be 42");
 
         let new_root = hdp.injected_state.write_key('my_trie', 'my_key2', 232);
@@ -62,9 +56,8 @@ mod injected_state_read_write_multiple {
             "Trie root should be 0xf965c2fc82a97770e97910309d8ca92635b6a3eb",
         );
 
-        let (value, exists) = hdp.injected_state.read_key('my_trie', 'my_key2');
-        assert!(exists, "Key should exist");
+        let value = hdp.injected_state.read_key('my_trie', 'my_key2').unwrap();
         assert!(value == 232, "Value should be 232");
     }
 }
-    
+
