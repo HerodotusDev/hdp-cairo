@@ -46,8 +46,10 @@ pub async fn get_state_proofs(
                     .get_connection(action.trie_label)
                     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
+                let (storage, _trie, root_idx) =
+                    Trie::load_from_root(action.trie_root, &conn).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
                 let leaf = storage
-                    .get_leaf_at(action.key, u64::from(root_idx), action.trie_label)
+                    .get_leaf_at(action.key, u64::from(root_idx))
                     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
                     .unwrap_or(TrieLeaf::new(action.key, pathfinder_crypto::Felt::ZERO));
                 let (storage, _trie, root_idx) =
@@ -73,7 +75,7 @@ pub async fn get_state_proofs(
                 };
 
                 let pre_leaf = storage
-                    .get_leaf_at(action.key, u64::from(prev_root_idx), action.trie_label)
+                    .get_leaf_at(action.key, u64::from(prev_root_idx))
                     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
                     .unwrap_or(TrieLeaf::new(action.key, pathfinder_crypto::Felt::ZERO));
 

@@ -44,3 +44,4 @@ dist/
 
 # State server db folder
 crates/state_server/db
+db

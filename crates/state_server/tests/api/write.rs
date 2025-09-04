@@ -16,7 +16,7 @@ async fn write_to_new_trie() {
     let conn = state.get_connection(label).unwrap();
     let db = TrieDB::new(&conn);
 
-    assert!(db.get_leaf_at(key, 0).unwrap().is_empty());
+    assert!(db.get_leaf_at(key, 0).unwrap().is_none());
     let root = write_to_trie(&router, label, Felt::ZERO, key, val).await.trie_root;
     let proof = write_proof(&router, label, Felt::ZERO, key, val).await;
 
@@ -24,6 +24,7 @@ async fn write_to_new_trie() {
     assert_eq!((proof.trie_root_prev, proof.trie_root_post), (Felt::ZERO, root));
     assert_eq!(
         db.get_leaf_at(key, db.get_node_idx_by_hash(root).unwrap().unwrap())
+            .unwrap()
             .unwrap()
             .data
             .value,
@@ -52,7 +53,7 @@ async fn write_to_existing_trie() {
     assert!(db
         .get_leaf_at(k2, db.get_node_idx_by_hash(root1).unwrap().unwrap())
         .unwrap()
-        .is_empty());
+        .is_none());
     let root2 = write_to_trie(&router, label, root1, k2, v2).await.trie_root;
     assert_ne!(root2, root1, "Root must change after second write");
     let proof2 = write_proof(&router, label, root1, k2, v2).await;
@@ -61,8 +62,8 @@ async fn write_to_existing_trie() {
     let idx2 = db.get_node_idx_by_hash(root2).unwrap().unwrap();
     assert_eq!(
         (
-            db.get_leaf_at(k1, idx2).unwrap().data.value,
-            db.get_leaf_at(k2, idx2).unwrap().data.value
+            db.get_leaf_at(k1, idx2).unwrap().unwrap().data.value,
+            db.get_leaf_at(k2, idx2).unwrap().unwrap().data.value
         ),
         (v1, v2)
     );
@@ -94,6 +95,7 @@ async fn override_existing_key() {
     assert!(!proof2.state_proof_post.is_empty(), "Post proof should not be empty");
     assert_eq!(
         db.get_leaf_at(key, db.get_node_idx_by_hash(root2).unwrap().unwrap())
+            .unwrap()
             .unwrap()
             .data
             .value,

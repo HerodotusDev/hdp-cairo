@@ -104,7 +104,7 @@ async fn edge_inputs_zero_and_max() {
     let label = Felt::from(0xF_u64);
     let r1 = write_to_trie(&router, label, Felt::ZERO, max, max).await.trie_root;
     let resp1 = read_from_trie(&router, label, r1, max).await;
-    assert_eq!(resp1.value, max);
+    assert_eq!(resp1.value, Some(max));
 }
 
 #[tokio::test]

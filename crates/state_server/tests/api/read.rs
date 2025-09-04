@@ -18,7 +18,7 @@ async fn read_from_trie_test() {
 
     // Test both direct read and proof verification
     let response = read_from_trie(&router, label, root, key).await;
-    assert_eq!((response.key, response.value), (key, val));
+    assert_eq!((response.key, response.value), (key, Some(val)));
 
     let proof_response = get_state_proofs(&router, read_actions(label, root, vec![key])).await;
     verify_read_proof_crypto(&proof_response.state_proofs[0], key, val, "basic_read", Some(Membership::Member));
@@ -39,7 +39,7 @@ async fn read_non_existent_key() {
 
     // Test both direct read and proof verification for non-existent key
     let response = read_from_trie(&router, label, root, k2).await;
-    assert_eq!((response.key, response.value), (k2, Felt::ZERO));
+    assert_eq!((response.key, response.value), (k2, None));
 
     let proof_response = get_state_proofs(&router, read_actions(label, root, vec![k2])).await;
     verify_read_proof_crypto(
