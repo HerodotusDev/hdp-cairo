@@ -46,14 +46,16 @@ pub async fn get_state_proofs(
                     .get_connection(action.trie_label)
                     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-                let (storage, _trie, root_idx) =
+                let (mut storage, _trie, root_idx) =
                     Trie::load_from_root(action.trie_root, &conn).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                storage.max_root_idx = u64::from(root_idx);
                 let leaf = storage
                     .get_leaf_at(action.key, u64::from(root_idx))
                     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
                     .unwrap_or(TrieLeaf::new(action.key, pathfinder_crypto::Felt::ZERO));
-                let (storage, _trie, root_idx) =
+                let (mut storage, _trie, root_idx) =
                     Trie::load_from_root(action.trie_root, &conn).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                storage.max_root_idx = u64::from(root_idx);
                 let proof = Trie::get_leaf_proof(&storage, action.trie_root, leaf).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
                 state_proofs.push(StateProof::Read(StateProofRead {
@@ -68,12 +70,13 @@ pub async fn get_state_proofs(
                     .get_connection(action.trie_label)
                     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-                let (storage, mut trie, prev_root_idx) = if action.trie_root == Felt::ZERO {
+                let (mut storage, mut trie, prev_root_idx) = if action.trie_root == Felt::ZERO {
                     Trie::create_empty(&conn).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
                 } else {
                     Trie::load_from_root(action.trie_root, &conn).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
                 };
 
+                storage.max_root_idx = u64::from(prev_root_idx);
                 let pre_leaf = storage
                     .get_leaf_at(action.key, u64::from(prev_root_idx))
                     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
@@ -93,6 +96,8 @@ pub async fn get_state_proofs(
                 let post_root_idx = storage
                     .get_node_idx_by_hash(update.root_commitment)
                     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+                storage.max_root_idx = post_root_idx.expect("Could not infer post root idx");
 
                 let post_proof =
                     Trie::get_leaf_proof(&storage, update.root_commitment, post_leaf).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;

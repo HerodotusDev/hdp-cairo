@@ -13,6 +13,7 @@ use crate::mpt::error::Error;
 #[derive(Debug, Clone, Copy)]
 pub struct TrieDB<'a> {
     conn: &'a PooledConnection<SqliteConnectionManager>,
+    pub max_root_idx: u64,
 }
 
 impl<'a> TrieDB<'a> {
@@ -22,7 +23,7 @@ impl<'a> TrieDB<'a> {
     ///
     /// * `conn` - A reference to a pooled SQLite connection.
     pub fn new(conn: &'a PooledConnection<SqliteConnectionManager>) -> Self {
-        Self { conn }
+        Self { conn, max_root_idx: 0 }
     }
 
     /// Persists the leaves in the database, skipping any (key, value) pairs that already exist.
@@ -282,6 +283,12 @@ impl Storage for TrieDB<'_> {
     /// Returns `Ok(None)` if no leaf is found at the specified path.
     /// Otherwise, returns `Ok(Some(leaf))` where `leaf` is the retrieved leaf value.
     fn leaf(&self, path: &BitSlice<u8, Msb0>) -> anyhow::Result<Option<Felt>> {
+        if self.max_root_idx > 0 {
+            return self
+                .get_leaf_at(Felt::from_bits(path)?, self.max_root_idx)
+                .map(|opt| opt.map(|leaf| leaf.data.value));
+        }
+
         let mut stmt = self
             .conn
             .prepare_cached("SELECT value FROM leafs WHERE key = ? ORDER BY idx DESC LIMIT 1")?;
