@@ -34,7 +34,7 @@ pub async fn get_state_proofs(
                 // Handle empty root case
                 if action.trie_root == Felt::ZERO {
                     state_proofs.push(StateProof::Read(StateProofRead {
-                        trie_id: 0,
+                        trie_label: action.trie_label,
                         state_proof: vec![],
                         trie_root: action.trie_root,
                         leaf: TrieLeaf::new(action.key, pathfinder_crypto::Felt::ZERO),
@@ -52,12 +52,12 @@ pub async fn get_state_proofs(
                     .get_leaf_at(action.key, u64::from(root_idx))
                     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
                     .unwrap_or(TrieLeaf::new(action.key, pathfinder_crypto::Felt::ZERO));
-                let (storage, _trie, root_idx) =
+                let (storage, _trie, _root_idx) =
                     Trie::load_from_root(action.trie_root, &conn).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
                 let proof = Trie::get_leaf_proof(&storage, action.trie_root, leaf).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
                 state_proofs.push(StateProof::Read(StateProofRead {
-                    trie_id: u64::from(root_idx),
+                    trie_label: action.trie_label,
                     state_proof: proof.into_iter().map(|(node, _)| node.into()).collect(),
                     trie_root: action.trie_root,
                     leaf,
@@ -90,7 +90,7 @@ pub async fn get_state_proofs(
                     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
                 let update = trie.commit(&storage).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-                let post_root_idx = storage
+                let _ = storage
                     .get_node_idx_by_hash(update.root_commitment)
                     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
@@ -98,11 +98,10 @@ pub async fn get_state_proofs(
                     Trie::get_leaf_proof(&storage, update.root_commitment, post_leaf).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
                 state_proofs.push(StateProof::Write(StateProofWrite {
-                    trie_id_prev: u64::from(prev_root_idx),
+                    trie_label: action.trie_label,
                     trie_root_prev: action.trie_root,
                     state_proof_prev: pre_proof.into_iter().map(|(node, _)| node.into()).collect(),
                     leaf_prev: pre_leaf,
-                    trie_id_post: post_root_idx.expect("Could not infer post root idx"),
                     trie_root_post: update.root_commitment,
                     state_proof_post: post_proof.into_iter().map(|(node, _)| node.into()).collect(),
                     leaf_post: post_leaf,
