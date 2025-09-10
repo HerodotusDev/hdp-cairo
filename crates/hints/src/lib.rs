@@ -146,6 +146,8 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(verifiers::evm::transaction_verifier::HINT_SET_TX_PROOF_LEN.into(), verifiers::evm::transaction_verifier::hint_set_tx_proof_len);
     hints.insert(verifiers::evm::transaction_verifier::HINT_SET_TX.into(), verifiers::evm::transaction_verifier::hint_set_tx);
     hints.insert(verifiers::injected_state::HINT_STATE_PROOF_ENTER_SCOPE.into(), verifiers::injected_state::hint_state_proof_enter_scope);
+    hints.insert(verifiers::injected_state::HINT_STATE_PROOF_READ_TRIE_LABEL.into(), verifiers::injected_state::hint_state_proof_read_trie_label);
+    hints.insert(verifiers::injected_state::HINT_STATE_PROOF_WRITE_TRIE_LABEL.into(), verifiers::injected_state::hint_state_proof_write_trie_label);
     hints.insert(verifiers::injected_state::inclusion::HINT_GET_KEY_BE.into(), verifiers::injected_state::inclusion::hint_get_key_be);
     hints.insert(verifiers::injected_state::inclusion::HINT_GET_TRIE_NODE_PROOF.into(), verifiers::injected_state::inclusion::hint_get_trie_node_proof);
     hints.insert(verifiers::injected_state::inclusion::HINT_INCLUSION_PROOF_LEN.into(), verifiers::injected_state::inclusion::hint_inclusion_proof_len);
