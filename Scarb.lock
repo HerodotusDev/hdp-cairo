@@ -52,6 +52,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "api_tests"
+version = "0.1.0"
+dependencies = [
+ "hdp_cairo",
+]
+
+[[package]]
 name = "example_blacklist"
 version = "0.1.0"
 dependencies = [

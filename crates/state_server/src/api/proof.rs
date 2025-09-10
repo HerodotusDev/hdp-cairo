@@ -94,7 +94,7 @@ pub async fn get_state_proofs(
                     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
                 let update = trie.commit(&storage).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-                let _ = storage
+                let post_root_idx = storage
                     .get_node_idx_by_hash(update.root_commitment)
                     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
