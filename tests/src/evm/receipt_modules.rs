@@ -6,7 +6,7 @@ async fn test_tests_receipt_get_status() {
     run(serde_json::from_slice(include_bytes!(
         "../../../target/dev/tests_receipts_get_status.compiled_contract_class.json"
     ))
-    .unwrap())
+    .unwrap(), None)
     .await
 }
 
@@ -16,6 +16,6 @@ async fn test_tests_receipt_get_cumulative_gas_used() {
     run(serde_json::from_slice(include_bytes!(
         "../../../target/dev/tests_receipts_get_and_tx_get.compiled_contract_class.json"
     ))
-    .unwrap())
+    .unwrap(), None)
     .await
 }

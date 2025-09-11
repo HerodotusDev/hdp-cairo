@@ -30,12 +30,13 @@ mod test_utils {
     use fetcher::{proof_keys::ProofKeys, Fetcher};
     use hints::vars;
     use syscall_handler::{SyscallHandler, SyscallHandlerWrapper};
+    use tracing::debug;
     use types::{
         ChainProofs, HDPDryRunInput, HDPInput, InjectedState, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID,
         STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
     };
 
-    pub async fn run(compiled_class: CasmContractClass) {
+    pub async fn run(compiled_class: CasmContractClass, injected_state_file_path: Option<&str>) {
         // Init CairoRunConfig
         let cairo_run_config = CairoRunConfig {
             layout: LayoutName::all_cairo,
@@ -53,10 +54,16 @@ mod test_utils {
         // Locate the compiled program file in the `OUT_DIR` folder.
         let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR is not set"));
 
+        let injected_state_path = injected_state_file_path
+            .map(PathBuf::from)
+            .unwrap_or_else(|| PathBuf::from("injected_state.json"));
+        debug!("Loading injected_state from: {}", injected_state_path.display());
+        let injected_state: InjectedState = serde_json::from_slice(&std::fs::read(&injected_state_path).unwrap()).unwrap();
+
         let program_inputs = HDPDryRunInput {
             params: vec![],
             compiled_class: compiled_class.clone(),
-            injected_state: InjectedState::default(),
+            injected_state: injected_state.clone(),
         };
 
         // Load the Program
@@ -85,6 +92,8 @@ mod test_utils {
         // Run the Cairo VM
         let mut hint_processor = dry_hint_processor::CustomHintProcessor::new(program_inputs);
         cairo_runner.run_until_pc(end, &mut hint_processor).unwrap();
+
+        debug!("Dry run completed successfully.");
 
         let syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler> =
             cairo_runner
@@ -127,6 +136,11 @@ mod test_utils {
             };
         }
 
+        // Add injected state keys
+        for (root_hash, actions) in syscall_handler.call_contract_handler.injected_state_call_contract_handler.key_set {
+            proof_keys.injected_state.insert(root_hash, actions);
+        }
+
         let fetcher = Fetcher::new(&proof_keys);
         let (evm_proofs_mainnet, evm_proofs_sepolia, starknet_proofs_mainnet, starknet_proofs_sepolia, state_proofs) = tokio::try_join!(
             fetcher.collect_evm_proofs(ETHEREUM_MAINNET_CHAIN_ID),
@@ -147,7 +161,7 @@ mod test_utils {
             params: vec![],
             compiled_class,
             state_proofs,
-            injected_state: InjectedState::default(),
+            injected_state: injected_state.clone(),
         };
 
         // Load the Program
@@ -176,5 +190,7 @@ mod test_utils {
         // Run the Cairo VM
         let mut hint_processor = sound_hint_processor::CustomHintProcessor::new(program_inputs);
         cairo_runner.run_until_pc(end, &mut hint_processor).unwrap();
+
+        debug!("Sound run completed successfully.");
     }
 }

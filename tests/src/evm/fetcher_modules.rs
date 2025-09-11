@@ -6,7 +6,7 @@ async fn test_tests_evm_fetcher_many_keys_same_header() {
     run(serde_json::from_slice(include_bytes!(
         "../../../target/dev/tests_evm_fetcher_many_keys_same_header.compiled_contract_class.json"
     ))
-    .unwrap())
+    .unwrap(), None)
     .await
 }
 
@@ -16,7 +16,7 @@ async fn test_tests_evm_fetcher_many_keys_same_header_10x() {
     run(serde_json::from_slice(include_bytes!(
         "../../../target/dev/tests_evm_fetcher_many_keys_same_header_10x.compiled_contract_class.json"
     ))
-    .unwrap())
+    .unwrap(), None)
     .await
 }
 
@@ -26,6 +26,6 @@ async fn test_tests_evm_fetcher_many_txns_same_header() {
     run(serde_json::from_slice(include_bytes!(
         "../../../target/dev/tests_evm_fetcher_many_txns_same_header.compiled_contract_class.json"
     ))
-    .unwrap())
+    .unwrap(), None)
     .await
 }

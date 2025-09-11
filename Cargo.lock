@@ -6860,6 +6860,7 @@ dependencies = [
  "starknet-crypto",
  "syscall_handler",
  "tokio",
+ "tracing",
  "types",
 ]
 

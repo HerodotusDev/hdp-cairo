@@ -6,7 +6,7 @@ async fn test_tests_log_get_address() {
     run(serde_json::from_slice(include_bytes!(
         "../../../target/dev/tests_logs_get_address.compiled_contract_class.json"
     ))
-    .unwrap())
+    .unwrap(), None)
     .await
 }
 
@@ -16,7 +16,7 @@ async fn test_tests_log_get_topic0() {
     run(serde_json::from_slice(include_bytes!(
         "../../../target/dev/tests_logs_get_topic0.compiled_contract_class.json"
     ))
-    .unwrap())
+    .unwrap(), None)
     .await
 }
 
@@ -26,7 +26,7 @@ async fn test_tests_log_get_topic1() {
     run(serde_json::from_slice(include_bytes!(
         "../../../target/dev/tests_logs_get_topic1.compiled_contract_class.json"
     ))
-    .unwrap())
+    .unwrap(), None)
     .await
 }
 
@@ -36,7 +36,7 @@ async fn test_tests_log_get_topic2() {
     run(serde_json::from_slice(include_bytes!(
         "../../../target/dev/tests_logs_get_topic2.compiled_contract_class.json"
     ))
-    .unwrap())
+    .unwrap(), None)
     .await
 }
 
@@ -46,6 +46,6 @@ async fn test_tests_log_get_data() {
     run(serde_json::from_slice(include_bytes!(
         "../../../target/dev/tests_logs_get_data.compiled_contract_class.json"
     ))
-    .unwrap())
+    .unwrap(), None)
     .await
 }
