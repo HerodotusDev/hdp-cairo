@@ -36,7 +36,7 @@ mod test_utils {
         STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
     };
 
-    pub async fn run(compiled_class: CasmContractClass, injected_state_file_path: Option<&str>) {
+    pub async fn run(compiled_class: CasmContractClass, injected_state: InjectedState) {
         // Init CairoRunConfig
         let cairo_run_config = CairoRunConfig {
             layout: LayoutName::all_cairo,
@@ -53,12 +53,6 @@ mod test_utils {
 
         // Locate the compiled program file in the `OUT_DIR` folder.
         let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR is not set"));
-
-        let injected_state_path = injected_state_file_path
-            .map(PathBuf::from)
-            .unwrap_or_else(|| PathBuf::from("injected_state.json"));
-        debug!("Loading injected_state from: {}", injected_state_path.display());
-        let injected_state: InjectedState = serde_json::from_slice(&std::fs::read(&injected_state_path).unwrap()).unwrap();
 
         let program_inputs = HDPDryRunInput {
             params: vec![],
