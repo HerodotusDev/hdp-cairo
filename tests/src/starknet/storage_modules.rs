@@ -1,3 +1,5 @@
+use types::InjectedState;
+
 use crate::test_utils::run;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
@@ -8,7 +10,7 @@ async fn test_tests_starknet_get_storage() {
             "../../../target/dev/tests_starknet_get_storage.compiled_contract_class.json"
         ))
         .unwrap(),
-        None,
+        InjectedState::default(),
     )
     .await
 }
