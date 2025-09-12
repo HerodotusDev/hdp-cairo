@@ -166,8 +166,8 @@ impl SyscallHandler for CallContractHandler {
                             };
 
                             self.key_set.entry(key.trie_label).or_default().push(Action::Read(ActionRead {
-                                trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
                                 trie_label: pathfinder_crypto::Felt::from(key.trie_label.to_bytes_be()),
+                                trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
                                 key: pathfinder_crypto::Felt::from(key.key.to_bytes_be()),
                             }));
 
@@ -188,8 +188,8 @@ impl SyscallHandler for CallContractHandler {
                         }
                         StatusCode::NOT_FOUND => {
                             self.key_set.entry(key.trie_label).or_default().push(Action::Read(ActionRead {
-                                trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
                                 trie_label: pathfinder_crypto::Felt::from(key.trie_label.to_bytes_be()),
+                                trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
                                 key: pathfinder_crypto::Felt::from(key.key.to_bytes_be()),
                             }));
 
@@ -236,8 +236,8 @@ impl SyscallHandler for CallContractHandler {
                 let client = reqwest::Client::new();
                 let endpoint = format!("{}/write", Self::get_base_url());
                 let response = client
-                    .get(endpoint)
-                    .query(&request_payload)
+                    .post(endpoint)
+                    .json(&request_payload)
                     .send()
                     .await
                     .map_err(|e| SyscallExecutionError::InternalError(format!("Network request failed: {}", e).into()))?;

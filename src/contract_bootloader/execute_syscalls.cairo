@@ -181,10 +181,10 @@ func execute_call_contract{
 
             let memorizer_key_inclusion = InjectedStateHashParams.read_inclusion{
                 poseidon_ptr=poseidon_ptr
-            }(root=[trie_root_ptr], value=key_key);
+            }(label=key_trie_label, root=[trie_root_ptr], value=key_key);
             let memorizer_key_non_inclusion = InjectedStateHashParams.read_non_inclusion{
                 poseidon_ptr=poseidon_ptr
-            }(root=[trie_root_ptr], value=key_key);
+            }(label=key_trie_label, root=[trie_root_ptr], value=key_key);
 
             let (value_inclusion) = InjectedStateMemorizer.get(key=memorizer_key_inclusion);
             let (value_non_inclusion) = InjectedStateMemorizer.get(key=memorizer_key_non_inclusion);
@@ -211,7 +211,7 @@ func execute_call_contract{
             let (trie_root_ptr) = InjectedStateMemorizer.get(key=label_memorizer_key);
 
             let memorizer_key = InjectedStateHashParams.write{poseidon_ptr=poseidon_ptr}(
-                root=[trie_root_ptr], value=key_key
+                label=key_trie_label, root=[trie_root_ptr], value=key_key
             );
             let (new_root_ptr) = InjectedStateMemorizer.get(key=memorizer_key);
 

@@ -1,63 +1,50 @@
-#[starknet::contract]
-mod injected_state_read_write_single {
-    use hdp_cairo::HDP;
-    use hdp_cairo::injected_state::state::{InjectedStateMemorizerImpl, InjectedStateMemorizerTrait};
+// Write tests
+pub mod boundary_value_testing;
+pub mod cross_trie_collision_test;
 
-    #[storage]
-    struct Storage {}
+// Invariant tests
+pub mod edge_inputs_max;
+pub mod empty_trie_operations;
+pub mod isolation_root_stability;
+pub mod key_value_permutation_testing;
+pub mod multi_trie_deterministic_reads;
+pub mod multiple_key_overrides;
+pub mod multiple_tries_proofs_test;
+pub mod non_sequential_proof_verification;
+pub mod noop_write_same_value;
+pub mod order_independence_two_keys;
+pub mod override_existing_key;
+pub mod random_reads_across_multiple_tries;
+pub mod read_duplicate_keys;
+pub mod read_edge_cases;
+pub mod read_empty_key_list;
 
-    #[external(v0)]
-    pub fn main(ref self: ContractState, hdp: HDP) {
-        let root = hdp.injected_state.read_injected_state_trie_root('my_trie').unwrap();
-        assert!(root == 0x0, "Trie root should be 0x0");
+// Read tests
+pub mod read_from_trie_test;
+pub mod read_large_key_set;
+pub mod read_mixed_existing_non_existing;
+pub mod read_non_existent_key;
+pub mod read_sequential_key_patterns;
+pub mod read_sparse_key_distribution;
+pub mod root_found_test;
+pub mod root_found_wrong_label_test;
 
-        let value = hdp.injected_state.read_key('my_trie', 'my_key');
-        assert!(value.is_none(), "Key should not exist");
+// Root to node idx tests
+pub mod root_is_zero_test;
+pub mod root_not_found_test;
+pub mod single_key_trie_operations;
 
-        let new_root = hdp.injected_state.write_key('my_trie', 'my_key', 42);
-        assert!(
-            new_root == 0xf153c6cd2bc40a4ec675068562f4ddefadc23030,
-            "Trie root should be 0xf153c6cd2bc40a4ec675068562f4ddefadc23030",
-        );
-
-        let value = hdp.injected_state.read_key('my_trie', 'my_key').unwrap();
-        assert!(value == 42, "Value should be 42");
-    }
-}
-
-#[starknet::contract]
-mod injected_state_read_write_multiple {
-    use hdp_cairo::HDP;
-    use hdp_cairo::injected_state::state::{InjectedStateMemorizerImpl, InjectedStateMemorizerTrait};
-
-    #[storage]
-    struct Storage {}
-
-    #[external(v0)]
-    pub fn main(ref self: ContractState, hdp: HDP) {
-        let root = hdp.injected_state.read_injected_state_trie_root('my_trie').unwrap();
-        assert!(root == 0x0, "Trie root should be 0x0");
-
-        let value = hdp.injected_state.read_key('my_trie', 'my_key');
-        assert!(value.is_none(), "Key should not exist");
-
-        let new_root = hdp.injected_state.write_key('my_trie', 'my_key', 42);
-        assert!(
-            new_root == 0xf153c6cd2bc40a4ec675068562f4ddefadc23030,
-            "Trie root should be 0xf153c6cd2bc40a4ec675068562f4ddefadc23030",
-        );
-
-        let value = hdp.injected_state.read_key('my_trie', 'my_key').unwrap();
-        assert!(value == 42, "Value should be 42");
-
-        let new_root = hdp.injected_state.write_key('my_trie', 'my_key2', 232);
-        assert!(
-            new_root == 0xf965c2fc82a97770e97910309d8ca92635b6a3eb,
-            "Trie root should be 0xf965c2fc82a97770e97910309d8ca92635b6a3eb",
-        );
-
-        let value = hdp.injected_state.read_key('my_trie', 'my_key2').unwrap();
-        assert!(value == 232, "Value should be 232");
-    }
-}
-
+// Proof tests
+pub mod single_trie_proofs_test;
+pub mod trie_label_collision_handling;
+pub mod trie_state_transition_consistency;
+pub mod verify_proofs_multiple_tries_test;
+pub mod write_alternating_patterns;
+pub mod write_circular_value_pattern;
+pub mod write_concurrent_key_access;
+pub mod write_edge_cases;
+pub mod write_large_number_of_keys;
+pub mod write_same_value_multiple_times;
+pub mod write_sequential_overwrites;
+pub mod write_to_existing_trie;
+pub mod write_to_new_trie;

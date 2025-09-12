@@ -38,7 +38,7 @@ impl CallContractHandler {
     }
 
     fn get_trie_root(&self, memorizer: &Memorizer, label: Felt252) -> Result<Option<Felt252>, HintError> {
-        let key = MaybeRelocatable::Int(poseidon_hash_many(&[LABEL_RUNTIME, label]));
+        let key = MaybeRelocatable::Int(poseidon_hash_many([&LABEL_RUNTIME, &label]));
         match memorizer.read_key_int(&key, self.dict_manager.clone()) {
             Ok(trie_root) if trie_root == Memorizer::DEFAULT_VALUE => Ok(None),
             Ok(trie_root) => Ok(Some(trie_root)),
@@ -89,14 +89,24 @@ impl SyscallHandler for CallContractHandler {
                     .dict_manager
                     .borrow_mut()
                     .get_tracker_mut(memorizer.dict_ptr)?
-                    .get_value(&MaybeRelocatable::Int(poseidon_hash_many([&INCLUSION, &trie_root, &key.key])))?
+                    .get_value(&MaybeRelocatable::Int(poseidon_hash_many([
+                        &INCLUSION,
+                        &key.trie_label,
+                        &trie_root,
+                        &key.key,
+                    ])))?
                     .clone();
 
                 let value_non_inclusion = self
                     .dict_manager
                     .borrow_mut()
                     .get_tracker_mut(memorizer.dict_ptr)?
-                    .get_value(&MaybeRelocatable::Int(poseidon_hash_many([&NON_INCLUSION, &trie_root, &key.key])))?
+                    .get_value(&MaybeRelocatable::Int(poseidon_hash_many([
+                        &NON_INCLUSION,
+                        &key.trie_label,
+                        &trie_root,
+                        &key.key,
+                    ])))?
                     .clone();
 
                 let result = match value_inclusion {
@@ -124,12 +134,12 @@ impl SyscallHandler for CallContractHandler {
                     .ok_or(HintError::NoValueForKey(Box::new(key.trie_label.into())))?;
 
                 let new_root = *vm.get_integer(memorizer.read_key_ptr(
-                    &MaybeRelocatable::Int(poseidon_hash_many([&WRITE, &trie_root, &key.key])),
+                    &MaybeRelocatable::Int(poseidon_hash_many([&WRITE, &key.trie_label, &trie_root, &key.key])),
                     self.dict_manager.clone(),
                 )?)?;
 
                 memorizer.set_key(
-                    &MaybeRelocatable::Int(poseidon_hash_many(&[LABEL_RUNTIME, key.trie_label])),
+                    &MaybeRelocatable::Int(poseidon_hash_many([&LABEL_RUNTIME, &key.trie_label])),
                     &MaybeRelocatable::Int(new_root),
                     self.dict_manager.clone(),
                 )?;
