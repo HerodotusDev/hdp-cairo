@@ -13,7 +13,7 @@ pub mod utils;
 #[cfg(test)]
 pub mod hashers;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "injected_state"))]
 pub mod injected_state;
 
 #[cfg(test)]

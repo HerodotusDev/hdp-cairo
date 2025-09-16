@@ -3,6 +3,9 @@ name = "tests_modules"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+injected_state = []
+
 [dependencies]
 
 [dev-dependencies]
