@@ -128,4 +128,4 @@ jobs:
           RPC_URL_HERODOTUS_INDEXER: ${{ secrets.RPC_URL_HERODOTUS_INDEXER }}
           RPC_URL_STARKNET_MAINNET: ${{ secrets.RPC_URL_STARKNET_MAINNET }}
           RPC_URL_STARKNET_TESTNET: ${{ secrets.RPC_URL_STARKNET_TESTNET }}
-        run: cargo nextest run
+        run: make test

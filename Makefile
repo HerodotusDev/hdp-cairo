@@ -11,3 +11,7 @@ format:
 format-check:
 	.venv/bin/cairo-format -c src/*.cairo
 	.venv/bin/cairo-format -c src/**/*.cairo
+
+# Run full tests
+test:	
+	./scripts/test.sh
