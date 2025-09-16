@@ -122,7 +122,8 @@ func run_injected_state_verification_inner{
 
     if (proof_type == ProofType.READ) {
         %{ vm_enter_scope({'state_proof': state_proofs[ids.idx - 1], '__dict_manager': __dict_manager}) %}
-        let (root, key, value) = inclusion_state_verification{
+        tempvar key_trie_label: felt = nondet %{ state_proof_read.trie_label %};
+        let (root, key, value, inclusion_flag) = inclusion_state_verification{
             range_check_ptr=range_check_ptr,
             poseidon_ptr=poseidon_ptr,
             bitwise_ptr=bitwise_ptr,
@@ -135,17 +136,15 @@ func run_injected_state_verification_inner{
         let (data_ptr: felt*) = alloc();
         assert [data_ptr] = value;
 
-        if (value != 0) {
-            // inclusion proof
+        if (inclusion_flag == 1) {
             let memorizer_key = InjectedStateHashParams.read_inclusion{poseidon_ptr=poseidon_ptr}(
-                root=root, value=key
+                label=key_trie_label, root=root, value=key
             );
             InjectedStateMemorizer.add(key=memorizer_key, data=data_ptr);
         } else {
-            // non-inclusion proof
             let memorizer_key = InjectedStateHashParams.read_non_inclusion{
                 poseidon_ptr=poseidon_ptr
-            }(root=root, value=key);
+            }(label=key_trie_label, root=root, value=key);
             InjectedStateMemorizer.add(key=memorizer_key, data=data_ptr);
         }
 
@@ -154,6 +153,7 @@ func run_injected_state_verification_inner{
 
     if (proof_type == ProofType.WRITE) {
         %{ vm_enter_scope({'state_proof': state_proofs[ids.idx - 1], '__dict_manager': __dict_manager}) %}
+        tempvar key_trie_label: felt = nondet %{ state_proof_write.trie_label %};
         let (prev_root, new_root, key, prev_value, new_value) = update_state_verification{
             range_check_ptr=range_check_ptr,
             bitwise_ptr=bitwise_ptr,
@@ -167,7 +167,7 @@ func run_injected_state_verification_inner{
         assert [data_ptr] = new_root;
 
         let memorizer_key = InjectedStateHashParams.write{poseidon_ptr=poseidon_ptr}(
-            root=prev_root, value=key
+            label=key_trie_label, root=prev_root, value=key
         );
         InjectedStateMemorizer.add(key=memorizer_key, data=data_ptr);
 
@@ -175,5 +175,6 @@ func run_injected_state_verification_inner{
     }
 
     assert 0 = 1;
+
     return (idx=0);
 }

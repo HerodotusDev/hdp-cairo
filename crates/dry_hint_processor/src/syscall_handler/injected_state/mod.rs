@@ -160,12 +160,14 @@ impl SyscallHandler for CallContractHandler {
                                 .await
                                 .map_err(|e| SyscallExecutionError::InternalError(format!("Network request failed: {}", e).into()))?;
 
-                            let exists = !response.value.is_zero();
-                            let value = Felt252::from_bytes_be(&response.value.to_be_bytes());
+                            let (value, exists) = match response.value {
+                                Some(value) => (Felt252::from_bytes_be(&value.to_be_bytes()), true),
+                                None => (Felt252::ZERO, false),
+                            };
 
                             self.key_set.entry(key.trie_label).or_default().push(Action::Read(ActionRead {
-                                trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
                                 trie_label: pathfinder_crypto::Felt::from(key.trie_label.to_bytes_be()),
+                                trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
                                 key: pathfinder_crypto::Felt::from(key.key.to_bytes_be()),
                             }));
 
@@ -186,8 +188,8 @@ impl SyscallHandler for CallContractHandler {
                         }
                         StatusCode::NOT_FOUND => {
                             self.key_set.entry(key.trie_label).or_default().push(Action::Read(ActionRead {
-                                trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
                                 trie_label: pathfinder_crypto::Felt::from(key.trie_label.to_bytes_be()),
+                                trie_root: pathfinder_crypto::Felt::from(trie_root.to_bytes_be()),
                                 key: pathfinder_crypto::Felt::from(key.key.to_bytes_be()),
                             }));
 
@@ -234,8 +236,8 @@ impl SyscallHandler for CallContractHandler {
                 let client = reqwest::Client::new();
                 let endpoint = format!("{}/write", Self::get_base_url());
                 let response = client
-                    .get(endpoint)
-                    .query(&request_payload)
+                    .post(endpoint)
+                    .json(&request_payload)
                     .send()
                     .await
                     .map_err(|e| SyscallExecutionError::InternalError(format!("Network request failed: {}", e).into()))?;

@@ -4,12 +4,15 @@ pub mod update;
 use std::{any::Any, collections::HashMap};
 
 use cairo_vm::{
-    hint_processor::builtin_hint_processor::{builtin_hint_processor_definition::HintProcessorData, hint_utils::get_integer_from_var_name},
+    hint_processor::builtin_hint_processor::{
+        builtin_hint_processor_definition::HintProcessorData,
+        hint_utils::{get_integer_from_var_name, insert_value_into_ap},
+    },
     types::exec_scope::ExecutionScopes,
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use types::proofs::injected_state::{StateProof, StateProofs};
+use types::proofs::injected_state::{StateProof, StateProofRead, StateProofWrite, StateProofs};
 
 use crate::vars;
 
@@ -39,4 +42,28 @@ pub fn hint_state_proof_enter_scope(
     ]));
 
     Ok(())
+}
+
+pub const HINT_STATE_PROOF_READ_TRIE_LABEL: &str = "memory[ap] = to_felt_or_relocatable(state_proof_read.trie_label)";
+
+pub fn hint_state_proof_read_trie_label(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    _hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let state_proof = exec_scopes.get::<StateProofRead>(vars::scopes::STATE_PROOF)?;
+    insert_value_into_ap(vm, Felt252::from_bytes_be(&state_proof.trie_label.to_be_bytes()))
+}
+
+pub const HINT_STATE_PROOF_WRITE_TRIE_LABEL: &str = "memory[ap] = to_felt_or_relocatable(state_proof_write.trie_label)";
+
+pub fn hint_state_proof_write_trie_label(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    _hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let state_proof = exec_scopes.get::<StateProofWrite>(vars::scopes::STATE_PROOF)?;
+    insert_value_into_ap(vm, Felt252::from_bytes_be(&state_proof.trie_label.to_be_bytes()))
 }
