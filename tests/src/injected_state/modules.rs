@@ -537,3 +537,17 @@ async fn test_injected_state_write_to_new_trie() {
     )
     .await
 }
+
+// Special tests
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn test_injected_state_zero_labeled_trie() {
+    dotenvy::dotenv().ok();
+    run(
+        serde_json::from_slice(include_bytes!(
+            "../../../target/dev/tests_zero_labeled_trie.compiled_contract_class.json"
+        ))
+        .unwrap(),
+        serde_json::from_slice(include_bytes!("modules/zero_labeled_trie_injected_state.json")).unwrap(),
+    )
+    .await
+}
