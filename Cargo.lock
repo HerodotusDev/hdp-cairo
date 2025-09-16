@@ -6848,6 +6848,8 @@ name = "tests_modules"
 version = "0.1.0"
 dependencies = [
  "alloy 0.12.6",
+ "anyhow",
+ "axum",
  "cairo-lang-starknet-classes",
  "cairo-vm",
  "dotenvy",
@@ -6855,9 +6857,11 @@ dependencies = [
  "fetcher",
  "futures",
  "hints",
+ "reqwest 0.11.27",
  "serde_json",
  "sound_hint_processor",
  "starknet-crypto",
+ "state_server",
  "syscall_handler",
  "tokio",
  "tracing",

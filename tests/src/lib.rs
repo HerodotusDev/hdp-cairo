@@ -17,6 +17,9 @@ pub mod hashers;
 pub mod injected_state;
 
 #[cfg(test)]
+pub mod test_state_server;
+
+#[cfg(test)]
 mod test_utils {
     use std::{env, path::PathBuf};
 
@@ -36,7 +39,21 @@ mod test_utils {
         STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
     };
 
+    use crate::test_state_server::ensure_test_state_server;
+
     pub async fn run(compiled_class: CasmContractClass, injected_state: InjectedState) {
+        let with_state_server = !injected_state.0.is_empty();
+        if with_state_server {
+            let state_server_port = ensure_test_state_server().await.expect("Failed to start test state server");
+            let state_server_url = format!("http://0.0.0.0:{}", state_server_port);
+            debug!("Test state server is running on port {}", state_server_port);
+
+            // Set the environment variable so the syscall handler can find the server
+            // The syscall handler expects INJECTED_STATE_BASE_URL
+            std::env::set_var("INJECTED_STATE_BASE_URL", &state_server_url);
+            debug!("Set INJECTED_STATE_BASE_URL to {}", state_server_url);
+        }
+
         // Init CairoRunConfig
         let cairo_run_config = CairoRunConfig {
             layout: LayoutName::all_cairo,
