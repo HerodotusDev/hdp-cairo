@@ -28,8 +28,8 @@ mod test_utils {
     use hints::vars;
     use syscall_handler::{SyscallHandler, SyscallHandlerWrapper};
     use types::{
-        ChainProofs, HDPDryRunInput, HDPInput, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID,
-        STARKNET_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID
+        ChainProofs, HDPDryRunInput, HDPInput, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID,
+        OPTIMISM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
     };
 
     pub async fn run(compiled_class: CasmContractClass) {
@@ -121,7 +121,14 @@ mod test_utils {
         }
 
         let fetcher = Fetcher::new(&proof_keys);
-        let (evm_proofs_mainnet, evm_proofs_sepolia, starknet_proofs_mainnet, starknet_proofs_sepolia, optimism_proofs_mainnet, optimism_proofs_sepolia) = tokio::try_join!(
+        let (
+            evm_proofs_mainnet,
+            evm_proofs_sepolia,
+            starknet_proofs_mainnet,
+            starknet_proofs_sepolia,
+            optimism_proofs_mainnet,
+            optimism_proofs_sepolia,
+        ) = tokio::try_join!(
             fetcher.collect_evm_proofs(ETHEREUM_MAINNET_CHAIN_ID),
             fetcher.collect_evm_proofs(ETHEREUM_TESTNET_CHAIN_ID),
             fetcher.collect_starknet_proofs(STARKNET_MAINNET_CHAIN_ID),

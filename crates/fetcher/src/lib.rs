@@ -33,8 +33,8 @@ use types::{
         mmr::MmrMeta,
         starknet::{header::Header as StarknetHeader, storage::Storage as StarknetStorage, Proofs as StarknetProofs},
     },
-    ChainProofs, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, 
-    STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID
+    ChainProofs, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID,
+    STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
 };
 
 pub mod proof_keys;
@@ -392,12 +392,12 @@ pub async fn run_fetcher(
     let proof_keys = parse_syscall_handler(syscall_handler)?;
     let fetcher = Fetcher::new(&proof_keys);
     let (
-        eth_proofs_mainnet, 
-        eth_proofs_sepolia, 
-        starknet_proofs_mainnet, 
+        eth_proofs_mainnet,
+        eth_proofs_sepolia,
+        starknet_proofs_mainnet,
         starknet_proofs_sepolia,
-        optimism_proofs_mainnet, 
-        optimism_proofs_sepolia
+        optimism_proofs_mainnet,
+        optimism_proofs_sepolia,
     ) = tokio::try_join!(
         fetcher.collect_evm_proofs(ETHEREUM_MAINNET_CHAIN_ID),
         fetcher.collect_evm_proofs(ETHEREUM_TESTNET_CHAIN_ID),
