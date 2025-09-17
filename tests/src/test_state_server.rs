@@ -1,34 +1,48 @@
+use anyhow::Ok;
 use state_server::{create_router, AppState};
-use tokio::{net::TcpListener, sync::oneshot};
-use tracing::warn;
+use tokio::{
+    net::{TcpListener, ToSocketAddrs},
+    sync::oneshot,
+    task::JoinHandle,
+};
 
 pub struct TestStateServer {
-    pub(crate) server_handle: tokio::task::JoinHandle<()>,
+    server_handle: JoinHandle<Result<(), anyhow::Error>>,
+    shutdown_tx: Option<oneshot::Sender<()>>,
     pub port: u16,
 }
 
 impl TestStateServer {
-    pub async fn start() -> anyhow::Result<Self> {
-        let listener = TcpListener::bind("127.0.0.1:0").await?;
+    /// Spawns the server in the background and waits until it is ready to accept connections.
+    pub async fn start<A: ToSocketAddrs>(addr: A) -> anyhow::Result<Self> {
+        let (shutdown_tx, shutdown_rx) = oneshot::channel();
+
+        let listener = TcpListener::bind(addr).await?;
         let port = listener.local_addr()?.port();
-        let (ready_tx, ready_rx) = oneshot::channel();
+
         let server_handle = tokio::spawn(async move {
-            let app = create_router(AppState::new_memory().unwrap());
-            let server = axum::serve(listener, app);
-            let _ = ready_tx.send(());
-            if let Err(e) = server.await {
-                warn!("State server error: {e}");
-            }
+            let app = create_router(AppState::new_memory()?);
+
+            axum::serve(listener, app)
+                .with_graceful_shutdown(async {
+                    shutdown_rx.await.ok();
+                })
+                .await?;
+
+            Ok(())
         });
-        ready_rx.await?;
-        Ok(TestStateServer { server_handle, port })
+
+        Ok(TestStateServer {
+            server_handle,
+            shutdown_tx: Some(shutdown_tx),
+            port,
+        })
     }
 
-    pub fn base_url(&self) -> String {
-        format!("http://127.0.0.1:{}", self.port)
-    }
-
-    pub fn shutdown(&self) {
-        self.server_handle.abort();
+    pub async fn stop(mut self) -> anyhow::Result<()> {
+        if let Some(tx) = self.shutdown_tx.take() {
+            let _ = tx.send(());
+        }
+        self.server_handle.await?
     }
 }

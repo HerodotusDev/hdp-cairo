@@ -1,25 +1,28 @@
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+
 use test_context::{test_context, AsyncTestContext};
 
 use crate::{test_state_server::TestStateServer, test_utils::run};
 
-pub struct StateServerCtx {
-    pub server: TestStateServer,
-}
+pub struct StateServerCtx(pub TestStateServer);
 
 impl AsyncTestContext for StateServerCtx {
     async fn setup() -> Self {
         let _ = dotenvy::dotenv();
 
-        let server = TestStateServer::start().await.unwrap();
+        let mut socket = SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 0);
+        let server = TestStateServer::start(socket).await.unwrap();
+        socket.set_port(server.port);
+
         // Set the environment variable so the syscall handler can find the server
         // The syscall handler expects INJECTED_STATE_BASE_URL
-        std::env::set_var("INJECTED_STATE_BASE_URL", server.base_url());
+        std::env::set_var("INJECTED_STATE_BASE_URL", format!("http://{}", socket));
 
-        StateServerCtx { server }
+        StateServerCtx(server)
     }
 
-    async fn teardown(self) {
-        self.server.shutdown();
+    async fn teardown(self) -> () {
+        self.0.stop().await.unwrap();
     }
 }
 
