@@ -48,3 +48,6 @@ pub mod write_same_value_multiple_times;
 pub mod write_sequential_overwrites;
 pub mod write_to_existing_trie;
 pub mod write_to_new_trie;
+
+// Special tests
+pub mod zero_labeled_trie;

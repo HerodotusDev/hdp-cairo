@@ -17,6 +17,9 @@ pub mod hashers;
 pub mod injected_state;
 
 #[cfg(test)]
+pub mod test_state_server;
+
+#[cfg(test)]
 mod test_utils {
     use std::{env, path::PathBuf};
 
