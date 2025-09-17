@@ -24,15 +24,15 @@ from src.types import MMRMeta
 from src.utils.utils import mmr_metas_write_output_ptr, felt_array_to_uint256s
 from src.memorizers.evm.memorizer import EvmMemorizer
 from src.memorizers.starknet.memorizer import StarknetMemorizer
-from src.memorizers.bare import BareMemorizer, SingleBareMemorizer
+from src.memorizers.bare import BareMemorizer
 from src.memorizers.evm.state_access import EvmStateAccess, EvmDecoder
 from src.memorizers.starknet.state_access import StarknetStateAccess, StarknetDecoder
-from src.memorizers.injected_state.memorizer import InjectedStateMemorizer
 from src.utils.chain_info import Layout
 from src.utils.merkle import compute_tasks_hash, compute_tasks_root, compute_results_root
 from src.utils.chain_info import fetch_chain_info
 from src.contract_bootloader.contract import compute_contract
 from starkware.cairo.common.memcpy import memcpy
+from src.memorizers.injected_state.memorizer import InjectedStateMemorizer, InjectedStateHashParams
 
 from packages.eth_essentials.lib.utils import pow2alloc251, write_felt_array_to_dict_keys
 
@@ -113,7 +113,20 @@ func run{
             __dict_manager = DictManager()
     %}
 
-    %{ injected_state_memorizer.set_key(poseidon_hash_single(key), value) for (key, value) in injected_states %}
+    let (injected_state_keys) = alloc();
+    let (injected_state_values) = alloc();
+    tempvar injected_state_len: felt = nondet %{ len(injected_states.entries()) %};
+    %{
+        segments.write_arg(ids.injected_state_keys, injected_states.keys())
+        segments.write_arg(ids.injected_state_values, injected_states.values())
+    %}
+    with injected_state_memorizer {
+        injected_state_load_loop(
+            keys=injected_state_keys, values=injected_state_values, n=injected_state_len
+        );
+    }
+
+    %{ injected_state_memorizer.set_key(poseidon_hash_many(LABEL_RUNTIME, key), value) for (key, value) in injected_states %}
     %{ syscall_handler = SyscallHandler(segments=segments, dict_manager=__dict_manager) %}
 
     // Misc
@@ -138,6 +151,7 @@ func run{
     run_injected_state_verification{
         range_check_ptr=range_check_ptr,
         keccak_ptr=keccak_ptr,
+        poseidon_ptr=poseidon_ptr,
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array,
         injected_state_memorizer=injected_state_memorizer,
@@ -202,4 +216,23 @@ func run{
     );
 
     return ();
+}
+
+func injected_state_load_loop{
+    poseidon_ptr: PoseidonBuiltin*, injected_state_memorizer: DictAccess*
+}(keys: felt*, values: felt*, n: felt) {
+    alloc_locals;
+
+    if (n == 0) {
+        return ();
+    }
+
+    let memorizer_key = InjectedStateHashParams.label{poseidon_ptr=poseidon_ptr}(label=keys[n - 1]);
+
+    let (local data_ptr: felt*) = alloc();
+    assert [data_ptr] = values[n - 1];
+
+    InjectedStateMemorizer.add(key=memorizer_key, data=data_ptr);
+
+    return injected_state_load_loop(keys=keys, values=values, n=n - 1);
 }

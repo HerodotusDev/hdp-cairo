@@ -2,8 +2,11 @@ pub mod scopes {
     pub const ACCOUNT_EVM: &str = "account_evm";
     pub const BATCH_EVM: &str = "batch_evm";
     pub const BATCH_STARKNET: &str = "batch_starknet";
+    pub const CASE: &str = "case";
     pub const CHAIN_PROOFS: &str = "chain_proofs";
     pub const COMPILED_CLASS: &str = "compiled_class";
+    pub const DESCEND: &str = "descend";
+    pub const DESCENT_MAP: &str = "descent_map";
     pub const DICT_MANAGER: &str = "dict_manager";
     pub const EXPECTED_PATH: &str = "expected_path";
     pub const HEADER_EVM: &str = "header_evm";
@@ -12,13 +15,18 @@ pub mod scopes {
     pub const HEADER_WITH_MMR_STARKNET: &str = "header_with_mmr_starknet";
     pub const INCLUSION_PROOF: &str = "inclusion_proof";
     pub const INJECTED_STATE: &str = "injected_state";
+    pub const LEFT_CHILD: &str = "left_child";
     pub const N_SELECTED_BUILTINS: &str = "n_selected_builtins";
+    pub const NODE: &str = "node";
     pub const NON_INCLUSION_PROOF: &str = "non_inclusion_proof";
+    pub const PATRICIA_SKIP_VALIDATION_RUNNER: &str = "patricia_skip_validation_runner";
+    pub const PREIMAGE: &str = "preimage";
     pub const PRIVATE_INPUTS: &str = "private_inputs";
     pub const PROOF: &str = "proof";
     pub const PROOFS: &str = "proofs";
     pub const PUBLIC_INPUTS: &str = "public_inputs";
     pub const RECEIPT: &str = "receipt";
+    pub const RIGHT_CHILD: &str = "right_child";
     pub const STATE_PROOF: &str = "state_proof";
     pub const STATE_PROOFS: &str = "state_proofs";
     pub const STORAGE_EVM: &str = "storage_evm";
@@ -29,24 +37,30 @@ pub mod scopes {
 }
 
 pub mod ids {
-    pub const INJECTED_STATE_MEMORIZER: &str = "injected_state_memorizer";
     pub const ADDRESS: &str = "address";
     pub const ALL_ENCODINGS: &str = "all_encodings";
     pub const BATCH_LEN: &str = "batch_len";
+    pub const BIT: &str = "bit";
     pub const BUILTIN_PARAMS: &str = "builtin_params";
     pub const BUILTIN_PTRS: &str = "builtin_ptrs";
     pub const CHAIN_ID: &str = "chain_id";
     pub const CHAIN_PROOFS_LEN: &str = "chain_proofs_len";
+    pub const CHILD_BIT: &str = "child_bit";
     pub const COMPILED_CLASS: &str = "compiled_class";
     pub const CONTRACT_NODES: &str = "contract_nodes";
     pub const CONTRACT_STATE_NODES: &str = "contract_state_nodes";
+    pub const CURRENT_HASH: &str = "current_hash";
     pub const CURRENT_ITEM: &str = "current_item";
     pub const DEVISOR: &str = "devisor";
+    pub const EDGE: &str = "edge";
     pub const EXPECTED_PATH: &str = "expected_path";
     pub const FIELDS: &str = "fields";
     pub const FIRST_BYTE: &str = "first_byte";
+    pub const HASH_PTR: &str = "hash_ptr";
+    pub const HEIGHT: &str = "height";
     pub const I: &str = "i";
     pub const IDX: &str = "idx";
+    pub const INJECTED_STATE_MEMORIZER: &str = "injected_state_memorizer";
     pub const IS_LEFT_SMALLER: &str = "is_left_smaller";
     pub const IS_LONG: &str = "is_long";
     pub const ITEM_TYPE: &str = "item_type";
@@ -57,6 +71,7 @@ pub mod ids {
     pub const LEAF_KEY: &str = "leaf_key";
     pub const LEAF: &str = "leaf";
     pub const LEFT: &str = "left";
+    pub const LENGTH: &str = "length";
     pub const MMR_META: &str = "mmr_meta";
     pub const MMR_PATH: &str = "mmr_path";
     pub const MODULE_HASH: &str = "module_hash";
@@ -65,12 +80,17 @@ pub mod ids {
     pub const N_NODES: &str = "n_nodes";
     pub const N_PROCESSED_WORDS: &str = "n_processed_words";
     pub const N_SELECTED_BUILTINS: &str = "n_selected_builtins";
+    pub const N_UPDATES: &str = "n_updates";
+    pub const NEW_LENGTH: &str = "new_length";
+    pub const NEW_ROOT: &str = "new_root";
     pub const NODE: &str = "node";
     pub const NODES_PTR: &str = "nodes_ptr";
     pub const NODES: &str = "nodes";
     pub const PARAMS_LEN: &str = "params_len";
     pub const PARAMS: &str = "params";
+    pub const PATH: &str = "path";
     pub const PEAKS: &str = "peaks";
+    pub const PREV_ROOT: &str = "prev_root";
     pub const PRIVATE_INPUTS: &str = "private_inputs";
     pub const PROOF_BYTES_LEN: &str = "proof_bytes_len";
     pub const PUBLIC_INPUTS: &str = "public_inputs";
@@ -86,11 +106,15 @@ pub mod ids {
     pub const SELECT_BUILTIN: &str = "select_builtin";
     pub const SELECTED_ENCODINGS: &str = "selected_encodings";
     pub const SELECTED_PTRS: &str = "selected_ptrs";
+    pub const SIBLINGS: &str = "siblings";
     pub const SLOT: &str = "slot";
     pub const STORAGE_ADDRESSES: &str = "storage_addresses";
     pub const SYSCALL_PTR: &str = "syscall_ptr";
     pub const TASK_HASH: &str = "task_hash";
     pub const TRIE_NODE_PROOF: &str = "trie_node_proof";
+    pub const UPDATE_PTR: &str = "update_ptr";
     pub const VALUE_LEN: &str = "value_len";
     pub const VALUE: &str = "value";
+    pub const MEMORIZER_KEY: &str = "memorizer_key";
+    pub const WORD: &str = "word";
 }

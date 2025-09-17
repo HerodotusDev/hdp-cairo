@@ -14,10 +14,12 @@ use crate::SyscallResult;
 
 #[derive(Debug)]
 pub struct Memorizer {
-    dict_ptr: Relocatable,
+    pub dict_ptr: Relocatable,
 }
 
 impl Memorizer {
+    pub const DEFAULT_VALUE: Felt252 = Felt252::MAX;
+
     pub fn new(dict_ptr: Relocatable) -> Self {
         Self { dict_ptr }
     }
@@ -37,7 +39,7 @@ impl Memorizer {
             .ok_or(HintError::NoValueForKey(Box::new(key.clone())))
     }
 
-    pub fn read_key(&self, key: &MaybeRelocatable, dict_manager: Rc<RefCell<DictManager>>) -> Result<Relocatable, HintError> {
+    pub fn read_key_ptr(&self, key: &MaybeRelocatable, dict_manager: Rc<RefCell<DictManager>>) -> Result<Relocatable, HintError> {
         dict_manager
             .borrow_mut()
             .get_tracker_mut(self.dict_ptr)?

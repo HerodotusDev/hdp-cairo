@@ -54,7 +54,7 @@ impl CallHandler for AccountCallHandler {
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
         let ptr = self
             .memorizer
-            .read_key(&MaybeRelocatable::Int(key.hash()), self.dict_manager.clone())?;
+            .read_key_ptr(&MaybeRelocatable::Int(key.hash()), self.dict_manager.clone())?;
         let mut data = vm.get_integer(ptr)?.to_bytes_le().to_vec();
         data.resize(1024, 0);
         let header =

@@ -27,8 +27,14 @@ func traverse{
     hash_ptr: HashBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
-}(nodes: TrieNode**, n_nodes: felt, expected_path: felt) -> (root: felt, value: felt) {
+}(nodes: TrieNode**, n_nodes: felt, expected_path: felt) -> (
+    root: felt, value: felt, inclusion_flag: felt
+) {
     alloc_locals;
+
+    if (n_nodes == 0) {
+        return (root=0, value=0, inclusion_flag=0);
+    }
 
     local node: TrieNode* = nodes[n_nodes - 1];
     %{ memory[ap] = CairoTrieNode(ids.node).is_edge() %}
@@ -47,7 +53,9 @@ func traverse_edge_leaf{
     hash_ptr: HashBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
-}(nodes: TrieNode**, n_nodes: felt, expected_path: felt) -> (root: felt, value: felt) {
+}(nodes: TrieNode**, n_nodes: felt, expected_path: felt) -> (
+    root: felt, value: felt, inclusion_flag: felt
+) {
     alloc_locals;
 
     let leaf: TrieNodeEdge* = cast(nodes[n_nodes - 1], TrieNodeEdge*);
@@ -93,11 +101,11 @@ func traverse_edge_leaf{
     let (proof_mode) = derive_proof_mode(leaf.value, edge_node_start_position, expected_path);
     if (proof_mode == 1) {
         assert traversed_path = expected_path;
-        return (root=root, value=leaf.child);
+        return (root=root, value=leaf.child, inclusion_flag=1);
     } else {
         // If we have a valid non-inclusion proof, we return 0 as value.
         assert_subpath(traversed_path, expected_path, edge_node_start_position);
-        return (root=root, value=0);
+        return (root=root, value=0, inclusion_flag=0);
     }
 }
 
@@ -109,7 +117,9 @@ func traverse_binary_leaf{
     hash_ptr: HashBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
-}(nodes: TrieNode**, n_nodes: felt, expected_path: felt) -> (root: felt, value: felt) {
+}(nodes: TrieNode**, n_nodes: felt, expected_path: felt) -> (
+    root: felt, value: felt, inclusion_flag: felt
+) {
     alloc_locals;
 
     let leaf: TrieNodeBinary* = cast(nodes[n_nodes - 1], TrieNodeBinary*);
@@ -130,16 +140,16 @@ func traverse_binary_leaf{
     assert traversed_path = expected_path;
 
     if (node_path == 0) {
-        return (root=root, value=leaf.left);
+        return (root=root, value=leaf.left, inclusion_flag=1);
     }
 
     if (node_path == 1) {
-        return (root=root, value=leaf.right);
+        return (root=root, value=leaf.right, inclusion_flag=1);
     }
 
     assert 0 = 1;
 
-    return (root=0, value=0);
+    return (root=0, value=0, inclusion_flag=0);
 }
 
 // Inner traverse function used to traverse the nodes.

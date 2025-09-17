@@ -8,36 +8,21 @@ mod module {
 
     #[external(v0)]
     pub fn main(ref self: ContractState, hdp: HDP) -> Array<felt252> {
-        let (root, exists) = hdp.injected_state.read_injected_state_trie_root('my_trie');
-        assert!(root == 0, "Tree root should be 0");
-        assert!(exists, "Failed to read tree root");
+        let root = hdp.injected_state.read_injected_state_trie_root('my_trie').unwrap();
+        assert!(root == 0x0, "Trie root should be 0x0");
 
-        // let (root, exists) = hdp.injected_state.read_injected_state_trie_root('my_troo');
-        // assert!(!exists, "Trie should not exist");
-        // assert!(root == 0, "Trie root should be 0");
+        let value = hdp.injected_state.read_key('my_trie', 'my_key');
+        assert!(value.is_none(), "Value should not exist");
 
-        // let (value, exists) = hdp.injected_state.read_key('my_trie', 'my_key');
-        // assert!(!exists, "Key should not exist");
-        // assert!(value == 0, "Value should be 0");
+        let new_root = hdp.injected_state.write_key('my_trie', 'my_key', 42);
+        assert!(
+            new_root == 0xf153c6cd2bc40a4ec675068562f4ddefadc23030,
+            "Trie root should be 0xf153c6cd2bc40a4ec675068562f4ddefadc23030",
+        );
 
-        // let key_exists = hdp.injected_state.does_key_exist('my_trie', 'my_key');
-        // assert!(!key_exists, "Key should not exist");
-
-        hdp.injected_state.write_key('my_trie', 'my_key', 42);
-        let (value, exists) = hdp.injected_state.read_key('my_trie', 'my_key');
-        assert!(exists, "Key should exist");
+        let value = hdp.injected_state.read_key('my_trie', 'my_key').unwrap();
         assert!(value == 42, "Value should be 42");
 
-        hdp.injected_state.write_key('my_trie', 'my_key2', 43);
-        let (value, exists) = hdp.injected_state.read_key('my_trie', 'my_key2');
-        assert!(exists, "Key should exist");
-        assert!(value == 43, "Value should be 43");
-
-        hdp.injected_state.write_key('my_trie', 'my_key3', 44);
-        let (value, exists) = hdp.injected_state.read_key('my_trie', 'my_key3');
-        assert!(exists, "Key should exist");
-        assert!(value == 44, "Value should be 44");
-
-        array![root]
+        array![new_root]
     }
 }

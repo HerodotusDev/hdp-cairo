@@ -12,6 +12,7 @@ use cairo_vm::{
 pub mod contract_bootloader;
 pub mod decoder;
 pub mod merkle;
+pub mod patricia;
 pub mod print;
 pub mod rlp;
 pub mod segments;
@@ -35,7 +36,9 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(contract_bootloader::builtins::UPDATE_BUILTIN_PTRS.into(), contract_bootloader::builtins::update_builtin_ptrs);
     hints.insert(contract_bootloader::contract_class::LOAD_CONTRACT_CLASS.into(), contract_bootloader::contract_class::load_contract_class);
     hints.insert(contract_bootloader::dict_manager::DICT_MANAGER_CREATE.into(), contract_bootloader::dict_manager::dict_manager_create);
-    hints.insert(contract_bootloader::params::LOAD_INJECTED_STATES.into(), contract_bootloader::params::load_injected_states);
+    hints.insert(contract_bootloader::params::INJECTED_STATES_ENTRIES_LEN.into(), contract_bootloader::params::injected_states_entries_len);
+    hints.insert(contract_bootloader::params::INJECTED_STATES_SET_KEYS.into(), contract_bootloader::params::injected_states_set_keys);
+    hints.insert(contract_bootloader::params::INJECTED_STATES_WRITE_LISTS.into(), contract_bootloader::params::injected_states_write_lists);
     hints.insert(contract_bootloader::params::LOAD_PRIVATE_INPUTS_LEN.into(), contract_bootloader::params::load_private_inputs_len);
     hints.insert(contract_bootloader::params::LOAD_PRIVATE_INPUTS.into(), contract_bootloader::params::load_private_inputs);
     hints.insert(contract_bootloader::params::LOAD_PUBLIC_INPUTS_LEN.into(), contract_bootloader::params::load_public_inputs_len);
@@ -47,6 +50,26 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(decoder::evm::v_is_encoded::HINT_V_IS_ENCODED.into(), decoder::evm::v_is_encoded::hint_v_is_encoded);
     hints.insert(merkle::HINT_IS_LEFT_SMALLER.into(), merkle::hint_is_left_smaller);
     hints.insert(merkle::HINT_TARGET_TASK_HASH.into(), merkle::hint_target_task_hash);
+    hints.insert(patricia::hints::ASSERT_CASE_IS_RIGHT.into(), patricia::hints::assert_case_is_right);
+    hints.insert(patricia::hints::BUILD_DESCENT_MAP.into(), patricia::hints::build_descent_map);
+    hints.insert(patricia::hints::DECODE_NODE_2.into(), patricia::hints::decode_node_hint);
+    hints.insert(patricia::hints::DECODE_NODE.into(), patricia::hints::decode_node_hint);
+    hints.insert(patricia::hints::ENTER_SCOPE_DESCEND_EDGE.into(), patricia::hints::enter_scope_descend_edge);
+    hints.insert(patricia::hints::ENTER_SCOPE_LEFT_CHILD.into(), patricia::hints::enter_scope_left_child);
+    hints.insert(patricia::hints::ENTER_SCOPE_NEW_NODE.into(), patricia::hints::enter_scope_new_node);
+    hints.insert(patricia::hints::ENTER_SCOPE_NEXT_NODE_BIT_0.into(), patricia::hints::enter_scope_next_node_bit_0);
+    hints.insert(patricia::hints::ENTER_SCOPE_NEXT_NODE_BIT_1.into(), patricia::hints::enter_scope_next_node_bit_1);
+    hints.insert(patricia::hints::ENTER_SCOPE_NODE.into(), patricia::hints::enter_scope_node_hint);
+    hints.insert(patricia::hints::ENTER_SCOPE_RIGHT_CHILD.into(), patricia::hints::enter_scope_right_child);
+    hints.insert(patricia::hints::HEIGHT_IS_ZERO_OR_LEN_NODE_PREIMAGE_IS_TWO.into(), patricia::hints::height_is_zero_or_len_node_preimage_is_two);
+    hints.insert(patricia::hints::IS_CASE_RIGHT.into(), patricia::hints::is_case_right);
+    hints.insert(patricia::hints::LOAD_EDGE.into(), patricia::hints::load_edge);
+    hints.insert(patricia::hints::PREPARE_PREIMAGE_VALIDATION_NON_DETERMINISTIC_HASHES.into(), patricia::hints::prepare_preimage_validation_non_deterministic_hashes);
+    hints.insert(patricia::hints::SET_AP_TO_DESCEND.into(), patricia::hints::set_ap_to_descend);
+    hints.insert(patricia::hints::SET_BIT.into(), patricia::hints::set_bit);
+    hints.insert(patricia::hints::SET_SIBLINGS.into(), patricia::hints::set_siblings);
+    hints.insert(patricia::hints::SPLIT_DESCEND.into(), patricia::hints::split_descend);
+    hints.insert(patricia::hints::WRITE_CASE_NOT_LEFT_TO_AP.into(), patricia::hints::write_case_not_left_to_ap);
     hints.insert(print::HINT_PRINT_TASK_RESULT.into(), print::hint_print_task_result);
     hints.insert(print::MODULE_HASH.into(), print::module_hash);
     hints.insert(rlp::divmod::HINT_DIVMOD_RLP.into(), rlp::divmod::hint_divmod_rlp);
@@ -61,9 +84,9 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(segments::SEGMENTS_ADD_EVM_MEMORIZER_SEGMENT_INDEX.into(), segments::segments_add_evm_memorizer_segment_index);
     hints.insert(segments::SEGMENTS_ADD_EVM_STARKNET_MEMORIZER_INDEX.into(), segments::segments_add_evm_starknet_memorizer_index);
     hints.insert(segments::SEGMENTS_ADD_FP.into(), segments::segments_add_fp);
-    hints.insert(segments::SEGMENTS_ADD_STARKNET_MEMORIZER_OFFSET.into(), segments::segments_add_starknet_memorizer_offset);
     hints.insert(segments::SEGMENTS_ADD_INJECTED_STATE_MEMORIZER_INDEX.into(), segments::segments_add_injected_state_memorizer_index);
     hints.insert(segments::SEGMENTS_ADD_INJECTED_STATE_MEMORIZER_OFFSET.into(), segments::segments_add_injected_state_memorizer_offset);
+    hints.insert(segments::SEGMENTS_ADD_STARKNET_MEMORIZER_OFFSET.into(), segments::segments_add_starknet_memorizer_offset);
     hints.insert(segments::SEGMENTS_ADD.into(), segments::segments_add);
     hints.insert(verifiers::evm::account_verifier::HINT_ACCOUNT_KEY_LEADING_ZEROS.into(), verifiers::evm::account_verifier::hint_account_key_leading_zeros);
     hints.insert(verifiers::evm::account_verifier::HINT_ACCOUNT_KEY.into(), verifiers::evm::account_verifier::hint_account_key);
@@ -122,6 +145,18 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(verifiers::evm::transaction_verifier::HINT_SET_TX_KEY.into(), verifiers::evm::transaction_verifier::hint_set_tx_key);
     hints.insert(verifiers::evm::transaction_verifier::HINT_SET_TX_PROOF_LEN.into(), verifiers::evm::transaction_verifier::hint_set_tx_proof_len);
     hints.insert(verifiers::evm::transaction_verifier::HINT_SET_TX.into(), verifiers::evm::transaction_verifier::hint_set_tx);
+    hints.insert(verifiers::injected_state::HINT_STATE_PROOF_ENTER_SCOPE.into(), verifiers::injected_state::hint_state_proof_enter_scope);
+    hints.insert(verifiers::injected_state::HINT_STATE_PROOF_READ_TRIE_LABEL.into(), verifiers::injected_state::hint_state_proof_read_trie_label);
+    hints.insert(verifiers::injected_state::HINT_STATE_PROOF_WRITE_TRIE_LABEL.into(), verifiers::injected_state::hint_state_proof_write_trie_label);
+    hints.insert(verifiers::injected_state::inclusion::HINT_GET_KEY_BE.into(), verifiers::injected_state::inclusion::hint_get_key_be);
+    hints.insert(verifiers::injected_state::inclusion::HINT_GET_TRIE_NODE_PROOF.into(), verifiers::injected_state::inclusion::hint_get_trie_node_proof);
+    hints.insert(verifiers::injected_state::inclusion::HINT_INCLUSION_PROOF_LEN.into(), verifiers::injected_state::inclusion::hint_inclusion_proof_len);
+    hints.insert(verifiers::injected_state::update::HINT_LEAF_POST_DATA_VALUE.into(), verifiers::injected_state::update::hint_leaf_post_data_value);
+    hints.insert(verifiers::injected_state::update::HINT_LEAF_PREV_DATA_VALUE.into(), verifiers::injected_state::update::hint_leaf_prev_data_value);
+    hints.insert(verifiers::injected_state::update::HINT_LEAF_PREV_KEY.into(), verifiers::injected_state::update::hint_leaf_prev_key);
+    hints.insert(verifiers::injected_state::update::HINT_PREIMAGE.into(), verifiers::injected_state::update::hint_preimage);
+    hints.insert(verifiers::injected_state::update::HINT_TRIE_ROOT_POST.into(), verifiers::injected_state::update::hint_trie_root_post);
+    hints.insert(verifiers::injected_state::update::HINT_TRIE_ROOT_PREV.into(), verifiers::injected_state::update::hint_trie_root_prev);
     hints.insert(verifiers::mpt::HINT_KECCAK160_BINARY_NODE.into(), verifiers::mpt::hint_keccak160_binary_node);
     hints.insert(verifiers::mpt::HINT_KECCAK160_EDGE_NODE.into(), verifiers::mpt::hint_keccak160_edge_node);
     hints.insert(verifiers::starknet::header_verifier::HINT_FIELDS_LEN.into(), verifiers::starknet::header_verifier::hint_rlp_len);
@@ -160,12 +195,11 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(verifiers::verify::HINT_CHAIN_PROOFS_LEN.into(), verifiers::verify::hint_chain_proofs_len);
     hints.insert(verifiers::verify::HINT_STATE_PROOFS_LEN.into(), verifiers::verify::hint_state_proofs_len);
     hints.insert(verifiers::verify::HINT_STATE_PROOFS_PROOF_TYPE.into(), verifiers::verify::hint_state_proofs_proof_type);
-    hints.insert(verifiers::state_server::HINT_STATE_PROOF_ENTER_SCOPE.into(), verifiers::state_server::hint_state_proof_enter_scope);
-    hints.insert(verifiers::state_server::HINT_PRINT_ROOT_AND_VALUE.into(), verifiers::state_server::hint_print_root_and_value);
-    hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_TRIE_NODE_PROOF.into(), verifiers::state_server::inclusion_verifier::hint_get_trie_node_proof);
-    hints.insert(verifiers::state_server::inclusion_verifier::HINT_GET_KEY_BE.into(), verifiers::state_server::inclusion_verifier::hint_get_key_be);
-    hints.insert(verifiers::state_server::inclusion_verifier::HINT_INCLUSION_PROOF_LEN.into(), verifiers::state_server::inclusion_verifier::hint_inclusion_proof_len);
-
+    hints.insert(verifiers::injected_state::HINT_STATE_PROOF_ENTER_SCOPE.into(), verifiers::injected_state::hint_state_proof_enter_scope);
+    hints.insert(verifiers::injected_state::inclusion::HINT_GET_TRIE_NODE_PROOF.into(), verifiers::injected_state::inclusion::hint_get_trie_node_proof);
+    hints.insert(verifiers::injected_state::inclusion::HINT_GET_KEY_BE.into(), verifiers::injected_state::inclusion::hint_get_key_be);
+    hints.insert(verifiers::injected_state::inclusion::HINT_INCLUSION_PROOF_LEN.into(), verifiers::injected_state::inclusion::hint_inclusion_proof_len);
+    hints.insert(verifiers::injected_state::inclusion::HINT_GET_TRIE_ROOT_HASH.into(), verifiers::injected_state::inclusion::hint_get_trie_root_hash);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::bit_length::HINT_BIT_LENGTH.into(), eth_essentials_cairo_vm_hints::hints::lib::bit_length::hint_bit_length);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::mmr::bit_length::MMR_BIT_LENGTH.into(), eth_essentials_cairo_vm_hints::hints::lib::mmr::bit_length::mmr_bit_length);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::mmr::left_child::MMR_LEFT_CHILD.into(), eth_essentials_cairo_vm_hints::hints::lib::mmr::left_child::mmr_left_child);
@@ -194,12 +228,11 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::utils::write::HINT_WRITE_6.into(), eth_essentials_cairo_vm_hints::hints::lib::utils::write::hint_write_6);
     hints.insert(eth_essentials_cairo_vm_hints::hints::lib::utils::write::HINT_WRITE_7.into(), eth_essentials_cairo_vm_hints::hints::lib::utils::write::hint_write_7);
 
-
+    hints.insert(utils::debug::PRINT_DEBUG_BREAKPOINT.into(), utils::debug::print_debug_breakpoint);
+    hints.insert(utils::debug::PRINT_FELT_HEX.into(), utils::debug::print_felt_hex);
     hints.insert(utils::debug::PRINT_FELT_HEX.into(), utils::debug::print_felt_hex);
     hints.insert(utils::debug::PRINT_FELT.into(), utils::debug::print_felt);
     hints.insert(utils::debug::PRINT_STRING.into(), utils::debug::print_string);
-    hints.insert(utils::debug::PRINT_FELT_HEX.into(), utils::debug::print_felt_hex);
-    hints.insert(utils::debug::PRINT_DEBUG_BREAKPOINT.into(), utils::debug::print_debug_breakpoint);
 
     hints
 }

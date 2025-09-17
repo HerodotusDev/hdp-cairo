@@ -54,7 +54,7 @@ impl CallHandler for StorageCallHandler {
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
         let ptr = self
             .memorizer
-            .read_key(&MaybeRelocatable::Int(key.hash()), self.dict_manager.clone())?;
+            .read_key_ptr(&MaybeRelocatable::Int(key.hash()), self.dict_manager.clone())?;
         let data = vm.get_integer(ptr)?;
         Ok(CairoStorage::new(CairoFelt::from(*data.as_ref())).handler(function_id))
     }

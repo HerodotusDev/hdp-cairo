@@ -14,6 +14,8 @@ from starkware.cairo.common.cairo_builtins import (
     EcOpBuiltin,
 )
 
+from src.memorizers.injected_state.memorizer import InjectedStateMemorizer, InjectedStateHashParams
+from starkware.cairo.common.alloc import alloc
 from src.types import MMRMeta, ChainInfo, InjectedStateInfo
 from src.utils.chain_info import fetch_chain_info, Layout
 from src.utils.injected_state_info import ProofType
@@ -85,6 +87,7 @@ func run_chain_state_verification_inner{
 func run_injected_state_verification{
     range_check_ptr,
     keccak_ptr: KeccakBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
     injected_state_memorizer: DictAccess*,
@@ -93,6 +96,7 @@ func run_injected_state_verification{
     let (idx) = run_injected_state_verification_inner{
         range_check_ptr=range_check_ptr,
         keccak_ptr=keccak_ptr,
+        poseidon_ptr=poseidon_ptr,
         bitwise_ptr=bitwise_ptr,
         pow2_array=pow2_array,
         injected_state_memorizer=injected_state_memorizer,
@@ -103,6 +107,7 @@ func run_injected_state_verification{
 func run_injected_state_verification_inner{
     range_check_ptr,
     keccak_ptr: KeccakBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
     injected_state_memorizer: DictAccess*,
@@ -117,38 +122,59 @@ func run_injected_state_verification_inner{
 
     if (proof_type == ProofType.READ) {
         %{ vm_enter_scope({'state_proof': state_proofs[ids.idx - 1], '__dict_manager': __dict_manager}) %}
-        let (root, value) = inclusion_state_verification{
+        tempvar key_trie_label: felt = nondet %{ state_proof_read.trie_label %};
+        let (root, key, value, inclusion_flag) = inclusion_state_verification{
             range_check_ptr=range_check_ptr,
+            poseidon_ptr=poseidon_ptr,
             bitwise_ptr=bitwise_ptr,
             keccak_ptr=keccak_ptr,
             pow2_array=pow2_array,
+            injected_state_memorizer=injected_state_memorizer,
         }();
-        %{ print(root, value) %}
         %{ vm_exit_scope() %}
+
+        let (data_ptr: felt*) = alloc();
+        assert [data_ptr] = value;
+
+        if (inclusion_flag == 1) {
+            let memorizer_key = InjectedStateHashParams.read_inclusion{poseidon_ptr=poseidon_ptr}(
+                label=key_trie_label, root=root, value=key
+            );
+            InjectedStateMemorizer.add(key=memorizer_key, data=data_ptr);
+        } else {
+            let memorizer_key = InjectedStateHashParams.read_non_inclusion{
+                poseidon_ptr=poseidon_ptr
+            }(label=key_trie_label, root=root, value=key);
+            InjectedStateMemorizer.add(key=memorizer_key, data=data_ptr);
+        }
 
         return run_injected_state_verification_inner(idx=idx - 1);
     }
 
-    // if (proof_info.proof_type == ProofType.NON_INCLUSION) {
-    //     with proof_info {
-    //         %{ vm_enter_scope({'batch_state_server': state_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
-    //         let (value, value_len) = non_inclusion_state_verification(0);
-    //         %{ vm_exit_scope() %}
+    if (proof_type == ProofType.WRITE) {
+        %{ vm_enter_scope({'state_proof': state_proofs[ids.idx - 1], '__dict_manager': __dict_manager}) %}
+        tempvar key_trie_label: felt = nondet %{ state_proof_write.trie_label %};
+        let (prev_root, new_root, key, prev_value, new_value) = update_state_verification{
+            range_check_ptr=range_check_ptr,
+            bitwise_ptr=bitwise_ptr,
+            keccak_ptr=keccak_ptr,
+            pow2_array=pow2_array,
+            injected_state_memorizer=injected_state_memorizer,
+        }();
+        %{ vm_exit_scope() %}
 
-    // return run_injected_state_verification_inner(idx=idx - 1);
-    //     }
-    // }
+        let (data_ptr: felt*) = alloc();
+        assert [data_ptr] = new_root;
 
-    // if (proof_info.proof_type == ProofType.UPDATE) {
-    //     with proof_info {
-    //         %{ vm_enter_scope({'batch_state_server': state_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
-    //         let (value, value_len) = update_state_verification();
-    //         %{ vm_exit_scope() %}
+        let memorizer_key = InjectedStateHashParams.write{poseidon_ptr=poseidon_ptr}(
+            label=key_trie_label, root=prev_root, value=key
+        );
+        InjectedStateMemorizer.add(key=memorizer_key, data=data_ptr);
 
-    // return run_injected_state_verification_inner(idx=idx - 1);
-    //     }
-    // }
+        return run_injected_state_verification_inner(idx=idx - 1);
+    }
 
     assert 0 = 1;
+
     return (idx=0);
 }

@@ -1,18 +1,16 @@
-// main.rs
-
-use std::error::Error;
-
 use clap::Parser;
-use state_server::create_router;
+use state_server::{create_router, AppState};
 use tokio::net::TcpListener;
 use tracing::info;
+use tracing_subscriber::EnvFilter;
 
 /// Binds to the given host and port and starts the axum server.
-pub async fn start_server(port: u16, host: &str) -> anyhow::Result<()> {
+pub async fn start_server(port: u16, host: &str, db_root_path: &str) -> anyhow::Result<()> {
     // Initialize the logger/subscriber.
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init();
 
-    let app = create_router();
+    let state = AppState::new(db_root_path)?;
+    let app = create_router(state);
     let addr = format!("{}:{}", host, port);
 
     info!("🚀 Server listening on {}", addr);
@@ -33,18 +31,19 @@ struct Args {
     /// The host address to bind to
     #[arg(long, default_value = "0.0.0.0")]
     host: String,
+
+    /// The path to the database root folder
+    #[arg(long, default_value = "db")]
+    db_root_path: String,
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
-    // `clap` parses arguments and automatically handles help/version flags.
+async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    // Call the server startup function with parsed arguments.
-    if let Err(e) = start_server(args.port, &args.host).await {
-        // Use a basic eprintln for the final error as tracing might not be initialized.
+    if let Err(e) = start_server(args.port, &args.host, &args.db_root_path).await {
         eprintln!("💥 Server failed to start: {}", e);
-        return Err(e.into());
+        return Err(e);
     }
 
     Ok(())

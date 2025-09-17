@@ -41,3 +41,7 @@ dist/
 !packages/cairo-lang-0.13.3.zip
 !examples/**/*.json
 !crates/server/tests/*.json
+
+# State server db folder
+crates/state_server/db
+db

@@ -13,6 +13,7 @@ use crate::mpt::error::Error;
 #[derive(Debug, Clone, Copy)]
 pub struct TrieDB<'a> {
     conn: &'a PooledConnection<SqliteConnectionManager>,
+    pub max_root_idx: u64,
 }
 
 impl<'a> TrieDB<'a> {
@@ -22,7 +23,7 @@ impl<'a> TrieDB<'a> {
     ///
     /// * `conn` - A reference to a pooled SQLite connection.
     pub fn new(conn: &'a PooledConnection<SqliteConnectionManager>) -> Self {
-        Self { conn }
+        Self { conn, max_root_idx: 0 }
     }
 
     /// Persists the leaves in the database, skipping any (key, value) pairs that already exist.
@@ -30,13 +31,14 @@ impl<'a> TrieDB<'a> {
     /// # Arguments
     ///
     /// * `leaves` - A vector of `TrieLeaf` representing the leaves to be persisted.
+    /// * `root_idx` - The trie root index to associate with these leaves.
     ///
     /// # Errors
     ///
     /// Returns a `Error` if there was an error persisting the leaves.
-    pub fn persist_leafs(&self, leaves: &Vec<TrieLeaf>) -> Result<(), Error> {
+    pub fn persist_leafs(&self, leaves: &Vec<TrieLeaf>, root_idx: u64) -> Result<(), Error> {
         const SELECT_QUERY: &str = "SELECT 1 FROM leafs WHERE key = ?1 AND value = ?2";
-        const INSERT_QUERY: &str = "INSERT INTO leafs (key, value) VALUES (?1, ?2)";
+        const INSERT_QUERY: &str = "INSERT INTO leafs (key, value, root_idx) VALUES (?1, ?2, ?3)";
 
         for item in leaves {
             let key_bytes = item.get_key().to_be_bytes().to_vec();
@@ -48,7 +50,7 @@ impl<'a> TrieDB<'a> {
 
             if exists.is_none() {
                 self.conn
-                    .execute(INSERT_QUERY, params![&key_bytes, &value_bytes])
+                    .execute(INSERT_QUERY, params![&key_bytes, &value_bytes, root_idx])
                     .map_err(Error::from)?;
             }
         }
@@ -76,7 +78,7 @@ impl<'a> TrieDB<'a> {
     /// Returns a `Error` if there was an error persisting the nodes.
     pub fn persist_nodes(&self, nodes: Vec<(StoredNode, Felt, u64)>) -> Result<(), Error> {
         // We'll check for existence before inserting to avoid duplicates.
-        const SELECT_QUERY: &str = "SELECT 1 FROM trie_nodes WHERE hash = ? AND data = ?";
+        const SELECT_QUERY: &str = "SELECT 1 FROM trie_nodes WHERE trie_idx = ?";
         const INSERT_QUERY: &str = "INSERT INTO trie_nodes (hash, data, trie_idx) VALUES (?1, ?2, ?3)";
         let mut write_buffer = [0u8; 256];
         for (node, hash, trie_idx) in nodes {
@@ -84,9 +86,9 @@ impl<'a> TrieDB<'a> {
             let hash_bytes = hash.to_be_bytes().to_vec();
             let data_bytes = write_buffer[..length].to_vec();
 
-            // Check if a node with the same hash and data already exists
+            // Check if a node with the same trie_idx already exists
             let mut stmt = self.conn.prepare_cached(SELECT_QUERY)?;
-            let exists: Option<u8> = stmt.query_row(params![&hash_bytes, &data_bytes], |row| row.get(0)).optional()?;
+            let exists: Option<u8> = stmt.query_row(params![trie_idx], |row| row.get(0)).optional()?;
 
             if exists.is_none() {
                 // Only insert if not already present
@@ -166,13 +168,49 @@ impl<'a> TrieDB<'a> {
         }
     }
 
+    /// Retrieves the leaf at the given key. This is used to get the latest leaf for a given key.
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - The key of the leaf to retrieve.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(leaf)` if the leaf is found, `Ok(TrieLeaf::empty(key))` otherwise.
     pub fn get_leaf(&self, key: Felt) -> anyhow::Result<TrieLeaf> {
-        let mut stmt = self
-            .conn
-            .prepare_cached("SELECT value FROM leafs WHERE key = ? ORDER BY idx DESC LIMIT 1")?;
-
+        let mut stmt = self.conn.prepare_cached("SELECT value FROM leafs WHERE key = ?")?;
         let result: Option<TrieLeaf> = stmt
             .query_row(params![key.to_be_bytes().to_vec()], |row| {
+                let value: Vec<u8> = row.get(0)?;
+                let value = Felt::from_be_slice(&value).unwrap();
+                Ok(TrieLeaf::new(key, value))
+            })
+            .optional()?;
+
+        match result {
+            Some(leaf) => Ok(leaf),
+            None => Ok(TrieLeaf::empty(key)),
+        }
+    }
+
+    /// Retrieves the leaf at the given key and root index.
+    /// This is used to get the leaf at a specific trie checkpoint.
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - The key of the leaf to retrieve.
+    /// * `max_root_idx` - The maximum root index to consider.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(leaf)` if the leaf is found, `Ok(TrieLeaf::empty(key))` otherwise.
+    pub fn get_leaf_at(&self, key: Felt, max_root_idx: u64) -> anyhow::Result<Option<TrieLeaf>> {
+        let mut stmt = self
+            .conn
+            .prepare_cached("SELECT value FROM leafs WHERE key = ? AND root_idx <= ? ORDER BY idx DESC LIMIT 1")?;
+
+        let result: Option<TrieLeaf> = stmt
+            .query_row(params![key.to_be_bytes().to_vec(), max_root_idx], |row| {
                 let value: Vec<u8> = row.get(0)?;
                 let value = Felt::from_be_slice(&value).unwrap();
 
@@ -184,10 +222,7 @@ impl<'a> TrieDB<'a> {
             })
             .optional()?;
 
-        match result {
-            Some(leaf) => Ok(leaf),
-            None => Ok(TrieLeaf::empty(key)),
-        }
+        Ok(result)
     }
 }
 
@@ -237,6 +272,7 @@ impl Storage for TrieDB<'_> {
     /// Retrieves the leaf value associated with the specified path from the trie database.
     /// This version retrieves the *latest* version of the leaf based on insertion order,
     /// assuming an auto-incrementing primary key 'id' exists in the 'leafs' table.
+    /// Note: This method is used by the merkle tree implementation and should get the latest leaf.
     ///
     /// # Arguments
     ///
@@ -247,6 +283,12 @@ impl Storage for TrieDB<'_> {
     /// Returns `Ok(None)` if no leaf is found at the specified path.
     /// Otherwise, returns `Ok(Some(leaf))` where `leaf` is the retrieved leaf value.
     fn leaf(&self, path: &BitSlice<u8, Msb0>) -> anyhow::Result<Option<Felt>> {
+        if self.max_root_idx > 0 {
+            return self
+                .get_leaf_at(Felt::from_bits(path)?, self.max_root_idx)
+                .map(|opt| opt.map(|leaf| leaf.data.value));
+        }
+
         let mut stmt = self
             .conn
             .prepare_cached("SELECT value FROM leafs WHERE key = ? ORDER BY idx DESC LIMIT 1")?;
