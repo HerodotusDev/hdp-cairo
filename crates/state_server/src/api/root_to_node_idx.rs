@@ -6,7 +6,6 @@ use pathfinder_crypto::Felt;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    api::error::ApiError,
     mpt::{db::trie::TrieDB, error::Error as MptError},
     AppState,
 };
@@ -26,17 +25,19 @@ pub struct GetIdResponse {
 pub async fn get_trie_root_node_idx(
     State(state): State<AppState>,
     Query(payload): Query<GetIdRequest>,
-) -> Result<Json<GetIdResponse>, ApiError> {
-    let conn = state.get_connection(payload.trie_label).map_err(MptError::from)?;
+) -> Result<Json<GetIdResponse>, MptError> {
+    let conn = state.get_connection(payload.trie_label)?;
     if payload.trie_root == Felt::ZERO {
         return Ok(Json(GetIdResponse {
             trie_root_node_idx: 0,
             trie_root: Felt::ZERO,
         }));
     }
-    let trie_root_node_idx = TrieDB::new(&conn)
-        .get_node_idx_by_hash(payload.trie_root)?
-        .ok_or(ApiError::NotFound)?;
+    let trie_root_node_idx = match TrieDB::new(&conn).get_node_idx_by_hash(payload.trie_root) {
+        Result::Ok(v) => Ok(v),
+        Result::Err(MptError::Database(rusqlite::Error::QueryReturnedNoRows)) => Err(MptError::MissingNodeIndex),
+        Result::Err(error) => Err(error),
+    }?;
 
     Ok(Json(GetIdResponse {
         trie_root_node_idx,

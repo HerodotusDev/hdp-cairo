@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 use types::proofs::injected_state::leaf::TrieLeaf;
 
 use crate::{
-    api::error::ApiError,
     mpt::{error::Error as MptError, trie::Trie},
     AppState,
 };
@@ -24,8 +23,8 @@ pub struct CreateTrieResponse {
 pub async fn create_trie(
     State(state): State<AppState>,
     Json(payload): Json<CreateTrieRequest>,
-) -> Result<Json<CreateTrieResponse>, ApiError> {
-    let conn = state.get_connection(payload.trie_label).map_err(MptError::from)?;
+) -> Result<Json<CreateTrieResponse>, MptError> {
+    let conn = state.get_connection(payload.trie_label)?;
 
     let (storage, mut trie, root_idx) = Trie::create_empty(&conn)?;
 
@@ -37,10 +36,10 @@ pub async fn create_trie(
         .collect::<Vec<_>>();
 
     for leaf in &leaves {
-        trie.set(&storage, leaf.get_path(), leaf.data.value).map_err(MptError::from)?;
+        trie.set(&storage, leaf.get_path(), leaf.data.value)?;
     }
 
-    let update = trie.commit(&storage).map_err(MptError::from)?;
+    let update = trie.commit(&storage)?;
     Trie::persist_updates(&storage, &update, &leaves, Some(u64::from(root_idx)))?;
 
     Ok(Json(CreateTrieResponse {
