@@ -1,10 +1,9 @@
 use axum::{extract::State, Json};
 use pathfinder_crypto::Felt;
-use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use types::proofs::injected_state::leaf::TrieLeaf;
 
-use crate::{mpt::trie::Trie, AppState};
+use crate::{api::error::ApiError, mpt::trie::Trie, AppState};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WriteRequest {
@@ -22,26 +21,19 @@ pub struct WriteResponse {
     pub value: Felt,
 }
 
-pub async fn write(State(state): State<AppState>, Json(payload): Json<WriteRequest>) -> Result<Json<WriteResponse>, StatusCode> {
-    let conn = state
-        .get_connection(payload.trie_label)
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
+pub async fn write(State(state): State<AppState>, Json(payload): Json<WriteRequest>) -> Result<Json<WriteResponse>, ApiError> {
+    let conn = state.get_connection(payload.trie_label)?;
     let (storage, mut trie, root_idx) = if payload.trie_root == Felt::ZERO {
-        Trie::create_empty(&conn).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        Trie::create_empty(&conn)?
     } else {
-        Trie::load_from_root(payload.trie_root, &conn).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        Trie::load_from_root(payload.trie_root, &conn)?
     };
 
     let leaf = TrieLeaf::new(payload.key, payload.value);
+    trie.set(&storage, leaf.get_path(), leaf.data.value)?;
 
-    trie.set(&storage, leaf.get_path(), leaf.data.value)
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    let update = trie.commit(&storage).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    let trie_id =
-        Trie::persist_updates(&storage, &update, &vec![leaf], Some(u64::from(root_idx))).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let update = trie.commit(&storage)?;
+    let trie_id = Trie::persist_updates(&storage, &update, &vec![leaf], Some(u64::from(root_idx)))?;
 
     Ok(Json(WriteResponse {
         trie_id: u64::from(trie_id),

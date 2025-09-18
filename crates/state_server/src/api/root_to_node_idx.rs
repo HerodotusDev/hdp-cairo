@@ -3,10 +3,9 @@ use axum::{
     Json,
 };
 use pathfinder_crypto::Felt;
-use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 
-use crate::{mpt::db::trie::TrieDB, AppState};
+use crate::{api::error::ApiError, mpt::db::trie::TrieDB, AppState};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GetIdRequest {
@@ -23,22 +22,17 @@ pub struct GetIdResponse {
 pub async fn get_trie_root_node_idx(
     State(state): State<AppState>,
     Query(payload): Query<GetIdRequest>,
-) -> Result<Json<GetIdResponse>, StatusCode> {
-    let conn = state
-        .get_connection(payload.trie_label)
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
+) -> Result<Json<GetIdResponse>, ApiError> {
+    let conn = state.get_connection(payload.trie_label)?;
     if payload.trie_root == Felt::ZERO {
         return Ok(Json(GetIdResponse {
             trie_root_node_idx: 0,
             trie_root: Felt::ZERO,
         }));
     }
-
     let trie_root_node_idx = TrieDB::new(&conn)
-        .get_node_idx_by_hash(payload.trie_root)
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-        .ok_or(StatusCode::NOT_FOUND)?;
+        .get_node_idx_by_hash(payload.trie_root)?
+        .ok_or(ApiError::NotFound)?;
 
     Ok(Json(GetIdResponse {
         trie_root_node_idx,

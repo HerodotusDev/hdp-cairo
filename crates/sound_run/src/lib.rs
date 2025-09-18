@@ -60,7 +60,7 @@ pub fn run(program_path: PathBuf, input: HDPInput) -> Result<(CairoPie, HDPOutpu
         ..Default::default()
     };
 
-    println!("Program path: {}", program_path.display());
+    debug!("Program path: {}", program_path.display());
     let program_file = std::fs::read(program_path).map_err(Error::IO)?;
     let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))?;
 

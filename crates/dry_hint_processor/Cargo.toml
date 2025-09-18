@@ -20,4 +20,5 @@ state_server.workspace = true
 strum_macros.workspace = true
 syscall_handler.workspace = true
 tokio.workspace = true
+tracing.workspace = true
 types.workspace = true

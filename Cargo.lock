@@ -2743,6 +2743,7 @@ dependencies = [
  "strum_macros 0.26.4",
  "syscall_handler",
  "tokio",
+ "tracing",
  "types",
 ]
 

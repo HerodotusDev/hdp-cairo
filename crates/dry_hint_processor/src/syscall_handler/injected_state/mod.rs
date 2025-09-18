@@ -14,6 +14,7 @@ use state_server::api::{
 };
 use strum_macros::FromRepr;
 use syscall_handler::{memorizer::Memorizer, traits::SyscallHandler, SyscallExecutionError, SyscallResult, WriteResponseResult};
+use tracing::error;
 use types::{
     cairo::{
         injected_state::{label, read, write, LABEL_RUNTIME},
@@ -146,12 +147,10 @@ impl SyscallHandler for CallContractHandler {
 
                     let client = reqwest::Client::new();
                     let endpoint = format!("{}/read", Self::get_base_url());
-                    let response = client
-                        .get(endpoint)
-                        .query(&request_payload)
-                        .send()
-                        .await
-                        .map_err(|e| SyscallExecutionError::InternalError(format!("Network request failed: {}", e).into()))?;
+                    let response = client.get(&endpoint).query(&request_payload).send().await.map_err(|e| {
+                        error!("State server unavailable: {}", e);
+                        SyscallExecutionError::InternalError(format!("Network request failed: {}", e).into())
+                    })?;
 
                     match response.status() {
                         StatusCode::OK => {
@@ -212,6 +211,7 @@ impl SyscallHandler for CallContractHandler {
                         }
                         status => {
                             let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+                            error!("State server error: {} - {}", status, error_text);
                             Err(SyscallExecutionError::InternalError(
                                 format!("Network request failed: {}: {}", status, error_text).into(),
                             ))?;
@@ -235,12 +235,10 @@ impl SyscallHandler for CallContractHandler {
 
                 let client = reqwest::Client::new();
                 let endpoint = format!("{}/write", Self::get_base_url());
-                let response = client
-                    .post(endpoint)
-                    .json(&request_payload)
-                    .send()
-                    .await
-                    .map_err(|e| SyscallExecutionError::InternalError(format!("Network request failed: {}", e).into()))?;
+                let response = client.post(&endpoint).json(&request_payload).send().await.map_err(|e| {
+                    error!("State server unavailable: {}", e);
+                    SyscallExecutionError::InternalError(format!("Network request failed: {}", e).into())
+                })?;
 
                 match response.status() {
                     StatusCode::OK => {
@@ -281,6 +279,7 @@ impl SyscallHandler for CallContractHandler {
                     }
                     status => {
                         let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+                        error!("State server error: {} - {}", status, error_text);
                         Err(SyscallExecutionError::InternalError(
                             format!("Network request failed: {}: {}", status, error_text).into(),
                         ))?;
