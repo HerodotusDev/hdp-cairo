@@ -1,5 +1,8 @@
+use axum::response::{IntoResponse, Response};
 use pathfinder_merkle_tree::tree::GetProofError;
+use reqwest::StatusCode;
 use thiserror::Error;
+use tracing::error;
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -37,4 +40,14 @@ pub enum Error {
     Pool(r2d2::Error),
     #[error(transparent)]
     Any(#[from] anyhow::Error),
+}
+
+impl IntoResponse for Error {
+    fn into_response(self) -> Response {
+        error!("Mpt error: {}", self);
+        match self {
+            Error::MissingNodeIndex => StatusCode::NOT_FOUND.into_response(),
+            error => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
+        }
+    }
 }
