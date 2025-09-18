@@ -5,7 +5,11 @@ use axum::{
 use pathfinder_crypto::Felt;
 use serde::{Deserialize, Serialize};
 
-use crate::{api::error::ApiError, mpt::db::trie::TrieDB, AppState};
+use crate::{
+    api::error::ApiError,
+    mpt::{db::trie::TrieDB, error::Error as MptError},
+    AppState,
+};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GetIdRequest {
@@ -23,7 +27,7 @@ pub async fn get_trie_root_node_idx(
     State(state): State<AppState>,
     Query(payload): Query<GetIdRequest>,
 ) -> Result<Json<GetIdResponse>, ApiError> {
-    let conn = state.get_connection(payload.trie_label)?;
+    let conn = state.get_connection(payload.trie_label).map_err(MptError::from)?;
     if payload.trie_root == Felt::ZERO {
         return Ok(Json(GetIdResponse {
             trie_root_node_idx: 0,

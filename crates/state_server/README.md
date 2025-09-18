@@ -23,7 +23,7 @@ This server exposes endpoints to create, update, and query Merkle tries, leverag
 - **Persistence:** Tries are stored in SQLite databases, one per trie
 - **Concurrency:** `DashMap` enables safe concurrent access to all tries
 - **API:** Built with Axum
-- **Error Handling:** Uses `anyhow` and `thiserror` for robust error reporting
+- **Error Handling:** Uses `thiserror` with specific error types for detailed error reporting and debugging
 
 ## API Endpoints
 
@@ -392,18 +392,33 @@ The Keccak256 hash of the trie root, representing a specific state of the trie. 
 
 ## Error Handling
 
-The API returns appropriate HTTP status codes:
+The API returns appropriate HTTP status codes with detailed error messages:
 
 - `200 OK`: Successful operations
 - `400 Bad Request`: Invalid input (malformed JSON, missing parameters)
-- `404 Not Found`: Trie/key not found
-- `500 Internal Server Error`: Server-side errors (database issues, trie operations)
+- `404 Not Found`: Resource not found (trie root, key, etc.)
+- `500 Internal Server Error`: Server-side errors with specific error details
 
-**Example Error Response:**
+**Error Categories:**
+
+The server provides specific error types for better debugging:
+
+- **Database Errors**: SQLite query failures, connection pool issues
+- **Crypto Errors**: Node encoding/decoding failures, hex parsing errors
+- **Trie Errors**: Proof generation failures, RLP decoding errors
+- **Storage Errors**: I/O operations, missing node indices
+
+**Example Error Responses:**
 
 ```json
 {
-  "error": "Trie root not found"
+  "error": "MPT operation failed: Storage error: Database query failed: SQLITE_CONSTRAINT: UNIQUE constraint failed"
+}
+```
+
+```json
+{
+  "error": "Resource not found"
 }
 ```
 

@@ -5,15 +5,12 @@ use axum::{
 use thiserror::Error;
 use tracing::error;
 
-use crate::mpt::error::Error as MptError;
+use crate::mpt::error::Error;
 
 #[derive(Error, Debug)]
 pub enum ApiError {
-    #[error("Database connection failed: {0}")]
-    DatabaseConnection(#[from] anyhow::Error),
-
     #[error("MPT operation failed: {0}")]
-    MptError(#[from] MptError),
+    MptError(#[from] Error),
 
     #[error("Resource not found")]
     NotFound,
@@ -22,11 +19,11 @@ pub enum ApiError {
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
         match &self {
-            ApiError::NotFound => (StatusCode::NOT_FOUND, self.to_string()).into_response(),
-            _ => {
-                error!("API error: {}", self);
-                (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()).into_response()
+            ApiError::MptError(e) => {
+                error!("API Mpt error: {}", e);
+                (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
             }
+            ApiError::NotFound => (StatusCode::NOT_FOUND, self.to_string()).into_response(),
         }
     }
 }

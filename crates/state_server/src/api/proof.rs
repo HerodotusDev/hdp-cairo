@@ -3,7 +3,11 @@ use pathfinder_crypto::Felt;
 use serde::{Deserialize, Serialize};
 use types::proofs::injected_state::{leaf::TrieLeaf, Action, StateProof, StateProofRead, StateProofWrite};
 
-use crate::{api::error::ApiError, mpt::trie::Trie, AppState};
+use crate::{
+    api::error::ApiError,
+    mpt::{error::Error as MptError, trie::Trie},
+    AppState,
+};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GetStateProofsRequest {
@@ -38,11 +42,12 @@ pub async fn get_state_proofs(
                     continue;
                 }
 
-                let conn = state.get_connection(action.trie_label)?;
+                let conn = state.get_connection(action.trie_label).map_err(MptError::from)?;
                 let (mut storage, _trie, root_idx) = Trie::load_from_root(action.trie_root, &conn)?;
                 storage.max_root_idx = u64::from(root_idx);
                 let leaf = storage
-                    .get_leaf_at(action.key, u64::from(root_idx))?
+                    .get_leaf_at(action.key, u64::from(root_idx))
+                    .map_err(MptError::from)?
                     .unwrap_or(TrieLeaf::new(action.key, pathfinder_crypto::Felt::ZERO));
 
                 let (mut storage, _trie, root_idx) = Trie::load_from_root(action.trie_root, &conn)?;
@@ -57,7 +62,7 @@ pub async fn get_state_proofs(
                 }));
             }
             Action::Write(action) => {
-                let conn = state.get_connection(action.trie_label)?;
+                let conn = state.get_connection(action.trie_label).map_err(MptError::from)?;
                 let (mut storage, mut trie, prev_root_idx) = if action.trie_root == Felt::ZERO {
                     Trie::create_empty(&conn)?
                 } else {
@@ -66,7 +71,8 @@ pub async fn get_state_proofs(
 
                 storage.max_root_idx = u64::from(prev_root_idx);
                 let pre_leaf = storage
-                    .get_leaf_at(action.key, u64::from(prev_root_idx))?
+                    .get_leaf_at(action.key, u64::from(prev_root_idx))
+                    .map_err(MptError::from)?
                     .unwrap_or(TrieLeaf::new(action.key, pathfinder_crypto::Felt::ZERO));
 
                 let pre_proof = if action.trie_root == Felt::ZERO {
@@ -76,8 +82,9 @@ pub async fn get_state_proofs(
                 };
 
                 let post_leaf = TrieLeaf::new(action.key, action.value);
-                trie.set(&storage, post_leaf.get_path(), post_leaf.data.value)?;
-                let update = trie.commit(&storage)?;
+                trie.set(&storage, post_leaf.get_path(), post_leaf.data.value)
+                    .map_err(MptError::from)?;
+                let update = trie.commit(&storage).map_err(MptError::from)?;
 
                 let post_root_idx = storage.get_node_idx_by_hash(update.root_commitment)?;
 
