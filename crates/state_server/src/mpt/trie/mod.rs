@@ -49,7 +49,7 @@ impl Trie {
         conn: &'a PooledConnection<SqliteConnectionManager>,
     ) -> Result<(TrieDB<'a>, MerkleTree<TruncatedKeccakHash, 251>, TrieStorageIndex), Error> {
         let storage = TrieDB::new(conn);
-        let root_idx_u64 = storage.get_node_idx_by_hash(root)?.ok_or(Error::MissingNodeIndex)?;
+        let root_idx_u64 = storage.get_node_idx_by_hash(root)?;
         let root_idx = TrieStorageIndex::from(root_idx_u64);
         let trie = MerkleTree::<TruncatedKeccakHash, 251>::new(root_idx);
 
@@ -84,7 +84,7 @@ impl Trie {
             return Ok(vec![]);
         }
 
-        let root_idx = storage.get_node_idx_by_hash(root)?.ok_or(Error::MissingNodeIndex)?;
+        let root_idx = storage.get_node_idx_by_hash(root)?;
 
         MerkleTree::<TruncatedKeccakHash, 251>::get_proof(root_idx.into(), storage, &key_bits).map_err(Error::GetProof)
     }
@@ -213,7 +213,7 @@ impl Trie {
         // Determine the final root index before persisting leaves
         let final_root_idx = if let Some(root_idx) = root_index {
             root_idx
-        } else if let Some(idx) = storage.get_node_idx_by_hash(update.root_commitment)?.map(TrieStorageIndex::from) {
+        } else if let Ok(idx) = storage.get_node_idx_by_hash(update.root_commitment).map(TrieStorageIndex::from) {
             idx
         } else {
             // Fallback: create a placeholder root node so that subsequent look-ups succeed.

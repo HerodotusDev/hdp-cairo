@@ -130,10 +130,10 @@ impl<'a> TrieDB<'a> {
     /// # Returns
     ///
     /// Returns `Ok(Some(index))` if the hash is found, `Ok(None)` otherwise.
-    pub fn get_node_idx_by_hash(&self, hash: Felt) -> Result<Option<u64>, Error> {
+    pub fn get_node_idx_by_hash(&self, hash: Felt) -> Result<u64, Error> {
         let mut stmt = self.conn.prepare_cached("SELECT trie_idx FROM trie_nodes WHERE hash = ?")?;
 
-        let index: Option<u64> = stmt.query_row(params![hash.to_be_bytes().to_vec()], |row| row.get(0)).optional()?;
+        let index: u64 = stmt.query_row(params![hash.to_be_bytes().to_vec()], |row| row.get(0))?;
 
         Ok(index)
     }
