@@ -1,11 +1,11 @@
 use clap::Parser;
-use state_server::{create_router, AppState};
+use state_server::{create_router, AppState, Error};
 use tokio::net::TcpListener;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 
 /// Binds to the given host and port and starts the axum server.
-pub async fn start_server(port: u16, host: &str, db_root_path: &str) -> anyhow::Result<()> {
+pub async fn start_server(port: u16, host: &str, db_root_path: &str) -> Result<(), Error> {
     // Initialize the logger/subscriber.
     tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init();
 
@@ -38,7 +38,7 @@ struct Args {
 }
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> Result<(), Error> {
     let args = Args::parse();
 
     if let Err(e) = start_server(args.port, &args.host, &args.db_root_path).await {
