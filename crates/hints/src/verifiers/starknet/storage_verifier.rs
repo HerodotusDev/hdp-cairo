@@ -91,7 +91,7 @@ pub fn hint_set_contract_address(
 }
 
 pub const HINT_SET_STORAGE_ADDRESSES: &str =
-    "segments.write_arg(ids.storage_addresses, [int(x, 16) for x in storage_starknet.storage_addresses]))";
+    "segments.write_arg(ids.storage_addresses, [int(x, 16) for x in storage_starknet.storage_addresses])";
 
 pub fn hint_set_storage_addresses(
     vm: &mut VirtualMachine,

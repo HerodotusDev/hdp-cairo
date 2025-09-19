@@ -11,7 +11,7 @@ use sound_hint_processor as _;
 use sound_run::{Args, HDP_COMPILED_JSON};
 use tracing as _;
 use tracing_subscriber::EnvFilter;
-use types::{error::Error, param::Param, CasmContractClass, ChainProofs, HDPInput};
+use types::{error::Error, param::Param, CasmContractClass, HDPInput, InjectedState, ProofsData};
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 1)]
 async fn main() -> Result<(), Error> {
@@ -26,14 +26,21 @@ async fn main() -> Result<(), Error> {
     } else {
         Vec::new()
     };
-    let chain_proofs: Vec<ChainProofs> = serde_json::from_slice(&std::fs::read(args.proofs).map_err(Error::IO)?)?;
+    let injected_state: InjectedState = if let Some(path) = args.injected_state {
+        serde_json::from_slice(&std::fs::read(path).map_err(Error::IO)?)?
+    } else {
+        InjectedState::default()
+    };
+    let proofs_data: ProofsData = serde_json::from_slice(&std::fs::read(args.proofs).map_err(Error::IO)?)?;
 
     let (pie, output) = sound_run::run(
         args.program.unwrap_or(PathBuf::from(HDP_COMPILED_JSON)),
         HDPInput {
-            chain_proofs,
+            chain_proofs: proofs_data.chain_proofs,
             compiled_class,
             params,
+            state_proofs: proofs_data.state_proofs,
+            injected_state,
         },
     )?;
 

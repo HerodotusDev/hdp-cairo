@@ -76,6 +76,7 @@ func call_execute_syscalls{
     starknet_memorizer: DictAccess*,
     starknet_decoder_ptr: felt***,
     starknet_key_hasher_ptr: felt**,
+    injected_state_memorizer: DictAccess*,
 }(execution_context: ExecutionContext*, syscall_ptr_end: felt*, dry_run: felt) {
     alloc_locals;
     let (__fp__, _) = get_fp_and_pc();
@@ -162,6 +163,7 @@ func execute_entry_point{
     starknet_memorizer: DictAccess*,
     starknet_decoder_ptr: felt***,
     starknet_key_hasher_ptr: felt**,
+    injected_state_memorizer: DictAccess*,
 }(compiled_class: CompiledClass*, execution_context: ExecutionContext*, dry_run: felt) -> (
     retdata_size: felt, retdata: felt*
 ) {
@@ -180,16 +182,6 @@ func execute_entry_point{
     let entry_point_offset = compiled_class_entry_point.offset;
     local range_check_ptr = range_check_ptr;
     local contract_entry_point: felt* = compiled_class.bytecode_ptr + entry_point_offset;
-
-    %{
-        if '__dict_manager' not in globals():
-            __dict_manager = DictManager()
-    %}
-
-    %{
-        if 'syscall_handler' not in globals():
-            syscall_handler = SyscallHandler(segments=segments, dict_manager=__dict_manager)
-    %}
 
     tempvar syscall_ptr: felt* = nondet %{ segments.add() %};
 
@@ -275,7 +267,7 @@ func execute_entry_point{
     //     segment_size = rc96_ptr.offset
     //     base = rc96_ptr - segment_size
 
-    //     for i in range(segment_size):
+    // for i in range(segment_size):
     //         memory.setdefault(base + i, 0)
     // %}
 

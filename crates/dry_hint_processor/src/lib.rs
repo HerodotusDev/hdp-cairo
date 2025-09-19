@@ -30,6 +30,8 @@ use syscall_handler::{evm, starknet};
 use tokio::{runtime::Handle, task};
 use types::HDPDryRunInput;
 
+use crate::syscall_handler::injected_state;
+
 pub struct CustomHintProcessor {
     inputs: HDPDryRunInput,
     builtin_hint_proc: BuiltinHintProcessor,
@@ -53,7 +55,6 @@ impl CustomHintProcessor {
     fn hints() -> HashMap<String, HintImpl> {
         let mut hints = hints();
         hints.insert(syscall_handler::ENTER_SCOPE_SYSCALL_HANDLER.into(), syscall_handler::enter_scope_syscall_handler);
-        hints.insert(syscall_handler::SYSCALL_HANDLER_CREATE_MOCK.into(), syscall_handler::syscall_handler_create_mock);
         hints.insert(syscall_handler::SYSCALL_HANDLER_CREATE.into(), syscall_handler::syscall_handler_create);
         hints.insert(syscall_handler::SYSCALL_HANDLER_SET_SYSCALL_PTR.into(), syscall_handler::syscall_handler_set_syscall_ptr);
         hints
@@ -115,10 +116,11 @@ impl HintProcessorLogic for CustomHintProcessor {
         if let Some(hint) = hint_data.downcast_ref::<Hint>() {
             if let Hint::Starknet(StarknetHint::SystemCall { system }) = hint {
                 let syscall_ptr = get_ptr_from_res_operand(vm, system)?;
-                let syscall_handler = exec_scopes
-                    .get_mut_ref::<SyscallHandlerWrapper<evm::CallContractHandler, starknet::CallContractHandler>>(
-                        vars::scopes::SYSCALL_HANDLER,
-                    )?;
+                let syscall_handler = exec_scopes.get_mut_ref::<SyscallHandlerWrapper<
+                    evm::CallContractHandler,
+                    starknet::CallContractHandler,
+                    injected_state::CallContractHandler,
+                >>(vars::scopes::SYSCALL_HANDLER)?;
                 return task::block_in_place(|| {
                     Handle::current().block_on(async {
                         syscall_handler

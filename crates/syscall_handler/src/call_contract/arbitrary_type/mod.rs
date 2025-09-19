@@ -18,10 +18,8 @@ impl traits::SyscallHandler for ArbitraryTypeCallContractHandler {
     type Request = CallContractRequest;
     type Response = CallContractResponse;
 
-    fn read_request(&mut self, vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Request> {
-        let ret = Self::Request::from_memory(vm, *ptr)?;
-        *ptr = (*ptr + Self::Request::cairo_size())?;
-        Ok(ret)
+    fn read_request(&mut self, _vm: &VirtualMachine, _ptr: &mut Relocatable) -> SyscallResult<Self::Request> {
+        unreachable!()
     }
 
     async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
@@ -41,9 +39,7 @@ impl traits::SyscallHandler for ArbitraryTypeCallContractHandler {
         })
     }
 
-    fn write_response(&mut self, response: Self::Response, vm: &mut VirtualMachine, ptr: &mut Relocatable) -> WriteResponseResult {
-        response.to_memory(vm, *ptr)?;
-        *ptr = (*ptr + Self::Response::cairo_size())?;
-        Ok(())
+    fn write_response(&mut self, _response: Self::Response, _vm: &mut VirtualMachine, _ptr: &mut Relocatable) -> WriteResponseResult {
+        unreachable!()
     }
 }

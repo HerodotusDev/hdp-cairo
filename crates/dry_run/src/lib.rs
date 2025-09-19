@@ -13,7 +13,7 @@ use cairo_vm::{
 use clap::Parser;
 use dotenvy as _;
 use dry_hint_processor::{
-    syscall_handler::{evm, starknet},
+    syscall_handler::{evm, injected_state, starknet},
     CustomHintProcessor,
 };
 use hints::vars;
@@ -36,6 +36,12 @@ pub struct Args {
     #[arg(short = 'i', long = "inputs", help = "Path to the JSON file containing input parameters")]
     pub inputs: Option<PathBuf>,
     #[arg(
+        short = 's',
+        long = "injected_state",
+        help = "Path to the JSON file containing injected_state parameters"
+    )]
+    pub injected_state: Option<PathBuf>,
+    #[arg(
         short = 'o',
         long = "output",
         default_value = "dry_run_output.json",
@@ -57,7 +63,7 @@ pub fn run(
     input: HDPDryRunInput,
 ) -> Result<
     (
-        SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler>,
+        SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>,
         HDPDryRunOutput,
     ),
     Error,
@@ -79,7 +85,9 @@ pub fn run(
 
     let syscall_handler = cairo_runner
         .exec_scopes
-        .get::<SyscallHandlerWrapper<evm::CallContractHandler, starknet::CallContractHandler>>(vars::scopes::SYSCALL_HANDLER)
+        .get::<SyscallHandlerWrapper<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>>(
+            vars::scopes::SYSCALL_HANDLER,
+        )
         .unwrap()
         .syscall_handler
         .try_read()

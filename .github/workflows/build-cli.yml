@@ -37,18 +37,18 @@ jobs:
         with:
           submodules: true
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.9"
+          enable-cache: true
 
       - name: Set up Cairo
-        run: make
+        run: uv sync
       
       - name: Build
         run: |
-          venv/bin/cairo-compile --cairo_path=packages/eth_essentials src/hdp.cairo --output sound_run_compiled.json --no_debug_info
-          venv/bin/cairo-compile --cairo_path=packages/eth_essentials src/contract_bootloader/contract_dry_run.cairo --output dry_run_compiled.json --no_debug_info
+          .venv/bin/cairo-compile --cairo_path=packages/eth_essentials src/hdp.cairo --output sound_run_compiled.json --no_debug_info
+          .venv/bin/cairo-compile --cairo_path=packages/eth_essentials src/contract_bootloader/contract_dry_run.cairo --output dry_run_compiled.json --no_debug_info
 
       - name: Upload to release
         uses: svenstaro/upload-release-action@v2
@@ -96,10 +96,10 @@ jobs:
         with:
           submodules: true
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.9"
+          enable-cache: true
 
       - name: Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -118,8 +118,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ matrix.platform.os }}-cargo-
 
-      - name: Set up Cairo
-        run: make
+      - name: Set up Cairo (Linux)
+        if: runner.os == 'Linux'
+        run: uv sync
+
+      - name: Set up Cairo (macOS)
+        if: runner.os == 'macOS'
+        run: CFLAGS=-I/opt/homebrew/opt/gmp/include LDFLAGS=-L/opt/homebrew/opt/gmp/lib uv sync
       
       - name: Build
         uses: actions-rs/cargo@v1
@@ -145,10 +150,10 @@ jobs:
         with:
           submodules: true
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.9"
+          enable-cache: true
 
       - name: Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -167,7 +172,7 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Set up Cairo
-        run: make
+        run: uv sync
 
       - name: Get Program Hash
         run: |

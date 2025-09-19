@@ -8,11 +8,11 @@ use cairo_vm::{
     Felt252,
 };
 use hints::vars;
-use types::{param, ChainProofs};
+use types::{param, proofs::injected_state::StateProofs, ChainProofs, InjectedState};
 
 use super::CustomHintProcessor;
 
-pub const HINT_INPUT: &str = "run_input = HDPInput.Schema().load(program_input)\nchain_proofs = run_input.proofs\nparams = run_input.params\ncompiled_class = run_input.compiled_class";
+pub const HINT_INPUT: &str = "run_input = HDPInput.Schema().load(program_input)\nparams = run_input.params\ncompiled_class = run_input.compiled_class\ninjected_state = run_input.injected_state\nchain_proofs = run_input.proofs_data.chain_proofs\nstate_proofs = run_input.proofs_data.state_proofs";
 
 impl CustomHintProcessor {
     pub fn hint_input(
@@ -22,7 +22,6 @@ impl CustomHintProcessor {
         _hint_data: &HintProcessorData,
         _constants: &HashMap<String, Felt252>,
     ) -> Result<(), HintError> {
-        exec_scopes.insert_value::<Vec<ChainProofs>>(vars::scopes::CHAIN_PROOFS, self.inputs.chain_proofs.to_owned());
         exec_scopes.insert_value::<Vec<Felt252>>(
             vars::scopes::PUBLIC_INPUTS,
             self.inputs
@@ -46,6 +45,9 @@ impl CustomHintProcessor {
                 .collect(),
         );
         exec_scopes.insert_value::<CasmContractClass>(vars::scopes::COMPILED_CLASS, self.inputs.compiled_class.to_owned());
+        exec_scopes.insert_value::<InjectedState>(vars::scopes::INJECTED_STATE, self.inputs.injected_state.to_owned());
+        exec_scopes.insert_value::<Vec<ChainProofs>>(vars::scopes::CHAIN_PROOFS, self.inputs.chain_proofs.to_owned());
+        exec_scopes.insert_value::<StateProofs>(vars::scopes::STATE_PROOFS, self.inputs.state_proofs.to_owned());
         Ok(())
     }
 }

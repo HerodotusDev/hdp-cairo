@@ -1,10 +1,12 @@
 use std::{cell::RefCell, rc::Rc};
 
 use cairo_vm::{
-    hint_processor::builtin_hint_processor::dict_manager::DictManager, types::relocatable::Relocatable, vm::vm_core::VirtualMachine,
+    hint_processor::builtin_hint_processor::dict_manager::DictManager,
+    types::relocatable::{MaybeRelocatable, Relocatable},
+    vm::vm_core::VirtualMachine,
     Felt252,
 };
-use syscall_handler::{traits::CallHandler, SyscallExecutionError, SyscallResult};
+use syscall_handler::{memorizer::Memorizer, traits::CallHandler, SyscallExecutionError, SyscallResult};
 use types::{
     cairo::{
         evm::transaction::{CairoTransaction, FunctionId},
@@ -13,8 +15,6 @@ use types::{
     },
     keys::evm::transaction::CairoKey,
 };
-
-use crate::syscall_handler::Memorizer;
 
 #[derive(Debug)]
 pub struct TransactionCallHandler {
@@ -52,7 +52,9 @@ impl CallHandler for TransactionCallHandler {
     }
 
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
-        let ptr = self.memorizer.read_key(key.hash(), self.dict_manager.clone())?;
+        let ptr = self
+            .memorizer
+            .read_key_ptr(&MaybeRelocatable::Int(key.hash()), self.dict_manager.clone())?;
         let mut data = vm.get_integer(ptr)?.to_bytes_le().to_vec();
 
         let tx_type = data[0];

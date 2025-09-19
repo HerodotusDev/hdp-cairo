@@ -2,7 +2,7 @@ use std::{env, fs, path::PathBuf, process::Command};
 
 fn main() {
     let workspace_root = PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR is not set")).join("../");
-    let python_path = workspace_root.join("venv/bin");
+    let python_path = workspace_root.join(".venv/bin");
     let cairo_path = workspace_root.join("packages/eth_essentials");
     let src_dir = workspace_root.join("src");
     let output_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR is not set")).join("cairo");

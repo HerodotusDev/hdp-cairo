@@ -31,6 +31,12 @@ pub struct Args {
     #[arg(short = 'i', long = "inputs", help = "Path to the JSON file containing input parameters")]
     pub inputs: Option<PathBuf>,
     #[arg(
+        short = 's',
+        long = "injected_state",
+        help = "Path to the JSON file containing injected_state parameters"
+    )]
+    pub injected_state: Option<PathBuf>,
+    #[arg(
         long = "proofs",
         default_value = "proofs.json",
         help = "Path to the program proofs file (fetch-proof output)"
@@ -54,7 +60,7 @@ pub fn run(program_path: PathBuf, input: HDPInput) -> Result<(CairoPie, HDPOutpu
         ..Default::default()
     };
 
-    println!("Program path: {}", program_path.display());
+    debug!("Program path: {}", program_path.display());
     let program_file = std::fs::read(program_path).map_err(Error::IO)?;
     let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))?;
 

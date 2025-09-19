@@ -12,10 +12,11 @@ pub mod proofs;
 
 use std::{fmt, str::FromStr};
 
+use alloy::primitives::map::HashMap;
 pub use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 pub use cairo_vm::{vm::runners::cairo_pie::CairoPie, Felt252};
 use param::Param;
-use proofs::{evm, starknet};
+use proofs::{evm, injected_state::StateProofs, starknet};
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
 
@@ -33,17 +34,29 @@ pub const STARKNET_MAINNET_CHAIN_ID: u128 = 0x534e5f4d41494e;
 pub const STARKNET_TESTNET_CHAIN_ID: u128 = 0x534e5f5345504f4c4941;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ProofsData {
+    pub chain_proofs: Vec<ChainProofs>,
+    pub state_proofs: StateProofs,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct HDPDryRunInput {
     pub params: Vec<Param>,
     pub compiled_class: CasmContractClass,
+    pub injected_state: InjectedState,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct HDPInput {
-    pub chain_proofs: Vec<ChainProofs>,
     pub params: Vec<Param>,
     pub compiled_class: CasmContractClass,
+    pub injected_state: InjectedState,
+    pub chain_proofs: Vec<ChainProofs>,
+    pub state_proofs: StateProofs,
 }
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default)]
+pub struct InjectedState(pub HashMap<Felt252, Felt252>);
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ChainProofs {

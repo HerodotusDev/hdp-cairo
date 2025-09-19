@@ -17,13 +17,14 @@ from starkware.cairo.common.builtin_keccak.keccak import keccak_felts
 from starkware.cairo.common.registers import get_label_location
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash_many, poseidon_hash
 
-from src.verifiers.verify import run_state_verification
+from src.verifiers.verify import run_chain_state_verification
+from src.verifiers.verify import run_injected_state_verification
 from src.utils.merkle import compute_merkle_root
 from src.types import MMRMeta
 from src.utils.utils import mmr_metas_write_output_ptr, felt_array_to_uint256s
 from src.memorizers.evm.memorizer import EvmMemorizer
 from src.memorizers.starknet.memorizer import StarknetMemorizer
-from src.memorizers.bare import BareMemorizer, SingleBareMemorizer
+from src.memorizers.bare import BareMemorizer
 from src.memorizers.evm.state_access import EvmStateAccess, EvmDecoder
 from src.memorizers.starknet.state_access import StarknetStateAccess, StarknetDecoder
 from src.utils.chain_info import Layout
@@ -31,6 +32,7 @@ from src.utils.merkle import compute_tasks_hash, compute_tasks_root, compute_res
 from src.utils.chain_info import fetch_chain_info
 from src.contract_bootloader.contract import compute_contract
 from starkware.cairo.common.memcpy import memcpy
+from src.memorizers.injected_state.memorizer import InjectedStateMemorizer, InjectedStateHashParams
 
 from packages.eth_essentials.lib.utils import pow2alloc251, write_felt_array_to_dict_keys
 
@@ -81,9 +83,11 @@ func run{
 
     %{
         run_input = HDPInput.Schema().load(program_input)
-        chain_proofs = run_input.proofs
         params = run_input.params
         compiled_class = run_input.compiled_class
+        injected_state = run_input.injected_state
+        chain_proofs = run_input.proofs_data.chain_proofs
+        state_proofs = run_input.proofs_data.state_proofs
     %}
 
     let (public_inputs) = alloc();
@@ -102,6 +106,28 @@ func run{
     // Memorizers
     let (evm_memorizer, evm_memorizer_start) = EvmMemorizer.init();
     let (starknet_memorizer, starknet_memorizer_start) = StarknetMemorizer.init();
+    let (injected_state_memorizer, injected_state_memorizer_start) = InjectedStateMemorizer.init();
+
+    %{
+        if '__dict_manager' not in globals():
+            __dict_manager = DictManager()
+    %}
+
+    let (injected_state_keys) = alloc();
+    let (injected_state_values) = alloc();
+    tempvar injected_state_len: felt = nondet %{ len(injected_states.entries()) %};
+    %{
+        segments.write_arg(ids.injected_state_keys, injected_states.keys())
+        segments.write_arg(ids.injected_state_values, injected_states.values())
+    %}
+    with injected_state_memorizer {
+        injected_state_load_loop(
+            keys=injected_state_keys, values=injected_state_values, n=injected_state_len
+        );
+    }
+
+    %{ injected_state_memorizer.set_key(poseidon_hash_many(LABEL_RUNTIME, key), value) for (key, value) in injected_states %}
+    %{ syscall_handler = SyscallHandler(segments=segments, dict_manager=__dict_manager) %}
 
     // Misc
     let pow2_array: felt* = pow2alloc251();
@@ -109,7 +135,7 @@ func run{
     // MMR Params
     let (mmr_metas: MMRMeta*) = alloc();
 
-    let (mmr_metas_len) = run_state_verification{
+    let (mmr_metas_len) = run_chain_state_verification{
         range_check_ptr=range_check_ptr,
         pedersen_ptr=pedersen_ptr,
         poseidon_ptr=poseidon_ptr,
@@ -118,7 +144,17 @@ func run{
         pow2_array=pow2_array,
         evm_memorizer=evm_memorizer,
         starknet_memorizer=starknet_memorizer,
+        injected_state_memorizer=injected_state_memorizer,
         mmr_metas=mmr_metas,
+    }();
+
+    run_injected_state_verification{
+        range_check_ptr=range_check_ptr,
+        keccak_ptr=keccak_ptr,
+        poseidon_ptr=poseidon_ptr,
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array,
+        injected_state_memorizer=injected_state_memorizer,
     }();
 
     let evm_key_hasher_ptr = EvmStateAccess.init();
@@ -144,12 +180,16 @@ func run{
         starknet_memorizer=starknet_memorizer,
         starknet_decoder_ptr=starknet_decoder_ptr,
         starknet_key_hasher_ptr=starknet_key_hasher_ptr,
+        injected_state_memorizer=injected_state_memorizer,
     }(module_inputs, module_inputs_len);
 
     // Post Verification Checks: Ensure dict consistency
     default_dict_finalize(evm_memorizer_start, evm_memorizer, BareMemorizer.DEFAULT_VALUE);
     default_dict_finalize(
         starknet_memorizer_start, starknet_memorizer, BareMemorizer.DEFAULT_VALUE
+    );
+    default_dict_finalize(
+        injected_state_memorizer_start, injected_state_memorizer, BareMemorizer.DEFAULT_VALUE
     );
 
     let (task_hash_preimage) = alloc();
@@ -176,4 +216,23 @@ func run{
     );
 
     return ();
+}
+
+func injected_state_load_loop{
+    poseidon_ptr: PoseidonBuiltin*, injected_state_memorizer: DictAccess*
+}(keys: felt*, values: felt*, n: felt) {
+    alloc_locals;
+
+    if (n == 0) {
+        return ();
+    }
+
+    let memorizer_key = InjectedStateHashParams.label{poseidon_ptr=poseidon_ptr}(label=keys[n - 1]);
+
+    let (local data_ptr: felt*) = alloc();
+    assert [data_ptr] = values[n - 1];
+
+    InjectedStateMemorizer.add(key=memorizer_key, data=data_ptr);
+
+    return injected_state_load_loop(keys=keys, values=values, n=n - 1);
 }

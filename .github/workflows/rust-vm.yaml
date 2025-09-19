@@ -20,10 +20,10 @@ jobs:
         with:
           submodules: true
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.9"
+          enable-cache: true
 
       - name: Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -48,8 +48,13 @@ jobs:
       - name: Set up Scarb
         uses: software-mansion/setup-scarb@v1
 
-      - name: Set up Cairo
-        run: make
+      - name: Set up Cairo (Linux)
+        if: runner.os == 'Linux'
+        run: uv sync
+
+      - name: Set up Cairo (macOS)
+        if: runner.os == 'macOS'
+        run: CFLAGS=-I/opt/homebrew/opt/gmp/include LDFLAGS=-L/opt/homebrew/opt/gmp/lib uv sync
 
       - name: Run fmt check
         run: cargo fmt --all -- --check
@@ -74,13 +79,19 @@ jobs:
         with:
           submodules: true
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.9"
+          enable-cache: true
 
       - name: Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Install Nextest
+        uses: taiki-e/install-action@nextest
+      
+      - name: Set up Scarb
+        uses: software-mansion/setup-scarb@v1
 
       - name: Cargo Cache
         uses: actions/cache@v3
@@ -99,14 +110,13 @@ jobs:
             ${{ runner.os }}-cargo-scarb-
             ${{ runner.os }}-cargo-
 
-      - name: Set up Scarb
-        uses: software-mansion/setup-scarb@v1
+      - name: Set up Cairo (Linux)
+        if: runner.os == 'Linux'
+        run: uv sync
 
-      - name: Set up Cairo
-        run: make
-
-      - name: Install Nextest
-        uses: taiki-e/install-action@nextest
+      - name: Set up Cairo (macOS)
+        if: runner.os == 'macOS'
+        run: CFLAGS=-I/opt/homebrew/opt/gmp/include LDFLAGS=-L/opt/homebrew/opt/gmp/lib uv sync
 
       - name: Build Test Contracts
         run: scarb build

@@ -22,6 +22,11 @@ from src.contract_bootloader.contract_bootloader import (
 from starkware.cairo.common.memcpy import memcpy
 from src.utils.merkle import compute_merkle_root
 from src.utils.utils import felt_array_to_uint256s
+from packages.eth_essentials.lib.utils import pow2alloc251
+from src.memorizers.evm.memorizer import EvmMemorizer
+from src.memorizers.starknet.memorizer import StarknetMemorizer
+from src.memorizers.bare import BareMemorizer
+from src.memorizers.injected_state.memorizer import InjectedStateMemorizer
 
 struct DryRunOutput {
     module_hash: felt,
@@ -44,9 +49,10 @@ func main{
     alloc_locals;
 
     %{
-        dry_run_input = HDPDryRunInput.Schema().load(program_input)
-        params = dry_run_input.params
-        compiled_class = dry_run_input.compiled_class
+        run_input = HDPDryRunInput.Schema().load(program_input)
+        params = run_input.params
+        compiled_class = run_input.compiled_class
+        injected_state = run_input.injected_state
     %}
 
     let (public_inputs) = alloc();
@@ -88,16 +94,21 @@ func main{
         )
     %}
 
-    let (local evm_memorizer) = default_dict_new(default_value=7);
-    let (local starknet_memorizer) = default_dict_new(default_value=7);
-    tempvar pow2_array: felt* = nondet %{ segments.add() %};
+    // Memorizers
+    let (evm_memorizer, evm_memorizer_start) = EvmMemorizer.init();
+    let (starknet_memorizer, starknet_memorizer_start) = StarknetMemorizer.init();
+    let (injected_state_memorizer, injected_state_memorizer_start) = InjectedStateMemorizer.init();
 
     %{
         if '__dict_manager' not in globals():
             __dict_manager = DictManager()
     %}
 
+    %{ injected_state_memorizer.set_key(poseidon_hash_many(LABEL_RUNTIME, key), value) for (key, value) in injected_states %}
     %{ syscall_handler = DryRunSyscallHandler(segments=segments, dict_manager=__dict_manager) %}
+
+    // Misc
+    let pow2_array: felt* = pow2alloc251();
 
     tempvar calldata: felt* = nondet %{ segments.add() %};
 
@@ -105,20 +116,32 @@ func main{
     assert calldata[1] = nondet %{ ids.evm_memorizer.address_.offset %};
     assert calldata[2] = nondet %{ ids.starknet_memorizer.address_.segment_index %};
     assert calldata[3] = nondet %{ ids.starknet_memorizer.address_.offset %};
+    assert calldata[4] = nondet %{ ids.injected_state_memorizer.address_.segment_index %};
+    assert calldata[5] = nondet %{ ids.injected_state_memorizer.address_.offset %};
 
-    memcpy(dst=calldata + 4, src=module_inputs, len=module_inputs_len);
-    let calldata_size = 4 + module_inputs_len;
+    memcpy(dst=calldata + 6, src=module_inputs, len=module_inputs_len);
+    let calldata_size = 6 + module_inputs_len;
 
     let (evm_decoder_ptr: felt**) = alloc();
     let (starknet_decoder_ptr: felt***) = alloc();
     let (evm_key_hasher_ptr: felt**) = alloc();
     let (starknet_key_hasher_ptr: felt**) = alloc();
+    let (injected_state_memorizer_ptr: felt**) = alloc();
 
-    with evm_memorizer, starknet_memorizer, pow2_array, evm_decoder_ptr, starknet_decoder_ptr, evm_key_hasher_ptr, starknet_key_hasher_ptr {
+    with evm_memorizer, starknet_memorizer, injected_state_memorizer, pow2_array, evm_decoder_ptr, starknet_decoder_ptr, evm_key_hasher_ptr, starknet_key_hasher_ptr, injected_state_memorizer_ptr {
         let (retdata_size, retdata) = run_contract_bootloader(
             compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata, dry_run=1
         );
     }
+
+    // Post Verification Checks: Ensure dict consistency
+    default_dict_finalize(evm_memorizer_start, evm_memorizer, BareMemorizer.DEFAULT_VALUE);
+    default_dict_finalize(
+        starknet_memorizer_start, starknet_memorizer, BareMemorizer.DEFAULT_VALUE
+    );
+    default_dict_finalize(
+        injected_state_memorizer_start, injected_state_memorizer, BareMemorizer.DEFAULT_VALUE
+    );
 
     let (task_hash_preimage) = alloc();
     assert task_hash_preimage[0] = module_hash;
@@ -127,15 +150,15 @@ func main{
 
     let (taskHash) = keccak_felts(task_hash_preimage_len, task_hash_preimage);
 
-    assert[output_ptr] = taskHash.low;
-    assert[output_ptr + 1] = taskHash.high;
+    assert [output_ptr] = taskHash.low;
+    assert [output_ptr + 1] = taskHash.high;
     let output_ptr = output_ptr + 2;
-    
+
     let (leafs: Uint256*) = alloc();
     felt_array_to_uint256s(counter=retdata_size, retdata=retdata, leafs=leafs);
     let output_root = compute_merkle_root(leafs, retdata_size);
-    assert[output_ptr + 0] = output_root.low;
-    assert[output_ptr + 1] = output_root.high;
+    assert [output_ptr + 0] = output_root.low;
+    assert [output_ptr + 1] = output_root.high;
     let output_ptr = output_ptr + 2;
 
     return ();

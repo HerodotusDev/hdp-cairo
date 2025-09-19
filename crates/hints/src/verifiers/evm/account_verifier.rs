@@ -39,7 +39,7 @@ pub fn hint_batch_accounts_len(
 }
 
 pub const HINT_GET_ACCOUNT_ADDRESS: &str =
-    "account_evm = batch_evm.accounts[ids.idx]\nsegments.write_arg(ids.address, [int(x, 16) for x in account_evm.address]))";
+    "account_evm = batch_evm.accounts[ids.idx]\nsegments.write_arg(ids.address, [int(x, 16) for x in account_evm.address])";
 
 pub fn hint_get_account_address(
     vm: &mut VirtualMachine,
