@@ -1,42 +1,47 @@
-# Virtual Environment
+# --- General ---
+.DS_Store
+*.log
+*.db
+*.sqlite3
+
+# --- Environments ---
+.env
+.venv/
 venv/
+.uv-cache/
 
-# Python Artifacts
+# --- Python ---
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
 *.egg-info/
-*.pickle
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
-# Build Artifacts
+# --- Rust & Scarb ---
+target/
+.snfoundry_cache/
+Cargo.lock
+
+# --- Build Artifacts ---
 build/
 dist/
-
-# Environment Files
-*.env
-!example.env
-
-# Miscellaneous
-.idea/
-.vscode/
 *.zip
 *.json
-*.db
-*.log
-cache/
-out/
-.gas-snapshot
-.encryptedKey
-broadcast/
-*.memory
-*.trace
 
-# Whitelist - these files should not be ignored
-!*_contract.json
+# --- IDEs ---
+.idea/
+.vscode/
+
+# --- Whitelist ---
+# Keep specific files that would otherwise be ignored
+!example.env
 !packages/cairo-lang-0.13.3.zip
-
-# Scarb & snfoundry
-target
-.snfoundry_cache/
-.cargo/config.toml
-
 !examples/**/*.json
 !crates/server/tests/*.json
+
+# State server db folder
+crates/state_server/db
+db

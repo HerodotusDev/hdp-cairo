@@ -1,5 +1,6 @@
 pub mod evm;
 pub mod hashers;
+pub mod injected_state;
 pub mod starknet;
 pub mod utils;
 

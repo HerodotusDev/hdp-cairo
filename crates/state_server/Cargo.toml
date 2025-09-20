@@ -1,0 +1,50 @@
+[package]
+name = "state_server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+alloy-rlp.workspace = true
+alloy.workspace = true
+anyhow.workspace = true
+axum.workspace = true
+bincode.workspace = true
+bitvec.workspace = true
+chrono.workspace = true
+clap.workspace = true
+dashmap.workspace = true
+eth_trie.workspace = true
+hex.workspace = true
+http-body-util.workspace = true
+pathfinder-common.workspace = true
+pathfinder-crypto.workspace = true
+pathfinder-merkle-tree.workspace = true
+pathfinder-storage.workspace = true
+primitive-types.workspace = true
+r2d2_sqlite.workspace = true
+r2d2.workspace = true
+rand.workspace = true
+reqwest.workspace = true
+rusqlite.workspace = true
+serde_json.workspace = true
+serde_with.workspace = true
+serde.workspace = true
+sha3.workspace = true
+starknet-types-core.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tower-http.workspace = true
+tower.workspace = true
+tracing-subscriber.workspace = true
+tracing.workspace = true
+types.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+tower.workspace = true
+urlencoding = "2.1"
+http-body-util = "0.1.2"
+
+[[test]]
+name = "api"
+path = "tests/api/mod.rs"

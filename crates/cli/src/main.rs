@@ -8,12 +8,15 @@ use std::{fs, path::PathBuf};
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use cairo_vm::{cairo_run, program_hash::compute_program_hash_chain};
 use clap::{Parser, Subcommand};
-use dry_hint_processor::syscall_handler::{evm, starknet};
+use dry_hint_processor::syscall_handler::{evm, injected_state, starknet};
 use dry_run::{Program, DRY_RUN_COMPILED_JSON};
-use fetcher::run_fetcher;
+use fetcher::{parse_syscall_handler, Fetcher};
 use sound_run::HDP_COMPILED_JSON;
 use syscall_handler::SyscallHandler;
-use types::{error::Error, param::Param, ChainProofs, HDPDryRunInput, HDPInput};
+use types::{
+    error::Error, param::Param, ChainProofs, HDPDryRunInput, HDPInput, InjectedState, ProofsData, ETHEREUM_MAINNET_CHAIN_ID,
+    ETHEREUM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
+};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about)]
@@ -60,11 +63,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             } else {
                 Vec::new()
             };
+            let injected_state: InjectedState = if let Some(path) = args.injected_state {
+                serde_json::from_slice(&std::fs::read(path).map_err(Error::IO)?)?
+            } else {
+                InjectedState::default()
+            };
 
             println!("Executing program...");
             let (syscall_handler, output) = dry_run::run(
                 args.program.unwrap_or(PathBuf::from(DRY_RUN_COMPILED_JSON)),
-                HDPDryRunInput { compiled_class, params },
+                HDPDryRunInput {
+                    compiled_class,
+                    params,
+                    injected_state,
+                },
             )?;
 
             if args.print_output {
@@ -73,8 +85,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             std::fs::write(
                 args.output,
-                serde_json::to_vec::<SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler>>(&syscall_handler)
-                    .map_err(|e| Error::IO(e.into()))?,
+                serde_json::to_vec::<
+                    SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>,
+                >(&syscall_handler)
+                .map_err(|e| Error::IO(e.into()))?,
             )
             .map_err(Error::IO)?;
 
@@ -87,15 +101,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("Reading input file from: {}", args.inputs.display());
             let input_file = fs::read(&args.inputs)?;
 
-            let syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler> =
-                serde_json::from_slice(&input_file)?;
+            let syscall_handler: SyscallHandler<
+                evm::CallContractHandler,
+                starknet::CallContractHandler,
+                injected_state::CallContractHandler,
+            > = serde_json::from_slice(&input_file)?;
+            let proof_keys = parse_syscall_handler(syscall_handler)?;
 
-            let chain_proofs = run_fetcher(syscall_handler).await?;
+            let fetcher = Fetcher::new(&proof_keys);
+            let (evm_proofs_mainnet, evm_proofs_sepolia, starknet_proofs_mainnet, starknet_proofs_sepolia, state_proofs) = tokio::try_join!(
+                fetcher.collect_evm_proofs(ETHEREUM_MAINNET_CHAIN_ID),
+                fetcher.collect_evm_proofs(ETHEREUM_TESTNET_CHAIN_ID),
+                fetcher.collect_starknet_proofs(STARKNET_MAINNET_CHAIN_ID),
+                fetcher.collect_starknet_proofs(STARKNET_TESTNET_CHAIN_ID),
+                fetcher.collect_state_proofs(),
+            )?;
+            let chain_proofs = vec![
+                ChainProofs::EthereumMainnet(evm_proofs_mainnet),
+                ChainProofs::EthereumSepolia(evm_proofs_sepolia),
+                ChainProofs::StarknetMainnet(starknet_proofs_mainnet),
+                ChainProofs::StarknetSepolia(starknet_proofs_sepolia),
+            ];
 
             println!("Writing proofs to: {}", args.output.display());
+
             fs::write(
                 args.output,
-                serde_json::to_string_pretty(&chain_proofs)
+                serde_json::to_string_pretty(&(chain_proofs, state_proofs))
                     .map_err(|e| fetcher::FetcherError::IO(e.into()))?
                     .as_bytes(),
             )?;
@@ -114,15 +146,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             } else {
                 Vec::new()
             };
-            let chain_proofs: Vec<ChainProofs> = serde_json::from_slice(&std::fs::read(args.proofs).map_err(Error::IO)?)?;
+            let injected_state: InjectedState = if let Some(path) = args.injected_state {
+                serde_json::from_slice(&std::fs::read(path).map_err(Error::IO)?)?
+            } else {
+                InjectedState::default()
+            };
+            let proofs_data: ProofsData = serde_json::from_slice(&std::fs::read(args.proofs).map_err(Error::IO)?)?;
 
-            println!("Executing program...");
             let (pie, output) = sound_run::run(
                 args.program.unwrap_or(PathBuf::from(HDP_COMPILED_JSON)),
                 HDPInput {
-                    chain_proofs,
+                    chain_proofs: proofs_data.chain_proofs,
                     compiled_class,
                     params,
+                    state_proofs: proofs_data.state_proofs,
+                    injected_state,
                 },
             )?;
 

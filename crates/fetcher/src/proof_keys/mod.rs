@@ -1,6 +1,11 @@
+use std::collections::HashMap;
+
 use alloy::{hex::FromHexError, primitives::Bytes};
 use indexer::{models::accumulators, Indexer};
-use types::proofs::mmr::MmrMeta;
+use types::{
+    proofs::{injected_state::Action, mmr::MmrMeta},
+    Felt252,
+};
 
 use crate::FetcherError;
 
@@ -17,6 +22,7 @@ pub struct FlattenedKey {
 pub struct ProofKeys {
     pub evm: evm::ProofKeys,
     pub starknet: starknet::ProofKeys,
+    pub injected_state: HashMap<Felt252, Vec<Action>>,
 }
 
 impl ProofKeys {

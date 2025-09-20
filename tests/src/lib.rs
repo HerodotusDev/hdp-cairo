@@ -14,6 +14,12 @@ pub mod utils;
 pub mod hashers;
 
 #[cfg(test)]
+pub mod injected_state;
+
+#[cfg(test)]
+pub mod test_state_server;
+
+#[cfg(test)]
 mod test_utils {
     use std::{env, path::PathBuf};
 
@@ -23,16 +29,17 @@ mod test_utils {
         types::{layout_name::LayoutName, program::Program},
         vm::runners::cairo_runner::{CairoRunner, RunnerMode},
     };
-    use dry_hint_processor::syscall_handler::{evm, starknet};
+    use dry_hint_processor::syscall_handler::{evm, injected_state, starknet};
     use fetcher::{proof_keys::ProofKeys, Fetcher};
     use hints::vars;
     use syscall_handler::{SyscallHandler, SyscallHandlerWrapper};
+    use tracing::debug;
     use types::{
-        ChainProofs, HDPDryRunInput, HDPInput, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID,
+        ChainProofs, HDPDryRunInput, HDPInput, InjectedState, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID,
         OPTIMISM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
     };
 
-    pub async fn run(compiled_class: CasmContractClass) {
+    pub async fn run(compiled_class: CasmContractClass, injected_state: InjectedState) {
         // Init CairoRunConfig
         let cairo_run_config = CairoRunConfig {
             layout: LayoutName::all_cairo,
@@ -53,6 +60,7 @@ mod test_utils {
         let program_inputs = HDPDryRunInput {
             params: vec![],
             compiled_class: compiled_class.clone(),
+            injected_state: injected_state.clone(),
         };
 
         // Load the Program
@@ -82,14 +90,19 @@ mod test_utils {
         let mut hint_processor = dry_hint_processor::CustomHintProcessor::new(program_inputs);
         cairo_runner.run_until_pc(end, &mut hint_processor).unwrap();
 
-        let syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler> = cairo_runner
-            .exec_scopes
-            .get::<SyscallHandlerWrapper<evm::CallContractHandler, starknet::CallContractHandler>>(vars::scopes::SYSCALL_HANDLER)
-            .unwrap()
-            .syscall_handler
-            .try_read()
-            .unwrap()
-            .clone();
+        debug!("Dry run completed successfully.");
+
+        let syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler> =
+            cairo_runner
+                .exec_scopes
+                .get::<SyscallHandlerWrapper<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>>(
+                    vars::scopes::SYSCALL_HANDLER,
+                )
+                .unwrap()
+                .syscall_handler
+                .try_read()
+                .unwrap()
+                .clone();
 
         let mut proof_keys = ProofKeys::default();
         for key in syscall_handler.call_contract_handler.evm_call_contract_handler.key_set {
@@ -120,6 +133,11 @@ mod test_utils {
             };
         }
 
+        // Add injected state keys
+        for (root_hash, actions) in syscall_handler.call_contract_handler.injected_state_call_contract_handler.key_set {
+            proof_keys.injected_state.insert(root_hash, actions);
+        }
+
         let fetcher = Fetcher::new(&proof_keys);
         let (
             evm_proofs_mainnet,
@@ -128,6 +146,7 @@ mod test_utils {
             starknet_proofs_sepolia,
             optimism_proofs_mainnet,
             optimism_proofs_sepolia,
+            state_proofs,
         ) = tokio::try_join!(
             fetcher.collect_evm_proofs(ETHEREUM_MAINNET_CHAIN_ID),
             fetcher.collect_evm_proofs(ETHEREUM_TESTNET_CHAIN_ID),
@@ -135,6 +154,7 @@ mod test_utils {
             fetcher.collect_starknet_proofs(STARKNET_TESTNET_CHAIN_ID),
             fetcher.collect_evm_proofs(OPTIMISM_MAINNET_CHAIN_ID),
             fetcher.collect_evm_proofs(OPTIMISM_TESTNET_CHAIN_ID),
+            fetcher.collect_state_proofs(),
         )
         .unwrap();
 
@@ -149,6 +169,8 @@ mod test_utils {
             ],
             params: vec![],
             compiled_class,
+            state_proofs,
+            injected_state: injected_state.clone(),
         };
 
         // Load the Program
@@ -177,5 +199,7 @@ mod test_utils {
         // Run the Cairo VM
         let mut hint_processor = sound_hint_processor::CustomHintProcessor::new(program_inputs);
         cairo_runner.run_until_pc(end, &mut hint_processor).unwrap();
+
+        debug!("Sound run completed successfully.");
     }
 }

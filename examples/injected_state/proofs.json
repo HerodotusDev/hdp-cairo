@@ -1,0 +1,153 @@
+[
+  [
+    {
+      "EthereumMainnet": {
+        "headers_with_mmr": [],
+        "accounts": [],
+        "storages": [],
+        "transactions": [],
+        "transaction_receipts": []
+      }
+    },
+    {
+      "EthereumSepolia": {
+        "headers_with_mmr": [],
+        "accounts": [],
+        "storages": [],
+        "transactions": [],
+        "transaction_receipts": []
+      }
+    },
+    {
+      "StarknetMainnet": {
+        "headers_with_mmr": [],
+        "storages": []
+      }
+    },
+    {
+      "StarknetSepolia": {
+        "headers_with_mmr": [],
+        "storages": []
+      }
+    }
+  ],
+  [
+    {
+      "Write": {
+        "trie_id_prev": 0,
+        "trie_root_prev": "0x0",
+        "state_proof_prev": [],
+        "leaf_prev": {
+          "key": "0x6d795f6b6579",
+          "data": {
+            "value": "0x0"
+          }
+        },
+        "trie_id_post": 1,
+        "trie_root_post": "0xf153c6cd2bc40a4ec675068562f4ddefadc23030",
+        "state_proof_post": [
+          {
+            "Edge": {
+              "child": "0x2a",
+              "path": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                13,
+                175,
+                43,
+                237,
+                108,
+                175,
+                57
+              ],
+              "bit_len": 251
+            }
+          }
+        ],
+        "leaf_post": {
+          "key": "0x6d795f6b6579",
+          "data": {
+            "value": "0x2a"
+          }
+        }
+      }
+    },
+    {
+      "Read": {
+        "trie_id": 1,
+        "trie_root": "0xf153c6cd2bc40a4ec675068562f4ddefadc23030",
+        "state_proof": [
+          {
+            "Edge": {
+              "child": "0x2a",
+              "path": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                13,
+                175,
+                43,
+                237,
+                108,
+                175,
+                57
+              ],
+              "bit_len": 251
+            }
+          }
+        ],
+        "leaf": {
+          "key": "0x6d795f6b6579",
+          "data": {
+            "value": "0x2a"
+          }
+        }
+      }
+    }
+  ]
+]

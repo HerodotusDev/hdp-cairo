@@ -23,10 +23,10 @@ jobs:
         with:
           submodules: true
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.9"
+          enable-cache: true
 
       - name: Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -45,7 +45,7 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Set up Cairo
-        run: make
+        run: uv sync
 
       - name: Setup mdBook
         uses: peaceiris/actions-mdbook@v2

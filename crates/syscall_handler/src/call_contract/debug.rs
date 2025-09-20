@@ -1,10 +1,7 @@
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
 use serde::{Deserialize, Serialize};
 use strum_macros::FromRepr;
-use types::cairo::{
-    new_syscalls::{CallContractRequest, CallContractResponse},
-    traits::CairoType,
-};
+use types::cairo::new_syscalls::{CallContractRequest, CallContractResponse};
 
 use crate::{traits, SyscallExecutionError, SyscallResult, WriteResponseResult};
 
@@ -23,10 +20,8 @@ impl traits::SyscallHandler for DebugCallContractHandler {
     type Request = CallContractRequest;
     type Response = CallContractResponse;
 
-    fn read_request(&mut self, vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Request> {
-        let ret = Self::Request::from_memory(vm, *ptr)?;
-        *ptr = (*ptr + Self::Request::cairo_size())?;
-        Ok(ret)
+    fn read_request(&mut self, _vm: &VirtualMachine, _ptr: &mut Relocatable) -> SyscallResult<Self::Request> {
+        unreachable!()
     }
 
     async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
@@ -66,12 +61,12 @@ impl traits::SyscallHandler for DebugCallContractHandler {
     }
 
     fn write_response(&mut self, _response: Self::Response, _vm: &mut VirtualMachine, _ptr: &mut Relocatable) -> WriteResponseResult {
-        Ok(())
+        unreachable!()
     }
 }
 
 // Decodes a serialized byte array of felts into a ascii string
-fn decode_byte_array_felts(felts: Vec<Felt252>) -> String {
+pub fn decode_byte_array_felts(felts: Vec<Felt252>) -> String {
     // 1) Parse how many full 31-byte chunks we have.
     let n_full: usize = felts[0].try_into().expect("n_full not convertible");
 

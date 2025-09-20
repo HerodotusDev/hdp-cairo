@@ -12,7 +12,11 @@ use std::{
 use alloy::hex::FromHexError;
 use clap::Parser;
 use dotenvy as _;
-use dry_hint_processor::syscall_handler::{evm, starknet};
+use dry_hint_processor::syscall_handler::{
+    evm,
+    injected_state::{self},
+    starknet,
+};
 use eth_trie_proofs::{tx_receipt_trie::TxReceiptsMptHandler, tx_trie::TxsMptHandler};
 use futures::StreamExt;
 use indexer::models::IndexerError;
@@ -20,6 +24,7 @@ use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use proof_keys::{evm::ProofKeys as EvmProofKeys, starknet::ProofKeys as StarknetProofKeys, FlattenedKey, ProofKeys};
 use reqwest::Url;
 use starknet_types_core::felt::FromStrError;
+use state_server::api::proof::{GetStateProofsRequest, GetStateProofsResponse};
 use syscall_handler::SyscallHandler;
 use thiserror::Error;
 use types::{
@@ -30,6 +35,7 @@ use types::{
             Proofs as EvmProofs,
         },
         header::HeaderMmrMeta,
+        injected_state::StateProofs,
         mmr::MmrMeta,
         starknet::{header::Header as StarknetHeader, storage::Storage as StarknetStorage, Proofs as StarknetProofs},
     },
@@ -384,10 +390,35 @@ impl<'a> Fetcher<'a> {
             storages: storages.into_iter().collect(),
         })
     }
+
+    pub async fn collect_state_proofs(&self) -> Result<StateProofs, FetcherError> {
+        let state_server_url = std::env::var("INJECTED_STATE_BASE_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
+        let client = reqwest::Client::new();
+
+        let actions = self.proof_keys.injected_state.clone();
+        let mut result = StateProofs::new();
+
+        for (_trie_label, actions) in actions.into_iter() {
+            let request_payload = GetStateProofsRequest { actions };
+
+            let response = client
+                .post(format!("{}/get_state_proofs", state_server_url))
+                .header("content-type", "application/json")
+                .json(&request_payload)
+                .send()
+                .await?;
+
+            let response_body: GetStateProofsResponse = response.json().await?;
+            let state_proofs = response_body.state_proofs;
+            result.extend(state_proofs);
+        }
+
+        Ok(result)
+    }
 }
 
 pub async fn run_fetcher(
-    syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler>,
+    syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>,
 ) -> Result<Vec<ChainProofs>, FetcherError> {
     let proof_keys = parse_syscall_handler(syscall_handler)?;
     let fetcher = Fetcher::new(&proof_keys);
@@ -435,7 +466,7 @@ where
 }
 
 pub fn parse_syscall_handler(
-    syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler>,
+    syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>,
 ) -> Result<ProofKeys, FetcherError> {
     let mut proof_keys = ProofKeys::default();
 
@@ -456,6 +487,11 @@ pub fn parse_syscall_handler(
             starknet::DryRunKey::Header(value) => proof_keys.starknet.header_keys.insert(value),
             starknet::DryRunKey::Storage(value) => proof_keys.starknet.storage_keys.insert(value),
         };
+    }
+
+    // Process injected state keys
+    for (root_hash, actions) in syscall_handler.call_contract_handler.injected_state_call_contract_handler.key_set {
+        proof_keys.injected_state.insert(root_hash, actions);
     }
 
     Ok(proof_keys)

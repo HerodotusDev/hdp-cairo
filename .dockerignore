@@ -1,36 +1,31 @@
-# Python
-*.pyc
-*.pyo
-*.pyd
-__pycache__
-*.swp
-*.swo
-.Python
-env/
-venv/
-ENV/
-*.egg-info
-.eggs/
-.dist-info
-*.egg
-*.whl
-.build/
-.tox/
-.coverage
-coverage.*
-.cache
-.pytest_cache/
-
-# Rust
-cairo-vm
-hdp-test
-target/
-Cargo.lock
-
-# Docker files
-Dockerfile
-docker-compose.yml
-
-# Version control
-.git/
+# --- Version Control ---
+.git
 .gitignore
+.gitmodules
+
+# --- Documentation ---
+docs/
+README.md
+
+# --- Local Environments & Caches ---
+.venv/
+venv/
+.uv-cache/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# --- Rust & Scarb Build Artifacts ---
+target/
+.snfoundry_cache/
+
+# --- IDEs & OS ---
+.idea/
+.vscode/
+.DS_Store
+
+# --- Local Configuration ---
+*.env
+example.env
+Makefile
