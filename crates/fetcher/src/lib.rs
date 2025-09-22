@@ -62,6 +62,17 @@ pub struct Args {
         help = "Path where the output JSON will be written"
     )]
     pub output: PathBuf,
+    #[arg(
+        long = "mmr-hashing-function",
+        default_value = "poseidon",
+        help = "MMR hashing function to request and annotate proofs with: poseidon or keccak"
+    )]
+    pub mmr_hashing_function: String,
+    #[arg(
+        long = "deployed-on-chain",
+        help = "Override deployed_on_chain used for MMR/header proof queries to the Indexer. Defaults: EVM=chain_id, Starknet=11155111"
+    )]
+    pub deployed_on_chain: Option<u128>,
 }
 
 #[derive(Error, Debug)]
@@ -166,6 +177,8 @@ impl ProgressExt for Option<ProgressBar> {
 
 pub struct Fetcher<'a> {
     proof_keys: &'a ProofKeys,
+    mmr_hashing_function: HashingFunction,
+    deployed_on_chain: Option<u128>,
     #[cfg(feature = "progress_bars")]
     progress_bars: ProgressBars,
 }
@@ -173,8 +186,27 @@ impl<'a> Fetcher<'a> {
     pub fn new(proof_keys: &'a ProofKeys) -> Self {
         Self {
             proof_keys,
+            mmr_hashing_function: HashingFunction::Poseidon,
+            deployed_on_chain: None,
             #[cfg(feature = "progress_bars")]
             progress_bars: ProgressBars::new(proof_keys),
+        }
+    }
+
+    pub fn new_with_mmr_hashing_functio(proof_keys: &'a ProofKeys, mmr_hashing_function: HashingFunction, deployed_on_chain: Option<u128>) -> Self {
+        Self {
+            proof_keys,
+            mmr_hashing_function,
+            deployed_on_chain,
+            #[cfg(feature = "progress_bars")]
+            progress_bars: ProgressBars::new(proof_keys),
+        }
+    }
+
+     fn indexer_mmr_hashing_function(&self) -> indexer::models::HashingFunction {
+        match self.mmr_hashing_function {
+            HashingFunction::Poseidon => indexer::models::HashingFunction::Poseidon,
+            HashingFunction::Keccak => indexer::models::HashingFunction::Keccak,
         }
     }
 
@@ -186,7 +218,15 @@ impl<'a> Fetcher<'a> {
         let mut header_fut = futures::stream::iter(
             flattened_keys
                 .iter()
-                .map(|key| EvmProofKeys::fetch_header_proof(key.chain_id, key.chain_id, key.block_number)),
+                .map(|key| {
+                    let deployed_on_chain = self.deployed_on_chain.unwrap_or(key.chain_id);
+                    EvmProofKeys::fetch_header_proof(
+                        deployed_on_chain,
+                        key.chain_id,
+                        key.block_number,
+                        self.indexer_mmr_hashing_function()
+                    )
+                }),
         )
         .buffer_unordered(BUFFER_UNORDERED)
         .boxed();
@@ -320,6 +360,7 @@ impl<'a> Fetcher<'a> {
             .safe_finish_with_message("evm transaction keys - finished");
 
         Ok(EvmProofs {
+            mmr_hashing_function: self.mmr_hashing_function.clone(),
             headers_with_mmr: process_headers(headers_with_mmr),
             accounts: accounts.into_iter().collect(),
             storages: storages.into_iter().collect(),
@@ -336,8 +377,15 @@ impl<'a> Fetcher<'a> {
         let mut header_fut = futures::stream::iter(
             flattened_keys
                 .iter()
-                // TODO: handle `deployed_on_chain_id` in a better way
-                .map(|key| StarknetProofKeys::fetch_header_proof(11155111, key.chain_id, key.block_number)),
+                .map(|key| {
+                    let deployed_on_chain = self.deployed_on_chain.unwrap_or(11155111);
+                    StarknetProofKeys::fetch_header_proof(
+                        deployed_on_chain,
+                        key.chain_id,
+                        key.block_number,
+                        self.indexer_hashing()
+                    )
+                }),
         )
         .buffer_unordered(BUFFER_UNORDERED)
         .boxed();
@@ -386,6 +434,7 @@ impl<'a> Fetcher<'a> {
             .safe_finish_with_message("starknet storage keys - finished");
 
         Ok(StarknetProofs {
+            mmr_hashing_function: self.mmr_hashing_function.clone(),
             headers_with_mmr: process_headers(headers_with_mmr),
             storages: storages.into_iter().collect(),
         })

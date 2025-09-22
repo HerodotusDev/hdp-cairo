@@ -35,7 +35,12 @@ async fn main() -> Result<(), fetcher::FetcherError> {
         serde_json::from_slice(&input_file)?;
     let proof_keys = parse_syscall_handler(syscall_handler)?;
 
-    let fetcher = Fetcher::new(&proof_keys);
+    let mmr_hashing_function = match args.mmr_hashing_function.to_lowercase().as_str() {
+        "keccak" => HashingFunction::Keccak,
+        _ => HashingFunction::Poseidon, // default
+    };
+
+    let fetcher = Fetcher::new_with_hashing(&proof_keys, mmr_hashing_function, args.deployed_on_chain);
     let (
         eth_proofs_mainnet,
         eth_proofs_sepolia,
