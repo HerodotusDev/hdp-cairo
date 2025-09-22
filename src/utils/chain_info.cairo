@@ -32,7 +32,8 @@ func fetch_chain_info(chain_id: felt) -> (info: ChainInfo) {
         );
     }
 
-         if (chain_id == 10) {
+    // Optimism Mainnet
+    if (chain_id == 10) {
         return (
             info=ChainInfo(
                 id=10,
@@ -45,7 +46,7 @@ func fetch_chain_info(chain_id: felt) -> (info: ChainInfo) {
         );
     }
 
-    // Optimism Sepolia (testnet)
+    // Optimism Sepolia
     if (chain_id == 11155420) {
         return (
             info=ChainInfo(
@@ -58,7 +59,6 @@ func fetch_chain_info(chain_id: felt) -> (info: ChainInfo) {
             ),
         );
     }
-
 
     // SN_MAIN
     if (chain_id == 23448594291968334) {
