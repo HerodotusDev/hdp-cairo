@@ -52,7 +52,7 @@ func run_chain_state_verification_inner{
     injected_state_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
     mmr_metas_keccak: MMRMetaKeccak*,
-(mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt, idx: felt) -> (mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt, idx: felt) {
+}(mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt, idx: felt) -> (mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt, idx: felt) {
     alloc_locals;
 
     if (idx == 0) {
