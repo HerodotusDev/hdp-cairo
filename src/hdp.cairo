@@ -196,7 +196,9 @@ func run{
     assert task_hash_preimage[0] = module_hash;
 
     // This is the offset for encoding dynamic array in Solidity - data for the inputs array starts at byte position 64 -> 40 in HEX
-    assert task_hash_preimage[1] = 0x0000000000000000000000000000000000000000000000000000000000000040;
+    assert task_hash_preimage[
+        1
+    ] = 0x0000000000000000000000000000000000000000000000000000000000000040;
 
     // For Solidity encoding of array size
     assert task_hash_preimage[2] = public_inputs_len;
