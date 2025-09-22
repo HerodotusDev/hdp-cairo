@@ -15,7 +15,7 @@ from packages.eth_essentials.lib.utils import (
     get_felt_bitlength,
 )
 
-from src.types import MMRMeta
+from src.types import MMRMeta, MMRMetaKeccak
 from starkware.cairo.common.memcpy import memcpy
 from src.utils.merkle import compute_merkle_root
 
@@ -138,4 +138,68 @@ func felt_array_to_uint256s{range_check_ptr}(counter: felt, retdata: felt*, leaf
     let res = felt_to_uint256([retdata]);
     assert [leafs] = res;
     return felt_array_to_uint256s(counter=counter - 1, retdata=retdata + 1, leafs=leafs + 2);
+}
+
+// Mixed writer: emits both Poseidon and Keccak MMR meta sections with counts header.
+// Layout:
+//   [poseidon_len, keccak_len,
+//    poseidon_len * (id, size, chain_id, root),
+//    keccak_len   * (id, size, chain_id, root_low, root_high)]
+func mmr_metas_write_output_ptr_mixed{output_ptr: felt*}(
+    mmr_metas_poseidon: MMRMeta*,
+    mmr_metas_len_poseidon: felt,
+    mmr_metas_keccak: MMRMetaKeccak*,
+    mmr_metas_len_keccak: felt,
+) {
+    // Write section counts
+    assert [output_ptr] = mmr_metas_len_poseidon;
+    assert [output_ptr + 1] = mmr_metas_len_keccak;
+    let output_ptr = output_ptr + 2;
+
+    // Poseidon entries (4 felts each)
+    tempvar i = 0;
+
+    poseidon_loop:
+    let i = [ap - 1];
+
+    %{ memory[ap] = 1 if (ids.mmr_metas_len_poseidon == ids.i) else 0 %}
+    jmp poseidon_end if [ap] != 0, ap++;
+
+    assert [output_ptr + i * 4] = mmr_metas_poseidon[i].id;
+    assert [output_ptr + i * 4 + 1] = mmr_metas_poseidon[i].size;
+    assert [output_ptr + i * 4 + 2] = mmr_metas_poseidon[i].chain_id;
+    assert [output_ptr + i * 4 + 3] = mmr_metas_poseidon[i].root;
+
+    [ap] = i + 1, ap++;
+    jmp poseidon_loop;
+
+    poseidon_end:
+    // advance pointer past poseidon entries
+    assert i = mmr_metas_len_poseidon;
+    let output_ptr = output_ptr + mmr_metas_len_poseidon * 4;
+
+    // Keccak entries (5 felts each, ordered as id, size, chain_id, root_low, root_high)
+    tempvar j = 0;
+
+    keccak_loop:
+    let j = [ap - 1];
+
+    %{ memory[ap] = 1 if (ids.mmr_metas_len_keccak == ids.j) else 0 %}
+    jmp keccak_end if [ap] != 0, ap++;
+
+    assert [output_ptr + j * 5] = mmr_metas_keccak[j].id;
+    assert [output_ptr + j * 5 + 1] = mmr_metas_keccak[j].size;
+    assert [output_ptr + j * 5 + 2] = mmr_metas_keccak[j].chain_id;
+    assert [output_ptr + j * 5 + 3] = mmr_metas_keccak[j].root_low;
+    assert [output_ptr + j * 5 + 4] = mmr_metas_keccak[j].root_high;
+
+    [ap] = j + 1, ap++;
+    jmp keccak_loop;
+
+    keccak_end:
+    // advance pointer past keccak entries
+    assert j = mmr_metas_len_keccak;
+    let output_ptr = output_ptr + mmr_metas_len_keccak * 5;
+
+    return ();
 }

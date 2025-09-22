@@ -32,7 +32,7 @@ func fetch_chain_info(chain_id: felt) -> (info: ChainInfo) {
         );
     }
 
-         if (chain_id == 10) {
+    if (chain_id == 10) {
         return (
             info=ChainInfo(
                 id=10,
@@ -58,7 +58,6 @@ func fetch_chain_info(chain_id: felt) -> (info: ChainInfo) {
             ),
         );
     }
-
 
     // SN_MAIN
     if (chain_id == 23448594291968334) {

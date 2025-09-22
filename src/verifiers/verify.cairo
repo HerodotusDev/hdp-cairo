@@ -16,7 +16,7 @@ from starkware.cairo.common.cairo_builtins import (
 
 from src.memorizers.injected_state.memorizer import InjectedStateMemorizer, InjectedStateHashParams
 from starkware.cairo.common.alloc import alloc
-from src.types import MMRMeta, ChainInfo, InjectedStateInfo
+from src.types import MMRMeta, MMRMetaKeccak, ChainInfo, InjectedStateInfo
 from src.utils.chain_info import fetch_chain_info, Layout
 from src.utils.injected_state_info import ProofType
 
@@ -31,12 +31,13 @@ func run_chain_state_verification{
     starknet_memorizer: DictAccess*,
     injected_state_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
-}() -> (mmr_metas_len: felt) {
+    mmr_metas_keccak: MMRMetaKeccak*,
+}() -> (mmr_metas_len_poseidon: felt, mmr_metas_len_keccak: felt) {
     tempvar chain_proofs_len: felt = nondet %{ len(chain_proofs) %};
-    let (mmr_meta_idx, _) = run_chain_state_verification_inner(
-        mmr_meta_idx=0, idx=chain_proofs_len
+    let (mmr_meta_idx_poseidon, mmr_meta_idx_keccak, _) = run_chain_state_verification_inner(
+        mmr_meta_idx_poseidon=0, mmr_meta_idx_keccak=0, idx=chain_proofs_len
     );
-    return (mmr_metas_len=mmr_meta_idx);
+    return (mmr_metas_len_poseidon=mmr_meta_idx_poseidon, mmr_metas_len_keccak=mmr_meta_idx_keccak);
 }
 
 func run_chain_state_verification_inner{
@@ -50,11 +51,12 @@ func run_chain_state_verification_inner{
     starknet_memorizer: DictAccess*,
     injected_state_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
-}(mmr_meta_idx: felt, idx: felt) -> (mmr_meta_idx: felt, idx: felt) {
+    mmr_metas_keccak: MMRMetaKeccak*,
+(mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt, idx: felt) -> (mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt, idx: felt) {
     alloc_locals;
 
     if (idx == 0) {
-        return (mmr_meta_idx=mmr_meta_idx, idx=idx);
+        return (mmr_meta_idx_poseidon=mmr_meta_idx_poseidon, mmr_meta_idx_keccak=mmr_meta_idx_keccak, idx=idx);
     }
 
     tempvar chain_id: felt = nondet %{ chain_proofs[ids.idx - 1].chain_id %};
@@ -63,25 +65,31 @@ func run_chain_state_verification_inner{
     if (chain_info.layout == Layout.EVM) {
         with chain_info {
             %{ vm_enter_scope({'batch_evm': chain_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
-            let (mmr_meta_idx) = evm_run_state_verification(mmr_meta_idx);
+            let (mmr_meta_idx_poseidon, mmr_meta_idx_keccak) = evm_run_state_verification(
+                mmr_meta_idx_poseidon, mmr_meta_idx_keccak
+            );
             %{ vm_exit_scope() %}
 
-            return run_chain_state_verification_inner(mmr_meta_idx=mmr_meta_idx, idx=idx - 1);
+            return run_chain_state_verification_inner(
+                mmr_meta_idx_poseidon=mmr_meta_idx_poseidon, mmr_meta_idx_keccak=mmr_meta_idx_keccak, idx=idx - 1
+            );
         }
     }
 
     if (chain_info.layout == Layout.STARKNET) {
         with chain_info {
             %{ vm_enter_scope({'batch_starknet': chain_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager}) %}
-            let (mmr_meta_idx) = starknet_run_state_verification(mmr_meta_idx);
+            let (mmr_meta_idx_poseidon) = starknet_run_state_verification(mmr_meta_idx_poseidon);
             %{ vm_exit_scope() %}
 
-            return run_chain_state_verification_inner(mmr_meta_idx=mmr_meta_idx, idx=idx - 1);
+            return run_chain_state_verification_inner(
+                mmr_meta_idx_poseidon=mmr_meta_idx_poseidon, mmr_meta_idx_keccak=mmr_meta_idx_keccak, idx=idx - 1
+            );
         }
     }
 
     assert 0 = 1;
-    return (mmr_meta_idx=0, idx=0);
+    return (mmr_meta_idx_poseidon=0, mmr_meta_idx_keccak=0, idx=0);
 }
 
 func run_injected_state_verification{

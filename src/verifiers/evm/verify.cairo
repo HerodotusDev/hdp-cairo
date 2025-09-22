@@ -10,7 +10,7 @@ from starkware.cairo.common.cairo_builtins import (
     KeccakBuiltin,
     HashBuiltin,
 )
-from src.types import MMRMeta, ChainInfo
+from src.types import MMRMeta, MMRMetaKeccak, ChainInfo
 from src.utils.chain_info import fetch_chain_info
 
 func run_state_verification{
@@ -24,13 +24,20 @@ func run_state_verification{
     starknet_memorizer: DictAccess*,
     injected_state_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
+    mmr_metas_keccak: MMRMetaKeccak*,
     chain_info: ChainInfo,
-}(mmr_meta_idx: felt) -> (mmr_meta_idx: felt) {
+}(mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt) -> (mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt) {
     alloc_locals;
 
     // Step 1: Verify MMR and headers inclusion
     tempvar n_proofs: felt = nondet %{ len(batch_evm.headers_with_mmr_evm) %};
-    let (mmr_meta_idx) = verify_mmr_batches(n_proofs, mmr_meta_idx);
+
+     // 0 = Poseidon, 1 = Keccak
+    tempvar hashing_fn: felt = nondet %{ batch_evm.mmr_hashing_function %};
+
+    let (mmr_meta_idx_poseidon, mmr_meta_idx_keccak) = verify_mmr_batches(
+        n_proofs, mmr_meta_idx_poseidon, mmr_meta_idx_keccak, hashing_fn
+    );
     // Step 2: Verify the accounts
     verify_accounts();
     // Step 3: Verify the storage items
@@ -40,5 +47,5 @@ func run_state_verification{
     // Step 5: Verify the block receipt proofs
     verify_block_receipt_proofs();
 
-    return (mmr_meta_idx=mmr_meta_idx);
+    return (mmr_meta_idx_poseidon=mmr_meta_idx_poseidon, mmr_meta_idx_keccak=mmr_meta_idx_keccak);
 }

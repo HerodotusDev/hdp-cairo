@@ -21,6 +21,14 @@ struct MMRMeta {
     chain_id: felt,
 }
 
+struct MMRMetaKeccak {
+    id: felt,
+    root_low: felt,
+    root_high: felt,
+    size: felt,
+    chain_id: felt,
+}
+
 struct ModuleTask {
     module_hash: felt,
     module_inputs_len: felt,
