@@ -21,7 +21,7 @@ from src.contract_bootloader.contract_bootloader import (
 )
 from starkware.cairo.common.memcpy import memcpy
 from src.utils.merkle import compute_merkle_root
-from src.utils.utils import felt_array_to_uint256s
+from src.utils.utils import felt_array_to_uint256s, calculate_task_hash
 from packages.eth_essentials.lib.utils import pow2alloc251
 from src.memorizers.evm.memorizer import EvmMemorizer
 from src.memorizers.starknet.memorizer import StarknetMemorizer
@@ -143,21 +143,7 @@ func main{
         injected_state_memorizer_start, injected_state_memorizer, BareMemorizer.DEFAULT_VALUE
     );
 
-    let (task_hash_preimage) = alloc();
-    assert task_hash_preimage[0] = module_hash;
-
-    // This is the offset for encoding dynamic array in Solidity - data for the inputs array starts at byte position 64 -> 40 in HEX
-    assert task_hash_preimage[
-        1
-    ] = 0x0000000000000000000000000000000000000000000000000000000000000040;
-
-    // For Solidity encoding of array size
-    assert task_hash_preimage[2] = public_inputs_len;
-
-    memcpy(dst=task_hash_preimage + 3, src=public_inputs, len=public_inputs_len);
-    tempvar task_hash_preimage_len: felt = 3 + public_inputs_len;
-
-    let (taskHash) = keccak_felts_bigend(task_hash_preimage_len, task_hash_preimage);
+    let taskHash = calculate_task_hash(module_hash, public_inputs_len, public_inputs);
 
     assert [output_ptr] = taskHash.low;
     assert [output_ptr + 1] = taskHash.high;
