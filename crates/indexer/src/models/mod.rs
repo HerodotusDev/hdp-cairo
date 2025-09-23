@@ -1,17 +1,10 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+pub use types::HashingFunction;
 
 pub mod accumulators;
 pub mod blocks;
 
-/// Enum for available hashing functions
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum HashingFunction {
-    Keccak,
-    Poseidon,
-    Pedersen,
-}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum BlockHeader {

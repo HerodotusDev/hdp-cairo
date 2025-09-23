@@ -21,7 +21,7 @@ use state_server as _;
 use syscall_handler::SyscallHandler;
 use thiserror as _;
 use types::{
-    ChainProofs, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID,
+    ChainProofs, HashingFunction, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID,
     STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
 };
 
@@ -40,7 +40,7 @@ async fn main() -> Result<(), fetcher::FetcherError> {
         _ => HashingFunction::Poseidon, // default
     };
 
-    let fetcher = Fetcher::new_with_hashing(&proof_keys, mmr_hashing_function, args.deployed_on_chain);
+    let fetcher = Fetcher::new_with_mmr_hashing_function(&proof_keys, mmr_hashing_function, args.deployed_on_chain);
     let (
         eth_proofs_mainnet,
         eth_proofs_sepolia,

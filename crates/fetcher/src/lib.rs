@@ -39,7 +39,7 @@ use types::{
         mmr::MmrMeta,
         starknet::{header::Header as StarknetHeader, storage::Storage as StarknetStorage, Proofs as StarknetProofs},
     },
-    ChainProofs, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID,
+    ChainProofs, HashingFunction, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID,
     STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
 };
 
@@ -193,7 +193,7 @@ impl<'a> Fetcher<'a> {
         }
     }
 
-    pub fn new_with_mmr_hashing_functio(proof_keys: &'a ProofKeys, mmr_hashing_function: HashingFunction, deployed_on_chain: Option<u128>) -> Self {
+    pub fn new_with_mmr_hashing_function(proof_keys: &'a ProofKeys, mmr_hashing_function: HashingFunction, deployed_on_chain: Option<u128>) -> Self {
         Self {
             proof_keys,
             mmr_hashing_function,
@@ -383,7 +383,7 @@ impl<'a> Fetcher<'a> {
                         deployed_on_chain,
                         key.chain_id,
                         key.block_number,
-                        self.indexer_hashing()
+                        self.indexer_mmr_hashing_function()
                     )
                 }),
         )

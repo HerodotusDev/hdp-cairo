@@ -48,7 +48,7 @@ impl ProofKeys {
                     block_number,
                     block_number,
                 )
-                .with_hashing_function(hashing),
+                .with_hashing_function(mmr_hashing_function),
             )
             .await?;
 

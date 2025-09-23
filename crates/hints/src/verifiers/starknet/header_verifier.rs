@@ -145,9 +145,28 @@ pub fn hint_mmr_path(
 ) -> Result<(), HintError> {
     let header = exec_scopes.get::<starknet::header::Header>(vars::scopes::HEADER_STARKNET)?;
     let mmr_path_ptr = get_ptr_from_var_name(vars::ids::MMR_PATH, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let mmr_path: Vec<MaybeRelocatable> = header.proof.mmr_path.into_iter().map(MaybeRelocatable::from).collect();
+    
+    // Convert each Bytes element into a 32-byte big-endian value, then split into (low, high) 128-bit felts.
+    let mut data: Vec<MaybeRelocatable> = Vec::with_capacity(header.proof.mmr_path.len() * 2);
+    for bytes_data in header.proof.mmr_path.iter() {
+        println!("Processing MMR path element: Uint256(0x{})", hex::encode(bytes_data));
 
-    vm.load_data(mmr_path_ptr, &mmr_path)?;
+        let mut wide = [0u8; 32];
+        let copy_len = core::cmp::min(bytes_data.len(), 32);
+        wide[32 - copy_len..].copy_from_slice(&bytes_data[bytes_data.len() - copy_len..]);
+
+        let high = Felt252::from_bytes_be_slice(&wide[..16]);
+        let low = Felt252::from_bytes_be_slice(&wide[16..]);
+
+        println!("  High (128 bits): 0x{:x}", high);
+        println!("  Low (128 bits):  0x{:x}", low);
+
+        // Uint256 layout in Cairo memory: low then high
+        data.push(MaybeRelocatable::from(low));
+        data.push(MaybeRelocatable::from(high));
+    }
+
+    vm.load_data(mmr_path_ptr, &data)?;
 
     Ok(())
 }

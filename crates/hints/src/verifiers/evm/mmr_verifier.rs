@@ -135,3 +135,42 @@ pub fn hint_headers_with_mmr_peaks_keccak(
     Ok(())
 }
 
+/* Keccak root splitters: read 32-byte root and split into 2x16-byte felts (high, low) big-endian. */
+pub const HINT_HEADERS_WITH_MMR_META_ROOT_KECCAK_LOW: &str =
+    "memory[ap] = to_felt_or_relocatable(int.from_bytes(bytes(header_with_mmr_evm.mmr_meta.root), 'big') & ((1 << 128) - 1))";
+
+pub fn hint_headers_with_mmr_meta_root_keccak_low(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    _hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let header_with_mmr =
+        exec_scopes.get::<HeaderMmrMeta<evm::header::Header>>(vars::scopes::HEADER_WITH_MMR_EVM)?;
+    let src: &[u8] = header_with_mmr.mmr_meta.root.as_ref();
+    let mut wide = [0u8; 32];
+    let copy_len = core::cmp::min(src.len(), 32);
+    wide[32 - copy_len..].copy_from_slice(&src[src.len() - copy_len..]);
+    let low = Felt252::from_bytes_be_slice(&wide[16..]);
+    insert_value_into_ap(vm, low)
+}
+
+pub const HINT_HEADERS_WITH_MMR_META_ROOT_KECCAK_HIGH: &str =
+    "memory[ap] = to_felt_or_relocatable(int.from_bytes(bytes(header_with_mmr_evm.mmr_meta.root), 'big') >> 128)";
+
+pub fn hint_headers_with_mmr_meta_root_keccak_high(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    _hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    println!("Executing hint_headers_with_mmr_meta_root_keccak_high");
+    let header_with_mmr =
+        exec_scopes.get::<HeaderMmrMeta<evm::header::Header>>(vars::scopes::HEADER_WITH_MMR_EVM)?;
+    let src: &[u8] = header_with_mmr.mmr_meta.root.as_ref();
+    let mut wide = [0u8; 32];
+    let copy_len = core::cmp::min(src.len(), 32);
+    wide[32 - copy_len..].copy_from_slice(&src[src.len() - copy_len..]);
+    let high = Felt252::from_bytes_be_slice(&wide[..16]);
+    insert_value_into_ap(vm, high)
+}

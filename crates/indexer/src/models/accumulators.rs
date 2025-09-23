@@ -50,6 +50,11 @@ impl IndexerQuery {
             prefer_native_block_header: false,
         }
     }
+
+    pub fn with_hashing_function(mut self, hashing: HashingFunction) -> Self {
+        self.hashing_function = hashing;
+        self
+    }
 }
 
 /// MMR metadata and proof returned from indexer

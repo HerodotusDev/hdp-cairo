@@ -136,7 +136,9 @@ pub const HINT_MMR_PATH: &str = "segments.write_arg(ids.mmr_path, header_evm.pro
 
 pub fn hint_mmr_path(
     vm: &mut VirtualMachine,
-@@ -142,9 +166,77 @@ pub fn hint_mmr_path(
+    exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let header = exec_scopes.get::<evm::header::Header>(vars::scopes::HEADER_EVM)?;
     let mmr_path_ptr = get_ptr_from_var_name(vars::ids::MMR_PATH, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;

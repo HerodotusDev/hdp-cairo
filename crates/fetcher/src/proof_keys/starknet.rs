@@ -1,8 +1,9 @@
 use std::collections::HashSet;
 
 use cairo_vm::Felt252;
-use indexer::models::BlockHeader;
+use indexer::models::{BlockHeader, HashingFunction};
 use reqwest::Url;
+use alloy::{hex::FromHexError, primitives::Bytes};
 use starknet_types_core::felt::FromStrError;
 use types::{
     keys::{self, starknet::get_corresponding_rpc_url},
@@ -24,21 +25,35 @@ pub struct ProofKeys {
     pub storage_keys: HashSet<keys::starknet::storage::Key>,
 }
 
+// Normalize hex to even-length before parsing to Bytes
+fn normalize_hex(input: &str) -> String {
+    let hex_str = input.trim_start_matches("0x");
+    format!("{:0>width$}", hex_str, width = hex_str.len().div_ceil(2) * 2)
+}
+
 impl ProofKeys {
     pub async fn fetch_header_proof(
         deployed_on_chain_id: u128,
         accumulates_chain_id: u128,
         block_number: u64,
+        mmr_hashing_function: HashingFunction,
     ) -> Result<HeaderMmrMeta<Header>, FetcherError> {
-        let (mmr_proof, meta) = super::ProofKeys::fetch_mmr_proof(deployed_on_chain_id, accumulates_chain_id, block_number).await?;
+        let (mmr_proof, meta) = super::ProofKeys::fetch_mmr_proof(
+            deployed_on_chain_id,
+            accumulates_chain_id,
+            block_number,
+            mmr_hashing_function,
+        ).await?;
+
+        let mmr_path = mmr_proof
+            .siblings_hashes
+            .iter()
+            .map(|hash| normalize_hex(hash).parse())
+            .collect::<Result<Vec<Bytes>, FromHexError>>()?;
 
         let proof = HeaderProof {
             leaf_idx: mmr_proof.element_index,
-            mmr_path: mmr_proof
-                .siblings_hashes
-                .iter()
-                .map(|hash| Felt252::from_hex(hash.as_str()))
-                .collect::<Result<Vec<Felt252>, FromStrError>>()?,
+            mmr_path,
         };
 
         match &mmr_proof.block_header {
