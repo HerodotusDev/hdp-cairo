@@ -76,7 +76,9 @@ namespace TransactionDecoder {
 
     func _get_field{
         keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
-    }(rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt, chain_id: felt) -> (res_array: felt*, res_len: felt) {
+    }(rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt, chain_id: felt) -> (
+        res_array: felt*, res_len: felt
+    ) {
         alloc_locals;
         let (__fp__, _) = get_fp_and_pc();
 

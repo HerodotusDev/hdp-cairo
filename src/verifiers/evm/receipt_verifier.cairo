@@ -71,7 +71,9 @@ func verify_block_receipt_proofs_inner{
     local header_key: HeaderKey = HeaderKey(chain_id=chain_info.id, block_number=block_number);
     let memorizer_key = EvmHashParams.header(chain_id=chain_info.id, block_number=block_number);
     let (header_rlp) = EvmMemorizer.get(key=memorizer_key);
-    let (receipt_root: Uint256*, _) = HeaderDecoder.get_field(header_rlp, HeaderField.RECEIPT_ROOT, &header_key);
+    let (receipt_root: Uint256*, _) = HeaderDecoder.get_field(
+        header_rlp, HeaderField.RECEIPT_ROOT, &header_key
+    );
 
     let (rlp, rlp_bytes_len) = verify_mpt_proof{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr

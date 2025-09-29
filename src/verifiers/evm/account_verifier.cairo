@@ -100,7 +100,9 @@ func verify_account{
     local header_key: HeaderKey = HeaderKey(chain_id=chain_info.id, block_number=block_number);
     let memorizer_key = EvmHashParams.header(chain_id=chain_info.id, block_number=block_number);
     let (header_rlp) = EvmMemorizer.get(key=memorizer_key);
-    let (state_root: Uint256*, _) = HeaderDecoder.get_field(header_rlp, HeaderField.STATE_ROOT, &header_key);
+    let (state_root: Uint256*, _) = HeaderDecoder.get_field(
+        header_rlp, HeaderField.STATE_ROOT, &header_key
+    );
 
     let (rlp: felt*, value_len: felt) = verify_mpt_proof(
         mpt_proof=mpt_proof,

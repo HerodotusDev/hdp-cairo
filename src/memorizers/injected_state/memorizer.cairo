@@ -35,7 +35,9 @@ namespace InjectedStatePackParams {
         return (params=params, params_len=4);
     }
 
-    func read_non_inclusion(label: felt, root: felt, value: felt) -> (params: felt*, params_len: felt) {
+    func read_non_inclusion(label: felt, root: felt, value: felt) -> (
+        params: felt*, params_len: felt
+    ) {
         alloc_locals;
 
         local params: felt* = nondet %{ segments.add() %};
@@ -52,7 +54,7 @@ namespace InjectedStatePackParams {
 
         local params: felt* = nondet %{ segments.add() %};
         assert params[0] = InjectedStatePackParams.WRITE;
-        assert params[1] = label; 
+        assert params[1] = label;
         assert params[2] = root;
         assert params[3] = value;
 
@@ -62,20 +64,22 @@ namespace InjectedStatePackParams {
 
 namespace InjectedStateHashParams {
     func label{poseidon_ptr: PoseidonBuiltin*}(label: felt) -> felt {
-        let (params, params_len) = InjectedStatePackParams.label(
-            label=label
-        );
+        let (params, params_len) = InjectedStatePackParams.label(label=label);
         return hash_memorizer_key(params, params_len);
     }
 
-    func read_inclusion{poseidon_ptr: PoseidonBuiltin*}(label: felt, root: felt, value: felt) -> felt {
+    func read_inclusion{poseidon_ptr: PoseidonBuiltin*}(
+        label: felt, root: felt, value: felt
+    ) -> felt {
         let (params, params_len) = InjectedStatePackParams.read_inclusion(
             label=label, root=root, value=value
         );
         return hash_memorizer_key(params, params_len);
     }
 
-    func read_non_inclusion{poseidon_ptr: PoseidonBuiltin*}(label: felt, root: felt, value: felt) -> felt {
+    func read_non_inclusion{poseidon_ptr: PoseidonBuiltin*}(
+        label: felt, root: felt, value: felt
+    ) -> felt {
         let (params, params_len) = InjectedStatePackParams.read_non_inclusion(
             label=label, root=root, value=value
         );

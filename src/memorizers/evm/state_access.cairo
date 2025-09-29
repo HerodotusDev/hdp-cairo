@@ -60,27 +60,13 @@ namespace EvmDecoder {
         evm_decoder_ptr: felt**,
         output_ptr: felt*,
         keccak_ptr: KeccakBuiltin*,
-    }(
-        rlp: felt*,
-        params: felt*,
-        state_access_type: felt,
-        field: felt
-    ) -> () {
+    }(rlp: felt*, params: felt*, state_access_type: felt, field: felt) -> () {
         alloc_locals;
 
         let func_ptr = evm_decoder_ptr[state_access_type];
 
         tempvar invoke_params = cast(
-            new (
-                keccak_ptr,
-                range_check_ptr,
-                bitwise_ptr,
-                pow2_array,
-                rlp,
-                field,
-                params,
-            ),
-            felt*,
+            new (keccak_ptr, range_check_ptr, bitwise_ptr, pow2_array, rlp, field, params), felt*
         );
         invoke(func_ptr, 7, invoke_params);
 
