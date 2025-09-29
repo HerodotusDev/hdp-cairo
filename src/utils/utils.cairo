@@ -140,7 +140,6 @@ func felt_array_to_uint256s{range_check_ptr}(counter: felt, retdata: felt*, leaf
     return felt_array_to_uint256s(counter=counter - 1, retdata=retdata + 1, leafs=leafs + 2);
 }
 
-
 func calculate_task_hash{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(
     module_hash: felt, public_inputs_len: felt, public_inputs: felt*
 ) -> Uint256 {
