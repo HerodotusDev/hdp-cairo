@@ -113,7 +113,7 @@ mod module {
                 // If slot is 0 it means that order is not fulfilled or market maker dont set any withdrawal address
                 if (mm_withdrawal_address_from_slot == 0) {
                     println!(
-                        "Order fullfilment verification failure for order {:x}",
+                        "Order fulfilment verification failure for order {:x}",
                         order_hash,
                     );
                     tmp_is_verified_correctly = false;
@@ -129,7 +129,7 @@ mod module {
                     }
 
                     println!(
-                        "Order {:x} fullfilment verified, MM withdrawal address: {:x}",
+                        "Order {:x} fulfilment verified, MM withdrawal address: {:x}",
                         order_hash, mm_withdrawal_address_from_slot
                     );
 
