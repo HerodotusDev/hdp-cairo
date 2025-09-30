@@ -1,10 +1,7 @@
 use core::{
     integer::u256,
     array::ArrayTrait,
-    traits::{Into, TryInto, Default},
-    option::{OptionTrait, Option},
-    serde::Serde,
-    result::ResultTrait,
+    option::{Option},
 };
 
 // -- Data structures --

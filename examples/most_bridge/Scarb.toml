@@ -12,3 +12,4 @@ alexandria_bytes = { git = "https://github.com/keep-starknet-strange/alexandria.
 sierra = true
 casm = true
 casm-add-pythonic-hints = true
+allowed-libfuncs = false

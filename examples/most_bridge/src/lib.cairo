@@ -7,9 +7,11 @@ mod module {
         evm::storage::{StorageTrait, StorageKey, StorageImpl},
     };
     use core::{
-        integer::{u256, BoundedInt}
+        integer::{u256}
     };
-    use alexandria_bytes::{Bytes, BytesTrait};
+    
+    use alexandria_bytes::byte_array_ext::{ByteArrayTraitExt};
+    use core::byte_array::ByteArrayImpl;
 
     use super::multi_mm_withdrawals_inefficient_dict::{MultiMMWithdrawalDictTrait, OrdersWithdrawals, BalanceToWithdraw};
 
@@ -68,7 +70,7 @@ mod module {
         let orders_details_len = orders_details.clone().len();
         assert(orders_hashes_len == orders_details_len, 'Mismatched order array lengths');
 
-        let mut current_lowest_expiration_timestamp: u256 = BoundedInt::<u256>::max();
+        let mut current_lowest_expiration_timestamp: u256 = 0;
 
         let mut i = 0;
         for order in orders_details {
@@ -76,12 +78,12 @@ mod module {
                 let mut order_hash = calculate_order_hash(order);
 
                 // Calculate storage slot address on EVM
-                let mut bytes: Bytes = BytesTrait::new(0, array![]);
+                let mut bytes: ByteArray = ByteArrayTraitExt::new(0, array![]);
 
                 bytes.append_u256(order_hash);
                 bytes.append_u256(FULFILLMENTS_MAPPING_SLOT);
 
-                let mut slot = bytes.keccak();
+                let mut slot = bytes.keccak_be();
 
                 println!(
                             "Order hash: {:x}",
@@ -133,7 +135,9 @@ mod module {
                         order_hash, mm_withdrawal_address_from_slot
                     );
 
-                    if (order.expiration_timestamp < current_lowest_expiration_timestamp) {
+                    if (i == 0) {
+                        current_lowest_expiration_timestamp = order.expiration_timestamp;
+                    } else if (order.expiration_timestamp < current_lowest_expiration_timestamp) {
                         current_lowest_expiration_timestamp = order.expiration_timestamp;
                     }
 
@@ -159,7 +163,7 @@ mod module {
     fn calculate_order_hash(
             order_details: OrderFulfillmentDetails
     ) -> u256 {
-            let mut bytes: Bytes = BytesTrait::new(0, array![]);
+            let mut bytes: ByteArray = ByteArrayTraitExt::new(0, array![]);
 
             bytes.append_u256(order_details.order_id);
             bytes.append_u256(order_details.escrow_contract_address);
@@ -174,7 +178,7 @@ mod module {
             bytes.append_u256(order_details.destination_chain_id);
 
 
-            let order_hash_calculated = bytes.keccak();
+            let order_hash_calculated = bytes.keccak_be();
             order_hash_calculated
     }
 
