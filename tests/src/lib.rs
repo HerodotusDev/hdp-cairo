@@ -2,10 +2,10 @@
 #![forbid(unsafe_code)]
 
 #[cfg(test)]
-pub mod evm;
+pub mod evm_modules;
 
 #[cfg(test)]
-pub mod starknet;
+pub mod starknet_modules;
 
 #[cfg(test)]
 pub mod utils;
