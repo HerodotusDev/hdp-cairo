@@ -4,7 +4,7 @@ pub use types::HashingFunction;
 
 pub mod accumulators;
 pub mod blocks;
-
+pub mod ranges;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum BlockHeader {
@@ -39,4 +39,8 @@ pub enum IndexerError {
     /// Failed to get blocks with a detailed message.
     #[error("Failed to get blocks: {0}")]
     GetBlocksProofError(String),
+
+    /// Failed to get accumulated ranges with a detailed message.
+    #[error("Failed to get accumulated ranges: {0}")]
+    GetRangesError(String),
 }

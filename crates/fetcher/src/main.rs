@@ -11,7 +11,7 @@ use cairo_vm as _;
 use clap::Parser;
 use dry_hint_processor::syscall_handler::{evm, injected_state, starknet};
 use eth_trie_proofs as _;
-use fetcher::{parse_syscall_handler, Args, Fetcher};
+use fetcher::{infer_mmr_sources_from_indexer, parse_mmr_sources_config, parse_syscall_handler, Args, Fetcher};
 use futures as _;
 use indexer as _;
 use indicatif as _;
@@ -21,7 +21,7 @@ use state_server as _;
 use syscall_handler::SyscallHandler;
 use thiserror as _;
 use types::{
-    ChainProofs, HashingFunction, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID,
+    ChainProofs, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID,
     STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
 };
 
@@ -35,12 +35,13 @@ async fn main() -> Result<(), fetcher::FetcherError> {
         serde_json::from_slice(&input_file)?;
     let proof_keys = parse_syscall_handler(syscall_handler)?;
 
-    let mmr_hashing_function = match args.mmr_hashing_function.to_lowercase().as_str() {
-        "keccak" => HashingFunction::Keccak,
-        _ => HashingFunction::Poseidon, // default
+    let per_chain_mmr = if let Some(path) = args.mmr_sources_config.as_ref() {
+        parse_mmr_sources_config(path)?
+    } else {
+        infer_mmr_sources_from_indexer(&proof_keys, args.deployed_on_chain).await?
     };
-
-    let fetcher = Fetcher::new_with_mmr_hashing_function(&proof_keys, mmr_hashing_function, args.deployed_on_chain);
+    
+    let fetcher = Fetcher::new_with_mmr_sources_map(&proof_keys, per_chain_mmr, args.deployed_on_chain);
     let (
         eth_proofs_mainnet,
         eth_proofs_sepolia,

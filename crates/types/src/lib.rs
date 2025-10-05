@@ -32,7 +32,7 @@ pub const RPC_URL_STARKNET_TESTNET: &str = "RPC_URL_STARKNET_TESTNET";
 pub const RPC_URL_HERODOTUS_INDEXER: &str = "RPC_URL_HERODOTUS_INDEXER";
 
 /// Enum for available hashing functions
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum HashingFunction {
     Poseidon,
