@@ -131,39 +131,3 @@ func validate_mmr_meta_evm_keccak{range_check_ptr, bitwise_ptr: BitwiseBuiltin*,
 
     return (mmr_meta=mmr_meta, dict=dict, dict_start=dict_start);
 }
-
-// Keccak-based MMR meta validation for Starknet.
-// Same guarantees as EVM variant, but reads from Starknet header scope.
-func validate_mmr_meta_starknet_keccak{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*}(
-    ) -> (mmr_meta: MMRMetaKeccak, dict: DictAccess*, dict_start: DictAccess*) {
-    alloc_locals;
-
-    let (local dict: DictAccess*) = default_dict_new(default_value=-1);
-    tempvar dict_start = dict;
-
-    // Build keccak MMR meta from scope
-    local mmr_meta: MMRMetaKeccak = MMRMetaKeccak(
-            id=nondet %{ header_with_mmr_starknet.mmr_meta.id %},
-            root_low=nondet %{ int.from_bytes(bytes(header_with_mmr_starknet.mmr_meta.root), 'big') & ((1 << 128) - 1) %},
-            root_high=nondet %{ int.from_bytes(bytes(header_with_mmr_starknet.mmr_meta.root), 'big') >> 128 %},
-            size=nondet %{ header_with_mmr_starknet.mmr_meta.size %},
-            chain_id=nondet %{ header_with_mmr_starknet.mmr_meta.chain_id %},
-    );
-
-    // Load peaks (Uint256) from scope
-    tempvar peaks_len: felt = nondet %{ len(header_with_mmr_starknet.mmr_meta.peaks) %};
-    let (peaks_keccak: Uint256*) = alloc();
-    %{ segments.write_arg(ids.peaks_keccak, header_with_mmr_starknet.mmr_meta.peaks) %}
-
-    // Validate size and peaks length
-    assert_mmr_size_is_valid(mmr_meta.size);
-    let (_, expected_peaks_len) = compute_peaks_positions(mmr_meta.size);
-    assert 0 = peaks_len - expected_peaks_len;
-
-    // Recompute keccak MMR root and compare
-    let (root) = mmr_root_keccak(peaks_keccak, mmr_meta.size, peaks_len);
-    assert 0 = mmr_meta.root_low - root.low;
-    assert 0 = mmr_meta.root_high - root.high;
-
-    return (mmr_meta=mmr_meta, dict=dict, dict_start=dict_start);
-}
