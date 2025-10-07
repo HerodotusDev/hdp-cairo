@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use alloy::{hex::FromHexError, primitives::Bytes};
-use indexer::{models::{accumulators, HashingFunction}, Indexer};
+use indexer_client::{models::{accumulators, HashingFunction}, Indexer};
 use types::{
     proofs::{injected_state::Action, mmr::MmrMeta},
     Felt252,

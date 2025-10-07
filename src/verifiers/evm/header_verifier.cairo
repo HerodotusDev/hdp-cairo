@@ -275,15 +275,7 @@ func contains_uint256{}(arr: felt*, len: felt, target: Uint256) -> (res: felt) {
             return (res=1);
         }
     }
-    // Be tolerant to swapped pair ordering (in case of encoding mismatch): [high, low]
-    let diff_low_alt = cur_low - target.high;
-    if (diff_low_alt == 0) {
-        let diff_high_alt = cur_high - target.low;
-        if (diff_high_alt == 0) {
-            return (res=1);
-        }
-    }
-
+   
     let (rec) = contains_uint256(arr + 2, len - 1, target);
     return (res=rec);
 }

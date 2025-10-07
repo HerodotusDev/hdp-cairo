@@ -13,7 +13,7 @@ use dry_hint_processor::syscall_handler::{evm, injected_state, starknet};
 use eth_trie_proofs as _;
 use fetcher::{infer_mmr_sources_from_indexer, parse_proofs_fetcher_config, parse_syscall_handler, Args, Fetcher};
 use futures as _;
-use indexer as _;
+use indexer_client as _;
 use indicatif as _;
 use reqwest as _;
 use starknet_types_core as _;

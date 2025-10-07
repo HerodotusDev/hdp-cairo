@@ -7,7 +7,7 @@ members = [
     "crates/dry_run",
     "crates/fetcher",
     "crates/hints",
-    "crates/indexer",
+    "crates/indexer_client",
     "crates/sound_hint_processor",
     "crates/sound_run",
     "crates/state_server",
@@ -75,7 +75,7 @@ dry_run = { path = "crates/dry_run" }
 eth_essentials_cairo_vm_hints = { path = "packages/eth_essentials/cairo_vm_hints" }
 fetcher = { path = "crates/fetcher" }
 hints = { path = "crates/hints" }
-indexer = { path = "crates/indexer" }
+indexer_client = { path = "crates/indexer_client" }
 pathfinder_gateway_types = { git = "https://github.com/petscheit/pathfinder", package = "starknet-gateway-types" }
 pathfinder-common = { git = "https://github.com/petscheit/pathfinder"}
 pathfinder-crypto = { git = "https://github.com/petscheit/pathfinder"}

@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use cairo_vm::Felt252;
-use indexer::models::{BlockHeader, HashingFunction};
+use indexer_client::models::{BlockHeader, HashingFunction};
 use reqwest::Url;
 use alloy::{hex::FromHexError, primitives::Bytes};
 use starknet_types_core::felt::FromStrError;

@@ -21,7 +21,7 @@ use dry_hint_processor::syscall_handler::{
 };
 use eth_trie_proofs::{tx_receipt_trie::TxReceiptsMptHandler, tx_trie::TxsMptHandler};
 use futures::StreamExt;
-use indexer::{models::IndexerError, Indexer};
+use indexer_client::{models::IndexerError, Indexer};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use proof_keys::{evm::ProofKeys as EvmProofKeys, starknet::ProofKeys as StarknetProofKeys, FlattenedKey, ProofKeys};
 use reqwest::Url;
@@ -267,10 +267,10 @@ impl<'a> Fetcher<'a> {
         }
     }
 
-     fn indexer_mmr_hashing_function_for_chain(&self, chain_id: u128) -> indexer::models::HashingFunction {
+     fn indexer_mmr_hashing_function_for_chain(&self, chain_id: u128) -> indexer_client::models::HashingFunction {
         match self.resolve_hashing_function(chain_id) {
-            HashingFunction::Poseidon => indexer::models::HashingFunction::Poseidon,
-            HashingFunction::Keccak => indexer::models::HashingFunction::Keccak,
+            HashingFunction::Poseidon => indexer_client::models::HashingFunction::Poseidon,
+            HashingFunction::Keccak => indexer_client::models::HashingFunction::Keccak,
         }
     }
 
@@ -612,9 +612,6 @@ pub fn parse_syscall_handler(
 
 
 // ===== Auto-infer per-chain MMR hashing function using Indexer ranges =====
-
- // Indexer base URL is resolved from types::RPC_URL_HERODOTUS_INDEXER env var,
- // see get_all_ranges_accumulated_per_chain() below (same approach as crates/indexer).
 
 
 fn in_ranges(ranges: &[(u64, u64)], block: u64) -> bool {

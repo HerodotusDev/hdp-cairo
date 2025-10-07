@@ -9,7 +9,7 @@ use alloy::{
 };
 use cairo_vm::Felt252;
 use eth_trie_proofs::{tx_receipt_trie::TxReceiptsMptHandler, tx_trie::TxsMptHandler};
-use indexer::models::{BlockHeader, HashingFunction};
+use indexer_client::models::{BlockHeader, HashingFunction};
 use starknet_types_core::felt::FromStrError;
 use types::{
     keys::{self, evm::get_corresponding_rpc_url},
