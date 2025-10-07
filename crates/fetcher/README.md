@@ -50,11 +50,14 @@ cargo run --bin fetcher -- \
 
 ### Providing explicit MMR hashing function per chain and the target chain
 
-# Create proof_fetcher_config.json:
-# {
-#   "11155111": { "mmr_hashing_function": "poseidon" },
-#   "10":       { "mmr_hashing_function": "keccak" }
-# }
+Create proof_fetcher_config.json:
+
+```json
+{
+   "11155111": { "mmr_hashing_function": "poseidon" },
+   "10":       { "mmr_hashing_function": "keccak" }
+ }
+```
 
 
 ```bash
