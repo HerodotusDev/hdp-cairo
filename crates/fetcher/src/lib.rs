@@ -65,13 +65,13 @@ pub struct Args {
     )]
     pub output: PathBuf,
     #[arg(
-        long = "mmr-sources-config",
-        help = "Path to JSON file mapping chainId -> { mmr_hashing_function }. Example: {\"11155111\":{\"mmr_hashing_function\":\"poseidon\"},\"10\":{\"mmr_hashing_function\":\"keccak\"}}"
+        long = "proofs-fetcher-config",
+        help = "Path to JSON file containing fetcher config - mapping chain_id -> to mmr_hashing_function and other settings if needed. Example: {\"11155111\":{\"mmr_hashing_function\":\"poseidon\"},\"10\":{\"mmr_hashing_function\":\"keccak\"}}"
     )]
-    pub mmr_sources_config: Option<PathBuf>,
+    pub proofs_fetcher_config: Option<PathBuf>,
     #[arg(
         long = "deployed-on-chain",
-        help = "Override deployed_on_chain used for MMR/header proof queries to the Indexer. Defaults: EVM=chain_id, Starknet=11155111"
+        help = "Specify the chain on which the proof will be decommited - basing on this fetcher will query correct MMRs from Herodotus Indexer. Defaults: EVM=chain_id, Starknet=11155111"
     )]
     pub deployed_on_chain: Option<u128>,
 }
@@ -94,7 +94,7 @@ fn parse_hashing_function(value: &str) -> Result<HashingFunction, FetcherError> 
 //   "11155111": { "mmr_hashing_function": "poseidon" },
 //   "10": { "mmr_hashing_function": "keccak" }
 // }
-pub fn parse_mmr_sources_config(path: &PathBuf) -> Result<HashMap<u128, HashingFunction>, FetcherError> {
+pub fn parse_proofs_fetcher_config(path: &PathBuf) -> Result<HashMap<u128, HashingFunction>, FetcherError> {
     let data = fs::read_to_string(path)?;
     let v: serde_json::Value = serde_json::from_str(&data)?;
 

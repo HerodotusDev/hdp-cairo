@@ -144,26 +144,24 @@ pub fn hint_mmr_path(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let header = exec_scopes.get::<starknet::header::Header>(vars::scopes::HEADER_STARKNET)?;
-    let mmr_path_ptr = get_ptr_from_var_name(vars::ids::MMR_PATH, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    
-    // Convert each Bytes element into a 32-byte big-endian value, then split into (low, high) 128-bit felts.
-    let mut data: Vec<MaybeRelocatable> = Vec::with_capacity(header.proof.mmr_path.len() * 2);
-    for bytes_data in header.proof.mmr_path.iter() {
-        println!("Processing MMR path element: Uint256(0x{})", hex::encode(bytes_data));
+    let mmr_path_ptr =
+        get_ptr_from_var_name(vars::ids::MMR_PATH, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
+    // Convert each Bytes element into a single felt (big-endian) as expected by
+    // packages/eth_essentials/lib/mmr.cairo: hash_subtree_path()
+    let mut data: Vec<MaybeRelocatable> = Vec::with_capacity(header.proof.mmr_path.len());
+    for bytes_data in header.proof.mmr_path.iter() {
+        // Left-pad to 32 bytes (big-endian), then interpret as a Felt252
         let mut wide = [0u8; 32];
         let copy_len = core::cmp::min(bytes_data.len(), 32);
         wide[32 - copy_len..].copy_from_slice(&bytes_data[bytes_data.len() - copy_len..]);
 
-        let high = Felt252::from_bytes_be_slice(&wide[..16]);
-        let low = Felt252::from_bytes_be_slice(&wide[16..]);
+        let felt = Felt252::from_bytes_be_slice(&wide);
 
-        println!("  High (128 bits): 0x{:x}", high);
-        println!("  Low (128 bits):  0x{:x}", low);
+        // Debug: show the single felt written for this path element
+        //println!("Processing MMR path element (felt): 0x{:x}", felt);
 
-        // Uint256 layout in Cairo memory: low then high
-        data.push(MaybeRelocatable::from(low));
-        data.push(MaybeRelocatable::from(high));
+        data.push(MaybeRelocatable::from(felt));
     }
 
     vm.load_data(mmr_path_ptr, &data)?;
