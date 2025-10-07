@@ -5,6 +5,7 @@
 
 use std::{env, path::PathBuf};
 
+use cairo_prove::prove::prover_input_from_runner;
 use cairo_vm::{
     cairo_run::{self, cairo_run_program},
     types::{layout_name::LayoutName, program::Program, relocatable::Relocatable},
@@ -68,6 +69,7 @@ pub fn run(program_path: PathBuf, input: HDPInput) -> Result<(CairoPie, HDPOutpu
     let mut cairo_runner = cairo_run_program(&program, &cairo_run_config, &mut hint_processor).map_err(Box::new)?;
     debug!("{:?}", cairo_runner.get_execution_resources());
 
+    let _prover_input = prover_input_from_runner(&cairo_runner);
     let pie = cairo_runner.get_cairo_pie().map_err(|e| Error::CairoPie(e.to_string()))?;
 
     let segment_index = cairo_runner.vm.get_output_builtin_mut()?.base();

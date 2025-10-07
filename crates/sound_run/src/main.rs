@@ -5,6 +5,7 @@
 
 use std::path::PathBuf;
 
+use cairo_prove as _;
 use cairo_vm as _;
 use clap::Parser;
 use sound_hint_processor as _;

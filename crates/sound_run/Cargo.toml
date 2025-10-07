@@ -16,6 +16,7 @@ tokio.workspace = true
 tracing-subscriber.workspace = true
 tracing.workspace = true
 types.workspace = true
+cairo-prove.workspace = true
 
 [build-dependencies]
 sha2 = "0.10.6"

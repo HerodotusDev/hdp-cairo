@@ -1,6 +1,6 @@
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
 use starknet::{
-    core::types::BlockId,
+    core::types::{BlockId, Felt},
     providers::{
         jsonrpc::{HttpTransport, JsonRpcClient},
         Provider, Url,
@@ -48,9 +48,13 @@ impl CallHandler for StorageCallHandler {
         let block_id = BlockId::Number(key.block_number);
         let value = match function_id {
             FunctionId::Storage => provider
-                .get_storage_at::<Felt252, Felt252, BlockId>(key.address, key.storage_slot, block_id)
+                .get_storage_at::<Felt, Felt, BlockId>(
+                    Felt::from_bytes_be(&key.address.to_bytes_be()),
+                    Felt::from_bytes_be(&key.storage_slot.to_bytes_be()),
+                    block_id,
+                )
                 .await
-                .map(CairoFelt::from),
+                .map(|f| CairoFelt::from(Felt252::from_bytes_be(&f.to_bytes_be()))),
         }
         .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
 
