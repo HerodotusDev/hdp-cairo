@@ -69,19 +69,6 @@ cargo run --bin fetcher -- \
 
 
 
-## Configuration
-
-### Proofs Fetcher Config (optional)
-
-When provided, the fetcher uses a JSON file to select the MMR hashing function per source chain. Accepted format:
-
-```json
-{
-  "11155111": { "mmr_hashing_function": "poseidon" },
-  "10":       { "mmr_hashing_function": "keccak" }
-}
-```
-
 ## Output
 
 The output is a single JSON file containing:
