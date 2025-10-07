@@ -1,6 +1,6 @@
 # Fetcher
 
-A CLI tool that collects cryptographic proofs required by HDP executions. It consumes the dry-run output produced by the syscall handler, derives proof keys, and fetches:
+A CLI tool that collects cryptographic proofs required for execution of HDP sound run stage. It consumes the output from the dry-run stage and fetches:
 - EVM proofs: headers (with MMR metadata), accounts, storage, transaction receipts, transactions
 - Starknet proofs: headers (with MMR metadata), storage
 - Injected-state proofs via a running State Server
@@ -8,16 +8,16 @@ A CLI tool that collects cryptographic proofs required by HDP executions. It con
 
 ## Features
 
-- Parse dry-run/syscall output and derive proof keys
+- Parse dry-run output and derive proof keys
 - Concurrent proof collection with bounded concurrency
 - Per-chain MMR hashing function:
   - Explicit via proof fetcher JSON config file
-  - Auto-infer from Indexer ranges (prefers Poseidon)
+  - Auto-infer from Indexer accumulated ranges per chain endpoint (prefers Poseidon)
   - Fallback to Poseidon when unspecified
 - Optional progress bars (feature flag)
 - Emits a single JSON file combining ChainProofs and Injected State Proofs
 
-Injected-state proofs are fetched over HTTP from a running State Server at INJECTED_STATE_BASE_URL
+Injected-state proofs are fetched over HTTP from a running State Server at URL specified in INJECTED_STATE_BASE_URL env variable
 
 ## CLI
 
