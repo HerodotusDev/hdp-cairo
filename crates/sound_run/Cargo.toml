@@ -7,16 +7,18 @@ edition = "2021"
 path = "src/lib.rs"
 
 [dependencies]
+cairo-air.workspace = true
+cairo-prove.workspace = true
 cairo-vm.workspace = true
 clap.workspace = true
 dotenvy.workspace = true
 serde_json.workspace = true
 sound_hint_processor.workspace = true
+stwo_cairo_prover.workspace = true
 tokio.workspace = true
 tracing-subscriber.workspace = true
 tracing.workspace = true
 types.workspace = true
-cairo-prove.workspace = true
 
 [build-dependencies]
 sha2 = "0.10.6"

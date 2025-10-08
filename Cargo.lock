@@ -2835,7 +2835,9 @@ checksum = "b94f61472cee1439c0b966b47e3aca9ae07e45d070759512cd390ea2bebc6675"
 name = "cli"
 version = "0.1.0"
 dependencies = [
+ "cairo-air",
  "cairo-lang-starknet-classes 2.12.3",
+ "cairo-prove",
  "cairo-vm 2.0.1",
  "clap",
  "dotenvy",
@@ -2844,6 +2846,7 @@ dependencies = [
  "fetcher",
  "serde_json",
  "sound_run",
+ "stwo_cairo_prover",
  "syscall_handler",
  "tokio",
  "types",
@@ -7142,6 +7145,7 @@ dependencies = [
 name = "sound_run"
 version = "0.1.0"
 dependencies = [
+ "cairo-air",
  "cairo-prove",
  "cairo-vm 2.0.1",
  "clap",
@@ -7149,6 +7153,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "sound_hint_processor",
+ "stwo_cairo_prover",
  "tokio",
  "tracing",
  "tracing-subscriber",
