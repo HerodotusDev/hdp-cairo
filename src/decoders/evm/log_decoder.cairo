@@ -4,7 +4,7 @@ from src.utils.chain_info import ChainInfo
 from src.utils.chain_info import fetch_chain_info
 from src.utils.rlp import rlp_list_retrieve, le_chunks_to_be_uint256, get_rlp_list_meta, get_rlp_len, decode_rlp_word_to_uint256
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin, KeccakBuiltin
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
 from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.uint256 import Uint256
 
@@ -34,7 +34,7 @@ namespace LogFieldOffset {
 }
 
 namespace LogDecoder {
-    func get_field{keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    func get_field{keccak_ptr: felt*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
         rlp: felt*,
         field: felt,
         key: LogKey*
@@ -114,7 +114,7 @@ namespace LogDecoder {
         return (res_array=res_array, res_len=0);
     }
 
-    func abi_data_to_uint256_array{keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(res: felt*, res_len: felt, bytes_len: felt, res_array: felt*) {
+    func abi_data_to_uint256_array{keccak_ptr: felt*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(res: felt*, res_len: felt, bytes_len: felt, res_array: felt*) {
         alloc_locals;
 
         if (bytes_len == 0) {
