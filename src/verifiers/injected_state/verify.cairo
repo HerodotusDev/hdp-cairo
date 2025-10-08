@@ -1,4 +1,4 @@
-from starkware.cairo.common.cairo_builtins import HashBuiltin, PoseidonBuiltin, KeccakBuiltin, BitwiseBuiltin
+from starkware.cairo.common.cairo_builtins import HashBuiltin, PoseidonBuiltin, BitwiseBuiltin
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian, uint256_to_felt
@@ -13,7 +13,7 @@ func inclusion_state_verification{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     pow2_array: felt*,
     injected_state_memorizer: DictAccess*,
 }() -> (root: felt, key: felt, value: felt, inclusion_flag: felt){
@@ -49,7 +49,7 @@ func inclusion_state_verification{
 func update_state_verification{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     pow2_array: felt*,
     injected_state_memorizer: DictAccess*,
 }() -> (prev_root:felt, new_root:felt, key:felt, prev_value:felt, new_value:felt){

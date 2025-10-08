@@ -9,7 +9,6 @@ from starkware.cairo.common.cairo_builtins import (
     HashBuiltin,
     PoseidonBuiltin,
     BitwiseBuiltin,
-    KeccakBuiltin,
     SignatureBuiltin,
     EcOpBuiltin,
 )
@@ -24,7 +23,7 @@ func run_chain_state_verification{
     range_check_ptr,
     pedersen_ptr: HashBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
@@ -43,7 +42,7 @@ func run_chain_state_verification_inner{
     range_check_ptr,
     pedersen_ptr: HashBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
@@ -86,7 +85,7 @@ func run_chain_state_verification_inner{
 
 func run_injected_state_verification{
     range_check_ptr,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
@@ -106,7 +105,7 @@ func run_injected_state_verification{
 
 func run_injected_state_verification_inner{
     range_check_ptr,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
