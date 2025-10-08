@@ -42,6 +42,9 @@ enum Commands {
         #[arg(short = 'p', long = "program", help = "Path to the compiled program")]
         program: Option<PathBuf>,
     },
+    /// Link globally installed HDP CLI into your project
+    #[command(name = "link")]
+    Link,
 }
 
 #[tokio::main]
@@ -184,6 +187,73 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 compute_program_hash_chain(&program.get_stripped_program().unwrap(), 0)?.to_hex_string()
             );
             Ok(())
+        }
+        Commands::Link => {
+            let result: Result<(), Error> = (|| {
+                println!("🔗 Linking HDP CLI into your project...");
+
+                // Get the current working directory
+                let current_dir = std::env::current_dir().map_err(Error::IO)?;
+
+                // Resolve the HDP installation path
+                let hdp_path = std::env::var("HOME")
+                    .map_err(|_| std::io::Error::new(std::io::ErrorKind::NotFound, "Failed to get HOME directory"))
+                    .and_then(|home| {
+                        let path = format!("{}/.local/share/hdp", home);
+                        let expanded_path = PathBuf::from(&path);
+                        if expanded_path.exists() {
+                            Ok(expanded_path)
+                        } else {
+                            Err(std::io::Error::new(
+                                std::io::ErrorKind::NotFound,
+                                format!("HDP installation not found at: {}", path),
+                            ))
+                        }
+                    })
+                    .map_err(Error::IO)?;
+
+                let target_path = current_dir.join("hdp_cairo");
+
+                // Check if target already exists
+                if target_path.exists() {
+                    if target_path.is_symlink() {
+                        println!("⚠️  Symlink 'hdp_cairo' already exists. Removing it first...");
+                        std::fs::remove_file(&target_path).map_err(Error::IO)?;
+                    } else {
+                        return Err(Error::IO(std::io::Error::new(
+                            std::io::ErrorKind::AlreadyExists,
+                            "Target 'hdp_cairo' already exists and is not a symlink. Please remove it first.",
+                        )));
+                    }
+                }
+
+                // Create the symlink
+                std::os::unix::fs::symlink(&hdp_path, &target_path).map_err(Error::IO)?;
+
+                // Verify the symlink was created successfully
+                if !target_path.exists() {
+                    return Err(Error::IO(std::io::Error::other(
+                        "Failed to create symlink - target does not exist after creation",
+                    )));
+                }
+
+                println!("✅ Successfully linked HDP CLI into your project!");
+                println!();
+                println!("📝 Next steps:");
+                println!("   1. Add the following to your Scarb.toml dependencies:");
+                println!();
+                println!("      [dependencies]");
+                println!("      hdp_cairo = {{ path = \"hdp_cairo\" }}");
+                println!();
+                println!("   2. You can now import HDP modules in your Cairo code:");
+                println!("      use hdp_cairo::{{ ... }};");
+                println!();
+                println!("🎉 Happy coding with HDP!");
+
+                Ok(())
+            })();
+
+            result.map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
         }
     }
 }
