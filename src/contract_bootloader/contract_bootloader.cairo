@@ -38,10 +38,8 @@ from starkware.cairo.common.alloc import alloc
 func run_contract_bootloader{
     pedersen_ptr: HashBuiltin*,
     range_check_ptr,
-    ecdsa_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    ec_op_ptr,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     poseidon_ptr: PoseidonBuiltin*,
     range_check96_ptr: felt*,
     add_mod_ptr: ModBuiltin*,
@@ -70,16 +68,16 @@ func run_contract_bootloader{
         selectable=SelectableBuiltins(
             pedersen=pedersen_ptr,
             range_check=nondet %{ segments.add() %},
-            ecdsa=ecdsa_ptr,
+            ecdsa=nondet %{ segments.add() %},
             bitwise=bitwise_ptr,
-            ec_op=ec_op_ptr,
+            ec_op=nondet %{ segments.add() %},
             poseidon=poseidon_ptr,
             segment_arena=segment_arena_ptr,
             range_check96=range_check96_ptr,
             add_mod=add_mod_ptr,
             mul_mod=mul_mod_ptr,
         ),
-        non_selectable=NonSelectableBuiltins(keccak=keccak_ptr, sha256=sha256_ptr),
+        non_selectable=NonSelectableBuiltins(keccak=cast(keccak_ptr, KeccakBuiltin*), sha256=sha256_ptr),
     );
 
     let builtin_ptrs = &local_builtin_ptrs;
