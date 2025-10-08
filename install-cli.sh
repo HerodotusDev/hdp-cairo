@@ -179,22 +179,13 @@ main() {
   echo -e "${YELLOW}${ARROW}${NC} Once you run ${BOLD}cargo build --release${NC}, the symlink will automatically make your version available everywhere using ${BOLD}hdp-cli${NC}"
   echo -e "${YELLOW}${ARROW}${NC} You can change branches, update the repo, add prints, or modify code as you please"
   echo -e "${YELLOW}${ARROW}${NC} The symlink always points to your latest built version"
+  echo -e "${YELLOW}${ARROW}${NC} You can also symlink this repo into your project for easier access to debugging"
+  echo -e "${YELLOW}${ARROW}${NC} To do this, run ${CYAN}hdp-cli link${NC} in your Scarb project directory, and import directly from there"
   echo
   echo -e "${YELLOW}${BOLD}╔══════════════════════════════════════╗${NC}"
   echo -e "${YELLOW}${BOLD}║              IMPORTANT               ║${NC}"
   echo -e "${YELLOW}${BOLD}╚══════════════════════════════════════╝${NC}"
-  echo
-  echo -e "${YELLOW}${WARNING}${NC} To use hdp-cli, you need a ${BOLD}.env${NC} file in your project directory."
-  echo -e "${BLUE}${INFO}${NC} Here's an example .env file:"
-  echo -e "${CYAN}────────────────────────────────────────${NC}"
-  cat "$REPO_DIR/example.env"
-  echo
-  echo -e "${CYAN}────────────────────────────────────────${NC}"
-  echo -e "${YELLOW}${ARROW}${NC} Copy this to your project directory as ${BOLD}.env${NC} and configure the values as needed."
-  echo
-  echo -e "${BLUE}${INFO}${NC} Note that the ethereum RPC URLs need to be ${BOLD}archive nodes${NC}."
-  echo -e "${BLUE}${INFO}${NC} Note that the starknet RPC URLs need to be ${BOLD}pathfinder full nodes${NC}."
-  echo
+  "$SYMLINK_PATH" env-info
 }
 
 main "$@"

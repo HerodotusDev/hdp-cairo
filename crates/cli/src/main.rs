@@ -45,6 +45,9 @@ enum Commands {
     /// Link globally installed HDP CLI into your project
     #[command(name = "link")]
     Link,
+    /// Print example .env file with info
+    #[command(name = "env-info")]
+    EnvInfo,
 }
 
 #[tokio::main]
@@ -255,18 +258,40 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             result.map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
         }
+        Commands::EnvInfo => print_env_info(),
     }
 }
 
+fn print_env_info() -> Result<(), Box<dyn std::error::Error>> {
+    println!();
+    println!("⚠ To use hdp-cli, you need a .env file in your project directory.");
+    println!("ℹ Here's an example .env file:");
+    println!("────────────────────────────────────────");
+
+    // Read and display the example.env file
+    let home_dir = std::env::var("HOME").map_err(|_| "Could not find HOME environment variable")?;
+    let example_env_path = PathBuf::from(home_dir).join(".local/share/hdp/example.env");
+    let example_env_content = std::fs::read_to_string(&example_env_path).map_err(Error::IO)?;
+    println!("{}", example_env_content);
+    println!();
+
+    println!("────────────────────────────────────────");
+    println!("➤ Copy this to your project directory as .env and configure the values as needed.");
+    println!();
+    println!("ℹ Note that the ethereum RPC URLs need to be archive nodes.");
+    println!("ℹ Note that the starknet RPC URLs need to be pathfinder full nodes.");
+    println!();
+
+    Ok(())
+}
+
 fn check_env() -> Result<(), Box<dyn std::error::Error>> {
-    println!();
-    println!("Note that the ethereum RPC URLs need to be archive nodes.");
-    println!("Note that the starknet RPC URLs need to be pathfinder full nodes.");
-    println!();
+    println!("ℹ️  If you're having problems with the .env file, or RPC endpoints, run `hdp-cli env-info` to get more information.");
 
     // Check required environment variables
     for env_var in ["RPC_URL_HERODOTUS_INDEXER"] {
         if std::env::var(env_var).is_err() {
+            let _ = print_env_info(); // Ignore the error to avoid accidentally hiding the error below
             return Err(format!("Missing required environment variable: {}", env_var).into());
         }
     }
