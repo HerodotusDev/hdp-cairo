@@ -197,7 +197,7 @@ pub fn hint_set_contract_nodes(
             let segment = vm.add_memory_segment();
             vm.load_data(
                 segment,
-                &CairoTrieNode(node)
+                &CairoTrieNode(node.node)
                     .into_iter()
                     .map(MaybeRelocatable::from)
                     .collect::<Vec<MaybeRelocatable>>(),

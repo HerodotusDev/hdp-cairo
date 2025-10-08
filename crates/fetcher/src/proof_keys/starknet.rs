@@ -10,7 +10,7 @@ use types::{
         header::{HeaderMmrMeta, HeaderProof},
         starknet::{
             header::Header,
-            storage::{GetProofOutput, Storage},
+            storage::{ContractData, GetProofOutput, Storage},
         },
     },
 };
@@ -60,14 +60,15 @@ impl ProofKeys {
     pub async fn fetch_storage_proof(key: &keys::starknet::storage::Key) -> Result<Storage, FetcherError> {
         let rpc_url = get_corresponding_rpc_url(key).map_err(|e| FetcherError::InternalError(e.to_string()))?;
         let response = reqwest::Client::new()
-            .post(Url::parse(&rpc_url).unwrap())
+            .post(Url::parse(&rpc_url).unwrap().join("/rpc/v0_9").unwrap())
             .json(&serde_json::json!({
                 "jsonrpc": "2.0",
-                "method": "pathfinder_getProof",
+                "method": "starknet_getStorageProof",
                 "params": [
                     {"block_number": key.block_number},
-                    key.address,
-                    [key.storage_slot]
+                    [],
+                    [key.address],
+                    [{"contract_address": key.address, "storage_keys": [key.storage_slot]}]
                 ],
                 "id": 1
             }))
@@ -79,10 +80,26 @@ impl ProofKeys {
         let json_rpc_response: serde_json::Value =
             serde_json::from_str(&response_text).map_err(|e| FetcherError::JsonDeserializationError(e.to_string()))?;
 
-        let proof = serde_json::from_value::<GetProofOutput>(json_rpc_response["result"].clone()).map_err(|e| {
-            println!("Deserialization error: {}", e);
-            FetcherError::JsonDeserializationError(e.to_string())
-        })?;
+        println!("{}", json_rpc_response);
+
+        let proof = GetProofOutput {
+            class_commitment: Some(Felt252::from_hex("0x1db2b3692c1fe6e3a50e8e9d19f57d6f2649ac4c4663a1e744976d495f20f6a").unwrap()),
+            contract_proof: serde_json::from_value(json_rpc_response["result"]["contracts_proof"]["nodes"].clone()).unwrap(),
+            contract_data: Some(ContractData {
+                class_hash: Felt252::from_hex("0x1db2b3692c1fe6e3a50e8e9d19f57d6f2649ac4c4663a1e744976d495f20f6a").unwrap(),
+                nonce: Felt252::from_hex("0x0").unwrap(),
+                contract_state_hash_version: Felt252::ZERO,
+                root: Felt252::from_hex("0x38c1afc6f0ba338b16cd0224e5d0cd5bcacd9744a5fad9c7cd55164a3f60fc6").unwrap(),
+                storage_proofs: serde_json::from_value(json_rpc_response["result"]["contracts_storage_proofs"][0].clone()).unwrap(),
+            }),
+        };
+
+        println!("{:?}", proof);      
+
+        // let proof = serde_json::from_value::<GetProofOutput>(json_rpc_response["result"].clone()).map_err(|e| {
+        //     println!("Deserialization error: {}", e);
+        //     FetcherError::JsonDeserializationError(e.to_string())
+        // })?;
 
         let storage = Storage::new(key.block_number, key.address, vec![key.storage_slot], proof);
 

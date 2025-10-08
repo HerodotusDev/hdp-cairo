@@ -7,7 +7,6 @@ use strum_macros::FromRepr;
 
 use crate::{
     cairo::{structs::CairoFelt, traits::CairoType, FELT_0, FELT_1},
-    proofs::starknet::storage::{Path, TrieNode},
 };
 
 #[derive(FromRepr, Debug)]
