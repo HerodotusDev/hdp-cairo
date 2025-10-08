@@ -80,6 +80,53 @@ ensure_path_bootstrap() {
   fi
 }
 
+check_old_installation() {
+  if [ -d "$REPO_DIR" ] && [ ! -d "$REPO_DIR/.git" ]; then
+    echo -e "${YELLOW}${WARNING}${NC} Old installation detected at ${CYAN}$REPO_DIR${NC} (no git repository found)"
+    return 0
+  fi
+  return 1
+}
+
+cleanup_old_installation() {
+  echo
+  echo -e "${YELLOW}${WARNING}${NC} An old installation of HDP CLI was found that needs to be removed."
+  echo -e "${YELLOW}${WARNING}${NC} This will delete the following:"
+  if [ -d "$REPO_DIR" ]; then
+    echo -e "  ${CYAN}•${NC} Directory: ${CYAN}$REPO_DIR${NC}"
+  fi
+  if [ -e "$SYMLINK_PATH" ]; then
+    echo -e "  ${CYAN}•${NC} Binary/symlink: ${CYAN}$SYMLINK_PATH${NC}"
+  fi
+  echo
+  echo -e "${YELLOW}${ARROW}${NC} Do you want to remove the old installation and proceed with a fresh install? (y/N)"
+  read -r response
+  
+  case "$response" in
+    [yY]|[yY][eE][sS])
+      echo -e "${BLUE}${INFO}${NC} Cleaning up old installation..."
+      
+      # Remove the old hdp directory
+      if [ -d "$REPO_DIR" ]; then
+        echo -e "${BLUE}${INFO}${NC} Removing old directory: ${CYAN}$REPO_DIR${NC}"
+        rm -rf "$REPO_DIR"
+      fi
+      
+      # Remove the old symlink or binary
+      if [ -e "$SYMLINK_PATH" ]; then
+        echo -e "${BLUE}${INFO}${NC} Removing old symlink/binary: ${CYAN}$SYMLINK_PATH${NC}"
+        rm -f "$SYMLINK_PATH"
+      fi
+      
+      echo -e "${GREEN}${SUCCESS}${NC} Old installation cleaned up successfully"
+      ;;
+    *)
+      echo -e "${RED}${ERROR}${NC} Installation cancelled. Please remove the old installation manually and run this script again."
+      exit 1
+      ;;
+  esac
+}
+
 clone_or_update_repo() {
   if [ -d "$REPO_DIR/.git" ]; then
     echo -e "${BLUE}${INFO}${NC} Repository already exists at ${CYAN}$REPO_DIR${NC}. Updating ${BOLD}$BIN_NAME${NC}..."
@@ -158,6 +205,11 @@ main() {
   ensure_rust
   ensure_uv
   ensure_path_bootstrap
+
+  # Check for old installation and clean up if necessary
+  if check_old_installation; then
+    cleanup_old_installation
+  fi
 
   clone_or_update_repo
   init_submodules
