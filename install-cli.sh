@@ -6,6 +6,7 @@ set -euo pipefail
 # - Clones or updates the repo at $HOME/.local/share/hdp
 # - Initializes submodules, sets up Python env with uv, activates venv
 # - Builds the hdp-cli binary and symlinks it into $HOME/.local/bin
+# - Supports installing specific versions via VERSION environment variable (e.g., VERSION=v1.0.12)
 
 # Colors for better readability
 RED='\033[0;31m'
@@ -80,6 +81,23 @@ ensure_path_bootstrap() {
   fi
 }
 
+validate_version() {
+  local version="$1"
+  if [ -z "$version" ]; then
+    return 0  # No version specified, use latest
+  fi
+  
+  # Check if version exists on GitHub
+  echo -e "${BLUE}${INFO}${NC} Checking if version ${CYAN}$version${NC} exists..."
+  if ! curl -s -f "https://api.github.com/repos/HerodotusDev/hdp-cairo/releases/tags/$version" >/dev/null 2>&1; then
+    echo -e "${RED}${ERROR}${NC} Version ${CYAN}$version${NC} not found on GitHub releases"
+    echo -e "${YELLOW}${ARROW}${NC} Please check available releases at: ${CYAN}https://github.com/HerodotusDev/hdp-cairo/releases${NC}"
+    exit 1
+  fi
+  
+  echo -e "${GREEN}${SUCCESS}${NC} Version ${CYAN}$version${NC} found"
+}
+
 check_old_installation() {
   if [ -d "$REPO_DIR" ] && [ ! -d "$REPO_DIR/.git" ]; then
     echo -e "${YELLOW}${WARNING}${NC} Old installation detected at ${CYAN}$REPO_DIR${NC} (no git repository found)"
@@ -128,17 +146,46 @@ cleanup_old_installation() {
 }
 
 clone_or_update_repo() {
+  local version="${VERSION:-}"
+  
   if [ -d "$REPO_DIR/.git" ]; then
-    echo -e "${BLUE}${INFO}${NC} Repository already exists at ${CYAN}$REPO_DIR${NC}. Updating ${BOLD}$BIN_NAME${NC}..."
-    git -C "$REPO_DIR" fetch --all --tags
-    # Prefer fast-forward; if not possible, fallback to rebase
-    if ! git -C "$REPO_DIR" pull --ff-only; then
-      git -C "$REPO_DIR" pull --rebase --autostash || true
+    echo -e "${BLUE}${INFO}${NC} Repository already exists at ${CYAN}$REPO_DIR${NC}..."
+    
+    if [ -n "$version" ]; then
+      echo -e "${BLUE}${INFO}${NC} Checking out version ${CYAN}$version${NC}..."
+      git -C "$REPO_DIR" fetch --all --tags
+      if ! git -C "$REPO_DIR" checkout "$version" 2>/dev/null; then
+        echo -e "${RED}${ERROR}${NC} Failed to checkout version ${CYAN}$version${NC}"
+        echo -e "${YELLOW}${ARROW}${NC} The version might not exist or the repository might be in a dirty state"
+        exit 1
+      fi
+    else
+      echo -e "${BLUE}${INFO}${NC} Updating to latest version..."
+      git -C "$REPO_DIR" fetch --all --tags
+      if ! git -C "$REPO_DIR" pull --ff-only origin main; then
+        echo -e "${RED}${ERROR}${NC} Failed to update repository. The repository has local changes that conflict with remote changes."
+        echo -e "${YELLOW}${ARROW}${NC} Please resolve conflicts manually:"
+        echo -e "  ${CYAN}cd $REPO_DIR${NC}"
+        echo -e "  ${CYAN}git stash${NC}  # to save your local changes"
+        echo -e "  ${CYAN}git pull origin main${NC}   # to update from main branch"
+        echo -e "  ${CYAN}git stash pop${NC}  # to restore your changes (if desired)"
+        echo -e "${YELLOW}${ARROW}${NC} Then run this installer again."
+        exit 1
+      fi
     fi
   else
     mkdir -p "$(dirname "$REPO_DIR")"
     echo -e "${BLUE}${INFO}${NC} Cloning ${CYAN}$REPO_URL${NC} into ${CYAN}$REPO_DIR${NC}..."
     git clone "$REPO_URL" "$REPO_DIR"
+    
+    if [ -n "$version" ]; then
+      echo -e "${BLUE}${INFO}${NC} Checking out version ${CYAN}$version${NC}..."
+      if ! git -C "$REPO_DIR" checkout "$version" 2>/dev/null; then
+        echo -e "${RED}${ERROR}${NC} Failed to checkout version ${CYAN}$version${NC}"
+        echo -e "${YELLOW}${ARROW}${NC} The version might not exist"
+        exit 1
+      fi
+    fi
   fi
 }
 
@@ -206,6 +253,14 @@ main() {
   ensure_uv
   ensure_path_bootstrap
 
+  # Validate version if specified
+  if [ -n "${VERSION:-}" ]; then
+    validate_version "$VERSION"
+    echo -e "${BLUE}${INFO}${NC} Installing version: ${CYAN}$VERSION${NC}"
+  else
+    echo -e "${BLUE}${INFO}${NC} Installing latest version"
+  fi
+
   # Check for old installation and clean up if necessary
   if check_old_installation; then
     cleanup_old_installation
@@ -233,6 +288,10 @@ main() {
   echo -e "${YELLOW}${ARROW}${NC} The symlink always points to your latest built version"
   echo -e "${YELLOW}${ARROW}${NC} You can also symlink this repo into your project for easier access to debugging"
   echo -e "${YELLOW}${ARROW}${NC} To do this, run ${CYAN}hdp-cli link${NC} in your Scarb project directory, and import directly from there"
+  echo
+  echo -e "${BLUE}${INFO}${NC} To install a specific version in the future, use:"
+  echo -e "  ${CYAN}VERSION=vX.X.X curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash${NC}"
+  echo -e "${BLUE}${INFO}${NC} Available versions can be found at: ${CYAN}https://github.com/HerodotusDev/hdp-cairo/releases${NC}"
   echo
   echo -e "${YELLOW}${BOLD}╔══════════════════════════════════════╗${NC}"
   echo -e "${YELLOW}${BOLD}║              IMPORTANT               ║${NC}"
