@@ -77,7 +77,9 @@ func run_contract_bootloader{
             add_mod=add_mod_ptr,
             mul_mod=mul_mod_ptr,
         ),
-        non_selectable=NonSelectableBuiltins(keccak=cast(keccak_ptr, KeccakBuiltin*), sha256=sha256_ptr),
+        non_selectable=NonSelectableBuiltins(
+            keccak=cast(keccak_ptr, KeccakBuiltin*), sha256=sha256_ptr
+        ),
     );
 
     let builtin_ptrs = &local_builtin_ptrs;

@@ -14,7 +14,10 @@ from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
 from starkware.cairo.common.registers import get_label_location
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash_many, poseidon_hash
-from starkware.cairo.common.cairo_keccak.keccak import finalize_keccak, cairo_keccak_felts as keccak_felts
+from starkware.cairo.common.cairo_keccak.keccak import (
+    finalize_keccak,
+    cairo_keccak_felts as keccak_felts,
+)
 
 from src.verifiers.verify import run_chain_state_verification
 from src.verifiers.verify import run_injected_state_verification

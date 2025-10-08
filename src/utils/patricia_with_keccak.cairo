@@ -21,10 +21,7 @@ from src.utils.keccak import TruncatedKeccak as HashBuiltin
 
 // Given an edge node hash, opens the hash using the preimage hint, and returns a NodeEdge object.
 func open_edge{
-    hash_ptr: HashBuiltin*,
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: felt*,
+    hash_ptr: HashBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*
 }(globals: ParticiaGlobals*, node: felt) -> (edge: NodeEdge*) {
     alloc_locals;
     local edge: NodeEdge*;
@@ -490,10 +487,7 @@ func patricia_update_constants_new() -> (patricia_update_constants: PatriciaUpda
 }
 
 func patricia_update_using_update_constants{
-    hash_ptr: HashBuiltin*,
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: felt*,
+    hash_ptr: HashBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*
 }(
     patricia_update_constants: PatriciaUpdateConstants*,
     update_ptr: DictAccess*,

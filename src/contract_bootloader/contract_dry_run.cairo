@@ -12,7 +12,10 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, felt_to_uint256
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
-from starkware.cairo.common.cairo_keccak.keccak import finalize_keccak, cairo_keccak_felts as keccak_felts
+from starkware.cairo.common.cairo_keccak.keccak import (
+    finalize_keccak,
+    cairo_keccak_felts as keccak_felts,
+)
 from src.contract_bootloader.contract_class.compiled_class import CompiledClass, compiled_class_hash
 from src.contract_bootloader.contract_bootloader import (
     run_contract_bootloader,
@@ -156,10 +159,9 @@ func main{
 
     let (leafs: Uint256*) = alloc();
     felt_array_to_uint256s(counter=retdata_size, retdata=retdata, leafs=leafs);
-    
+
     with keccak_ptr {
         let output_root = compute_merkle_root(leafs, retdata_size);
-    
     }
     assert [output_ptr + 0] = output_root.low;
     assert [output_ptr + 1] = output_root.high;

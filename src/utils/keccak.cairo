@@ -2,7 +2,9 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.math import split_felt, unsigned_div_rem
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
-from starkware.cairo.common.cairo_keccak.keccak import cairo_keccak_felts_bigend as keccak_felts_bigend
+from starkware.cairo.common.cairo_keccak.keccak import (
+    cairo_keccak_felts_bigend as keccak_felts_bigend,
+)
 from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.memset import memset
 from starkware.cairo.common.registers import get_label_location
@@ -44,9 +46,9 @@ func keccak160{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*}
     return (res=result);
 }
 
-func finalize_truncated_keccak{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*
-}(ptr_start: TruncatedKeccak*, ptr_end: TruncatedKeccak*) {
+func finalize_truncated_keccak{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*}(
+    ptr_start: TruncatedKeccak*, ptr_end: TruncatedKeccak*
+) {
     alloc_locals;
 
     // Check if we've processed all elements

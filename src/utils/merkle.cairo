@@ -1,5 +1,8 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
-from starkware.cairo.common.cairo_keccak.keccak import cairo_keccak as keccak, cairo_keccak_uint256s as keccak_uint256s
+from starkware.cairo.common.cairo_keccak.keccak import (
+    cairo_keccak as keccak,
+    cairo_keccak_uint256s as keccak_uint256s,
+)
 from starkware.cairo.common.keccak_utils.keccak_utils import keccak_add_uint256
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
@@ -32,9 +35,9 @@ func compute_tasks_root{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_pt
     }(leafs=leafs, leafs_len=1);
 }
 
-func compute_results_root{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*
-}(task_hash: Uint256, result: Uint256) -> Uint256 {
+func compute_results_root{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*}(
+    task_hash: Uint256, result: Uint256
+) -> Uint256 {
     alloc_locals;
     let (local leafs: Uint256*) = alloc();
 
@@ -118,9 +121,9 @@ func compute_leaf_hashes{
 }
 
 // Double keccak hashes the leaf to create the leaf hash
-func compute_leaf_hash_inner{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*
-}(leaf: Uint256) -> Uint256 {
+func compute_leaf_hash_inner{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*}(
+    leaf: Uint256
+) -> Uint256 {
     alloc_locals;
     let (first_round_input) = alloc();
     let first_round_input_start = first_round_input;
@@ -200,9 +203,9 @@ func hash_pair{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*}
 // - result: the result
 // Outputs:
 // - the result entry
-func compute_results_entry{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*
-}(task_hash: Uint256, result: Uint256) -> Uint256 {
+func compute_results_entry{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*}(
+    task_hash: Uint256, result: Uint256
+) -> Uint256 {
     alloc_locals;
 
     // before hashing we need to reverse the endianness
