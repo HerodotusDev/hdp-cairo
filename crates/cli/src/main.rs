@@ -189,6 +189,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn check_env() -> Result<(), Box<dyn std::error::Error>> {
+    println!();
+    println!("Note that the ethereum RPC URLs need to be archive nodes.");
+    println!("Note that the starknet RPC URLs need to be pathfinder full nodes.");
+    println!();
+
     // Check required environment variables
     for env_var in ["RPC_URL_HERODOTUS_INDEXER"] {
         if std::env::var(env_var).is_err() {
