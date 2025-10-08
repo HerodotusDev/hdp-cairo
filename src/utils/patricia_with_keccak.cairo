@@ -14,8 +14,7 @@ from starkware.cairo.common.patricia_utils import (
     ParticiaGlobals,
     PatriciaUpdateConstants,
 )
-
-from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, KeccakBuiltin, BitwiseBuiltin
+from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin
 
 from src.utils.keccak import keccak160 as hash2
 from src.utils.keccak import TruncatedKeccak as HashBuiltin
@@ -25,7 +24,7 @@ func open_edge{
     hash_ptr: HashBuiltin*,
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
 }(globals: ParticiaGlobals*, node: felt) -> (edge: NodeEdge*) {
     alloc_locals;
     local edge: NodeEdge*;
@@ -161,7 +160,7 @@ func traverse_edge{
     update_ptr: DictAccess*,
     siblings: felt*,
     bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
 }(globals: ParticiaGlobals*, height: felt, path: felt, edge: NodeEdge) {
     alloc_locals;
 
@@ -319,7 +318,7 @@ func traverse_binary_or_leaf{
     update_ptr: DictAccess*,
     siblings: felt*,
     bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
 }(globals: ParticiaGlobals*, height: felt, path: felt, node: felt) {
     if (height == 0) {
         // Leaf.
@@ -406,7 +405,7 @@ func traverse_node{
     update_ptr: DictAccess*,
     siblings: felt*,
     bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
 }(globals: ParticiaGlobals*, height: felt, path: felt, node: felt) {
     if (node == 0) {
         // Empty:
@@ -424,7 +423,7 @@ func traverse_non_empty{
     update_ptr: DictAccess*,
     siblings: felt*,
     bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
 }(globals: ParticiaGlobals*, height: felt, path: felt, node: felt) {
     %{ memory[ap] = 1 if ids.height == 0 or len(preimage[ids.node]) == 2 else 0 %}
     jmp binary if [ap] != 0, ap++;
@@ -494,7 +493,7 @@ func patricia_update_using_update_constants{
     hash_ptr: HashBuiltin*,
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
 }(
     patricia_update_constants: PatriciaUpdateConstants*,
     update_ptr: DictAccess*,

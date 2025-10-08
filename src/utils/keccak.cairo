@@ -1,9 +1,8 @@
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
-from starkware.cairo.common.keccak_state import KeccakBuiltinState
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.math import split_felt, unsigned_div_rem
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
-from starkware.cairo.common.builtin_keccak.keccak import keccak_felts_bigend
+from starkware.cairo.common.cairo_keccak.keccak import cairo_keccak_felts_bigend as keccak_felts_bigend
 from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.memset import memset
 from starkware.cairo.common.registers import get_label_location
@@ -18,7 +17,7 @@ struct TruncatedKeccak {
 // A 160 msb truncated version of keccak:
 //   keccak(x, y) >> 96.
 // Note: This version hashes the big-endian representations of x and y.
-func keccak160{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(
+func keccak160{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*}(
     x: felt, y: felt
 ) -> (res: felt) {
     alloc_locals;
@@ -46,7 +45,7 @@ func keccak160{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: Keccak
 }
 
 func finalize_truncated_keccak{
-    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*
+    range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*
 }(ptr_start: TruncatedKeccak*, ptr_end: TruncatedKeccak*) {
     alloc_locals;
 
