@@ -9,9 +9,7 @@ from starkware.starknet.common.new_syscalls import (
     RequestHeader,
     ResponseHeader,
 )
-from starkware.cairo.common.builtin_keccak.keccak import (
-    KECCAK_FULL_RATE_IN_WORDS,
-)
+from starkware.cairo.common.builtin_keccak.keccak import KECCAK_FULL_RATE_IN_WORDS
 from starkware.cairo.common.cairo_keccak.keccak import cairo_keccak as keccak
 from starkware.cairo.common.math import unsigned_div_rem
 from starkware.cairo.common.cairo_builtins import (
@@ -289,9 +287,9 @@ func execute_keccak{
 
     tempvar input_start = request.input_start;
     tempvar input_end = request.input_end;
-    tempvar len = input_end - input_start;
+    tempvar chunks = input_end - input_start - 1;
 
-    let (res) = keccak(inputs=input_start, n_bytes=len);
+    let (res) = keccak(inputs=input_start, n_bytes=chunks * 8);
 
     assert response.result_low = res.low;
     assert response.result_high = res.high;
