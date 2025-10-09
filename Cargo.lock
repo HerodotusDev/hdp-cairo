@@ -7508,7 +7508,6 @@ dependencies = [
  "bitvec",
  "chrono",
  "clap",
- "eth_trie",
  "hex",
  "http-body-util",
  "pathfinder-common",
