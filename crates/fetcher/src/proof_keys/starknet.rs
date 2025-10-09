@@ -8,10 +8,7 @@ use types::{
     keys::{self, starknet::get_corresponding_rpc_url},
     proofs::{
         header::{HeaderMmrMeta, HeaderProof},
-        starknet::{
-            header::Header,
-            storage::{ContractData, GetProofOutput, Storage},
-        },
+        starknet::{self, header::Header, storage::Storage},
     },
 };
 
@@ -80,30 +77,12 @@ impl ProofKeys {
         let json_rpc_response: serde_json::Value =
             serde_json::from_str(&response_text).map_err(|e| FetcherError::JsonDeserializationError(e.to_string()))?;
 
-        println!("{}", json_rpc_response);
+        let proof = serde_json::from_value::<starknet::storage::Output>(json_rpc_response["result"].clone()).map_err(|e| {
+            println!("Deserialization error: {}", e);
+            FetcherError::JsonDeserializationError(e.to_string())
+        })?;
 
-        let proof = GetProofOutput {
-            class_commitment: Some(Felt252::from_hex("0x1db2b3692c1fe6e3a50e8e9d19f57d6f2649ac4c4663a1e744976d495f20f6a").unwrap()),
-            contract_proof: serde_json::from_value(json_rpc_response["result"]["contracts_proof"]["nodes"].clone()).unwrap(),
-            contract_data: Some(ContractData {
-                class_hash: Felt252::from_hex("0x1db2b3692c1fe6e3a50e8e9d19f57d6f2649ac4c4663a1e744976d495f20f6a").unwrap(),
-                nonce: Felt252::from_hex("0x0").unwrap(),
-                contract_state_hash_version: Felt252::ZERO,
-                root: Felt252::from_hex("0x38c1afc6f0ba338b16cd0224e5d0cd5bcacd9744a5fad9c7cd55164a3f60fc6").unwrap(),
-                storage_proofs: serde_json::from_value(json_rpc_response["result"]["contracts_storage_proofs"][0].clone()).unwrap(),
-            }),
-        };
-
-        println!("{:?}", proof);      
-
-        // let proof = serde_json::from_value::<GetProofOutput>(json_rpc_response["result"].clone()).map_err(|e| {
-        //     println!("Deserialization error: {}", e);
-        //     FetcherError::JsonDeserializationError(e.to_string())
-        // })?;
-
-        let storage = Storage::new(key.block_number, key.address, vec![key.storage_slot], proof);
-
-        Ok(storage)
+        Ok(Storage::new(key.block_number, key.address, vec![key.storage_slot], proof))
     }
 
     pub fn to_flattened_keys(&self, chain_id: u128) -> HashSet<FlattenedKey> {
