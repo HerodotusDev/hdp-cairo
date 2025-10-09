@@ -3,11 +3,11 @@ use cairo_vm::{
     vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
     Felt252,
 };
+use pathfinder_common::trie::TrieNode;
+use pathfinder_crypto::Felt;
 use strum_macros::FromRepr;
 
-use crate::{
-    cairo::{structs::CairoFelt, traits::CairoType, FELT_0, FELT_1},
-};
+use crate::cairo::{structs::CairoFelt, traits::CairoType, FELT_0, FELT_1};
 
 #[derive(FromRepr, Debug)]
 pub enum FunctionId {
@@ -58,10 +58,20 @@ impl IntoIterator for CairoTrieNode {
 
     fn into_iter(self) -> Self::IntoIter {
         match self.0 {
-            TrieNode::Binary { left, right } => vec![FELT_0, left, right, FELT_0].into_iter(),
-            TrieNode::Edge { child, path } => {
-                vec![FELT_1, child, Felt252::from_hex(&path.value).unwrap(), Felt252::from(path.len)].into_iter()
-            }
+            TrieNode::Binary { left, right } => vec![
+                FELT_0,
+                Felt252::from_bytes_be(&left.to_be_bytes()),
+                Felt252::from_bytes_be(&right.to_be_bytes()),
+                FELT_0,
+            ]
+            .into_iter(),
+            TrieNode::Edge { child, path } => vec![
+                FELT_1,
+                Felt252::from_bytes_be(&child.to_be_bytes()),
+                Felt252::from_bytes_be(&Felt::from_bits(&path).unwrap().to_be_bytes()),
+                Felt252::from(path.len()),
+            ]
+            .into_iter(),
         }
     }
 }
@@ -74,15 +84,15 @@ impl CairoType for CairoTrieNode {
         let node_type: u8 = (*vm.get_integer((address + 0)?)?).try_into().unwrap();
         match node_type {
             0 => Ok(Self(TrieNode::Binary {
-                left: *vm.get_integer((address + 1)?)?,
-                right: *vm.get_integer((address + 2)?)?,
+                left: Felt::from_be_bytes(vm.get_integer((address + 1)?)?.to_bytes_be()).unwrap(),
+                right: Felt::from_be_bytes(vm.get_integer((address + 2)?)?.to_bytes_be()).unwrap(),
             })),
             1 => Ok(Self(TrieNode::Edge {
-                child: *vm.get_integer((address + 1)?)?,
-                path: Path {
-                    value: (*vm.get_integer((address + 2)?)?).to_string(),
-                    len: (*vm.get_integer((address + 3)?)?).try_into().unwrap(),
-                },
+                child: Felt::from_be_bytes(vm.get_integer((address + 1)?)?.to_bytes_be()).unwrap(),
+                path: Felt::from_be_bytes(vm.get_integer((address + 2)?)?.to_bytes_be())
+                    .unwrap()
+                    .view_bits()
+                    .to_bitvec(),
             })),
             _ => Err(MemoryError::ErrorRetrievingMessage("node type can be either 0 or 1".into())),
         }
@@ -95,15 +105,18 @@ impl CairoType for CairoTrieNode {
         match &self.0 {
             TrieNode::Binary { left, right } => {
                 vm.insert_value((address + 0)?, FELT_0)?;
-                vm.insert_value((address + 1)?, left)?;
-                vm.insert_value((address + 2)?, right)?;
+                vm.insert_value((address + 1)?, Felt252::from_bytes_be(&left.to_be_bytes()))?;
+                vm.insert_value((address + 2)?, Felt252::from_bytes_be(&right.to_be_bytes()))?;
                 vm.insert_value((address + 3)?, FELT_0)?;
             }
             TrieNode::Edge { child, path } => {
                 vm.insert_value((address + 0)?, FELT_1)?;
-                vm.insert_value((address + 1)?, child)?;
-                vm.insert_value((address + 2)?, Felt252::from_hex(&path.value).unwrap())?;
-                vm.insert_value((address + 3)?, Felt252::from(path.len))?;
+                vm.insert_value((address + 1)?, Felt252::from_bytes_be(&child.to_be_bytes()))?;
+                vm.insert_value(
+                    (address + 2)?,
+                    Felt252::from_bytes_be(&Felt::from_bits(path).unwrap().to_be_bytes()),
+                )?;
+                vm.insert_value((address + 3)?, Felt252::from(path.len()))?;
             }
         };
         Ok((address + 4)?)
