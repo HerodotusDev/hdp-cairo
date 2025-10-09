@@ -80,15 +80,15 @@ namespace ReceiptDecoder {
 
         local has_type_prefix: felt;
         %{
-            # typed transactions have a type prefix in this range [1, 3]
-            if 0x0 < ids.first_byte < 0x04:
+            # typed transactions have a type prefix in this range [1, 4]
+            if 0x0 < ids.first_byte < 0x05:
                 ids.has_type_prefix = 1
             else:
                 ids.has_type_prefix = 0
         %}
 
         if (has_type_prefix == 1) {
-            assert [range_check_ptr] = 0x3 - first_byte;
+            assert [range_check_ptr] = 0x4 - first_byte;
             assert [range_check_ptr + 1] = first_byte - 1;
             // Can be a long or short list
             assert [range_check_ptr + 2] = 0xff - second_byte;
