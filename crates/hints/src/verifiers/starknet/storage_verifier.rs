@@ -12,7 +12,10 @@ use cairo_vm::{
 use pathfinder_common::trie::TrieNode;
 use types::{
     cairo::{starknet::storage::CairoTrieNode, traits::CairoType, FELT_0},
-    proofs::starknet::{storage::Storage, Proofs},
+    proofs::starknet::{
+        storage::{ProofNode, Storage},
+        Proofs,
+    },
 };
 
 use crate::vars;
@@ -58,7 +61,6 @@ pub fn hint_set_storage_block_number(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_STARKNET)?;
-
     insert_value_into_ap(vm, Felt252::from(storage.block_number))
 }
 
@@ -71,7 +73,6 @@ pub fn hint_set_storage_addresses_len(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_STARKNET)?;
-
     insert_value_into_ap(vm, Felt252::from(storage.storage_addresses.len()))
 }
 
@@ -84,7 +85,6 @@ pub fn hint_set_contract_address(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_STARKNET)?;
-
     insert_value_into_ap(vm, storage.contract_address)
 }
 
@@ -123,9 +123,7 @@ pub fn hint_set_storage_starknet_proof_contract_data_class_hash(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_STARKNET)?;
-
     let class_hash = Felt252::from_bytes_be(storage.output.contracts_proof.contract_leaves_data[0].class_hash.0.as_be_bytes());
-    println!("class_hash: {}", class_hash);
     insert_value_into_ap(vm, class_hash)
 }
 
@@ -141,7 +139,6 @@ pub fn hint_set_storage_starknet_proof_contract_data_nonce(
     let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_STARKNET)?;
 
     let nonce = Felt252::from_bytes_be(storage.output.contracts_proof.contract_leaves_data[0].nonce.0.as_be_bytes());
-    println!("nonce: {}", nonce);
     insert_value_into_ap(vm, nonce)
 }
 
@@ -168,7 +165,6 @@ pub fn hint_set_storage_starknet_proof_contract_proof_len(
 ) -> Result<(), HintError> {
     let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_STARKNET)?;
     let proof_len = storage.output.contracts_proof.nodes.0.len();
-    println!("proof_len: {}", proof_len);
     insert_value_into_ap(vm, proof_len)
 }
 
@@ -183,17 +179,40 @@ pub fn hint_set_contract_nodes(
     let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_STARKNET)?;
     let contract_nodes_ptr = get_ptr_from_var_name(vars::ids::CONTRACT_NODES, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    let data = storage
+    let mut target_node_hash = storage.output.global_roots.contracts_tree_root;
+    let mut node_store: HashMap<pathfinder_crypto::Felt, ProofNode> = storage
         .output
         .contracts_proof
         .nodes
         .0
+        .iter()
+        .cloned()
+        .map(|node_mapping| (node_mapping.node_hash, node_mapping.node))
+        .collect();
+
+    let mut ordered_nodes: Vec<ProofNode> = Vec::with_capacity(node_store.len());
+
+    while !node_store.is_empty() {
+        let node = node_store.remove(&target_node_hash).unwrap();
+        ordered_nodes.push(node.clone());
+
+        target_node_hash = match node.0 {
+            TrieNode::Binary { left, right } => match (node_store.contains_key(&left), node_store.contains_key(&right)) {
+                (true, false) => left,
+                (false, true) => right,
+                _ => break,
+            },
+            TrieNode::Edge { child, path: _ } => child,
+        };
+    }
+
+    let data = ordered_nodes
         .into_iter()
         .map(|node| {
             let segment = vm.add_memory_segment();
             vm.load_data(
                 segment,
-                &CairoTrieNode(node.node.0)
+                &CairoTrieNode(node.0)
                     .into_iter()
                     .map(MaybeRelocatable::from)
                     .collect::<Vec<MaybeRelocatable>>(),
@@ -220,7 +239,6 @@ pub fn hint_set_storage_starknet_proof_class_commitment(
 ) -> Result<(), HintError> {
     let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_STARKNET)?;
     let class_commitment = Felt252::from_bytes_be(storage.output.global_roots.classes_tree_root.as_be_bytes());
-    println!("class_commitment: {}", class_commitment);
     insert_value_into_ap(vm, class_commitment)
 }
 
@@ -253,19 +271,37 @@ pub fn hint_set_storage_starknet_proof_contract_data_storage_proof(
     let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_STARKNET)?;
     let contract_state_nodes_ptr = get_ptr_from_var_name(vars::ids::CONTRACT_STATE_NODES, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    println!("storege proofs: {:?}", storage.output.contracts_storage_proofs[0].0.clone());
-
-    let data = storage.output.contracts_storage_proofs[0]
+    let mut target_node_hash = storage.output.contracts_proof.contract_leaves_data[0].storage_root.0;
+    let mut node_store: HashMap<pathfinder_crypto::Felt, ProofNode> = storage.output.contracts_storage_proofs[0]
         .0
-        .clone()
+        .iter()
+        .cloned()
+        .map(|node_mapping| (node_mapping.node_hash, node_mapping.node))
+        .collect();
+
+    let mut ordered_nodes: Vec<ProofNode> = Vec::with_capacity(node_store.len());
+
+    while !node_store.is_empty() {
+        let node = node_store.remove(&target_node_hash).unwrap();
+        ordered_nodes.push(node.clone());
+
+        target_node_hash = match node.0 {
+            TrieNode::Binary { left, right } => match (node_store.contains_key(&left), node_store.contains_key(&right)) {
+                (true, false) => left,
+                (false, true) => right,
+                _ => break,
+            },
+            TrieNode::Edge { child, path: _ } => child,
+        };
+    }
+
+    let data = ordered_nodes
         .into_iter()
-        .rev()
         .map(|node| {
             let segment = vm.add_memory_segment();
-            println!("node: {:?}", CairoTrieNode(node.node.0.clone()).into_iter());
             vm.load_data(
                 segment,
-                &CairoTrieNode(node.node.0)
+                &CairoTrieNode(node.0)
                     .into_iter()
                     .map(MaybeRelocatable::from)
                     .collect::<Vec<MaybeRelocatable>>(),
