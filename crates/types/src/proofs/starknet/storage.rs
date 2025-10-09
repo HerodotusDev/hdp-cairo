@@ -1,7 +1,7 @@
 use core::fmt;
 
 use cairo_vm::Felt252;
-use pathfinder_common::{trie::TrieNode, BlockHash, ClassHash, ContractNonce};
+use pathfinder_common::{trie::TrieNode, BlockHash, ClassHash, ContractNonce, ContractRoot};
 use pathfinder_crypto::Felt;
 use serde::{
     de::{self, MapAccess, Visitor},
@@ -53,7 +53,7 @@ pub struct ContractsProof {
 pub struct ContractLeafData {
     pub nonce: ContractNonce,
     pub class_hash: ClassHash,
-    pub storage_root: ContractNonce,
+    pub storage_root: ContractRoot,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
@@ -176,7 +176,7 @@ impl<'de> Deserialize<'de> for ProofNode {
                     if left.is_some() || right.is_some() {
                         return Err(de::Error::custom("found both Binary and Edge fields"));
                     }
-                    let path_bits = path_felt.view_bits();
+                    let path_bits = path_felt.view_bits().to_bitvec();
                     Ok(ProofNode(TrieNode::Edge {
                         child,
                         path: path_bits[path_bits.len() - len..].to_bitvec(),

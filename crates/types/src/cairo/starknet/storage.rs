@@ -87,12 +87,15 @@ impl CairoType for CairoTrieNode {
                 left: Felt::from_be_bytes(vm.get_integer((address + 1)?)?.to_bytes_be()).unwrap(),
                 right: Felt::from_be_bytes(vm.get_integer((address + 2)?)?.to_bytes_be()).unwrap(),
             })),
-            1 => Ok(Self(TrieNode::Edge {
-                child: Felt::from_be_bytes(vm.get_integer((address + 1)?)?.to_bytes_be()).unwrap(),
-                path: Felt::from_be_bytes(vm.get_integer((address + 2)?)?.to_bytes_be())
-                    .unwrap()
-                    .view_bits()
-                    .to_bitvec(),
+            1 => Ok(Self({
+                let len: usize = (*vm.get_integer((address + 3)?)?).try_into().unwrap();
+                let path = Felt::from_be_bytes(vm.get_integer((address + 2)?)?.to_bytes_be()).unwrap();
+                let path_bits = path.view_bits().to_bitvec();
+                let node = TrieNode::Edge {
+                    child: Felt::from_be_bytes(vm.get_integer((address + 1)?)?.to_bytes_be()).unwrap(),
+                    path: path_bits[path_bits.len() - len..].to_bitvec(),
+                };
+                node
             })),
             _ => Err(MemoryError::ErrorRetrievingMessage("node type can be either 0 or 1".into())),
         }
