@@ -1,4 +1,3 @@
-use anyhow::Ok;
 use state_server::{create_router, AppState};
 use tokio::{
     net::{TcpListener, ToSocketAddrs},

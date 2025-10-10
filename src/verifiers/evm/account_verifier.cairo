@@ -5,8 +5,8 @@ from src.types import ChainInfo
 from src.utils.converter import le_address_chunks_to_felt
 from src.utils.mpt import verify_mpt_proof
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.builtin_keccak.keccak import keccak_bigend
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
+from starkware.cairo.common.cairo_keccak.keccak import cairo_keccak_bigend as keccak_bigend
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.uint256 import Uint256
@@ -15,7 +15,7 @@ from starkware.cairo.common.uint256 import Uint256
 func verify_accounts{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     poseidon_ptr: PoseidonBuiltin*,
     evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
@@ -32,7 +32,7 @@ func verify_accounts{
 func verify_accounts_inner{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     poseidon_ptr: PoseidonBuiltin*,
     evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
@@ -73,7 +73,7 @@ func verify_accounts_inner{
 func verify_account{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     poseidon_ptr: PoseidonBuiltin*,
     evm_memorizer: DictAccess*,
     chain_info: ChainInfo,

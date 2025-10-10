@@ -1,6 +1,6 @@
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
 from starkware.cairo.common.dict_access import DictAccess
-from starkware.cairo.common.builtin_keccak.keccak import keccak
+from starkware.cairo.common.cairo_keccak.keccak import cairo_keccak as keccak
 from starkware.cairo.common.uint256 import Uint256
 
 from starkware.cairo.common.alloc import alloc
@@ -23,7 +23,7 @@ func verify_block_tx_proofs{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,
@@ -40,7 +40,7 @@ func verify_block_tx_proofs_inner{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
     pow2_array: felt*,

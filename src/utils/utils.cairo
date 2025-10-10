@@ -1,4 +1,4 @@
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian, felt_to_uint256
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_felts_bigend
@@ -14,9 +14,9 @@ from packages.eth_essentials.lib.utils import (
     felt_divmod,
     get_felt_bitlength,
 )
+from starkware.cairo.common.memcpy import memcpy
 
 from src.types import MMRMeta
-from starkware.cairo.common.memcpy import memcpy
 from src.utils.merkle import compute_merkle_root
 
 // Writes all required fields to the output_ptr.

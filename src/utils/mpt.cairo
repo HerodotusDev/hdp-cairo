@@ -1,10 +1,10 @@
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.alloc import alloc
 from packages.eth_essentials.lib.mpt import verify_mpt_proof as verify_mpt_proof_lib
 
 // Wraps the original verify_mpt_proof function with the logic required for handling non-inclusion.
-func verify_mpt_proof{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(
+func verify_mpt_proof{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*}(
     mpt_proof: felt**,
     mpt_proof_bytes_len: felt*,
     mpt_proof_len: felt,
