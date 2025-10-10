@@ -29,8 +29,8 @@ bitvec = "1.0.1"
 cairo_runner = { path = "src/crates/cairo-runner" }
 cairo_type_derive = { path = "crates/cairo_type_derive" }
 cairo-air = { git = "https://github.com/starkware-libs/stwo-cairo", rev = "62c3c4a" }
-cairo-lang-casm = { version = "2.12.0-dev.0", default-features = false }
-cairo-lang-starknet-classes = { version = "2.12.0-dev.0", default-features = false }
+cairo-lang-casm = "2.7.1"
+cairo-lang-starknet-classes = "2.7.1"
 cairo-prove = { git = "https://github.com/starkware-libs/stwo-cairo", rev = "793b02d71c58aa4b55c9b02e3eab366f632fd268" }
 cairo-type-derive = { git = "https://github.com/keep-starknet-strange/snos.git", rev = "2dc07a4298e2954c774f4d419a8f9db007da494c" }
 cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", rev = "b1a91f929b5fa29a1a2e9e6990a68a1220c0c673", features = ["extensive_hints", "clap", "cairo-1-hints", "mod_builtin"] }
