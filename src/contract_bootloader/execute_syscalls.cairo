@@ -9,16 +9,13 @@ from starkware.starknet.common.new_syscalls import (
     RequestHeader,
     ResponseHeader,
 )
-from starkware.cairo.common.builtin_keccak.keccak import (
-    KECCAK_FULL_RATE_IN_WORDS,
-    keccak_padded_input,
-)
+from starkware.cairo.common.builtin_keccak.keccak import KECCAK_FULL_RATE_IN_WORDS
+from starkware.cairo.common.cairo_keccak.keccak import cairo_keccak as keccak
 from starkware.cairo.common.math import unsigned_div_rem
 from starkware.cairo.common.cairo_builtins import (
     BitwiseBuiltin,
     EcOpBuiltin,
     HashBuiltin,
-    KeccakBuiltin,
     ModBuiltin,
     PoseidonBuiltin,
     SignatureBuiltin,
@@ -59,10 +56,8 @@ struct ExecutionContext {
 func execute_syscalls{
     pedersen_ptr: HashBuiltin*,
     range_check_ptr,
-    ecdsa_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    ec_op_ptr,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     poseidon_ptr: PoseidonBuiltin*,
     range_check96_ptr: felt*,
     add_mod_ptr: ModBuiltin*,
@@ -113,10 +108,8 @@ func abstract_memorizer_handler{
 func execute_call_contract{
     pedersen_ptr: HashBuiltin*,
     range_check_ptr,
-    ecdsa_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    ec_op_ptr,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     poseidon_ptr: PoseidonBuiltin*,
     range_check96_ptr: felt*,
     add_mod_ptr: ModBuiltin*,
@@ -264,10 +257,8 @@ func execute_call_contract{
 func execute_keccak{
     pedersen_ptr: HashBuiltin*,
     range_check_ptr,
-    ecdsa_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    ec_op_ptr,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     poseidon_ptr: PoseidonBuiltin*,
     range_check96_ptr: felt*,
     add_mod_ptr: ModBuiltin*,
@@ -296,12 +287,9 @@ func execute_keccak{
 
     tempvar input_start = request.input_start;
     tempvar input_end = request.input_end;
-    let len = input_end - input_start;
-    let (local q, r) = unsigned_div_rem(len, KECCAK_FULL_RATE_IN_WORDS);
+    tempvar chunks = input_end - input_start - 1;
 
-    with bitwise_ptr, keccak_ptr {
-        let (res) = keccak_padded_input(inputs=input_start, n_blocks=q);
-    }
+    let (res) = keccak(inputs=input_start, n_bytes=chunks * 8);
 
     assert response.result_low = res.low;
     assert response.result_high = res.high;

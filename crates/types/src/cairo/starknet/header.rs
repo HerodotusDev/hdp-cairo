@@ -3,7 +3,7 @@ pub use pathfinder_gateway_types::reply::Block;
 use pathfinder_gateway_types::reply::L1DataAvailabilityMode;
 use serde::{Deserialize, Serialize};
 use strum_macros::FromRepr;
-use version_compare::{CompOp, Version};
+use version_compare::{Cmp, Version};
 
 use crate::cairo::structs::CairoFelt;
 
@@ -33,8 +33,8 @@ impl From<Block> for StarknetBlock {
     fn from(value: Block) -> Self {
         let binding = value.starknet_version.to_string();
         let version = Version::from(&binding).unwrap();
-        match version.compare(&Version::from("0.13.2").unwrap()) {
-            CompOp::Gt | CompOp::Eq => StarknetBlock::V0_13_2(Box::new(StarknetBlock0_13_2::from_block(&value))),
+        match version.compare(Version::from("0.13.2").unwrap()) {
+            Cmp::Gt | Cmp::Eq => StarknetBlock::V0_13_2(Box::new(StarknetBlock0_13_2::from_block(&value))),
             _ => StarknetBlock::Legacy(Box::new(StarknetBlockLegacy::from_block(&value))),
         }
     }

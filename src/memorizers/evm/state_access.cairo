@@ -6,7 +6,7 @@ from src.decoders.evm.storage_slot_decoder import StorageSlotDecoder as EvmStora
 from src.decoders.evm.transaction_decoder import TransactionDecoder as EvmTransactionDecoder
 from src.memorizers.evm.memorizer import EvmMemorizer, EvmHashParams2
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin, KeccakBuiltin
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.invoke import invoke
 from starkware.cairo.common.memcpy import memcpy
@@ -59,7 +59,7 @@ namespace EvmDecoder {
         pow2_array: felt*,
         evm_decoder_ptr: felt**,
         output_ptr: felt*,
-        keccak_ptr: KeccakBuiltin*,
+        keccak_ptr: felt*,
     }(
         rlp: felt*,
         params: felt*,
@@ -89,7 +89,7 @@ namespace EvmDecoder {
         let pow2_array = cast([ap - 3], felt*);
         let bitwise_ptr = cast([ap - 4], BitwiseBuiltin*);
         let range_check_ptr = [ap - 5];
-        let keccak_ptr = cast([ap - 6], KeccakBuiltin*);
+        let keccak_ptr = cast([ap - 6], felt*);
 
         // Assert correct output_ptr values
         memcpy(dst=output_ptr, src=res_array, len=res_len);
@@ -134,7 +134,7 @@ namespace EvmStateAccess {
         range_check_ptr,
         poseidon_ptr: PoseidonBuiltin*,
         bitwise_ptr: BitwiseBuiltin*,
-        keccak_ptr: KeccakBuiltin*,
+        keccak_ptr: felt*,
         evm_memorizer: DictAccess*,
         evm_decoder_ptr: felt**,
         evm_key_hasher_ptr: felt**,
