@@ -1,5 +1,8 @@
 use alloy::{
-    consensus::{transaction::TxEnvelope, TxType},
+    consensus::{
+        transaction::{SignerRecoverable, TxEnvelope},
+        TxType,
+    },
     rpc::types::Transaction,
 };
 use alloy_rlp::{Decodable, Encodable};
