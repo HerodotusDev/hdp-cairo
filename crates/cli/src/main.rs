@@ -5,13 +5,21 @@
 
 use std::{fs, path::PathBuf};
 
+use cairo_air::utils::{serialize_proof_to_file, ProofFormat};
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
-use cairo_vm::{cairo_run, program_hash::compute_program_hash_chain};
+use cairo_vm::{
+    cairo_run::{self, CairoRunConfig},
+    program_hash::compute_program_hash_chain,
+};
 use clap::{Parser, Subcommand};
 use dry_hint_processor::syscall_handler::{evm, injected_state, starknet};
-use dry_run::{Program, DRY_RUN_COMPILED_JSON};
+use dry_run::{LayoutName, Program, DRY_RUN_COMPILED_JSON};
 use fetcher::{parse_syscall_handler, Fetcher};
-use sound_run::HDP_COMPILED_JSON;
+use sound_run::{
+    prove::{prove, prover_input_from_runner, secure_pcs_config},
+    HDP_COMPILED_JSON,
+};
+use stwo_cairo_prover::stwo_prover::core::vcs::blake2_merkle::Blake2sMerkleChannel;
 use syscall_handler::SyscallHandler;
 use types::{
     error::Error, param::Param, ChainProofs, HDPDryRunInput, HDPInput, InjectedState, ProofsData, ETHEREUM_MAINNET_CHAIN_ID,
@@ -159,8 +167,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             };
             let proofs_data: ProofsData = serde_json::from_slice(&std::fs::read(args.proofs).map_err(Error::IO)?)?;
 
-            let (pie, output) = sound_run::run(
+            let cairo_run_config = CairoRunConfig {
+                layout: LayoutName::all_cairo_stwo,
+                secure_run: Some(true),
+                allow_missing_builtins: Some(false),
+                relocate_mem: true,
+                trace_enabled: true,
+                proof_mode: args.proof_mode,
+                ..Default::default()
+            };
+
+            let (cairo_runner, output) = sound_run::run(
                 args.program.unwrap_or(PathBuf::from(HDP_COMPILED_JSON)),
+                cairo_run_config,
                 HDPInput {
                     chain_proofs: proofs_data.chain_proofs,
                     compiled_class,
@@ -174,8 +193,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("{:#?}", output);
             }
 
-            if let Some(ref file_name) = args.cairo_pie_output {
-                pie.write_zip_file(file_name, true)?
+            if let Some(ref file_name) = args.cairo_pie {
+                let pie = cairo_runner.get_cairo_pie().map_err(|e| Error::CairoPie(e.to_string()))?;
+                pie.write_zip_file(file_name, true)?;
+            }
+
+            if let Some(ref file_name) = args.stwo_proof {
+                let stwo_prover_input = prover_input_from_runner(&cairo_runner);
+                std::fs::write(file_name, serde_json::to_string(&stwo_prover_input)?)?;
+
+                let cairo_proof = prove(stwo_prover_input, secure_pcs_config());
+                serialize_proof_to_file::<Blake2sMerkleChannel>(&cairo_proof, file_name.into(), ProofFormat::Json)
+                    .expect("Failed to serialize proof");
+
+                println!("Proof saved to: {:?}", file_name);
             }
 
             println!("Sound run completed successfully.");

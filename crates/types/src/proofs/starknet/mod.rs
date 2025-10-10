@@ -7,7 +7,7 @@ use super::header::HeaderMmrMeta;
 pub mod header;
 pub mod storage;
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq, Eq, Hash)]
 pub struct Proofs {
     pub headers_with_mmr: Vec<HeaderMmrMeta<Header>>,
     pub storages: Vec<Storage>,

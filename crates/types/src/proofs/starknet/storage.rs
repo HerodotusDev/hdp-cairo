@@ -1,170 +1,197 @@
-use serde::{Deserialize, Serialize};
+use core::fmt;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
+use cairo_vm::Felt252;
+use pathfinder_common::{trie::TrieNode, BlockHash, ClassHash, ContractNonce, ContractRoot};
+use pathfinder_crypto::Felt;
+use serde::{
+    de::{self, MapAccess, Visitor},
+    ser::SerializeStruct,
+    Deserialize, Deserializer, Serialize, Serializer,
+};
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Storage {
     pub block_number: u64,
     pub contract_address: Felt252,
     pub storage_addresses: Vec<Felt252>,
-    pub proof: GetProofOutput,
+    pub output: Output,
 }
 
 impl Storage {
-    pub fn new(block_number: u64, contract_address: Felt252, storage_addresses: Vec<Felt252>, proof: GetProofOutput) -> Self {
+    pub fn new(block_number: u64, contract_address: Felt252, storage_addresses: Vec<Felt252>, output: Output) -> Self {
         Self {
             block_number,
             contract_address,
             storage_addresses,
-            proof,
+            output,
         }
     }
 }
 
-// Diclaimers:
-// Currently, there is no good way of importing this type from an external crate. We have found the
-// following implementations:
-// - https://github.com/keep-starknet-strange/snos/tree/main/crates/rpc-client/src/pathfinder
-// - https://github.com/eqlabs/pathfinder/blob/main/crates/rpc/src/pathfinder/methods/get_proof.rs
-// Both of these implementations essentially force us to follow the cairo-vm versions that are used,
-// which is a bad idea for us to do. We should aim for finding an implementation that we can simply
-// update instead of managing it ourself. This is a temporary solution that we should aim to
-// replace.
-
-use cairo_vm::Felt252;
-// Type alias to avoid naming collision when importing both TrieNode types
-pub use pathfinder_common::trie::TrieNode as PathfinderTrieNode;
-use serde_with::skip_serializing_none;
-use starknet_types_core::hash::StarkHash;
-
-use crate::proofs::injected_state::TrieNodeSerde;
-
-/// Codebase is from <https://github.com/eqlabs/pathfinder/tree/ae81d84b7c4157891069bd02ef810a29b60a94e3>
-/// Holds the membership/non-membership of a contract and its associated
-/// contract contract if the contract exists.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash, Default)]
-#[skip_serializing_none]
-pub struct GetProofOutput {
-    /// The global state commitment for Starknet 0.11.0 blocks onward, if
-    /// absent the hash of the first node in the
-    /// [contract_proof](GetProofOutput#contract_proof) is the global state
-    /// commitment.
-    pub state_commitment: Option<Felt252>,
-    /// Required to verify that the hash of the class commitment and the root of
-    /// the [contract_proof](GetProofOutput::contract_proof) matches the
-    /// [state_commitment](Self#state_commitment). Present only for Starknet
-    /// blocks 0.11.0 onward.
-    pub class_commitment: Option<Felt252>,
-
-    /// Membership / Non-membership proof for the queried contract
-    pub contract_proof: Vec<TrieNode>,
-
-    /// Additional contract data if it exists.
-    pub contract_data: Option<ContractData>,
-}
-
-/// A node in a Starknet patricia-merkle trie.
-///
-/// See pathfinders merkle-tree crate for more information.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
-pub enum TrieNode {
-    #[serde(rename = "binary")]
-    Binary { left: Felt252, right: Felt252 },
-    #[serde(rename = "edge")]
-    Edge { child: Felt252, path: Path },
+pub struct Output {
+    pub classes_proof: NodeHashToNodeMappings,
+    pub contracts_proof: ContractsProof,
+    pub contracts_storage_proofs: Vec<NodeHashToNodeMappings>,
+    pub global_roots: GlobalRoots,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
-pub struct Path {
-    pub len: u64,
-    pub value: String,
+pub struct GlobalRoots {
+    pub contracts_tree_root: Felt,
+    pub classes_tree_root: Felt,
+    pub block_hash: BlockHash,
 }
 
-impl TrieNode {
-    pub fn hash<H: StarkHash>(&self) -> Felt252 {
-        match self {
-            TrieNode::Binary { left, right } => H::hash(left, right),
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
+pub struct ContractsProof {
+    pub nodes: NodeHashToNodeMappings,
+    pub contract_leaves_data: Vec<ContractLeafData>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
+pub struct ContractLeafData {
+    pub nonce: ContractNonce,
+    pub class_hash: ClassHash,
+    pub storage_root: ContractRoot,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
+pub struct NodeHashToNodeMappings(pub Vec<NodeHashToNodeMapping>);
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
+pub struct NodeHashToNodeMapping {
+    pub node_hash: Felt,
+    pub node: ProofNode,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ProofNode(pub TrieNode);
+
+impl Serialize for ProofNode {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match &self.0 {
+            TrieNode::Binary { left, right } => {
+                let mut s = serializer.serialize_struct("ProofNode", 2)?;
+                s.serialize_field("left", left)?;
+                s.serialize_field("right", right)?;
+                s.end()
+            }
+
             TrieNode::Edge { child, path } => {
-                let bytes: [u8; 32] = path.value.as_bytes().try_into().unwrap();
-                let mut length = [0; 32];
-                // Safe as len() is guaranteed to be <= 251
-                length[31] = bytes.len() as u8;
-
-                let length = Felt252::from_bytes_be(&length);
-                let path = Felt252::from_bytes_be(&bytes);
-                H::hash(child, &path) + length
-            }
-        }
-    }
-
-    pub fn from_pathfinder(pathfinder_node: PathfinderTrieNode) -> Self {
-        match pathfinder_node {
-            PathfinderTrieNode::Binary { left, right } => TrieNode::Binary {
-                left: Felt252::from_bytes_be(&left.to_be_bytes()),
-                right: Felt252::from_bytes_be(&right.to_be_bytes()),
-            },
-            PathfinderTrieNode::Edge { child, path } => {
-                let path_bytes = path.as_raw_slice();
-                let path_len = path.len() as u64;
-
-                let mut path_value = String::new();
-                for byte in path_bytes {
-                    path_value.push_str(&format!("{:02x}", byte));
-                }
-
-                TrieNode::Edge {
-                    child: Felt252::from_bytes_be(&child.to_be_bytes()),
-                    path: Path {
-                        len: path_len,
-                        value: path_value,
-                    },
-                }
+                let mut s = serializer.serialize_struct("ProofNode", 3)?;
+                let p = Felt::from_bits(path).unwrap();
+                let len = path.len();
+                s.serialize_field("path", &p)?;
+                s.serialize_field("length", &len)?;
+                s.serialize_field("child", &child)?;
+                s.end()
             }
         }
     }
 }
 
-/// Direct conversion from TrieNodeSerde to Starknet storage TrieNode
-/// This bypasses the intermediate pathfinder conversion step for efficiency
-impl From<TrieNodeSerde> for TrieNode {
-    fn from(node_serde: TrieNodeSerde) -> Self {
-        match node_serde {
-            TrieNodeSerde::Binary { left, right } => TrieNode::Binary {
-                left: Felt252::from_bytes_be(&left.to_be_bytes()),
-                right: Felt252::from_bytes_be(&right.to_be_bytes()),
-            },
-            TrieNodeSerde::Edge { child, path, bit_len } => {
-                // Convert path bytes to hex string
-                let mut path_value = String::new();
-                for byte in &path {
-                    path_value.push_str(&format!("{:02x}", byte));
+impl<'de> Deserialize<'de> for ProofNode {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(field_identifier, rename_all = "snake_case")]
+        enum Field {
+            Left,
+            Right,
+            Path,
+            Length,
+            Child,
+        }
+
+        struct ProofNodeVisitor;
+
+        impl<'de> Visitor<'de> for ProofNodeVisitor {
+            type Value = ProofNode;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a map representing either a Binary or an Edge node")
+            }
+
+            fn visit_map<M>(self, mut map: M) -> Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut left: Option<Felt> = None;
+                let mut right: Option<Felt> = None;
+                let mut path: Option<Felt> = None;
+                let mut length: Option<usize> = None;
+                let mut child: Option<Felt> = None;
+
+                // 2. Loop over the strongly-typed `Field` enum.
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::Left => {
+                            if left.is_some() {
+                                return Err(de::Error::duplicate_field("left"));
+                            }
+                            left = Some(map.next_value()?);
+                        }
+                        Field::Right => {
+                            if right.is_some() {
+                                return Err(de::Error::duplicate_field("right"));
+                            }
+                            right = Some(map.next_value()?);
+                        }
+                        Field::Path => {
+                            if path.is_some() {
+                                return Err(de::Error::duplicate_field("path"));
+                            }
+                            path = Some(map.next_value()?);
+                        }
+                        Field::Length => {
+                            if length.is_some() {
+                                return Err(de::Error::duplicate_field("length"));
+                            }
+                            length = Some(map.next_value()?);
+                        }
+                        Field::Child => {
+                            if child.is_some() {
+                                return Err(de::Error::duplicate_field("child"));
+                            }
+                            child = Some(map.next_value()?);
+                        }
+                    }
                 }
 
-                TrieNode::Edge {
-                    child: Felt252::from_bytes_be(&child.to_be_bytes()),
-                    path: Path {
-                        len: bit_len as u64,
-                        value: path_value,
-                    },
+                // Case 1: We have 'left' and 'right', indicating a Binary node.
+                if let (Some(left), Some(right)) = (left, right) {
+                    if path.is_some() || length.is_some() || child.is_some() {
+                        return Err(de::Error::custom("found both Binary and Edge fields"));
+                    }
+                    Ok(ProofNode(TrieNode::Binary { left, right }))
+
+                // Case 2: We have 'path', 'length', and 'child', indicating an Edge node.
+                } else if let (Some(path_felt), Some(len), Some(child)) = (path, length, child) {
+                    if left.is_some() || right.is_some() {
+                        return Err(de::Error::custom("found both Binary and Edge fields"));
+                    }
+                    let path_bits = path_felt.view_bits().to_bitvec();
+                    Ok(ProofNode(TrieNode::Edge {
+                        child,
+                        path: path_bits[path_bits.len() - len..].to_bitvec(),
+                    }))
+
+                // Case 3: The combination of fields is invalid.
+                } else {
+                    Err(de::Error::custom(
+                        "missing fields: expected ('left', 'right') or ('path', 'length', 'child')",
+                    ))
                 }
             }
         }
+
+        const FIELDS: &[&str] = &["left", "right", "path", "length", "child"];
+        deserializer.deserialize_struct("ProofNode", FIELDS, ProofNodeVisitor)
     }
-}
-
-/// Holds the data and proofs for a specific contract.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
-pub struct ContractData {
-    /// Required to verify the contract state hash to contract root calculation.
-    pub class_hash: Felt252,
-    /// Required to verify the contract state hash to contract root calculation.
-    pub nonce: Felt252,
-
-    /// Root of the Contract state tree
-    pub root: Felt252,
-
-    /// This is currently just a constant value 0, however it might change in the
-    /// future.
-    pub contract_state_hash_version: Felt252,
-
-    /// The proofs associated with the queried storage values
-    pub storage_proofs: Vec<Vec<TrieNode>>,
 }

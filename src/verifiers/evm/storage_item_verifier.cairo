@@ -1,8 +1,8 @@
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin, PoseidonBuiltin
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
 from starkware.cairo.common.dict_access import DictAccess
 from src.utils.mpt import verify_mpt_proof
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
-from starkware.cairo.common.builtin_keccak.keccak import keccak_bigend
+from starkware.cairo.common.cairo_keccak.keccak import cairo_keccak_bigend as keccak_bigend
 from starkware.cairo.common.alloc import alloc
 from src.types import ChainInfo
 from src.utils.rlp import decode_rlp_word_to_uint256, le_chunks_to_uint256
@@ -21,7 +21,7 @@ from packages.eth_essentials.lib.utils import felt_divmod, felt_divmod_8, word_r
 func verify_storage_items{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     poseidon_ptr: PoseidonBuiltin*,
     evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
@@ -38,7 +38,7 @@ func verify_storage_items{
 func verify_storage_items_inner{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     poseidon_ptr: PoseidonBuiltin*,
     evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
@@ -92,7 +92,7 @@ func verify_storage_items_inner{
 func verify_storage_item{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     poseidon_ptr: PoseidonBuiltin*,
     evm_memorizer: DictAccess*,
     chain_info: ChainInfo,

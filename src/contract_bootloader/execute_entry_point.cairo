@@ -2,7 +2,6 @@ from starkware.cairo.common.cairo_builtins import (
     BitwiseBuiltin,
     EcOpBuiltin,
     HashBuiltin,
-    KeccakBuiltin,
     ModBuiltin,
     PoseidonBuiltin,
     SignatureBuiltin,
@@ -60,10 +59,8 @@ struct EntryPointReturnValues {
 func call_execute_syscalls{
     pedersen_ptr: HashBuiltin*,
     range_check_ptr,
-    ecdsa_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    ec_op_ptr,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     poseidon_ptr: PoseidonBuiltin*,
     range_check96_ptr: felt*,
     add_mod_ptr: ModBuiltin*,
@@ -146,10 +143,8 @@ func get_entry_point{range_check_ptr}(
 func execute_entry_point{
     pedersen_ptr: HashBuiltin*,
     range_check_ptr,
-    ecdsa_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    ec_op_ptr,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     poseidon_ptr: PoseidonBuiltin*,
     range_check96_ptr: felt*,
     add_mod_ptr: ModBuiltin*,
@@ -251,14 +246,12 @@ func execute_entry_point{
 
     let selectable_builtins = &builtin_ptrs.selectable;
     let pedersen_ptr = selectable_builtins.pedersen;
-    let ecdsa_ptr = selectable_builtins.ecdsa;
     let bitwise_ptr = selectable_builtins.bitwise;
-    let ec_op_ptr = selectable_builtins.ec_op;
     let poseidon_ptr = selectable_builtins.poseidon;
     let range_check96_ptr = selectable_builtins.range_check96;
     let add_mod_ptr = selectable_builtins.add_mod;
     let mul_mod_ptr = selectable_builtins.mul_mod;
-    let keccak_ptr = builtin_ptrs.non_selectable.keccak;
+    let keccak_ptr = cast(builtin_ptrs.non_selectable.keccak, felt*);
 
     // TODO enable and test it.
     // Fill holes in the rc96 segment.
