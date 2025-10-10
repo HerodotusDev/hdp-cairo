@@ -6,7 +6,6 @@
 use std::{env, path::PathBuf};
 
 use cairo_air as _;
-use cairo_prove as _;
 use cairo_vm::{
     cairo_run::{self, cairo_run_program},
     types::{layout_name::LayoutName, program::Program, relocatable::Relocatable},
@@ -16,14 +15,12 @@ use clap::Parser;
 use dotenvy as _;
 use serde_json as _;
 use sound_hint_processor::CustomHintProcessor;
-use stwo_cairo_prover::{
-    self as _,
-    stwo_prover::core::{fri::FriConfig, pcs::PcsConfig},
-};
+use stwo_cairo_prover as _;
 use tokio as _;
 use tracing::info;
 use tracing_subscriber as _;
 use types::{error::Error, HDPInput, HDPOutput};
+pub mod prove;
 
 pub const HDP_COMPILED_JSON: &str = env!("HDP_COMPILED_JSON");
 
@@ -94,15 +91,4 @@ pub fn run(program_path: PathBuf, input: HDPInput) -> Result<(CairoRunner, HDPOu
 
 pub fn get_program_path() -> String {
     std::env::var("HDP_SOUND_RUN_PATH").unwrap_or_else(|_| HDP_COMPILED_JSON.to_string())
-}
-
-pub fn secure_pcs_config() -> PcsConfig {
-    PcsConfig {
-        pow_bits: 26,
-        fri_config: FriConfig {
-            log_last_layer_degree_bound: 0,
-            log_blowup_factor: 1,
-            n_queries: 70,
-        },
-    }
 }

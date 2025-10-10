@@ -5,12 +5,16 @@
 
 use std::path::PathBuf;
 
+use bytemuck as _;
 use cairo_air::utils::{serialize_proof_to_file, ProofFormat};
-use cairo_prove::prove::{prove, prover_input_from_runner};
 use cairo_vm as _;
 use clap::Parser;
 use sound_hint_processor as _;
-use sound_run::{secure_pcs_config, Args, HDP_COMPILED_JSON};
+use sound_run::{
+    prove::{prove, prover_input_from_runner, secure_pcs_config},
+    Args, HDP_COMPILED_JSON,
+};
+use stwo_cairo_adapter as _;
 use stwo_cairo_prover::stwo_prover::core::vcs::blake2_merkle::Blake2sMerkleChannel;
 use tracing::{self as _, info};
 use tracing_subscriber::EnvFilter;
@@ -61,7 +65,7 @@ async fn main() -> Result<(), Error> {
         std::fs::write(file_name, serde_json::to_string(&stwo_prover_input)?)?;
 
         let cairo_proof = prove(stwo_prover_input, secure_pcs_config());
-        serialize_proof_to_file::<Blake2sMerkleChannel>(&cairo_proof, file_name.into(), ProofFormat::CairoSerde)
+        serialize_proof_to_file::<Blake2sMerkleChannel>(&cairo_proof, file_name.into(), ProofFormat::Json)
             .expect("Failed to serialize proof");
 
         info!("Proof saved to: {:?}", file_name);
