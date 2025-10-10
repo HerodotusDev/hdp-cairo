@@ -144,7 +144,9 @@ func main{
         injected_state_memorizer_start, injected_state_memorizer, BareMemorizer.DEFAULT_VALUE
     );
 
-    let taskHash = calculate_task_hash(module_hash, public_inputs_len, public_inputs);
+    with keccak_ptr {
+        let taskHash = calculate_task_hash(module_hash, public_inputs_len, public_inputs);
+    }
 
     assert [output_ptr] = taskHash.low;
     assert [output_ptr + 1] = taskHash.high;

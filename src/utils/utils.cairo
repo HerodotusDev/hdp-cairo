@@ -1,7 +1,7 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian, felt_to_uint256
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.builtin_keccak.keccak import keccak, keccak_felts_bigend
+from starkware.cairo.common.cairo_keccak.keccak import cairo_keccak_felts_bigend as keccak_felts_bigend
 from packages.eth_essentials.lib.rlp_little import array_copy
 from packages.eth_essentials.lib.utils import (
     word_reverse_endian_16_RC,
@@ -140,7 +140,7 @@ func felt_array_to_uint256s{range_check_ptr}(counter: felt, retdata: felt*, leaf
     return felt_array_to_uint256s(counter=counter - 1, retdata=retdata + 1, leafs=leafs + 2);
 }
 
-func calculate_task_hash{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*}(
+func calculate_task_hash{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*}(
     module_hash: felt, public_inputs_len: felt, public_inputs: felt*
 ) -> Uint256 {
     alloc_locals;

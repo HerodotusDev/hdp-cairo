@@ -16,7 +16,7 @@ from starkware.cairo.common.registers import get_label_location
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash_many, poseidon_hash
 from starkware.cairo.common.cairo_keccak.keccak import (
     finalize_keccak,
-    cairo_keccak_felts as keccak_felts,s
+    cairo_keccak_felts as keccak_felts,
 )
 
 from src.verifiers.verify import run_chain_state_verification
@@ -190,7 +190,9 @@ func run{
         injected_state_memorizer_start, injected_state_memorizer, BareMemorizer.DEFAULT_VALUE
     );
 
-    let taskHash = calculate_task_hash(module_hash, public_inputs_len, public_inputs);
+    with keccak_ptr {
+        let taskHash = calculate_task_hash(module_hash, public_inputs_len, public_inputs);
+    }
 
     assert [output_ptr] = taskHash.low;
     assert [output_ptr + 1] = taskHash.high;

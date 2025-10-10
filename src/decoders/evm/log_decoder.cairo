@@ -40,7 +40,7 @@ namespace LogFieldOffset {
 }
 
 namespace LogDecoder {
-    func get_field{keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+    func get_field{keccak_ptr: felt*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
         rlp: felt*,
         field: felt,
         key: LogKey*
