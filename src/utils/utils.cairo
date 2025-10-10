@@ -1,7 +1,9 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian, felt_to_uint256
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.cairo_keccak.keccak import cairo_keccak_felts_bigend as keccak_felts_bigend
+from starkware.cairo.common.cairo_keccak.keccak import (
+    cairo_keccak_felts_bigend as keccak_felts_bigend,
+)
 from packages.eth_essentials.lib.rlp_little import array_copy
 from packages.eth_essentials.lib.utils import (
     word_reverse_endian_16_RC,
