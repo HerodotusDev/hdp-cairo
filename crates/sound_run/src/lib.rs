@@ -7,8 +7,8 @@ use std::{env, path::PathBuf};
 
 use cairo_air as _;
 use cairo_vm::{
-    cairo_run::{self, cairo_run_program},
-    types::{layout_name::LayoutName, program::Program, relocatable::Relocatable},
+    cairo_run::{cairo_run_program, CairoRunConfig},
+    types::{program::Program, relocatable::Relocatable},
     vm::runners::cairo_runner::CairoRunner,
 };
 use clap::Parser;
@@ -51,23 +51,28 @@ pub struct Args {
         help = "Print program output to stdout [default: false]"
     )]
     pub print_output: bool,
-    #[arg(long = "cairo_pie", default_value = None, help = "Path where the Cairo PIE zip file will be written")]
+    #[arg(long = "proof_mode", conflicts_with = "cairo_pie", help = "Configure runner in proof mode")]
+    pub proof_mode: bool,
+
+    #[arg(
+        long = "cairo_pie",
+        default_value = None,
+        conflicts_with_all = ["stwo_proof", "proof_mode"],
+        help = "Path where the Cairo PIE zip file will be written"
+    )]
     pub cairo_pie: Option<PathBuf>,
-    #[arg(long = "stwo_proof", default_value = None, help = "Path where the STWO proof file will be written")]
+
+    #[arg(
+        long = "stwo_proof",
+        default_value = None,
+        requires = "proof_mode",
+        conflicts_with = "cairo_pie",
+        help = "Path where the STWO proof file will be written"
+    )]
     pub stwo_proof: Option<PathBuf>,
 }
 
-pub fn run(program_path: PathBuf, input: HDPInput) -> Result<(CairoRunner, HDPOutput), Error> {
-    let cairo_run_config = cairo_run::CairoRunConfig {
-        layout: LayoutName::all_cairo_stwo,
-        secure_run: Some(true),
-        allow_missing_builtins: Some(false),
-        relocate_mem: true,
-        trace_enabled: true,
-        proof_mode: true,
-        ..Default::default()
-    };
-
+pub fn run(program_path: PathBuf, cairo_run_config: CairoRunConfig, input: HDPInput) -> Result<(CairoRunner, HDPOutput), Error> {
     info!("Program path: {}", program_path.display());
     let program_file = std::fs::read(program_path).map_err(Error::IO)?;
     let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))?;

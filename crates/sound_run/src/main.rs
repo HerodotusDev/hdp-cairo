@@ -7,7 +7,7 @@ use std::path::PathBuf;
 
 use bytemuck as _;
 use cairo_air::utils::{serialize_proof_to_file, ProofFormat};
-use cairo_vm as _;
+use cairo_vm::{self as _, cairo_run::CairoRunConfig, types::layout_name::LayoutName};
 use clap::Parser;
 use sound_hint_processor as _;
 use sound_run::{
@@ -40,8 +40,19 @@ async fn main() -> Result<(), Error> {
     };
     let proofs_data: ProofsData = serde_json::from_slice(&std::fs::read(args.proofs).map_err(Error::IO)?)?;
 
+    let cairo_run_config = CairoRunConfig {
+        layout: LayoutName::all_cairo_stwo,
+        secure_run: Some(true),
+        allow_missing_builtins: Some(false),
+        relocate_mem: true,
+        trace_enabled: true,
+        proof_mode: args.proof_mode,
+        ..Default::default()
+    };
+
     let (cairo_runner, output) = sound_run::run(
         args.program.unwrap_or(PathBuf::from(HDP_COMPILED_JSON)),
+        cairo_run_config,
         HDPInput {
             chain_proofs: proofs_data.chain_proofs,
             compiled_class,
