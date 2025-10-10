@@ -12,7 +12,6 @@ bincode.workspace = true
 bitvec.workspace = true
 chrono.workspace = true
 clap.workspace = true
-eth_trie.workspace = true
 hex.workspace = true
 http-body-util.workspace = true
 pathfinder-common.workspace = true

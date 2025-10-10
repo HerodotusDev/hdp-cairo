@@ -23,7 +23,6 @@ __pycache__/
 # --- Rust & Scarb ---
 target/
 .snfoundry_cache/
-Cargo.lock
 
 # --- Build Artifacts ---
 build/
