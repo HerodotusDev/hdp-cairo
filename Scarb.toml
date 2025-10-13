@@ -22,6 +22,3 @@ starknet = "2.10.0"
 
 [workspace.tool.fmt]
 sort-module-level-items = true
-
-[tool.scarb.build]
-cache = false

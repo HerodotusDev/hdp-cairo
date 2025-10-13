@@ -106,9 +106,6 @@ jobs:
         if: runner.os == 'macOS'
         run: CFLAGS=-I/opt/homebrew/opt/gmp/include LDFLAGS=-L/opt/homebrew/opt/gmp/lib uv sync
 
-      - name: Clean Scarb Cache
-        run: scarb clean
-
       - name: Build Test Contracts
         run: scarb build
 
@@ -119,4 +116,6 @@ jobs:
           RPC_URL_HERODOTUS_INDEXER: ${{ secrets.RPC_URL_HERODOTUS_INDEXER }}
           RPC_URL_STARKNET_MAINNET: ${{ secrets.RPC_URL_STARKNET_MAINNET }}
           RPC_URL_STARKNET_TESTNET: ${{ secrets.RPC_URL_STARKNET_TESTNET }}
+          RPC_URL_OPTIMISM_MAINNET: ${{ secrets.RPC_URL_OPTIMISM_MAINNET }}
+          RPC_URL_OPTIMISM_SEPOLIA: ${{ secrets.RPC_URL_OPTIMISM_SEPOLIA }}
         run: cargo nextest run --profile ci
