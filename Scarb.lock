@@ -3,8 +3,8 @@ version = 1
 
 [[package]]
 name = "alexandria_bytes"
-version = "0.1.0"
-source = "git+https://github.com/keep-starknet-strange/alexandria.git#74cafd429eef374730f2c6fed9a74753103c6fdb"
+version = "0.6.1"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git#3f5e6476f350bb09e919e2725489c29442f313ca"
 dependencies = [
  "alexandria_data_structures",
  "alexandria_math",
@@ -12,16 +12,13 @@ dependencies = [
 
 [[package]]
 name = "alexandria_data_structures"
-version = "0.2.0"
-source = "git+https://github.com/keep-starknet-strange/alexandria.git#74cafd429eef374730f2c6fed9a74753103c6fdb"
-dependencies = [
- "alexandria_encoding",
-]
+version = "0.6.1"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git#3f5e6476f350bb09e919e2725489c29442f313ca"
 
 [[package]]
 name = "alexandria_encoding"
-version = "0.1.0"
-source = "git+https://github.com/keep-starknet-strange/alexandria.git#74cafd429eef374730f2c6fed9a74753103c6fdb"
+version = "0.6.1"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git#3f5e6476f350bb09e919e2725489c29442f313ca"
 dependencies = [
  "alexandria_bytes",
  "alexandria_data_structures",
@@ -31,13 +28,13 @@ dependencies = [
 
 [[package]]
 name = "alexandria_math"
-version = "0.2.1"
-source = "git+https://github.com/keep-starknet-strange/alexandria.git#74cafd429eef374730f2c6fed9a74753103c6fdb"
+version = "0.6.1"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git#3f5e6476f350bb09e919e2725489c29442f313ca"
 
 [[package]]
 name = "alexandria_numeric"
-version = "0.1.0"
-source = "git+https://github.com/keep-starknet-strange/alexandria.git#74cafd429eef374730f2c6fed9a74753103c6fdb"
+version = "0.6.1"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git#3f5e6476f350bb09e919e2725489c29442f313ca"
 dependencies = [
  "alexandria_math",
  "alexandria_searching",
@@ -45,10 +42,17 @@ dependencies = [
 
 [[package]]
 name = "alexandria_searching"
-version = "0.1.0"
-source = "git+https://github.com/keep-starknet-strange/alexandria.git#74cafd429eef374730f2c6fed9a74753103c6fdb"
+version = "0.6.1"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git#3f5e6476f350bb09e919e2725489c29442f313ca"
 dependencies = [
  "alexandria_data_structures",
+]
+
+[[package]]
+name = "example_all_features_combined"
+version = "0.1.0"
+dependencies = [
+ "hdp_cairo",
 ]
 
 [[package]]
@@ -71,6 +75,14 @@ dependencies = [
 name = "example_injected_state"
 version = "0.1.0"
 dependencies = [
+ "hdp_cairo",
+]
+
+[[package]]
+name = "example_most_bridge"
+version = "0.1.0"
+dependencies = [
+ "alexandria_bytes",
  "hdp_cairo",
 ]
 

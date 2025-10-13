@@ -71,16 +71,7 @@ namespace EvmDecoder {
         let func_ptr = evm_decoder_ptr[state_access_type];
 
         tempvar invoke_params = cast(
-            new (
-                keccak_ptr,
-                range_check_ptr,
-                bitwise_ptr,
-                pow2_array,
-                rlp,
-                field,
-                params,
-            ),
-            felt*,
+            new (keccak_ptr, range_check_ptr, bitwise_ptr, pow2_array, rlp, field, params), felt*
         );
         invoke(func_ptr, 7, invoke_params);
 

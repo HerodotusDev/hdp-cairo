@@ -32,6 +32,34 @@ func fetch_chain_info(chain_id: felt) -> (info: ChainInfo) {
         );
     }
 
+    // Optimism Mainnet
+    if (chain_id == 10) {
+        return (
+            info=ChainInfo(
+                id=10,
+                id_bytes_len=1,
+                encoded_id=0xa,
+                encoded_id_bytes_len=4,
+                byzantium=0,
+                layout=Layout.EVM,
+            ),
+        );
+    }
+
+    // Optimism Sepolia
+    if (chain_id == 11155420) {
+        return (
+            info=ChainInfo(
+                id=11155420,
+                id_bytes_len=3,
+                encoded_id=0x83AA37DC,
+                encoded_id_bytes_len=4,
+                byzantium=0,
+                layout=Layout.EVM,
+            ),
+        );
+    }
+
     // SN_MAIN
     if (chain_id == 23448594291968334) {
         return (
