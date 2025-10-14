@@ -33,7 +33,6 @@ from src.memorizers.starknet.state_access import (
     StarknetStateAccessType,
     StarknetDecoderTarget,
 )
-from src.utils.debug import print_felt_hex, print_felt, print_string
 from src.utils.chain_info import Layout
 from src.memorizers.injected_state.memorizer import InjectedStateMemorizer, InjectedStateHashParams
 
