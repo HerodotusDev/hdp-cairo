@@ -293,37 +293,21 @@ func find_message_len_bytes{range_check_ptr}(base: felt*, len_words: felt, pow2_
     let total_bytes = len_words * 8;
     let last_idx = total_bytes - 1;
 
-    // Debug: print last word and derived indices.
-    tempvar last_word_idx = len_words - 1;
-    print_felt(total_bytes);
-    print_felt(last_idx);
-    print_felt_hex(base[last_word_idx]);
+    // // Debug: print last word and derived indices.
+    // tempvar last_word_idx = len_words - 1;
+    // print_felt(total_bytes);
+    // print_felt(last_idx);
+    // print_felt_hex(base[last_word_idx]);
 
     // Last byte must be 0x80 in the builtin-padded representation.
     let (b_last) = get_byte_at_offset(base, pow2_array, last_idx);
-    print_felt(b_last);
+    //print_felt(b_last);
     assert b_last = 128;
 
     // Move left to find the required 0x01 after a run of zeros.
     let (pos_01) = find_padding_01_pos(base, pow2_array, last_idx - 1);
     // Message length equals index of the 0x01 padding byte.
     return (msg_len=pos_01);
-}
-
-// Copy the first n bytes from a 64-bit-lane buffer into a contiguous byte buffer.
-func copy_prefix_bytes_loop{range_check_ptr}(src: felt*, dst: felt*, pow2_array: felt*, n: felt, i: felt) {
-    if (i == n) {
-        return ();
-    }
-    let (b) = get_byte_at_offset(src, pow2_array, i);
-    assert dst[i] = b;
-    copy_prefix_bytes_loop(src, dst, pow2_array, n, i + 1);
-    return ();
-}
-
-func copy_prefix_bytes{range_check_ptr}(src: felt*, dst: felt*, pow2_array: felt*, n: felt) {
-    copy_prefix_bytes_loop(src, dst, pow2_array, n, 0);
-    return ();
 }
 
 // Copy the first n 64-bit words from src to dst.
@@ -341,45 +325,6 @@ func copy_prefix_words{range_check_ptr}(src: felt*, dst: felt*, n_words: felt) {
     return ();
 }
 
-// Convert one builtin big-endian 64-bit lane (8 bytes) to a little-endian u64 felt.
-func be_word_to_le_acc_loop{range_check_ptr}(
-    src: felt*, pow2_array: felt*, word_index: felt, j: felt, acc: felt
-) -> (res: felt) {
-    if (j == 8) {
-        return (res=acc);
-    }
-    // Read the j-th byte of the word in message order (big-endian within word).
-    let offset = word_index * 8 + j;
-    let (b) = get_byte_at_offset(src, pow2_array, offset);
-    // Accumulate as little-endian: acc += b * 256^j = b * 2^(8*j).
-    let factor = pow2_array[j * 8];
-    let acc2 = acc + b * factor;
-    let (res_rec) = be_word_to_le_acc_loop(src, pow2_array, word_index, j + 1, acc2);
-    return (res=res_rec);
-}
-
-func be_word_to_le{range_check_ptr}(src: felt*, pow2_array: felt*, word_index: felt) -> (w_le: felt) {
-    let (res) = be_word_to_le_acc_loop(src, pow2_array, word_index, 0, 0);
-    return (w_le=res);
-}
-
-// Convert the first n_words from builtin big-endian lanes to little-endian u64 felts.
-func convert_be_to_le_words_loop{range_check_ptr}(
-    src: felt*, dst: felt*, pow2_array: felt*, n_words: felt, i: felt
-) {
-    if (i == n_words) {
-        return ();
-    }
-    let (w_le) = be_word_to_le(src, pow2_array, i);
-    assert dst[i] = w_le;
-    convert_be_to_le_words_loop(src, dst, pow2_array, n_words, i + 1);
-    return ();
-}
-
-func convert_be_to_le_words{range_check_ptr}(src: felt*, dst: felt*, pow2_array: felt*, n_words: felt) {
-    convert_be_to_le_words_loop(src, dst, pow2_array, n_words, 0);
-    return ();
-}
 
 // Executes a syscall that calls another contract.
 func execute_keccak{
@@ -427,8 +372,6 @@ func execute_keccak{
 
     // Validate message is an exact number of Uint256 elements (32 bytes each).
     let (n_inputs, rem32) = unsigned_div_rem(msg_len, 32);
-    print_felt(msg_len);
-    print_felt(n_inputs);
     assert rem32 = 0;
 
     // Materialize the original message as contiguous u64 words for cairo_keccak (little-endian per word).
