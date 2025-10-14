@@ -35,9 +35,11 @@ namespace ReceiptDecoder {
         return (res_array=res_array, res_len=res_len);
     }
 
-    func _get_field{keccak_ptr: felt*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
-        rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt
-    ) -> (res_array: felt*, res_len: felt) {
+    func _get_field{
+        keccak_ptr: felt*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
+    }(rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt) -> (
+        res_array: felt*, res_len: felt
+    ) {
         alloc_locals;
         let (__fp__, _) = get_fp_and_pc();
 
@@ -56,7 +58,9 @@ namespace ReceiptDecoder {
         return (res_array=&result, res_len=2);
     }
 
-    func bloom_to_uint256_array{keccak_ptr: felt*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(res: felt*, res_len: felt, bytes_len: felt, res_array: felt*) {
+    func bloom_to_uint256_array{
+        keccak_ptr: felt*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
+    }(res: felt*, res_len: felt, bytes_len: felt, res_array: felt*) {
         alloc_locals;
 
         if (bytes_len == 0) {

@@ -298,13 +298,15 @@ func execute_keccak{
     assert r = 0;
 
     // Recover the original unpadded message length (in bytes) from the builtin-padded lanes.
-    let (msg_len) = find_message_len_bytes(base=input_start, len_words=len_words, pow2_array=pow2_array);
+    let (msg_len) = find_message_len_bytes(
+        base=input_start, len_words=len_words, pow2_array=pow2_array
+    );
 
     // Treat the original message as contiguous u64 words for cairo_keccak (little-endian per word).
     // Because keccak_u256s_be_inputs() appends padding words after the message words (last_input_num_bytes=0),
     // the first msg_len/8 words in input_start are exactly the original message words.
     let (n_words, rem8) = unsigned_div_rem(msg_len, 8);
-   
+
     let (word_buf: felt*) = alloc();
     // First msg_len/8 words are the original message words in little-endian u64.
     copy_prefix_words(src=input_start, dst=word_buf, n_words=n_words);

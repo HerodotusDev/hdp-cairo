@@ -60,12 +60,7 @@ namespace EvmDecoder {
         evm_decoder_ptr: felt**,
         output_ptr: felt*,
         keccak_ptr: felt*,
-    }(
-        rlp: felt*,
-        params: felt*,
-        state_access_type: felt,
-        field: felt
-    ) -> () {
+    }(rlp: felt*, params: felt*, state_access_type: felt, field: felt) -> () {
         alloc_locals;
 
         let func_ptr = evm_decoder_ptr[state_access_type];
