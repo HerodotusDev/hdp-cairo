@@ -115,12 +115,16 @@ func verify_storage_item{
     let (mpt_proof: felt**) = alloc();
     %{ segments.write_arg(ids.mpt_proof, [int(x, 16) for x in proof.proof]) %}
 
-    local account_key: AccountKey = AccountKey(chain_id=chain_info.id, block_number=block_number, address=address);
+    local account_key: AccountKey = AccountKey(
+        chain_id=chain_info.id, block_number=block_number, address=address
+    );
     let memorizer_key = EvmHashParams.account(
         chain_id=chain_info.id, block_number=block_number, address=address
     );
     let (account_rlp) = EvmMemorizer.get(key=memorizer_key);
-    let (state_root: Uint256*, _) = AccountDecoder.get_field(account_rlp, AccountField.STATE_ROOT, &account_key);
+    let (state_root: Uint256*, _) = AccountDecoder.get_field(
+        account_rlp, AccountField.STATE_ROOT, &account_key
+    );
 
     let (rlp: felt*, _value_bytes_len: felt) = verify_mpt_proof(
         mpt_proof=mpt_proof,

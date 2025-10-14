@@ -1,6 +1,6 @@
 #[starknet::contract]
 mod module {
-    use core::starknet::EthAddress;
+    use starknet::EthAddress;
     use hdp_cairo::HDP;
     use hdp_cairo::evm::ETHEREUM_TESTNET_CHAIN_ID;
     use hdp_cairo::evm::account::{AccountImpl, AccountKey, AccountTrait};

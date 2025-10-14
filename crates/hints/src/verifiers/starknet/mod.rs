@@ -49,6 +49,8 @@ pub fn hint_vm_enter_scope(
         ChainProofs::EthereumSepolia(proofs) => Box::new(proofs),
         ChainProofs::StarknetMainnet(proofs) => Box::new(proofs),
         ChainProofs::StarknetSepolia(proofs) => Box::new(proofs),
+        ChainProofs::OptimismMainnet(proofs) => Box::new(proofs),
+        ChainProofs::OptimismSepolia(proofs) => Box::new(proofs),
     };
     let dict_manager: Box<dyn Any> = Box::new(exec_scopes.get_dict_manager()?);
 

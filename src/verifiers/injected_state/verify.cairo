@@ -4,7 +4,10 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian, uint256_to_felt
 from starkware.cairo.common.default_dict import default_dict_finalize
 from starkware.cairo.common.registers import get_label_location
-from src.utils.patricia_with_keccak import patricia_update_using_update_constants, patricia_update_constants_new
+from src.utils.patricia_with_keccak import (
+    patricia_update_using_update_constants,
+    patricia_update_constants_new,
+)
 from src.utils.keccak import TruncatedKeccak, finalize_truncated_keccak
 from src.verifiers.mpt import HashNodeTruncatedKeccak, traverse
 from src.types import TrieNode
@@ -16,7 +19,7 @@ func inclusion_state_verification{
     keccak_ptr: felt*,
     pow2_array: felt*,
     injected_state_memorizer: DictAccess*,
-}() -> (root: felt, key: felt, value: felt, inclusion_flag: felt){
+}() -> (root: felt, key: felt, value: felt, inclusion_flag: felt) {
     alloc_locals;
 
     tempvar key_be: felt = nondet %{ state_proof_read.leaf.key %};
@@ -30,20 +33,20 @@ func inclusion_state_verification{
 
     let (keccak_ptr_seg: TruncatedKeccak*) = alloc();
     let hash_ptr = cast(keccak_ptr_seg, HashBuiltin*);
-    
+
     let (root, value, inclusion_flag) = traverse{
-        hash_binary_node_ptr=hash_binary_node_ptr, hash_edge_node_ptr=hash_edge_node_ptr, hash_ptr=hash_ptr,
-        bitwise_ptr=bitwise_ptr, pow2_array=pow2_array
-    }(
-        cast(nodes_ptr, TrieNode**), proof_len, key_be
-    );
+        hash_binary_node_ptr=hash_binary_node_ptr,
+        hash_edge_node_ptr=hash_edge_node_ptr,
+        hash_ptr=hash_ptr,
+        bitwise_ptr=bitwise_ptr,
+        pow2_array=pow2_array,
+    }(cast(nodes_ptr, TrieNode**), proof_len, key_be);
 
     finalize_truncated_keccak{
         range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
     }(ptr_start=keccak_ptr_seg, ptr_end=cast(hash_ptr, TruncatedKeccak*));
 
     return (root=root, key=key_be, value=value, inclusion_flag=inclusion_flag);
-
 }
 
 func update_state_verification{
@@ -52,7 +55,7 @@ func update_state_verification{
     keccak_ptr: felt*,
     pow2_array: felt*,
     injected_state_memorizer: DictAccess*,
-}() -> (prev_root:felt, new_root:felt, key:felt, prev_value:felt, new_value:felt){
+}() -> (prev_root: felt, new_root: felt, key: felt, prev_value: felt, new_value: felt) {
     alloc_locals;
 
     tempvar n_updates = 1;
@@ -94,11 +97,13 @@ func update_state_verification{
         new_root=new_root,
     );
 
-    with keccak_ptr_seg{
+    with keccak_ptr_seg {
         finalize_truncated_keccak{
             range_check_ptr=range_check_ptr, bitwise_ptr=bitwise_ptr, keccak_ptr=keccak_ptr
         }(ptr_start=keccak_ptr_seg_start, ptr_end=keccak_ptr_seg);
     }
-    
-    return (prev_root=prev_root, new_root=new_root, key=key, prev_value=prev_value, new_value=new_value);
+
+    return (
+        prev_root=prev_root, new_root=new_root, key=key, prev_value=prev_value, new_value=new_value
+    );
 }
