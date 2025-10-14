@@ -1,6 +1,6 @@
 #[starknet::contract]
 mod hashers_keccak {
-    use core::keccak::{keccak_u256s_be_inputs};
+    use core::keccak::{keccak_u256s_be_inputs, cairo_keccak};
     use hdp_cairo::{HDP};
 
     #[storage]
@@ -22,5 +22,12 @@ mod hashers_keccak {
        assert!(hash4 == 0xe0c2a7d2cc99d544061ac0ccbb083ac8976e54eed878fb1854dfe7b6ce7b0be9);
        assert!(hash5 == 0x9c94f221eddf185aa6e49f6a641a0944071b3f711f7bfe32d44bb20079620c6e);
        assert!(hash6 == 0xa2be4cfd50af371d37fab2814cb4fde068b498d9e24955560983c753139fa9a5);
+
+       // from https://github.com/starkware-libs/cairo/blob/062b13af3c5748d05022e86d0e9d50fb449ecb2e/corelib/src/keccak.cairo#L142C1-L146C8
+       // Hash "Hello world!" by splitting into 64-bit words in little-endian
+       let mut input = array![0x6f77206f6c6c6548]; // a full 8-byte word
+       let hash = cairo_keccak(ref input, 0x21646c72, 4); // 4 bytes of the last word
+       assert!(hash == 0xabea1f2503529a21734e2077c8b584d7bee3f45550c2d2f12a198ea908e1d0ec);
+
     }
 }
