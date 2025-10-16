@@ -119,6 +119,10 @@ impl CairoHeader {
         self.0.parent_beacon_block_root.map(|f| f.into())
     }
 
+    pub fn requests_hash(&self) -> Option<Uint256> {
+        self.0.requests_hash.map(|f| f.into())
+    }
+
     pub fn hash(&self) -> Uint256 {
         keccak256(self.rlp_encode()).into()
     }

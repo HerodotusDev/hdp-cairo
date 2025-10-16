@@ -35,6 +35,7 @@ namespace HeaderField {
     const BLOB_GAS_USED = 17;
     const EXCESS_BLOB_GAS = 18;
     const PARENT_BEACON_BLOCK_ROOT = 19;
+    const REQUESTS_HASH = 20;
 }
 
 struct HeaderKey {
