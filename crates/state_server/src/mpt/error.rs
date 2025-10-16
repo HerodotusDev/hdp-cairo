@@ -16,8 +16,6 @@ pub enum Error {
     PoolConnection(#[from] r2d2::Error),
     #[error("Failed to get proof:")]
     GetProof(GetProofError),
-    #[error("Failed to verify proof: {0}")]
-    ProofVerification(#[from] eth_trie::TrieError),
     #[error("Failed to decode rlp: {0}")]
     RlpDecoding(#[from] alloy_rlp::Error),
     #[error("Failed to convert address to Felt: {0}")]

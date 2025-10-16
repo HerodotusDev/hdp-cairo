@@ -1,10 +1,11 @@
 #[starknet::contract]
 mod module {
-    use alexandria_bytes::{Bytes, BytesTrait};
+    use alexandria_bytes::{Bytes};
+    use alexandria_bytes::byte_array_ext::{ByteArrayTraitExt};
     use alexandria_encoding::sol_abi::{decode::SolAbiDecodeTrait};
-    use core::byte_array::ByteArrayImpl;
     use core::num::traits::BitSize;
-    use core::starknet::EthAddress;
+    use core::byte_array::ByteArrayImpl;
+    use starknet::EthAddress;
     use hdp_cairo::{
         HDP, evm::ETHEREUM_TESTNET_CHAIN_ID,
         evm::block_receipt::{BlockReceiptImpl, BlockReceiptKey, BlockReceiptTrait},
@@ -100,10 +101,10 @@ mod module {
                             if (topic0 == WITHDRAWAL_EVENT_SIGNATURE) {
                                 // Retrieve the log data.
                                 let data = hdp.evm.log_get_data(@key);
-                                let encoded: Bytes = BytesTrait::new(
+                                let encoded: Bytes = ByteArrayTraitExt::new(
                                     data.len() * BitSize::<u256>::bits() / BitSize::<u8>::bits(),
                                     data,
-                                );
+                                ).into();
 
                                 let mut offset = 0;
                                 // Decode the data to extract an Ethereum address corresponding to

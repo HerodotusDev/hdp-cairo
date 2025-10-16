@@ -5,19 +5,22 @@
 
 use std::{env, path::PathBuf};
 
+use cairo_air as _;
 use cairo_vm::{
-    cairo_run::{self, cairo_run_program},
-    types::{layout_name::LayoutName, program::Program, relocatable::Relocatable},
-    vm::runners::cairo_pie::CairoPie,
+    cairo_run::{cairo_run_program, CairoRunConfig},
+    types::{program::Program, relocatable::Relocatable},
+    vm::runners::cairo_runner::CairoRunner,
 };
 use clap::Parser;
 use dotenvy as _;
 use serde_json as _;
 use sound_hint_processor::CustomHintProcessor;
+use stwo_cairo_prover as _;
 use tokio as _;
-use tracing::debug;
+use tracing::info;
 use tracing_subscriber as _;
 use types::{error::Error, HDPInput, HDPOutput};
+pub mod prove;
 
 pub const HDP_COMPILED_JSON: &str = env!("HDP_COMPILED_JSON");
 
@@ -48,27 +51,35 @@ pub struct Args {
         help = "Print program output to stdout [default: false]"
     )]
     pub print_output: bool,
-    #[arg(long = "cairo_pie_output", default_value = None, help = "Path where the Cairo PIE zip file will be written")]
-    pub cairo_pie_output: Option<PathBuf>,
+    #[arg(long = "proof_mode", conflicts_with = "cairo_pie", help = "Configure runner in proof mode")]
+    pub proof_mode: bool,
+
+    #[arg(
+        long = "cairo_pie",
+        default_value = None,
+        conflicts_with_all = ["stwo_proof", "proof_mode"],
+        help = "Path where the Cairo PIE zip file will be written"
+    )]
+    pub cairo_pie: Option<PathBuf>,
+
+    #[arg(
+        long = "stwo_proof",
+        default_value = None,
+        requires = "proof_mode",
+        conflicts_with = "cairo_pie",
+        help = "Path where the STWO proof file will be written"
+    )]
+    pub stwo_proof: Option<PathBuf>,
 }
 
-pub fn run(program_path: PathBuf, input: HDPInput) -> Result<(CairoPie, HDPOutput), Error> {
-    let cairo_run_config = cairo_run::CairoRunConfig {
-        layout: LayoutName::all_cairo,
-        secure_run: Some(true),
-        allow_missing_builtins: Some(false),
-        ..Default::default()
-    };
-
-    debug!("Program path: {}", program_path.display());
+pub fn run(program_path: PathBuf, cairo_run_config: CairoRunConfig, input: HDPInput) -> Result<(CairoRunner, HDPOutput), Error> {
+    info!("Program path: {}", program_path.display());
     let program_file = std::fs::read(program_path).map_err(Error::IO)?;
     let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))?;
 
     let mut hint_processor = CustomHintProcessor::new(input);
     let mut cairo_runner = cairo_run_program(&program, &cairo_run_config, &mut hint_processor).map_err(Box::new)?;
-    debug!("{:?}", cairo_runner.get_execution_resources());
-
-    let pie = cairo_runner.get_cairo_pie().map_err(|e| Error::CairoPie(e.to_string()))?;
+    info!("{:?}", cairo_runner.get_execution_resources());
 
     let segment_index = cairo_runner.vm.get_output_builtin_mut()?.base();
     let segment_size = cairo_runner.vm.segments.compute_effective_sizes()[segment_index];
@@ -80,7 +91,7 @@ pub fn run(program_path: PathBuf, input: HDPInput) -> Result<(CairoPie, HDPOutpu
 
     let output = HDPOutput::from_iter(iter);
 
-    Ok((pie, output))
+    Ok((cairo_runner, output))
 }
 
 pub fn get_program_path() -> String {

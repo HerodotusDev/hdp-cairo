@@ -50,8 +50,6 @@ pub const ETHEREUM_MAINNET_CHAIN_ID: u128 = 0x1;
 pub const ETHEREUM_TESTNET_CHAIN_ID: u128 = 0xaa36a7;
 pub const OPTIMISM_MAINNET_CHAIN_ID: u128 = 0xa;
 pub const OPTIMISM_TESTNET_CHAIN_ID: u128 = 0xaa37dc;
-// pub const WORLDCHAIN_MAINNET_CHAIN_ID: u128 = 0x1e0;
-// pub const WORLDCHAIN_TESTNET_CHAIN_ID: u128 = 0x12c1;
 pub const STARKNET_MAINNET_CHAIN_ID: u128 = 0x534e5f4d41494e;
 pub const STARKNET_TESTNET_CHAIN_ID: u128 = 0x534e5f5345504f4c4941;
 
@@ -86,8 +84,6 @@ pub enum ChainProofs {
     EthereumSepolia(evm::Proofs),
     OptimismMainnet(evm::Proofs),
     OptimismSepolia(evm::Proofs),
-    // WorldchainMainnet(evm::Proofs),
-    // WorldchainSepolia(evm::Proofs),
     StarknetMainnet(starknet::Proofs),
     StarknetSepolia(starknet::Proofs),
 }
@@ -99,8 +95,6 @@ impl ChainProofs {
             ChainProofs::EthereumSepolia(_) => 0xaa36a7,
             ChainProofs::OptimismMainnet(_) => 0xa,
             ChainProofs::OptimismSepolia(_) => 0xaa37dc,
-            // ChainProofs::WorldchainMainnet(_) => 0x1e0,
-            // ChainProofs::WorldchainSepolia(_) => 0x12c1,
             ChainProofs::StarknetMainnet(_) => 0x534e5f4d41494e,
             ChainProofs::StarknetSepolia(_) => 0x534e5f5345504f4c4941,
         }

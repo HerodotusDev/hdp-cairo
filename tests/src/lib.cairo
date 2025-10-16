@@ -1,16 +1,17 @@
-pub mod evm;
+pub mod evm_modules;
 pub mod hashers;
 pub mod injected_state;
-pub mod starknet;
+pub mod starknet_modules;
 pub mod utils;
 
 use alexandria_bytes::utils::{BytesDebug, BytesDisplay};
-use alexandria_bytes::{Bytes, BytesTrait};
+use alexandria_bytes::{Bytes};
+use alexandria_bytes::byte_array_ext::{ByteArrayTraitExt};
 use alexandria_encoding::sol_abi::{decode::SolAbiDecodeTrait, sol_bytes::SolBytesTrait};
-use core::starknet::{ContractAddress, EthAddress};
+use starknet::{ContractAddress, EthAddress};
 
 fn sol_abi_decode_test() {
-    let encoded: Bytes = BytesTrait::new(
+    let encoded: Bytes = ByteArrayTraitExt::new(
         384,
         array![
             0x00000000000000000000000000000000,
@@ -38,7 +39,7 @@ fn sol_abi_decode_test() {
             0x000000000000000000000000Deadbeef,
             0xDeaDbeefdEAdbeefdEadbEEFdeadbeEF,
         ],
-    );
+    ).into();
 
     let mut offset = 0;
     let decoded: u16 = encoded.decode(ref offset);

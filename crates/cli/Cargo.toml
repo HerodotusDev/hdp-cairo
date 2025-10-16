@@ -8,6 +8,7 @@ name = "hdp-cli"
 path = "src/main.rs"
 
 [dependencies]
+cairo-air.workspace = true
 cairo-lang-starknet-classes.workspace = true
 cairo-vm.workspace = true
 clap.workspace = true
@@ -17,6 +18,7 @@ dry_run.workspace = true
 fetcher.workspace = true
 serde_json.workspace = true
 sound_run.workspace = true
+stwo_cairo_prover.workspace = true
 syscall_handler.workspace = true
 tokio.workspace = true
 types.workspace = true

@@ -133,7 +133,9 @@ namespace EvmHashParams2 {
     }
 
     func storage{poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> felt {
-        let (params, params_len) = EvmPackParams.storage(params[0], params[1], params[2], Uint256(low=params[4], high=params[3]));
+        let (params, params_len) = EvmPackParams.storage(
+            params[0], params[1], params[2], Uint256(low=params[4], high=params[3])
+        );
         return hash_memorizer_key(params, params_len);
     }
 

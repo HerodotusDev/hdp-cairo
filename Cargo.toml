@@ -18,92 +18,75 @@ members = [
 ]
 
 [workspace.dependencies]
-alloy = { version = "0.12.5", features = ["full"] }
-alloy-rlp = { version = "0.3.5", features = ["derive"] }
-alloy-trie = { version = "0.8.1", features = ["ethereum", "serde"] }
-anyhow = "1.0.95"
+alloy = { version = "1.0", features = ["full"] }
+alloy-rlp = { version = "0.3", features = ["derive"] }
+alloy-trie = { version = "0.9", features = ["ethereum", "serde"] }
+anyhow = "1.0.100"
+api = { path = "src/crates/api" }
 axum = { version = "0.8", features = ["tracing"] }
-bincode = { version = "=2.0.0-rc.3", default-features = false, features = [
-    "serde",
-] }
-bincode_derive = { version = "=2.0.0-rc.3" }
-
-cairo-lang-casm = { version = "2.11.2", default-features = false }
-cairo-lang-starknet-classes = "2.11.2"
-cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", tag = "v2.0.1", features = [
-    "extensive_hints",
-    "clap",
-    "cairo-1-hints",
-    "mod_builtin",
-] }
-clap = { version = "4.3.10", features = ["derive"] }
-dotenvy = "0.15.7"
-eth-trie-proofs = "0.1.2"
+bincode = "2.0.1"
+bitvec = "1.0.1"
+bytemuck = { version = "1.20", features = ["derive"] }
+cairo_runner = { path = "src/crates/cairo-runner" }
+cairo_type_derive = { path = "crates/cairo_type_derive" }
+cairo-air = { git = "https://github.com/starkware-libs/stwo-cairo", rev = "62c3c4a" }
+cairo-lang-casm = "2.12.3"
+cairo-lang-starknet-classes = "2.12.3"
+cairo-type-derive = { git = "https://github.com/keep-starknet-strange/snos.git", rev = "2dc07a4298e2954c774f4d419a8f9db007da494c" }
+cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", rev = "b1a91f929b5fa29a1a2e9e6990a68a1220c0c673", features = ["extensive_hints", "clap", "cairo-1-hints", "mod_builtin"] }
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4.5", features = ["derive"] }
+dotenvy = "0.15"
+dry_hint_processor = { path = "crates/dry_hint_processor" }
+dry_run = { path = "crates/dry_run" }
+eth_essentials_cairo_vm_hints = { path = "packages/eth_essentials/cairo_vm_hints" }
+eth-trie-proofs = { git = "https://github.com/HerodotusDev/trie-proofs.git", rev = "ac583244e50ba39a36407eda5fc6dd41f767d1c0"}
+fetcher = { path = "crates/fetcher" }
 futures = "0.3.31"
+futures-util = "0.3.31"
 hex = { version = "0.4.3", features = ["serde"] }
+hints = { path = "crates/hints" }
 http-body-util = "0.1.0"
-indicatif = "0.17.9"
+indexer = { path = "crates/indexer" }
+indicatif = "0.18.0"
 keccak = "0.1.5"
-lazy_static = "1.5.0"
-num-bigint = "0.4.6"
-num-integer = "0.1.46"
-num-traits = "0.2.19"
+num-bigint = { version = "0.4", features = ["rand"] }
+num-integer = "0.1"
+num-traits = "0.2"
+pathfinder_gateway_types = { git = "https://github.com/HerodotusDev/pathfinder.git", package = "starknet-gateway-types", rev = "f173c93efabe421b5500dc319dafa75b8fa3c7a8" }
+pathfinder-common = { git = "https://github.com/HerodotusDev/pathfinder.git", rev = "f173c93efabe421b5500dc319dafa75b8fa3c7a8"}
+pathfinder-crypto = { git = "https://github.com/HerodotusDev/pathfinder.git", rev = "f173c93efabe421b5500dc319dafa75b8fa3c7a8"}
+pathfinder-merkle-tree = { git = "https://github.com/HerodotusDev/pathfinder.git", rev = "f173c93efabe421b5500dc319dafa75b8fa3c7a8"}
+pathfinder-storage = { git = "https://github.com/HerodotusDev/pathfinder.git", rev = "f173c93efabe421b5500dc319dafa75b8fa3c7a8"}
+r2d2 = "0.8.10"
+r2d2_sqlite = "0.31"
 rand = "0.8"
-reqwest = "0.12.9"
+reqwest = "0.12"
+rusqlite = "0.37" 
 serde = { version = "1.0.215", features = ["derive"] }
 serde_json = "1.0.132"
 serde_with = { version = "3.11.0", features = ["hex"] }
 sha3 = "0.10.8"
-starknet = "0.13.0"
-starknet-core = { version = "0.11.1", default-features = false }
-starknet-crypto = { version = "0.7.1", default-features = false }
-starknet-types-core = { version = "0.1.6", default-features = false }
-strum_macros = "0.26.4"
-thiserror = "1.0.64"
-tiny-keccak = { version = "2.0.2", features = ["keccak"] }
-tokio = { version = "1.41.1", features = ["full"] }
-tower-http = { version = "0.6.1", features = ["timeout", "trace", "cors"] }
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-utoipa = { version = "5.3.1", features = ["axum_extras"] }
-utoipa-swagger-ui = { version = "9", features = ["axum"] }
-version-compare = "0.0.11"
-
-cairo_type_derive = { path = "crates/cairo_type_derive" }
-dry_hint_processor = { path = "crates/dry_hint_processor" }
-dry_run = { path = "crates/dry_run" }
-eth_essentials_cairo_vm_hints = { path = "packages/eth_essentials/cairo_vm_hints" }
-fetcher = { path = "crates/fetcher" }
-hints = { path = "crates/hints" }
-indexer_client = { path = "crates/indexer_client" }
-pathfinder_gateway_types = { git = "https://github.com/petscheit/pathfinder", package = "starknet-gateway-types" }
-pathfinder-common = { git = "https://github.com/petscheit/pathfinder"}
-pathfinder-crypto = { git = "https://github.com/petscheit/pathfinder"}
 sound_hint_processor = { path = "crates/sound_hint_processor" }
 sound_run = { path = "crates/sound_run" }
+starknet = "0.17.0"
+starknet-core = { version = "0.16.0", default-features = false }
+starknet-crypto = { version = "0.7.4", default-features = false }
+starknet-types-core = { version = "0.1.7", default-features = false }
 state_server = { path = "crates/state_server" }
+strum_macros = "0.27"
+stwo_cairo_adapter = { git = "https://github.com/starkware-libs/stwo-cairo", rev = "62c3c4a", package = "stwo-cairo-adapter" }
+stwo_cairo_prover = { git = "https://github.com/starkware-libs/stwo-cairo", rev = "62c3c4a" }
 syscall_handler = { path = "crates/syscall_handler" }
+thiserror = "2.0"
+tiny-keccak = { version = "2.0.2", features = ["keccak"] }
+tokio = { version = "1.0", features = ["full"] }
+tower = { version = "0.5.2", features = ["util"] }
+tower-http = { version = "0.6.1", features = ["timeout", "trace", "cors"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3.20", features = ["env-filter"] }
 types = { path = "crates/types" }
-
-uuid = { version = "1.0", features = ["v4"] }
-dashmap = "5.5"
-tower = { version = "0.4", features = ["util"] }
-chrono = { version = "0.4", features = ["serde"] }
-
-pathfinder-merkle-tree = { git = "https://github.com/petscheit/pathfinder" }
-pathfinder-storage = { git = "https://github.com/petscheit/pathfinder" }
-cairo-type-derive = { git = "https://github.com/keep-starknet-strange/snos.git", branch = "main" }
-bitvec = "1.0.1"
-eth_trie = "0.5.0"
-fake = { version = "=2.10.0", features = ["derive", "serde_json"] }
-futures-util = "0.3.31"
-hex-literal = "1.0.0"
-num_cpus = "1.16.0"
-once_cell = "1.21.3"
-primitive-types = { version = "0.13.1", features = ["serde"] }
-r2d2 = "0.8.10"
-r2d2_sqlite = "0.25.0"
-rusqlite = "0.32.1"
-rand_distr = "0.4"
-api = { path = "src/crates/api" }
-cairo_runner = { path = "src/crates/cairo-runner" }
+utoipa = { version = "5.3.1", features = ["axum_extras"] }
+utoipa-swagger-ui = { version = "9", features = ["axum"] }
+uuid = { version = "1.18.1", features = ["v4"] }
+version-compare = "0.2.0"

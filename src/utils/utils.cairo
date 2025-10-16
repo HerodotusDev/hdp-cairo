@@ -1,7 +1,9 @@
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, KeccakBuiltin
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian, felt_to_uint256
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.builtin_keccak.keccak import keccak
+from starkware.cairo.common.cairo_keccak.keccak import (
+    cairo_keccak_felts_bigend as keccak_felts_bigend,
+)
 from packages.eth_essentials.lib.rlp_little import array_copy
 from packages.eth_essentials.lib.utils import (
     word_reverse_endian_16_RC,
@@ -202,4 +204,26 @@ func mmr_metas_write_output_ptr_mixed{output_ptr: felt*}(
     let output_ptr = output_ptr + mmr_metas_len_keccak * 5;
 
     return ();
+func calculate_task_hash{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*}(
+    module_hash: felt, public_inputs_len: felt, public_inputs: felt*
+) -> Uint256 {
+    alloc_locals;
+
+    let (task_hash_preimage) = alloc();
+    assert task_hash_preimage[0] = module_hash;
+
+    // This is the offset for encoding dynamic array in Solidity - data for the inputs array starts at byte position 64 -> 40 in HEX
+    assert task_hash_preimage[
+        1
+    ] = 0x0000000000000000000000000000000000000000000000000000000000000040;
+
+    // For Solidity encoding of array size
+    assert task_hash_preimage[2] = public_inputs_len;
+
+    memcpy(dst=task_hash_preimage + 3, src=public_inputs, len=public_inputs_len);
+    tempvar task_hash_preimage_len: felt = 3 + public_inputs_len;
+
+    let (taskHash) = keccak_felts_bigend(task_hash_preimage_len, task_hash_preimage);
+
+    return taskHash;
 }
