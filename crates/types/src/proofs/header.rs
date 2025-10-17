@@ -1,8 +1,7 @@
+use alloy::{hex, primitives::Bytes};
 use cairo_vm::Felt252;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
-use alloy::primitives::Bytes;
-use alloy::hex;
 
 use super::mmr::MmrMeta;
 
@@ -20,8 +19,7 @@ where
         } else {
             clean_hex.to_string()
         };
-        let bytes = alloy::hex::decode(&normalized)
-            .map_err(|e| serde::de::Error::custom(format!("Invalid hex string: {}", e)))?;
+        let bytes = alloy::hex::decode(&normalized).map_err(|e| serde::de::Error::custom(format!("Invalid hex string: {}", e)))?;
         bytes_vec.push(bytes.into());
     }
 
@@ -38,10 +36,9 @@ pub struct HeaderMmrMeta<T> {
 #[serde_as]
 pub struct HeaderProof {
     pub leaf_idx: u64,
-     #[serde(deserialize_with = "deserialize_mmr_path")]
+    #[serde(deserialize_with = "deserialize_mmr_path")]
     pub mmr_path: Vec<Bytes>,
 }
-
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
 pub struct HeaderProofSerialized {
@@ -51,9 +48,7 @@ pub struct HeaderProofSerialized {
 
 impl From<&HeaderProof> for HeaderProofSerialized {
     fn from(proof: &HeaderProof) -> Self {
-        let mmr_path: Vec<String> = proof.mmr_path.iter().map(|bytes| {
-            format!("0x{}", hex::encode(bytes))
-        }).collect();
+        let mmr_path: Vec<String> = proof.mmr_path.iter().map(|bytes| format!("0x{}", hex::encode(bytes))).collect();
 
         HeaderProofSerialized {
             leaf_idx: proof.leaf_idx,

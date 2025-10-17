@@ -5,10 +5,9 @@
 
 use std::{
     collections::{HashMap, HashSet},
+    env, fs,
     num::ParseIntError,
     path::PathBuf,
-    fs,
-    env,
 };
 
 use alloy::hex::FromHexError;
@@ -41,8 +40,8 @@ use types::{
         mmr::MmrMeta,
         starknet::{header::Header as StarknetHeader, storage::Storage as StarknetStorage, Proofs as StarknetProofs},
     },
-    ChainProofs, HashingFunction, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID,
-    STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID, RPC_URL_HERODOTUS_INDEXER,
+    ChainProofs, HashingFunction, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID,
+    OPTIMISM_TESTNET_CHAIN_ID, RPC_URL_HERODOTUS_INDEXER, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
 };
 
 pub mod proof_keys;
@@ -111,15 +110,13 @@ pub fn parse_proofs_fetcher_config(path: &PathBuf) -> Result<HashMap<u128, Hashi
 
     for (k, v) in obj {
         let chain_id: u128 = k.parse()?;
-        let inner = v.as_object().ok_or_else(|| {
-            FetcherError::JsonDeserializationError("Config value must be an object with 'mmr_hashing_function'".into())
-        })?;
+        let inner = v
+            .as_object()
+            .ok_or_else(|| FetcherError::JsonDeserializationError("Config value must be an object with 'mmr_hashing_function'".into()))?;
         let func_s = inner
             .get("mmr_hashing_function")
             .and_then(|x| x.as_str())
-            .ok_or_else(|| FetcherError::JsonDeserializationError(
-                "Missing or invalid 'mmr_hashing_function' (expected string)".into()
-            ))?;
+            .ok_or_else(|| FetcherError::JsonDeserializationError("Missing or invalid 'mmr_hashing_function' (expected string)".into()))?;
         map.insert(chain_id, parse_hashing_function(func_s)?);
     }
 
@@ -267,7 +264,7 @@ impl<'a> Fetcher<'a> {
         }
     }
 
-     fn indexer_mmr_hashing_function_for_chain(&self, chain_id: u128) -> indexer_client::models::HashingFunction {
+    fn indexer_mmr_hashing_function_for_chain(&self, chain_id: u128) -> indexer_client::models::HashingFunction {
         match self.resolve_hashing_function(chain_id) {
             HashingFunction::Poseidon => indexer_client::models::HashingFunction::Poseidon,
             HashingFunction::Keccak => indexer_client::models::HashingFunction::Keccak,
@@ -279,19 +276,15 @@ impl<'a> Fetcher<'a> {
         flattened_keys: &HashSet<FlattenedKey>,
     ) -> Result<HashMap<MmrMeta, Vec<EvmHeader>>, FetcherError> {
         let mut headers_with_mmr = HashMap::default();
-        let mut header_fut = futures::stream::iter(
-            flattened_keys
-                .iter()
-                .map(|key| {
-                    let deployed_on_chain = self.deployed_on_chain.unwrap_or(key.chain_id);
-                    EvmProofKeys::fetch_header_proof(
-                        deployed_on_chain,
-                        key.chain_id,
-                        key.block_number,
-                        self.indexer_mmr_hashing_function_for_chain(key.chain_id)
-                    )
-                }),
-        )
+        let mut header_fut = futures::stream::iter(flattened_keys.iter().map(|key| {
+            let deployed_on_chain = self.deployed_on_chain.unwrap_or(key.chain_id);
+            EvmProofKeys::fetch_header_proof(
+                deployed_on_chain,
+                key.chain_id,
+                key.block_number,
+                self.indexer_mmr_hashing_function_for_chain(key.chain_id),
+            )
+        }))
         .buffer_unordered(BUFFER_UNORDERED)
         .boxed();
 
@@ -438,19 +431,15 @@ impl<'a> Fetcher<'a> {
         flattened_keys: &HashSet<FlattenedKey>,
     ) -> Result<HashMap<MmrMeta, Vec<StarknetHeader>>, FetcherError> {
         let mut headers_with_mmr = HashMap::default();
-        let mut header_fut = futures::stream::iter(
-            flattened_keys
-                .iter()
-                .map(|key| {
-                    let deployed_on_chain = self.deployed_on_chain.unwrap_or(11155111);
-                    StarknetProofKeys::fetch_header_proof(
-                        deployed_on_chain,
-                        key.chain_id,
-                        key.block_number,
-                        self.indexer_mmr_hashing_function_for_chain(key.chain_id)
-                    )
-                }),
-        )
+        let mut header_fut = futures::stream::iter(flattened_keys.iter().map(|key| {
+            let deployed_on_chain = self.deployed_on_chain.unwrap_or(11155111);
+            StarknetProofKeys::fetch_header_proof(
+                deployed_on_chain,
+                key.chain_id,
+                key.block_number,
+                self.indexer_mmr_hashing_function_for_chain(key.chain_id),
+            )
+        }))
         .buffer_unordered(BUFFER_UNORDERED)
         .boxed();
 
@@ -610,9 +599,7 @@ pub fn parse_syscall_handler(
     Ok(proof_keys)
 }
 
-
 // ===== Auto-infer per-chain MMR hashing function using Indexer ranges =====
-
 
 fn in_ranges(ranges: &[(u64, u64)], block: u64) -> bool {
     ranges.iter().any(|(from, to)| block >= *from && block <= *to)
@@ -622,7 +609,8 @@ fn covers_all(ranges: &[(u64, u64)], blocks: &std::collections::HashSet<u64>) ->
     blocks.iter().all(|b| in_ranges(ranges, *b))
 }
 
-async fn get_all_ranges_accumulated_per_chain() -> Result<HashMap<u128, HashMap<u128, HashMap<HashingFunction, Vec<(u64, u64)>>>>, FetcherError> {
+async fn get_all_ranges_accumulated_per_chain(
+) -> Result<HashMap<u128, HashMap<u128, HashMap<HashingFunction, Vec<(u64, u64)>>>>, FetcherError> {
     // Delegate fetching to the Indexer crate for consistency
     let resp = Indexer::default().get_all_ranges_accumulated_per_chain().await?;
     let mut result: HashMap<u128, HashMap<u128, HashMap<HashingFunction, Vec<(u64, u64)>>>> = HashMap::new();
@@ -650,18 +638,32 @@ async fn get_all_ranges_accumulated_per_chain() -> Result<HashMap<u128, HashMap<
 
 fn collect_chain_ids_for_evm(proof_keys: &ProofKeys) -> HashSet<u128> {
     let mut set = HashSet::new();
-    for k in &proof_keys.evm.header_keys { set.insert(k.chain_id); }
-    for k in &proof_keys.evm.account_keys { set.insert(k.chain_id); }
-    for k in &proof_keys.evm.storage_keys { set.insert(k.chain_id); }
-    for k in &proof_keys.evm.receipt_keys { set.insert(k.chain_id); }
-    for k in &proof_keys.evm.transaction_keys { set.insert(k.chain_id); }
+    for k in &proof_keys.evm.header_keys {
+        set.insert(k.chain_id);
+    }
+    for k in &proof_keys.evm.account_keys {
+        set.insert(k.chain_id);
+    }
+    for k in &proof_keys.evm.storage_keys {
+        set.insert(k.chain_id);
+    }
+    for k in &proof_keys.evm.receipt_keys {
+        set.insert(k.chain_id);
+    }
+    for k in &proof_keys.evm.transaction_keys {
+        set.insert(k.chain_id);
+    }
     set
 }
 
 fn collect_chain_ids_for_starknet(proof_keys: &ProofKeys) -> HashSet<u128> {
     let mut set = HashSet::new();
-    for k in &proof_keys.starknet.header_keys { set.insert(k.chain_id); }
-    for k in &proof_keys.starknet.storage_keys { set.insert(k.chain_id); }
+    for k in &proof_keys.starknet.header_keys {
+        set.insert(k.chain_id);
+    }
+    for k in &proof_keys.starknet.storage_keys {
+        set.insert(k.chain_id);
+    }
     set
 }
 

@@ -40,7 +40,7 @@ async fn main() -> Result<(), fetcher::FetcherError> {
     } else {
         infer_mmr_sources_from_indexer(&proof_keys, args.deployed_on_chain).await?
     };
-    
+
     let fetcher = Fetcher::new_with_mmr_sources_map(&proof_keys, per_chain_mmr, args.deployed_on_chain);
     let (
         eth_proofs_mainnet,

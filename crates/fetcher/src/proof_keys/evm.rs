@@ -14,7 +14,13 @@ use starknet_types_core::felt::FromStrError;
 use types::{
     keys::{self, evm::get_corresponding_rpc_url},
     proofs::{
-        evm::{account::Account, header::{Header, HeaderKeccak}, receipt::Receipt, storage::Storage, transaction::Transaction},
+        evm::{
+            account::Account,
+            header::{Header, HeaderKeccak},
+            receipt::Receipt,
+            storage::Storage,
+            transaction::Transaction,
+        },
         header::{HeaderMmrMeta, HeaderProof},
         mpt::MPTProof,
     },
@@ -49,15 +55,16 @@ impl ProofKeys {
             accumulates_chain_id,
             block_number,
             mmr_hashing_function.clone(),
-        ).await?;
+        )
+        .await?;
 
         let proof = HeaderProof {
             leaf_idx: mmr_proof.element_index,
             mmr_path: mmr_proof
                 .siblings_hashes
                 .iter()
-             .map(|hash| Self::normalize_hex(hash).parse())
-                .collect::<Result<Vec<Bytes>, FromHexError>>()?
+                .map(|hash| Self::normalize_hex(hash).parse())
+                .collect::<Result<Vec<Bytes>, FromHexError>>()?,
         };
 
         let rlp = match &mmr_proof.block_header {
