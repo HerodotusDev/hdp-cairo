@@ -47,7 +47,7 @@ futures-util = "0.3.31"
 hex = { version = "0.4.3", features = ["serde"] }
 hints = { path = "crates/hints" }
 http-body-util = "0.1.0"
-indexer = { path = "crates/indexer" }
+indexer_client = { path = "crates/indexer_client" }
 indicatif = "0.18.0"
 keccak = "0.1.5"
 num-bigint = { version = "0.4", features = ["rand"] }

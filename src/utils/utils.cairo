@@ -204,6 +204,14 @@ func mmr_metas_write_output_ptr_mixed{output_ptr: felt*}(
     let output_ptr = output_ptr + mmr_metas_len_keccak * 5;
 
     return ();
+}
+
+// Calculates the HDP Task Hash (also known as task commitment) 
+// That is compatibile with Solidity implementation of Data Processor Module in Satellite 
+// Inputs:
+// module_hash: Program hash of the HDP module
+// modupublic_inputs: Array of HDP Task public inputs for the module
+// returns the task hash
 func calculate_task_hash{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*}(
     module_hash: felt, public_inputs_len: felt, public_inputs: felt*
 ) -> Uint256 {
