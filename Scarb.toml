@@ -7,6 +7,8 @@ members = [
     "examples/compliance",
     "examples/starkgate",
     "examples/injected_state",
+    "examples/most_bridge",
+    "examples/all_features_combined",
     "hdp_cairo",
     "tests",
 ]

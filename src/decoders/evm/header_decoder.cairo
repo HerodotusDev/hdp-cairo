@@ -1,11 +1,14 @@
-from packages.eth_essentials.lib.block_header import (extract_block_number_big,reverse_block_header_chunks)
+from packages.eth_essentials.lib.block_header import (
+    extract_block_number_big,
+    reverse_block_header_chunks,
+)
 from packages.eth_essentials.lib.mmr import hash_subtree_path
 from packages.eth_essentials.lib.utils import felt_divmod
 from src.types import MMRMeta
 from src.utils.rlp import rlp_list_retrieve, le_chunks_to_be_uint256
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash, poseidon_hash_many
-from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, KeccakBuiltin
+from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin
 from starkware.cairo.common.dict import dict_read
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.registers import get_fp_and_pc
@@ -48,9 +51,9 @@ namespace HeaderDecoder {
         return value.low;
     }
 
-    func get_field{keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
-        rlp: felt*, field: felt, key: HeaderKey*
-    ) -> (res_array: felt*, res_len: felt) {
+    func get_field{
+        keccak_ptr: felt*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
+    }(rlp: felt*, field: felt, key: HeaderKey*) -> (res_array: felt*, res_len: felt) {
         alloc_locals;
         let (__fp__, _) = get_fp_and_pc();
 
@@ -64,7 +67,9 @@ namespace HeaderDecoder {
         }
         if (field == HeaderField.COINBASE) {
             let address = get_address_value(rlp, 8, 6);
-            let (local result) = le_chunks_to_be_uint256(elements=address, elements_len=3, bytes_len=20);
+            let (local result) = le_chunks_to_be_uint256(
+                elements=address, elements_len=3, bytes_len=20
+            );
             return (res_array=&result, res_len=2);
         }
         if (field == HeaderField.STATE_ROOT) {
@@ -84,7 +89,7 @@ namespace HeaderDecoder {
 
             let (local res_array: felt*) = alloc();
             bloom_to_uint256_array(res, res_len, bytes_len, res_array);
-            
+
             return (res_array=res_array, res_len=bytes_len / 0x20 * 2);
         }
         if (field == HeaderField.EXTRA_DATA) {
@@ -117,7 +122,9 @@ namespace HeaderDecoder {
         return (value=res, value_len=res_len, bytes_len=bytes_len);
     }
 
-    func bloom_to_uint256_array{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(res: felt*, res_len: felt, bytes_len: felt, res_array: felt*) {
+    func bloom_to_uint256_array{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+        res: felt*, res_len: felt, bytes_len: felt, res_array: felt*
+    ) {
         alloc_locals;
 
         if (bytes_len == 0) {
@@ -127,7 +134,7 @@ namespace HeaderDecoder {
         let (local result) = le_chunks_to_be_uint256(res, 4, 0x20);
         assert [res_array + 1] = result.low;
         assert [res_array + 0] = result.high;
-        
+
         return bloom_to_uint256_array(res + 4, res_len - 4, bytes_len - 0x20, res_array + 2);
     }
 }

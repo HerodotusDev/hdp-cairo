@@ -1,7 +1,7 @@
-from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, KeccakBuiltin
+from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian, felt_to_uint256
-from starkware.cairo.common.builtin_keccak.keccak import keccak_bigend
+from starkware.cairo.common.cairo_keccak.keccak import cairo_keccak_bigend as keccak_bigend
 from starkware.cairo.common.cairo_secp.bigint import uint256_to_bigint
 from starkware.cairo.common.cairo_keccak.keccak import finalize_keccak
 from starkware.cairo.common.registers import get_fp_and_pc
@@ -69,7 +69,7 @@ namespace TransactionType {
 namespace TransactionDecoder {
     // Returns the TX field as BE uint256
     func get_field{
-        keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
+        keccak_ptr: felt*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
     }(rlp: felt*, field: felt, key: TransactionKey*) -> (res_array: felt*, res_len: felt) {
         let (tx_type, rlp_start_offset) = open_tx_envelope(rlp);
         let (res_array, res_len) = _get_field(rlp, field, rlp_start_offset, tx_type, key.chain_id);
@@ -77,8 +77,10 @@ namespace TransactionDecoder {
     }
 
     func _get_field{
-        keccak_ptr: KeccakBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
-    }(rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt, chain_id: felt) -> (res_array: felt*, res_len: felt) {
+        keccak_ptr: felt*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
+    }(rlp: felt*, field: felt, rlp_start_offset: felt, tx_type: felt, chain_id: felt) -> (
+        res_array: felt*, res_len: felt
+    ) {
         alloc_locals;
         let (__fp__, _) = get_fp_and_pc();
 
@@ -201,7 +203,7 @@ namespace TransactionSender {
     // Output:
     //     felt - The address of the sender, in BE
     func derive{
-        range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, keccak_ptr: KeccakBuiltin*
+        range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*, keccak_ptr: felt*
     }(rlp: felt*, rlp_start_offset: felt, tx_type: felt, chain_id: felt) -> felt {
         alloc_locals;
         let (chain_info) = fetch_chain_info(chain_id);

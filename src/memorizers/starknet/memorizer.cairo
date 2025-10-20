@@ -57,12 +57,19 @@ namespace StarknetHashParams {
 
 namespace StarknetHashParams2 {
     func header{poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> felt {
-        let (params, params_len) = StarknetPackParams.header(chain_id=params[0], block_number=params[1]);
+        let (params, params_len) = StarknetPackParams.header(
+            chain_id=params[0], block_number=params[1]
+        );
         return hash_memorizer_key(params, params_len);
     }
 
     func storage{poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> felt {
-        let (params, params_len) = StarknetPackParams.storage(chain_id=params[0], block_number=params[1], contract_address=params[2], storage_address=params[3]);
+        let (params, params_len) = StarknetPackParams.storage(
+            chain_id=params[0],
+            block_number=params[1],
+            contract_address=params[2],
+            storage_address=params[3],
+        );
         return hash_memorizer_key(params, params_len);
     }
 }

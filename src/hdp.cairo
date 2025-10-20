@@ -1,10 +1,9 @@
-%builtins output pedersen range_check ecdsa bitwise ec_op keccak poseidon range_check96 add_mod mul_mod
+%builtins output pedersen range_check bitwise poseidon range_check96 add_mod mul_mod
 
 from starkware.cairo.common.cairo_builtins import (
     BitwiseBuiltin,
     EcOpBuiltin,
     HashBuiltin,
-    KeccakBuiltin,
     ModBuiltin,
     PoseidonBuiltin,
     SignatureBuiltin,
@@ -13,15 +12,18 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new, default_dict_finalize
-from starkware.cairo.common.builtin_keccak.keccak import keccak_felts
 from starkware.cairo.common.registers import get_label_location
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash_many, poseidon_hash
+from starkware.cairo.common.cairo_keccak.keccak import (
+    finalize_keccak,
+    cairo_keccak_felts as keccak_felts,
+)
 
 from src.verifiers.verify import run_chain_state_verification
 from src.verifiers.verify import run_injected_state_verification
 from src.utils.merkle import compute_merkle_root
 from src.types import MMRMeta
-from src.utils.utils import mmr_metas_write_output_ptr, felt_array_to_uint256s
+from src.utils.utils import mmr_metas_write_output_ptr, felt_array_to_uint256s, calculate_task_hash
 from src.memorizers.evm.memorizer import EvmMemorizer
 from src.memorizers.starknet.memorizer import StarknetMemorizer
 from src.memorizers.bare import BareMemorizer
@@ -40,22 +42,21 @@ func main{
     output_ptr: felt*,
     pedersen_ptr: HashBuiltin*,
     range_check_ptr,
-    ecdsa_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    ec_op_ptr,
-    keccak_ptr: KeccakBuiltin*,
     poseidon_ptr: PoseidonBuiltin*,
     range_check96_ptr: felt*,
     add_mod_ptr: ModBuiltin*,
     mul_mod_ptr: ModBuiltin*,
 }() {
+    alloc_locals;
+    let (keccak_ptr: felt*) = alloc();
+    local keccak_ptr_start: felt* = keccak_ptr;
+
     run{
         output_ptr=output_ptr,
         pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
-        ecdsa_ptr=ecdsa_ptr,
         bitwise_ptr=bitwise_ptr,
-        ec_op_ptr=ec_op_ptr,
         keccak_ptr=keccak_ptr,
         poseidon_ptr=poseidon_ptr,
         range_check96_ptr=range_check96_ptr,
@@ -63,6 +64,7 @@ func main{
         mul_mod_ptr=mul_mod_ptr,
     }();
 
+    finalize_keccak(keccak_ptr_start=keccak_ptr_start, keccak_ptr_end=keccak_ptr);
     return ();
 }
 
@@ -70,10 +72,8 @@ func run{
     output_ptr: felt*,
     pedersen_ptr: HashBuiltin*,
     range_check_ptr,
-    ecdsa_ptr,
     bitwise_ptr: BitwiseBuiltin*,
-    ec_op_ptr,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     poseidon_ptr: PoseidonBuiltin*,
     range_check96_ptr: felt*,
     add_mod_ptr: ModBuiltin*,
@@ -165,9 +165,7 @@ func run{
     let (module_hash, retdata, retdata_size) = compute_contract{
         pedersen_ptr=pedersen_ptr,
         range_check_ptr=range_check_ptr,
-        ecdsa_ptr=ecdsa_ptr,
         bitwise_ptr=bitwise_ptr,
-        ec_op_ptr=ec_op_ptr,
         keccak_ptr=keccak_ptr,
         poseidon_ptr=poseidon_ptr,
         range_check96_ptr=range_check96_ptr,
@@ -192,12 +190,9 @@ func run{
         injected_state_memorizer_start, injected_state_memorizer, BareMemorizer.DEFAULT_VALUE
     );
 
-    let (task_hash_preimage) = alloc();
-    assert task_hash_preimage[0] = module_hash;
-    memcpy(dst=task_hash_preimage + 1, src=public_inputs, len=public_inputs_len);
-    tempvar task_hash_preimage_len: felt = 1 + public_inputs_len;
-
-    let (taskHash) = keccak_felts(task_hash_preimage_len, task_hash_preimage);
+    with keccak_ptr {
+        let taskHash = calculate_task_hash(module_hash, public_inputs_len, public_inputs);
+    }
 
     assert [output_ptr] = taskHash.low;
     assert [output_ptr + 1] = taskHash.high;
