@@ -41,7 +41,6 @@ pub enum HashingFunction {
     // Pedersen,
 }
 
-
 pub const ETHEREUM_MAINNET_CHAIN_ID: u128 = 0x1;
 pub const ETHEREUM_TESTNET_CHAIN_ID: u128 = 0xaa36a7;
 pub const OPTIMISM_MAINNET_CHAIN_ID: u128 = 0xa;
