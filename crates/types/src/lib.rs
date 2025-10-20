@@ -32,19 +32,15 @@ pub const RPC_URL_STARKNET_TESTNET: &str = "RPC_URL_STARKNET_TESTNET";
 pub const RPC_URL_HERODOTUS_INDEXER: &str = "RPC_URL_HERODOTUS_INDEXER";
 
 /// Enum for available hashing functions
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum HashingFunction {
+    #[default]
     Poseidon,
     Keccak,
     // Pedersen,
 }
 
-impl Default for HashingFunction {
-    fn default() -> Self {
-        HashingFunction::Poseidon
-    }
-}
 
 pub const ETHEREUM_MAINNET_CHAIN_ID: u128 = 0x1;
 pub const ETHEREUM_TESTNET_CHAIN_ID: u128 = 0xaa36a7;
@@ -203,7 +199,6 @@ impl FromIterator<Felt252> for HDPDryRunOutput {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "hash", rename_all = "lowercase")]
 pub enum MmrMetaOutput {
-    // Current Cairo output writes a single felt root for every MMR meta.
     // We map those 4 felt words (id, size, chain_id, root) into this Poseidon variant.
     Poseidon {
         id: Felt252,
@@ -211,8 +206,7 @@ pub enum MmrMetaOutput {
         chain_id: Felt252,
         root: Felt252,
     },
-    // Reserved for future extension when Cairo exposes Keccak (Uint256) roots directly.
-    // Not constructed from current Cairo output; included to avoid wasting space in Poseidon-only paths.
+    // We map those 5 felt words (id, size, chain_id, root_low, root_high) into this Poseidon variant.
     Keccak {
         id: Felt252,
         size: Felt252,

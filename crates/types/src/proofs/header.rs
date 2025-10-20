@@ -1,5 +1,4 @@
 use alloy::{hex, primitives::Bytes};
-use cairo_vm::Felt252;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
