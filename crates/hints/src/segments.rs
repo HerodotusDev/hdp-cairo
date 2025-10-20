@@ -134,8 +134,7 @@ pub fn mmr_metas_len_poseidon_counter(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let mmr_metas_len_poseidon =
-        get_integer_from_var_name("mmr_metas_len_poseidon", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let mmr_metas_len_poseidon = get_integer_from_var_name("mmr_metas_len_poseidon", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     let i = get_integer_from_var_name("i", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     let insert = if mmr_metas_len_poseidon == i { Felt252::ONE } else { Felt252::ZERO };
     insert_value_into_ap(vm, insert)
@@ -149,8 +148,7 @@ pub fn mmr_metas_len_keccak_counter(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let mmr_metas_len_keccak =
-        get_integer_from_var_name("mmr_metas_len_keccak", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let mmr_metas_len_keccak = get_integer_from_var_name("mmr_metas_len_keccak", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     let j = get_integer_from_var_name("j", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     let insert = if mmr_metas_len_keccak == j { Felt252::ONE } else { Felt252::ZERO };
     insert_value_into_ap(vm, insert)

@@ -1,9 +1,9 @@
 use std::collections::HashSet;
 
+use alloy::{hex::FromHexError, primitives::Bytes};
 use cairo_vm::Felt252;
 use indexer_client::models::{BlockHeader, HashingFunction};
 use reqwest::Url;
-use alloy::{hex::FromHexError, primitives::Bytes};
 use starknet_types_core::felt::FromStrError;
 use types::{
     keys::{self, starknet::get_corresponding_rpc_url},
@@ -35,12 +35,8 @@ impl ProofKeys {
         block_number: u64,
         mmr_hashing_function: HashingFunction,
     ) -> Result<HeaderMmrMeta<Header>, FetcherError> {
-        let (mmr_proof, meta) = super::ProofKeys::fetch_mmr_proof(
-            deployed_on_chain_id,
-            accumulates_chain_id,
-            block_number,
-            mmr_hashing_function,
-        ).await?;
+        let (mmr_proof, meta) =
+            super::ProofKeys::fetch_mmr_proof(deployed_on_chain_id, accumulates_chain_id, block_number, mmr_hashing_function).await?;
 
         let mmr_path = mmr_proof
             .siblings_hashes

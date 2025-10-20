@@ -1,4 +1,4 @@
-from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, KeccakBuiltin, BitwiseBuiltin
+from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin
 from src.types import MMRMeta, MMRMetaKeccak
 from packages.eth_essentials.lib.utils import write_felt_array_to_dict_keys
 from starkware.cairo.common.dict_access import DictAccess
@@ -97,7 +97,7 @@ func validate_mmr_meta_starknet{range_check_ptr, poseidon_ptr: PoseidonBuiltin*,
 // 2. mmr_peaks_len matches the expected value based on mmr_size
 // 3. keccak mmr_peaks, mmr_size recreate the keccak mmr_root (Uint256)
 // It returns the keccak mmr_meta and empty dict placeholders for symmetry.
-func validate_mmr_meta_evm_keccak{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: KeccakBuiltin*, pow2_array: felt*}(
+func validate_mmr_meta_evm_keccak{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*, pow2_array: felt*}(
     ) -> (mmr_meta: MMRMetaKeccak, dict: DictAccess*, dict_start: DictAccess*) {
     alloc_locals;
 

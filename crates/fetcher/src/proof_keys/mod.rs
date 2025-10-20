@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 
 use alloy::{hex::FromHexError, primitives::Bytes};
-use indexer_client::{models::{accumulators, HashingFunction}, Indexer};
+use indexer_client::{
+    models::{accumulators, HashingFunction},
+    Indexer,
+};
 use types::{
     proofs::{injected_state::Action, mmr::MmrMeta},
     Felt252,
@@ -42,13 +45,8 @@ impl ProofKeys {
         // Fetch proof response
         let response = provider
             .get_headers_proof(
-                accumulators::IndexerQuery::new(
-                    deployed_on_chain_id,
-                    accumulates_chain_id,
-                    block_number,
-                    block_number,
-                )
-                .with_hashing_function(mmr_hashing_function),
+                accumulators::IndexerQuery::new(deployed_on_chain_id, accumulates_chain_id, block_number, block_number)
+                    .with_hashing_function(mmr_hashing_function),
             )
             .await?;
 

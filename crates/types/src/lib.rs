@@ -37,7 +37,7 @@ pub const RPC_URL_HERODOTUS_INDEXER: &str = "RPC_URL_HERODOTUS_INDEXER";
 pub enum HashingFunction {
     Poseidon,
     Keccak,
-    //Pedersen,
+    // Pedersen,
 }
 
 impl Default for HashingFunction {
@@ -264,9 +264,14 @@ impl FromIterator<Felt252> for HDPOutput {
 
         // Keccak section: keccak_len * 5 felts (id, size, chain_id, root_low, root_high)
         for _ in 0..keccak_len {
-            let [id, size, chain_id, root_low, root_high] =
-                i.next_chunk::<5>().expect("missing keccak mmr_meta words");
-            mmr_metas.push(MmrMetaOutput::Keccak { id, size, chain_id, root_low, root_high });
+            let [id, size, chain_id, root_low, root_high] = i.next_chunk::<5>().expect("missing keccak mmr_meta words");
+            mmr_metas.push(MmrMetaOutput::Keccak {
+                id,
+                size,
+                chain_id,
+                root_low,
+                root_high,
+            });
         }
 
         Self {
@@ -289,7 +294,11 @@ impl HDPOutput {
         ];
 
         // Counts
-        let poseidon_len = self.mmr_metas.iter().filter(|m| matches!(m, MmrMetaOutput::Poseidon { .. })).count();
+        let poseidon_len = self
+            .mmr_metas
+            .iter()
+            .filter(|m| matches!(m, MmrMetaOutput::Poseidon { .. }))
+            .count();
         let keccak_len = self.mmr_metas.iter().filter(|m| matches!(m, MmrMetaOutput::Keccak { .. })).count();
         felt_vec.push(Felt252::from(poseidon_len));
         felt_vec.push(Felt252::from(keccak_len));
@@ -303,7 +312,14 @@ impl HDPOutput {
 
         // Keccak section
         self.mmr_metas.iter().for_each(|mmr_meta| {
-            if let MmrMetaOutput::Keccak { id, size, chain_id, root_low, root_high } = mmr_meta {
+            if let MmrMetaOutput::Keccak {
+                id,
+                size,
+                chain_id,
+                root_low,
+                root_high,
+            } = mmr_meta
+            {
                 felt_vec.extend([*id, *size, *chain_id, *root_low, *root_high]);
             }
         });

@@ -163,10 +163,8 @@ pub fn hint_mmr_path(
     Ok(())
 }
 
-
 // Poseidon path variant: write mmr_path as a flat array of felts (one felt per Bytes element).
-pub const HINT_MMR_PATH_FELTS: &str =
-    "segments.write_arg(ids.mmr_path, [int(x, 16) for x in header_evm.proof.mmr_path])";
+pub const HINT_MMR_PATH_FELTS: &str = "segments.write_arg(ids.mmr_path, [int(x, 16) for x in header_evm.proof.mmr_path])";
 
 pub fn hint_mmr_path_felts(
     vm: &mut VirtualMachine,

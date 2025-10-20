@@ -1,4 +1,4 @@
-from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, KeccakBuiltin
+from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.dict import dict_read, dict_write
 from starkware.cairo.common.alloc import alloc
@@ -6,7 +6,7 @@ from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash, pose
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.default_dict import default_dict_finalize
 from starkware.cairo.common.builtin_keccak.keccak import keccak
-from starkware.cairo.common.builtin_keccak.keccak import keccak_bigend
+from starkware.cairo.common.cairo_keccak.keccak import cairo_keccak_bigend as keccak_bigend
 
 from packages.eth_essentials.lib.mmr import hash_subtree_path, hash_subtree_path_keccak
 from src.types import MMRMeta, MMRMetaKeccak, ChainInfo
@@ -21,7 +21,7 @@ func verify_mmr_batches{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
@@ -159,7 +159,7 @@ func verify_headers_with_mmr_peaks_keccak{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
@@ -182,7 +182,7 @@ func verify_headers_with_mmr_peaks_keccak_inner{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: KeccakBuiltin*,
+    keccak_ptr: felt*,
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
