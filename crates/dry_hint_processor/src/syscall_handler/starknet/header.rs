@@ -1,5 +1,5 @@
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
-use indexer::{models::blocks, Indexer};
+use indexer_client::{models::blocks, Indexer};
 use syscall_handler::{traits::CallHandler, SyscallExecutionError, SyscallResult};
 use types::{
     cairo::{

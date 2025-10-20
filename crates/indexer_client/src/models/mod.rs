@@ -1,17 +1,10 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+pub use types::HashingFunction;
 
 pub mod accumulators;
 pub mod blocks;
-
-/// Enum for available hashing functions
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum HashingFunction {
-    Keccak,
-    Poseidon,
-    Pedersen,
-}
+pub mod ranges;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum BlockHeader {
@@ -46,4 +39,8 @@ pub enum IndexerError {
     /// Failed to get blocks with a detailed message.
     #[error("Failed to get blocks: {0}")]
     GetBlocksProofError(String),
+
+    /// Failed to get accumulated ranges with a detailed message.
+    #[error("Failed to get accumulated ranges: {0}")]
+    GetRangesError(String),
 }

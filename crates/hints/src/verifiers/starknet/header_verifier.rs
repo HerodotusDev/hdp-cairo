@@ -145,9 +145,25 @@ pub fn hint_mmr_path(
 ) -> Result<(), HintError> {
     let header = exec_scopes.get::<starknet::header::Header>(vars::scopes::HEADER_STARKNET)?;
     let mmr_path_ptr = get_ptr_from_var_name(vars::ids::MMR_PATH, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let mmr_path: Vec<MaybeRelocatable> = header.proof.mmr_path.into_iter().map(MaybeRelocatable::from).collect();
 
-    vm.load_data(mmr_path_ptr, &mmr_path)?;
+    // Convert each Bytes element into a single felt (big-endian) as expected by
+    // packages/eth_essentials/lib/mmr.cairo: hash_subtree_path()
+    let mut data: Vec<MaybeRelocatable> = Vec::with_capacity(header.proof.mmr_path.len());
+    for bytes_data in header.proof.mmr_path.iter() {
+        // Left-pad to 32 bytes (big-endian), then interpret as a Felt252
+        let mut wide = [0u8; 32];
+        let copy_len = core::cmp::min(bytes_data.len(), 32);
+        wide[32 - copy_len..].copy_from_slice(&bytes_data[bytes_data.len() - copy_len..]);
+
+        let felt = Felt252::from_bytes_be_slice(&wide);
+
+        // Debug: show the single felt written for this path element
+        // println!("Processing MMR path element (felt): 0x{:x}", felt);
+
+        data.push(MaybeRelocatable::from(felt));
+    }
+
+    vm.load_data(mmr_path_ptr, &data)?;
 
     Ok(())
 }

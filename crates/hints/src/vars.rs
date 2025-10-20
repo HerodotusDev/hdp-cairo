@@ -74,6 +74,7 @@ pub mod ids {
     pub const LENGTH: &str = "length";
     pub const MMR_META: &str = "mmr_meta";
     pub const MMR_PATH: &str = "mmr_path";
+    pub const MMR_PATH_KECCAK: &str = "mmr_path_keccak";
     pub const MODULE_HASH: &str = "module_hash";
     pub const MPT_PROOF: &str = "mpt_proof";
     pub const N_BUILTINS: &str = "n_builtins";
@@ -90,6 +91,7 @@ pub mod ids {
     pub const PARAMS: &str = "params";
     pub const PATH: &str = "path";
     pub const PEAKS: &str = "peaks";
+    pub const PEAKS_KECCAK: &str = "peaks_keccak";
     pub const PREV_ROOT: &str = "prev_root";
     pub const PRIVATE_INPUTS: &str = "private_inputs";
     pub const PROOF_BYTES_LEN: &str = "proof_bytes_len";

@@ -11,9 +11,9 @@ use cairo_vm as _;
 use clap::Parser;
 use dry_hint_processor::syscall_handler::{evm, injected_state, starknet};
 use eth_trie_proofs as _;
-use fetcher::{parse_syscall_handler, Args, Fetcher};
+use fetcher::{infer_mmr_sources_from_indexer, parse_proofs_fetcher_config, parse_syscall_handler, Args, Fetcher};
 use futures as _;
-use indexer as _;
+use indexer_client as _;
 use indicatif as _;
 use reqwest as _;
 use starknet_types_core as _;
@@ -35,7 +35,13 @@ async fn main() -> Result<(), fetcher::FetcherError> {
         serde_json::from_slice(&input_file)?;
     let proof_keys = parse_syscall_handler(syscall_handler)?;
 
-    let fetcher = Fetcher::new(&proof_keys);
+    let per_chain_mmr = if let Some(path) = args.proofs_fetcher_config.as_ref() {
+        parse_proofs_fetcher_config(path)?
+    } else {
+        infer_mmr_sources_from_indexer(&proof_keys, args.deployed_on_chain).await?
+    };
+
+    let fetcher = Fetcher::new_with_mmr_sources_map(&proof_keys, per_chain_mmr, args.deployed_on_chain);
     let (
         eth_proofs_mainnet,
         eth_proofs_sepolia,
