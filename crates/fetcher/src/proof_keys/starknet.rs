@@ -73,7 +73,7 @@ impl ProofKeys {
             .await?;
 
         let response_text = response.text().await?;
- 
+
         let json_rpc_response: serde_json::Value =
             serde_json::from_str(&response_text).map_err(|e| FetcherError::JsonDeserializationError(e.to_string()))?;
         if let Some(err) = json_rpc_response.get("error") {
