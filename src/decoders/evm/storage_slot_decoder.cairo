@@ -11,9 +11,9 @@ struct StorageKey {
 }
 
 namespace StorageSlotDecoder {
-    func get_word{keccak_ptr: felt*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
-        rlp: felt*, field: felt, key: StorageKey*
-    ) -> (res_array: felt*, res_len: felt) {
+    func get_word{
+        keccak_ptr: felt*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*
+    }(rlp: felt*, field: felt, key: StorageKey*) -> (res_array: felt*, res_len: felt) {
         alloc_locals;
         let (__fp__, _) = get_fp_and_pc();
 

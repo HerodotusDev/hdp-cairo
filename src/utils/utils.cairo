@@ -4,6 +4,7 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.cairo_keccak.keccak import (
     cairo_keccak_felts_bigend as keccak_felts_bigend,
 )
+from starkware.cairo.common.math import unsigned_div_rem
 from packages.eth_essentials.lib.rlp_little import array_copy
 from packages.eth_essentials.lib.utils import (
     word_reverse_endian_16_RC,
@@ -164,4 +165,104 @@ func calculate_task_hash{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_p
     let (taskHash) = keccak_felts_bigend(task_hash_preimage_len, task_hash_preimage);
 
     return taskHash;
+}
+
+// Helper utilities to adapt builtin-padded 64-bit lanes to raw bytes for cairo_keccak.
+
+// Extract the byte at a given offset from a buffer of 64-bit-packed words (little-endian within word).
+func get_byte_at_offset{range_check_ptr}(base: felt*, pow2_array: felt*, offset: felt) -> (
+    byte: felt
+) {
+    alloc_locals;
+    // word_index = offset // 8, in_word_offset = offset % 8
+    let (word_index, in_word_offset) = unsigned_div_rem(offset, 8);
+    let w = base[word_index];
+
+    // Lanes are little-endian within each 64-bit word in the syscall buffer.
+    let shift_bits = in_word_offset * 8;
+    let divisor = pow2_array[shift_bits];  // 2 ** shift_bits
+    let (q1, _) = unsigned_div_rem(w, divisor);
+    let (_, b) = unsigned_div_rem(q1, 256);
+    return (byte=b);
+}
+
+// Scan from the end of the last block: require trailing 0x80, then zeros, then 0x01.
+// Return the index (in bytes from start) of the padding 0x01 byte, which equals the message length.
+func find_padding_01_pos{range_check_ptr}(base: felt*, pow2_array: felt*, idx: felt) -> (
+    pos: felt
+) {
+    alloc_locals;
+    let (b) = get_byte_at_offset(base, pow2_array, idx);
+    if (b == 0) {
+        let (pos) = find_padding_01_pos(base, pow2_array, idx - 1);
+        return (pos=pos);
+    }
+    // First non-zero after trailing zeros must be 0x01 (Keccak legacy domain).
+    assert b = 1;
+    return (pos=idx);
+}
+
+// Recover original (unpadded) message length in bytes from builtin-padded lanes.
+func find_message_len_bytes{range_check_ptr}(base: felt*, len_words: felt, pow2_array: felt*) -> (
+    msg_len: felt
+) {
+    alloc_locals;
+    let total_bytes = len_words * 8;
+    let last_idx = total_bytes - 1;
+
+    // Last byte must be 0x80 in the builtin-padded representation.
+    let (b_last) = get_byte_at_offset(base, pow2_array, last_idx);
+    assert b_last = 128;
+
+    // Move left to find the required 0x01 after a run of zeros.
+    let (pos_01) = find_padding_01_pos(base, pow2_array, last_idx - 1);
+    // Message length equals index of the 0x01 padding byte.
+    return (msg_len=pos_01);
+}
+
+// Copy the first n 64-bit words from src to dst.
+func copy_prefix_words_loop{range_check_ptr}(src: felt*, dst: felt*, n_words: felt, i: felt) {
+    if (i == n_words) {
+        return ();
+    }
+    assert dst[i] = src[i];
+    copy_prefix_words_loop(src, dst, n_words, i + 1);
+    return ();
+}
+
+func copy_prefix_words{range_check_ptr}(src: felt*, dst: felt*, n_words: felt) {
+    copy_prefix_words_loop(src, dst, n_words, 0);
+    return ();
+}
+
+// Build a little-endian 64-bit word from rem_bytes starting at start_offset (byte index) in base.
+// This is used to supply cairo_keccak() with the tail bytes when msg_len % 8 != 0.
+func build_tail_le_word_acc{range_check_ptr}(
+    base: felt*, pow2_array: felt*, start_offset: felt, rem_bytes: felt, j: felt, acc: felt
+) -> (res: felt) {
+    if (j == rem_bytes) {
+        return (res=acc);
+    }
+    let offset = start_offset + j;
+    let (b) = get_byte_at_offset(base, pow2_array, offset);
+    let factor = pow2_array[j * 8];
+    let acc2 = acc + b * factor;
+    let (res_rec) = build_tail_le_word_acc(
+        base=base,
+        pow2_array=pow2_array,
+        start_offset=start_offset,
+        rem_bytes=rem_bytes,
+        j=j + 1,
+        acc=acc2,
+    );
+    return (res=res_rec);
+}
+
+func build_tail_le_word{range_check_ptr}(
+    base: felt*, pow2_array: felt*, start_offset: felt, rem_bytes: felt
+) -> (word: felt) {
+    let (res) = build_tail_le_word_acc(
+        base=base, pow2_array=pow2_array, start_offset=start_offset, rem_bytes=rem_bytes, j=0, acc=0
+    );
+    return (word=res);
 }

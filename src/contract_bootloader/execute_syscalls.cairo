@@ -12,6 +12,7 @@ from starkware.starknet.common.new_syscalls import (
 from starkware.cairo.common.builtin_keccak.keccak import KECCAK_FULL_RATE_IN_WORDS
 from starkware.cairo.common.cairo_keccak.keccak import cairo_keccak as keccak
 from starkware.cairo.common.math import unsigned_div_rem
+from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.cairo_builtins import (
     BitwiseBuiltin,
     EcOpBuiltin,
@@ -25,6 +26,7 @@ from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.registers import get_label_location
 from src.utils.chain_info import chain_id_to_layout
+from src.utils.utils import find_message_len_bytes, copy_prefix_words, build_tail_le_word
 from src.memorizers.evm.state_access import EvmStateAccess, EvmStateAccessType
 from src.memorizers.starknet.state_access import (
     StarknetStateAccess,
@@ -287,10 +289,39 @@ func execute_keccak{
 
     tempvar input_start = request.input_start;
     tempvar input_end = request.input_end;
-    tempvar chunks = input_end - input_start - 1;
 
-    let (res) = keccak(inputs=input_start, n_bytes=chunks * 8);
+    // Number of 64-bit lanes in the input (only rate words are provided).
+    tempvar len_words = input_end - input_start;
+    let (local q, r) = unsigned_div_rem(len_words, KECCAK_FULL_RATE_IN_WORDS);
+    // Require whole number of rate blocks.
+    assert r = 0;
 
+    // Recover the original unpadded message length (in bytes) from the builtin-padded lanes.
+    let (msg_len) = find_message_len_bytes(
+        base=input_start, len_words=len_words, pow2_array=pow2_array
+    );
+
+    // Treat the original message as contiguous u64 words for cairo_keccak (little-endian per word).
+    // Because keccak_u256s_be_inputs() appends padding words after the message words (last_input_num_bytes=0),
+    // the first msg_len/8 words in input_start are exactly the original message words.
+    let (n_words, rem8) = unsigned_div_rem(msg_len, 8);
+
+    let (word_buf: felt*) = alloc();
+    // First msg_len/8 words are the original message words in little-endian u64.
+    copy_prefix_words(src=input_start, dst=word_buf, n_words=n_words);
+
+    let tail_start = n_words * 8;
+    let (tail_word) = build_tail_le_word(
+        base=input_start, pow2_array=pow2_array, start_offset=tail_start, rem_bytes=rem8
+    );
+    if (rem8 != 0) {
+        assert word_buf[n_words] = tail_word;
+    }
+
+    // Hash the original message words; cairo_keccak returns a little-endian Uint256.
+    let (res) = keccak(inputs=word_buf, n_bytes=msg_len);
+
+    // Output result.
     assert response.result_low = res.low;
     assert response.result_high = res.high;
 

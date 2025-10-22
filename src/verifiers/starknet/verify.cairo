@@ -1,9 +1,5 @@
 from starkware.cairo.common.dict_access import DictAccess
-from starkware.cairo.common.cairo_builtins import (
-    PoseidonBuiltin,
-    HashBuiltin,
-    BitwiseBuiltin,
-)
+from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, HashBuiltin, BitwiseBuiltin
 
 from src.verifiers.starknet.header_verifier import verify_mmr_batches
 from src.verifiers.starknet.storage_verifier import verify_proofs
