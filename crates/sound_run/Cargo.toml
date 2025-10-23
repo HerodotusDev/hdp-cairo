@@ -7,7 +7,6 @@ edition = "2021"
 path = "src/lib.rs"
 
 [dependencies]
-bytemuck.workspace = true
 cairo-vm.workspace = true
 clap.workspace = true
 dotenvy.workspace = true
