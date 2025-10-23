@@ -107,6 +107,8 @@ func run{
     let (evm_memorizer, evm_memorizer_start) = EvmMemorizer.init();
     let (starknet_memorizer, starknet_memorizer_start) = StarknetMemorizer.init();
     let (injected_state_memorizer, injected_state_memorizer_start) = InjectedStateMemorizer.init();
+    // TODO: @beeinger
+    // let (unconstrined_memorizer, unconstrined_memorizer_start) = UnconstrinedStateMemorizer.init();
 
     %{
         if '__dict_manager' not in globals():

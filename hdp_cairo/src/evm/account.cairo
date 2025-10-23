@@ -1,6 +1,6 @@
 use hdp_cairo::EvmMemorizer;
+use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;
-use starknet::{SyscallResultTrait};
 
 const ACCOUNT: felt252 = 1;
 
@@ -34,16 +34,21 @@ pub impl AccountImpl of AccountTrait {
         let result = self.call_memorizer(ACCOUNT_GET_CODE_HASH, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
+    // TODO: @beeinger
+    // fn account_get_bytecode(self: @EvmMemorizer, key: @AccountKey) -> Span<u8> {
+    //     let code_hash = account_get_code_hash();
+    //     let bytecode = call_memorizer(self: @EvmMemorizer, selector: felt252, key: @AccountKey);
+    //     assert
+    //     keccak(bytecode) == code_hash;
+    //     return bytecode;
+    // }
 
     fn call_memorizer(self: @EvmMemorizer, selector: felt252, key: @AccountKey) -> Span<felt252> {
         call_contract_syscall(
             ACCOUNT.try_into().unwrap(),
             selector,
             array![
-                *self.dict.segment_index,
-                *self.dict.offset,
-                *key.chain_id,
-                *key.block_number,
+                *self.dict.segment_index, *self.dict.offset, *key.chain_id, *key.block_number,
                 *key.address,
             ]
                 .span(),

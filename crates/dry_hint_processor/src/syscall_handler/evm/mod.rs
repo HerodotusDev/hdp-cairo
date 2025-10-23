@@ -80,6 +80,14 @@ impl SyscallHandler for CallContractHandler {
                 self.key_set.insert(DryRunKey::Account(key));
                 retdata_end = result.to_memory(vm, retdata_end)?;
             }
+            // TODO: @beeinger
+            // CallHandlerId::UnconstrainedStore => {
+            //     let key = account::UnconstrainedStoreCallHandler::derive_key(vm, &mut calldata)?;
+            //     let function_id = account::UnconstrainedStoreHandler::derive_id(request.selector)?;
+            //     let result = account::AccountCallHandler.handle(key.clone(), function_id, vm).await?;
+            //     self.key_set.insert(DryRunKey::UnconstrainedStore(key));
+            //     retdata_end = result.to_memory(vm, retdata_end)?;
+            // }
             CallHandlerId::Storage => {
                 let key = storage::StorageCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = storage::StorageCallHandler::derive_id(request.selector)?;
