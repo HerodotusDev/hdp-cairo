@@ -14,11 +14,11 @@ use clap::Parser;
 use dotenvy as _;
 use serde_json as _;
 use sound_hint_processor::CustomHintProcessor;
+use stwo_cairo_adapter as _;
 use tokio as _;
 use tracing::info;
 use tracing_subscriber as _;
 use types::{error::Error, HDPInput, HDPOutput};
-pub mod prove;
 
 pub const HDP_COMPILED_JSON: &str = env!("HDP_COMPILED_JSON");
 
