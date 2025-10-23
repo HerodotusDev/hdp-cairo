@@ -8,14 +8,12 @@ path = "src/lib.rs"
 
 [dependencies]
 bytemuck.workspace = true
-cairo-air.workspace = true
 cairo-vm.workspace = true
 clap.workspace = true
 dotenvy.workspace = true
 serde_json.workspace = true
 sound_hint_processor.workspace = true
 stwo_cairo_adapter.workspace = true
-stwo_cairo_prover.workspace = true
 tokio.workspace = true
 tracing-subscriber.workspace = true
 tracing.workspace = true

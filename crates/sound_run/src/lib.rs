@@ -5,7 +5,6 @@
 
 use std::{env, path::PathBuf};
 
-use cairo_air as _;
 use cairo_vm::{
     cairo_run::{cairo_run_program, CairoRunConfig},
     types::{program::Program, relocatable::Relocatable},
@@ -15,7 +14,6 @@ use clap::Parser;
 use dotenvy as _;
 use serde_json as _;
 use sound_hint_processor::CustomHintProcessor;
-use stwo_cairo_prover as _;
 use tokio as _;
 use tracing::info;
 use tracing_subscriber as _;
@@ -63,13 +61,13 @@ pub struct Args {
     pub cairo_pie: Option<PathBuf>,
 
     #[arg(
-        long = "stwo_proof",
+        long = "stwo_prover_input",
         default_value = None,
         requires = "proof_mode",
         conflicts_with = "cairo_pie",
-        help = "Path where the STWO proof file will be written"
+        help = "Path where the STWO prover input file will be written"
     )]
-    pub stwo_proof: Option<PathBuf>,
+    pub stwo_prover_input: Option<PathBuf>,
 }
 
 pub fn run(program_path: PathBuf, cairo_run_config: CairoRunConfig, input: HDPInput) -> Result<(CairoRunner, HDPOutput), Error> {
