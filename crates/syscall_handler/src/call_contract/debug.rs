@@ -32,7 +32,7 @@ impl traits::SyscallHandler for DebugCallContractHandler {
                 let fields = vm
                     .get_integer_range(request.calldata_start, field_len)?
                     .into_iter()
-                    .map(|f| (*f.as_ref()))
+                    .map(|f| *f.as_ref())
                     .collect::<Vec<Felt252>>();
 
                 let str = decode_byte_array_felts(fields);
@@ -47,7 +47,7 @@ impl traits::SyscallHandler for DebugCallContractHandler {
                 let fields = vm
                     .get_integer_range(request.calldata_start, field_len)?
                     .into_iter()
-                    .map(|f| (*f.as_ref()))
+                    .map(|f| *f.as_ref())
                     .collect::<Vec<Felt252>>();
 
                 println!("{:?}", fields);

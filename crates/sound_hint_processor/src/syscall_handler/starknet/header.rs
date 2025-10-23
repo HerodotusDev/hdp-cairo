@@ -60,7 +60,7 @@ impl CallHandler for HeaderCallHandler {
         let fields = vm
             .get_integer_range(ptr, field_len + 1)?
             .into_iter()
-            .map(|f| (*f.as_ref()))
+            .map(|f| *f.as_ref())
             .collect::<Vec<Felt252>>();
 
         Ok(StarknetBlock::from_memorizer(fields).handle(function_id))
