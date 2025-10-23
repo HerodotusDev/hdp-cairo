@@ -3,7 +3,12 @@
 #![warn(unused_crate_dependencies)]
 #![forbid(unsafe_code)]
 
-use std::{fs, path::PathBuf};
+use std::{
+    fs,
+    io::{Read, Write},
+    path::PathBuf,
+    process::{Command, Stdio},
+};
 
 use cairo_air::utils::{serialize_proof_to_file, ProofFormat};
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
@@ -56,6 +61,11 @@ enum Commands {
     /// Print example .env file with info
     #[command(name = "env-info")]
     EnvInfo,
+    /// Update HDP CLI
+    ///
+    /// Runs the update/install command: ```curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash```
+    #[command(name = "update")]
+    Update,
 }
 
 #[tokio::main]
@@ -290,6 +300,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             result.map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
         }
         Commands::EnvInfo => print_env_info(),
+        Commands::Update => {
+            //? Runs the update/install command: curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
+            let mut curl = Command::new("curl")
+                .arg("-fsSL")
+                .arg("https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh")
+                .stdout(Stdio::piped())
+                .spawn()
+                .map_err(Error::IO)?;
+
+            let mut script = Vec::new();
+            curl.stdout.take().unwrap().read_to_end(&mut script)?;
+            let status = Command::new("bash")
+                .stdin(Stdio::piped())
+                .spawn()
+                .and_then(|mut child| {
+                    child.stdin.as_mut().unwrap().write_all(&script)?;
+                    child.wait()
+                })
+                .map_err(Error::IO)?;
+
+            if !status.success() {
+                return Err(Box::new(Error::IO(std::io::Error::other("Installer failed"))) as Box<dyn std::error::Error>);
+            }
+
+            Ok(())
+        }
     }
 }
 
