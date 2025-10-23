@@ -3,14 +3,13 @@
 #![warn(unused_crate_dependencies)]
 #![forbid(unsafe_code)]
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-use bytemuck as _;
 use cairo_vm::{self as _, cairo_run::CairoRunConfig, types::layout_name::LayoutName};
 use clap::Parser;
 use sound_hint_processor as _;
-use sound_run::{prove::prover_input_from_runner, Args, HDP_COMPILED_JSON};
-use stwo_cairo_adapter as _;
+use sound_run::{Args, HDP_COMPILED_JSON};
+use stwo_cairo_adapter::adapter::adapter_shards;
 use tracing::{self as _, info};
 use tracing_subscriber::EnvFilter;
 use types::{error::Error, param::Param, CasmContractClass, HDPInput, InjectedState, ProofsData};
@@ -66,10 +65,23 @@ async fn main() -> Result<(), Error> {
         pie.write_zip_file(file_name, true)?;
     }
 
-    if let Some(ref file_name) = args.stwo_prover_input {
-        let stwo_prover_input = prover_input_from_runner(&cairo_runner);
-        std::fs::write(file_name, serde_json::to_string(&stwo_prover_input)?)?;
-        info!("Prover Input saved to: {:?}", file_name);
+    if let Some(ref file_name_str) = args.stwo_prover_input {
+        let file_path = Path::new(file_name_str);
+
+        let stem = file_path.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
+
+        let extension = file_path
+            .extension()
+            .map(|s| format!(".{}", s.to_string_lossy()))
+            .unwrap_or_default();
+
+        let stwo_prover_inputs = adapter_shards(&cairo_runner, 4000000);
+
+        for (idx, input) in stwo_prover_inputs.into_iter().enumerate() {
+            let new_file_name = format!("{}-{}{}", stem, idx, extension);
+            std::fs::write(&new_file_name, serde_json::to_string(&input)?)?;
+            info!("Prover Input saved to: {}", new_file_name);
+        }
     }
 
     Ok(())

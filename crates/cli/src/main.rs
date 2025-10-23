@@ -19,7 +19,7 @@ use clap::{Parser, Subcommand};
 use dry_hint_processor::syscall_handler::{evm, injected_state, starknet};
 use dry_run::{LayoutName, Program, DRY_RUN_COMPILED_JSON};
 use fetcher::{parse_syscall_handler, Fetcher};
-use sound_run::{prove::prover_input_from_runner, HDP_COMPILED_JSON};
+use sound_run::HDP_COMPILED_JSON;
 use syscall_handler::SyscallHandler;
 use types::{
     error::Error, param::Param, ChainProofs, HDPDryRunInput, HDPInput, InjectedState, ProofsData, ETHEREUM_MAINNET_CHAIN_ID,
@@ -201,12 +201,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             if let Some(ref file_name) = args.cairo_pie {
                 let pie = cairo_runner.get_cairo_pie().map_err(|e| Error::CairoPie(e.to_string()))?;
                 pie.write_zip_file(file_name, true)?;
-            }
-
-            if let Some(ref file_name) = args.stwo_prover_input {
-                let stwo_prover_input = prover_input_from_runner(&cairo_runner);
-                std::fs::write(file_name, serde_json::to_string(&stwo_prover_input)?)?;
-                println!("Prover Input saved to: {:?}", file_name);
             }
 
             println!("Sound run completed successfully.");

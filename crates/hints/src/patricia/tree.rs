@@ -79,7 +79,7 @@ where
 /// # Errors
 /// Returns `PatriciaHintError::UnexpectedLeaf` if a leaf is passed, or
 /// `PatriciaHintError::InvalidTupleNode` for an invalid branch with no children.
-pub fn decode_node<LF>(node: &TreeUpdate<LF>) -> Result<DecodedNode<LF>, PatriciaHintError>
+pub fn decode_node<LF>(node: &TreeUpdate<LF>) -> Result<DecodedNode<'_, LF>, PatriciaHintError>
 where
     LF: Clone,
 {
