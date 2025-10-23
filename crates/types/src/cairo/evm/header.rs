@@ -30,6 +30,7 @@ pub enum FunctionId {
     BlobGasUsed = 17,
     ExcessBlobGas = 18,
     ParentBeaconBlockRoot = 19,
+    RequestsHash = 20,
 }
 
 pub struct CairoHeader(Header);
@@ -159,6 +160,7 @@ impl CairoHeader {
                 .chunks((u128::BITS / 8) as usize)
                 .map(Felt252::from_bytes_be_slice)
                 .collect(),
+            FunctionId::RequestsHash => <Uint256 as Into<[Felt252; 2]>>::into(self.requests_hash().unwrap()).to_vec(),
             _ => panic!("Unsupported FunctionId"),
         }
     }
