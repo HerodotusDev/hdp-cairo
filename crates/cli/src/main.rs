@@ -203,6 +203,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("{:#?}", output);
             }
 
+            if let Some(ref relocated_trace) = cairo_runner.relocated_trace {
+                println!(
+                    "Step count ({}): {:?}",
+                    if args.proof_mode { "stwo" } else { "pie" },
+                    relocated_trace.len()
+                );
+            }
+
             if let Some(ref file_name) = args.cairo_pie {
                 let pie = cairo_runner.get_cairo_pie().map_err(|e| Error::CairoPie(e.to_string()))?;
                 pie.write_zip_file(file_name, true)?;
