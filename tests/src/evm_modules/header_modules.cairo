@@ -306,3 +306,25 @@ mod evm_header_get_base_fee_per_gas {
         )
     }
 }
+
+#[starknet::contract]
+mod evm_header_get_requests_hash {
+    use hdp_cairo::evm::header::HeaderTrait;
+    use hdp_cairo::{HDP, evm::header::{HeaderImpl, HeaderKey}};
+
+    #[storage]
+    struct Storage {}
+
+    #[external(v0)]
+    pub fn main(ref self: ContractState, hdp: HDP) {
+        assert!(
+            hdp
+                .evm
+                .header_get_requests_hash(
+                    @HeaderKey { chain_id: 11155111, block_number: 9416712 },
+                ) == u256 { low: 0x27ae41e4649b934ca495991b7852b855, high: 0xe3b0c44298fc1c149afbf4c8996fb924 },
+        )
+    }
+}
+
+
