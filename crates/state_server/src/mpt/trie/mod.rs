@@ -34,10 +34,10 @@ impl Trie {
     ///
     /// A new Trie instance.
     #[allow(dead_code)]
-    pub fn load(
+    pub fn load<'a>(
         root_idx: TrieStorageIndex,
-        conn: &PooledConnection<SqliteConnectionManager>,
-    ) -> (TrieDB, MerkleTree<TruncatedKeccakHash, 251>) {
+        conn: &'a PooledConnection<SqliteConnectionManager>,
+    ) -> (TrieDB<'a>, MerkleTree<TruncatedKeccakHash, 251>) {
         let storage = TrieDB::new(conn);
         let trie = MerkleTree::<TruncatedKeccakHash, 251>::new(root_idx);
 
@@ -65,9 +65,9 @@ impl Trie {
     /// # Returns
     ///
     /// A new empty Trie instance with storage, trie, and root index.
-    pub fn create_empty(
-        conn: &PooledConnection<SqliteConnectionManager>,
-    ) -> Result<(TrieDB, MerkleTree<TruncatedKeccakHash, 251>, TrieStorageIndex), Error> {
+    pub fn create_empty<'a>(
+        conn: &'a PooledConnection<SqliteConnectionManager>,
+    ) -> Result<(TrieDB<'a>, MerkleTree<TruncatedKeccakHash, 251>, TrieStorageIndex), Error> {
         let storage = TrieDB::new(conn);
         let trie = MerkleTree::<TruncatedKeccakHash, 251>::empty();
         let root_idx = TrieStorageIndex::from(0);
