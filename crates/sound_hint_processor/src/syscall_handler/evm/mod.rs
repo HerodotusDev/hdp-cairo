@@ -79,6 +79,15 @@ impl traits::SyscallHandler for CallContractHandler {
                     .await?;
                 retdata_end = result.to_memory(vm, retdata_end)?;
             }
+            // TODO: @beeinger
+            // CallHandlerId::UnconstrainedStore => {
+            //     let key = account::UnconstrainedStoreHandler::derive_key(vm, &mut calldata)?;
+            //     let function_id = account::UnconstrainedStoreHandler::derive_id(request.selector)?;
+            //     let result = account::AccountCallHandler::new(memorizer, self.dict_manager.clone())
+            //         .handle(key.clone(), function_id, vm)
+            //         .await?;
+            //     retdata_end = result.to_memory(vm, retdata_end)?;
+            // }
             CallHandlerId::Storage => {
                 let key = storage::StorageCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = storage::StorageCallHandler::derive_id(request.selector)?;

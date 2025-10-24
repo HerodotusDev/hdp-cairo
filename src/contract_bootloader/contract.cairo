@@ -73,6 +73,9 @@ func compute_contract{
     assert calldata[3] = nondet %{ ids.starknet_memorizer.address_.offset %};
     assert calldata[4] = nondet %{ ids.injected_state_memorizer.address_.segment_index %};
     assert calldata[5] = nondet %{ ids.injected_state_memorizer.address_.offset %};
+    // TODO: @beeinger
+    // assert calldata[6] = nondet %{ ids.injected_state_memorizer.address_.segment_index %};
+    // assert calldata[7] = nondet %{ ids.injected_state_memorizer.address_.offset %};
 
     memcpy(dst=calldata + 6, src=module_inputs, len=module_inputs_len);
     let calldata_size = 6 + module_inputs_len;

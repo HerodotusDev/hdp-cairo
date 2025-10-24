@@ -149,6 +149,21 @@ func execute_call_contract{
         return ();
     }
 
+    // TODO: @beeinger
+    // if (request.contract_address == 'unconstrained_store') {
+    //     let memorizer_key = HashParams.label{poseidon_ptr=poseidon_ptr}(
+    //         label=key_trie_label
+    //     );
+
+    //     let (bytecode_start) = Memorizer.get(key=memorizer_key);
+
+    //     // for i in len:
+    //     //     assert bytecode_ptr[i] = response.retdata_start[i]
+
+    //     memcpy(retdata_start, bytecode_start, retdata_end - retdata_start);
+        
+    // }
+
     // TODO!!!
     if (request.contract_address == 'injected_state') {
         let call_handler_id = request.selector;
