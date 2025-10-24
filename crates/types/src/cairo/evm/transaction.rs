@@ -27,9 +27,10 @@ pub enum FunctionId {
     MaxPriorityFeePerGas = 12,
     MaxFeePerBlobGas = 13,
     BlobVersionedHashes = 14,
-    TxType = 15,
-    Sender = 16,
-    Hash = 17,
+    AuthorizationList = 15,
+    TxType = 16,
+    Sender = 17,
+    Hash = 18,
 }
 
 pub struct CairoTransaction(TxEnvelope);
@@ -145,6 +146,31 @@ impl CairoTransaction {
         }
     }
 
+    pub fn handle_eip_7702_tx(&self, function_id: FunctionId) -> Uint256 {
+        let (fields, signature, _) = self.0.as_eip7702().unwrap().clone().into_parts();
+
+        match function_id {
+            FunctionId::ChainId => fields.chain_id.into(),
+            FunctionId::MaxPriorityFeePerGas => fields.max_priority_fee_per_gas.into(),
+            FunctionId::MaxFeePerGas => fields.max_fee_per_gas.into(),
+            FunctionId::Nonce => fields.nonce.into(),
+            FunctionId::GasLimit => fields.gas_limit.into(),
+            FunctionId::Receiver => fields.to.into(),
+            FunctionId::Value => fields.value.into(),
+            FunctionId::V => Uint256::from(signature.v()),
+            FunctionId::R => signature.r().into(),
+            FunctionId::S => signature.s().into(),
+            FunctionId::Sender => self.0.recover_signer().unwrap().into(),
+            FunctionId::Hash => self.hash(),
+            FunctionId::TxType => (self.0.tx_type() as u64).into(),
+            FunctionId::AccessList => panic!("Unsupported field `AccessList`"),
+            FunctionId::Data => panic!("Unsupported field `Data`"),
+            FunctionId::AuthorizationList => panic!("Unsupported field `AuthorizationList`"),
+
+            _ => panic!("Unexpected tx field"),
+        }
+    }
+
     pub fn handle(&self, function_id: FunctionId) -> Uint256 {
         match self.0.tx_type() {
             TxType::Legacy => {
@@ -157,7 +183,7 @@ impl CairoTransaction {
             TxType::Eip2930 => self.handle_eip_2930_tx(function_id),
             TxType::Eip1559 => self.handle_eip_1559_tx(function_id),
             TxType::Eip4844 => self.handle_eip_4844_tx(function_id),
-            TxType::Eip7702 => panic!("Unsupported tx type"),
+            TxType::Eip7702 => self.handle_eip_7702_tx(function_id),
         }
     }
 
