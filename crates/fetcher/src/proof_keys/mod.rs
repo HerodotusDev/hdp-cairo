@@ -46,7 +46,7 @@ impl ProofKeys {
         let response = provider
             .get_headers_proof(
                 accumulators::IndexerQuery::new(deployed_on_chain_id, accumulates_chain_id, block_number, block_number)
-                    .with_hashing_function(mmr_hashing_function),
+                    .with_hashing_function(mmr_hashing_function.clone()),
             )
             .await?;
 
@@ -62,6 +62,7 @@ impl ProofKeys {
                 .iter()
                 .map(|peak| Self::normalize_hex(peak).parse())
                 .collect::<Result<Vec<Bytes>, FromHexError>>()?,
+            hasher: mmr_hashing_function,
         };
 
         let proof = response

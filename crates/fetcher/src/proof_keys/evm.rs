@@ -7,20 +7,12 @@ use alloy::{
     providers::{Provider, RootProvider},
     transports::http::reqwest::Url,
 };
-use cairo_vm::Felt252;
 use eth_trie_proofs::{tx_receipt_trie::TxReceiptsMptHandler, tx_trie::TxsMptHandler};
 use indexer_client::models::{BlockHeader, HashingFunction};
-use starknet_types_core::felt::FromStrError;
 use types::{
     keys::{self, evm::get_corresponding_rpc_url},
     proofs::{
-        evm::{
-            account::Account,
-            header::{Header, HeaderKeccak},
-            receipt::Receipt,
-            storage::Storage,
-            transaction::Transaction,
-        },
+        evm::{account::Account, header::Header, receipt::Receipt, storage::Storage, transaction::Transaction},
         header::{HeaderMmrMeta, HeaderProof},
         mpt::MPTProof,
     },
@@ -50,13 +42,8 @@ impl ProofKeys {
         block_number: u64,
         mmr_hashing_function: HashingFunction,
     ) -> Result<HeaderMmrMeta<Header>, FetcherError> {
-        let (mmr_proof, meta) = super::ProofKeys::fetch_mmr_proof(
-            deployed_on_chain_id,
-            accumulates_chain_id,
-            block_number,
-            mmr_hashing_function.clone(),
-        )
-        .await?;
+        let (mmr_proof, mmr_meta) =
+            super::ProofKeys::fetch_mmr_proof(deployed_on_chain_id, accumulates_chain_id, block_number, mmr_hashing_function).await?;
 
         let proof = HeaderProof {
             leaf_idx: mmr_proof.element_index,
@@ -83,7 +70,7 @@ impl ProofKeys {
             _ => return Err(FetcherError::InternalError("wrong rlp format".into())),
         };
         Ok(HeaderMmrMeta {
-            mmr_meta: meta,
+            mmr_meta,
             headers: vec![Header { rlp, proof }],
         })
     }
