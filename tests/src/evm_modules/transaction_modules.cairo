@@ -341,7 +341,7 @@ mod transaction_get_tx_type_eip4844 {
             hdp
                 .evm
                 .block_tx_get_tx_type(
-                    @BlockTxKey { chain_id: 11155111, block_number: 9410665, transaction_index: 3 },
+                    @BlockTxKey { chain_id: 11155111, block_number: 8569640, transaction_index: 2 },
                 ) == u256 { low: 0x3, high: 0x0 },
         );
     }
