@@ -175,7 +175,6 @@ async fn test_tests_transaction_get_tx_type_eip2930() {
     .await
 }
 
-
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_tests_transaction_get_tx_type_eip2559() {
     dotenvy::dotenv().ok();
@@ -189,7 +188,6 @@ async fn test_tests_transaction_get_tx_type_eip2559() {
     .await
 }
 
-
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_tests_transaction_get_tx_type_eip4844() {
     dotenvy::dotenv().ok();
@@ -202,7 +200,6 @@ async fn test_tests_transaction_get_tx_type_eip4844() {
     )
     .await
 }
-
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn transaction_get_tx_type_eip7702() {
