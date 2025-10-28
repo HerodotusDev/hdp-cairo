@@ -15,7 +15,7 @@ from starkware.cairo.common.cairo_builtins import (
 
 from src.memorizers.injected_state.memorizer import InjectedStateMemorizer, InjectedStateHashParams
 from starkware.cairo.common.alloc import alloc
-from src.types import MMRMeta, MMRMetaKeccak, ChainInfo, InjectedStateInfo
+from src.types import MMRMetaPoseidon, MMRMetaKeccak, ChainInfo, InjectedStateInfo
 from src.utils.chain_info import fetch_chain_info, Layout
 from src.utils.injected_state_info import ProofType
 
@@ -29,7 +29,7 @@ func run_chain_state_verification{
     evm_memorizer: DictAccess*,
     starknet_memorizer: DictAccess*,
     injected_state_memorizer: DictAccess*,
-    mmr_metas: MMRMeta*,
+    mmr_metas_poseidon: MMRMetaPoseidon*,
     mmr_metas_keccak: MMRMetaKeccak*,
 }() -> (mmr_metas_len_poseidon: felt, mmr_metas_len_keccak: felt) {
     tempvar chain_proofs_len: felt = nondet %{ len(chain_proofs) %};

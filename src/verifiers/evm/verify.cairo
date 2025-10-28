@@ -9,7 +9,7 @@ from starkware.cairo.common.cairo_builtins import (
     BitwiseBuiltin,
     HashBuiltin,
 )
-from src.types import MMRMeta, MMRMetaKeccak, ChainInfo
+from src.types import MMRMetaPoseidon, MMRMetaKeccak, ChainInfo
 from src.utils.chain_info import fetch_chain_info
 
 func run_state_verification{
@@ -22,7 +22,7 @@ func run_state_verification{
     evm_memorizer: DictAccess*,
     starknet_memorizer: DictAccess*,
     injected_state_memorizer: DictAccess*,
-    mmr_metas: MMRMeta*,
+    mmr_metas_poseidon: MMRMetaPoseidon*,
     mmr_metas_keccak: MMRMetaKeccak*,
     chain_info: ChainInfo,
 }(mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt) -> (mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt) {

@@ -1,6 +1,9 @@
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin
-from src.types import MMRMeta, MMRMetaKeccak
-from packages.eth_essentials.lib.utils import write_felt_array_to_dict_keys
+from src.types import MMRMetaPoseidon, MMRMetaKeccak
+from packages.eth_essentials.lib.utils import (
+    write_felt_array_to_dict_keys,
+    write_uint256_array_to_dict_keys,
+)
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.default_dict import default_dict_new
 from starkware.cairo.common.alloc import alloc

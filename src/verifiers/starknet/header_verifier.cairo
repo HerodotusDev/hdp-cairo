@@ -52,7 +52,7 @@ func verify_mmr_batches{
 // 2. The peaks dict contains the computed peak
 // The peak checks are performed in isolation, so each MMR batch separately.
 // This ensures we dont create a bag of mmr peas from different chains, which are then used to check the header inclusion for every chain
-func verify_headers_with_mmr_peaks{
+func verify_headers_with_mmr_peaks_poseidon{
     range_check_ptr,
     poseidon_ptr: PoseidonBuiltin*,
     pedersen_ptr: HashBuiltin*,
@@ -60,7 +60,7 @@ func verify_headers_with_mmr_peaks{
     pow2_array: felt*,
     starknet_memorizer: DictAccess*,
     chain_info: ChainInfo,
-    mmr_meta: MMRMeta,
+    mmr_meta_poseidon: MMRMetaPoseidon,
     peaks_dict: DictAccess*,
 }(idx: felt) {
     alloc_locals;
@@ -81,7 +81,7 @@ func verify_headers_with_mmr_peaks{
     let (block_hash) = compute_blockhash(fields);
 
     // a header can be the right-most peak
-    if (leaf_idx == mmr_meta.size) {
+    if (leaf_idx == mmr_meta_poseidon.size) {
         // instead of running an inclusion proof, we ensure its a known peak
         let (contains_peak) = dict_read{dict_ptr=peaks_dict}(block_hash);
         assert contains_peak = 1;
@@ -100,15 +100,15 @@ func verify_headers_with_mmr_peaks{
         );
         StarknetMemorizer.add(key=memorizer_key, data=length_and_fields);
 
-        return verify_headers_with_mmr_peaks(idx=idx - 1);
+        return verify_headers_with_mmr_peaks_poseidon(idx=idx - 1);
     }
 
     let (mmr_path) = alloc();
-    tempvar mmr_path_len: felt = nondet %{ len(header_starknet.proof.mmr_path) %};
     %{ segments.write_arg(ids.mmr_path, [int(x, 16) for x in header_starknet.proof.mmr_path]) %}
+    tempvar mmr_path_len: felt = nondet %{ len(header_starknet.proof.mmr_path) %};
 
     // compute the peak of the header
-    let (computed_peak) = hash_subtree_path(
+    let (computed_peak) = hash_subtree_path_poseidon(
         element=block_hash,
         height=0,
         position=leaf_idx,
@@ -134,7 +134,7 @@ func verify_headers_with_mmr_peaks{
     );
     StarknetMemorizer.add(key=memorizer_key, data=length_and_fields);
 
-    return verify_headers_with_mmr_peaks(idx=idx - 1);
+    return verify_headers_with_mmr_peaks_poseidon(idx=idx - 1);
 }
 
 func compute_blockhash{
