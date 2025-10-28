@@ -1,3 +1,5 @@
+use std::num::ParseIntError;
+
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 pub use types::HashingFunction;
@@ -27,6 +29,10 @@ pub enum IndexerError {
     /// Failed to parse the response using [`serde_json`].
     #[error("Failed to parse response")]
     SerdeJsonError(#[from] serde_json::Error),
+
+    /// Failed to parse Int.
+    #[error("Failed to parse Int")]
+    ParseIntError(#[from] ParseIntError),
 
     /// Validation error with a detailed message.
     #[error("Validation error: {0}")]
