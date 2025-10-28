@@ -40,7 +40,7 @@ from src.contract_bootloader.contract import compute_contract
 from starkware.cairo.common.memcpy import memcpy
 from src.memorizers.injected_state.memorizer import InjectedStateMemorizer, InjectedStateHashParams
 
-from packages.eth_essentials.lib.utils import pow2alloc251, write_felt_array_to_dict_keys
+from packages.eth_essentials.lib.utils import pow2alloc251
 
 func main{
     output_ptr: felt*,

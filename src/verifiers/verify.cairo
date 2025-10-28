@@ -49,13 +49,19 @@ func run_chain_state_verification_inner{
     evm_memorizer: DictAccess*,
     starknet_memorizer: DictAccess*,
     injected_state_memorizer: DictAccess*,
-    mmr_metas: MMRMeta*,
+    mmr_metas_poseidon: MMRMetaPoseidon*,
     mmr_metas_keccak: MMRMetaKeccak*,
-}(mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt, idx: felt) -> (mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt, idx: felt) {
+}(mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt, idx: felt) -> (
+    mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt, idx: felt
+) {
     alloc_locals;
 
     if (idx == 0) {
-        return (mmr_meta_idx_poseidon=mmr_meta_idx_poseidon, mmr_meta_idx_keccak=mmr_meta_idx_keccak, idx=idx);
+        return (
+            mmr_meta_idx_poseidon=mmr_meta_idx_poseidon,
+            mmr_meta_idx_keccak=mmr_meta_idx_keccak,
+            idx=idx,
+        );
     }
 
     tempvar chain_id: felt = nondet %{ chain_proofs[ids.idx - 1].chain_id %};
@@ -70,7 +76,9 @@ func run_chain_state_verification_inner{
             %{ vm_exit_scope() %}
 
             return run_chain_state_verification_inner(
-                mmr_meta_idx_poseidon=mmr_meta_idx_poseidon, mmr_meta_idx_keccak=mmr_meta_idx_keccak, idx=idx - 1
+                mmr_meta_idx_poseidon=mmr_meta_idx_poseidon,
+                mmr_meta_idx_keccak=mmr_meta_idx_keccak,
+                idx=idx - 1,
             );
         }
     }
@@ -82,7 +90,9 @@ func run_chain_state_verification_inner{
             %{ vm_exit_scope() %}
 
             return run_chain_state_verification_inner(
-                mmr_meta_idx_poseidon=mmr_meta_idx_poseidon, mmr_meta_idx_keccak=mmr_meta_idx_keccak, idx=idx - 1
+                mmr_meta_idx_poseidon=mmr_meta_idx_poseidon,
+                mmr_meta_idx_keccak=mmr_meta_idx_keccak,
+                idx=idx - 1,
             );
         }
     }
