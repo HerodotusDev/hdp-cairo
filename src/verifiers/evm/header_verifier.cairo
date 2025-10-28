@@ -36,24 +36,24 @@ func verify_mmr_batches{
         return (mmr_meta_idx_poseidon=mmr_meta_idx_poseidon, mmr_meta_idx_keccak=mmr_meta_idx_keccak);
     }
 
-    %{ memory[ap] = 1 if batch_evm.headers_with_mmr[ids.idx - 1].is_poseidon() else 0 %}
-    if ([ap] == 1) {
-        %{ vm_enter_scope({'header_evm_with_mmr_poseidon': batch_evm.headers_with_mmr[ids.idx - 1].poseidon, '__dict_manager': __dict_manager}) %}
+    tempvar is_poseidon = nondet %{ batch_evm.headers_with_mmr[ids.idx - 1].is_poseidon() %};
+    if (is_poseidon == 1) {
+        %{ vm_enter_scope({'header_evm_with_mmr': batch_evm.headers_with_mmr[ids.idx - 1], '__dict_manager': __dict_manager}) %}
 
         local mmr_meta_poseidon: MMRMetaPoseidon = MMRMetaPoseidon(
-            id=nondet %{ header_evm_with_mmr_poseidon.mmr_meta.id %},
-            root=nondet %{ header_evm_with_mmr_poseidon.mmr_meta.root %},
-            size=nondet %{ header_evm_with_mmr_poseidon.mmr_meta.size %},
-            chain_id=nondet %{ header_evm_with_mmr_poseidon.mmr_meta.chain_id %},
+            id=nondet %{ header_evm_with_mmr.mmr_meta.id %},
+            root=nondet %{ header_evm_with_mmr.mmr_meta.root %},
+            size=nondet %{ header_evm_with_mmr.mmr_meta.size %},
+            chain_id=nondet %{ header_evm_with_mmr.mmr_meta.chain_id %},
         );
 
         let (peaks_poseidon: felt*) = alloc();
-        %{ segments.write_arg(ids.peaks_poseidon, header_evm_with_mmr_poseidon.mmr_meta.peaks) %}
-        tempvar peaks_len: felt = nondet %{ len(header_evm_with_mmr_poseidon.mmr_meta.peaks) %};
+        %{ segments.write_arg(ids.peaks_poseidon, header_evm_with_mmr.mmr_meta.peaks) %}
+        tempvar peaks_len: felt = nondet %{ len(header_evm_with_mmr.mmr_meta.peaks) %};
 
         let (peaks_dict, peaks_dict_start) = validate_poseidon_mmr_meta(&mmr_meta_poseidon, peaks_poseidon, peaks_len);
         assert mmr_metas_poseidon[mmr_meta_idx_poseidon] = mmr_meta_poseidon;
-        tempvar n_header_proofs: felt = nondet %{ len(header_evm_with_mmr_poseidon.headers) %};
+        tempvar n_header_proofs: felt = nondet %{ len(header_evm_with_mmr.headers) %};
         verify_headers_with_mmr_peaks_poseidon{mmr_meta_poseidon=mmr_meta_poseidon, peaks_dict=peaks_dict}(n_header_proofs);
 
         default_dict_finalize(peaks_dict_start, peaks_dict, 0);
@@ -66,25 +66,25 @@ func verify_mmr_batches{
         );
     }
 
-    %{ memory[ap] = 1 if batch_evm.headers_with_mmr[ids.idx - 1].is_keccak() else 0 %}
-    if ([ap] == 1) {
-        %{ vm_enter_scope({'header_evm_with_mmr_keccak': batch_evm.headers_with_mmr[ids.idx - 1].keccak, '__dict_manager': __dict_manager}) %}
+    tempvar is_keccak = nondet %{ batch_evm.headers_with_mmr[ids.idx - 1].is_keccak() %};
+    if (is_keccak == 1) {
+        %{ vm_enter_scope({'header_evm_with_mmr': batch_evm.headers_with_mmr[ids.idx - 1], '__dict_manager': __dict_manager}) %}
 
         local mmr_meta_keccak: MMRMetaKeccak = MMRMetaKeccak(
-            id=nondet %{ header_evm_with_mmr_keccak.mmr_meta.id %},
-            root_low=nondet %{ header_evm_with_mmr_keccak.mmr_meta.root_low %},
-            root_high=nondet %{ header_evm_with_mmr_keccak.mmr_meta.root_high %},
-            size=nondet %{ header_evm_with_mmr_keccak.mmr_meta.size %},
-            chain_id=nondet %{ header_evm_with_mmr_keccak.mmr_meta.chain_id %},
+            id=nondet %{ header_evm_with_mmr.mmr_meta.id %},
+            root_low=nondet %{ header_evm_with_mmr.mmr_meta.root_low %},
+            root_high=nondet %{ header_evm_with_mmr.mmr_meta.root_high %},
+            size=nondet %{ header_evm_with_mmr.mmr_meta.size %},
+            chain_id=nondet %{ header_evm_with_mmr.mmr_meta.chain_id %},
         );
 
         let (peaks_keccak: Uint256*) = alloc();
-        %{ segments.write_arg(ids.peaks_keccak, header_evm_with_mmr_keccak.mmr_meta.peaks) %}
-        tempvar peaks_len: felt = nondet %{ len(header_evm_with_mmr_keccak.mmr_meta.peaks) %};
+        %{ segments.write_arg(ids.peaks_keccak, header_evm_with_mmr.mmr_meta.peaks) %}
+        tempvar peaks_len: felt = nondet %{ len(header_evm_with_mmr.mmr_meta.peaks) %};
 
         let (peaks_dict, peaks_dict_start) = validate_keccak_mmr_meta(&mmr_meta_keccak, peaks_keccak, peaks_len);
         assert mmr_metas_keccak[mmr_meta_idx_keccak] = mmr_meta_keccak;
-        tempvar n_header_proofs: felt = nondet %{ len(header_evm_with_mmr_keccak.headers) %};
+        tempvar n_header_proofs: felt = nondet %{ len(header_evm_with_mmr.headers) %};
         verify_headers_with_mmr_peaks_keccak{mmr_meta_keccak=mmr_meta_keccak, peaks_dict=peaks_dict}(n_header_proofs);
 
         default_dict_finalize(peaks_dict_start, peaks_dict, 0);
@@ -128,7 +128,7 @@ func verify_headers_with_mmr_peaks_poseidon{
         return ();
     }
 
-    %{ header_evm = header_with_mmr_evm_poseidon.headers[ids.idx - 1] %}
+    %{ header_evm = header_evm_with_mmr.headers[ids.idx - 1] %}
 
     let (rlp) = alloc();
     %{ segments.write_arg(ids.rlp, [int(x, 16) for x in header_evm.rlp]) %}
@@ -152,17 +152,17 @@ func verify_headers_with_mmr_peaks_poseidon{
         return verify_headers_with_mmr_peaks_poseidon(idx=idx - 1);
     }
 
-    let (mmr_path) = alloc();
-    tempvar mmr_path_len: felt = nondet %{ len(header_evm.proof.mmr_path) %};
-    %{ segments.write_arg(ids.mmr_path, [int(x, 16) for x in header_evm.proof.mmr_path]) %}
+    let (mmr_path_poseidon) = alloc();
+    tempvar mmr_path_poseidon_len: felt = nondet %{ len(header_evm.proof.mmr_path) %};
+    %{ segments.write_arg(ids.mmr_path_poseidon, [int(x, 16) for x in header_evm.proof.mmr_path]) %}
 
     // compute the peak of the header
     let (computed_peak) = hash_subtree_path_poseidon(
         element=poseidon_hash,
         height=0,
         position=leaf_idx,
-        inclusion_proof=mmr_path,
-        inclusion_proof_len=mmr_path_len,
+        inclusion_proof=mmr_path_poseidon,
+        inclusion_proof_len=mmr_path_poseidon_len,
     );
 
     // ensure the peak is included in the peaks dict, which contains the peaks of the mmr_root
@@ -199,11 +199,11 @@ func verify_headers_with_mmr_peaks_keccak{
         return ();
     }
 
-    %{ header_evm = header_evm_with_mmr_keccak.headers[ids.idx - 1] %}
+    %{ header_evm = header_evm_with_mmr.headers[ids.idx - 1] %}
 
     let (rlp) = alloc();
     %{ segments.write_arg(ids.rlp, [int(x, 16) for x in header_evm.rlp]) %}
-    tempvar rlp_bytes_len: felt = nondet %{ len(header_evm.rlp.bytes()) %};
+    tempvar rlp_bytes_len: felt = nondet %{ header_evm.rlp.byte_len() %};
     tempvar leaf_idx: felt = nondet %{ len(header_evm.proof.leaf_idx) %};
 
     // compute the hash of the header
@@ -224,17 +224,17 @@ func verify_headers_with_mmr_peaks_keccak{
         return verify_headers_with_mmr_peaks_keccak(idx=idx - 1);
     }
 
-    let (mmr_path) = alloc();
-    tempvar mmr_path_len: felt = nondet %{ len(header_evm.proof.mmr_path) %};
-    %{ segments.write_arg(ids.mmr_path, [int(x, 16) for x in header_evm.proof.mmr_path]) %}
+    let (mmr_path_keccak) = alloc();
+    tempvar mmr_path_keccak_len: felt = nondet %{ len(header_evm.proof.mmr_path) %};
+    %{ segments.write_arg(ids.mmr_path_keccak, [int(x, 16) for x in header_evm.proof.mmr_path]) %}
 
     // compute the peak of the header
     let (computed_peak: Uint256) = hash_subtree_path_keccak(
         element=keccak_hash,
         height=0,
         position=leaf_idx,
-        inclusion_proof=mmr_path,
-        inclusion_proof_len=mmr_path_len,
+        inclusion_proof=mmr_path_keccak,
+        inclusion_proof_len=mmr_path_keccak_len,
     );
 
     // ensure the peak is included in the peaks dict, which contains the peaks of the mmr_root
