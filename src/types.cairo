@@ -14,7 +14,7 @@ struct InjectedStateInfo {
     // initial_root_hash: felt,
 }
 
-struct MMRMeta {
+struct MMRMetaPoseidon {
     id: felt,
     root: felt,
     size: felt,
