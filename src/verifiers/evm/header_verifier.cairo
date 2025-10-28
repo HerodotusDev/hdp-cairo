@@ -132,7 +132,7 @@ func verify_headers_with_mmr_peaks_poseidon{
     %{ segments.write_arg(ids.mmr_path, [int(x, 16) for x in header_evm.proof.mmr_path]) %}
 
     // compute the peak of the header
-    let (computed_peak) = hash_subtree_path(
+    let (computed_peak) = hash_subtree_path_poseidon(
         element=poseidon_hash,
         height=0,
         position=leaf_idx,

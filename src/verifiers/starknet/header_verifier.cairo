@@ -2,15 +2,16 @@ from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuilti
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.dict import dict_read
 from starkware.cairo.common.alloc import alloc
+from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash_many
 from starkware.cairo.common.default_dict import default_dict_finalize
 from starkware.cairo.common.hash_state import hash_felts_no_padding
-from packages.eth_essentials.lib.mmr import hash_subtree_path
-from src.types import MMRMeta, ChainInfo
+from packages.eth_essentials.lib.mmr import hash_subtree_path_poseidon
+from src.types import MMRMetaPoseidon, ChainInfo
 from src.memorizers.starknet.memorizer import StarknetMemorizer, StarknetHashParams
 from src.decoders.starknet.header_decoder import StarknetHeaderDecoder, StarknetHeaderFields
-from src.verifiers.mmr_verifier import validate_mmr_meta_starknet
+from src.verifiers.mmr_verifier import validate_poseidon_mmr_meta
 
 func verify_mmr_batches{
     range_check_ptr,
