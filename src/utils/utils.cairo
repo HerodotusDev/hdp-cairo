@@ -210,7 +210,7 @@ func mmr_metas_write_output_ptr_mixed{output_ptr: felt*}(
 }
 
 // Calculates the HDP Task Hash (also known as task commitment)
-// That is compatibile with Solidity implementation of Data Processor Module in Satellite
+// That is compatible with Solidity implementation of Data Processor Module in Satellite
 // Inputs:
 // module_hash: Program hash of the HDP module
 // modupublic_inputs: Array of HDP Task public inputs for the module
