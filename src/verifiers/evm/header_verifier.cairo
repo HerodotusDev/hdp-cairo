@@ -2,19 +2,20 @@ from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuilti
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.dict import dict_read, dict_write
 from starkware.cairo.common.alloc import alloc
+from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash, poseidon_hash_many
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.default_dict import default_dict_finalize
 from starkware.cairo.common.builtin_keccak.keccak import keccak
 from starkware.cairo.common.cairo_keccak.keccak import cairo_keccak_bigend as keccak_bigend
 
-from packages.eth_essentials.lib.mmr import hash_subtree_path, hash_subtree_path_keccak
-from src.types import MMRMeta, MMRMetaKeccak, ChainInfo
+from packages.eth_essentials.lib.mmr import hash_subtree_path_poseidon, hash_subtree_path_keccak
+from src.types import MMRMetaPoseidon, MMRMetaKeccak, ChainInfo
 from src.utils.debug import print_felt_hex, print_string, print_felt
 
 from src.memorizers.evm.memorizer import EvmMemorizer, EvmHashParams
 from src.decoders.evm.header_decoder import HeaderDecoder
-from src.verifiers.mmr_verifier import validate_mmr_meta_evm, validate_mmr_meta_evm_keccak
+from src.verifiers.mmr_verifier import validate_poseidon_mmr_meta, validate_keccak_mmr_meta
 from src.utils.rlp import get_rlp_len
 
 func verify_mmr_batches{
@@ -24,60 +25,86 @@ func verify_mmr_batches{
     keccak_ptr: felt*,
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
-    mmr_metas: MMRMeta*,
+    mmr_metas_poseidon: MMRMetaPoseidon*,
     mmr_metas_keccak: MMRMetaKeccak*,
     chain_info: ChainInfo,
-}(idx: felt, mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt, hashing_fn: felt) -> (mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt) {
+}(idx: felt, mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt) -> (mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt) {
     alloc_locals;
+    let (__fp__, _) = get_fp_and_pc();
 
     if (0 == idx) {
         return (mmr_meta_idx_poseidon=mmr_meta_idx_poseidon, mmr_meta_idx_keccak=mmr_meta_idx_keccak);
     }
 
-    %{ vm_enter_scope({'header_with_mmr_evm': batch_evm.headers_with_mmr[ids.idx - 1], '__dict_manager': __dict_manager}) %}
+    %{ memory[ap] = 1 if batch_evm.headers_with_mmr[ids.idx - 1].is_poseidon() else 0 %}
+    if ([ap] == 1) {
+        %{ vm_enter_scope({'header_evm_with_mmr_poseidon': batch_evm.headers_with_mmr[ids.idx - 1].poseidon, '__dict_manager': __dict_manager}) %}
 
-    // Dispatch on hashing function
-    if (hashing_fn == 0) {
-        let (mmr_meta, peaks_dict, peaks_dict_start) = validate_mmr_meta_evm();
-        assert mmr_metas[mmr_meta_idx_poseidon] = mmr_meta;
-        tempvar n_header_proofs: felt = nondet %{ len(header_with_mmr_evm.headers) %};
-        with mmr_meta, peaks_dict {
-            verify_headers_with_mmr_peaks(n_header_proofs);
-        }
-        // Ensure the peaks dict for this batch is finalized
-        default_dict_finalize(peaks_dict_start, peaks_dict, -1);
+        local mmr_meta_poseidon: MMRMetaPoseidon = MMRMetaPoseidon(
+            id=nondet %{ header_evm_with_mmr_poseidon.mmr_meta.id %},
+            root=nondet %{ header_evm_with_mmr_poseidon.mmr_meta.root %},
+            size=nondet %{ header_evm_with_mmr_poseidon.mmr_meta.size %},
+            chain_id=nondet %{ header_evm_with_mmr_poseidon.mmr_meta.chain_id %},
+        );
+
+        let (peaks_poseidon: felt*) = alloc();
+        %{ segments.write_arg(ids.peaks_poseidon, header_evm_with_mmr_poseidon.mmr_meta.peaks) %}
+        tempvar peaks_len: felt = nondet %{ len(header_evm_with_mmr_poseidon.mmr_meta.peaks) %};
+
+        let (peaks_dict, peaks_dict_start) = validate_poseidon_mmr_meta(&mmr_meta_poseidon, peaks_poseidon, peaks_len);
+        assert mmr_metas_poseidon[mmr_meta_idx_poseidon] = mmr_meta_poseidon;
+        tempvar n_header_proofs: felt = nondet %{ len(header_evm_with_mmr_poseidon.headers) %};
+        verify_headers_with_mmr_peaks_poseidon{mmr_meta_poseidon=mmr_meta_poseidon, peaks_dict=peaks_dict}(n_header_proofs);
+
+        default_dict_finalize(peaks_dict_start, peaks_dict, 0);
+
         %{ vm_exit_scope() %}
         return verify_mmr_batches(
             idx=idx - 1,
             mmr_meta_idx_poseidon=mmr_meta_idx_poseidon + 1,
             mmr_meta_idx_keccak=mmr_meta_idx_keccak,
-            hashing_fn=hashing_fn
         );
-    } else {
-        // Keccak meta verification; run full inclusion verification with Uint256 MMR path and Keccak header hash
-        let (mmr_meta_k, peaks_dict_k, peaks_dict_start_k) = validate_mmr_meta_evm_keccak();
+    }
 
-        // Record Keccak MMR meta directly into the Keccak section (no conversion to felt).
-        assert mmr_metas_keccak[mmr_meta_idx_keccak] = mmr_meta_k;
+    %{ memory[ap] = 1 if batch_evm.headers_with_mmr[ids.idx - 1].is_keccak() else 0 %}
+    if ([ap] == 1) {
+        %{ vm_enter_scope({'header_evm_with_mmr_keccak': batch_evm.headers_with_mmr[ids.idx - 1].keccak, '__dict_manager': __dict_manager}) %}
 
-        tempvar n_header_proofs: felt = nondet %{ len(header_with_mmr_evm.headers) %};
-        with mmr_meta_k {
-            verify_headers_with_mmr_peaks_keccak(n_header_proofs);
-        }
+        local mmr_meta_keccak: MMRMetaKeccak = MMRMetaKeccak(
+            id=nondet %{ header_evm_with_mmr_keccak.mmr_meta.id %},
+            root_low=nondet %{ header_evm_with_mmr_keccak.mmr_meta.root_low %},
+            root_high=nondet %{ header_evm_with_mmr_keccak.mmr_meta.root_high %},
+            size=nondet %{ header_evm_with_mmr_keccak.mmr_meta.size %},
+            chain_id=nondet %{ header_evm_with_mmr_keccak.mmr_meta.chain_id %},
+        );
 
-        // Finalize dict and exit scope
-        default_dict_finalize(peaks_dict_start_k, peaks_dict_k, -1);
+        let (peaks_keccak: Uint256*) = alloc();
+        %{ segments.write_arg(ids.peaks_keccak, header_evm_with_mmr_keccak.mmr_meta.peaks) %}
+        tempvar peaks_len: felt = nondet %{ len(header_evm_with_mmr_keccak.mmr_meta.peaks) %};
+
+        let (peaks_dict, peaks_dict_start) = validate_keccak_mmr_meta(&mmr_meta_keccak, peaks_keccak, peaks_len);
+        assert mmr_metas_keccak[mmr_meta_idx_keccak] = mmr_meta_keccak;
+        tempvar n_header_proofs: felt = nondet %{ len(header_evm_with_mmr_keccak.headers) %};
+        verify_headers_with_mmr_peaks_keccak{mmr_meta_keccak=mmr_meta_keccak, peaks_dict=peaks_dict}(n_header_proofs);
+
+        default_dict_finalize(peaks_dict_start, peaks_dict, 0);
 
         %{ vm_exit_scope() %}
-
-        // Advance Keccak meta index; Poseidon untouched for this branch.
         return verify_mmr_batches(
             idx=idx - 1,
             mmr_meta_idx_poseidon=mmr_meta_idx_poseidon,
             mmr_meta_idx_keccak=mmr_meta_idx_keccak + 1,
-            hashing_fn=hashing_fn
         );
     }
+    
+    assert 0 = 1;
+
+    %{ vm_exit_scope() %}
+    return verify_mmr_batches(
+        idx=idx,
+        mmr_meta_idx_poseidon=mmr_meta_idx_poseidon,
+        mmr_meta_idx_keccak=mmr_meta_idx_keccak,
+    );
 }
 
 // Guard function that verifies the inclusion of headers in the MMR.
@@ -101,12 +128,10 @@ func verify_headers_with_mmr_peaks_poseidon{
         return ();
     }
 
-    let (rlp) = alloc();
-    %{
-        header_evm = header_with_mmr_evm.headers[ids.idx - 1]
-        segments.write_arg(ids.rlp, [int(x, 16) for x in header_evm.rlp])
-    %}
+    %{ header_evm = header_with_mmr_evm_poseidon.headers[ids.idx - 1] %}
 
+    let (rlp) = alloc();
+    %{ segments.write_arg(ids.rlp, [int(x, 16) for x in header_evm.rlp]) %}
     tempvar rlp_len: felt = nondet %{ len(header_evm.rlp) %};
     tempvar leaf_idx: felt = nondet %{ len(header_evm.proof.leaf_idx) %};
 
@@ -149,133 +174,78 @@ func verify_headers_with_mmr_peaks_poseidon{
     let memorizer_key = EvmHashParams.header(chain_id=chain_info.id, block_number=block_number);
     EvmMemorizer.add(key=memorizer_key, data=rlp);
 
-    return verify_headers_with_mmr_peaks(idx=idx - 1);
+    return verify_headers_with_mmr_peaks_poseidon(idx=idx - 1);
 }
 
-
-// Keccak variant: verify inclusion of headers against Keccak-based MMR peaks (Uint256),
-// and memorize headers for downstream verifiers.
+// Guard function that verifies the inclusion of headers in the MMR.
+// It ensures:
+// 1. The header hash is included in one of the peaks of the MMR.
+// 2. The peaks dict contains the computed peak
+// The peak checks are performed in isolation, so each MMR batch separately.
+// This ensures we dont create a bag of mmr peas from different chains, which are then used to check the header inclusion for every chain
 func verify_headers_with_mmr_peaks_keccak{
     range_check_ptr,
-    poseidon_ptr: PoseidonBuiltin*,
     bitwise_ptr: BitwiseBuiltin*,
+    poseidon_ptr: PoseidonBuiltin*,
     keccak_ptr: felt*,
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
     chain_info: ChainInfo,
-    mmr_meta_k: MMRMetaKeccak,
+    mmr_meta_keccak: MMRMetaKeccak,
+    peaks_dict: DictAccess*,
 }(idx: felt) {
     alloc_locals;
     if (0 == idx) {
         return ();
     }
 
-    // Recurse first to avoid implicit pointer revocation of bitwise_ptr
-    verify_headers_with_mmr_peaks_keccak(idx=idx - 1);
-    verify_headers_with_mmr_peaks_keccak_inner(idx, mmr_meta_k);
-    return ();
+    %{ header_evm = header_evm_with_mmr_keccak.headers[ids.idx - 1] %}
 
-}
-
-// Processes a single header (at position idx) with Keccak-based MMR inclusion.
-func verify_headers_with_mmr_peaks_keccak_inner{
-    range_check_ptr,
-    poseidon_ptr: PoseidonBuiltin*,
-    bitwise_ptr: BitwiseBuiltin*,
-    keccak_ptr: felt*,
-    pow2_array: felt*,
-    evm_memorizer: DictAccess*,
-    chain_info: ChainInfo,
-}(idx: felt, mmr_meta_k: MMRMetaKeccak) {
-    alloc_locals;
-
-    // Prepare RLP words for memorization
     let (rlp) = alloc();
-    %{
-        header_evm = header_with_mmr_evm.headers[ids.idx - 1]
-        segments.write_arg(ids.rlp, [int(x, 16) for x in header_evm.rlp])
-    %}
-
-    let rlp_bytes_len = get_rlp_len(rlp, 0);
+    %{ segments.write_arg(ids.rlp, [int(x, 16) for x in header_evm.rlp]) %}
+    tempvar rlp_bytes_len: felt = nondet %{ len(header_evm.rlp.bytes()) %};
     tempvar leaf_idx: felt = nondet %{ len(header_evm.proof.leaf_idx) %};
 
-    // Decode once to avoid implicit pointer revocation across branches
-    let block_number = HeaderDecoder.get_block_number(rlp);
+    // compute the hash of the header
+    let (keccak_hash: Uint256) = keccak_bigend(rlp, rlp_bytes_len);
 
-    local header_hash: Uint256;
+    // a header can be the right-most peak
+    if (leaf_idx == mmr_meta_keccak.size) {
+        // instead of running an inclusion proof, we ensure its a known peak
+        let (key) = poseidon_hash(x=keccak_hash.low, y=keccak_hash.high);
+        let (contains_peak) = dict_read{dict_ptr=peaks_dict}(key);
+        assert contains_peak = 1;
 
-    // Compute keccak(header_rlp) over raw bytes
-    let (header_hash_alt: Uint256) = keccak_bigend(rlp, rlp_bytes_len);
+        // add to memorizer
+        let block_number = HeaderDecoder.get_block_number(rlp);
+        let memorizer_key = EvmHashParams.header(chain_id=chain_info.id, block_number=block_number);
+        EvmMemorizer.add(key=memorizer_key, data=rlp);
 
-    let (peaks_keccak: Uint256*) = alloc();
+        return verify_headers_with_mmr_peaks_keccak(idx=idx - 1);
+    }
 
-    tempvar peaks_len: felt = nondet %{ len(header_with_mmr_evm.mmr_meta.peaks) %};
-    %{ segments.write_arg(ids.peaks_keccak, header_with_mmr_evm.mmr_meta.peaks) %}
-
-    // Compute peak for this header using a unified path call to preserve implicits
-    local computed_peak: Uint256;
-
-    let (mmr_path: Uint256*) = alloc();
-
+    let (mmr_path) = alloc();
     tempvar mmr_path_len: felt = nondet %{ len(header_evm.proof.mmr_path) %};
-    %{ segments.write_arg(ids.mmr_path, header_evm.proof.mmr_path) %}
+    %{ segments.write_arg(ids.mmr_path, [int(x, 16) for x in header_evm.proof.mmr_path]) %}
 
-    // Choose effective inclusion proof length: 0 for right-most peak, otherwise provided length
-    local eff_len: felt;
-    if (leaf_idx == mmr_meta_k.size) {
-        assert eff_len = 0;
-    } else {
-        assert eff_len = mmr_path_len;
-    } 
-
-    // Always call the keccak MMR path hasher; with eff_len=0 it returns the element unchanged
-    let (peak_u256: Uint256) = hash_subtree_path_keccak(
-            element=header_hash_alt,
-            height=0,
-            position=leaf_idx,
-            inclusion_proof=mmr_path,
-            inclusion_proof_len=eff_len,
+    // compute the peak of the header
+    let (computed_peak: Uint256) = hash_subtree_path_keccak(
+        element=keccak_hash,
+        height=0,
+        position=leaf_idx,
+        inclusion_proof=mmr_path,
+        inclusion_proof_len=mmr_path_len,
     );
-    assert computed_peak.low = peak_u256.low;
-    assert computed_peak.high = peak_u256.high;
 
-    // Ensure the peak is included in the MMR peaks set
-    let (contains_peak) = contains_uint256(peaks_keccak, peaks_len, computed_peak);
+    // ensure the peak is included in the peaks dict, which contains the peaks of the mmr_root
+    let (key) = poseidon_hash(x=computed_peak.low, y=computed_peak.high);
+    let (contains_peak) = dict_read{dict_ptr=peaks_dict}(key);
     assert contains_peak = 1;
 
-    // Memorize header RLP
+    // add to memorizer
+    let block_number = HeaderDecoder.get_block_number(rlp);
     let memorizer_key = EvmHashParams.header(chain_id=chain_info.id, block_number=block_number);
     EvmMemorizer.add(key=memorizer_key, data=rlp);
 
-    // Rebind implicits to avoid revocation at return
-    tempvar range_check_ptr = range_check_ptr;
-    tempvar bitwise_ptr = bitwise_ptr;
-    return ();
-}
-
- // Helper: check if target Uint256 is contained within a serialized array [low, high] as felts
-func contains_uint256{}(arr: felt*, len: felt, target: Uint256) -> (res: felt) {
-    alloc_locals;
-    if (len == 0) {
-        return (res=0);
-    }
-
-    // Read current element (two felts represent one Uint256: [low, high])
-    local cur_low: felt;
-    local cur_high: felt;
-    assert cur_low = [arr];
-    assert cur_high = [arr + 1];
-
-    // Compare in pure Cairo (no hints)
-    // Direct order: [low, high]
-    let diff_low = cur_low - target.low;
-    if (diff_low == 0) {
-        let diff_high = cur_high - target.high;
-        if (diff_high == 0) {
-            return (res=1);
-        }
-    }
-   
-    let (rec) = contains_uint256(arr + 2, len - 1, target);
-    return (res=rec);
+    return verify_headers_with_mmr_peaks_keccak(idx=idx - 1);
 }

@@ -20,31 +20,52 @@ func verify_mmr_batches{
     bitwise_ptr: BitwiseBuiltin*,
     pow2_array: felt*,
     starknet_memorizer: DictAccess*,
-    mmr_metas: MMRMeta*,
+    mmr_metas_poseidon: MMRMetaPoseidon*,
     chain_info: ChainInfo,
-}(idx: felt, mmr_meta_idx: felt) -> (mmr_meta_idx: felt) {
+}(idx: felt, mmr_meta_idx_poseidon: felt) -> (mmr_meta_idx_poseidon: felt) {
     alloc_locals;
+    let (__fp__, _) = get_fp_and_pc();
 
     if (0 == idx) {
-        return (mmr_meta_idx=mmr_meta_idx);
+        return (mmr_meta_idx_poseidon=mmr_meta_idx_poseidon);
     }
 
-    %{ vm_enter_scope({'header_with_mmr_starknet': batch_starknet.headers_with_mmr[ids.idx - 1], '__dict_manager': __dict_manager}) %}
+    %{ memory[ap] = 1 if batch_starknet.headers_with_mmr[ids.idx - 1].is_poseidon() else 0 %}
+    if ([ap] == 1) {
+        %{ vm_enter_scope({'header_starknet_with_mmr_poseidon': batch_starknet.headers_with_mmr[ids.idx - 1].poseidon, '__dict_manager': __dict_manager}) %}
 
-    let (mmr_meta, peaks_dict, peaks_dict_start) = validate_mmr_meta_starknet();
-    assert mmr_metas[mmr_meta_idx] = mmr_meta;
+        local mmr_meta_poseidon: MMRMetaPoseidon = MMRMetaPoseidon(
+            id=nondet %{ header_starknet_with_mmr_poseidon.mmr_meta.id %},
+            root=nondet %{ header_starknet_with_mmr_poseidon.mmr_meta.root %},
+            size=nondet %{ header_starknet_with_mmr_poseidon.mmr_meta.size %},
+            chain_id=nondet %{ header_starknet_with_mmr_poseidon.mmr_meta.chain_id %},
+        );
 
-    tempvar n_header_proofs: felt = nondet %{ len(header_with_mmr_starknet.headers) %};
-    with mmr_meta, peaks_dict {
-        verify_headers_with_mmr_peaks(n_header_proofs);
+        let (peaks_poseidon: felt*) = alloc();
+        %{ segments.write_arg(ids.peaks_poseidon, header_starknet_with_mmr_poseidon.mmr_meta.peaks) %}
+        tempvar peaks_len: felt = nondet %{ len(header_starknet_with_mmr_poseidon.mmr_meta.peaks) %};
+
+        let (peaks_dict, peaks_dict_start) = validate_poseidon_mmr_meta(&mmr_meta_poseidon, peaks_poseidon, peaks_len);
+        assert mmr_metas_poseidon[mmr_meta_idx_poseidon] = mmr_meta_poseidon;
+        tempvar n_header_proofs: felt = nondet %{ len(header_evm_with_mmr_poseidon.headers) %};
+        verify_headers_with_mmr_peaks_poseidon{mmr_meta_poseidon=mmr_meta_poseidon, peaks_dict=peaks_dict}(n_header_proofs);
+
+        default_dict_finalize(peaks_dict_start, peaks_dict, 0);
+
+        %{ vm_exit_scope() %}
+        return verify_mmr_batches(
+            idx=idx - 1,
+            mmr_meta_idx_poseidon=mmr_meta_idx_poseidon + 1,
+        );
     }
-
-    // Ensure the peaks dict for this batch is finalized
-    default_dict_finalize(peaks_dict_start, peaks_dict, -1);
+    
+    assert 0 = 1;
 
     %{ vm_exit_scope() %}
-
-    return verify_mmr_batches(idx=idx - 1, mmr_meta_idx=mmr_meta_idx + 1);
+    return verify_mmr_batches(
+        idx=idx,
+        mmr_meta_idx_poseidon=mmr_meta_idx_poseidon,
+    );
 }
 
 // Guard function that verifies the inclusion of headers in the MMR.
@@ -69,12 +90,10 @@ func verify_headers_with_mmr_peaks_poseidon{
         return ();
     }
 
-    let (fields) = alloc();
-    %{
-        header_starknet = header_with_mmr_starknet.headers[ids.idx - 1]
-        segments.write_arg(ids.fields, [int(x, 16) for x in header_starknet.fields])
-    %}
+    %{ header_starknet = header_starknet_with_mmr_poseidon.headers[ids.idx - 1] %}
 
+    let (fields) = alloc();
+    %{ segments.write_arg(ids.fields, [int(x, 16) for x in header_starknet.fields]) %}
     tempvar fields_len: felt = nondet %{ len(header_starknet.fields) %};
     tempvar leaf_idx: felt = nondet %{ len(header_starknet.proof.leaf_idx) %};
 
