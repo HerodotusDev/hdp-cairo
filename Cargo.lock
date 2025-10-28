@@ -6456,7 +6456,6 @@ dependencies = [
  "cairo-vm 2.0.1",
  "clap",
  "dotenvy",
- "hex",
  "serde_json",
  "sha2",
  "sound_hint_processor",
