@@ -10,9 +10,12 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
-use types::proofs::{evm, header::HeaderMmrMeta};
+use types::{
+    proofs::{evm, header::HeaderMmrMeta},
+    HashingFunction,
+};
 
-use crate::vars;
+use crate::{vars, verifiers::bytes_to_u256_be};
 
 pub const HINT_HEADERS_WITH_MMR_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch_evm.headers_with_mmr))";
 
@@ -23,14 +26,56 @@ pub fn hint_headers_with_mmr_len(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let proofs = exec_scopes.get::<evm::Proofs>(vars::scopes::BATCH_EVM)?;
-
     insert_value_into_ap(vm, Felt252::from(proofs.headers_with_mmr.len()))
 }
 
-pub const HINT_VM_ENTER_SCOPE: &str =
-    "vm_enter_scope({'header_with_mmr_evm': batch_evm.headers_with_mmr[ids.idx - 1], '__dict_manager': __dict_manager})";
+pub const HINT_AP_HEADER_IS_POSEIDON: &str = "memory[ap] = to_felt_or_relocatable(batch_evm.headers_with_mmr[ids.idx - 1].is_poseidon())";
 
-pub fn hint_vm_enter_scope(
+pub fn hint_ap_header_is_poseidon(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let proofs = exec_scopes.get::<evm::Proofs>(vars::scopes::BATCH_EVM)?;
+    let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
+        .try_into()
+        .unwrap();
+
+    insert_value_into_ap(
+        vm,
+        Felt252::from(matches!(
+            proofs.headers_with_mmr[idx - 1].mmr_meta.hasher,
+            HashingFunction::Poseidon
+        )),
+    )?;
+    Ok(())
+}
+
+pub const HINT_AP_HEADER_IS_KECCAK: &str = "memory[ap] = to_felt_or_relocatable(batch_evm.headers_with_mmr[ids.idx - 1].is_keccak())";
+
+pub fn hint_ap_header_is_keccak(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let proofs = exec_scopes.get::<evm::Proofs>(vars::scopes::BATCH_EVM)?;
+    let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
+        .try_into()
+        .unwrap();
+
+    insert_value_into_ap(
+        vm,
+        Felt252::from(matches!(proofs.headers_with_mmr[idx - 1].mmr_meta.hasher, HashingFunction::Keccak)),
+    )?;
+    Ok(())
+}
+
+pub const HINT_ENTER_SCOPE_HEADER_WITH_MMR: &str =
+    "vm_enter_scope({'header_evm_with_mmr': batch_evm.headers_with_mmr[ids.idx - 1], '__dict_manager': __dict_manager})";
+
+pub fn hint_enter_scope_header_with_mmr(
     vm: &mut VirtualMachine,
     exec_scopes: &mut ExecutionScopes,
     hint_data: &HintProcessorData,
@@ -44,14 +89,13 @@ pub fn hint_vm_enter_scope(
     let headers_with_mmr: Box<dyn Any> = Box::new(proofs.headers_with_mmr[idx - 1].clone());
     let dict_manager: Box<dyn Any> = Box::new(exec_scopes.get::<Rc<RefCell<DictManager>>>(vars::scopes::DICT_MANAGER)?);
     exec_scopes.enter_scope(HashMap::from([
-        (String::from(vars::scopes::HEADER_WITH_MMR_EVM), headers_with_mmr),
+        (String::from(vars::scopes::HEADER_EVM_WITH_MMR), headers_with_mmr),
         (String::from(vars::scopes::DICT_MANAGER), dict_manager),
     ]));
-
     Ok(())
 }
 
-pub const HINT_HEADERS_WITH_MMR_HEADERS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(header_with_mmr_evm.headers))";
+pub const HINT_HEADERS_WITH_MMR_HEADERS_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(header_evm_with_mmr.headers))";
 
 pub fn hint_headers_with_mmr_headers_len(
     vm: &mut VirtualMachine,
@@ -59,13 +103,11 @@ pub fn hint_headers_with_mmr_headers_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let header_with_mmr = exec_scopes.get::<HeaderMmrMeta<evm::header::Header>>(vars::scopes::HEADER_WITH_MMR_EVM)?;
-
+    let header_with_mmr = exec_scopes.get::<HeaderMmrMeta<evm::header::Header>>(vars::scopes::HEADER_EVM_WITH_MMR)?;
     insert_value_into_ap(vm, Felt252::from(header_with_mmr.headers.len()))
 }
 
-pub const HINT_SET_HEADER: &str =
-    "header_evm = header_with_mmr_evm.headers[ids.idx - 1]\nsegments.write_arg(ids.rlp, [int(x, 16) for x in header_evm.rlp])";
+pub const HINT_SET_HEADER: &str = "header_evm = header_evm_with_mmr.headers[ids.idx - 1]";
 
 pub fn hint_set_header(
     vm: &mut VirtualMachine,
@@ -73,22 +115,33 @@ pub fn hint_set_header(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let headers_with_mmr = exec_scopes.get::<HeaderMmrMeta<evm::header::Header>>(vars::scopes::HEADER_WITH_MMR_EVM)?;
+    let headers_with_mmr = exec_scopes.get::<HeaderMmrMeta<evm::header::Header>>(vars::scopes::HEADER_EVM_WITH_MMR)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
         .unwrap();
 
     let header = headers_with_mmr.headers[idx - 1].clone();
+    exec_scopes.insert_value::<evm::header::Header>(vars::scopes::HEADER_EVM, header);
+
+    Ok(())
+}
+
+pub const HINT_SET_RLP: &str = "segments.write_arg(ids.rlp, [int(x, 16) for x in header_evm.rlp])";
+
+pub fn hint_set_rlp(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let header = exec_scopes.get::<evm::header::Header>(vars::scopes::HEADER_EVM)?;
     let rlp_le_chunks: Vec<MaybeRelocatable> = header
         .rlp
         .chunks(8)
         .map(|chunk| MaybeRelocatable::from(Felt252::from_bytes_be_slice(&chunk.iter().rev().copied().collect::<Vec<_>>())))
         .collect();
 
-    exec_scopes.insert_value::<evm::header::Header>(vars::scopes::HEADER_EVM, header);
-
     let rlp_ptr = get_ptr_from_var_name(vars::ids::RLP, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-
     vm.load_data(rlp_ptr, &rlp_le_chunks)?;
 
     Ok(())
@@ -103,9 +156,28 @@ pub fn hint_rlp_len(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let header = exec_scopes.get::<evm::header::Header>(vars::scopes::HEADER_EVM)?;
-
     insert_value_into_ap(vm, Felt252::from(header.rlp.chunks(8).count()))
 }
+
+pub const HINT_RLP_BYTE_LEN: &str = "memory[ap] = to_felt_or_relocatable(header_evm.rlp.byte_len())";
+
+pub fn hint_rlp_byte_len(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    _hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let header = exec_scopes.get::<evm::header::Header>(vars::scopes::HEADER_EVM)?;
+    insert_value_into_ap(
+        vm,
+        Felt252::from(
+            alloy_rlp::Header::decode(&mut header.rlp.to_vec().as_slice())
+                .unwrap()
+                .length_with_payload(),
+        ),
+    )
+}
+
 pub const HINT_LEAF_IDX: &str = "memory[ap] = to_felt_or_relocatable(len(header_evm.proof.leaf_idx))";
 
 pub fn hint_leaf_idx(
@@ -115,7 +187,6 @@ pub fn hint_leaf_idx(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let header = exec_scopes.get::<evm::header::Header>(vars::scopes::HEADER_EVM)?;
-
     insert_value_into_ap(vm, Felt252::from(header.proof.leaf_idx))
 }
 
@@ -132,30 +203,22 @@ pub fn hint_mmr_path_len(
     insert_value_into_ap(vm, Felt252::from(header.proof.mmr_path.len()))
 }
 
-pub const HINT_MMR_PATH: &str = "segments.write_arg(ids.mmr_path, header_evm.proof.mmr_path)";
+pub const HINT_MMR_PATH_KECCAK: &str = "segments.write_arg(ids.mmr_path_keccak, [int(x, 16) for x in header_evm.proof.mmr_path])";
 
-pub fn hint_mmr_path(
+pub fn hint_mmr_path_keccak(
     vm: &mut VirtualMachine,
     exec_scopes: &mut ExecutionScopes,
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let header = exec_scopes.get::<evm::header::Header>(vars::scopes::HEADER_EVM)?;
-    let mmr_path_ptr = get_ptr_from_var_name(vars::ids::MMR_PATH, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let mmr_path_ptr = get_ptr_from_var_name(vars::ids::MMR_PATH_KECCAK, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    // Convert each Bytes element into a 32-byte big-endian value, then split into (low, high) 128-bit felts.
     let mut data: Vec<MaybeRelocatable> = Vec::with_capacity(header.proof.mmr_path.len() * 2);
-    for bytes_data in header.proof.mmr_path.iter() {
-        let mut wide = [0u8; 32];
-        let copy_len = core::cmp::min(bytes_data.len(), 32);
-        wide[32 - copy_len..].copy_from_slice(&bytes_data[bytes_data.len() - copy_len..]);
-
-        let high = Felt252::from_bytes_be_slice(&wide[..16]);
-        let low = Felt252::from_bytes_be_slice(&wide[16..]);
-
-        // Uint256 layout in Cairo memory: low then high
-        data.push(MaybeRelocatable::from(low));
-        data.push(MaybeRelocatable::from(high));
+    for mmr_path_bytes in header.proof.mmr_path.iter() {
+        let mmr_path_bytes = bytes_to_u256_be(mmr_path_bytes)?;
+        data.push(MaybeRelocatable::from(Felt252::from_bytes_be_slice(&mmr_path_bytes[16..])));
+        data.push(MaybeRelocatable::from(Felt252::from_bytes_be_slice(&mmr_path_bytes[..16])));
     }
 
     vm.load_data(mmr_path_ptr, &data)?;
@@ -163,47 +226,23 @@ pub fn hint_mmr_path(
     Ok(())
 }
 
-// Poseidon path variant: write mmr_path as a flat array of felts (one felt per Bytes element).
-pub const HINT_MMR_PATH_FELTS: &str = "segments.write_arg(ids.mmr_path, [int(x, 16) for x in header_evm.proof.mmr_path])";
+pub const HINT_MMR_PATH_POSEIDON: &str = "segments.write_arg(ids.mmr_path_poseidon, [int(x, 16) for x in header_evm.proof.mmr_path])";
 
-pub fn hint_mmr_path_felts(
+pub fn hint_mmr_path_poseidon(
     vm: &mut VirtualMachine,
     exec_scopes: &mut ExecutionScopes,
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let header = exec_scopes.get::<evm::header::Header>(vars::scopes::HEADER_EVM)?;
-    let mmr_path_ptr = get_ptr_from_var_name(vars::ids::MMR_PATH, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let mmr_path_ptr = get_ptr_from_var_name(vars::ids::MMR_PATH_POSEIDON, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    // Each element is a felt (<= 252 bits). Convert Bytes to Felt252 big-endian.
     let mut data: Vec<MaybeRelocatable> = Vec::with_capacity(header.proof.mmr_path.len());
-    for bytes_data in header.proof.mmr_path.iter() {
-        // Left-pad to 32 bytes, then interpret as big-endian Felt252 (modulus reduction handled by library).
-        let mut wide = [0u8; 32];
-        let copy_len = core::cmp::min(bytes_data.len(), 32);
-        wide[32 - copy_len..].copy_from_slice(&bytes_data[bytes_data.len() - copy_len..]);
-
-        let felt = Felt252::from_bytes_be_slice(&wide);
-        data.push(MaybeRelocatable::from(felt));
+    for mmr_path_bytes in header.proof.mmr_path.iter() {
+        let mmr_path_bytes = bytes_to_u256_be(mmr_path_bytes)?;
+        data.push(MaybeRelocatable::from(Felt252::from_bytes_be_slice(&mmr_path_bytes)));
     }
 
     vm.load_data(mmr_path_ptr, &data)?;
     Ok(())
-}
-
-// Hint to expose mmr_hashing_function (0=Poseidon, 1=Keccak) from batch_evm to Cairo.
-pub const HINT_MMR_HASHING_FUNCTION: &str = "memory[ap] = to_felt_or_relocatable(batch_evm.mmr_hashing_function)";
-
-pub fn hint_mmr_hashing_function(
-    vm: &mut VirtualMachine,
-    exec_scopes: &mut ExecutionScopes,
-    _hint_data: &HintProcessorData,
-    _constants: &HashMap<String, Felt252>,
-) -> Result<(), HintError> {
-    let proofs = exec_scopes.get::<evm::Proofs>(vars::scopes::BATCH_EVM)?;
-    let v: u8 = match proofs.mmr_hashing_function {
-        types::HashingFunction::Poseidon => 0,
-        types::HashingFunction::Keccak => 1,
-    };
-    insert_value_into_ap(vm, Felt252::from(v))
 }
