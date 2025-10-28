@@ -269,7 +269,7 @@ mod transaction_get_chain_id {
 
 // Legacy transaction decoding test
 #[starknet::contract]
-mod transaction_get_tx_type {
+mod transaction_get_tx_type_legacy {
     use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
 
     #[storage]
@@ -289,7 +289,7 @@ mod transaction_get_tx_type {
 
 // EIP-2930 transaction decoding test
 #[starknet::contract]
-mod transaction_get_tx_type {
+mod transaction_get_tx_type_eip2930 {
     use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
 
     #[storage]
@@ -309,7 +309,7 @@ mod transaction_get_tx_type {
 
 // EIP-1559 transaction decoding test
 #[starknet::contract]
-mod transaction_get_tx_type {
+mod transaction_get_tx_type_eip2559 {
     use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
 
     #[storage]
@@ -329,7 +329,7 @@ mod transaction_get_tx_type {
 
 // EIP-4844 transaction decoding test
 #[starknet::contract]
-mod transaction_get_tx_type {
+mod transaction_get_tx_type_eip4844 {
     use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
 
     #[storage]
@@ -349,7 +349,7 @@ mod transaction_get_tx_type {
 
 // EIP-7702 transaction decoding test
 #[starknet::contract]
-mod transaction_get_tx_type {
+mod transaction_get_tx_type_eip7702 {
     use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
 
     #[storage]
