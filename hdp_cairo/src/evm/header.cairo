@@ -24,6 +24,8 @@ const HEADER_GET_WITHDRAWALS_ROOT: felt252 = 16;
 const HEADER_GET_BLOB_GAS_USED: felt252 = 17;
 const HEADER_GET_EXCESS_BLOB_GAS: felt252 = 18;
 const HEADER_GET_PARENT_BEACON_BLOCK_ROOT: felt252 = 19;
+const HEADER_GET_REQUESTS_HASH: felt252 = 20;
+
 
 #[derive(Serde, Drop)]
 pub struct HeaderKey {
@@ -112,6 +114,11 @@ pub impl HeaderImpl of HeaderTrait {
     //     let result = self.call_memorizer(HEADER_GET_PARENT_BEACON_BLOCK_ROOT, key);
     //     u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     // }
+
+    fn header_get_requests_hash(self: @EvmMemorizer, key: @HeaderKey) -> u256 {
+        let result = self.call_memorizer(HEADER_GET_REQUESTS_HASH, key);
+        u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
+    }
 
     fn call_memorizer(self: @EvmMemorizer, selector: felt252, key: @HeaderKey) -> Span<felt252> {
         call_contract_syscall(

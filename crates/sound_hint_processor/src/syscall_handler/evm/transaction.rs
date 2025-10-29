@@ -59,7 +59,7 @@ impl CallHandler for TransactionCallHandler {
 
         let tx_type = data[0];
         let mut extra_len = 0;
-        if tx_type > 0 && tx_type < 4 {
+        if tx_type > 0 && tx_type < 5 {
             data.remove(0);
             extra_len = 1;
         }

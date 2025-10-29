@@ -19,9 +19,10 @@ const BLOCK_TX_GET_MAX_FEE_PER_GAS: felt252 = 11;
 const BLOCK_TX_GET_MAX_PRIORITY_FEE_PER_GAS: felt252 = 12;
 const BLOCK_TX_GET_MAX_FEE_PER_BLOB_GAS: felt252 = 13;
 const BLOCK_TX_GET_BLOB_VERSIONED_HASHES: felt252 = 14;
-const BLOCK_TX_GET_TX_TYPE: felt252 = 15;
-const BLOCK_TX_GET_SENDER: felt252 = 16;
-const BLOCK_TX_GET_HASH: felt252 = 17;
+const BLOCK_TX_GET_AUTHORIZATION_LIST: felt252 = 15;
+const BLOCK_TX_GET_TX_TYPE: felt252 = 16;
+const BLOCK_TX_GET_SENDER: felt252 = 17;
+const BLOCK_TX_GET_HASH: felt252 = 18;
 
 #[derive(Serde, Drop)]
 pub struct BlockTxKey {
