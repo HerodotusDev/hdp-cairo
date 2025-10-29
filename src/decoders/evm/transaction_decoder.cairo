@@ -52,9 +52,10 @@ namespace TransactionField {
     const MAX_PRIORITY_FEE_PER_GAS = 12;
     const MAX_FEE_PER_BLOB_GAS = 13;
     const BLOB_VERSIONED_HASHES = 14;
-    const TX_TYPE = 15;
-    const SENDER = 16;
-    const HASH = 17;
+    const AUTHORIZATION_LIST = 15;
+    const TX_TYPE = 16;
+    const SENDER = 17;
+    const HASH = 18;
 }
 
 namespace TransactionType {
@@ -62,6 +63,7 @@ namespace TransactionType {
     const EIP2930 = 1;
     const EIP1559 = 2;
     const EIP4844 = 3;
+    const EIP7702 = 4;
 }
 
 namespace TransactionDecoder {
@@ -166,15 +168,15 @@ namespace TransactionDecoder {
 
         local has_type_prefix: felt;
         %{
-            # typed transactions have a type prefix in this range [1, 3]
-            if 0x0 < ids.first_byte < 0x04:
+            # typed transactions have a type prefix in this range [1, 4]
+            if 0x0 < ids.first_byte < 0x05:
                 ids.has_type_prefix = 1
             else:
                 ids.has_type_prefix = 0
         %}
 
         if (has_type_prefix == 1) {
-            assert [range_check_ptr] = 0x3 - first_byte;
+            assert [range_check_ptr] = 0x4 - first_byte;
             assert [range_check_ptr + 1] = first_byte - 1;
             assert [range_check_ptr + 2] = 0xff - second_byte;
             assert [range_check_ptr + 3] = second_byte - 0xf8;
@@ -440,7 +442,7 @@ namespace TxTypeFieldMap {
     func get_field_index{range_check_ptr}(tx_type: felt, field: felt) -> felt {
         alloc_locals;
         assert [range_check_ptr] = 14 - field;  // type & sender are not native fields, so we catch them before we get here
-        assert [range_check_ptr + 1] = 3 - tx_type;
+        assert [range_check_ptr + 1] = 4 - tx_type;
         tempvar range_check_ptr = range_check_ptr + 2;
 
         let (data_address) = get_label_location(data);
@@ -567,5 +569,34 @@ namespace TxTypeFieldMap {
         dw 2;  // MAX_PRIORITY_FEE_PER_GAS
         dw 9;  // MAX_FEE_PER_BLOB_GAS
         dw 10;  // BLOB_VERSIONED_HASHES
+
+        // EIP7702 field indices
+        //     0: Chain Id
+        //     1: Nonce
+        //     2: Max Priority Fee Per Gas
+        //     3: Max Fee Per Gas
+        //     4: Gas Limit
+        //     5: Destination (aka "to")
+        //     6: Value
+        //     7: Inputs (Data)
+        //     8: Access List
+        //     9: Authorization List
+        //     10: V
+        //     11: R
+        //     12: S
+        dw 1;        // NONCE
+        dw 0xFFFFFFFF;  // GAS_PRICE (not available in EIP-7702)
+        dw 4;        // GAS_LIMIT
+        dw 5;        // RECEIVER / DESTINATION
+        dw 6;        // VALUE
+        dw 7;        // INPUT / DATA
+        dw 10;       // V
+        dw 11;       // R
+        dw 12;       // S
+        dw 0;        // CHAIN_ID
+        dw 8;        // ACCESS_LIST
+        dw 3;        // MAX_FEE_PER_GAS
+        dw 2;        // MAX_PRIORITY_FEE_PER_GAS
+        dw 9;        // AUTHORIZATION_LIST
     }
 }
