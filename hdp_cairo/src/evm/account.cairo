@@ -1,6 +1,14 @@
+use core::keccak::cairo_keccak;
+use core::panic_with_felt252;
 use hdp_cairo::EvmMemorizer;
 use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;
+use crate::UnconstrainedMemorizer;
+use crate::bytecode::{ByteCode, ByteCodeLeWords, OriginalByteCodeTrait};
+
+const UNCONSTRAINED_STORE_CONTRACT_ADDRESS: felt252 = 'unconstrained_store';
+
+const UNCONSTRAINED_STORE_GET_BYTECODE: felt252 = 0;
 
 const ACCOUNT: felt252 = 1;
 
@@ -34,14 +42,30 @@ pub impl AccountImpl of AccountTrait {
         let result = self.call_memorizer(ACCOUNT_GET_CODE_HASH, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
-    // TODO: @beeinger
-    // fn account_get_bytecode(self: @EvmMemorizer, key: @AccountKey) -> Span<u8> {
-    //     let code_hash = account_get_code_hash();
-    //     let bytecode = call_memorizer(self: @EvmMemorizer, selector: felt252, key: @AccountKey);
-    //     assert
-    //     keccak(bytecode) == code_hash;
-    //     return bytecode;
-    // }
+    // TODO: @beeinger [done?]
+    fn account_get_bytecode(
+        self: @EvmMemorizer, key: @AccountKey, unconstrained_memorizer: @UnconstrainedMemorizer,
+    ) -> ByteCode {
+        let code_hash = self.account_get_code_hash(key);
+
+        /// Bytecode as u64 le words [] +
+        /// lastInputWord +
+        /// lastInputNumBytes (how many bytes are in the last word)
+        let mut bytecode = unconstrained_memorizer
+            .call_unconstrained_memorizer(UNCONSTRAINED_STORE_GET_BYTECODE);
+
+        let bytecode_le_words = Serde::<ByteCodeLeWords>::deserialize(ref bytecode).unwrap();
+        let mut words_64bit = bytecode_le_words.words64bit.clone();
+        let calculated_code_hash = cairo_keccak(
+            ref words_64bit, bytecode_le_words.lastInputWord, bytecode_le_words.lastInputNumBytes,
+        );
+
+        if calculated_code_hash != code_hash {
+            panic_with_felt252('Account: code hash mismatch');
+        }
+
+        bytecode_le_words.get_original()
+    }
 
     fn call_memorizer(self: @EvmMemorizer, selector: felt252, key: @AccountKey) -> Span<felt252> {
         call_contract_syscall(
@@ -52,6 +76,17 @@ pub impl AccountImpl of AccountTrait {
                 *key.address,
             ]
                 .span(),
+        )
+            .unwrap_syscall()
+    }
+
+    fn call_unconstrained_memorizer(
+        self: @UnconstrainedMemorizer, selector: felt252,
+    ) -> Span<felt252> {
+        call_contract_syscall(
+            UNCONSTRAINED_STORE_CONTRACT_ADDRESS.try_into().unwrap(),
+            selector,
+            array![*self.dict.segment_index, *self.dict.offset].span(),
         )
             .unwrap_syscall()
     }

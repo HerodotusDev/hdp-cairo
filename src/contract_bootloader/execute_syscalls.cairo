@@ -73,6 +73,7 @@ func execute_syscalls{
     starknet_decoder_ptr: felt***,
     starknet_key_hasher_ptr: felt**,
     injected_state_memorizer: DictAccess*,
+    unconstrained_memorizer: DictAccess*,
 }(execution_context: ExecutionContext*, syscall_ptr_end: felt*) {
     if (syscall_ptr == syscall_ptr_end) {
         return ();
@@ -125,6 +126,7 @@ func execute_call_contract{
     starknet_decoder_ptr: felt***,
     starknet_key_hasher_ptr: felt**,
     injected_state_memorizer: DictAccess*,
+    unconstrained_memorizer: DictAccess*,
 }(caller_execution_context: ExecutionContext*) {
     alloc_locals;
     let request_header = cast(syscall_ptr, RequestHeader*);
@@ -149,20 +151,21 @@ func execute_call_contract{
         return ();
     }
 
-    // TODO: @beeinger
-    // if (request.contract_address == 'unconstrained_store') {
-    //     let memorizer_key = HashParams.label{poseidon_ptr=poseidon_ptr}(
-    //         label=key_trie_label
-    //     );
+    // TODO: @beeinger [wip]
+    if (request.contract_address == 'unconstrained_store') {
+        // let memorizer_key = HashParams.label{poseidon_ptr=poseidon_ptr}(
+        //     label=key_trie_label
+        // );
 
-    //     let (bytecode_start) = Memorizer.get(key=memorizer_key);
+        // let (bytecode_start) = Memorizer.get(key=memorizer_key);
 
-    //     // for i in len:
-    //     //     assert bytecode_ptr[i] = response.retdata_start[i]
+        // // for i in len:
+        // //     assert bytecode_ptr[i] = response.retdata_start[i]
 
-    //     memcpy(retdata_start, bytecode_start, retdata_end - retdata_start);
-        
-    // }
+        // memcpy(retdata_start, bytecode_start, retdata_end - retdata_start);
+
+        return ();
+    }
 
     // TODO!!!
     if (request.contract_address == 'injected_state') {
