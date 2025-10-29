@@ -6,10 +6,12 @@ use starknet::syscalls::call_contract_syscall;
 use crate::UnconstrainedMemorizer;
 use crate::bytecode::{ByteCode, ByteCodeLeWords, OriginalByteCodeTrait, U256Trait};
 
-const UNCONSTRAINED_STORE_CONTRACT_ADDRESS: felt252 = 'unconstrained_store';
+// ----- Unconstrained Store -----
+const UNCONSTRAINED_STORE: felt252 = 'unconstrained_store';
 
 const UNCONSTRAINED_STORE_GET_BYTECODE: felt252 = 0;
 
+// ----- Account -----
 const ACCOUNT: felt252 = 1;
 
 const ACCOUNT_GET_NONCE: felt252 = 0;
@@ -85,7 +87,7 @@ pub impl AccountImpl of AccountTrait {
         self: @UnconstrainedMemorizer, selector: felt252, key: @AccountKey,
     ) -> Span<felt252> {
         call_contract_syscall(
-            UNCONSTRAINED_STORE_CONTRACT_ADDRESS.try_into().unwrap(),
+            UNCONSTRAINED_STORE.try_into().unwrap(),
             selector,
             array![
                 *self.dict.segment_index, *self.dict.offset, *key.chain_id, *key.block_number,
