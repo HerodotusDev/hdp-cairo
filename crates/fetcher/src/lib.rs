@@ -21,7 +21,7 @@ use dry_hint_processor::syscall_handler::{
 use eth_trie_proofs::{tx_receipt_trie::TxReceiptsMptHandler, tx_trie::TxsMptHandler};
 use futures::StreamExt;
 use indexer_client::{
-    models::{ranges::FunctionsRanges, IndexerError},
+    models::{ranges::FunctionsRanges, IndexerError, MMRDeploymentConfig, MMRHasherConfig},
     Indexer,
 };
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
@@ -68,9 +68,15 @@ pub struct Args {
     pub output: PathBuf,
     #[arg(
         long = "mmr-hasher-config",
-        help = "Path to JSON file containing fetcher config - mapping chain_id -> to mmr_hashing_function and other settings if needed. Example: {\"11155111\":{\"mmr_hashing_function\":\"poseidon\"},\"10\":{\"mmr_hashing_function\":\"keccak\"}}"
+        help = "Path to JSON file containing fetcher config - mapping chain_id -> to mmr_hashing_function"
     )]
     pub mmr_hasher_config: Option<PathBuf>,
+
+    #[arg(
+        long = "mmr-deployment-config",
+        help = "Path to JSON file containing fetcher config - mapping chain_id -> to chain_id"
+    )]
+    pub mmr_deployment_config: Option<PathBuf>,
 }
 
 #[derive(Error, Debug)]
@@ -175,33 +181,19 @@ impl ProgressExt for Option<ProgressBar> {
 
 pub struct Fetcher<'a> {
     proof_keys: &'a ProofKeys,
-    mmr_hasher_config: HashMap<u128, HashingFunction>,
+    mmr_hasher_config: MMRHasherConfig,
+    mmr_deployment_config: MMRDeploymentConfig,
     #[cfg(feature = "progress_bars")]
     progress_bars: ProgressBars,
 }
 impl<'a> Fetcher<'a> {
-    pub fn new(proof_keys: &'a ProofKeys) -> Self {
-        Self {
-            proof_keys,
-            mmr_hasher_config: HashMap::new(),
-            #[cfg(feature = "progress_bars")]
-            progress_bars: ProgressBars::new(proof_keys),
-        }
-    }
-
-    pub fn new_with_mmr_sources_map(proof_keys: &'a ProofKeys, mmr_hasher_config: HashMap<u128, HashingFunction>) -> Self {
+    pub fn new(proof_keys: &'a ProofKeys, mmr_hasher_config: MMRHasherConfig, mmr_deployment_config: MMRDeploymentConfig) -> Self {
         Self {
             proof_keys,
             mmr_hasher_config,
+            mmr_deployment_config,
             #[cfg(feature = "progress_bars")]
             progress_bars: ProgressBars::new(proof_keys),
-        }
-    }
-
-    fn indexer_mmr_hashing_function_for_chain(&self, chain_id: u128) -> indexer_client::models::HashingFunction {
-        match self.mmr_hasher_config.get(&chain_id).unwrap_or(&HashingFunction::Poseidon) {
-            HashingFunction::Poseidon => indexer_client::models::HashingFunction::Poseidon,
-            HashingFunction::Keccak => indexer_client::models::HashingFunction::Keccak,
         }
     }
 
@@ -212,10 +204,10 @@ impl<'a> Fetcher<'a> {
         let mut headers_with_mmr = HashMap::default();
         let mut header_fut = futures::stream::iter(flattened_keys.iter().map(|key| {
             EvmProofKeys::fetch_header_proof(
-                ETHEREUM_TESTNET_CHAIN_ID,
+                *self.mmr_deployment_config.get(&key.chain_id).unwrap(),
                 key.chain_id,
                 key.block_number,
-                self.indexer_mmr_hashing_function_for_chain(key.chain_id),
+                *self.mmr_hasher_config.get(&key.chain_id).unwrap(),
             )
         }))
         .buffer_unordered(BUFFER_UNORDERED)
@@ -365,10 +357,10 @@ impl<'a> Fetcher<'a> {
         let mut headers_with_mmr = HashMap::default();
         let mut header_fut = futures::stream::iter(flattened_keys.iter().map(|key| {
             StarknetProofKeys::fetch_header_proof(
-                ETHEREUM_TESTNET_CHAIN_ID,
+                *self.mmr_deployment_config.get(&key.chain_id).unwrap(),
                 key.chain_id,
                 key.block_number,
-                self.indexer_mmr_hashing_function_for_chain(key.chain_id),
+                *self.mmr_hasher_config.get(&key.chain_id).unwrap(),
             )
         }))
         .buffer_unordered(BUFFER_UNORDERED)
@@ -453,7 +445,7 @@ pub async fn run_fetcher(
     syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>,
 ) -> Result<Vec<ChainProofs>, FetcherError> {
     let proof_keys = parse_syscall_handler(syscall_handler)?;
-    let fetcher = Fetcher::new(&proof_keys);
+    let fetcher = Fetcher::new(&proof_keys, MMRHasherConfig::default(), MMRDeploymentConfig::default());
     let (
         eth_proofs_mainnet,
         eth_proofs_sepolia,
