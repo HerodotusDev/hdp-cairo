@@ -52,7 +52,7 @@ pub impl AccountImpl of AccountTrait {
         /// lastInputWord +
         /// lastInputNumBytes (how many bytes are in the last word)
         let mut bytecode = unconstrained_memorizer
-            .call_unconstrained_memorizer(UNCONSTRAINED_STORE_GET_BYTECODE);
+            .call_unconstrained_memorizer(UNCONSTRAINED_STORE_GET_BYTECODE, key);
 
         let bytecode_le_words = Serde::<ByteCodeLeWords>::deserialize(ref bytecode).unwrap();
         let mut words_64bit = bytecode_le_words.words64bit.clone();
@@ -81,12 +81,16 @@ pub impl AccountImpl of AccountTrait {
     }
 
     fn call_unconstrained_memorizer(
-        self: @UnconstrainedMemorizer, selector: felt252,
+        self: @UnconstrainedMemorizer, selector: felt252, key: @AccountKey,
     ) -> Span<felt252> {
         call_contract_syscall(
             UNCONSTRAINED_STORE_CONTRACT_ADDRESS.try_into().unwrap(),
             selector,
-            array![*self.dict.segment_index, *self.dict.offset].span(),
+            array![
+                *self.dict.segment_index, *self.dict.offset, *key.chain_id, *key.block_number,
+                *key.address,
+            ]
+                .span(),
         )
             .unwrap_syscall()
     }
