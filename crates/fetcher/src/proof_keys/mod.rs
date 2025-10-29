@@ -46,7 +46,7 @@ impl ProofKeys {
         let response = provider
             .get_headers_proof(
                 accumulators::IndexerQuery::new(deployed_on_chain_id, accumulates_chain_id, block_number, block_number)
-                    .with_hashing_function(mmr_hashing_function.clone()),
+                    .with_hashing_function(mmr_hashing_function),
             )
             .await?;
 
