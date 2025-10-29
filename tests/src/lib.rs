@@ -32,6 +32,7 @@ mod test_utils {
     use dry_hint_processor::syscall_handler::{evm, injected_state, starknet};
     use fetcher::{proof_keys::ProofKeys, Fetcher};
     use hints::vars;
+    use indexer_client::models::{MMRDeploymentConfig, MMRHasherConfig};
     use syscall_handler::{SyscallHandler, SyscallHandlerWrapper};
     use tracing::debug;
     use types::{
@@ -138,7 +139,7 @@ mod test_utils {
             proof_keys.injected_state.insert(root_hash, actions);
         }
 
-        let fetcher = Fetcher::new(&proof_keys);
+        let fetcher = Fetcher::new(&proof_keys, MMRHasherConfig::default(), MMRDeploymentConfig::default());
         let (
             evm_proofs_mainnet,
             evm_proofs_sepolia,
