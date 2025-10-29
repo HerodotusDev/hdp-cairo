@@ -17,12 +17,13 @@ dry_hint_processor.workspace = true
 fetcher.workspace = true
 futures.workspace = true
 hints.workspace = true
-reqwest = { version = "0.11", features = ["json"] }
+indexer_client.workspace = true
+reqwest.workspace = true
 serde_json.workspace = true
 sound_hint_processor.workspace = true
 starknet-crypto.workspace = true
 state_server.workspace = true
 syscall_handler.workspace = true
 tokio.workspace = true
-types.workspace = true
 tracing.workspace = true
+types.workspace = true
