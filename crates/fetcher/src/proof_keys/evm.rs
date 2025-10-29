@@ -8,7 +8,7 @@ use alloy::{
     transports::http::reqwest::Url,
 };
 use eth_trie_proofs::{tx_receipt_trie::TxReceiptsMptHandler, tx_trie::TxsMptHandler};
-use indexer_client::models::{BlockHeader, HashingFunction};
+use indexer_client::models::BlockHeader;
 use types::{
     keys::{self, evm::get_corresponding_rpc_url},
     proofs::{
@@ -16,6 +16,7 @@ use types::{
         header::{HeaderMmrMeta, HeaderProof},
         mpt::MPTProof,
     },
+    HashingFunction,
 };
 
 use super::FlattenedKey;

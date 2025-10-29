@@ -1,13 +1,10 @@
 use std::collections::HashMap;
 
 use alloy::{hex::FromHexError, primitives::Bytes};
-use indexer_client::{
-    models::{accumulators, HashingFunction},
-    Indexer,
-};
+use indexer_client::{models::accumulators, Indexer};
 use types::{
     proofs::{injected_state::Action, mmr::MmrMeta},
-    Felt252,
+    Felt252, HashingFunction,
 };
 
 use crate::FetcherError;

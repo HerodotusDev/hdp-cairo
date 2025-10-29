@@ -3,10 +3,9 @@ use std::{num::ParseIntError, ops::Deref};
 use alloy::primitives::map::HashMap;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-pub use types::HashingFunction;
 use types::{
-    ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID,
-    STARKNET_TESTNET_CHAIN_ID,
+    HashingFunction, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID,
+    STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
 };
 
 pub mod accumulators;

@@ -3,9 +3,13 @@
 #![warn(unused_crate_dependencies)]
 #![forbid(unsafe_code)]
 
-use std::{fs, path::PathBuf};
+use std::{
+    fs,
+    io::{Read, Write},
+    path::PathBuf,
+    process::{Command, Stdio},
+};
 
-use cairo_air::utils::{serialize_proof_to_file, ProofFormat};
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use cairo_vm::{
     cairo_run::{self, CairoRunConfig},
@@ -16,11 +20,7 @@ use dry_hint_processor::syscall_handler::{evm, injected_state, starknet};
 use dry_run::{LayoutName, Program, DRY_RUN_COMPILED_JSON};
 use fetcher::{parse_syscall_handler, Fetcher};
 use indexer_client::models::{MMRDeploymentConfig, MMRHasherConfig};
-use sound_run::{
-    prove::{prove, prover_input_from_runner, secure_pcs_config},
-    HDP_COMPILED_JSON,
-};
-use stwo_cairo_prover::stwo_prover::core::vcs::blake2_merkle::Blake2sMerkleChannel;
+use sound_run::{prove::prover_input_from_runner, HDP_COMPILED_JSON};
 use syscall_handler::SyscallHandler;
 use types::{
     error::Error, param::Param, ChainProofs, HDPDryRunInput, HDPInput, InjectedState, ProofsData, ETHEREUM_MAINNET_CHAIN_ID,
@@ -57,6 +57,11 @@ enum Commands {
     /// Print example .env file with info
     #[command(name = "env-info")]
     EnvInfo,
+    /// Update HDP CLI
+    ///
+    /// Runs the update/install command: ```curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash```
+    #[command(name = "update")]
+    Update,
 }
 
 #[tokio::main]
@@ -227,15 +232,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 pie.write_zip_file(file_name, true)?;
             }
 
-            if let Some(ref file_name) = args.stwo_proof {
+            if let Some(ref file_name) = args.stwo_prover_input {
                 let stwo_prover_input = prover_input_from_runner(&cairo_runner);
                 std::fs::write(file_name, serde_json::to_string(&stwo_prover_input)?)?;
-
-                let cairo_proof = prove(stwo_prover_input, secure_pcs_config());
-                serialize_proof_to_file::<Blake2sMerkleChannel>(&cairo_proof, file_name.into(), ProofFormat::Json)
-                    .expect("Failed to serialize proof");
-
-                println!("Proof saved to: {:?}", file_name);
+                println!("Prover Input saved to: {:?}", file_name);
             }
 
             println!("Sound run completed successfully.");
@@ -319,6 +319,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             result.map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
         }
         Commands::EnvInfo => print_env_info(),
+        Commands::Update => {
+            //? Runs the update/install command: curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
+            let mut curl = Command::new("curl")
+                .arg("-fsSL")
+                .arg("https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh")
+                .stdout(Stdio::piped())
+                .spawn()
+                .map_err(Error::IO)?;
+
+            let mut script = Vec::new();
+            curl.stdout.take().unwrap().read_to_end(&mut script)?;
+            let status = Command::new("bash")
+                .stdin(Stdio::piped())
+                .spawn()
+                .and_then(|mut child| {
+                    child.stdin.as_mut().unwrap().write_all(&script)?;
+                    child.wait()
+                })
+                .map_err(Error::IO)?;
+
+            if !status.success() {
+                return Err(Box::new(Error::IO(std::io::Error::other("Installer failed"))) as Box<dyn std::error::Error>);
+            }
+
+            Ok(())
+        }
     }
 }
 
