@@ -4,7 +4,7 @@ use hdp_cairo::EvmMemorizer;
 use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;
 use crate::UnconstrainedMemorizer;
-use crate::bytecode::{ByteCode, ByteCodeLeWords, OriginalByteCodeTrait};
+use crate::bytecode::{ByteCode, ByteCodeLeWords, OriginalByteCodeTrait, U256Trait};
 
 const UNCONSTRAINED_STORE_CONTRACT_ADDRESS: felt252 = 'unconstrained_store';
 
@@ -58,7 +58,8 @@ pub impl AccountImpl of AccountTrait {
         let mut words_64bit = bytecode_le_words.words64bit.clone();
         let calculated_code_hash = cairo_keccak(
             ref words_64bit, bytecode_le_words.lastInputWord, bytecode_le_words.lastInputNumBytes,
-        );
+        )
+            .reverse_endianness();
 
         if calculated_code_hash != code_hash {
             panic_with_felt252('Account: code hash mismatch');
