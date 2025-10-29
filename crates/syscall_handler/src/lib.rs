@@ -59,11 +59,15 @@ impl TryFrom<Felt252> for SyscallSelector {
 }
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
-pub struct SyscallHandler<EVM: CallContractSyscallHandler, STARKNET: CallContractSyscallHandler, InjectedState: CallContractSyscallHandler>
-{
+pub struct SyscallHandler<
+    EVM: CallContractSyscallHandler,
+    STARKNET: CallContractSyscallHandler,
+    InjectedState: CallContractSyscallHandler,
+    UnconstrainedState: CallContractSyscallHandler,
+> {
     #[serde(skip)]
     pub syscall_ptr: Option<Relocatable>,
-    pub call_contract_handler: CallContractHandlerRelay<EVM, STARKNET, InjectedState>,
+    pub call_contract_handler: CallContractHandlerRelay<EVM, STARKNET, InjectedState, UnconstrainedState>,
     #[serde(skip)]
     pub keccak_handler: KeccakHandler,
 }
@@ -72,12 +76,14 @@ impl<
         EVM: Default + CallContractSyscallHandler,
         STARKNET: Default + CallContractSyscallHandler,
         InjectedState: Default + CallContractSyscallHandler,
-    > SyscallHandler<EVM, STARKNET, InjectedState>
+        UnconstrainedState: Default + CallContractSyscallHandler,
+    > SyscallHandler<EVM, STARKNET, InjectedState, UnconstrainedState>
 {
     pub fn new(
         evm_call_contract_handler: EVM,
         starknet_call_contract_handler: STARKNET,
         injected_state_call_contract_handler: InjectedState,
+        unconstrained_state_call_contract_handler: UnconstrainedState,
     ) -> Self {
         Self {
             syscall_ptr: Option::default(),
@@ -85,6 +91,7 @@ impl<
                 evm_call_contract_handler,
                 starknet_call_contract_handler,
                 injected_state_call_contract_handler,
+                unconstrained_state_call_contract_handler,
             ),
             keccak_handler: KeccakHandler::default(),
         }
@@ -98,26 +105,30 @@ pub struct SyscallHandlerWrapper<
     EVM: CallContractSyscallHandler,
     STARKNET: CallContractSyscallHandler,
     InjectedState: CallContractSyscallHandler,
+    UnconstrainedState: CallContractSyscallHandler,
 > {
-    pub syscall_handler: Rc<RwLock<SyscallHandler<EVM, STARKNET, InjectedState>>>,
+    pub syscall_handler: Rc<RwLock<SyscallHandler<EVM, STARKNET, InjectedState, UnconstrainedState>>>,
 }
 
 impl<
         EVM: Default + CallContractSyscallHandler,
         STARKNET: Default + CallContractSyscallHandler,
         InjectedState: Default + CallContractSyscallHandler,
-    > SyscallHandlerWrapper<EVM, STARKNET, InjectedState>
+        UnconstrainedState: Default + CallContractSyscallHandler,
+    > SyscallHandlerWrapper<EVM, STARKNET, InjectedState, UnconstrainedState>
 {
     pub fn new(
         evm_call_contract_handler: EVM,
         starknet_call_contract_handler: STARKNET,
         injected_state_call_contract_handler: InjectedState,
+        unconstrained_state_call_contract_handler: UnconstrainedState,
     ) -> Self {
         Self {
             syscall_handler: Rc::new(RwLock::new(SyscallHandler::new(
                 evm_call_contract_handler,
                 starknet_call_contract_handler,
                 injected_state_call_contract_handler,
+                unconstrained_state_call_contract_handler,
             ))),
         }
     }
@@ -155,6 +166,7 @@ pub struct CallContractHandlerRelay<
     EVM: CallContractSyscallHandler,
     STARKNET: CallContractSyscallHandler,
     InjectedState: CallContractSyscallHandler,
+    UnconstrainedState: CallContractSyscallHandler,
 > {
     #[serde(bound(serialize = "EVM: Serialize", deserialize = "EVM: Deserialize<'de>"))]
     pub evm_call_contract_handler: EVM,
@@ -166,28 +178,40 @@ pub struct CallContractHandlerRelay<
     pub any_type_call_contract_handler: ArbitraryTypeCallContractHandler,
     #[serde(bound(serialize = "InjectedState: Serialize", deserialize = "InjectedState: Deserialize<'de>"))]
     pub injected_state_call_contract_handler: InjectedState,
+    #[serde(bound(serialize = "UnconstrainedState: Serialize", deserialize = "UnconstrainedState: Deserialize<'de>"))]
+    pub unconstrained_state_call_contract_handler: UnconstrainedState,
 }
 
-impl<EVM: CallContractSyscallHandler, STARKNET: CallContractSyscallHandler, InjectedState: CallContractSyscallHandler>
-    CallContractHandlerRelay<EVM, STARKNET, InjectedState>
+impl<
+        EVM: CallContractSyscallHandler,
+        STARKNET: CallContractSyscallHandler,
+        InjectedState: CallContractSyscallHandler,
+        UnconstrainedState: CallContractSyscallHandler,
+    > CallContractHandlerRelay<EVM, STARKNET, InjectedState, UnconstrainedState>
 {
     pub fn new(
         evm_call_contract_handler: EVM,
         starknet_call_contract_handler: STARKNET,
         injected_state_call_contract_handler: InjectedState,
+        unconstrained_state_call_contract_handler: UnconstrainedState,
     ) -> Self {
         Self {
             evm_call_contract_handler,
             starknet_call_contract_handler,
             injected_state_call_contract_handler,
+            unconstrained_state_call_contract_handler,
             debug_call_contract_handler: DebugCallContractHandler,
             any_type_call_contract_handler: ArbitraryTypeCallContractHandler,
         }
     }
 }
 
-impl<EVM: CallContractSyscallHandler, STARKNET: CallContractSyscallHandler, InjectedState: CallContractSyscallHandler>
-    traits::SyscallHandler for CallContractHandlerRelay<EVM, STARKNET, InjectedState>
+impl<
+        EVM: CallContractSyscallHandler,
+        STARKNET: CallContractSyscallHandler,
+        InjectedState: CallContractSyscallHandler,
+        UnconstrainedState: CallContractSyscallHandler,
+    > traits::SyscallHandler for CallContractHandlerRelay<EVM, STARKNET, InjectedState, UnconstrainedState>
 {
     type Request = CallContractRequest;
     type Response = CallContractResponse;
@@ -202,6 +226,9 @@ impl<EVM: CallContractSyscallHandler, STARKNET: CallContractSyscallHandler, Inje
         match request.contract_address {
             v if v == call_contract::debug::CONTRACT_ADDRESS => self.debug_call_contract_handler.execute(request, vm).await,
             v if v == call_contract::arbitrary_type::CONTRACT_ADDRESS => self.any_type_call_contract_handler.execute(request, vm).await,
+            v if v == call_contract::unconstrained_state::CONTRACT_ADDRESS => {
+                self.unconstrained_state_call_contract_handler.execute(request, vm).await
+            }
             v if v == call_contract::injected_state::CONTRACT_ADDRESS => {
                 self.injected_state_call_contract_handler.execute(request, vm).await
             }

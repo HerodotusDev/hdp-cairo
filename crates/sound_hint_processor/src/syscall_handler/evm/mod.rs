@@ -30,7 +30,6 @@ pub enum CallHandlerId {
     Transaction = 3,
     Receipt = 4,
     Logs = 5,
-    UnconstrainedStore = 6,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
@@ -79,16 +78,6 @@ impl traits::SyscallHandler for CallContractHandler {
                     .handle(key.clone(), function_id, vm)
                     .await?;
                 retdata_end = result.to_memory(vm, retdata_end)?;
-            }
-            // TODO: @beeinger [wip]
-            CallHandlerId::UnconstrainedStore => {
-                // let key = account::UnconstrainedStoreHandler::derive_key(vm, &mut calldata)?;
-                // let function_id = account::UnconstrainedStoreHandler::derive_id(request.selector)?;
-                // let result = account::AccountCallHandler::new(memorizer, self.dict_manager.clone())
-                //     .handle(key.clone(), function_id, vm)
-                //     .await?;
-                // retdata_end = result.to_memory(vm, retdata_end)?;
-                panic!("Unconstrained storage is not supported yet");
             }
             CallHandlerId::Storage => {
                 let key = storage::StorageCallHandler::derive_key(vm, &mut calldata)?;
