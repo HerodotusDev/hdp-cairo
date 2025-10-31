@@ -8,7 +8,10 @@ use cairo_vm::{
 };
 use syscall_handler::{memorizer::Memorizer, traits::CallHandler, SyscallExecutionError, SyscallResult};
 use types::{
-    cairo::{new_syscalls::CairoVec, traits::CairoType, unconstrained_state::FunctionId},
+    cairo::{
+        traits::CairoType,
+        unconstrained_state::{bytecode::BytecodeLeWords, FunctionId},
+    },
     keys::evm::account::CairoKey,
 };
 
@@ -28,7 +31,7 @@ impl BytecodeCallHandler {
 impl CallHandler for BytecodeCallHandler {
     type Key = CairoKey;
     type Id = FunctionId;
-    type CallHandlerResult = CairoVec;
+    type CallHandlerResult = BytecodeLeWords;
 
     fn derive_key(vm: &VirtualMachine, ptr: &mut Relocatable) -> SyscallResult<Self::Key> {
         let ret = CairoKey::from_memory(vm, *ptr)?;
@@ -47,20 +50,12 @@ impl CallHandler for BytecodeCallHandler {
         })
     }
 
-    async fn handle(&mut self, key: Self::Key, function_id: Self::Id, vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
+    // TODO: @beeinger - function_id is not used for bytecode, do we get rid of it?
+    async fn handle(&mut self, key: Self::Key, _function_id: Self::Id, vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
         let ptr = self
             .memorizer
             .read_key_ptr(&MaybeRelocatable::Int(key.hash()), self.dict_manager.clone())?;
 
-        // data is the rlp-encoded receipt (injected by the verified mpt proof Cairo0 memorizer)
-        let mut data = vm.get_integer(ptr)?.to_bytes_le().to_vec();
-
-        // Max bytecode size is 24KB = 24 * 1024 bytes
-        //? https://ethereum.org/developers/docs/smart-contracts/#limitations
-        data.resize(24 * 1024, 0);
-
-        // ! TODO: @beeinger - implement this, no idea how for now...
-
-        unimplemented!();
+        Ok(BytecodeLeWords::from_memory(vm, ptr)?)
     }
 }

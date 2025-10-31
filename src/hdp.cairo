@@ -89,6 +89,7 @@ func run{
         injected_state = run_input.injected_state
         chain_proofs = run_input.proofs_data.chain_proofs
         state_proofs = run_input.proofs_data.state_proofs
+    // TODO: @beeinger - add unconstrained state keys
     %}
 
     let (public_inputs) = alloc();

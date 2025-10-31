@@ -114,7 +114,7 @@ impl CairoType for KeccakResponse {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, Default)]
 pub struct CairoVec(pub Vec<Felt252>);
 
 impl FromIterator<Felt252> for CairoVec {

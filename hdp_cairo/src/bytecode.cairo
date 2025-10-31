@@ -7,6 +7,7 @@ use keccak::cairo_keccak;
 
 #[derive(Clone, Debug, Serde, Destruct)]
 pub struct ByteCodeLeWords {
+    // length, array..., lastInputWord, lastInputNumBytes
     pub words64bit: Array<u64>,
     pub lastInputWord: u64,
     pub lastInputNumBytes: usize,
