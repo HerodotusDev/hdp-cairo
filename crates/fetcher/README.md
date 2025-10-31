@@ -69,7 +69,7 @@ Create mmr_deployment_config.json:
 {
    "11155111": 11155222,
    "393402133025997798000961": 393402133025997798000961 , // Startnet Sepolia as source and destination chain
-   "10": 480  // Optimism Mainnet as source chaing and Worldchain Mainnet as destination chain
+   "10": 480  // Optimism Mainnet as source chain and Worldchain Mainnet as destination chain
  }
 ```
 
