@@ -244,7 +244,8 @@ mod transaction_get_chain_id {
 //     }
 // }
 
-// TODO: find a tx w/ blob gas
+
+// // Testing EIP-4844 transaction max fee per blob gas
 // #[starknet::contract]
 // mod transaction_get_max_fee_per_blob_gas {
 //     use hdp_cairo::{HDP, evm::block_tx::{BlockTxTrait, BlockTxKey, BlockTxImpl}};
@@ -259,15 +260,16 @@ mod transaction_get_chain_id {
 //                 .evm
 //                 .block_tx_get_max_fee_per_blob_gas(
 //                     @BlockTxKey {
-//                         chain_id: 11155111, block_number: 7692344, transaction_index: 0,
+//                         chain_id: 11155111, block_number: 9410665, transaction_index: 3,
 //                     },
 //                 ) == u256 { low: 0x3, high: 0x0 },
 //         );
 //     }
 // }
 
+// Legacy transaction decoding test
 #[starknet::contract]
-mod transaction_get_tx_type {
+mod transaction_get_tx_type_legacy {
     use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
 
     #[storage]
@@ -281,6 +283,86 @@ mod transaction_get_tx_type {
                 .block_tx_get_tx_type(
                     @BlockTxKey { chain_id: 11155111, block_number: 7692344, transaction_index: 0 },
                 ) == u256 { low: 0x0, high: 0x0 },
+        );
+    }
+}
+
+// EIP-2930 transaction decoding test
+#[starknet::contract]
+mod transaction_get_tx_type_eip2930 {
+    use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
+
+    #[storage]
+    struct Storage {}
+
+    #[external(v0)]
+    pub fn main(ref self: ContractState, hdp: HDP) {
+        assert!(
+            hdp
+                .evm
+                .block_tx_get_tx_type(
+                    @BlockTxKey { chain_id: 11155111, block_number: 7354022, transaction_index: 2 },
+                ) == u256 { low: 0x1, high: 0x0 },
+        );
+    }
+}
+
+// EIP-1559 transaction decoding test
+#[starknet::contract]
+mod transaction_get_tx_type_eip2559 {
+    use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
+
+    #[storage]
+    struct Storage {}
+
+    #[external(v0)]
+    pub fn main(ref self: ContractState, hdp: HDP) {
+        assert!(
+            hdp
+                .evm
+                .block_tx_get_tx_type(
+                    @BlockTxKey { chain_id: 11155111, block_number: 6005662, transaction_index: 82 },
+                ) == u256 { low: 0x2, high: 0x0 },
+        );
+    }
+}
+
+// EIP-4844 transaction decoding test
+#[starknet::contract]
+mod transaction_get_tx_type_eip4844 {
+    use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
+
+    #[storage]
+    struct Storage {}
+
+    #[external(v0)]
+    pub fn main(ref self: ContractState, hdp: HDP) {
+        assert!(
+            hdp
+                .evm
+                .block_tx_get_tx_type(
+                    @BlockTxKey { chain_id: 11155111, block_number: 8569640, transaction_index: 2 },
+                ) == u256 { low: 0x3, high: 0x0 },
+        );
+    }
+}
+
+// EIP-7702 transaction decoding test
+#[starknet::contract]
+mod transaction_get_tx_type_eip7702 {
+    use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
+
+    #[storage]
+    struct Storage {}
+
+    #[external(v0)]
+    pub fn main(ref self: ContractState, hdp: HDP) {
+        assert!(
+            hdp
+                .evm
+                .block_tx_get_tx_type(
+                    @BlockTxKey { chain_id: 11155111, block_number: 8179046, transaction_index: 252 },
+                ) == u256 { low: 0x4, high: 0x0 },
         );
     }
 }

@@ -39,7 +39,7 @@ dotenvy = "0.15"
 dry_hint_processor = { path = "crates/dry_hint_processor" }
 dry_run = { path = "crates/dry_run" }
 eth_essentials_cairo_vm_hints = { path = "packages/eth_essentials/cairo_vm_hints" }
-eth-trie-proofs = { git = "https://github.com/HerodotusDev/trie-proofs.git", rev = "ac583244e50ba39a36407eda5fc6dd41f767d1c0"}
+eth-trie-proofs = { git = "https://github.com/HerodotusDev/trie-proofs.git", rev = "e7aac1a0d410e7217eb150ac793c50e24c88b2b4"}
 fetcher = { path = "crates/fetcher" }
 futures = "0.3.31"
 futures-util = "0.3.31"

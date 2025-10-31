@@ -150,11 +150,63 @@ async fn test_tests_transaction_get_chain_id() {
 // }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-async fn test_tests_transaction_get_tx_type() {
+async fn test_tests_transaction_get_tx_type_legacy() {
     dotenvy::dotenv().ok();
     run(
         serde_json::from_slice(include_bytes!(
-            "../../../target/dev/tests_transaction_get_tx_type.compiled_contract_class.json"
+            "../../../target/dev/tests_transaction_get_tx_type_legacy.compiled_contract_class.json"
+        ))
+        .unwrap(),
+        InjectedState::default(),
+    )
+    .await
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn test_tests_transaction_get_tx_type_eip2930() {
+    dotenvy::dotenv().ok();
+    run(
+        serde_json::from_slice(include_bytes!(
+            "../../../target/dev/tests_transaction_get_tx_type_eip2930.compiled_contract_class.json"
+        ))
+        .unwrap(),
+        InjectedState::default(),
+    )
+    .await
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn test_tests_transaction_get_tx_type_eip2559() {
+    dotenvy::dotenv().ok();
+    run(
+        serde_json::from_slice(include_bytes!(
+            "../../../target/dev/tests_transaction_get_tx_type_eip2559.compiled_contract_class.json"
+        ))
+        .unwrap(),
+        InjectedState::default(),
+    )
+    .await
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn test_tests_transaction_get_tx_type_eip4844() {
+    dotenvy::dotenv().ok();
+    run(
+        serde_json::from_slice(include_bytes!(
+            "../../../target/dev/tests_transaction_get_tx_type_eip4844.compiled_contract_class.json"
+        ))
+        .unwrap(),
+        InjectedState::default(),
+    )
+    .await
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn transaction_get_tx_type_eip7702() {
+    dotenvy::dotenv().ok();
+    run(
+        serde_json::from_slice(include_bytes!(
+            "../../../target/dev/tests_transaction_get_tx_type_eip7702.compiled_contract_class.json"
         ))
         .unwrap(),
         InjectedState::default(),
