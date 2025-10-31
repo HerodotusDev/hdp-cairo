@@ -17,15 +17,17 @@ from packages.eth_essentials.lib.utils import (
     felt_divmod,
     get_felt_bitlength,
 )
-from starkware.cairo.common.memcpy import memcpy
 
-from src.types import MMRMeta
+from src.types import MMRMetaPoseidon, MMRMetaKeccak
+from starkware.cairo.common.memcpy import memcpy
 from src.utils.merkle import compute_merkle_root
 
 // Writes all required fields to the output_ptr.
 // The first 4 words are reserved for the tasks and results root.
 // The rest of the words are reserved for the MMR metas. Each MMR will contain 4 fields, and we can add an arbitrary amount of them.
-func mmr_metas_write_output_ptr{output_ptr: felt*}(mmr_metas: MMRMeta*, mmr_metas_len: felt) {
+func mmr_metas_write_output_ptr{output_ptr: felt*}(
+    mmr_metas_poseidon: MMRMetaPoseidon*, mmr_metas_len: felt
+) {
     tempvar counter = 0;
 
     loop:
@@ -34,10 +36,10 @@ func mmr_metas_write_output_ptr{output_ptr: felt*}(mmr_metas: MMRMeta*, mmr_meta
     %{ memory[ap] = 1 if (ids.mmr_metas_len == ids.counter) else 0 %}
     jmp end_loop if [ap] != 0, ap++;
 
-    assert [output_ptr + counter * 4] = mmr_metas[counter].id;
-    assert [output_ptr + counter * 4 + 1] = mmr_metas[counter].size;
-    assert [output_ptr + counter * 4 + 2] = mmr_metas[counter].chain_id;
-    assert [output_ptr + counter * 4 + 3] = mmr_metas[counter].root;
+    assert [output_ptr + counter * 4] = mmr_metas_poseidon[counter].id;
+    assert [output_ptr + counter * 4 + 1] = mmr_metas_poseidon[counter].size;
+    assert [output_ptr + counter * 4 + 2] = mmr_metas_poseidon[counter].chain_id;
+    assert [output_ptr + counter * 4 + 3] = mmr_metas_poseidon[counter].root;
 
     [ap] = counter + 1, ap++;
 
@@ -143,6 +145,76 @@ func felt_array_to_uint256s{range_check_ptr}(counter: felt, retdata: felt*, leaf
     return felt_array_to_uint256s(counter=counter - 1, retdata=retdata + 1, leafs=leafs + 2);
 }
 
+// Mixed writer: emits both Poseidon and Keccak MMR meta sections with counts header.
+// Layout:
+//   [poseidon_len, keccak_len,
+//    poseidon_len * (id, size, chain_id, root),
+//    keccak_len   * (id, size, chain_id, root_low, root_high)]
+func mmr_metas_write_output_ptr_mixed{output_ptr: felt*}(
+    mmr_metas_poseidon: MMRMetaPoseidon*,
+    mmr_metas_len_poseidon: felt,
+    mmr_metas_keccak: MMRMetaKeccak*,
+    mmr_metas_len_keccak: felt,
+) {
+    // Write section counts
+    assert [output_ptr] = mmr_metas_len_poseidon;
+    assert [output_ptr + 1] = mmr_metas_len_keccak;
+    let output_ptr = output_ptr + 2;
+
+    // Poseidon entries (4 felts each)
+    tempvar i = 0;
+
+    poseidon_loop:
+    let i = [ap - 1];
+
+    %{ memory[ap] = 1 if (ids.mmr_metas_len_poseidon == ids.i) else 0 %}
+    jmp poseidon_end if [ap] != 0, ap++;
+
+    assert [output_ptr + i * 4] = mmr_metas_poseidon[i].id;
+    assert [output_ptr + i * 4 + 1] = mmr_metas_poseidon[i].size;
+    assert [output_ptr + i * 4 + 2] = mmr_metas_poseidon[i].chain_id;
+    assert [output_ptr + i * 4 + 3] = mmr_metas_poseidon[i].root;
+
+    [ap] = i + 1, ap++;
+    jmp poseidon_loop;
+
+    poseidon_end:
+    // advance pointer past poseidon entries
+    assert i = mmr_metas_len_poseidon;
+    let output_ptr = output_ptr + mmr_metas_len_poseidon * 4;
+
+    // Keccak entries (5 felts each, ordered as id, size, chain_id, root_low, root_high)
+    tempvar j = 0;
+
+    keccak_loop:
+    let j = [ap - 1];
+
+    %{ memory[ap] = 1 if (ids.mmr_metas_len_keccak == ids.j) else 0 %}
+    jmp keccak_end if [ap] != 0, ap++;
+
+    assert [output_ptr + j * 5] = mmr_metas_keccak[j].id;
+    assert [output_ptr + j * 5 + 1] = mmr_metas_keccak[j].size;
+    assert [output_ptr + j * 5 + 2] = mmr_metas_keccak[j].chain_id;
+    assert [output_ptr + j * 5 + 3] = mmr_metas_keccak[j].root_low;
+    assert [output_ptr + j * 5 + 4] = mmr_metas_keccak[j].root_high;
+
+    [ap] = j + 1, ap++;
+    jmp keccak_loop;
+
+    keccak_end:
+    // advance pointer past keccak entries
+    assert j = mmr_metas_len_keccak;
+    let output_ptr = output_ptr + mmr_metas_len_keccak * 5;
+
+    return ();
+}
+
+// Calculates the HDP Task Hash (also known as task commitment)
+// That is compatible with Solidity implementation of Data Processor Module in Satellite
+// Inputs:
+// module_hash: Program hash of the HDP module
+// modupublic_inputs: Array of HDP Task public inputs for the module
+// returns the task hash
 func calculate_task_hash{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, keccak_ptr: felt*}(
     module_hash: felt, public_inputs_len: felt, public_inputs: felt*
 ) -> Uint256 {

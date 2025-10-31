@@ -4,8 +4,12 @@ from src.verifiers.evm.header_verifier import verify_mmr_batches
 from src.verifiers.evm.block_tx_verifier import verify_block_tx_proofs
 from src.verifiers.evm.receipt_verifier import verify_block_receipt_proofs
 from starkware.cairo.common.dict_access import DictAccess
-from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, HashBuiltin
-from src.types import MMRMeta, ChainInfo
+from starkware.cairo.common.cairo_builtins import (
+    PoseidonBuiltin,
+    BitwiseBuiltin,
+    HashBuiltin,
+)
+from src.types import MMRMetaPoseidon, MMRMetaKeccak, ChainInfo
 from src.utils.chain_info import fetch_chain_info
 
 func run_state_verification{
@@ -18,14 +22,17 @@ func run_state_verification{
     evm_memorizer: DictAccess*,
     starknet_memorizer: DictAccess*,
     injected_state_memorizer: DictAccess*,
-    mmr_metas: MMRMeta*,
+    mmr_metas_poseidon: MMRMetaPoseidon*,
+    mmr_metas_keccak: MMRMetaKeccak*,
     chain_info: ChainInfo,
-}(mmr_meta_idx: felt) -> (mmr_meta_idx: felt) {
+}(mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt) -> (mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt) {
     alloc_locals;
 
     // Step 1: Verify MMR and headers inclusion
     tempvar n_proofs: felt = nondet %{ len(batch_evm.headers_with_mmr_evm) %};
-    let (mmr_meta_idx) = verify_mmr_batches(n_proofs, mmr_meta_idx);
+    let (mmr_meta_idx_poseidon, mmr_meta_idx_keccak) = verify_mmr_batches(
+        n_proofs, mmr_meta_idx_poseidon, mmr_meta_idx_keccak
+    );
     // Step 2: Verify the accounts
     verify_accounts();
     // Step 3: Verify the storage items
@@ -35,5 +42,5 @@ func run_state_verification{
     // Step 5: Verify the block receipt proofs
     verify_block_receipt_proofs();
 
-    return (mmr_meta_idx=mmr_meta_idx);
+    return (mmr_meta_idx_poseidon=mmr_meta_idx_poseidon, mmr_meta_idx_keccak=mmr_meta_idx_keccak);
 }

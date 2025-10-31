@@ -97,6 +97,29 @@ impl Indexer {
             ))
         }
     }
+
+    /// Fetch accumulated ranges per (source_chain -> deployed_on_chain) and hashing function
+    pub async fn get_all_ranges_accumulated_per_chain(&self) -> Result<models::ranges::RangesResponse, IndexerError> {
+        // Parse base URL from environment variable
+        let base_url = Url::parse(&env::var(RPC_URL_HERODOTUS_INDEXER).unwrap()).unwrap();
+
+        let response = self
+            .client
+            .get(base_url.join("/backend/get-all-ranges-accumulated-per-chain").unwrap())
+            .send()
+            .await
+            .map_err(IndexerError::ReqwestError)?;
+
+        if response.status().is_success() {
+            let parsed: models::ranges::RangesResponse =
+                serde_json::from_value(response.json().await.map_err(IndexerError::ReqwestError)?).map_err(IndexerError::SerdeJsonError)?;
+            Ok(parsed)
+        } else {
+            Err(IndexerError::GetRangesError(
+                response.text().await.map_err(IndexerError::ReqwestError)?,
+            ))
+        }
+    }
 }
 
 #[cfg(test)]

@@ -2,9 +2,7 @@ from packages.eth_essentials.lib.block_header import (
     extract_block_number_big,
     reverse_block_header_chunks,
 )
-from packages.eth_essentials.lib.mmr import hash_subtree_path
 from packages.eth_essentials.lib.utils import felt_divmod
-from src.types import MMRMeta
 from src.utils.rlp import rlp_list_retrieve, le_chunks_to_be_uint256
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash, poseidon_hash_many

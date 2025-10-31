@@ -31,6 +31,16 @@ pub const RPC_URL_STARKNET_TESTNET: &str = "RPC_URL_STARKNET_TESTNET";
 
 pub const RPC_URL_HERODOTUS_INDEXER: &str = "RPC_URL_HERODOTUS_INDEXER";
 
+/// Enum for available hashing functions
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Default, Copy)]
+#[serde(rename_all = "lowercase")]
+pub enum HashingFunction {
+    #[default]
+    Poseidon,
+    Keccak,
+    // Pedersen,
+}
+
 pub const ETHEREUM_MAINNET_CHAIN_ID: u128 = 0x1;
 pub const ETHEREUM_TESTNET_CHAIN_ID: u128 = 0xaa36a7;
 pub const OPTIMISM_MAINNET_CHAIN_ID: u128 = 0xa;
@@ -186,11 +196,23 @@ impl FromIterator<Felt252> for HDPDryRunOutput {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub struct MmrMetaOutput {
-    pub id: Felt252,
-    pub size: Felt252,
-    pub chain_id: Felt252,
-    pub root: Felt252,
+#[serde(tag = "hash", rename_all = "lowercase")]
+pub enum MmrMetaOutput {
+    // We map those 4 felt words (id, size, chain_id, root) into this Poseidon variant.
+    Poseidon {
+        id: Felt252,
+        size: Felt252,
+        chain_id: Felt252,
+        root: Felt252,
+    },
+    // We map those 5 felt words (id, size, chain_id, root_low, root_high) into this Poseidon variant.
+    Keccak {
+        id: Felt252,
+        size: Felt252,
+        chain_id: Felt252,
+        root_low: Felt252,
+        root_high: Felt252,
+    },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -206,15 +228,43 @@ impl FromIterator<Felt252> for HDPOutput {
     fn from_iter<T: IntoIterator<Item = Felt252>>(iter: T) -> Self {
         let mut i = iter.into_iter();
 
+        // Fixed 4 words
         let task_hash_low = i.next().unwrap();
         let task_hash_high = i.next().unwrap();
         let output_tree_root_low = i.next().unwrap();
         let output_tree_root_high = i.next().unwrap();
 
-        let mut mmr_metas = Vec::<MmrMetaOutput>::new();
+        // New mixed-layout header: [poseidon_len, keccak_len]
+        let poseidon_len_f = i.next().unwrap();
+        let keccak_len_f = i.next().unwrap();
 
-        while let Ok([id, size, chain_id, root]) = i.next_chunk::<4>() {
-            mmr_metas.push(MmrMetaOutput { id, size, chain_id, root });
+        // Convert Felt252 -> usize by reading the last 8 bytes (big-endian)
+        let felt_to_usize = |f: &Felt252| -> usize {
+            let bytes = f.to_bytes_be();
+            let mut buf = [0u8; 8];
+            buf.copy_from_slice(&bytes[24..32]);
+            u64::from_be_bytes(buf) as usize
+        };
+        let poseidon_len = felt_to_usize(&poseidon_len_f);
+        let keccak_len = felt_to_usize(&keccak_len_f);
+
+        // Poseidon section: poseidon_len * 4 felts
+        let mut mmr_metas = Vec::<MmrMetaOutput>::with_capacity(poseidon_len + keccak_len);
+        for _ in 0..poseidon_len {
+            let [id, size, chain_id, root] = i.next_chunk::<4>().expect("missing poseidon mmr_meta words");
+            mmr_metas.push(MmrMetaOutput::Poseidon { id, size, chain_id, root });
+        }
+
+        // Keccak section: keccak_len * 5 felts (id, size, chain_id, root_low, root_high)
+        for _ in 0..keccak_len {
+            let [id, size, chain_id, root_low, root_high] = i.next_chunk::<5>().expect("missing keccak mmr_meta words");
+            mmr_metas.push(MmrMetaOutput::Keccak {
+                id,
+                size,
+                chain_id,
+                root_low,
+                root_high,
+            });
         }
 
         Self {
@@ -235,9 +285,38 @@ impl HDPOutput {
             self.output_tree_root_low,
             self.output_tree_root_high,
         ];
+
+        // Counts
+        let poseidon_len = self
+            .mmr_metas
+            .iter()
+            .filter(|m| matches!(m, MmrMetaOutput::Poseidon { .. }))
+            .count();
+        let keccak_len = self.mmr_metas.iter().filter(|m| matches!(m, MmrMetaOutput::Keccak { .. })).count();
+        felt_vec.push(Felt252::from(poseidon_len));
+        felt_vec.push(Felt252::from(keccak_len));
+
+        // Poseidon section
         self.mmr_metas.iter().for_each(|mmr_meta| {
-            felt_vec.extend([mmr_meta.id, mmr_meta.size, mmr_meta.chain_id, mmr_meta.root]);
+            if let MmrMetaOutput::Poseidon { id, size, chain_id, root } = mmr_meta {
+                felt_vec.extend([*id, *size, *chain_id, *root]);
+            }
         });
+
+        // Keccak section
+        self.mmr_metas.iter().for_each(|mmr_meta| {
+            if let MmrMetaOutput::Keccak {
+                id,
+                size,
+                chain_id,
+                root_low,
+                root_high,
+            } = mmr_meta
+            {
+                felt_vec.extend([*id, *size, *chain_id, *root_low, *root_high]);
+            }
+        });
+
         felt_vec
     }
 }

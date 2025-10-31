@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
 use alloy::{hex::FromHexError, primitives::Bytes};
-use indexer::{models::accumulators, Indexer};
+use indexer_client::{models::accumulators, Indexer};
 use types::{
     proofs::{injected_state::Action, mmr::MmrMeta},
-    Felt252,
+    Felt252, HashingFunction,
 };
 
 use crate::FetcherError;
@@ -35,17 +35,16 @@ impl ProofKeys {
         deployed_on_chain_id: u128,
         accumulates_chain_id: u128,
         block_number: u64,
+        mmr_hashing_function: HashingFunction,
     ) -> Result<(accumulators::MMRProof, MmrMeta), FetcherError> {
         let provider = Indexer::default();
 
         // Fetch proof response
         let response = provider
-            .get_headers_proof(accumulators::IndexerQuery::new(
-                deployed_on_chain_id,
-                accumulates_chain_id,
-                block_number,
-                block_number,
-            ))
+            .get_headers_proof(
+                accumulators::IndexerQuery::new(deployed_on_chain_id, accumulates_chain_id, block_number, block_number)
+                    .with_hashing_function(mmr_hashing_function),
+            )
             .await?;
 
         // Extract MMR metadata
@@ -60,6 +59,7 @@ impl ProofKeys {
                 .iter()
                 .map(|peak| Self::normalize_hex(peak).parse())
                 .collect::<Result<Vec<Bytes>, FromHexError>>()?,
+            hasher: mmr_hashing_function,
         };
 
         let proof = response
