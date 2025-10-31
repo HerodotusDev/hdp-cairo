@@ -29,6 +29,7 @@ func run_chain_state_verification{
     evm_memorizer: DictAccess*,
     starknet_memorizer: DictAccess*,
     injected_state_memorizer: DictAccess*,
+    unconstrained_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
 }() -> (mmr_metas_len: felt) {
     tempvar chain_proofs_len: felt = nondet %{ len(chain_proofs) %};
@@ -48,6 +49,7 @@ func run_chain_state_verification_inner{
     evm_memorizer: DictAccess*,
     starknet_memorizer: DictAccess*,
     injected_state_memorizer: DictAccess*,
+    unconstrained_memorizer: DictAccess*,
     mmr_metas: MMRMeta*,
 }(mmr_meta_idx: felt, idx: felt) -> (mmr_meta_idx: felt, idx: felt) {
     alloc_locals;

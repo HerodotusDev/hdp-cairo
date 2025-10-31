@@ -25,6 +25,7 @@ from src.utils.merkle import compute_merkle_root
 from src.types import MMRMeta
 from src.utils.utils import mmr_metas_write_output_ptr, felt_array_to_uint256s, calculate_task_hash
 from src.memorizers.evm.memorizer import EvmMemorizer
+from src.memorizers.unconstrained.memorizer import UnconstrainedMemorizer
 from src.memorizers.starknet.memorizer import StarknetMemorizer
 from src.memorizers.bare import BareMemorizer
 from src.memorizers.evm.state_access import EvmStateAccess, EvmDecoder
@@ -88,6 +89,7 @@ func run{
         injected_state = run_input.injected_state
         chain_proofs = run_input.proofs_data.chain_proofs
         state_proofs = run_input.proofs_data.state_proofs
+    // TODO: @Okm165 - add unconstrained state keys
     %}
 
     let (public_inputs) = alloc();
@@ -107,6 +109,8 @@ func run{
     let (evm_memorizer, evm_memorizer_start) = EvmMemorizer.init();
     let (starknet_memorizer, starknet_memorizer_start) = StarknetMemorizer.init();
     let (injected_state_memorizer, injected_state_memorizer_start) = InjectedStateMemorizer.init();
+    // TODO: @Okm165 [done?]
+    let (unconstrained_memorizer, unconstrained_memorizer_start) = UnconstrainedMemorizer.init();
 
     %{
         if '__dict_manager' not in globals():
@@ -145,6 +149,7 @@ func run{
         evm_memorizer=evm_memorizer,
         starknet_memorizer=starknet_memorizer,
         injected_state_memorizer=injected_state_memorizer,
+        unconstrained_memorizer=unconstrained_memorizer,
         mmr_metas=mmr_metas,
     }();
 
@@ -179,6 +184,7 @@ func run{
         starknet_decoder_ptr=starknet_decoder_ptr,
         starknet_key_hasher_ptr=starknet_key_hasher_ptr,
         injected_state_memorizer=injected_state_memorizer,
+        unconstrained_memorizer=unconstrained_memorizer,
     }(module_inputs, module_inputs_len);
 
     // Post Verification Checks: Ensure dict consistency
@@ -188,6 +194,9 @@ func run{
     );
     default_dict_finalize(
         injected_state_memorizer_start, injected_state_memorizer, BareMemorizer.DEFAULT_VALUE
+    );
+    default_dict_finalize(
+        unconstrained_memorizer_start, unconstrained_memorizer, BareMemorizer.DEFAULT_VALUE
     );
 
     with keccak_ptr {
