@@ -10,7 +10,7 @@ pub struct HDP {
     pub evm: EvmMemorizer,
     pub starknet: StarknetMemorizer,
     pub injected_state: InjectedStateMemorizer,
-    // TODO: @beeinger [done?]
+    // TODO: @Okm165 [done?]
     pub unconstrained: UnconstrainedMemorizer,
 }
 

@@ -15,7 +15,7 @@ pub enum UnconstrainedStateValue {
     Bytecode(BytecodeLeWords),
 }
 
-// TODO: @beeinger - not sure how it's used???
+// TODO: @Okm165 - not sure how it's used???
 pub struct UnconstrainedState(UnconstrainedStateValue);
 
 impl UnconstrainedState {

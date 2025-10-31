@@ -40,7 +40,7 @@ func hash_memorizer_key{poseidon_ptr: PoseidonBuiltin*}(params: felt*, params_le
     return res;
 }
 
-//! TODO: @beeinger - this needs fixing, definitely rlp shouldn't be here...
+//! TODO: @Okm165 - this needs fixing, definitely rlp shouldn't be here...
 namespace UnconstrainedMemorizer {
     func init() -> (dict_ptr: DictAccess*, dict_ptr_start: DictAccess*) {
         alloc_locals;

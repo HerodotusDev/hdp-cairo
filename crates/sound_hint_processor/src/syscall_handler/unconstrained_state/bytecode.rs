@@ -50,7 +50,7 @@ impl CallHandler for BytecodeCallHandler {
         })
     }
 
-    // TODO: @beeinger - function_id is not used for bytecode, do we get rid of it?
+    // TODO: @Okm165 - function_id is not used for bytecode, do we get rid of it?
     async fn handle(&mut self, key: Self::Key, _function_id: Self::Id, vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
         let ptr = self
             .memorizer

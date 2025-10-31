@@ -74,7 +74,7 @@ func compute_contract{
     assert calldata[3] = nondet %{ ids.starknet_memorizer.address_.offset %};
     assert calldata[4] = nondet %{ ids.injected_state_memorizer.address_.segment_index %};
     assert calldata[5] = nondet %{ ids.injected_state_memorizer.address_.offset %};
-    // TODO: @beeinger [done?]
+    // TODO: @Okm165 [done?]
     assert calldata[6] = nondet %{ ids.unconstrained_memorizer.address_.segment_index %};
     assert calldata[7] = nondet %{ ids.unconstrained_memorizer.address_.offset %};
 

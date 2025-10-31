@@ -89,7 +89,7 @@ func run{
         injected_state = run_input.injected_state
         chain_proofs = run_input.proofs_data.chain_proofs
         state_proofs = run_input.proofs_data.state_proofs
-    // TODO: @beeinger - add unconstrained state keys
+    // TODO: @Okm165 - add unconstrained state keys
     %}
 
     let (public_inputs) = alloc();
@@ -109,7 +109,7 @@ func run{
     let (evm_memorizer, evm_memorizer_start) = EvmMemorizer.init();
     let (starknet_memorizer, starknet_memorizer_start) = StarknetMemorizer.init();
     let (injected_state_memorizer, injected_state_memorizer_start) = InjectedStateMemorizer.init();
-    // TODO: @beeinger [done?]
+    // TODO: @Okm165 [done?]
     let (unconstrained_memorizer, unconstrained_memorizer_start) = UnconstrainedMemorizer.init();
 
     %{

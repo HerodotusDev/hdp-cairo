@@ -17,7 +17,7 @@ pub struct BytecodeLeWords {
 
 impl CairoType for BytecodeLeWords {
     fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
-        //? TOOD: @beeinger - should i simply unwrap here? converting to MemoryError does not make much sense
+        //? TOOD: @Okm165 - should i simply unwrap here? converting to MemoryError does not make much sense
         let words_64bit_len: usize = (*vm.get_integer((address + 0)?)?).try_into().unwrap();
         Ok(Self {
             words_64bit: vm
