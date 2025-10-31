@@ -3,7 +3,7 @@ from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, HashBuiltin, 
 
 from src.verifiers.starknet.header_verifier import verify_mmr_batches
 from src.verifiers.starknet.storage_verifier import verify_proofs
-from src.types import MMRMeta, ChainInfo
+from src.types import MMRMetaPoseidon, ChainInfo
 
 func run_state_verification{
     range_check_ptr,
@@ -15,7 +15,7 @@ func run_state_verification{
     evm_memorizer: DictAccess*,
     starknet_memorizer: DictAccess*,
     injected_state_memorizer: DictAccess*,
-    mmr_metas: MMRMeta*,
+    mmr_metas_poseidon: MMRMetaPoseidon*,
     chain_info: ChainInfo,
 }(mmr_meta_idx: felt) -> (mmr_meta_idx: felt) {
     alloc_locals;

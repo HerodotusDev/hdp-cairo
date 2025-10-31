@@ -18,14 +18,16 @@ from packages.eth_essentials.lib.utils import (
     get_felt_bitlength,
 )
 
-from src.types import MMRMeta, MMRMetaKeccak
+from src.types import MMRMetaPoseidon, MMRMetaKeccak
 from starkware.cairo.common.memcpy import memcpy
 from src.utils.merkle import compute_merkle_root
 
 // Writes all required fields to the output_ptr.
 // The first 4 words are reserved for the tasks and results root.
 // The rest of the words are reserved for the MMR metas. Each MMR will contain 4 fields, and we can add an arbitrary amount of them.
-func mmr_metas_write_output_ptr{output_ptr: felt*}(mmr_metas: MMRMeta*, mmr_metas_len: felt) {
+func mmr_metas_write_output_ptr{output_ptr: felt*}(
+    mmr_metas_poseidon: MMRMetaPoseidon*, mmr_metas_len: felt
+) {
     tempvar counter = 0;
 
     loop:
@@ -34,10 +36,10 @@ func mmr_metas_write_output_ptr{output_ptr: felt*}(mmr_metas: MMRMeta*, mmr_meta
     %{ memory[ap] = 1 if (ids.mmr_metas_len == ids.counter) else 0 %}
     jmp end_loop if [ap] != 0, ap++;
 
-    assert [output_ptr + counter * 4] = mmr_metas[counter].id;
-    assert [output_ptr + counter * 4 + 1] = mmr_metas[counter].size;
-    assert [output_ptr + counter * 4 + 2] = mmr_metas[counter].chain_id;
-    assert [output_ptr + counter * 4 + 3] = mmr_metas[counter].root;
+    assert [output_ptr + counter * 4] = mmr_metas_poseidon[counter].id;
+    assert [output_ptr + counter * 4 + 1] = mmr_metas_poseidon[counter].size;
+    assert [output_ptr + counter * 4 + 2] = mmr_metas_poseidon[counter].chain_id;
+    assert [output_ptr + counter * 4 + 3] = mmr_metas_poseidon[counter].root;
 
     [ap] = counter + 1, ap++;
 
@@ -149,7 +151,7 @@ func felt_array_to_uint256s{range_check_ptr}(counter: felt, retdata: felt*, leaf
 //    poseidon_len * (id, size, chain_id, root),
 //    keccak_len   * (id, size, chain_id, root_low, root_high)]
 func mmr_metas_write_output_ptr_mixed{output_ptr: felt*}(
-    mmr_metas_poseidon: MMRMeta*,
+    mmr_metas_poseidon: MMRMetaPoseidon*,
     mmr_metas_len_poseidon: felt,
     mmr_metas_keccak: MMRMetaKeccak*,
     mmr_metas_len_keccak: felt,
@@ -207,8 +209,8 @@ func mmr_metas_write_output_ptr_mixed{output_ptr: felt*}(
     return ();
 }
 
-// Calculates the HDP Task Hash (also known as task commitment) 
-// That is compatibile with Solidity implementation of Data Processor Module in Satellite 
+// Calculates the HDP Task Hash (also known as task commitment)
+// That is compatible with Solidity implementation of Data Processor Module in Satellite
 // Inputs:
 // module_hash: Program hash of the HDP module
 // modupublic_inputs: Array of HDP Task public inputs for the module

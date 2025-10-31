@@ -22,8 +22,12 @@ from starkware.cairo.common.cairo_keccak.keccak import (
 from src.verifiers.verify import run_chain_state_verification
 from src.verifiers.verify import run_injected_state_verification
 from src.utils.merkle import compute_merkle_root
-from src.types import MMRMeta, MMRMetaKeccak
-from src.utils.utils import mmr_metas_write_output_ptr_mixed, felt_array_to_uint256s, calculate_task_hash
+from src.types import MMRMetaPoseidon, MMRMetaKeccak
+from src.utils.utils import (
+    mmr_metas_write_output_ptr_mixed,
+    felt_array_to_uint256s,
+    calculate_task_hash,
+)
 from src.memorizers.evm.memorizer import EvmMemorizer
 from src.memorizers.starknet.memorizer import StarknetMemorizer
 from src.memorizers.bare import BareMemorizer
@@ -36,7 +40,7 @@ from src.contract_bootloader.contract import compute_contract
 from starkware.cairo.common.memcpy import memcpy
 from src.memorizers.injected_state.memorizer import InjectedStateMemorizer, InjectedStateHashParams
 
-from packages.eth_essentials.lib.utils import pow2alloc251, write_felt_array_to_dict_keys
+from packages.eth_essentials.lib.utils import pow2alloc251
 
 func main{
     output_ptr: felt*,
@@ -133,7 +137,7 @@ func run{
     let pow2_array: felt* = pow2alloc251();
 
     // MMR Params
-    let (mmr_metas: MMRMeta*) = alloc();
+    let (mmr_metas_poseidon: MMRMetaPoseidon*) = alloc();
     let (mmr_metas_keccak: MMRMetaKeccak*) = alloc();
 
     let (mmr_metas_len_poseidon, mmr_metas_len_keccak) = run_chain_state_verification{
@@ -146,7 +150,7 @@ func run{
         evm_memorizer=evm_memorizer,
         starknet_memorizer=starknet_memorizer,
         injected_state_memorizer=injected_state_memorizer,
-        mmr_metas=mmr_metas,
+        mmr_metas_poseidon=mmr_metas_poseidon,
         mmr_metas_keccak=mmr_metas_keccak,
     }();
 
@@ -209,7 +213,7 @@ func run{
     let output_ptr = output_ptr + 2;
 
     mmr_metas_write_output_ptr_mixed{output_ptr=output_ptr}(
-        mmr_metas_poseidon=mmr_metas,
+        mmr_metas_poseidon=mmr_metas_poseidon,
         mmr_metas_len_poseidon=mmr_metas_len_poseidon,
         mmr_metas_keccak=mmr_metas_keccak,
         mmr_metas_len_keccak=mmr_metas_len_keccak,

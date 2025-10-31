@@ -1,6 +1,12 @@
+use std::{num::ParseIntError, ops::Deref};
+
+use alloy::primitives::map::HashMap;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-pub use types::HashingFunction;
+use types::{
+    HashingFunction, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID,
+    STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
+};
 
 pub mod accumulators;
 pub mod blocks;
@@ -11,6 +17,60 @@ pub enum BlockHeader {
     RlpString(String),
     RlpLittleEndian8ByteChunks(Vec<String>),
     Fields(Vec<String>),
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct MMRHasherConfig(HashMap<u128, HashingFunction>);
+
+impl Default for MMRHasherConfig {
+    fn default() -> Self {
+        Self(
+            [
+                (ETHEREUM_MAINNET_CHAIN_ID, HashingFunction::Poseidon),
+                (ETHEREUM_TESTNET_CHAIN_ID, HashingFunction::Poseidon),
+                (STARKNET_MAINNET_CHAIN_ID, HashingFunction::Poseidon),
+                (STARKNET_TESTNET_CHAIN_ID, HashingFunction::Poseidon),
+                (OPTIMISM_MAINNET_CHAIN_ID, HashingFunction::Poseidon),
+                (OPTIMISM_TESTNET_CHAIN_ID, HashingFunction::Poseidon),
+            ]
+            .into_iter()
+            .collect(),
+        )
+    }
+}
+
+impl Deref for MMRHasherConfig {
+    type Target = HashMap<u128, HashingFunction>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct MMRDeploymentConfig(HashMap<u128, u128>);
+
+impl Default for MMRDeploymentConfig {
+    fn default() -> Self {
+        Self(
+            [
+                (ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_MAINNET_CHAIN_ID),
+                (ETHEREUM_TESTNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID),
+                (STARKNET_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID),
+                (STARKNET_TESTNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID),
+                (OPTIMISM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID),
+                (OPTIMISM_TESTNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID),
+            ]
+            .into_iter()
+            .collect(),
+        )
+    }
+}
+
+impl Deref for MMRDeploymentConfig {
+    type Target = HashMap<u128, u128>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
 /// Error from [`Indexer`]
@@ -27,6 +87,10 @@ pub enum IndexerError {
     /// Failed to parse the response using [`serde_json`].
     #[error("Failed to parse response")]
     SerdeJsonError(#[from] serde_json::Error),
+
+    /// Failed to parse Int.
+    #[error("Failed to parse Int")]
+    ParseIntError(#[from] ParseIntError),
 
     /// Validation error with a detailed message.
     #[error("Validation error: {0}")]

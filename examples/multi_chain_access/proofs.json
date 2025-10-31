@@ -2,7 +2,6 @@
   [
     {
       "EthereumMainnet": {
-        "mmr_hashing_function": "poseidon",
         "headers_with_mmr": [],
         "accounts": [],
         "storages": [],
@@ -12,7 +11,6 @@
     },
     {
       "EthereumSepolia": {
-        "mmr_hashing_function": "keccak",
         "headers_with_mmr": [
           {
             "headers": [
@@ -41,16 +39,20 @@
             ],
             "mmr_meta": {
               "id": "0x30314a4d484d31413242354d38455336505a57524a505354374d",
-              "size": 43027,
-              "root": "0x8df74acdc8c1fc184081e4a2ec4ccca78c03a541b8eb37ccfb5d11f205555666",
+              "size": 60288,
+              "root": "0xba6739dd5db477464e1dbb7a66283f9184086dff3924532ab733dd5c936579e2",
               "peaks": [
                 "0x7b09f8eb19165ff0cf5f21d60fefcba5e79b3bbd6c595ae01f29817f7269e653",
-                "0xdc13464dda1a59595fd3cf0cc9959f809f51d83345df787b160bfdd7fbba0a10",
-                "0x4c5c0f1a6a34c921b65762dc2c14826bef58badd6ec24f4ee6e3c038d2d5f76a",
-                "0x3bb597f9bfa3ab94ae40af01bfa14a095ca67034d98e46655db4f18fcbaf8f06",
-                "0x20142fc3007f3ec7c7b800596b1e689fb3d2174532841ec89f5719e4ba40c237"
+                "0xb3c8c56c772965cadb0af556e457cf2d698fcfce2d423363efb6ac7fe7292ed3",
+                "0xc24307e6b9c3cb24a815c3a5234f7d7254a1f813d0c70ab320980b6480615fa4",
+                "0xdacdbe31871bb1463fac69d0c504e0af694ec5b160f2e88eedbb85ee424631f8",
+                "0x97f2a6dc3dc3b174f12d39156d579778ca6d09cdd6f5d299b945da12b3c20c2f",
+                "0x8cdf58cdb4c0ba9af04f2900159cba3819f4fc903b187a77bc9da7bb4e9fa038",
+                "0x0fff34adddffe612b32da841f83d489b419aeec957b4406096c47e12b5c7f046",
+                "0x024bee95d4447fd1988ad3f8b14f22d679b44823e6ed6061bfc296f781642ce1"
               ],
-              "chain_id": 11155111
+              "chain_id": 11155111,
+              "hasher": "keccak"
             }
           }
         ],
@@ -62,14 +64,12 @@
     },
     {
       "StarknetMainnet": {
-        "mmr_hashing_function": "poseidon",
         "headers_with_mmr": [],
         "storages": []
       }
     },
     {
       "StarknetSepolia": {
-        "mmr_hashing_function": "poseidon",
         "headers_with_mmr": [
           {
             "headers": [
@@ -133,7 +133,8 @@
                 "0x03d59a9e4d7988f400400d3f78eab158381d1b5973105c4a7923cd1e9b78635d",
                 "0x00a623976f2e48bf7a0a6aaf0c008e56d8a997b6666aedc47354e6dbbcc99f7e"
               ],
-              "chain_id": 393402133025997798000961
+              "chain_id": 393402133025997798000961,
+              "hasher": "poseidon"
             }
           }
         ],
@@ -142,7 +143,6 @@
     },
     {
       "OptimismMainnet": {
-        "mmr_hashing_function": "poseidon",
         "headers_with_mmr": [],
         "accounts": [],
         "storages": [],
@@ -152,7 +152,6 @@
     },
     {
       "OptimismSepolia": {
-        "mmr_hashing_function": "poseidon",
         "headers_with_mmr": [
           {
             "headers": [
@@ -189,7 +188,8 @@
                 "0x036458a28260490910fcb43835c63c92253ab1dfa5c7b1c0b01cc0b34a07eee9",
                 "0x017827882b6f3c8a5df13e95ce12ddfa968010b01958a728669f63052e32271e"
               ],
-              "chain_id": 11155420
+              "chain_id": 11155420,
+              "hasher": "poseidon"
             }
           }
         ],

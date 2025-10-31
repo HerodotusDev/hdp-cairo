@@ -5,8 +5,8 @@
 
 use std::{
     collections::{HashMap, HashSet},
-    env, fs,
     num::ParseIntError,
+    ops::RangeInclusive,
     path::PathBuf,
 };
 
@@ -20,7 +20,10 @@ use dry_hint_processor::syscall_handler::{
 };
 use eth_trie_proofs::{tx_receipt_trie::TxReceiptsMptHandler, tx_trie::TxsMptHandler};
 use futures::StreamExt;
-use indexer_client::{models::IndexerError, Indexer};
+use indexer_client::{
+    models::{ranges::FunctionsRanges, IndexerError, MMRDeploymentConfig, MMRHasherConfig},
+    Indexer,
+};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use proof_keys::{evm::ProofKeys as EvmProofKeys, starknet::ProofKeys as StarknetProofKeys, FlattenedKey, ProofKeys};
 use reqwest::Url;
@@ -41,7 +44,7 @@ use types::{
         starknet::{header::Header as StarknetHeader, storage::Storage as StarknetStorage, Proofs as StarknetProofs},
     },
     ChainProofs, HashingFunction, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID,
-    OPTIMISM_TESTNET_CHAIN_ID, RPC_URL_HERODOTUS_INDEXER, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
+    OPTIMISM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
 };
 
 pub mod proof_keys;
@@ -64,63 +67,16 @@ pub struct Args {
     )]
     pub output: PathBuf,
     #[arg(
-        long = "proofs-fetcher-config",
-        help = "Path to JSON file containing fetcher config - mapping chain_id -> to mmr_hashing_function and other settings if needed. Example: {\"11155111\":{\"mmr_hashing_function\":\"poseidon\"},\"10\":{\"mmr_hashing_function\":\"keccak\"}}"
+        long = "mmr-hasher-config",
+        help = "Path to JSON file containing fetcher config - mapping chain_id -> to mmr_hashing_function"
     )]
-    pub proofs_fetcher_config: Option<PathBuf>,
+    pub mmr_hasher_config: Option<PathBuf>,
+
     #[arg(
-        long = "deployed-on-chain",
-        help = "Specify the chain on which the proof will be decommited - basing on this fetcher will query correct MMRs from Herodotus Indexer. Defaults: EVM=chain_id, Starknet=11155111"
+        long = "mmr-deployment-config",
+        help = "Path to JSON file containing fetcher config - mapping chain_id -> to chain_id"
     )]
-    pub deployed_on_chain: Option<u128>,
-}
-
-// Parse string to types::HashingFunction
-fn parse_hashing_function(value: &str) -> Result<HashingFunction, FetcherError> {
-    match value.to_lowercase().as_str() {
-        "poseidon" => Ok(HashingFunction::Poseidon),
-        "keccak" => Ok(HashingFunction::Keccak),
-        other => Err(FetcherError::InternalError(format!(
-            "Unsupported MMR hashing function: {} (expected 'poseidon' or 'keccak')",
-            other
-        ))),
-    }
-}
-
-// Load per-chain MMR hashing function mapping from a JSON file.
-// Accepts ONLY the following format:
-// {
-//   "11155111": { "mmr_hashing_function": "poseidon" },
-//   "10": { "mmr_hashing_function": "keccak" }
-// }
-pub fn parse_proofs_fetcher_config(path: &PathBuf) -> Result<HashMap<u128, HashingFunction>, FetcherError> {
-    let data = fs::read_to_string(path)?;
-    let v: serde_json::Value = serde_json::from_str(&data)?;
-
-    let mut map: HashMap<u128, HashingFunction> = HashMap::new();
-
-    let obj = match v {
-        serde_json::Value::Object(obj) => obj,
-        _ => {
-            return Err(FetcherError::JsonDeserializationError(
-                "Config must be a JSON object mapping chainId -> { mmr_hashing_function }".into(),
-            ))
-        }
-    };
-
-    for (k, v) in obj {
-        let chain_id: u128 = k.parse()?;
-        let inner = v
-            .as_object()
-            .ok_or_else(|| FetcherError::JsonDeserializationError("Config value must be an object with 'mmr_hashing_function'".into()))?;
-        let func_s = inner
-            .get("mmr_hashing_function")
-            .and_then(|x| x.as_str())
-            .ok_or_else(|| FetcherError::JsonDeserializationError("Missing or invalid 'mmr_hashing_function' (expected string)".into()))?;
-        map.insert(chain_id, parse_hashing_function(func_s)?);
-    }
-
-    Ok(map)
+    pub mmr_deployment_config: Option<PathBuf>,
 }
 
 #[derive(Error, Debug)]
@@ -225,49 +181,19 @@ impl ProgressExt for Option<ProgressBar> {
 
 pub struct Fetcher<'a> {
     proof_keys: &'a ProofKeys,
-    per_chain_mmr_hashing_function: HashMap<u128, HashingFunction>,
-    deployed_on_chain: Option<u128>,
+    mmr_hasher_config: MMRHasherConfig,
+    mmr_deployment_config: MMRDeploymentConfig,
     #[cfg(feature = "progress_bars")]
     progress_bars: ProgressBars,
 }
 impl<'a> Fetcher<'a> {
-    pub fn new(proof_keys: &'a ProofKeys) -> Self {
+    pub fn new(proof_keys: &'a ProofKeys, mmr_hasher_config: MMRHasherConfig, mmr_deployment_config: MMRDeploymentConfig) -> Self {
         Self {
             proof_keys,
-            per_chain_mmr_hashing_function: HashMap::new(),
-            deployed_on_chain: None,
+            mmr_hasher_config,
+            mmr_deployment_config,
             #[cfg(feature = "progress_bars")]
             progress_bars: ProgressBars::new(proof_keys),
-        }
-    }
-
-    pub fn new_with_mmr_sources_map(
-        proof_keys: &'a ProofKeys,
-        per_chain_mmr_hashing_function: HashMap<u128, HashingFunction>,
-        deployed_on_chain: Option<u128>,
-    ) -> Self {
-        Self {
-            proof_keys,
-            per_chain_mmr_hashing_function,
-            deployed_on_chain,
-            #[cfg(feature = "progress_bars")]
-            progress_bars: ProgressBars::new(proof_keys),
-        }
-    }
-
-    fn resolve_hashing_function(&self, chain_id: u128) -> HashingFunction {
-        if let Some(v) = self.per_chain_mmr_hashing_function.get(&chain_id) {
-            v.clone()
-        } else {
-            // Fallback to Poseidon if not specified
-            HashingFunction::Poseidon
-        }
-    }
-
-    fn indexer_mmr_hashing_function_for_chain(&self, chain_id: u128) -> indexer_client::models::HashingFunction {
-        match self.resolve_hashing_function(chain_id) {
-            HashingFunction::Poseidon => indexer_client::models::HashingFunction::Poseidon,
-            HashingFunction::Keccak => indexer_client::models::HashingFunction::Keccak,
         }
     }
 
@@ -277,12 +203,11 @@ impl<'a> Fetcher<'a> {
     ) -> Result<HashMap<MmrMeta, Vec<EvmHeader>>, FetcherError> {
         let mut headers_with_mmr = HashMap::default();
         let mut header_fut = futures::stream::iter(flattened_keys.iter().map(|key| {
-            let deployed_on_chain = self.deployed_on_chain.unwrap_or(key.chain_id);
             EvmProofKeys::fetch_header_proof(
-                deployed_on_chain,
+                *self.mmr_deployment_config.get(&key.chain_id).unwrap(),
                 key.chain_id,
                 key.block_number,
-                self.indexer_mmr_hashing_function_for_chain(key.chain_id),
+                *self.mmr_hasher_config.get(&key.chain_id).unwrap(),
             )
         }))
         .buffer_unordered(BUFFER_UNORDERED)
@@ -417,7 +342,6 @@ impl<'a> Fetcher<'a> {
             .safe_finish_with_message("evm transaction keys - finished");
 
         Ok(EvmProofs {
-            mmr_hashing_function: self.resolve_hashing_function(chain_id),
             headers_with_mmr: process_headers(headers_with_mmr),
             accounts: accounts.into_iter().collect(),
             storages: storages.into_iter().collect(),
@@ -432,12 +356,11 @@ impl<'a> Fetcher<'a> {
     ) -> Result<HashMap<MmrMeta, Vec<StarknetHeader>>, FetcherError> {
         let mut headers_with_mmr = HashMap::default();
         let mut header_fut = futures::stream::iter(flattened_keys.iter().map(|key| {
-            let deployed_on_chain = self.deployed_on_chain.unwrap_or(11155111);
             StarknetProofKeys::fetch_header_proof(
-                deployed_on_chain,
+                *self.mmr_deployment_config.get(&key.chain_id).unwrap(),
                 key.chain_id,
                 key.block_number,
-                self.indexer_mmr_hashing_function_for_chain(key.chain_id),
+                *self.mmr_hasher_config.get(&key.chain_id).unwrap(),
             )
         }))
         .buffer_unordered(BUFFER_UNORDERED)
@@ -487,7 +410,6 @@ impl<'a> Fetcher<'a> {
             .safe_finish_with_message("starknet storage keys - finished");
 
         Ok(StarknetProofs {
-            mmr_hashing_function: self.resolve_hashing_function(chain_id),
             headers_with_mmr: process_headers(headers_with_mmr),
             storages: storages.into_iter().collect(),
         })
@@ -523,7 +445,7 @@ pub async fn run_fetcher(
     syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>,
 ) -> Result<Vec<ChainProofs>, FetcherError> {
     let proof_keys = parse_syscall_handler(syscall_handler)?;
-    let fetcher = Fetcher::new(&proof_keys);
+    let fetcher = Fetcher::new(&proof_keys, MMRHasherConfig::default(), MMRDeploymentConfig::default());
     let (
         eth_proofs_mainnet,
         eth_proofs_sepolia,
@@ -599,75 +521,40 @@ pub fn parse_syscall_handler(
     Ok(proof_keys)
 }
 
-// ===== Auto-infer per-chain MMR hashing function using Indexer ranges =====
-
-fn in_ranges(ranges: &[(u64, u64)], block: u64) -> bool {
-    ranges.iter().any(|(from, to)| block >= *from && block <= *to)
+/// Checks if a block is contained within any of the inclusive ranges.
+fn in_ranges(ranges: &[RangeInclusive<u64>], block: u64) -> bool {
+    ranges.iter().any(|range| range.contains(&block))
 }
 
-fn covers_all(ranges: &[(u64, u64)], blocks: &std::collections::HashSet<u64>) -> bool {
+/// Checks if all required blocks are covered by the given ranges.
+fn covers_all(ranges: &[RangeInclusive<u64>], blocks: &HashSet<u64>) -> bool {
     blocks.iter().all(|b| in_ranges(ranges, *b))
 }
 
-async fn get_all_ranges_accumulated_per_chain(
-) -> Result<HashMap<u128, HashMap<u128, HashMap<HashingFunction, Vec<(u64, u64)>>>>, FetcherError> {
-    // Delegate fetching to the Indexer crate for consistency
-    let resp = Indexer::default().get_all_ranges_accumulated_per_chain().await?;
-    let mut result: HashMap<u128, HashMap<u128, HashMap<HashingFunction, Vec<(u64, u64)>>>> = HashMap::new();
-
-    for (src_chain_str, deployed_map) in resp {
-        if let Ok(src_chain_id) = src_chain_str.parse::<u128>() {
-            for (deployed_chain_str, functions) in deployed_map {
-                if let Ok(deployed_chain_id) = deployed_chain_str.parse::<u128>() {
-                    let entry = result.entry(src_chain_id).or_default().entry(deployed_chain_id).or_default();
-                    if !functions.poseidon.is_empty() {
-                        let poseidon_ranges: Vec<(u64, u64)> = functions.poseidon.iter().map(|p| (p[0], p[1])).collect();
-                        entry.insert(HashingFunction::Poseidon, poseidon_ranges);
-                    }
-                    if !functions.keccak.is_empty() {
-                        let keccak_ranges: Vec<(u64, u64)> = functions.keccak.iter().map(|p| (p[0], p[1])).collect();
-                        entry.insert(HashingFunction::Keccak, keccak_ranges);
-                    }
-                }
-            }
-        }
-    }
-
-    Ok(result)
+fn required_chain_ids_for_evm(proof_keys: &ProofKeys) -> HashSet<u128> {
+    proof_keys
+        .evm
+        .header_keys
+        .iter()
+        .map(|f| f.chain_id)
+        .chain(proof_keys.evm.account_keys.iter().map(|f| f.chain_id))
+        .chain(proof_keys.evm.storage_keys.iter().map(|f| f.chain_id))
+        .chain(proof_keys.evm.receipt_keys.iter().map(|f| f.chain_id))
+        .chain(proof_keys.evm.transaction_keys.iter().map(|f| f.chain_id))
+        .collect()
 }
 
-fn collect_chain_ids_for_evm(proof_keys: &ProofKeys) -> HashSet<u128> {
-    let mut set = HashSet::new();
-    for k in &proof_keys.evm.header_keys {
-        set.insert(k.chain_id);
-    }
-    for k in &proof_keys.evm.account_keys {
-        set.insert(k.chain_id);
-    }
-    for k in &proof_keys.evm.storage_keys {
-        set.insert(k.chain_id);
-    }
-    for k in &proof_keys.evm.receipt_keys {
-        set.insert(k.chain_id);
-    }
-    for k in &proof_keys.evm.transaction_keys {
-        set.insert(k.chain_id);
-    }
-    set
+fn required_chain_ids_for_starknet(proof_keys: &ProofKeys) -> HashSet<u128> {
+    proof_keys
+        .starknet
+        .header_keys
+        .iter()
+        .map(|f| f.chain_id)
+        .chain(proof_keys.starknet.storage_keys.iter().map(|f| f.chain_id))
+        .collect()
 }
 
-fn collect_chain_ids_for_starknet(proof_keys: &ProofKeys) -> HashSet<u128> {
-    let mut set = HashSet::new();
-    for k in &proof_keys.starknet.header_keys {
-        set.insert(k.chain_id);
-    }
-    for k in &proof_keys.starknet.storage_keys {
-        set.insert(k.chain_id);
-    }
-    set
-}
-
-fn required_blocks_for_evm(proof_keys: &ProofKeys, chain_id: u128) -> HashSet<u64> {
+fn required_evm_blocks(proof_keys: &ProofKeys, chain_id: u128) -> HashSet<u64> {
     proof_keys
         .evm
         .to_flattened_keys(chain_id)
@@ -676,7 +563,7 @@ fn required_blocks_for_evm(proof_keys: &ProofKeys, chain_id: u128) -> HashSet<u6
         .collect()
 }
 
-fn required_blocks_for_starknet(proof_keys: &ProofKeys, chain_id: u128) -> HashSet<u64> {
+fn required_starknet_blocks(proof_keys: &ProofKeys, chain_id: u128) -> HashSet<u64> {
     proof_keys
         .starknet
         .to_flattened_keys(chain_id)
@@ -685,71 +572,56 @@ fn required_blocks_for_starknet(proof_keys: &ProofKeys, chain_id: u128) -> HashS
         .collect()
 }
 
-// When mmr-sources-config is not provided, infer per-chain hashing function by checking
-// availability of all required blocks on the Indexer ranges endpoint.
-// Strategy: prefer "poseidon" if it covers all required blocks; else try "keccak";
-// if neither covers all, return an error:
-// "given block not available on indexer for both keccak and poseidon hashing functions"
-pub async fn infer_mmr_sources_from_indexer(
-    proof_keys: &ProofKeys,
-    deployed_on_chain_override: Option<u128>,
-) -> Result<HashMap<u128, HashingFunction>, FetcherError> {
-    let ranges = get_all_ranges_accumulated_per_chain().await?;
-    let mut mapping: HashMap<u128, HashingFunction> = HashMap::new();
-
-    // EVM chains: default deployed_on_chain == chain_id unless overridden
-    for chain_id in collect_chain_ids_for_evm(proof_keys) {
-        let required_blocks = required_blocks_for_evm(proof_keys, chain_id);
-        if required_blocks.is_empty() {
-            continue;
-        }
-        let deployed_on_chain = deployed_on_chain_override.unwrap_or(chain_id);
-        let pair = ranges
-            .get(&chain_id)
-            .and_then(|m| m.get(&deployed_on_chain))
-            .cloned()
-            .unwrap_or_default();
-
-        let poseidon_ranges = pair.get(&HashingFunction::Poseidon).cloned().unwrap_or_default();
-        let keccak_ranges = pair.get(&HashingFunction::Keccak).cloned().unwrap_or_default();
-
-        if covers_all(&poseidon_ranges, &required_blocks) {
-            mapping.insert(chain_id, HashingFunction::Poseidon);
-        } else if covers_all(&keccak_ranges, &required_blocks) {
-            mapping.insert(chain_id, HashingFunction::Keccak);
-        } else {
-            return Err(FetcherError::InternalError(
-                "given block not available on indexer for both keccak and poseidon hashing functions".to_string(),
-            ));
-        }
+/// Implements the core strategy: Prefer Poseidon, then Keccak, else Error.
+fn determine_hashing_function(ranges: &FunctionsRanges, required_blocks: &HashSet<u64>) -> Result<HashingFunction, FetcherError> {
+    if covers_all(&ranges.poseidon, required_blocks) {
+        Ok(HashingFunction::Poseidon)
+    } else if covers_all(&ranges.keccak, required_blocks) {
+        Ok(HashingFunction::Keccak)
+    } else {
+        Err(FetcherError::InternalError(
+            "given block not available on indexer for both keccak and poseidon hashing functions".to_string(),
+        ))
     }
+}
 
-    // Starknet chains: default deployed_on_chain == 11155111 unless overridden
-    for chain_id in collect_chain_ids_for_starknet(proof_keys) {
-        let required_blocks = required_blocks_for_starknet(proof_keys, chain_id);
-        if required_blocks.is_empty() {
-            continue;
-        }
-        let deployed_on_chain = deployed_on_chain_override.unwrap_or(11155111);
-        let pair = ranges
-            .get(&chain_id)
-            .and_then(|m| m.get(&deployed_on_chain))
-            .cloned()
-            .unwrap_or_default();
+pub async fn infer_mmr_sources_from_indexer(proof_keys: &ProofKeys) -> Result<HashMap<u128, HashingFunction>, FetcherError> {
+    let ranges = Indexer::default().get_all_ranges_accumulated_per_chain().await?;
+    let default_ranges = FunctionsRanges::default();
 
-        let poseidon_ranges = pair.get(&HashingFunction::Poseidon).cloned().unwrap_or_default();
-        let keccak_ranges = pair.get(&HashingFunction::Keccak).cloned().unwrap_or_default();
+    // Process EVM chains.
+    let evm_iter = required_chain_ids_for_evm(proof_keys)
+        .into_iter()
+        .filter_map(|chain_id| {
+            // Get blocks; skip chain if no blocks are required.
+            let required_blocks = required_evm_blocks(proof_keys, chain_id);
+            if required_blocks.is_empty() {
+                None
+            } else {
+                Some((chain_id, required_blocks))
+            }
+        })
+        .map(|(chain_id, required_blocks)| {
+            let pair_ranges = ranges.get(&chain_id).and_then(|m| m.get(&chain_id)).unwrap_or(&default_ranges);
+            determine_hashing_function(pair_ranges, &required_blocks).map(|func| (chain_id, func))
+        });
 
-        if covers_all(&poseidon_ranges, &required_blocks) {
-            mapping.insert(chain_id, HashingFunction::Poseidon);
-        } else if covers_all(&keccak_ranges, &required_blocks) {
-            mapping.insert(chain_id, HashingFunction::Keccak);
-        } else {
-            return Err(FetcherError::InternalError(
-                "given block not available on indexer for both keccak and poseidon hashing functions".to_string(),
-            ));
-        }
-    }
+    // Process Starknet chains.
+    let starknet_iter = required_chain_ids_for_starknet(proof_keys)
+        .into_iter()
+        .filter_map(|chain_id| {
+            // Get blocks; skip chain if no blocks are required.
+            let required_blocks = required_starknet_blocks(proof_keys, chain_id);
+            if required_blocks.is_empty() {
+                None
+            } else {
+                Some((chain_id, required_blocks))
+            }
+        })
+        .map(|(chain_id, required_blocks)| {
+            let pair_ranges = ranges.get(&chain_id).and_then(|m| m.get(&chain_id)).unwrap_or(&default_ranges);
+            determine_hashing_function(pair_ranges, &required_blocks).map(|func| (chain_id, func))
+        });
 
-    Ok(mapping)
+    evm_iter.chain(starknet_iter).collect()
 }

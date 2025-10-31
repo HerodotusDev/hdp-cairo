@@ -33,38 +33,53 @@ Examples:
 cargo run --bin fetcher -- \
   --inputs dry_run_output.json \
   --output proofs.json \
-  --proofs-fetcher-config proof_fetcher_config.json
+  --mmr-hasher-config mmr_hasher_config.json
 
 # Auto-infer per-chain hashing function from Indexer ranges
 cargo run --bin fetcher -- \
   --inputs dry_run_output.json \
   --output proofs.json
 
-# Specify target chain
+# Specify target chains for each source chain
 cargo run --bin fetcher -- \
   --inputs dry_run_output.json \
   --output proofs.json \
-  --deployed-on-chain 10
+  --mmr-deployment-config mmr_deployment_config.json
 ```
 
 
 ### Providing explicit MMR hashing function per chain and the target chain
 
-Create proof_fetcher_config.json:
+Create mmr_hasher_config.json
 
 ```json
 {
-   "11155111": { "mmr_hashing_function": "poseidon" },
-   "10":       { "mmr_hashing_function": "keccak" }
+  "11155111": "keccak",
+  "11155420": "poseidon",
+  "10": "keccak",
+  "393402133025997798000961": "poseidon"
+}
+```
+
+### Providing the MMR destination chain for specific proof source chain
+
+Create mmr_deployment_config.json:
+
+```json
+{
+   "11155111": 11155222,
+   "393402133025997798000961": 393402133025997798000961 , // Startnet Sepolia as source and destination chain
+   "10": 480  // Optimism Mainnet as source chain and Worldchain Mainnet as destination chain
  }
 ```
+
 
 
 ```bash
 cargo run --bin fetcher -- \
   --output proofs.json \
-  --deployed-on-chain 11155111 \
-  --proofs-fetcher-config proof_fetcher_config.json
+  --mmr-hasher-config mmr_hasher_config.json \
+  --mmr-deployment-config mmr_deployment_config.json
 ```
 
 

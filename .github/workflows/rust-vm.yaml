@@ -53,11 +53,11 @@ jobs:
       - name: Run fmt check
         run: cargo fmt --all -- --check
 
+      - name: Run Cairo fmt check
+        run: .venv/bin/cairo-format -c src/*.cairo
+
       - name: Run clippy check
         run: cargo clippy
-
-      - name: Run Cairo fmt check
-        run: make format-check
 
   test:
     name: Run Tests

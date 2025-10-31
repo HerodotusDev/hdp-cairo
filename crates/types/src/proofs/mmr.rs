@@ -2,6 +2,8 @@ use alloy::primitives::Bytes;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
+use crate::HashingFunction;
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash, Default)]
 #[serde_as]
 pub struct MmrMeta {
@@ -13,6 +15,7 @@ pub struct MmrMeta {
     #[serde(deserialize_with = "deserialize_vec_bytes_even")]
     pub peaks: Vec<Bytes>,
     pub chain_id: u128,
+    pub hasher: HashingFunction,
 }
 
 #[derive(thiserror::Error, Debug)]

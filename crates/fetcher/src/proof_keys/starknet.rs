@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use alloy::{hex::FromHexError, primitives::Bytes};
 use cairo_vm::Felt252;
-use indexer_client::models::{BlockHeader, HashingFunction};
+use indexer_client::models::BlockHeader;
 use reqwest::Url;
 use starknet_types_core::felt::FromStrError;
 use types::{
@@ -11,6 +11,7 @@ use types::{
         header::{HeaderMmrMeta, HeaderProof},
         starknet::{self, header::Header, storage::Storage},
     },
+    HashingFunction,
 };
 
 use super::FlattenedKey;

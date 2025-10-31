@@ -8,9 +8,3 @@ pub struct Header {
     pub rlp: Bytes,
     pub proof: HeaderProof,
 }
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash, Default)]
-pub struct HeaderKeccak {
-    pub rlp: Bytes,
-    pub proof: HeaderProof,
-}
