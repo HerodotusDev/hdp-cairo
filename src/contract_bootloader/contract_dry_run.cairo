@@ -29,6 +29,7 @@ from src.memorizers.evm.memorizer import EvmMemorizer
 from src.memorizers.starknet.memorizer import StarknetMemorizer
 from src.memorizers.bare import BareMemorizer
 from src.memorizers.injected_state.memorizer import InjectedStateMemorizer
+from src.memorizers.unconstrained.memorizer import UnconstrainedMemorizer
 
 struct DryRunOutput {
     module_hash: felt,
@@ -99,6 +100,7 @@ func main{
     let (evm_memorizer, evm_memorizer_start) = EvmMemorizer.init();
     let (starknet_memorizer, starknet_memorizer_start) = StarknetMemorizer.init();
     let (injected_state_memorizer, injected_state_memorizer_start) = InjectedStateMemorizer.init();
+    let (unconstrained_memorizer, unconstrained_memorizer_start) = UnconstrainedMemorizer.init();
 
     %{
         if '__dict_manager' not in globals():
@@ -119,17 +121,18 @@ func main{
     assert calldata[3] = nondet %{ ids.starknet_memorizer.address_.offset %};
     assert calldata[4] = nondet %{ ids.injected_state_memorizer.address_.segment_index %};
     assert calldata[5] = nondet %{ ids.injected_state_memorizer.address_.offset %};
+    assert calldata[6] = nondet %{ ids.unconstrained_memorizer.address_.segment_index %};
+    assert calldata[7] = nondet %{ ids.unconstrained_memorizer.address_.offset %};
 
-    memcpy(dst=calldata + 6, src=module_inputs, len=module_inputs_len);
-    let calldata_size = 6 + module_inputs_len;
+    memcpy(dst=calldata + 8, src=module_inputs, len=module_inputs_len);
+    let calldata_size = 8 + module_inputs_len;
 
     let (evm_decoder_ptr: felt**) = alloc();
     let (starknet_decoder_ptr: felt***) = alloc();
     let (evm_key_hasher_ptr: felt**) = alloc();
     let (starknet_key_hasher_ptr: felt**) = alloc();
-    let (injected_state_memorizer_ptr: felt**) = alloc();
 
-    with keccak_ptr, evm_memorizer, starknet_memorizer, injected_state_memorizer, pow2_array, evm_decoder_ptr, starknet_decoder_ptr, evm_key_hasher_ptr, starknet_key_hasher_ptr, injected_state_memorizer_ptr {
+    with keccak_ptr, evm_memorizer, starknet_memorizer, injected_state_memorizer, unconstrained_memorizer, pow2_array, evm_decoder_ptr, starknet_decoder_ptr, evm_key_hasher_ptr, starknet_key_hasher_ptr {
         let (retdata_size, retdata) = run_contract_bootloader(
             compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata, dry_run=1
         );
@@ -142,6 +145,9 @@ func main{
     );
     default_dict_finalize(
         injected_state_memorizer_start, injected_state_memorizer, BareMemorizer.DEFAULT_VALUE
+    );
+    default_dict_finalize(
+        unconstrained_memorizer_start, unconstrained_memorizer, BareMemorizer.DEFAULT_VALUE
     );
 
     with keccak_ptr {
