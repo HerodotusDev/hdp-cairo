@@ -20,7 +20,7 @@ use proofs::{evm, injected_state::StateProofs, starknet};
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
 
-use crate::cairo::unconstrained_state::UnconstrainedStateValue;
+use crate::cairo::unconstrained::UnconstrainedStateValue;
 
 pub const RPC_URL_ETHEREUM_MAINNET: &str = "RPC_URL_ETHEREUM_MAINNET";
 pub const RPC_URL_ETHEREUM_TESTNET: &str = "RPC_URL_ETHEREUM_TESTNET";
@@ -47,9 +47,6 @@ pub struct ProofsData {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub struct UnconstrainedState(pub HashMap<Felt252, UnconstrainedStateValue>);
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct HDPDryRunInput {
     pub params: Vec<Param>,
     pub compiled_class: CasmContractClass,
@@ -63,8 +60,11 @@ pub struct HDPInput {
     pub injected_state: InjectedState,
     pub chain_proofs: Vec<ChainProofs>,
     pub state_proofs: StateProofs,
-    pub unconstrained_state: UnconstrainedState,
+    pub unconstrained: UnconstrainedState,
 }
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default)]
+pub struct UnconstrainedState(pub HashMap<Felt252, UnconstrainedStateValue>);
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub struct InjectedState(pub HashMap<Felt252, Felt252>);
