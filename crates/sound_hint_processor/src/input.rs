@@ -48,7 +48,7 @@ impl CustomHintProcessor {
         exec_scopes.insert_value::<InjectedState>(vars::scopes::INJECTED_STATE, self.inputs.injected_state.to_owned());
         exec_scopes.insert_value::<Vec<ChainProofs>>(vars::scopes::CHAIN_PROOFS, self.inputs.chain_proofs.to_owned());
         exec_scopes.insert_value::<StateProofs>(vars::scopes::STATE_PROOFS, self.inputs.state_proofs.to_owned());
-        exec_scopes.insert_value::<UnconstrainedState>(vars::scopes::UNCONSTRAINED_STATE, self.inputs.unconstrained_state.to_owned());
+        exec_scopes.insert_value::<UnconstrainedState>(vars::scopes::UNCONSTRAINED_STATE, self.inputs.unconstrained.to_owned());
         Ok(())
     }
 }

@@ -30,7 +30,7 @@ use syscall_handler::{evm, starknet};
 use tokio::{runtime::Handle, task};
 use types::HDPInput;
 
-use crate::syscall_handler::{injected_state, unconstrained_state};
+use crate::syscall_handler::{injected_state, unconstrained};
 
 pub struct CustomHintProcessor {
     inputs: HDPInput,
@@ -120,7 +120,7 @@ impl HintProcessorLogic for CustomHintProcessor {
                     evm::CallContractHandler,
                     starknet::CallContractHandler,
                     injected_state::CallContractHandler,
-                    unconstrained_state::CallContractHandler,
+                    unconstrained::CallContractHandler,
                 >>(vars::scopes::SYSCALL_HANDLER)?;
                 return task::block_in_place(|| {
                     Handle::current().block_on(async {
