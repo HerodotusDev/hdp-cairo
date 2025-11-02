@@ -13,7 +13,7 @@ use cairo_vm::{
 use clap::Parser;
 use dotenvy as _;
 use dry_hint_processor::{
-    syscall_handler::{evm, injected_state, starknet},
+    syscall_handler::{evm, injected_state, starknet, unconstrained},
     CustomHintProcessor,
 };
 use hints::vars;
@@ -58,12 +58,18 @@ pub struct Args {
     pub allow_missing_builtins: Option<bool>,
 }
 
+#[allow(clippy::type_complexity)]
 pub fn run(
     program_path: PathBuf,
     input: HDPDryRunInput,
 ) -> Result<
     (
-        SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>,
+        SyscallHandler<
+            evm::CallContractHandler,
+            starknet::CallContractHandler,
+            injected_state::CallContractHandler,
+            unconstrained::CallContractHandler,
+        >,
         HDPDryRunOutput,
     ),
     Error,
@@ -85,9 +91,12 @@ pub fn run(
 
     let syscall_handler = cairo_runner
         .exec_scopes
-        .get::<SyscallHandlerWrapper<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>>(
-            vars::scopes::SYSCALL_HANDLER,
-        )
+        .get::<SyscallHandlerWrapper<
+            evm::CallContractHandler,
+            starknet::CallContractHandler,
+            injected_state::CallContractHandler,
+            unconstrained::CallContractHandler,
+        >>(vars::scopes::SYSCALL_HANDLER)
         .unwrap()
         .syscall_handler
         .try_read()

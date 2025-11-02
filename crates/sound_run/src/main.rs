@@ -61,7 +61,7 @@ async fn main() -> Result<(), Error> {
             state_proofs: proofs_data.state_proofs,
             injected_state,
             // TODO: @Okm165 - either get these from a separate file, or from proofs file or smthn
-            unconstrained_state: Default::default(),
+            unconstrained: Default::default(),
         },
     )?;
 
