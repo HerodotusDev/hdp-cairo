@@ -15,7 +15,7 @@ use dotenvy as _;
 use dry_hint_processor::syscall_handler::{
     evm,
     injected_state::{self},
-    starknet, unconstrained_state,
+    starknet, unconstrained,
 };
 use eth_trie_proofs::{tx_receipt_trie::TxReceiptsMptHandler, tx_trie::TxsMptHandler};
 use futures::StreamExt;
@@ -422,7 +422,7 @@ pub async fn run_fetcher(
         evm::CallContractHandler,
         starknet::CallContractHandler,
         injected_state::CallContractHandler,
-        unconstrained_state::CallContractHandler,
+        unconstrained::CallContractHandler,
     >,
 ) -> Result<Vec<ChainProofs>, FetcherError> {
     let proof_keys = parse_syscall_handler(syscall_handler)?;
@@ -475,7 +475,7 @@ pub fn parse_syscall_handler(
         evm::CallContractHandler,
         starknet::CallContractHandler,
         injected_state::CallContractHandler,
-        unconstrained_state::CallContractHandler,
+        unconstrained::CallContractHandler,
     >,
 ) -> Result<ProofKeys, FetcherError> {
     let mut proof_keys = ProofKeys::default();
@@ -511,7 +511,7 @@ pub fn parse_syscall_handler(
         .key_set
     {
         match key {
-            unconstrained_state::DryRunKey::Bytecode(value) => proof_keys.unconstrained_state.bytecode.insert(value),
+            unconstrained::DryRunKey::Bytecode(value) => proof_keys.unconstrained_state.bytecode.insert(value),
         };
     }
 

@@ -9,7 +9,7 @@ use alloy as _;
 use alloy_rlp as _;
 use cairo_vm as _;
 use clap::Parser;
-use dry_hint_processor::syscall_handler::{evm, injected_state, starknet, unconstrained_state};
+use dry_hint_processor::syscall_handler::{evm, injected_state, starknet, unconstrained};
 use eth_trie_proofs as _;
 use fetcher::{parse_syscall_handler, Args, Fetcher};
 use futures as _;
@@ -35,7 +35,7 @@ async fn main() -> Result<(), fetcher::FetcherError> {
         evm::CallContractHandler,
         starknet::CallContractHandler,
         injected_state::CallContractHandler,
-        unconstrained_state::CallContractHandler,
+        unconstrained::CallContractHandler,
     > = serde_json::from_slice(&input_file)?;
     let proof_keys = parse_syscall_handler(syscall_handler)?;
 
