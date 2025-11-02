@@ -25,7 +25,6 @@ from src.utils.merkle import compute_merkle_root
 from src.types import MMRMeta
 from src.utils.utils import mmr_metas_write_output_ptr, felt_array_to_uint256s, calculate_task_hash
 from src.memorizers.evm.memorizer import EvmMemorizer
-from src.memorizers.unconstrained.memorizer import UnconstrainedMemorizer
 from src.memorizers.starknet.memorizer import StarknetMemorizer
 from src.memorizers.bare import BareMemorizer
 from src.memorizers.evm.state_access import EvmStateAccess, EvmDecoder
@@ -36,6 +35,7 @@ from src.utils.chain_info import fetch_chain_info
 from src.contract_bootloader.contract import compute_contract
 from starkware.cairo.common.memcpy import memcpy
 from src.memorizers.injected_state.memorizer import InjectedStateMemorizer, InjectedStateHashParams
+from src.memorizers.unconstrained.memorizer import UnconstrainedMemorizer, UnconstrainedHashParams
 
 from packages.eth_essentials.lib.utils import pow2alloc251, write_felt_array_to_dict_keys
 
@@ -87,9 +87,9 @@ func run{
         params = run_input.params
         compiled_class = run_input.compiled_class
         injected_state = run_input.injected_state
+        unconstrained = run_input.unconstrained
         chain_proofs = run_input.proofs_data.chain_proofs
         state_proofs = run_input.proofs_data.state_proofs
-    // TODO: @Okm165 - add unconstrained state keys
     %}
 
     let (public_inputs) = alloc();
@@ -109,7 +109,6 @@ func run{
     let (evm_memorizer, evm_memorizer_start) = EvmMemorizer.init();
     let (starknet_memorizer, starknet_memorizer_start) = StarknetMemorizer.init();
     let (injected_state_memorizer, injected_state_memorizer_start) = InjectedStateMemorizer.init();
-    // TODO: @Okm165 [done?]
     let (unconstrained_memorizer, unconstrained_memorizer_start) = UnconstrainedMemorizer.init();
 
     %{
@@ -130,7 +129,19 @@ func run{
         );
     }
 
-    %{ injected_state_memorizer.set_key(poseidon_hash_many(LABEL_RUNTIME, key), value) for (key, value) in injected_states %}
+    let (unconstrained_keys) = alloc();
+    let (unconstrained_values) = alloc();
+    tempvar unconstrained_len: felt = nondet %{ len(unconstrained.entries()) %};
+    %{
+        segments.write_arg(ids.unconstrained_keys, unconstrained.keys())
+        segments.write_arg(ids.unconstrained_values, unconstrained.values())
+    %}
+    with unconstrained_memorizer {
+        unconstrained_load_loop(
+            keys=unconstrained_keys, values=unconstrained_values, n=unconstrained_len
+        );
+    }
+
     %{ syscall_handler = SyscallHandler(segments=segments, dict_manager=__dict_manager) %}
 
     // Misc
@@ -148,8 +159,6 @@ func run{
         pow2_array=pow2_array,
         evm_memorizer=evm_memorizer,
         starknet_memorizer=starknet_memorizer,
-        injected_state_memorizer=injected_state_memorizer,
-        unconstrained_memorizer=unconstrained_memorizer,
         mmr_metas=mmr_metas,
     }();
 
@@ -239,4 +248,21 @@ func injected_state_load_loop{
     InjectedStateMemorizer.add(key=memorizer_key, data=data_ptr);
 
     return injected_state_load_loop(keys=keys, values=values, n=n - 1);
+}
+
+func unconstrained_load_loop{poseidon_ptr: PoseidonBuiltin*, unconstrained_memorizer: DictAccess*}(
+    keys: felt*, values: felt*, n: felt
+) {
+    alloc_locals;
+
+    if (n == 0) {
+        return ();
+    }
+
+    let (local data_ptr: felt*) = alloc();
+    assert [data_ptr] = values[n - 1];
+
+    UnconstrainedMemorizer.add(key=keys[n - 1], data=data_ptr);
+
+    return unconstrained_load_loop(keys=keys, values=values, n=n - 1);
 }
