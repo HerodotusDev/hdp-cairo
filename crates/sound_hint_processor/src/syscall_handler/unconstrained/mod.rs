@@ -1,20 +1,21 @@
-pub mod bytecode;
-
 use std::{cell::RefCell, hash::Hash, rc::Rc};
 
 use cairo_vm::{
-    hint_processor::builtin_hint_processor::dict_manager::DictManager, types::relocatable::Relocatable, vm::vm_core::VirtualMachine,
+    hint_processor::builtin_hint_processor::dict_manager::DictManager,
+    types::relocatable::{MaybeRelocatable, Relocatable},
+    vm::vm_core::VirtualMachine,
     Felt252,
 };
 use serde::{Deserialize, Serialize};
 use strum_macros::FromRepr;
-use syscall_handler::{memorizer::Memorizer, traits, traits::CallHandler, SyscallExecutionError, SyscallResult, WriteResponseResult};
+use syscall_handler::{memorizer::Memorizer, traits, SyscallExecutionError, SyscallResult, WriteResponseResult};
 use types::{
     cairo::{
         new_syscalls::{CallContractRequest, CallContractResponse},
         traits::CairoType,
+        unconstrained::bytecode::BytecodeLeWords,
     },
-    keys::evm,
+    keys,
 };
 
 #[derive(FromRepr)]
@@ -54,12 +55,9 @@ impl traits::SyscallHandler for CallContractHandler {
 
         match call_handler_id {
             CallHandlerId::Bytecode => {
-                let key = bytecode::BytecodeCallHandler::derive_key(vm, &mut calldata)?;
-                let function_id = bytecode::BytecodeCallHandler::derive_id(request.selector)?;
-                let result = bytecode::BytecodeCallHandler::new(memorizer, self.dict_manager.clone())
-                    .handle(key.clone(), function_id, vm)
-                    .await?;
-                retdata_end = result.to_memory(vm, retdata_end)?;
+                let key = keys::evm::account::CairoKey::from_memory(vm, calldata)?;
+                let ptr = memorizer.read_key_ptr(&MaybeRelocatable::Int(key.hash()), self.dict_manager.clone())?;
+                retdata_end = BytecodeLeWords::from_memory(vm, ptr)?.to_memory(vm, retdata_end)?;
             }
         }
 
@@ -91,7 +89,7 @@ impl TryFrom<Felt252> for CallHandlerId {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum DryRunKey {
-    Bytecode(evm::account::Key),
+    Bytecode(keys::evm::account::Key),
 }
 
 impl DryRunKey {
