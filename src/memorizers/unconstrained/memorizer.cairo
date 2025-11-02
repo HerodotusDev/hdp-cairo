@@ -40,7 +40,6 @@ func hash_memorizer_key{poseidon_ptr: PoseidonBuiltin*}(params: felt*, params_le
     return res;
 }
 
-//! TODO: @Okm165 - this needs fixing, definitely rlp shouldn't be here...
 namespace UnconstrainedMemorizer {
     func init() -> (dict_ptr: DictAccess*, dict_ptr_start: DictAccess*) {
         alloc_locals;
@@ -54,9 +53,9 @@ namespace UnconstrainedMemorizer {
     }
 
     func get{unconstrained_memorizer: DictAccess*, poseidon_ptr: PoseidonBuiltin*}(key: felt) -> (
-        rlp: felt*
+        data: felt*
     ) {
-        let (rlp) = BareMemorizer.get{dict_ptr=unconstrained_memorizer}(key);
-        return (rlp=rlp);
+        let (data) = BareMemorizer.get{dict_ptr=unconstrained_memorizer}(key);
+        return (data=data);
     }
 }

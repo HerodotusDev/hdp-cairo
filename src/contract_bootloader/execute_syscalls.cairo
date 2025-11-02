@@ -13,6 +13,7 @@ from starkware.cairo.common.builtin_keccak.keccak import KECCAK_FULL_RATE_IN_WOR
 from starkware.cairo.common.cairo_keccak.keccak import cairo_keccak as keccak
 from starkware.cairo.common.math import unsigned_div_rem
 from starkware.cairo.common.alloc import alloc
+from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.cairo_builtins import (
     BitwiseBuiltin,
     EcOpBuiltin,
@@ -35,6 +36,7 @@ from src.memorizers.starknet.state_access import (
 )
 from src.utils.chain_info import Layout
 from src.memorizers.injected_state.memorizer import InjectedStateMemorizer, InjectedStateHashParams
+from src.memorizers.unconstrained.memorizer import UnconstrainedMemorizer, UnconstrainedHashParams
 
 struct ExecutionInfo {
     selector: felt,
@@ -151,23 +153,22 @@ func execute_call_contract{
         return ();
     }
 
-    // TODO: @Okm165 [wip]
     if (request.contract_address == 'unconstrained_store') {
-        // let memorizer_key = HashParams.label{poseidon_ptr=poseidon_ptr}(
-        //     label=key_trie_label
-        // );
+        tempvar key_chain_id = request.calldata_start[2];
+        tempvar key_block_number = request.calldata_start[3];
+        tempvar key_address = request.calldata_start[4];
 
-        // let (bytecode_start) = Memorizer.get(key=memorizer_key);
+        let memorizer_key = UnconstrainedHashParams.bytecode{poseidon_ptr=poseidon_ptr}(
+            chain_id=key_chain_id, block_number=key_block_number, address=key_address
+        );
 
-        // // for i in len:
-        // //     assert bytecode_ptr[i] = response.retdata_start[i]
-
-        // memcpy(retdata_start, bytecode_start, retdata_end - retdata_start);
+        let (data_start) = UnconstrainedMemorizer.get(key=memorizer_key);
+        // use memory copy fn as check for memory slice
+        memcpy(response.retdata_start, data_start, response.retdata_end - response.retdata_start);
 
         return ();
     }
 
-    // TODO!!!
     if (request.contract_address == 'injected_state') {
         let call_handler_id = request.selector;
 
