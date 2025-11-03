@@ -83,7 +83,7 @@ impl<
         evm_call_contract_handler: EVM,
         starknet_call_contract_handler: STARKNET,
         injected_state_call_contract_handler: InjectedState,
-        unconstrained_state_call_contract_handler: UnconstrainedState,
+        unconstrained_call_contract_handler: UnconstrainedState,
     ) -> Self {
         Self {
             syscall_ptr: Option::default(),
@@ -91,7 +91,7 @@ impl<
                 evm_call_contract_handler,
                 starknet_call_contract_handler,
                 injected_state_call_contract_handler,
-                unconstrained_state_call_contract_handler,
+                unconstrained_call_contract_handler,
             ),
             keccak_handler: KeccakHandler::default(),
         }
@@ -121,14 +121,14 @@ impl<
         evm_call_contract_handler: EVM,
         starknet_call_contract_handler: STARKNET,
         injected_state_call_contract_handler: InjectedState,
-        unconstrained_state_call_contract_handler: UnconstrainedState,
+        unconstrained_call_contract_handler: UnconstrainedState,
     ) -> Self {
         Self {
             syscall_handler: Rc::new(RwLock::new(SyscallHandler::new(
                 evm_call_contract_handler,
                 starknet_call_contract_handler,
                 injected_state_call_contract_handler,
-                unconstrained_state_call_contract_handler,
+                unconstrained_call_contract_handler,
             ))),
         }
     }
@@ -179,7 +179,7 @@ pub struct CallContractHandlerRelay<
     #[serde(bound(serialize = "InjectedState: Serialize", deserialize = "InjectedState: Deserialize<'de>"))]
     pub injected_state_call_contract_handler: InjectedState,
     #[serde(bound(serialize = "UnconstrainedState: Serialize", deserialize = "UnconstrainedState: Deserialize<'de>"))]
-    pub unconstrained_state_call_contract_handler: UnconstrainedState,
+    pub unconstrained_call_contract_handler: UnconstrainedState,
 }
 
 impl<
@@ -193,13 +193,13 @@ impl<
         evm_call_contract_handler: EVM,
         starknet_call_contract_handler: STARKNET,
         injected_state_call_contract_handler: InjectedState,
-        unconstrained_state_call_contract_handler: UnconstrainedState,
+        unconstrained_call_contract_handler: UnconstrainedState,
     ) -> Self {
         Self {
             evm_call_contract_handler,
             starknet_call_contract_handler,
             injected_state_call_contract_handler,
-            unconstrained_state_call_contract_handler,
+            unconstrained_call_contract_handler,
             debug_call_contract_handler: DebugCallContractHandler,
             any_type_call_contract_handler: ArbitraryTypeCallContractHandler,
         }
@@ -227,7 +227,7 @@ impl<
             v if v == call_contract::debug::CONTRACT_ADDRESS => self.debug_call_contract_handler.execute(request, vm).await,
             v if v == call_contract::arbitrary_type::CONTRACT_ADDRESS => self.any_type_call_contract_handler.execute(request, vm).await,
             v if v == call_contract::unconstrained_state::CONTRACT_ADDRESS => {
-                self.unconstrained_state_call_contract_handler.execute(request, vm).await
+                self.unconstrained_call_contract_handler.execute(request, vm).await
             }
             v if v == call_contract::injected_state::CONTRACT_ADDRESS => {
                 self.injected_state_call_contract_handler.execute(request, vm).await
