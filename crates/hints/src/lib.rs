@@ -43,6 +43,8 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(contract_bootloader::params::LOAD_PRIVATE_INPUTS.into(), contract_bootloader::params::load_private_inputs);
     hints.insert(contract_bootloader::params::LOAD_PUBLIC_INPUTS_LEN.into(), contract_bootloader::params::load_public_inputs_len);
     hints.insert(contract_bootloader::params::LOAD_PUBLIC_INPUTS.into(), contract_bootloader::params::load_public_inputs);
+    hints.insert(contract_bootloader::params::UNCONSTRAINED_ENTRIES_LEN.into(), contract_bootloader::params::unconstrained_entries_len);
+    hints.insert(contract_bootloader::params::UNCONSTRAINED_WRITE_LISTS.into(), contract_bootloader::params::unconstrained_write_lists);
     hints.insert(decoder::evm::has_type_prefix::HINT_HAS_TYPE_PREFIX.into(), decoder::evm::has_type_prefix::hint_has_type_prefix);
     hints.insert(decoder::evm::is_byzantium::HINT_IS_BYZANTIUM.into(), decoder::evm::is_byzantium::hint_is_byzantium);
     hints.insert(decoder::evm::normalize_v::HINT_IS_EIP155.into(), decoder::evm::normalize_v::hint_is_eip155);
@@ -82,11 +84,13 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(segments::RETDATA_SIZE_COUNTER.into(), segments::retdata_size_counter);
     hints.insert(segments::SEGMENTS_ADD_EVM_MEMORIZER_OFFSET.into(), segments::segments_add_evm_memorizer_offset);
     hints.insert(segments::SEGMENTS_ADD_EVM_MEMORIZER_SEGMENT_INDEX.into(), segments::segments_add_evm_memorizer_segment_index);
-    hints.insert(segments::SEGMENTS_ADD_EVM_STARKNET_MEMORIZER_INDEX.into(), segments::segments_add_evm_starknet_memorizer_index);
     hints.insert(segments::SEGMENTS_ADD_FP.into(), segments::segments_add_fp);
     hints.insert(segments::SEGMENTS_ADD_INJECTED_STATE_MEMORIZER_INDEX.into(), segments::segments_add_injected_state_memorizer_index);
     hints.insert(segments::SEGMENTS_ADD_INJECTED_STATE_MEMORIZER_OFFSET.into(), segments::segments_add_injected_state_memorizer_offset);
+    hints.insert(segments::SEGMENTS_ADD_STARKNET_MEMORIZER_INDEX.into(), segments::segments_add_starknet_memorizer_index);
     hints.insert(segments::SEGMENTS_ADD_STARKNET_MEMORIZER_OFFSET.into(), segments::segments_add_starknet_memorizer_offset);
+    hints.insert(segments::SEGMENTS_ADD_UNCONSTRAINED_MEMORIZER_INDEX.into(), segments::segments_add_unconstrained_memorizer_index);
+    hints.insert(segments::SEGMENTS_ADD_UNCONSTRAINED_MEMORIZER_OFFSET.into(), segments::segments_add_unconstrained_memorizer_offset);
     hints.insert(segments::SEGMENTS_ADD.into(), segments::segments_add);
     hints.insert(verifiers::evm::account_verifier::HINT_ACCOUNT_KEY_LEADING_ZEROS.into(), verifiers::evm::account_verifier::hint_account_key_leading_zeros);
     hints.insert(verifiers::evm::account_verifier::HINT_ACCOUNT_KEY.into(), verifiers::evm::account_verifier::hint_account_key);

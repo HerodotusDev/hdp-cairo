@@ -34,7 +34,7 @@ pub mod scopes {
     pub const SYSCALL_HANDLER: &str = "syscall_handler";
     pub const TRANSACTION: &str = "transaction";
     pub const UPDATE_PROOF: &str = "update_proof";
-    pub const UNCONSTRAINED_STATE: &str = "unconstrained_state";
+    pub const UNCONSTRAINED: &str = "unconstrained";
 }
 
 pub mod ids {
