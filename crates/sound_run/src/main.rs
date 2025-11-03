@@ -50,7 +50,6 @@ async fn main() -> Result<(), Error> {
         ..Default::default()
     };
 
-    // TODO: @Okm165 - add unconstrained state keys
     let (cairo_runner, output) = sound_run::run(
         args.program.unwrap_or(PathBuf::from(HDP_COMPILED_JSON)),
         cairo_run_config,
@@ -60,8 +59,7 @@ async fn main() -> Result<(), Error> {
             params,
             state_proofs: proofs_data.state_proofs,
             injected_state,
-            // TODO: @Okm165 - either get these from a separate file, or from proofs file or smthn
-            unconstrained: Default::default(),
+            unconstrained: proofs_data.unconstrained,
         },
     )?;
 

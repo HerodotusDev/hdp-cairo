@@ -17,6 +17,9 @@ pub mod hashers;
 pub mod injected_state;
 
 #[cfg(test)]
+pub mod unconstrained;
+
+#[cfg(test)]
 pub mod test_state_server;
 
 #[cfg(test)]
@@ -29,7 +32,7 @@ mod test_utils {
         types::{layout_name::LayoutName, program::Program},
         vm::runners::cairo_runner::{CairoRunner, RunnerMode},
     };
-    use dry_hint_processor::syscall_handler::{evm, injected_state, starknet};
+    use dry_hint_processor::syscall_handler::{evm, injected_state, starknet, unconstrained};
     use fetcher::{proof_keys::ProofKeys, Fetcher};
     use hints::vars;
     use syscall_handler::{SyscallHandler, SyscallHandlerWrapper};
@@ -92,17 +95,24 @@ mod test_utils {
 
         debug!("Dry run completed successfully.");
 
-        let syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler> =
-            cairo_runner
-                .exec_scopes
-                .get::<SyscallHandlerWrapper<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>>(
-                    vars::scopes::SYSCALL_HANDLER,
-                )
-                .unwrap()
-                .syscall_handler
-                .try_read()
-                .unwrap()
-                .clone();
+        let syscall_handler: SyscallHandler<
+            evm::CallContractHandler,
+            starknet::CallContractHandler,
+            injected_state::CallContractHandler,
+            unconstrained::CallContractHandler,
+        > = cairo_runner
+            .exec_scopes
+            .get::<SyscallHandlerWrapper<
+                evm::CallContractHandler,
+                starknet::CallContractHandler,
+                injected_state::CallContractHandler,
+                unconstrained::CallContractHandler,
+            >>(vars::scopes::SYSCALL_HANDLER)
+            .unwrap()
+            .syscall_handler
+            .try_read()
+            .unwrap()
+            .clone();
 
         let mut proof_keys = ProofKeys::default();
         for key in syscall_handler.call_contract_handler.evm_call_contract_handler.key_set {
@@ -171,6 +181,7 @@ mod test_utils {
             compiled_class,
             state_proofs,
             injected_state: injected_state.clone(),
+            unconstrained: Default::default(),
         };
 
         // Load the Program
