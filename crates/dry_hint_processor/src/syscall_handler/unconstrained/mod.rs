@@ -40,7 +40,7 @@ impl SyscallHandler for CallContractHandler {
     async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
         let mut calldata = request.calldata_start;
 
-        let call_handler_id = CallHandlerId::try_from(request.contract_address)?;
+        let call_handler_id = CallHandlerId::try_from(request.selector)?;
 
         let segment_index = felt_from_ptr(vm, &mut calldata)?;
         let offset = felt_from_ptr(vm, &mut calldata)?;
