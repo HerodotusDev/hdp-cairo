@@ -17,28 +17,37 @@ pub struct BytecodeLeWords {
 
 impl CairoType for BytecodeLeWords {
     fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
-        //? TOOD: @Okm165 - should i simply unwrap here? converting to MemoryError does not make much sense
         let words_64bit_len: usize = (*vm.get_integer((address + 0)?)?).try_into().unwrap();
+        println!("words_64bit_len {:?}", words_64bit_len);
+        let words_64bit = vm
+            .get_integer_range((address + 1)?, words_64bit_len)?
+            .into_iter()
+            .map(|e| *e)
+            .collect::<Vec<_>>();
+        println!("words_64bit {:?}", words_64bit);
+        let last_input_word = *vm.get_integer((address + (words_64bit_len + 1))?)?;
+        println!("last_input_word {:?}", last_input_word);
+        let last_input_num_bytes = *vm.get_integer((address + (words_64bit_len + 2))?)?;
+        println!("last_input_num_bytes {:?}", last_input_num_bytes);
         Ok(Self {
-            words_64bit: vm
-                .get_integer_range((address + 1)?, words_64bit_len)?
-                .into_iter()
-                .map(|e| *e)
-                .collect::<Vec<_>>(),
-            last_input_word: *vm.get_integer((address + (words_64bit_len + 1))?)?,
-            last_input_num_bytes: *vm.get_integer((address + (words_64bit_len + 2))?)?,
+            words_64bit,
+            last_input_word,
+            last_input_num_bytes,
         })
     }
     fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
         let words_64bit_len = self.words_64bit.len();
+        println!("to_memory words_64bit_len {:?}", words_64bit_len);
         vm.insert_value((address + 0)?, words_64bit_len)?;
         vm.load_data(
             (address + 1)?,
             &self.words_64bit.iter().map(MaybeRelocatable::from).collect::<Vec<_>>(),
         )?;
+        println!("to_memory last_input_word {:?}", self.last_input_word);
         vm.insert_value((address + (words_64bit_len + 1))?, self.last_input_word)?;
+        println!("to_memory last_input_word {:?}", self.last_input_num_bytes);
         vm.insert_value((address + (words_64bit_len + 2))?, self.last_input_num_bytes)?;
-        Ok((address + (self.words_64bit.len() + 3))?)
+        Ok((address + (words_64bit_len + 3))?)
     }
     fn n_fields(vm: &VirtualMachine, address: Relocatable) -> Result<usize, MemoryError> {
         let words_64bit_len: usize = (*vm.get_integer((address + 0)?)?).try_into().unwrap();

@@ -43,6 +43,7 @@ pub const STARKNET_TESTNET_CHAIN_ID: u128 = 0x534e5f5345504f4c4941;
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ProofsData {
     pub chain_proofs: Vec<ChainProofs>,
+    pub unconstrained: UnconstrainedState,
     pub state_proofs: StateProofs,
 }
 
