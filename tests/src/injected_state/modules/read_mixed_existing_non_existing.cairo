@@ -45,7 +45,7 @@ mod read_mixed_existing_non_existing {
             }
 
             i += 1;
-        };
+        }
 
         array![root, existing_read]
     }

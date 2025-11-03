@@ -1,10 +1,10 @@
 #[starknet::contract]
 mod module {
-    use starknet::EthAddress;
     use hdp_cairo::HDP;
     use hdp_cairo::evm::ETHEREUM_TESTNET_CHAIN_ID;
     use hdp_cairo::evm::account::{AccountImpl, AccountKey, AccountTrait};
     use hdp_cairo::evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait};
+    use starknet::EthAddress;
 
     // Tornado Cash router deployment address on the Sepolia testnet.
     // Reference: https://docs.tornado.ws/general/deployments.html
@@ -97,7 +97,7 @@ mod module {
 
             // Check that the receiver is not the forbidden address.
             assert!(receiver != forbidden_address.into());
-        };
+        }
 
         println!("final_nonce {:x}", prev_nonce);
         println!(

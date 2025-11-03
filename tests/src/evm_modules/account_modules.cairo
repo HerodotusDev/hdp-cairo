@@ -1,7 +1,7 @@
 #[starknet::contract]
 mod evm_account_get_nonce {
-    use hdp_cairo::evm::account::AccountTrait;
-    use hdp_cairo::{HDP, evm::account::{AccountImpl, AccountKey}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::account::{AccountImpl, AccountKey, AccountTrait};
 
     #[storage]
     struct Storage {}
@@ -24,8 +24,8 @@ mod evm_account_get_nonce {
 
 #[starknet::contract]
 mod evm_account_get_balance {
-    use hdp_cairo::evm::account::AccountTrait;
-    use hdp_cairo::{HDP, evm::account::{AccountImpl, AccountKey}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::account::{AccountImpl, AccountKey, AccountTrait};
 
     #[storage]
     struct Storage {}
@@ -48,8 +48,8 @@ mod evm_account_get_balance {
 
 #[starknet::contract]
 mod evm_account_get_state_root {
-    use hdp_cairo::evm::account::AccountTrait;
-    use hdp_cairo::{HDP, evm::account::{AccountImpl, AccountKey}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::account::{AccountImpl, AccountKey, AccountTrait};
 
     #[storage]
     struct Storage {}
@@ -75,8 +75,8 @@ mod evm_account_get_state_root {
 
 #[starknet::contract]
 mod evm_account_get_code_hash {
-    use hdp_cairo::evm::account::AccountTrait;
-    use hdp_cairo::{HDP, evm::account::{AccountImpl, AccountKey}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::account::{AccountImpl, AccountKey, AccountTrait};
 
     #[storage]
     struct Storage {}

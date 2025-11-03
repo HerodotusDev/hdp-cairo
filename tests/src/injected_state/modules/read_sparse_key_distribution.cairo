@@ -25,7 +25,7 @@ mod read_sparse_key_distribution {
             let value = *sparse_values.at(i);
             current_root = hdp.injected_state.write_key(label, key, value);
             i += 1;
-        };
+        }
 
         // Read all sparse keys and verify
         let mut j = 0;
@@ -40,7 +40,7 @@ mod read_sparse_key_distribution {
             assert!(read_value == expected_value, "Sparse key should match expected value");
 
             j += 1;
-        };
+        }
 
         // Test reading some non-existent keys between sparse keys
         let non_existent_keys = array![500, 500000, 500000000];
@@ -53,7 +53,7 @@ mod read_sparse_key_distribution {
             let non_existent_value = hdp.injected_state.read_key(label, non_existent_key);
             assert!(non_existent_value.is_none(), "Non-existent sparse key should return None");
             k += 1;
-        };
+        }
 
         // Verify trie root
         let final_root = hdp.injected_state.read_injected_state_trie_root(label).unwrap();

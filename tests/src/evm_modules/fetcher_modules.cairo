@@ -1,12 +1,11 @@
 #[starknet::contract]
 mod evm_fetcher_many_keys_same_header {
-    use hdp_cairo::{
-        HDP, evm::account::{AccountImpl, AccountKey, AccountTrait},
-        evm::block_receipt::{BlockReceiptImpl, BlockReceiptKey, BlockReceiptTrait},
-        evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait},
-        evm::header::{HeaderImpl, HeaderKey, HeaderTrait},
-        evm::storage::{StorageImpl, StorageKey, StorageTrait},
-    };
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::account::{AccountImpl, AccountKey, AccountTrait};
+    use hdp_cairo::evm::block_receipt::{BlockReceiptImpl, BlockReceiptKey, BlockReceiptTrait};
+    use hdp_cairo::evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait};
+    use hdp_cairo::evm::header::{HeaderImpl, HeaderKey, HeaderTrait};
+    use hdp_cairo::evm::storage::{StorageImpl, StorageKey, StorageTrait};
 
     #[storage]
     struct Storage {}
@@ -55,11 +54,10 @@ mod evm_fetcher_many_keys_same_header {
 
 #[starknet::contract]
 mod evm_fetcher_many_keys_same_header_10x {
-    use hdp_cairo::{
-        HDP, evm::account::{AccountImpl, AccountKey, AccountTrait},
-        evm::header::{HeaderImpl, HeaderKey, HeaderTrait},
-        evm::storage::{StorageImpl, StorageKey, StorageTrait},
-    };
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::account::{AccountImpl, AccountKey, AccountTrait};
+    use hdp_cairo::evm::header::{HeaderImpl, HeaderKey, HeaderTrait};
+    use hdp_cairo::evm::storage::{StorageImpl, StorageKey, StorageTrait};
 
     #[storage]
     struct Storage {}
@@ -97,7 +95,8 @@ mod evm_fetcher_many_keys_same_header_10x {
 
 #[starknet::contract]
 mod evm_fetcher_many_txns_same_header {
-    use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait};
 
     #[storage]
     struct Storage {}

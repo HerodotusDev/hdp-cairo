@@ -14,16 +14,9 @@ mod multiple_key_overrides {
 
         // Use deterministic values for testing (similar to seeded RNG in Rust)
         let values = array![
-            0x1234567890ABCDEF,
-            0xFEDCBA0987654321,
-            0x1111111111111111,
-            0x2222222222222222,
-            0x3333333333333333,
-            0x4444444444444444,
-            0x5555555555555555,
-            0x6666666666666666,
-            0x7777777777777777,
-            0x8888888888888888,
+            0x1234567890ABCDEF, 0xFEDCBA0987654321, 0x1111111111111111, 0x2222222222222222,
+            0x3333333333333333, 0x4444444444444444, 0x5555555555555555, 0x6666666666666666,
+            0x7777777777777777, 0x8888888888888888,
         ];
 
         let mut current_root = 0x0;
@@ -46,7 +39,7 @@ mod multiple_key_overrides {
             root_history.append(new_root);
             current_root = new_root;
             i += 1;
-        };
+        }
 
         // Verify all roots are unique (except potentially the first one)
         let mut j = 0;
@@ -63,9 +56,9 @@ mod multiple_key_overrides {
                 let root_k = *root_history.at(k);
                 assert!(root_j != root_k, "Roots should be different");
                 k += 1;
-            };
+            }
             j += 1;
-        };
+        }
 
         // Verify final value is correct
         let final_value = hdp.injected_state.read_key(label, key).unwrap();

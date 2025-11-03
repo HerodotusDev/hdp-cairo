@@ -1,6 +1,6 @@
 use hdp_cairo::EvmMemorizer;
+use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;
-use starknet::{SyscallResultTrait};
 
 const LOG: felt252 = 5;
 
@@ -50,7 +50,7 @@ pub impl LogImpl of LogTrait {
         let mut result: Array<u128> = array![];
         for element in self.call_memorizer(LOG_GET_DATA, key) {
             result.append((*element).try_into().unwrap());
-        };
+        }
         result
     }
 
@@ -59,12 +59,8 @@ pub impl LogImpl of LogTrait {
             LOG.try_into().unwrap(),
             selector,
             array![
-                *self.dict.segment_index,
-                *self.dict.offset,
-                *key.chain_id,
-                *key.block_number,
-                *key.transaction_index,
-                *key.log_index,
+                *self.dict.segment_index, *self.dict.offset, *key.chain_id, *key.block_number,
+                *key.transaction_index, *key.log_index,
             ]
                 .span(),
         )

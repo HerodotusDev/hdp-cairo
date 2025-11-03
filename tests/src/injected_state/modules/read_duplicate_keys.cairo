@@ -45,7 +45,7 @@ mod read_duplicate_keys {
             let duplicate_value = hdp.injected_state.read_key(label, duplicate_key).unwrap();
             assert!(duplicate_value == value, "Duplicate key read should return same value");
             i += 1;
-        };
+        }
 
         array![root, read1, read2, read3, read4]
     }

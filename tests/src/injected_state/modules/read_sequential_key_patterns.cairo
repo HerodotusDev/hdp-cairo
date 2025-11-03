@@ -25,7 +25,7 @@ mod read_sequential_key_patterns {
             let value = *sequential_values.at(i);
             current_root = hdp.injected_state.write_key(label, key, value);
             i += 1;
-        };
+        }
 
         // Read all sequential keys and verify
         let mut j = 0;
@@ -40,7 +40,7 @@ mod read_sequential_key_patterns {
             assert!(read_value == expected_value, "Sequential key should match expected value");
 
             j += 1;
-        };
+        }
 
         // Verify trie root
         let final_root = hdp.injected_state.read_injected_state_trie_root(label).unwrap();
