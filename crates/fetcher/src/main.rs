@@ -21,7 +21,7 @@ use state_server as _;
 use syscall_handler::SyscallHandler;
 use thiserror as _;
 use types::{
-    ChainProofs, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID,
+    ChainProofs, ProofsData, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID,
     STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
 };
 
@@ -47,6 +47,7 @@ async fn main() -> Result<(), fetcher::FetcherError> {
         starknet_proofs_sepolia,
         optimism_proofs_mainnet,
         optimism_proofs_sepolia,
+        unconstrained,
         state_proofs,
     ) = tokio::try_join!(
         fetcher.collect_evm_proofs(ETHEREUM_MAINNET_CHAIN_ID),
@@ -55,6 +56,7 @@ async fn main() -> Result<(), fetcher::FetcherError> {
         fetcher.collect_starknet_proofs(STARKNET_TESTNET_CHAIN_ID),
         fetcher.collect_evm_proofs(OPTIMISM_MAINNET_CHAIN_ID),
         fetcher.collect_evm_proofs(OPTIMISM_TESTNET_CHAIN_ID),
+        fetcher.collect_unconstrained_data(),
         fetcher.collect_state_proofs(),
     )?;
     let chain_proofs = vec![
@@ -68,9 +70,15 @@ async fn main() -> Result<(), fetcher::FetcherError> {
 
     fs::write(
         args.output,
-        serde_json::to_string_pretty(&(chain_proofs, state_proofs))
-            .map_err(|e| fetcher::FetcherError::IO(e.into()))?
-            .as_bytes(),
+        serde_json::to_string_pretty(
+            &(ProofsData {
+                chain_proofs,
+                unconstrained,
+                state_proofs,
+            }),
+        )
+        .map_err(|e| fetcher::FetcherError::IO(e.into()))?
+        .as_bytes(),
     )?;
 
     Ok(())
