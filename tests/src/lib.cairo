@@ -2,44 +2,34 @@ pub mod evm_modules;
 pub mod hashers;
 pub mod injected_state;
 pub mod starknet_modules;
+pub mod unconstrained;
 pub mod utils;
-
+use alexandria_bytes::Bytes;
+use alexandria_bytes::byte_array_ext::ByteArrayTraitExt;
 use alexandria_bytes::utils::{BytesDebug, BytesDisplay};
-use alexandria_bytes::{Bytes};
-use alexandria_bytes::byte_array_ext::{ByteArrayTraitExt};
-use alexandria_encoding::sol_abi::{decode::SolAbiDecodeTrait, sol_bytes::SolBytesTrait};
+use alexandria_encoding::sol_abi::decode::SolAbiDecodeTrait;
+use alexandria_encoding::sol_abi::sol_bytes::SolBytesTrait;
 use starknet::{ContractAddress, EthAddress};
 
 fn sol_abi_decode_test() {
     let encoded: Bytes = ByteArrayTraitExt::new(
         384,
         array![
-            0x00000000000000000000000000000000,
-            0x0000000000000000000000000000a0a1,
-            0x00000000000000000000000000000000,
-            0x000000000000000000000000a2a3a4a5,
-            0x00000000000000000000000000000000,
-            0x000000000000000000000000000000a6,
-            0x00000000000000000000000000000000,
-            0xa7a8a9aaabacadaeafb0b1b2b3b4b5b6,
-            0xabcdefabcdefabcdefabcdefabcdefab,
-            0xcdefabcdefabcdefabcdefabcdefabcd,
-            0x00000000000000000000000000000000,
-            0x0000000000000000b7b8b9babbbcbdbe,
-            0x00a0a1a2a30000000000000000000000,
-            0x00000000000000000000000000000000,
-            0xa0a1a2a3a4a5a6a7a8a9aaabacadaeaf,
-            0xb0b1b2b3000000000000000000000000,
-            0x000000000000000000000000000000a0,
-            0xaaab00000000000000000000000000ac,
-            0x00000000000000000000000000000000,
-            0x00000000000000000000000000001234,
-            0x00a0a1a2a30000000000000000000000,
-            0x00000000000000000000000000001234,
-            0x000000000000000000000000Deadbeef,
-            0xDeaDbeefdEAdbeefdEadbEEFdeadbeEF,
+            0x00000000000000000000000000000000, 0x0000000000000000000000000000a0a1,
+            0x00000000000000000000000000000000, 0x000000000000000000000000a2a3a4a5,
+            0x00000000000000000000000000000000, 0x000000000000000000000000000000a6,
+            0x00000000000000000000000000000000, 0xa7a8a9aaabacadaeafb0b1b2b3b4b5b6,
+            0xabcdefabcdefabcdefabcdefabcdefab, 0xcdefabcdefabcdefabcdefabcdefabcd,
+            0x00000000000000000000000000000000, 0x0000000000000000b7b8b9babbbcbdbe,
+            0x00a0a1a2a30000000000000000000000, 0x00000000000000000000000000000000,
+            0xa0a1a2a3a4a5a6a7a8a9aaabacadaeaf, 0xb0b1b2b3000000000000000000000000,
+            0x000000000000000000000000000000a0, 0xaaab00000000000000000000000000ac,
+            0x00000000000000000000000000000000, 0x00000000000000000000000000001234,
+            0x00a0a1a2a30000000000000000000000, 0x00000000000000000000000000001234,
+            0x000000000000000000000000Deadbeef, 0xDeaDbeefdEAdbeefdEadbEEFdeadbeEF,
         ],
-    ).into();
+    )
+        .into();
 
     let mut offset = 0;
     let decoded: u16 = encoded.decode(ref offset);
