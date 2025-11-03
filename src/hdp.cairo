@@ -128,9 +128,10 @@ func run{
             keys=injected_state_keys, values=injected_state_values, n=injected_state_len
         );
     }
+    %{ injected_state_memorizer.set_key(poseidon_hash_many(LABEL_RUNTIME, key), value) for (key, value) in injected_states %}
 
     let (unconstrained_keys) = alloc();
-    let (unconstrained_values) = alloc();
+    let (unconstrained_values: felt**) = alloc();
     tempvar unconstrained_len: felt = nondet %{ len(unconstrained.entries()) %};
     %{
         segments.write_arg(ids.unconstrained_keys, unconstrained.keys())
@@ -251,7 +252,7 @@ func injected_state_load_loop{
 }
 
 func unconstrained_load_loop{poseidon_ptr: PoseidonBuiltin*, unconstrained_memorizer: DictAccess*}(
-    keys: felt*, values: felt*, n: felt
+    keys: felt*, values: felt**, n: felt
 ) {
     alloc_locals;
 
@@ -259,7 +260,7 @@ func unconstrained_load_loop{poseidon_ptr: PoseidonBuiltin*, unconstrained_memor
         return ();
     }
 
-    let (local data_ptr: felt*) = alloc();
+    let (local data_ptr: felt**) = alloc();
     assert [data_ptr] = values[n - 1];
 
     UnconstrainedMemorizer.add(key=keys[n - 1], data=data_ptr);

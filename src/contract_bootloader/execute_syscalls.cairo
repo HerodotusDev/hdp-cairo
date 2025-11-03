@@ -153,7 +153,7 @@ func execute_call_contract{
         return ();
     }
 
-    if (request.contract_address == 'unconstrained_store') {
+    if (request.contract_address == 'unconstrained') {
         tempvar key_chain_id = request.calldata_start[2];
         tempvar key_block_number = request.calldata_start[3];
         tempvar key_address = request.calldata_start[4];
@@ -163,8 +163,9 @@ func execute_call_contract{
         );
 
         let (data_start) = UnconstrainedMemorizer.get(key=memorizer_key);
+        let ptr: felt** = cast(data_start, felt**);
         // use memory copy fn as check for memory slice
-        memcpy(response.retdata_start, data_start, response.retdata_end - response.retdata_start);
+        memcpy(response.retdata_start, [ptr], response.retdata_end - response.retdata_start);
 
         return ();
     }

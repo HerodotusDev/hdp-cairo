@@ -1,17 +1,7 @@
-use core::keccak::cairo_keccak;
-use core::panic_with_felt252;
 use hdp_cairo::EvmMemorizer;
 use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;
-use crate::UnconstrainedMemorizer;
-use crate::bytecode::{ByteCode, ByteCodeLeWords, OriginalByteCodeTrait, U256Trait};
 
-// ----- Unconstrained Store -----
-const UNCONSTRAINED_STORE: felt252 = 'unconstrained_store';
-
-const UNCONSTRAINED_STORE_GET_BYTECODE: felt252 = 0;
-
-// ----- Account -----
 const ACCOUNT: felt252 = 1;
 
 const ACCOUNT_GET_NONCE: felt252 = 0;
@@ -44,50 +34,10 @@ pub impl AccountImpl of AccountTrait {
         let result = self.call_memorizer(ACCOUNT_GET_CODE_HASH, key);
         u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
     }
-    // TODO: @Okm165 [done?]
-    fn account_get_bytecode(
-        self: @EvmMemorizer, key: @AccountKey, unconstrained_memorizer: @UnconstrainedMemorizer,
-    ) -> ByteCode {
-        let code_hash = self.account_get_code_hash(key);
-
-        /// Bytecode as u64 le words [] +
-        /// lastInputWord +
-        /// lastInputNumBytes (how many bytes are in the last word)
-        let mut bytecode = unconstrained_memorizer
-            .call_unconstrained_memorizer(UNCONSTRAINED_STORE_GET_BYTECODE, key);
-
-        let bytecode_le_words = Serde::<ByteCodeLeWords>::deserialize(ref bytecode).unwrap();
-        let mut words_64bit = bytecode_le_words.words64bit.clone();
-        let calculated_code_hash = cairo_keccak(
-            ref words_64bit, bytecode_le_words.lastInputWord, bytecode_le_words.lastInputNumBytes,
-        )
-            .reverse_endianness();
-
-        if calculated_code_hash != code_hash {
-            panic_with_felt252('Account: code hash mismatch');
-        }
-
-        bytecode_le_words.get_original()
-    }
 
     fn call_memorizer(self: @EvmMemorizer, selector: felt252, key: @AccountKey) -> Span<felt252> {
         call_contract_syscall(
             ACCOUNT.try_into().unwrap(),
-            selector,
-            array![
-                *self.dict.segment_index, *self.dict.offset, *key.chain_id, *key.block_number,
-                *key.address,
-            ]
-                .span(),
-        )
-            .unwrap_syscall()
-    }
-
-    fn call_unconstrained_memorizer(
-        self: @UnconstrainedMemorizer, selector: felt252, key: @AccountKey,
-    ) -> Span<felt252> {
-        call_contract_syscall(
-            UNCONSTRAINED_STORE.try_into().unwrap(),
             selector,
             array![
                 *self.dict.segment_index, *self.dict.offset, *key.chain_id, *key.block_number,

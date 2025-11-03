@@ -4,6 +4,7 @@ pub mod debug;
 pub mod evm;
 pub mod injected_state;
 pub mod starknet;
+pub mod unconstrained;
 
 #[derive(Serde, Drop)]
 pub struct HDP {
