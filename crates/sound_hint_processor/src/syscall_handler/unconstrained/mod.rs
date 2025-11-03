@@ -1,4 +1,4 @@
-use std::{cell::RefCell, hash::Hash, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 use cairo_vm::{
     hint_processor::builtin_hint_processor::dict_manager::DictManager,
@@ -46,7 +46,7 @@ impl traits::SyscallHandler for CallContractHandler {
     async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
         let mut calldata = request.calldata_start;
 
-        let call_handler_id = CallHandlerId::try_from(request.contract_address)?;
+        let call_handler_id = CallHandlerId::try_from(request.selector)?;
 
         let memorizer = Memorizer::derive(vm, &mut calldata)?;
 
@@ -57,7 +57,11 @@ impl traits::SyscallHandler for CallContractHandler {
             CallHandlerId::Bytecode => {
                 let key = keys::evm::account::CairoKey::from_memory(vm, calldata)?;
                 let ptr = memorizer.read_key_ptr(&MaybeRelocatable::Int(key.hash()), self.dict_manager.clone())?;
-                retdata_end = BytecodeLeWords::from_memory(vm, ptr)?.to_memory(vm, retdata_end)?;
+                let address = vm.get_maybe(&ptr).unwrap();
+                println!("{:?}", key);
+                println!("{:?}", ptr);
+                retdata_end = BytecodeLeWords::from_memory(vm, address.get_relocatable().unwrap())?.to_memory(vm, retdata_end)?;
+                println!("dupa");
             }
         }
 
@@ -83,17 +87,5 @@ impl TryFrom<Felt252> for CallHandlerId {
             input: value,
             info: "Invalid function identifier".to_string(),
         })
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone)]
-#[serde(rename_all = "lowercase")]
-pub enum DryRunKey {
-    Bytecode(keys::evm::account::Key),
-}
-
-impl DryRunKey {
-    pub fn is_bytecode(&self) -> bool {
-        matches!(self, Self::Bytecode(_))
     }
 }
