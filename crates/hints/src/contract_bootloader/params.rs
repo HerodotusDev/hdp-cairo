@@ -155,24 +155,26 @@ pub fn unconstrained_write_lists(
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
     let unconstrained_states = exec_scopes.get::<UnconstrainedState>(vars::scopes::UNCONSTRAINED)?;
-    let mut unconstrained_keys_ptr = get_ptr_from_var_name("unconstrained_keys", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let mut unconstrained_values_ptr = get_ptr_from_var_name("unconstrained_values", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let unconstrained_keys_ptr = get_ptr_from_var_name(vars::ids::UNCONSTRAINED_KEYS, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let unconstrained_values_ptr = get_ptr_from_var_name(vars::ids::UNCONSTRAINED_VALUES, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+
+    let capacity = unconstrained_states.0.len();
+    let mut keys_to_write: Vec<MaybeRelocatable> = Vec::with_capacity(capacity);
+    let mut values_to_write: Vec<MaybeRelocatable> = Vec::with_capacity(capacity);
 
     for (key, value) in unconstrained_states.0.into_iter() {
-        vm.insert_value(unconstrained_keys_ptr, key)?;
-        unconstrained_keys_ptr += 1;
-
         match value {
             UnconstrainedStateValue::Bytecode(data) => {
-                println!("{:?}", data);
-                println!("{:?}", BytecodeLeWords::from(data.clone()));
+                keys_to_write.push(key.into());
                 let segment = vm.add_memory_segment();
                 BytecodeLeWords::from(data).to_memory(vm, segment)?;
-                vm.insert_value(unconstrained_values_ptr, segment)?;
-                unconstrained_values_ptr += 1;
+                values_to_write.push(segment.into());
             }
         }
     }
+
+    vm.load_data(unconstrained_keys_ptr, &keys_to_write)?;
+    vm.load_data(unconstrained_values_ptr, &values_to_write)?;
 
     Ok(())
 }
