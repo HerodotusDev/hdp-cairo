@@ -51,9 +51,6 @@ impl CallHandler for HeaderCallHandler {
             .await
             .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?
             .ok_or(SyscallExecutionError::InternalError("Block not found".into()))?;
-        println!("block number: {:?}", value.header.inner.number);
-        println!("parent_hash: {:?}", value.header.inner.parent_hash);
-        println!("FunctionId: {:?}", function_id);
         Ok(CairoHeader::from(value.header.inner).handle(function_id))
     }
 }

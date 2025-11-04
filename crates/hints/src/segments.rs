@@ -163,7 +163,5 @@ pub fn retdata_size_counter(
     let counter = get_integer_from_var_name("counter", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     let insert = if retdata_size == counter { Felt252::ONE } else { Felt252::ZERO };
-    println!("{}", retdata_size);
-    println!("{}", counter);
     insert_value_into_ap(vm, insert)
 }
