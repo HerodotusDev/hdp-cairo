@@ -18,17 +18,13 @@ pub struct BytecodeLeWords {
 impl CairoType for BytecodeLeWords {
     fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
         let words_64bit_len: usize = (*vm.get_integer((address + 0)?)?).try_into().unwrap();
-        println!("words_64bit_len {:?}", words_64bit_len);
         let words_64bit = vm
             .get_integer_range((address + 1)?, words_64bit_len)?
             .into_iter()
             .map(|e| *e)
             .collect::<Vec<_>>();
-        println!("words_64bit {:?}", words_64bit);
         let last_input_word = *vm.get_integer((address + (words_64bit_len + 1))?)?;
-        println!("last_input_word {:?}", last_input_word);
         let last_input_num_bytes = *vm.get_integer((address + (words_64bit_len + 2))?)?;
-        println!("last_input_num_bytes {:?}", last_input_num_bytes);
         Ok(Self {
             words_64bit,
             last_input_word,
@@ -37,15 +33,12 @@ impl CairoType for BytecodeLeWords {
     }
     fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
         let words_64bit_len = self.words_64bit.len();
-        println!("to_memory words_64bit_len {:?}", words_64bit_len);
         vm.insert_value((address + 0)?, words_64bit_len)?;
         vm.load_data(
             (address + 1)?,
             &self.words_64bit.iter().map(MaybeRelocatable::from).collect::<Vec<_>>(),
         )?;
-        println!("to_memory last_input_word {:?}", self.last_input_word);
         vm.insert_value((address + (words_64bit_len + 1))?, self.last_input_word)?;
-        println!("to_memory last_input_word {:?}", self.last_input_num_bytes);
         vm.insert_value((address + (words_64bit_len + 2))?, self.last_input_num_bytes)?;
         Ok((address + (words_64bit_len + 3))?)
     }
@@ -57,33 +50,26 @@ impl CairoType for BytecodeLeWords {
 
 impl From<Bytes> for BytecodeLeWords {
     fn from(value: Bytes) -> Self {
-        let len = value.len();
-        let remaining = (len % 8) as u8;
-        let mut words = vec![];
+        let bytes: &[u8] = value.as_ref();
 
-        // Process only complete 8-byte words
-        for i in (0..len - remaining as usize).step_by(8) {
-            let mut word: u64 = 0;
-            for j in 0..8 {
-                word |= (value[i + j] as u64) << (j * 8);
-            }
-            words.push(word);
-        }
+        let words_64bit: Vec<Felt252> = bytes
+            .chunks_exact(8)
+            .map(|chunk| {
+                let word = u64::from_le_bytes(chunk.try_into().expect("chunks_exact guarantees 8 bytes"));
+                Felt252::from(word)
+            })
+            .collect();
 
-        // Process remaining bytes (if any)
-        let (last_input_word, last_input_num_bytes) = if remaining > 0 {
-            let start_idx = len - remaining as usize;
-            let mut last_word: u64 = 0;
-            for i in 0..remaining as usize {
-                last_word |= (value[start_idx + i] as u64) << (i * 8);
-            }
-            (last_word, remaining as u64)
-        } else {
-            (0, 0)
-        };
+        let remainder = bytes.chunks_exact(8).remainder();
+        let last_input_num_bytes = remainder.len() as u64;
+
+        let last_input_word = remainder
+            .iter()
+            .enumerate()
+            .fold(0u64, |acc, (i, &byte)| acc | ((byte as u64) << (i * 8)));
 
         BytecodeLeWords {
-            words_64bit: words.into_iter().map(Felt252::from).collect(),
+            words_64bit,
             last_input_word: Felt252::from(last_input_word),
             last_input_num_bytes: Felt252::from(last_input_num_bytes),
         }
