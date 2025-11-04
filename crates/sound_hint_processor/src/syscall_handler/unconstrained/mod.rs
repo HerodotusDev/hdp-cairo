@@ -56,12 +56,11 @@ impl traits::SyscallHandler for CallContractHandler {
         match call_handler_id {
             CallHandlerId::Bytecode => {
                 let key = keys::evm::account::CairoKey::from_memory(vm, calldata)?;
-                let ptr = memorizer.read_key_ptr(&MaybeRelocatable::Int(key.hash()), self.dict_manager.clone())?;
-                let address = vm.get_maybe(&ptr).unwrap();
-                println!("{:?}", key);
-                println!("{:?}", ptr);
-                retdata_end = BytecodeLeWords::from_memory(vm, address.get_relocatable().unwrap())?.to_memory(vm, retdata_end)?;
-                println!("dupa");
+                let ptr = vm
+                    .get_maybe(&memorizer.read_key_ptr(&MaybeRelocatable::Int(key.hash()), self.dict_manager.clone())?)
+                    .ok_or(SyscallExecutionError::InternalError("No key for pointer".into()))?;
+
+                retdata_end = BytecodeLeWords::from_memory(vm, ptr.get_relocatable().unwrap())?.to_memory(vm, retdata_end)?;
             }
         }
 
