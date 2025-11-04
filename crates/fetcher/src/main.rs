@@ -13,7 +13,10 @@ use dry_hint_processor::syscall_handler::{evm, injected_state, starknet, unconst
 use eth_trie_proofs as _;
 use fetcher::{parse_syscall_handler, Args, Fetcher};
 use futures as _;
-use indexer as _;
+use indexer_client::{
+    self as _,
+    models::{MMRDeploymentConfig, MMRHasherConfig},
+};
 use indicatif as _;
 use reqwest as _;
 use starknet_types_core as _;
@@ -39,7 +42,23 @@ async fn main() -> Result<(), fetcher::FetcherError> {
     > = serde_json::from_slice(&input_file)?;
     let proof_keys = parse_syscall_handler(syscall_handler)?;
 
-    let fetcher = Fetcher::new(&proof_keys);
+    let mmr_hasher_config = args
+        .mmr_hasher_config
+        .as_ref()
+        .map(|path| Ok::<MMRHasherConfig, fetcher::FetcherError>(serde_json::from_slice(&fs::read(path)?)?))
+        .transpose()?;
+
+    let mmr_deployment_config = args
+        .mmr_deployment_config
+        .as_ref()
+        .map(|path| Ok::<MMRDeploymentConfig, fetcher::FetcherError>(serde_json::from_slice(&fs::read(path)?)?))
+        .transpose()?;
+
+    let fetcher = Fetcher::new(
+        &proof_keys,
+        mmr_hasher_config.unwrap_or_default(),
+        mmr_deployment_config.unwrap_or_default(),
+    );
     let (
         eth_proofs_mainnet,
         eth_proofs_sepolia,

@@ -7,10 +7,8 @@ use alloy::{
     providers::{Provider, RootProvider},
     transports::http::reqwest::Url,
 };
-use cairo_vm::Felt252;
 use eth_trie_proofs::{tx_receipt_trie::TxReceiptsMptHandler, tx_trie::TxsMptHandler};
-use indexer::models::BlockHeader;
-use starknet_types_core::felt::FromStrError;
+use indexer_client::models::BlockHeader;
 use types::{
     keys::{self, evm::get_corresponding_rpc_url},
     proofs::{
@@ -18,6 +16,7 @@ use types::{
         header::{HeaderMmrMeta, HeaderProof},
         mpt::MPTProof,
     },
+    HashingFunction,
 };
 
 use super::FlattenedKey;
@@ -42,16 +41,18 @@ impl ProofKeys {
         deployed_on_chain_id: u128,
         accumulates_chain_id: u128,
         block_number: u64,
+        mmr_hashing_function: HashingFunction,
     ) -> Result<HeaderMmrMeta<Header>, FetcherError> {
-        let (mmr_proof, meta) = super::ProofKeys::fetch_mmr_proof(deployed_on_chain_id, accumulates_chain_id, block_number).await?;
+        let (mmr_proof, mmr_meta) =
+            super::ProofKeys::fetch_mmr_proof(deployed_on_chain_id, accumulates_chain_id, block_number, mmr_hashing_function).await?;
 
         let proof = HeaderProof {
             leaf_idx: mmr_proof.element_index,
             mmr_path: mmr_proof
                 .siblings_hashes
                 .iter()
-                .map(|hash| Felt252::from_hex(hash.as_str()))
-                .collect::<Result<Vec<Felt252>, FromStrError>>()?,
+                .map(|hash| Self::normalize_hex(hash).parse())
+                .collect::<Result<Vec<Bytes>, FromHexError>>()?,
         };
 
         let rlp = match &mmr_proof.block_header {
@@ -70,7 +71,7 @@ impl ProofKeys {
             _ => return Err(FetcherError::InternalError("wrong rlp format".into())),
         };
         Ok(HeaderMmrMeta {
-            mmr_meta: meta,
+            mmr_meta,
             headers: vec![Header { rlp, proof }],
         })
     }

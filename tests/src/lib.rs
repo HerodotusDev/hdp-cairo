@@ -35,6 +35,7 @@ mod test_utils {
     use dry_hint_processor::syscall_handler::{evm, injected_state, starknet, unconstrained};
     use fetcher::{parse_syscall_handler, Fetcher};
     use hints::vars;
+    use indexer_client::models::{MMRDeploymentConfig, MMRHasherConfig};
     use syscall_handler::{SyscallHandler, SyscallHandlerWrapper};
     use tracing::debug;
     use types::{
@@ -116,7 +117,7 @@ mod test_utils {
 
         let proof_keys = parse_syscall_handler(syscall_handler).unwrap();
 
-        let fetcher = Fetcher::new(&proof_keys);
+        let fetcher = Fetcher::new(&proof_keys, MMRHasherConfig::default(), MMRDeploymentConfig::default());
         let (
             eth_proofs_mainnet,
             eth_proofs_sepolia,

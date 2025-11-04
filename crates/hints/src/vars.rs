@@ -11,8 +11,8 @@ pub mod scopes {
     pub const EXPECTED_PATH: &str = "expected_path";
     pub const HEADER_EVM: &str = "header_evm";
     pub const HEADER_STARKNET: &str = "header_starknet";
-    pub const HEADER_WITH_MMR_EVM: &str = "header_with_mmr";
-    pub const HEADER_WITH_MMR_STARKNET: &str = "header_with_mmr_starknet";
+    pub const HEADER_EVM_WITH_MMR: &str = "header_evm_with_mmr";
+    pub const HEADER_STARKNET_WITH_MMR: &str = "header_starknet_with_mmr";
     pub const INCLUSION_PROOF: &str = "inclusion_proof";
     pub const INJECTED_STATE: &str = "injected_state";
     pub const LEFT_CHILD: &str = "left_child";
@@ -75,7 +75,8 @@ pub mod ids {
     pub const LENGTH: &str = "length";
     pub const MEMORIZER_KEY: &str = "memorizer_key";
     pub const MMR_META: &str = "mmr_meta";
-    pub const MMR_PATH: &str = "mmr_path";
+    pub const MMR_PATH_POSEIDON: &str = "mmr_path_poseidon";
+    pub const MMR_PATH_KECCAK: &str = "mmr_path_keccak";
     pub const MODULE_HASH: &str = "module_hash";
     pub const MPT_PROOF: &str = "mpt_proof";
     pub const N_BUILTINS: &str = "n_builtins";
@@ -91,7 +92,8 @@ pub mod ids {
     pub const PARAMS_LEN: &str = "params_len";
     pub const PARAMS: &str = "params";
     pub const PATH: &str = "path";
-    pub const PEAKS: &str = "peaks";
+    pub const PEAKS_POSEIDON: &str = "peaks_poseidon";
+    pub const PEAKS_KECCAK: &str = "peaks_keccak";
     pub const PREV_ROOT: &str = "prev_root";
     pub const PRIVATE_INPUTS: &str = "private_inputs";
     pub const PROOF_BYTES_LEN: &str = "proof_bytes_len";

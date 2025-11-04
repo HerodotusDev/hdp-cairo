@@ -151,6 +151,35 @@ pub fn mmr_metas_len_counter(
     insert_value_into_ap(vm, insert)
 }
 
+// Mixed-output counters for Poseidon/Keccak MMR metas in utils.mmr_metas_write_output_ptr_mixed
+pub const MMR_METAS_LEN_POSEIDON_COUNTER: &str = "memory[ap] = 1 if (ids.mmr_metas_len_poseidon == ids.i) else 0";
+
+pub fn mmr_metas_len_poseidon_counter(
+    vm: &mut VirtualMachine,
+    _exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let mmr_metas_len_poseidon = get_integer_from_var_name("mmr_metas_len_poseidon", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let i = get_integer_from_var_name("i", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let insert = if mmr_metas_len_poseidon == i { Felt252::ONE } else { Felt252::ZERO };
+    insert_value_into_ap(vm, insert)
+}
+
+pub const MMR_METAS_LEN_KECCAK_COUNTER: &str = "memory[ap] = 1 if (ids.mmr_metas_len_keccak == ids.j) else 0";
+
+pub fn mmr_metas_len_keccak_counter(
+    vm: &mut VirtualMachine,
+    _exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let mmr_metas_len_keccak = get_integer_from_var_name("mmr_metas_len_keccak", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let j = get_integer_from_var_name("j", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let insert = if mmr_metas_len_keccak == j { Felt252::ONE } else { Felt252::ZERO };
+    insert_value_into_ap(vm, insert)
+}
+
 pub const RETDATA_SIZE_COUNTER: &str = "memory[ap] = 1 if (ids.retdata_size == ids.counter) else 0";
 
 pub fn retdata_size_counter(

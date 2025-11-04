@@ -10,7 +10,6 @@ use std::{
     process::{Command, Stdio},
 };
 
-use cairo_air::utils::{serialize_proof_to_file, ProofFormat};
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use cairo_vm::{
     cairo_run::{self, CairoRunConfig},
@@ -20,15 +19,12 @@ use clap::{Parser, Subcommand};
 use dry_hint_processor::syscall_handler::{evm, injected_state, starknet, unconstrained};
 use dry_run::{LayoutName, Program, DRY_RUN_COMPILED_JSON};
 use fetcher::{parse_syscall_handler, Fetcher};
-use sound_run::{
-    prove::{prove, prover_input_from_runner, secure_pcs_config},
-    HDP_COMPILED_JSON,
-};
-use stwo_cairo_prover::stwo_prover::core::vcs::blake2_merkle::Blake2sMerkleChannel;
+use indexer_client::models::{MMRDeploymentConfig, MMRHasherConfig};
+use sound_run::{prove::prover_input_from_runner, HDP_COMPILED_JSON};
 use syscall_handler::SyscallHandler;
 use types::{
     error::Error, param::Param, ChainProofs, HDPDryRunInput, HDPInput, InjectedState, ProofsData, ETHEREUM_MAINNET_CHAIN_ID,
-    ETHEREUM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
+    ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
 };
 
 #[derive(Parser, Debug)]
@@ -138,19 +134,47 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             > = serde_json::from_slice(&input_file)?;
             let proof_keys = parse_syscall_handler(syscall_handler)?;
 
-            let fetcher = Fetcher::new(&proof_keys);
-            let (evm_proofs_mainnet, evm_proofs_sepolia, starknet_proofs_mainnet, starknet_proofs_sepolia, state_proofs) = tokio::try_join!(
+            let mmr_hasher_config = args
+                .mmr_hasher_config
+                .as_ref()
+                .map(|path| Ok::<MMRHasherConfig, fetcher::FetcherError>(serde_json::from_slice(&fs::read(path)?)?))
+                .transpose()?;
+
+            let mmr_deployment_config = args
+                .mmr_deployment_config
+                .as_ref()
+                .map(|path| Ok::<MMRDeploymentConfig, fetcher::FetcherError>(serde_json::from_slice(&fs::read(path)?)?))
+                .transpose()?;
+
+            let fetcher = Fetcher::new(
+                &proof_keys,
+                mmr_hasher_config.unwrap_or_default(),
+                mmr_deployment_config.unwrap_or_default(),
+            );
+            let (
+                eth_proofs_mainnet,
+                eth_proofs_sepolia,
+                starknet_proofs_mainnet,
+                starknet_proofs_sepolia,
+                optimism_proofs_mainnet,
+                optimism_proofs_sepolia,
+                state_proofs,
+            ) = tokio::try_join!(
                 fetcher.collect_evm_proofs(ETHEREUM_MAINNET_CHAIN_ID),
                 fetcher.collect_evm_proofs(ETHEREUM_TESTNET_CHAIN_ID),
                 fetcher.collect_starknet_proofs(STARKNET_MAINNET_CHAIN_ID),
                 fetcher.collect_starknet_proofs(STARKNET_TESTNET_CHAIN_ID),
+                fetcher.collect_evm_proofs(OPTIMISM_MAINNET_CHAIN_ID),
+                fetcher.collect_evm_proofs(OPTIMISM_TESTNET_CHAIN_ID),
                 fetcher.collect_state_proofs(),
             )?;
             let chain_proofs = vec![
-                ChainProofs::EthereumMainnet(evm_proofs_mainnet),
-                ChainProofs::EthereumSepolia(evm_proofs_sepolia),
+                ChainProofs::EthereumMainnet(eth_proofs_mainnet),
+                ChainProofs::EthereumSepolia(eth_proofs_sepolia),
                 ChainProofs::StarknetMainnet(starknet_proofs_mainnet),
                 ChainProofs::StarknetSepolia(starknet_proofs_sepolia),
+                ChainProofs::OptimismMainnet(optimism_proofs_mainnet),
+                ChainProofs::OptimismSepolia(optimism_proofs_sepolia),
             ];
 
             println!("Writing proofs to: {}", args.output.display());
@@ -223,15 +247,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 pie.write_zip_file(file_name, true)?;
             }
 
-            if let Some(ref file_name) = args.stwo_proof {
+            if let Some(ref file_name) = args.stwo_prover_input {
                 let stwo_prover_input = prover_input_from_runner(&cairo_runner);
                 std::fs::write(file_name, serde_json::to_string(&stwo_prover_input)?)?;
-
-                let cairo_proof = prove(stwo_prover_input, secure_pcs_config());
-                serialize_proof_to_file::<Blake2sMerkleChannel>(&cairo_proof, file_name.into(), ProofFormat::Json)
-                    .expect("Failed to serialize proof");
-
-                println!("Proof saved to: {:?}", file_name);
+                println!("Prover Input saved to: {:?}", file_name);
             }
 
             println!("Sound run completed successfully.");
