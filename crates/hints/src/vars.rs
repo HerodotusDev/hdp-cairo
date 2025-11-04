@@ -73,6 +73,7 @@ pub mod ids {
     pub const LEAF: &str = "leaf";
     pub const LEFT: &str = "left";
     pub const LENGTH: &str = "length";
+    pub const MEMORIZER_KEY: &str = "memorizer_key";
     pub const MMR_META: &str = "mmr_meta";
     pub const MMR_PATH: &str = "mmr_path";
     pub const MODULE_HASH: &str = "module_hash";
@@ -113,9 +114,10 @@ pub mod ids {
     pub const SYSCALL_PTR: &str = "syscall_ptr";
     pub const TASK_HASH: &str = "task_hash";
     pub const TRIE_NODE_PROOF: &str = "trie_node_proof";
+    pub const UNCONSTRAINED_KEYS: &str = "unconstrained_keys";
+    pub const UNCONSTRAINED_VALUES: &str = "unconstrained_values";
     pub const UPDATE_PTR: &str = "update_ptr";
     pub const VALUE_LEN: &str = "value_len";
     pub const VALUE: &str = "value";
-    pub const MEMORIZER_KEY: &str = "memorizer_key";
     pub const WORD: &str = "word";
 }
