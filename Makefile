@@ -15,7 +15,7 @@ CLEAN_DIRS := .venv db
 .PHONY: all setup build test clean help
 
 # Default target: running 'make' will default to 'make all'
-all: build
+all: clean setup build test
 
 # Setup the environment: sync Python deps and check Rust code
 setup:
