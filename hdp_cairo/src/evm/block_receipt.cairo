@@ -1,6 +1,6 @@
 use hdp_cairo::EvmMemorizer;
+use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;
-use starknet::{SyscallResultTrait};
 
 const BLOCK_RECEIPT: felt252 = 4;
 
@@ -29,7 +29,7 @@ pub impl BlockReceiptImpl of BlockReceiptTrait {
         let mut result: ByteArray = "";
         for element in self.call_memorizer(BLOCK_RECEIPT_GET_BLOOM, key) {
             result.append_word(*element, 16);
-        };
+        }
         result
     }
 
@@ -40,10 +40,7 @@ pub impl BlockReceiptImpl of BlockReceiptTrait {
             BLOCK_RECEIPT.try_into().unwrap(),
             selector,
             array![
-                *self.dict.segment_index,
-                *self.dict.offset,
-                *key.chain_id,
-                *key.block_number,
+                *self.dict.segment_index, *self.dict.offset, *key.chain_id, *key.block_number,
                 *key.transaction_index,
             ]
                 .span(),

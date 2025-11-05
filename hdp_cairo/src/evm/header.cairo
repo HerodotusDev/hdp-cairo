@@ -1,6 +1,6 @@
 use hdp_cairo::EvmMemorizer;
+use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;
-use starknet::{SyscallResultTrait};
 
 const HEADER: felt252 = 0;
 
@@ -63,7 +63,7 @@ pub impl HeaderImpl of HeaderTrait {
         let mut result: ByteArray = "";
         for element in self.call_memorizer(HEADER_GET_BLOOM, key) {
             result.append_word(*element, 16);
-        };
+        }
         result
     }
     fn header_get_difficulty(self: @EvmMemorizer, key: @HeaderKey) -> u256 {

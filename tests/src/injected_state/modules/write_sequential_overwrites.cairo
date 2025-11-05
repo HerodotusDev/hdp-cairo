@@ -38,7 +38,7 @@ mod write_sequential_overwrites {
             root_history.append(new_root);
             current_root = new_root;
             i += 1;
-        };
+        }
 
         // Verify all roots are unique
         let mut j = 0;
@@ -55,9 +55,9 @@ mod write_sequential_overwrites {
                 let root_k = *root_history.at(k);
                 assert!(root_j != root_k, "Roots should be different");
                 k += 1;
-            };
+            }
             j += 1;
-        };
+        }
 
         // Verify final value is correct
         // let final_value = hdp.injected_state.read_key(label, key).unwrap();

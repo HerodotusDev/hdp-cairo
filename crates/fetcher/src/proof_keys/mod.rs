@@ -11,6 +11,7 @@ use crate::FetcherError;
 
 pub mod evm;
 pub mod starknet;
+pub mod unconstrained;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FlattenedKey {
@@ -23,6 +24,7 @@ pub struct ProofKeys {
     pub evm: evm::ProofKeys,
     pub starknet: starknet::ProofKeys,
     pub injected_state: HashMap<Felt252, Vec<Action>>,
+    pub unconstrained: unconstrained::ProofKeys,
 }
 
 impl ProofKeys {

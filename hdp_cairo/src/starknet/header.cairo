@@ -1,6 +1,6 @@
 use hdp_cairo::StarknetMemorizer;
+use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;
-use starknet::{SyscallResultTrait};
 
 const HEADER: felt252 = 0;
 

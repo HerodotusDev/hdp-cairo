@@ -1,7 +1,7 @@
 #[starknet::contract]
 mod hashers_pedersen {
-    use core::pedersen::{pedersen};
-    use hdp_cairo::{HDP};
+    use core::pedersen::pedersen;
+    use hdp_cairo::HDP;
 
     #[storage]
     struct Storage {}

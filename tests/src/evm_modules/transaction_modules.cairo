@@ -1,6 +1,7 @@
 #[starknet::contract]
 mod transaction_get_nonce {
-    use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait};
 
     #[storage]
     struct Storage {}
@@ -37,7 +38,8 @@ mod transaction_get_nonce {
 
 #[starknet::contract]
 mod transaction_get_gas_price {
-    use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait};
 
     #[storage]
     struct Storage {}
@@ -56,7 +58,8 @@ mod transaction_get_gas_price {
 
 #[starknet::contract]
 mod transaction_get_gas_limit {
-    use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait};
 
     #[storage]
     struct Storage {}
@@ -75,7 +78,8 @@ mod transaction_get_gas_limit {
 
 #[starknet::contract]
 mod transaction_get_receiver {
-    use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait};
 
     #[storage]
     struct Storage {}
@@ -97,7 +101,8 @@ mod transaction_get_receiver {
 
 #[starknet::contract]
 mod transaction_get_value {
-    use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait};
 
     #[storage]
     struct Storage {}
@@ -116,7 +121,8 @@ mod transaction_get_value {
 
 #[starknet::contract]
 mod transaction_get_v {
-    use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait};
 
     #[storage]
     struct Storage {}
@@ -137,7 +143,8 @@ mod transaction_get_v {
 
 #[starknet::contract]
 mod transaction_get_r {
-    use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait};
 
     #[storage]
     struct Storage {}
@@ -159,7 +166,8 @@ mod transaction_get_r {
 
 #[starknet::contract]
 mod transaction_get_s {
-    use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait};
 
     #[storage]
     struct Storage {}
@@ -181,7 +189,8 @@ mod transaction_get_s {
 
 #[starknet::contract]
 mod transaction_get_chain_id {
-    use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait};
 
     #[storage]
     struct Storage {}
@@ -244,7 +253,6 @@ mod transaction_get_chain_id {
 //     }
 // }
 
-
 // // Testing EIP-4844 transaction max fee per blob gas
 // #[starknet::contract]
 // mod transaction_get_max_fee_per_blob_gas {
@@ -270,7 +278,8 @@ mod transaction_get_chain_id {
 // Legacy transaction decoding test
 #[starknet::contract]
 mod transaction_get_tx_type_legacy {
-    use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait};
 
     #[storage]
     struct Storage {}
@@ -290,7 +299,8 @@ mod transaction_get_tx_type_legacy {
 // EIP-2930 transaction decoding test
 #[starknet::contract]
 mod transaction_get_tx_type_eip2930 {
-    use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait};
 
     #[storage]
     struct Storage {}
@@ -310,7 +320,8 @@ mod transaction_get_tx_type_eip2930 {
 // EIP-1559 transaction decoding test
 #[starknet::contract]
 mod transaction_get_tx_type_eip2559 {
-    use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait};
 
     #[storage]
     struct Storage {}
@@ -321,7 +332,9 @@ mod transaction_get_tx_type_eip2559 {
             hdp
                 .evm
                 .block_tx_get_tx_type(
-                    @BlockTxKey { chain_id: 11155111, block_number: 6005662, transaction_index: 82 },
+                    @BlockTxKey {
+                        chain_id: 11155111, block_number: 6005662, transaction_index: 82,
+                    },
                 ) == u256 { low: 0x2, high: 0x0 },
         );
     }
@@ -330,7 +343,8 @@ mod transaction_get_tx_type_eip2559 {
 // EIP-4844 transaction decoding test
 #[starknet::contract]
 mod transaction_get_tx_type_eip4844 {
-    use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait};
 
     #[storage]
     struct Storage {}
@@ -350,7 +364,8 @@ mod transaction_get_tx_type_eip4844 {
 // EIP-7702 transaction decoding test
 #[starknet::contract]
 mod transaction_get_tx_type_eip7702 {
-    use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait};
 
     #[storage]
     struct Storage {}
@@ -361,7 +376,9 @@ mod transaction_get_tx_type_eip7702 {
             hdp
                 .evm
                 .block_tx_get_tx_type(
-                    @BlockTxKey { chain_id: 11155111, block_number: 8179046, transaction_index: 252 },
+                    @BlockTxKey {
+                        chain_id: 11155111, block_number: 8179046, transaction_index: 252,
+                    },
                 ) == u256 { low: 0x4, high: 0x0 },
         );
     }
@@ -369,7 +386,8 @@ mod transaction_get_tx_type_eip7702 {
 
 #[starknet::contract]
 mod transaction_get_sender {
-    use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait};
 
     #[storage]
     struct Storage {}
@@ -391,7 +409,8 @@ mod transaction_get_sender {
 
 #[starknet::contract]
 mod transaction_get_hash {
-    use hdp_cairo::{HDP, evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait};
 
     #[storage]
     struct Storage {}

@@ -1,6 +1,6 @@
 use hdp_cairo::EvmMemorizer;
+use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;
-use starknet::{SyscallResultTrait};
 
 const STORAGE: felt252 = 2;
 
@@ -26,13 +26,8 @@ pub impl StorageImpl of StorageTrait {
             STORAGE.try_into().unwrap(),
             STORAGE_GET_SLOT,
             array![
-                *self.dict.segment_index,
-                *self.dict.offset,
-                *key.chain_id,
-                *key.block_number,
-                *key.address,
-                (*key.storage_slot).high.into(),
-                (*key.storage_slot).low.into(),
+                *self.dict.segment_index, *self.dict.offset, *key.chain_id, *key.block_number,
+                *key.address, (*key.storage_slot).high.into(), (*key.storage_slot).low.into(),
             ]
                 .span(),
         )

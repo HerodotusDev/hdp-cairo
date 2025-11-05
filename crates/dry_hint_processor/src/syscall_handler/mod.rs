@@ -1,6 +1,7 @@
 pub mod evm;
 pub mod injected_state;
 pub mod starknet;
+pub mod unconstrained;
 
 use std::{any::Any, collections::HashMap};
 
@@ -21,12 +22,17 @@ pub fn syscall_handler_create(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let syscall_handler =
-        SyscallHandlerWrapper::<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>::new(
-            evm::CallContractHandler::default(),
-            starknet::CallContractHandler::default(),
-            injected_state::CallContractHandler::new(exec_scopes.get_dict_manager()?),
-        );
+    let syscall_handler = SyscallHandlerWrapper::<
+        evm::CallContractHandler,
+        starknet::CallContractHandler,
+        injected_state::CallContractHandler,
+        unconstrained::CallContractHandler,
+    >::new(
+        evm::CallContractHandler::default(),
+        starknet::CallContractHandler::default(),
+        injected_state::CallContractHandler::new(exec_scopes.get_dict_manager()?),
+        unconstrained::CallContractHandler::default(),
+    );
     exec_scopes.insert_value(vars::scopes::SYSCALL_HANDLER, syscall_handler);
 
     Ok(())
@@ -45,6 +51,7 @@ pub fn syscall_handler_set_syscall_ptr(
         evm::CallContractHandler,
         starknet::CallContractHandler,
         injected_state::CallContractHandler,
+        unconstrained::CallContractHandler,
     >>(vars::scopes::SYSCALL_HANDLER)?;
     syscall_handler.set_syscall_ptr(syscall_ptr);
 
@@ -63,6 +70,7 @@ pub fn enter_scope_syscall_handler(
         evm::CallContractHandler,
         starknet::CallContractHandler,
         injected_state::CallContractHandler,
+        unconstrained::CallContractHandler,
     >>(vars::scopes::SYSCALL_HANDLER)?);
     exec_scopes.enter_scope(HashMap::from_iter([(vars::scopes::SYSCALL_HANDLER.to_string(), syscall_handler)]));
 

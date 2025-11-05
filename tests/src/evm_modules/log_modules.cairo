@@ -1,6 +1,7 @@
 #[starknet::contract]
 mod logs_get_address {
-    use hdp_cairo::{HDP, evm::log::{LogImpl, LogKey, LogTrait}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::log::{LogImpl, LogKey, LogTrait};
 
 
     #[storage]
@@ -25,7 +26,8 @@ mod logs_get_address {
 
 #[starknet::contract]
 mod logs_get_topic0 {
-    use hdp_cairo::{HDP, evm::log::{LogImpl, LogKey, LogTrait}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::log::{LogImpl, LogKey, LogTrait};
 
     #[storage]
     struct Storage {}
@@ -52,7 +54,8 @@ mod logs_get_topic0 {
 
 #[starknet::contract]
 mod logs_get_topic1 {
-    use hdp_cairo::{HDP, evm::log::{LogImpl, LogKey, LogTrait}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::log::{LogImpl, LogKey, LogTrait};
 
     #[storage]
     struct Storage {}
@@ -76,7 +79,8 @@ mod logs_get_topic1 {
 
 #[starknet::contract]
 mod logs_get_topic2 {
-    use hdp_cairo::{HDP, evm::log::{LogImpl, LogKey, LogTrait}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::log::{LogImpl, LogKey, LogTrait};
 
     #[storage]
     struct Storage {}
@@ -100,10 +104,11 @@ mod logs_get_topic2 {
 
 #[starknet::contract]
 mod logs_get_data {
-    use alexandria_bytes::{Bytes};
-    use alexandria_bytes::byte_array_ext::{ByteArrayTraitExt};
-    use alexandria_encoding::sol_abi::{decode::SolAbiDecodeTrait};
-    use hdp_cairo::{HDP, evm::log::{LogImpl, LogKey, LogTrait}};
+    use alexandria_bytes::Bytes;
+    use alexandria_bytes::byte_array_ext::ByteArrayTraitExt;
+    use alexandria_encoding::sol_abi::decode::SolAbiDecodeTrait;
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::log::{LogImpl, LogKey, LogTrait};
 
     #[storage]
     struct Storage {}

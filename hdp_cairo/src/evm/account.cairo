@@ -1,6 +1,6 @@
 use hdp_cairo::EvmMemorizer;
+use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;
-use starknet::{SyscallResultTrait};
 
 const ACCOUNT: felt252 = 1;
 
@@ -40,10 +40,7 @@ pub impl AccountImpl of AccountTrait {
             ACCOUNT.try_into().unwrap(),
             selector,
             array![
-                *self.dict.segment_index,
-                *self.dict.offset,
-                *key.chain_id,
-                *key.block_number,
+                *self.dict.segment_index, *self.dict.offset, *key.chain_id, *key.block_number,
                 *key.address,
             ]
                 .span(),

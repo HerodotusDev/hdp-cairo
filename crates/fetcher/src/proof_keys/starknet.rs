@@ -92,10 +92,8 @@ impl ProofKeys {
             return Err(FetcherError::JsonDeserializationError(err.to_string()));
         }
 
-        let proof = serde_json::from_value::<starknet::storage::Output>(json_rpc_response["result"].clone()).map_err(|e| {
-            println!("Deserialization error: {}", e);
-            FetcherError::JsonDeserializationError(e.to_string())
-        })?;
+        let proof = serde_json::from_value::<starknet::storage::Output>(json_rpc_response["result"].clone())
+            .map_err(|e| FetcherError::JsonDeserializationError(e.to_string()))?;
 
         Ok(Storage::new(key.block_number, key.address, vec![key.storage_slot], proof))
     }

@@ -88,7 +88,7 @@ mod random_reads_across_multiple_tries {
 
             results.append(key);
             i += 1;
-        };
+        }
 
         array![root_a, root_b, root_c]
     }

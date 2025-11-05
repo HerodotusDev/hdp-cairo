@@ -1,17 +1,17 @@
 #[starknet::contract]
 mod module {
-    use alexandria_bytes::{Bytes};
-    use alexandria_bytes::byte_array_ext::{ByteArrayTraitExt};
-    use alexandria_encoding::sol_abi::{decode::SolAbiDecodeTrait};
-    use core::num::traits::BitSize;
+    use alexandria_bytes::Bytes;
+    use alexandria_bytes::byte_array_ext::ByteArrayTraitExt;
+    use alexandria_encoding::sol_abi::decode::SolAbiDecodeTrait;
     use core::byte_array::ByteArrayImpl;
+    use core::num::traits::BitSize;
+    use hdp_cairo::HDP;
+    use hdp_cairo::evm::ETHEREUM_TESTNET_CHAIN_ID;
+    use hdp_cairo::evm::block_receipt::{BlockReceiptImpl, BlockReceiptKey, BlockReceiptTrait};
+    use hdp_cairo::evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait};
+    use hdp_cairo::evm::header::{HeaderImpl, HeaderKey, HeaderTrait};
+    use hdp_cairo::evm::log::{LogImpl, LogKey, LogTrait};
     use starknet::EthAddress;
-    use hdp_cairo::{
-        HDP, evm::ETHEREUM_TESTNET_CHAIN_ID,
-        evm::block_receipt::{BlockReceiptImpl, BlockReceiptKey, BlockReceiptTrait},
-        evm::block_tx::{BlockTxImpl, BlockTxKey, BlockTxTrait},
-        evm::header::{HeaderImpl, HeaderKey, HeaderTrait}, evm::log::{LogImpl, LogKey, LogTrait},
-    };
 
     const MAX_CONSIDERED_LOGS_PER_TRANSACTION: u32 = 80000;
 
@@ -104,7 +104,8 @@ mod module {
                                 let encoded: Bytes = ByteArrayTraitExt::new(
                                     data.len() * BitSize::<u256>::bits() / BitSize::<u8>::bits(),
                                     data,
-                                ).into();
+                                )
+                                    .into();
 
                                 let mut offset = 0;
                                 // Decode the data to extract an Ethereum address corresponding to
@@ -120,7 +121,7 @@ mod module {
                     }
                 };
             }
-        };
+        }
 
         res
     }

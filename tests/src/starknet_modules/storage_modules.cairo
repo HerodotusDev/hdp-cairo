@@ -1,7 +1,7 @@
 #[starknet::contract]
 mod starknet_get_storage {
-    use hdp_cairo::starknet::storage::StorageTrait;
-    use hdp_cairo::{HDP, starknet::storage::{StorageImpl, StorageKey}};
+    use hdp_cairo::HDP;
+    use hdp_cairo::starknet::storage::{StorageImpl, StorageKey, StorageTrait};
 
     #[storage]
     struct Storage {}

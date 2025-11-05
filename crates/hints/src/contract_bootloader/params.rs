@@ -10,7 +10,14 @@ use cairo_vm::{
     Felt252,
 };
 use starknet_crypto::poseidon_hash_many;
-use types::{cairo::injected_state::LABEL_RUNTIME, InjectedState};
+use types::{
+    cairo::{
+        injected_state::LABEL_RUNTIME,
+        traits::CairoType,
+        unconstrained::{bytecode::BytecodeLeWords, UnconstrainedStateValue},
+    },
+    InjectedState, UnconstrainedState,
+};
 
 use crate::vars;
 
@@ -123,6 +130,51 @@ pub fn injected_states_set_keys(
                 &MaybeRelocatable::Int(val),
             );
     }
+
+    Ok(())
+}
+
+pub const UNCONSTRAINED_ENTRIES_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(unconstrained.entries()))";
+
+pub fn unconstrained_entries_len(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    _hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let unconstrained_states = exec_scopes.get::<UnconstrainedState>(vars::scopes::UNCONSTRAINED)?;
+    insert_value_into_ap(vm, unconstrained_states.0.len())
+}
+
+pub const UNCONSTRAINED_WRITE_LISTS: &str = "segments.write_arg(ids.unconstrained_keys, unconstrained.keys())\nsegments.write_arg(ids.unconstrained_values, unconstrained.values())";
+
+pub fn unconstrained_write_lists(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let unconstrained_states = exec_scopes.get::<UnconstrainedState>(vars::scopes::UNCONSTRAINED)?;
+    let unconstrained_keys_ptr = get_ptr_from_var_name(vars::ids::UNCONSTRAINED_KEYS, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let unconstrained_values_ptr = get_ptr_from_var_name(vars::ids::UNCONSTRAINED_VALUES, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+
+    let capacity = unconstrained_states.0.len();
+    let mut keys_to_write: Vec<MaybeRelocatable> = Vec::with_capacity(capacity);
+    let mut values_to_write: Vec<MaybeRelocatable> = Vec::with_capacity(capacity);
+
+    for (key, value) in unconstrained_states.0.into_iter() {
+        match value {
+            UnconstrainedStateValue::Bytecode(data) => {
+                keys_to_write.push(key.into());
+                let segment = vm.add_memory_segment();
+                BytecodeLeWords::from(data).to_memory(vm, segment)?;
+                values_to_write.push(segment.into());
+            }
+        }
+    }
+
+    vm.load_data(unconstrained_keys_ptr, &keys_to_write)?;
+    vm.load_data(unconstrained_values_ptr, &values_to_write)?;
 
     Ok(())
 }

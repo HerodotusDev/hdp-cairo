@@ -79,3 +79,13 @@ impl TryFrom<CairoKey> for Key {
         })
     }
 }
+
+impl From<Key> for CairoKey {
+    fn from(value: Key) -> Self {
+        Self {
+            chain_id: Felt252::from(value.chain_id),
+            block_number: Felt252::from(value.block_number),
+            address: Felt252::from_bytes_be_slice(value.address.0 .0.as_slice()),
+        }
+    }
+}

@@ -39,6 +39,7 @@ from src.utils.chain_info import fetch_chain_info
 from src.contract_bootloader.contract import compute_contract
 from starkware.cairo.common.memcpy import memcpy
 from src.memorizers.injected_state.memorizer import InjectedStateMemorizer, InjectedStateHashParams
+from src.memorizers.unconstrained.memorizer import UnconstrainedMemorizer, UnconstrainedHashParams
 
 from packages.eth_essentials.lib.utils import pow2alloc251
 
@@ -90,6 +91,7 @@ func run{
         params = run_input.params
         compiled_class = run_input.compiled_class
         injected_state = run_input.injected_state
+        unconstrained = run_input.unconstrained
         chain_proofs = run_input.proofs_data.chain_proofs
         state_proofs = run_input.proofs_data.state_proofs
     %}
@@ -111,6 +113,7 @@ func run{
     let (evm_memorizer, evm_memorizer_start) = EvmMemorizer.init();
     let (starknet_memorizer, starknet_memorizer_start) = StarknetMemorizer.init();
     let (injected_state_memorizer, injected_state_memorizer_start) = InjectedStateMemorizer.init();
+    let (unconstrained_memorizer, unconstrained_memorizer_start) = UnconstrainedMemorizer.init();
 
     %{
         if '__dict_manager' not in globals():
@@ -129,8 +132,21 @@ func run{
             keys=injected_state_keys, values=injected_state_values, n=injected_state_len
         );
     }
-
     %{ injected_state_memorizer.set_key(poseidon_hash_many(LABEL_RUNTIME, key), value) for (key, value) in injected_states %}
+
+    let (unconstrained_keys) = alloc();
+    let (unconstrained_values: felt**) = alloc();
+    tempvar unconstrained_len: felt = nondet %{ len(unconstrained.entries()) %};
+    %{
+        segments.write_arg(ids.unconstrained_keys, unconstrained.keys())
+        segments.write_arg(ids.unconstrained_values, unconstrained.values())
+    %}
+    with unconstrained_memorizer {
+        unconstrained_load_loop(
+            keys=unconstrained_keys, values=unconstrained_values, n=unconstrained_len
+        );
+    }
+
     %{ syscall_handler = SyscallHandler(segments=segments, dict_manager=__dict_manager) %}
 
     // Misc
@@ -185,6 +201,7 @@ func run{
         starknet_decoder_ptr=starknet_decoder_ptr,
         starknet_key_hasher_ptr=starknet_key_hasher_ptr,
         injected_state_memorizer=injected_state_memorizer,
+        unconstrained_memorizer=unconstrained_memorizer,
     }(module_inputs, module_inputs_len);
 
     // Post Verification Checks: Ensure dict consistency
@@ -194,6 +211,9 @@ func run{
     );
     default_dict_finalize(
         injected_state_memorizer_start, injected_state_memorizer, BareMemorizer.DEFAULT_VALUE
+    );
+    default_dict_finalize(
+        unconstrained_memorizer_start, unconstrained_memorizer, BareMemorizer.DEFAULT_VALUE
     );
 
     with keccak_ptr {
@@ -239,4 +259,21 @@ func injected_state_load_loop{
     InjectedStateMemorizer.add(key=memorizer_key, data=data_ptr);
 
     return injected_state_load_loop(keys=keys, values=values, n=n - 1);
+}
+
+func unconstrained_load_loop{poseidon_ptr: PoseidonBuiltin*, unconstrained_memorizer: DictAccess*}(
+    keys: felt*, values: felt**, n: felt
+) {
+    alloc_locals;
+
+    if (n == 0) {
+        return ();
+    }
+
+    let (local data_ptr: felt**) = alloc();
+    assert [data_ptr] = values[n - 1];
+
+    UnconstrainedMemorizer.add(key=keys[n - 1], data=data_ptr);
+
+    return unconstrained_load_loop(keys=keys, values=values, n=n - 1);
 }

@@ -9,7 +9,7 @@ use alloy as _;
 use alloy_rlp as _;
 use cairo_vm as _;
 use clap::Parser;
-use dry_hint_processor::syscall_handler::{evm, injected_state, starknet};
+use dry_hint_processor::syscall_handler::{evm, injected_state, starknet, unconstrained};
 use eth_trie_proofs as _;
 use fetcher::{parse_syscall_handler, Args, Fetcher};
 use futures as _;
@@ -24,7 +24,7 @@ use state_server as _;
 use syscall_handler::SyscallHandler;
 use thiserror as _;
 use types::{
-    ChainProofs, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID,
+    ChainProofs, ProofsData, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID,
     STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
 };
 
@@ -34,8 +34,12 @@ async fn main() -> Result<(), fetcher::FetcherError> {
     let args = Args::try_parse_from(std::env::args()).map_err(fetcher::FetcherError::Args)?;
     let input_file = fs::read(&args.inputs)?;
 
-    let syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler> =
-        serde_json::from_slice(&input_file)?;
+    let syscall_handler: SyscallHandler<
+        evm::CallContractHandler,
+        starknet::CallContractHandler,
+        injected_state::CallContractHandler,
+        unconstrained::CallContractHandler,
+    > = serde_json::from_slice(&input_file)?;
     let proof_keys = parse_syscall_handler(syscall_handler)?;
 
     let mmr_hasher_config = args
@@ -62,6 +66,7 @@ async fn main() -> Result<(), fetcher::FetcherError> {
         starknet_proofs_sepolia,
         optimism_proofs_mainnet,
         optimism_proofs_sepolia,
+        unconstrained,
         state_proofs,
     ) = tokio::try_join!(
         fetcher.collect_evm_proofs(ETHEREUM_MAINNET_CHAIN_ID),
@@ -70,6 +75,7 @@ async fn main() -> Result<(), fetcher::FetcherError> {
         fetcher.collect_starknet_proofs(STARKNET_TESTNET_CHAIN_ID),
         fetcher.collect_evm_proofs(OPTIMISM_MAINNET_CHAIN_ID),
         fetcher.collect_evm_proofs(OPTIMISM_TESTNET_CHAIN_ID),
+        fetcher.collect_unconstrained_data(),
         fetcher.collect_state_proofs(),
     )?;
     let chain_proofs = vec![
@@ -83,9 +89,15 @@ async fn main() -> Result<(), fetcher::FetcherError> {
 
     fs::write(
         args.output,
-        serde_json::to_string_pretty(&(chain_proofs, state_proofs))
-            .map_err(|e| fetcher::FetcherError::IO(e.into()))?
-            .as_bytes(),
+        serde_json::to_string_pretty(
+            &(ProofsData {
+                chain_proofs,
+                unconstrained,
+                state_proofs,
+            }),
+        )
+        .map_err(|e| fetcher::FetcherError::IO(e.into()))?
+        .as_bytes(),
     )?;
 
     Ok(())

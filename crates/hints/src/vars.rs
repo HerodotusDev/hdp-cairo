@@ -34,6 +34,7 @@ pub mod scopes {
     pub const SYSCALL_HANDLER: &str = "syscall_handler";
     pub const TRANSACTION: &str = "transaction";
     pub const UPDATE_PROOF: &str = "update_proof";
+    pub const UNCONSTRAINED: &str = "unconstrained";
 }
 
 pub mod ids {
@@ -72,6 +73,7 @@ pub mod ids {
     pub const LEAF: &str = "leaf";
     pub const LEFT: &str = "left";
     pub const LENGTH: &str = "length";
+    pub const MEMORIZER_KEY: &str = "memorizer_key";
     pub const MMR_META: &str = "mmr_meta";
     pub const MMR_PATH_POSEIDON: &str = "mmr_path_poseidon";
     pub const MMR_PATH_KECCAK: &str = "mmr_path_keccak";
@@ -114,9 +116,10 @@ pub mod ids {
     pub const SYSCALL_PTR: &str = "syscall_ptr";
     pub const TASK_HASH: &str = "task_hash";
     pub const TRIE_NODE_PROOF: &str = "trie_node_proof";
+    pub const UNCONSTRAINED_KEYS: &str = "unconstrained_keys";
+    pub const UNCONSTRAINED_VALUES: &str = "unconstrained_values";
     pub const UPDATE_PTR: &str = "update_ptr";
     pub const VALUE_LEN: &str = "value_len";
     pub const VALUE: &str = "value";
-    pub const MEMORIZER_KEY: &str = "memorizer_key";
     pub const WORD: &str = "word";
 }

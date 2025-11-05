@@ -13,6 +13,7 @@ from starkware.cairo.common.builtin_keccak.keccak import KECCAK_FULL_RATE_IN_WOR
 from starkware.cairo.common.cairo_keccak.keccak import cairo_keccak as keccak
 from starkware.cairo.common.math import unsigned_div_rem
 from starkware.cairo.common.alloc import alloc
+from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.cairo_builtins import (
     BitwiseBuiltin,
     EcOpBuiltin,
@@ -35,6 +36,7 @@ from src.memorizers.starknet.state_access import (
 )
 from src.utils.chain_info import Layout
 from src.memorizers.injected_state.memorizer import InjectedStateMemorizer, InjectedStateHashParams
+from src.memorizers.unconstrained.memorizer import UnconstrainedMemorizer, UnconstrainedHashParams
 
 struct ExecutionInfo {
     selector: felt,
@@ -73,6 +75,7 @@ func execute_syscalls{
     starknet_decoder_ptr: felt***,
     starknet_key_hasher_ptr: felt**,
     injected_state_memorizer: DictAccess*,
+    unconstrained_memorizer: DictAccess*,
 }(execution_context: ExecutionContext*, syscall_ptr_end: felt*) {
     if (syscall_ptr == syscall_ptr_end) {
         return ();
@@ -125,6 +128,7 @@ func execute_call_contract{
     starknet_decoder_ptr: felt***,
     starknet_key_hasher_ptr: felt**,
     injected_state_memorizer: DictAccess*,
+    unconstrained_memorizer: DictAccess*,
 }(caller_execution_context: ExecutionContext*) {
     alloc_locals;
     let request_header = cast(syscall_ptr, RequestHeader*);
@@ -149,7 +153,23 @@ func execute_call_contract{
         return ();
     }
 
-    // TODO!!!
+    if (request.contract_address == 'unconstrained') {
+        tempvar key_chain_id = request.calldata_start[2];
+        tempvar key_block_number = request.calldata_start[3];
+        tempvar key_address = request.calldata_start[4];
+
+        let memorizer_key = UnconstrainedHashParams.bytecode{poseidon_ptr=poseidon_ptr}(
+            chain_id=key_chain_id, block_number=key_block_number, address=key_address
+        );
+
+        let (data_start) = UnconstrainedMemorizer.get(key=memorizer_key);
+        let ptr: felt** = cast(data_start, felt**);
+        // use memory copy fn as check for memory slice
+        memcpy(response.retdata_start, [ptr], response.retdata_end - response.retdata_start);
+
+        return ();
+    }
+
     if (request.contract_address == 'injected_state') {
         let call_handler_id = request.selector;
 

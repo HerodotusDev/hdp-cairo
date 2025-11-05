@@ -16,7 +16,7 @@ use cairo_vm::{
     program_hash::compute_program_hash_chain,
 };
 use clap::{Parser, Subcommand};
-use dry_hint_processor::syscall_handler::{evm, injected_state, starknet};
+use dry_hint_processor::syscall_handler::{evm, injected_state, starknet, unconstrained};
 use dry_run::{LayoutName, Program, DRY_RUN_COMPILED_JSON};
 use fetcher::{parse_syscall_handler, Fetcher};
 use indexer_client::models::{MMRDeploymentConfig, MMRHasherConfig};
@@ -106,7 +106,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             std::fs::write(
                 args.output,
                 serde_json::to_vec::<
-                    SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>,
+                    SyscallHandler<
+                        evm::CallContractHandler,
+                        starknet::CallContractHandler,
+                        injected_state::CallContractHandler,
+                        unconstrained::CallContractHandler,
+                    >,
                 >(&syscall_handler)
                 .map_err(|e| Error::IO(e.into()))?,
             )
@@ -125,6 +130,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 evm::CallContractHandler,
                 starknet::CallContractHandler,
                 injected_state::CallContractHandler,
+                unconstrained::CallContractHandler,
             > = serde_json::from_slice(&input_file)?;
             let proof_keys = parse_syscall_handler(syscall_handler)?;
 
@@ -220,11 +226,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     params,
                     state_proofs: proofs_data.state_proofs,
                     injected_state,
+                    unconstrained: Default::default(),
                 },
             )?;
 
             if args.print_output {
                 println!("{:#?}", output);
+            }
+
+            if let Some(ref relocated_trace) = cairo_runner.relocated_trace {
+                println!(
+                    "Step count ({}): {:?}",
+                    if args.proof_mode { "stwo" } else { "pie" },
+                    relocated_trace.len()
+                );
             }
 
             if let Some(ref file_name) = args.cairo_pie {

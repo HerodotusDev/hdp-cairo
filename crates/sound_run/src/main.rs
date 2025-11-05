@@ -54,6 +54,7 @@ async fn main() -> Result<(), Error> {
             params,
             state_proofs: proofs_data.state_proofs,
             injected_state,
+            unconstrained: proofs_data.unconstrained,
         },
     )?;
 

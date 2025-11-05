@@ -8,11 +8,11 @@ use cairo_vm::{
     Felt252,
 };
 use hints::vars;
-use types::{param, proofs::injected_state::StateProofs, ChainProofs, InjectedState};
+use types::{param, proofs::injected_state::StateProofs, ChainProofs, InjectedState, UnconstrainedState};
 
 use super::CustomHintProcessor;
 
-pub const HINT_INPUT: &str = "run_input = HDPInput.Schema().load(program_input)\nparams = run_input.params\ncompiled_class = run_input.compiled_class\ninjected_state = run_input.injected_state\nchain_proofs = run_input.proofs_data.chain_proofs\nstate_proofs = run_input.proofs_data.state_proofs";
+pub const HINT_INPUT: &str = "run_input = HDPInput.Schema().load(program_input)\nparams = run_input.params\ncompiled_class = run_input.compiled_class\ninjected_state = run_input.injected_state\nunconstrained = run_input.unconstrained\nchain_proofs = run_input.proofs_data.chain_proofs\nstate_proofs = run_input.proofs_data.state_proofs";
 
 impl CustomHintProcessor {
     pub fn hint_input(
@@ -48,6 +48,7 @@ impl CustomHintProcessor {
         exec_scopes.insert_value::<InjectedState>(vars::scopes::INJECTED_STATE, self.inputs.injected_state.to_owned());
         exec_scopes.insert_value::<Vec<ChainProofs>>(vars::scopes::CHAIN_PROOFS, self.inputs.chain_proofs.to_owned());
         exec_scopes.insert_value::<StateProofs>(vars::scopes::STATE_PROOFS, self.inputs.state_proofs.to_owned());
+        exec_scopes.insert_value::<UnconstrainedState>(vars::scopes::UNCONSTRAINED, self.inputs.unconstrained.to_owned());
         Ok(())
     }
 }

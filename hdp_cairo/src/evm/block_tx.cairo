@@ -1,6 +1,6 @@
 use hdp_cairo::EvmMemorizer;
+use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;
-use starknet::{SyscallResultTrait};
 
 const BLOCK_TX: felt252 = 3;
 
@@ -122,10 +122,7 @@ pub impl BlockTxImpl of BlockTxTrait {
             BLOCK_TX.try_into().unwrap(),
             selector,
             array![
-                *self.dict.segment_index,
-                *self.dict.offset,
-                *key.chain_id,
-                *key.block_number,
+                *self.dict.segment_index, *self.dict.offset, *key.chain_id, *key.block_number,
                 *key.transaction_index,
             ]
                 .span(),

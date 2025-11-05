@@ -10,13 +10,13 @@ use std::{
     path::PathBuf,
 };
 
-use alloy::hex::FromHexError;
+use alloy::{hex::FromHexError, primitives::Bytes};
 use clap::Parser;
 use dotenvy as _;
 use dry_hint_processor::syscall_handler::{
     evm,
     injected_state::{self},
-    starknet,
+    starknet, unconstrained,
 };
 use eth_trie_proofs::{tx_receipt_trie::TxReceiptsMptHandler, tx_trie::TxsMptHandler};
 use futures::StreamExt;
@@ -25,13 +25,18 @@ use indexer_client::{
     Indexer,
 };
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use proof_keys::{evm::ProofKeys as EvmProofKeys, starknet::ProofKeys as StarknetProofKeys, FlattenedKey, ProofKeys};
+use proof_keys::{
+    evm::ProofKeys as EvmProofKeys, starknet::ProofKeys as StarknetProofKeys, unconstrained::ProofKeys as UnconstrainedProofKeys,
+    FlattenedKey, ProofKeys,
+};
 use reqwest::Url;
 use starknet_types_core::felt::FromStrError;
 use state_server::api::proof::{GetStateProofsRequest, GetStateProofsResponse};
 use syscall_handler::SyscallHandler;
 use thiserror::Error;
+use tokio as _;
 use types::{
+    cairo::unconstrained::UnconstrainedStateValue,
     keys::evm::get_corresponding_rpc_url,
     proofs::{
         evm::{
@@ -43,8 +48,7 @@ use types::{
         mmr::MmrMeta,
         starknet::{header::Header as StarknetHeader, storage::Storage as StarknetStorage, Proofs as StarknetProofs},
     },
-    ChainProofs, HashingFunction, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID,
-    OPTIMISM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
+    HashingFunction, UnconstrainedState,
 };
 
 pub mod proof_keys;
@@ -119,6 +123,7 @@ pub struct ProgressBars {
     pub evm_transactions: Option<ProgressBar>,
     pub starknet_header: Option<ProgressBar>,
     pub starknet_storage: Option<ProgressBar>,
+    pub unconstrained_bytecode: Option<ProgressBar>,
 }
 
 impl ProgressBars {
@@ -137,6 +142,7 @@ impl ProgressBars {
             (proof_keys.evm.transaction_keys.len(), "ethereum transactions keys - fetching"),
             (proof_keys.starknet.header_keys.len(), "starknet header keys - fetching"),
             (proof_keys.starknet.storage_keys.len(), "starknet storage keys - fetching"),
+            (proof_keys.unconstrained.bytecode.len(), "unconstrained bytecode keys - fetching"),
         ]
         .map(|(len, msg)| {
             let pb = multi_progress.add(ProgressBar::new(len as u64));
@@ -153,6 +159,7 @@ impl ProgressBars {
             evm_transactions: bars[4].clone(),
             starknet_header: bars[5].clone(),
             starknet_storage: bars[6].clone(),
+            unconstrained_bytecode: bars[7].clone(),
         }
     }
 }
@@ -237,9 +244,6 @@ impl<'a> Fetcher<'a> {
 
         // Collect required header proofs for all keys
         let headers_with_mmr = self.collect_evm_headers_proofs(&flattened_keys).await?;
-
-        #[cfg(feature = "progress_bars")]
-        self.progress_bars.evm_header.safe_finish_with_message("evm header keys - finished");
 
         // Collect account proofs
         let chain_account_keys_iter = self.proof_keys.evm.account_keys.iter().filter(|key| key.chain_id == chain_id);
@@ -415,6 +419,35 @@ impl<'a> Fetcher<'a> {
         })
     }
 
+    pub async fn collect_unconstrained_data(&self) -> Result<UnconstrainedState, FetcherError> {
+        let mut data = HashMap::default();
+
+        // Collect data
+        let bytecode_keys_iter = self.proof_keys.unconstrained.bytecode.iter();
+        let mut data_fut =
+            futures::stream::iter(bytecode_keys_iter.map(|key: &types::keys::evm::account::Key| async move {
+                (key.clone(), UnconstrainedProofKeys::fetch_bytecode(key).await)
+            }))
+            .buffer_unordered(BUFFER_UNORDERED)
+            .boxed();
+
+        while let Some::<(types::keys::evm::account::Key, Result<Bytes, FetcherError>)>((key, result)) = data_fut.next().await {
+            data.insert(
+                Into::<types::keys::evm::account::CairoKey>::into(key).hash(),
+                UnconstrainedStateValue::Bytecode(result?),
+            );
+            #[cfg(feature = "progress_bars")]
+            self.progress_bars.unconstrained.safe_inc();
+        }
+
+        #[cfg(feature = "progress_bars")]
+        self.progress_bars
+            .unconstrained
+            .safe_finish_with_message("starknet storage keys - finished");
+
+        Ok(UnconstrainedState(data))
+    }
+
     pub async fn collect_state_proofs(&self) -> Result<StateProofs, FetcherError> {
         let state_server_url = std::env::var("INJECTED_STATE_BASE_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
         let client = reqwest::Client::new();
@@ -441,38 +474,6 @@ impl<'a> Fetcher<'a> {
     }
 }
 
-pub async fn run_fetcher(
-    syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>,
-) -> Result<Vec<ChainProofs>, FetcherError> {
-    let proof_keys = parse_syscall_handler(syscall_handler)?;
-    let fetcher = Fetcher::new(&proof_keys, MMRHasherConfig::default(), MMRDeploymentConfig::default());
-    let (
-        eth_proofs_mainnet,
-        eth_proofs_sepolia,
-        starknet_proofs_mainnet,
-        starknet_proofs_sepolia,
-        optimism_proofs_mainnet,
-        optimism_proofs_sepolia,
-    ) = tokio::try_join!(
-        fetcher.collect_evm_proofs(ETHEREUM_MAINNET_CHAIN_ID),
-        fetcher.collect_evm_proofs(ETHEREUM_TESTNET_CHAIN_ID),
-        fetcher.collect_starknet_proofs(STARKNET_MAINNET_CHAIN_ID),
-        fetcher.collect_starknet_proofs(STARKNET_TESTNET_CHAIN_ID),
-        fetcher.collect_evm_proofs(OPTIMISM_MAINNET_CHAIN_ID),
-        fetcher.collect_evm_proofs(OPTIMISM_TESTNET_CHAIN_ID),
-    )?;
-    let chain_proofs = vec![
-        ChainProofs::EthereumMainnet(eth_proofs_mainnet),
-        ChainProofs::EthereumSepolia(eth_proofs_sepolia),
-        ChainProofs::StarknetMainnet(starknet_proofs_mainnet),
-        ChainProofs::StarknetSepolia(starknet_proofs_sepolia),
-        ChainProofs::OptimismMainnet(optimism_proofs_mainnet),
-        ChainProofs::OptimismSepolia(optimism_proofs_sepolia),
-    ];
-
-    Ok(chain_proofs)
-}
-
 pub fn process_headers<H>(headers_with_mmr: HashMap<MmrMeta, Vec<H>>) -> Vec<HeaderMmrMeta<H>>
 where
     H: Eq + std::hash::Hash + Clone,
@@ -490,7 +491,12 @@ where
 }
 
 pub fn parse_syscall_handler(
-    syscall_handler: SyscallHandler<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>,
+    syscall_handler: SyscallHandler<
+        evm::CallContractHandler,
+        starknet::CallContractHandler,
+        injected_state::CallContractHandler,
+        unconstrained::CallContractHandler,
+    >,
 ) -> Result<ProofKeys, FetcherError> {
     let mut proof_keys = ProofKeys::default();
 
@@ -516,6 +522,12 @@ pub fn parse_syscall_handler(
     // Process injected state keys
     for (root_hash, actions) in syscall_handler.call_contract_handler.injected_state_call_contract_handler.key_set {
         proof_keys.injected_state.insert(root_hash, actions);
+    }
+
+    for key in syscall_handler.call_contract_handler.unconstrained_call_contract_handler.key_set {
+        match key {
+            unconstrained::DryRunKey::Bytecode(value) => proof_keys.unconstrained.bytecode.insert(value),
+        };
     }
 
     Ok(proof_keys)

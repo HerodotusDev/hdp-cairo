@@ -12,6 +12,7 @@ use syscall_handler::SyscallHandlerWrapper;
 pub mod evm;
 pub mod injected_state;
 pub mod starknet;
+pub mod unconstrained;
 
 pub const SYSCALL_HANDLER_CREATE: &str = "syscall_handler = SyscallHandler(segments=segments, dict_manager=__dict_manager)";
 
@@ -25,14 +26,20 @@ pub fn syscall_handler_create(
         evm::CallContractHandler,
         starknet::CallContractHandler,
         injected_state::CallContractHandler,
+        unconstrained::CallContractHandler,
     >>(vars::scopes::SYSCALL_HANDLER)
     {
-        let syscall_handler =
-            SyscallHandlerWrapper::<evm::CallContractHandler, starknet::CallContractHandler, injected_state::CallContractHandler>::new(
-                evm::CallContractHandler::new(exec_scopes.get_dict_manager()?),
-                starknet::CallContractHandler::new(exec_scopes.get_dict_manager()?),
-                injected_state::CallContractHandler::new(exec_scopes.get_dict_manager()?),
-            );
+        let syscall_handler = SyscallHandlerWrapper::<
+            evm::CallContractHandler,
+            starknet::CallContractHandler,
+            injected_state::CallContractHandler,
+            unconstrained::CallContractHandler,
+        >::new(
+            evm::CallContractHandler::new(exec_scopes.get_dict_manager()?),
+            starknet::CallContractHandler::new(exec_scopes.get_dict_manager()?),
+            injected_state::CallContractHandler::new(exec_scopes.get_dict_manager()?),
+            unconstrained::CallContractHandler::new(exec_scopes.get_dict_manager()?),
+        );
         exec_scopes.insert_value(vars::scopes::SYSCALL_HANDLER, syscall_handler);
     }
 
@@ -52,6 +59,7 @@ pub fn syscall_handler_set_syscall_ptr(
         evm::CallContractHandler,
         starknet::CallContractHandler,
         injected_state::CallContractHandler,
+        unconstrained::CallContractHandler,
     >>(vars::scopes::SYSCALL_HANDLER)?;
     syscall_handler.set_syscall_ptr(syscall_ptr);
 
@@ -70,6 +78,7 @@ pub fn enter_scope_syscall_handler(
         evm::CallContractHandler,
         starknet::CallContractHandler,
         injected_state::CallContractHandler,
+        unconstrained::CallContractHandler,
     >>(vars::scopes::SYSCALL_HANDLER)?);
     exec_scopes.enter_scope(HashMap::from_iter([(vars::scopes::SYSCALL_HANDLER.to_string(), syscall_handler)]));
 
