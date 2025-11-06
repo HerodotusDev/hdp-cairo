@@ -4,28 +4,26 @@
 #![forbid(unsafe_code)]
 
 use std::{
-    fs,
     io::{Read, Write},
     path::PathBuf,
     process::{Command, Stdio},
 };
 
-use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
+use cairo_lang_starknet_classes as _;
 use cairo_vm::{
-    cairo_run::{self, CairoRunConfig},
+    cairo_run::{self},
     program_hash::compute_program_hash_chain,
 };
 use clap::{Parser, Subcommand};
-use dry_hint_processor::syscall_handler::{evm, injected_state, starknet, unconstrained};
-use dry_run::{LayoutName, Program, DRY_RUN_COMPILED_JSON};
-use fetcher::{parse_syscall_handler, Fetcher};
-use indexer_client::models::{MMRDeploymentConfig, MMRHasherConfig};
-use sound_run::{prove::prover_input_from_runner, HDP_COMPILED_JSON};
-use syscall_handler::SyscallHandler;
-use types::{
-    error::Error, param::Param, ChainProofs, HDPDryRunInput, HDPInput, InjectedState, ProofsData, ETHEREUM_MAINNET_CHAIN_ID,
-    ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
-};
+use dry_hint_processor as _;
+use dry_run::Program;
+use indexer_client as _;
+use serde_json as _;
+use sound_run::HDP_COMPILED_JSON;
+use syscall_handler as _;
+use tracing as _;
+use tracing_subscriber::EnvFilter;
+use types::error::Error;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about)]
@@ -67,195 +65,21 @@ enum Commands {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv().ok();
+    tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init();
 
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::DryRun(args) => {
+        Commands::DryRun(_) | Commands::FetchProofs(_) | Commands::SoundRun(_) => {
             check_env()?;
-
-            println!("Starting dry run execution...");
-            println!("Reading compiled module from: {}", args.compiled_module.display());
-
-            let compiled_class: CasmContractClass = serde_json::from_slice(&std::fs::read(args.compiled_module).map_err(Error::IO)?)?;
-            let params: Vec<Param> = if let Some(input_path) = args.inputs {
-                serde_json::from_slice(&std::fs::read(input_path).map_err(Error::IO)?)?
-            } else {
-                Vec::new()
-            };
-            let injected_state: InjectedState = if let Some(path) = args.injected_state {
-                serde_json::from_slice(&std::fs::read(path).map_err(Error::IO)?)?
-            } else {
-                InjectedState::default()
-            };
-
-            println!("Executing program...");
-            let (syscall_handler, output) = dry_run::run(
-                args.program.unwrap_or(PathBuf::from(DRY_RUN_COMPILED_JSON)),
-                HDPDryRunInput {
-                    compiled_class,
-                    params,
-                    injected_state,
-                },
-            )?;
-
-            if args.print_output {
-                println!("{:#?}", output);
-            }
-
-            std::fs::write(
-                args.output,
-                serde_json::to_vec::<
-                    SyscallHandler<
-                        evm::CallContractHandler,
-                        starknet::CallContractHandler,
-                        injected_state::CallContractHandler,
-                        unconstrained::CallContractHandler,
-                    >,
-                >(&syscall_handler)
-                .map_err(|e| Error::IO(e.into()))?,
-            )
-            .map_err(Error::IO)?;
-
-            println!("Dry run completed successfully.");
-            Ok(())
         }
-        Commands::FetchProofs(args) => {
-            check_env()?;
+        _ => {}
+    }
 
-            println!("Reading input file from: {}", args.inputs.display());
-            let input_file = fs::read(&args.inputs)?;
-
-            let syscall_handler: SyscallHandler<
-                evm::CallContractHandler,
-                starknet::CallContractHandler,
-                injected_state::CallContractHandler,
-                unconstrained::CallContractHandler,
-            > = serde_json::from_slice(&input_file)?;
-            let proof_keys = parse_syscall_handler(syscall_handler)?;
-
-            let mmr_hasher_config = args
-                .mmr_hasher_config
-                .as_ref()
-                .map(|path| Ok::<MMRHasherConfig, fetcher::FetcherError>(serde_json::from_slice(&fs::read(path)?)?))
-                .transpose()?;
-
-            let mmr_deployment_config = args
-                .mmr_deployment_config
-                .as_ref()
-                .map(|path| Ok::<MMRDeploymentConfig, fetcher::FetcherError>(serde_json::from_slice(&fs::read(path)?)?))
-                .transpose()?;
-
-            let fetcher = Fetcher::new(
-                &proof_keys,
-                mmr_hasher_config.unwrap_or_default(),
-                mmr_deployment_config.unwrap_or_default(),
-            );
-            let (
-                eth_proofs_mainnet,
-                eth_proofs_sepolia,
-                starknet_proofs_mainnet,
-                starknet_proofs_sepolia,
-                optimism_proofs_mainnet,
-                optimism_proofs_sepolia,
-                state_proofs,
-            ) = tokio::try_join!(
-                fetcher.collect_evm_proofs(ETHEREUM_MAINNET_CHAIN_ID),
-                fetcher.collect_evm_proofs(ETHEREUM_TESTNET_CHAIN_ID),
-                fetcher.collect_starknet_proofs(STARKNET_MAINNET_CHAIN_ID),
-                fetcher.collect_starknet_proofs(STARKNET_TESTNET_CHAIN_ID),
-                fetcher.collect_evm_proofs(OPTIMISM_MAINNET_CHAIN_ID),
-                fetcher.collect_evm_proofs(OPTIMISM_TESTNET_CHAIN_ID),
-                fetcher.collect_state_proofs(),
-            )?;
-            let chain_proofs = vec![
-                ChainProofs::EthereumMainnet(eth_proofs_mainnet),
-                ChainProofs::EthereumSepolia(eth_proofs_sepolia),
-                ChainProofs::StarknetMainnet(starknet_proofs_mainnet),
-                ChainProofs::StarknetSepolia(starknet_proofs_sepolia),
-                ChainProofs::OptimismMainnet(optimism_proofs_mainnet),
-                ChainProofs::OptimismSepolia(optimism_proofs_sepolia),
-            ];
-
-            println!("Writing proofs to: {}", args.output.display());
-
-            fs::write(
-                args.output,
-                serde_json::to_string_pretty(&(chain_proofs, state_proofs))
-                    .map_err(|e| fetcher::FetcherError::IO(e.into()))?
-                    .as_bytes(),
-            )?;
-
-            println!("Proofs have been saved successfully.");
-            Ok(())
-        }
-        Commands::SoundRun(args) => {
-            println!("Starting sound run execution...");
-            println!("Reading compiled module from: {}", args.compiled_module.display());
-            println!("Reading proofs from: {}", args.proofs.display());
-
-            let compiled_class: CasmContractClass = serde_json::from_slice(&std::fs::read(args.compiled_module).map_err(Error::IO)?)?;
-            let params: Vec<Param> = if let Some(input_path) = args.inputs {
-                serde_json::from_slice(&std::fs::read(input_path).map_err(Error::IO)?)?
-            } else {
-                Vec::new()
-            };
-            let injected_state: InjectedState = if let Some(path) = args.injected_state {
-                serde_json::from_slice(&std::fs::read(path).map_err(Error::IO)?)?
-            } else {
-                InjectedState::default()
-            };
-            let proofs_data: ProofsData = serde_json::from_slice(&std::fs::read(args.proofs).map_err(Error::IO)?)?;
-
-            let cairo_run_config = CairoRunConfig {
-                layout: LayoutName::all_cairo_stwo,
-                secure_run: Some(true),
-                allow_missing_builtins: Some(false),
-                relocate_mem: true,
-                trace_enabled: true,
-                proof_mode: args.proof_mode,
-                ..Default::default()
-            };
-
-            let (cairo_runner, output) = sound_run::run(
-                args.program.unwrap_or(PathBuf::from(HDP_COMPILED_JSON)),
-                cairo_run_config,
-                HDPInput {
-                    chain_proofs: proofs_data.chain_proofs,
-                    compiled_class,
-                    params,
-                    state_proofs: proofs_data.state_proofs,
-                    injected_state,
-                    unconstrained: Default::default(),
-                },
-            )?;
-
-            if args.print_output {
-                println!("{:#?}", output);
-            }
-
-            if let Some(ref relocated_trace) = cairo_runner.relocated_trace {
-                println!(
-                    "Step count ({}): {:?}",
-                    if args.proof_mode { "stwo" } else { "pie" },
-                    relocated_trace.len()
-                );
-            }
-
-            if let Some(ref file_name) = args.cairo_pie {
-                let pie = cairo_runner.get_cairo_pie().map_err(|e| Error::CairoPie(e.to_string()))?;
-                pie.write_zip_file(file_name, true)?;
-            }
-
-            if let Some(ref file_name) = args.stwo_prover_input {
-                let stwo_prover_input = prover_input_from_runner(&cairo_runner);
-                std::fs::write(file_name, serde_json::to_string(&stwo_prover_input)?)?;
-                println!("Prover Input saved to: {:?}", file_name);
-            }
-
-            println!("Sound run completed successfully.");
-            Ok(())
-        }
+    match cli.command {
+        Commands::DryRun(args) => dry_run::run_with_args(args).await?,
+        Commands::FetchProofs(args) => fetcher::run_with_args(args).await?,
+        Commands::SoundRun(args) => sound_run::run_with_args(args).await?,
         Commands::ProgramHash { program } => {
             let program_file = std::fs::read(program.unwrap_or(PathBuf::from(HDP_COMPILED_JSON))).map_err(Error::IO)?;
             let program = Program::from_bytes(&program_file, Some(cairo_run::CairoRunConfig::default().entrypoint))?;
@@ -264,7 +88,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "{}",
                 compute_program_hash_chain(&program.get_stripped_program().unwrap(), 0)?.to_hex_string()
             );
-            Ok(())
         }
         Commands::Link => {
             let result: Result<(), Error> = (|| {
@@ -331,9 +154,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Ok(())
             })();
 
-            result.map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
+            result?;
         }
-        Commands::EnvInfo => print_env_info(),
+        Commands::EnvInfo => print_env_info()?,
         Commands::Update => {
             //? Runs the update/install command: curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
             let mut curl = Command::new("curl")
@@ -357,10 +180,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             if !status.success() {
                 return Err(Box::new(Error::IO(std::io::Error::other("Installer failed"))) as Box<dyn std::error::Error>);
             }
-
-            Ok(())
         }
     }
+
+    Ok(())
 }
 
 fn print_env_info() -> Result<(), Box<dyn std::error::Error>> {

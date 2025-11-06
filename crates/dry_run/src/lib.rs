@@ -20,9 +20,9 @@ use hints::vars;
 use serde_json as _;
 use syscall_handler::{SyscallHandler, SyscallHandlerWrapper};
 use tokio as _;
-use tracing::debug;
+use tracing::{debug, info};
 use tracing_subscriber as _;
-use types::{error::Error, HDPDryRunInput, HDPDryRunOutput};
+use types::{error::Error, param::Param, CasmContractClass, HDPDryRunInput, HDPDryRunOutput, InjectedState};
 
 pub const DRY_RUN_COMPILED_JSON: &str = env!("DRY_RUN_COMPILED_JSON");
 
@@ -114,4 +114,52 @@ pub fn run(
     let output = HDPDryRunOutput::from_iter(iter);
 
     Ok((syscall_handler, output))
+}
+
+pub async fn run_with_args(args: Args) -> Result<(), Error> {
+    info!("Starting dry run execution...");
+    info!("Reading compiled module from: {}", args.compiled_module.display());
+    let compiled_class: CasmContractClass = serde_json::from_slice(&std::fs::read(args.compiled_module).map_err(Error::IO)?)?;
+    let params: Vec<Param> = if let Some(path) = args.inputs {
+        serde_json::from_slice(&std::fs::read(path).map_err(Error::IO)?)?
+    } else {
+        Vec::new()
+    };
+    let injected_state: InjectedState = if let Some(path) = args.injected_state {
+        serde_json::from_slice(&std::fs::read(path).map_err(Error::IO)?)?
+    } else {
+        InjectedState::default()
+    };
+
+    info!("Executing program...");
+    let (syscall_handler, output) = run(
+        args.program.unwrap_or(PathBuf::from(DRY_RUN_COMPILED_JSON)),
+        HDPDryRunInput {
+            compiled_class,
+            params,
+            injected_state,
+        },
+    )?;
+
+    if args.print_output {
+        println!("{:#?}", output);
+    }
+
+    std::fs::write(
+        args.output,
+        serde_json::to_vec::<
+            SyscallHandler<
+                evm::CallContractHandler,
+                starknet::CallContractHandler,
+                injected_state::CallContractHandler,
+                unconstrained::CallContractHandler,
+            >,
+        >(&syscall_handler)
+        .map_err(|e| Error::IO(e.into()))?,
+    )
+    .map_err(Error::IO)?;
+
+    info!("Dry run completed successfully.");
+
+    Ok(())
 }

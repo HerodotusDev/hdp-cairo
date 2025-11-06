@@ -7,7 +7,7 @@ use std::{env, path::PathBuf};
 
 use cairo_vm::{
     cairo_run::{cairo_run_program, CairoRunConfig},
-    types::{program::Program, relocatable::Relocatable},
+    types::{layout_name::LayoutName, program::Program, relocatable::Relocatable},
     vm::runners::cairo_runner::CairoRunner,
 };
 use clap::Parser;
@@ -17,7 +17,9 @@ use sound_hint_processor::CustomHintProcessor;
 use tokio as _;
 use tracing::info;
 use tracing_subscriber as _;
-use types::{error::Error, HDPInput, HDPOutput};
+use types::{error::Error, param::Param, CasmContractClass, HDPInput, HDPOutput, InjectedState, ProofsData};
+
+use crate::prove::prover_input_from_runner;
 pub mod prove;
 
 pub const HDP_COMPILED_JSON: &str = env!("HDP_COMPILED_JSON");
@@ -94,4 +96,73 @@ pub fn run(program_path: PathBuf, cairo_run_config: CairoRunConfig, input: HDPIn
 
 pub fn get_program_path() -> String {
     std::env::var("HDP_SOUND_RUN_PATH").unwrap_or_else(|_| HDP_COMPILED_JSON.to_string())
+}
+
+pub async fn run_with_args(args: Args) -> Result<(), Error> {
+    info!("Starting sound run execution...");
+    info!("Reading compiled module from: {}", args.compiled_module.display());
+    info!("Reading proofs from: {}", args.proofs.display());
+
+    let compiled_class: CasmContractClass = serde_json::from_slice(&std::fs::read(args.compiled_module).map_err(Error::IO)?)?;
+    let params: Vec<Param> = if let Some(input_path) = args.inputs {
+        serde_json::from_slice(&std::fs::read(input_path).map_err(Error::IO)?)?
+    } else {
+        Vec::new()
+    };
+    let injected_state: InjectedState = if let Some(path) = args.injected_state {
+        serde_json::from_slice(&std::fs::read(path).map_err(Error::IO)?)?
+    } else {
+        InjectedState::default()
+    };
+    let proofs_data: ProofsData = serde_json::from_slice(&std::fs::read(args.proofs).map_err(Error::IO)?)?;
+
+    let cairo_run_config = CairoRunConfig {
+        layout: LayoutName::all_cairo_stwo,
+        secure_run: Some(true),
+        allow_missing_builtins: Some(false),
+        relocate_mem: true,
+        trace_enabled: true,
+        proof_mode: args.proof_mode,
+        ..Default::default()
+    };
+
+    let (cairo_runner, output) = run(
+        args.program.unwrap_or(PathBuf::from(HDP_COMPILED_JSON)),
+        cairo_run_config,
+        HDPInput {
+            chain_proofs: proofs_data.chain_proofs,
+            compiled_class,
+            params,
+            state_proofs: proofs_data.state_proofs,
+            injected_state,
+            unconstrained: proofs_data.unconstrained,
+        },
+    )?;
+
+    if args.print_output {
+        println!("{:#?}", output);
+    }
+
+    if let Some(ref relocated_trace) = cairo_runner.relocated_trace {
+        info!(
+            "Step count ({}): {:?}",
+            if args.proof_mode { "stwo" } else { "pie" },
+            relocated_trace.len()
+        );
+    }
+
+    if let Some(ref file_name) = args.cairo_pie {
+        let pie = cairo_runner.get_cairo_pie().map_err(|e| Error::CairoPie(e.to_string()))?;
+        pie.write_zip_file(file_name, true)?;
+    }
+
+    if let Some(ref file_name) = args.stwo_prover_input {
+        let stwo_prover_input = prover_input_from_runner(&cairo_runner);
+        std::fs::write(file_name, serde_json::to_string(&stwo_prover_input)?)?;
+        info!("Prover Input saved to: {:?}", file_name);
+    }
+
+    info!("Sound run completed successfully.");
+
+    Ok(())
 }

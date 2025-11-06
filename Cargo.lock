@@ -2180,6 +2180,8 @@ dependencies = [
  "sound_run",
  "syscall_handler",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
  "types",
 ]
 
@@ -3030,6 +3032,8 @@ dependencies = [
  "syscall_handler",
  "thiserror 2.0.17",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
  "types",
 ]
 
