@@ -32,6 +32,13 @@ struct Cli {
     command: Commands,
 }
 
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+pub struct UpdateArgs {
+    #[arg(short = 'c', long = "clean", help = "Clean build, longer and heavier, but clean")]
+    clean: bool,
+}
+
 #[derive(Subcommand, Debug)]
 enum Commands {
     /// Run the dry-run functionality
@@ -59,7 +66,7 @@ enum Commands {
     ///
     /// Runs the update/install command: ```curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash```
     #[command(name = "update")]
-    Update,
+    Update(UpdateArgs),
 }
 
 #[tokio::main]
@@ -157,11 +164,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             result?;
         }
         Commands::EnvInfo => print_env_info()?,
-        Commands::Update => {
+        Commands::Update(args) => {
             //? Runs the update/install command: curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
             let mut curl = Command::new("curl")
                 .arg("-fsSL")
                 .arg("https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh")
+                .arg(if args.clean { "--clean" } else { "" })
                 .stdout(Stdio::piped())
                 .spawn()
                 .map_err(Error::IO)?;

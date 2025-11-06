@@ -4,9 +4,10 @@ set -euo pipefail
 # HDP Cairo CLI installer
 # - Checks for Rust and uv (prompts with installation instructions if missing)
 # - Clones or updates the repo at $HOME/.local/share/hdp
-# - Initializes submodules, sets up Python env with uv, activates venv
+# - Initializes and updates submodules, sets up Python env with uv, activates venv
 # - Builds the hdp-cli binary and symlinks it into $HOME/.local/bin
 # - Supports installing specific versions via VERSION environment variable (e.g., VERSION=v1.0.12)
+# - Supports --clean flag for full cargo clean (without flag, only cleans build script outputs)
 
 # Colors for better readability
 RED='\033[0;31m'
@@ -190,8 +191,8 @@ clone_or_update_repo() {
 }
 
 init_submodules() {
-  echo -e "${BLUE}${INFO}${NC} Initializing submodules..."
-  git -C "$REPO_DIR" submodule update --init
+  echo -e "${BLUE}${INFO}${NC} Initializing and updating submodules..."
+  git -C "$REPO_DIR" submodule update --init --recursive
 }
 
 setup_python_env() {
@@ -204,7 +205,44 @@ setup_python_env() {
   fi
 }
 
+clean_build_artifacts() {
+  local clean_mode="$1"
+  
+  if [ "$clean_mode" = "full" ]; then
+    echo -e "${BLUE}${INFO}${NC} Performing full clean (${BOLD}cargo clean${NC})..."
+    (cd "$REPO_DIR" && cargo clean)
+  else
+    echo -e "${BLUE}${INFO}${NC} Cleaning build script output directories..."
+    # Find all "out/cairo" directories, then remove their parent "out" directory
+    # (e.g., find target/release/build/sound_run-*/out/cairo, then remove the "out" parent)
+    if [ -d "$REPO_DIR/target/release/build" ]; then
+      local cleaned_count=0
+      # Recursively find all "out/cairo" directories within target/release/build
+      # -type d: only directories
+      # -path "*/out/cairo": matches paths ending with /out/cairo
+      # -print0: null-delimited output for safe handling of paths with spaces
+      while IFS= read -r -d '' cairo_dir; do
+        # Get the parent "out" directory by removing "/cairo" from the path
+        local out_dir="${cairo_dir%/cairo}"
+        echo -e "${BLUE}${INFO}${NC} Removing ${CYAN}$out_dir${NC}..."
+        rm -rf "$out_dir"
+        cleaned_count=$((cleaned_count + 1))
+      done < <(find "$REPO_DIR/target/release/build" -type d -path "*/out/cairo" -print0 2>/dev/null || true)
+      
+      if [ "$cleaned_count" -eq 0 ]; then
+        echo -e "${BLUE}${INFO}${NC} No build script output directories found to clean"
+      else
+        echo -e "${GREEN}${SUCCESS}${NC} Cleaned ${CYAN}$cleaned_count${NC} build script output directory(ies)"
+      fi
+    else
+      echo -e "${BLUE}${INFO}${NC} No target/release/build directory found"
+    fi
+  fi
+}
+
 build_cli() {
+  local clean_mode="${1:-light}"
+  clean_build_artifacts "$clean_mode"
   echo -e "${BLUE}${INFO}${NC} Building ${BOLD}$BIN_NAME${NC} (release)..."
   (cd "$REPO_DIR" && cargo build --release --bin "$BIN_NAME")
 }
@@ -236,6 +274,34 @@ print_path_hint() {
 }
 
 main() {
+  local clean_mode="light"
+  
+  # Parse command line arguments
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      --clean)
+        clean_mode="full"
+        shift
+        ;;
+      -h|--help)
+        echo "Usage: $0 [--clean]"
+        echo
+        echo "Options:"
+        echo "  --clean    Perform full cargo clean before building (slower but more thorough)"
+        echo "             Without this flag, only removes build script output directories"
+        echo
+        echo "Environment variables:"
+        echo "  VERSION    Install a specific version (e.g., VERSION=v1.0.12)"
+        exit 0
+        ;;
+      *)
+        echo -e "${RED}${ERROR}${NC} Unknown option: ${BOLD}$1${NC}"
+        echo -e "${YELLOW}${ARROW}${NC} Use ${CYAN}--help${NC} for usage information"
+        exit 1
+        ;;
+    esac
+  done
+
   echo -e "${PURPLE}${BOLD}╔══════════════════════════════════════╗${NC}"
   echo -e "${PURPLE}${BOLD}║        HDP Cairo CLI Installer        ║${NC}"
   echo -e "${PURPLE}${BOLD}╚══════════════════════════════════════╝${NC}"
@@ -269,7 +335,7 @@ main() {
   clone_or_update_repo
   init_submodules
   setup_python_env
-  build_cli
+  build_cli "$clean_mode"
   ensure_symlink
   print_path_hint
 
