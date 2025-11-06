@@ -212,7 +212,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn print_env_info() -> Result<(), Box<dyn std::error::Error>> {
     println!();
-    println!("⚠ To use hdp-cli, you need a .env file in your project directory.");
+    println!("⚠ To use HDP CLI, you need a .env file in your project directory.");
     println!("ℹ Here's an example .env file:");
     println!("────────────────────────────────────────");
 
@@ -234,7 +234,7 @@ fn print_env_info() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn check_env() -> Result<(), Box<dyn std::error::Error>> {
-    info!("ℹ️  If you're having problems with the .env file, or RPC endpoints, run `hdp-cli env-info` to get more information.");
+    info!("ℹ️  If you're having problems with the .env file, or RPC endpoints, run `hdp env-info` to get more information.");
 
     // Check required environment variables
     for env_var in ["RPC_URL_HERODOTUS_INDEXER"] {

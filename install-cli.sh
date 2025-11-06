@@ -33,9 +33,10 @@ SUCCESS="✓"
 REPO_URL="https://github.com/HerodotusDev/hdp-cairo"
 REPO_DIR="$HOME/.local/share/hdp"
 BIN_NAME="hdp-cli"
+ALIAS_NAME="hdp"
 TARGET_BIN="$REPO_DIR/target/release/$BIN_NAME"
 LOCAL_BIN_DIR="$HOME/.local/bin"
-SYMLINK_PATH="$LOCAL_BIN_DIR/$BIN_NAME"
+SYMLINK_PATH="$LOCAL_BIN_DIR/$ALIAS_NAME"
 
 command_exists() {
   command -v "$1" >/dev/null 2>&1
@@ -340,7 +341,7 @@ main() {
   print_path_hint
 
   echo
-  echo -e "${GREEN}${SUCCESS}${NC} ${BOLD}Installation/update complete!${NC} You can run ${BOLD}'$BIN_NAME'${NC} if $LOCAL_BIN_DIR is in PATH."
+  echo -e "${GREEN}${SUCCESS}${NC} ${BOLD}Installation/update complete!${NC} You can run ${BOLD}'$ALIAS_NAME'${NC} if $LOCAL_BIN_DIR is in PATH."
   echo
   echo -e "${GRAY}${BOLD}╔══════════════════════════════════════╗${NC}"
   echo -e "${GRAY}${BOLD}║           Developer Info             ║${NC}"
@@ -349,11 +350,11 @@ main() {
   echo -e "${BLUE}${INFO}${NC} You can work on HDP, debug, or make changes in the HDP folder:"
   echo -e "  ${CYAN}$REPO_DIR${NC}"
   echo
-  echo -e "${YELLOW}${ARROW}${NC} Once you run ${BOLD}cargo build --release${NC}, the symlink will automatically make your version available everywhere using ${BOLD}hdp-cli${NC}"
+  echo -e "${YELLOW}${ARROW}${NC} Once you run ${BOLD}cargo build --release${NC}, the symlink will automatically make your version available everywhere using ${BOLD}hdp${NC}"
   echo -e "${YELLOW}${ARROW}${NC} You can change branches, update the repo, add prints, or modify code as you please"
   echo -e "${YELLOW}${ARROW}${NC} The symlink always points to your latest built version"
   echo -e "${YELLOW}${ARROW}${NC} You can also symlink this repo into your project for easier access to debugging"
-  echo -e "${YELLOW}${ARROW}${NC} To do this, run ${CYAN}hdp-cli link${NC} in your Scarb project directory, and import directly from there"
+  echo -e "${YELLOW}${ARROW}${NC} To do this, run ${CYAN}hdp link${NC} in your Scarb project directory, and import directly from there"
   echo
   echo -e "${BLUE}${INFO}${NC} To install a specific version in the future, use:"
   echo -e "  ${CYAN}VERSION=vX.X.X curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash${NC}"
