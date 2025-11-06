@@ -21,13 +21,22 @@ use indexer_client as _;
 use serde_json as _;
 use sound_run::HDP_COMPILED_JSON;
 use syscall_handler as _;
-use tracing as _;
+use tracing::{self as _, info, level_filters::LevelFilter};
 use tracing_subscriber::EnvFilter;
 use types::error::Error;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about)]
 struct Cli {
+    /// Set the logging level (trace, debug, info, warn, error)
+    /// Defaults to INFO if not specified. Can also be set via RUST_LOG environment variable.
+    #[arg(long = "log-level", value_name = "LEVEL")]
+    log_level: Option<String>,
+
+    /// Set log level to DEBUG (shortcut for --log-level debug)
+    #[arg(long = "debug")]
+    debug: bool,
+
     #[command(subcommand)]
     command: Commands,
 }
@@ -72,14 +81,14 @@ enum Commands {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv().ok();
-    tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init();
 
+    // Parse CLI early to get log level, but don't process commands yet
     let cli = Cli::parse();
 
+    setup_tracing(cli.log_level.as_ref(), cli.debug)?;
+
     match cli.command {
-        Commands::DryRun(_) | Commands::FetchProofs(_) | Commands::SoundRun(_) => {
-            check_env()?;
-        }
+        Commands::DryRun(_) | Commands::FetchProofs(_) | Commands::SoundRun(_) => check_env()?,
         _ => {}
     }
 
@@ -225,7 +234,7 @@ fn print_env_info() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn check_env() -> Result<(), Box<dyn std::error::Error>> {
-    println!("ℹ️  If you're having problems with the .env file, or RPC endpoints, run `hdp-cli env-info` to get more information.");
+    info!("ℹ️  If you're having problems with the .env file, or RPC endpoints, run `hdp-cli env-info` to get more information.");
 
     // Check required environment variables
     for env_var in ["RPC_URL_HERODOTUS_INDEXER"] {
@@ -234,6 +243,29 @@ fn check_env() -> Result<(), Box<dyn std::error::Error>> {
             return Err(format!("Missing required environment variable: {}", env_var).into());
         }
     }
+
+    Ok(())
+}
+
+fn setup_tracing(log_level: Option<&String>, debug: bool) -> Result<(), Box<dyn std::error::Error>> {
+    // Set up tracing with log level from CLI or default to INFO
+    // --log-level takes precedence over --debug
+    let level_filter = if let Some(level) = log_level {
+        // If log level is specified via CLI, use it
+        level
+            .parse::<LevelFilter>()
+            .map_err(|_| Error::IO(std::io::Error::other("Invalid log level. Use: trace, debug, info, warn, or error")))?
+    } else if debug {
+        // If --debug flag is set, use DEBUG level
+        LevelFilter::DEBUG
+    } else {
+        // Default to INFO
+        LevelFilter::INFO
+    };
+
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::builder().with_default_directive(level_filter.into()).from_env_lossy())
+        .init();
 
     Ok(())
 }

@@ -81,7 +81,7 @@ pub fn run(
         ..Default::default()
     };
 
-    println!("Program path: {}", program_path.display());
+    info!("Program path: {}", program_path.display());
     let program_file = std::fs::read(program_path).map_err(Error::IO)?;
     let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))?;
 
