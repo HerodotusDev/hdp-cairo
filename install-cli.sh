@@ -222,8 +222,8 @@ clean_build_artifacts() {
       # -path "*/out/cairo": matches paths ending with /out/cairo
       # -print0: null-delimited output for safe handling of paths with spaces
       while IFS= read -r -d '' cairo_dir; do
-        # Get the parent "out" directory by removing "/cairo" from the path
-        local out_dir="${cairo_dir%/cairo}"
+        # Get the parent "out" directory by removing "/out/cairo" from the path
+        local out_dir="${cairo_dir%/out/cairo}"
         echo -e "${BLUE}${INFO}${NC} Removing ${CYAN}$out_dir${NC}..."
         rm -rf "$out_dir"
         cleaned_count=$((cleaned_count + 1))

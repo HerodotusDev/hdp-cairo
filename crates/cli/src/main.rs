@@ -166,18 +166,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Commands::EnvInfo => print_env_info()?,
         Commands::Update(args) => {
             //? Runs the update/install command: curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
+            // Original curl version (commented for debug):
             let mut curl = Command::new("curl")
                 .arg("-fsSL")
                 .arg("https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh")
-                .arg(if args.clean { "--clean" } else { "" })
                 .stdout(Stdio::piped())
                 .spawn()
                 .map_err(Error::IO)?;
 
             let mut script = Vec::new();
             curl.stdout.take().unwrap().read_to_end(&mut script)?;
-            let status = Command::new("bash")
-                .stdin(Stdio::piped())
+
+            let mut bash_cmd = Command::new("bash");
+            bash_cmd.arg("-s").arg("--").stdin(Stdio::piped());
+
+            if args.clean {
+                bash_cmd.arg("--clean");
+            }
+
+            let status = bash_cmd
                 .spawn()
                 .and_then(|mut child| {
                     child.stdin.as_mut().unwrap().write_all(&script)?;
