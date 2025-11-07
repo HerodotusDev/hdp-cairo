@@ -143,7 +143,7 @@ scarb build
   Identify the required on-chain data and proofs.
 - **Command:**
   ```bash
-  hdp-cli dry-run -m target/dev/example_starkgate_module.compiled_contract_class.json --print_output
+  hdp dry-run -m target/dev/example_starkgate_module.compiled_contract_class.json --print_output
   ```
 
 2. **Fetcher Process:**
@@ -152,7 +152,7 @@ scarb build
   Connect to blockchain RPC endpoints to fetch on-chain data and corresponding proofs, using the keys identified during the dry run.
 - **Command:**
   ```bash
-  hdp-cli fetch-proofs
+  hdp fetch-proofs
   ```
 
 3. **Sound Run Process:**
@@ -161,7 +161,7 @@ scarb build
   Execute the compiled Cairo1 bytecode with the verified data. During this process, the bootloader retrieves data, handles system calls, and runs user logic, generating an execution trace.
 - **Command:**
   ```bash
-  hdp-cli sound-run -m target/dev/example_starkgate_module.compiled_contract_class.json --print_output
+  hdp sound-run -m target/dev/example_starkgate_module.compiled_contract_class.json --print_output
   ```
 
 #### Using Source Build

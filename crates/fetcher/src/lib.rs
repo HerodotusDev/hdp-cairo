@@ -5,6 +5,7 @@
 
 use std::{
     collections::{HashMap, HashSet},
+    fs,
     num::ParseIntError,
     ops::RangeInclusive,
     path::PathBuf,
@@ -35,6 +36,8 @@ use state_server::api::proof::{GetStateProofsRequest, GetStateProofsResponse};
 use syscall_handler::SyscallHandler;
 use thiserror::Error;
 use tokio as _;
+use tracing::info;
+use tracing_subscriber as _;
 use types::{
     cairo::unconstrained::UnconstrainedStateValue,
     keys::evm::get_corresponding_rpc_url,
@@ -48,7 +51,8 @@ use types::{
         mmr::MmrMeta,
         starknet::{header::Header as StarknetHeader, storage::Storage as StarknetStorage, Proofs as StarknetProofs},
     },
-    HashingFunction, UnconstrainedState,
+    ChainProofs, HashingFunction, ProofsData, UnconstrainedState, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID,
+    OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
 };
 
 pub mod proof_keys;
@@ -636,4 +640,82 @@ pub async fn infer_mmr_sources_from_indexer(proof_keys: &ProofKeys) -> Result<Ha
         });
 
     evm_iter.chain(starknet_iter).collect()
+}
+
+pub async fn run_with_args(args: Args) -> Result<(), FetcherError> {
+    info!("Starting fetcher execution...");
+    info!("Reading input file from: {}", args.inputs.display());
+    let input_file = fs::read(&args.inputs)?;
+
+    let syscall_handler: SyscallHandler<
+        evm::CallContractHandler,
+        starknet::CallContractHandler,
+        injected_state::CallContractHandler,
+        unconstrained::CallContractHandler,
+    > = serde_json::from_slice(&input_file)?;
+    let proof_keys = parse_syscall_handler(syscall_handler)?;
+
+    let mmr_hasher_config = args
+        .mmr_hasher_config
+        .as_ref()
+        .map(|path| Ok::<MMRHasherConfig, crate::FetcherError>(serde_json::from_slice(&fs::read(path)?)?))
+        .transpose()?;
+
+    let mmr_deployment_config = args
+        .mmr_deployment_config
+        .as_ref()
+        .map(|path| Ok::<MMRDeploymentConfig, crate::FetcherError>(serde_json::from_slice(&fs::read(path)?)?))
+        .transpose()?;
+
+    let fetcher = Fetcher::new(
+        &proof_keys,
+        mmr_hasher_config.unwrap_or_default(),
+        mmr_deployment_config.unwrap_or_default(),
+    );
+    let (
+        eth_proofs_mainnet,
+        eth_proofs_sepolia,
+        starknet_proofs_mainnet,
+        starknet_proofs_sepolia,
+        optimism_proofs_mainnet,
+        optimism_proofs_sepolia,
+        unconstrained,
+        state_proofs,
+    ) = tokio::try_join!(
+        fetcher.collect_evm_proofs(ETHEREUM_MAINNET_CHAIN_ID),
+        fetcher.collect_evm_proofs(ETHEREUM_TESTNET_CHAIN_ID),
+        fetcher.collect_starknet_proofs(STARKNET_MAINNET_CHAIN_ID),
+        fetcher.collect_starknet_proofs(STARKNET_TESTNET_CHAIN_ID),
+        fetcher.collect_evm_proofs(OPTIMISM_MAINNET_CHAIN_ID),
+        fetcher.collect_evm_proofs(OPTIMISM_TESTNET_CHAIN_ID),
+        fetcher.collect_unconstrained_data(),
+        fetcher.collect_state_proofs(),
+    )?;
+    let chain_proofs = vec![
+        ChainProofs::EthereumMainnet(eth_proofs_mainnet),
+        ChainProofs::EthereumSepolia(eth_proofs_sepolia),
+        ChainProofs::StarknetMainnet(starknet_proofs_mainnet),
+        ChainProofs::StarknetSepolia(starknet_proofs_sepolia),
+        ChainProofs::OptimismMainnet(optimism_proofs_mainnet),
+        ChainProofs::OptimismSepolia(optimism_proofs_sepolia),
+    ];
+
+    info!("Writing proofs to: {}", args.output.display());
+
+    fs::write(
+        args.output,
+        serde_json::to_string_pretty(
+            &(ProofsData {
+                chain_proofs,
+                unconstrained,
+                state_proofs,
+            }),
+        )
+        .map_err(|e| crate::FetcherError::IO(e.into()))?
+        .as_bytes(),
+    )?;
+
+    info!("Proofs have been saved successfully.");
+
+    Ok(())
 }

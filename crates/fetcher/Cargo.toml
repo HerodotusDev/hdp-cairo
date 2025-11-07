@@ -25,6 +25,8 @@ syscall_handler.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 types.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
 
 [features]
 default = []

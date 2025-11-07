@@ -3,17 +3,16 @@
 #![warn(unused_crate_dependencies)]
 #![forbid(unsafe_code)]
 
-use std::path::PathBuf;
-
 use bytemuck as _;
-use cairo_vm::{self as _, cairo_run::CairoRunConfig, types::layout_name::LayoutName};
+use cairo_vm as _;
 use clap::Parser;
+use serde_json as _;
 use sound_hint_processor as _;
-use sound_run::{prove::prover_input_from_runner, Args, HDP_COMPILED_JSON};
+use sound_run::Args;
 use stwo_cairo_adapter as _;
-use tracing::{self as _, info};
+use tracing as _;
 use tracing_subscriber::EnvFilter;
-use types::{error::Error, param::Param, CasmContractClass, HDPInput, InjectedState, ProofsData};
+use types::error::Error;
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 1)]
 async fn main() -> Result<(), Error> {
@@ -22,56 +21,5 @@ async fn main() -> Result<(), Error> {
 
     let args = Args::try_parse_from(std::env::args()).map_err(Error::Cli)?;
 
-    let compiled_class: CasmContractClass = serde_json::from_slice(&std::fs::read(args.compiled_module).map_err(Error::IO)?)?;
-    let params: Vec<Param> = if let Some(input_path) = args.inputs {
-        serde_json::from_slice(&std::fs::read(input_path).map_err(Error::IO)?)?
-    } else {
-        Vec::new()
-    };
-    let injected_state: InjectedState = if let Some(path) = args.injected_state {
-        serde_json::from_slice(&std::fs::read(path).map_err(Error::IO)?)?
-    } else {
-        InjectedState::default()
-    };
-    let proofs_data: ProofsData = serde_json::from_slice(&std::fs::read(args.proofs).map_err(Error::IO)?)?;
-
-    let cairo_run_config = CairoRunConfig {
-        layout: LayoutName::all_cairo_stwo,
-        secure_run: Some(true),
-        allow_missing_builtins: Some(false),
-        relocate_mem: true,
-        trace_enabled: true,
-        proof_mode: args.proof_mode,
-        ..Default::default()
-    };
-
-    let (cairo_runner, output) = sound_run::run(
-        args.program.unwrap_or(PathBuf::from(HDP_COMPILED_JSON)),
-        cairo_run_config,
-        HDPInput {
-            chain_proofs: proofs_data.chain_proofs,
-            compiled_class,
-            params,
-            state_proofs: proofs_data.state_proofs,
-            injected_state,
-            unconstrained: proofs_data.unconstrained,
-        },
-    )?;
-
-    if args.print_output {
-        println!("{:#?}", output);
-    }
-
-    if let Some(ref file_name) = args.cairo_pie {
-        let pie = cairo_runner.get_cairo_pie().map_err(|e| Error::CairoPie(e.to_string()))?;
-        pie.write_zip_file(file_name, true)?;
-    }
-
-    if let Some(ref file_name) = args.stwo_prover_input {
-        let stwo_prover_input = prover_input_from_runner(&cairo_runner);
-        std::fs::write(file_name, serde_json::to_string(&stwo_prover_input)?)?;
-        info!("Prover Input saved to: {:?}", file_name);
-    }
-
-    Ok(())
+    sound_run::run_with_args(args).await
 }
