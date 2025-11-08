@@ -23,3 +23,6 @@ tokio.workspace = true
 types.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+
+[features]
+default = ["fetcher/progress_bars"]

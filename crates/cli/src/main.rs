@@ -46,6 +46,12 @@ struct Cli {
 pub struct UpdateArgs {
     #[arg(short = 'c', long = "clean", help = "Clean build, longer and heavier, but clean")]
     clean: bool,
+    #[arg(
+        short = 'l',
+        long = "local",
+        help = "Build from existing local repository without pulling from GitHub"
+    )]
+    local: bool,
 }
 
 #[derive(Subcommand, Debug)]
@@ -76,6 +82,9 @@ enum Commands {
     /// Runs the update/install command: ```curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash```
     #[command(name = "update")]
     Update(UpdateArgs),
+    /// Print the path to the HDP repository directory
+    #[command(name = "pwd")]
+    Pwd,
 }
 
 #[tokio::main]
@@ -113,21 +122,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let current_dir = std::env::current_dir().map_err(Error::IO)?;
 
                 // Resolve the HDP installation path
-                let hdp_path = std::env::var("HOME")
-                    .map_err(|_| std::io::Error::new(std::io::ErrorKind::NotFound, "Failed to get HOME directory"))
-                    .and_then(|home| {
-                        let path = format!("{}/.local/share/hdp", home);
-                        let expanded_path = PathBuf::from(&path);
-                        if expanded_path.exists() {
-                            Ok(expanded_path)
-                        } else {
-                            Err(std::io::Error::new(
-                                std::io::ErrorKind::NotFound,
-                                format!("HDP installation not found at: {}", path),
-                            ))
-                        }
-                    })
-                    .map_err(Error::IO)?;
+                let hdp_path = get_hdp_path()?;
 
                 let target_path = current_dir.join("hdp_cairo");
 
@@ -174,23 +169,38 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Commands::EnvInfo => print_env_info()?,
         Commands::Update(args) => {
-            //? Runs the update/install command: curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
-            // Original curl version (commented for debug):
-            let mut curl = Command::new("curl")
-                .arg("-fsSL")
-                .arg("https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh")
-                .stdout(Stdio::piped())
-                .spawn()
-                .map_err(Error::IO)?;
+            let script = if args.local {
+                // Load script from local filesystem
+                let hdp_path = get_hdp_path()?;
+                let script_path = hdp_path.join("install-cli.sh");
+                std::fs::read(&script_path).map_err(|e| {
+                    Error::IO(std::io::Error::new(
+                        std::io::ErrorKind::NotFound,
+                        format!("Failed to read install script at {}: {}", script_path.display(), e),
+                    ))
+                })?
+            } else {
+                // Download script from internet
+                let mut curl = Command::new("curl")
+                    .arg("-fsSL")
+                    .arg("https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh")
+                    .stdout(Stdio::piped())
+                    .spawn()
+                    .map_err(Error::IO)?;
 
-            let mut script = Vec::new();
-            curl.stdout.take().unwrap().read_to_end(&mut script)?;
+                let mut script = Vec::new();
+                curl.stdout.take().unwrap().read_to_end(&mut script)?;
+                script
+            };
 
             let mut bash_cmd = Command::new("bash");
             bash_cmd.arg("-s").arg("--").stdin(Stdio::piped());
 
             if args.clean {
                 bash_cmd.arg("--clean");
+            }
+            if args.local {
+                bash_cmd.arg("--local");
             }
 
             let status = bash_cmd
@@ -205,9 +215,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 return Err(Box::new(Error::IO(std::io::Error::other("Installer failed"))) as Box<dyn std::error::Error>);
             }
         }
+        Commands::Pwd => {
+            let hdp_path = get_hdp_path()?;
+            println!("{}", hdp_path.display());
+        }
     }
 
     Ok(())
+}
+
+fn get_hdp_path() -> Result<PathBuf, Error> {
+    std::env::var("HOME")
+        .map_err(|_| std::io::Error::new(std::io::ErrorKind::NotFound, "Failed to get HOME directory"))
+        .and_then(|home| {
+            let path = format!("{}/.local/share/hdp", home);
+            let expanded_path = PathBuf::from(&path);
+            if expanded_path.exists() {
+                Ok(expanded_path)
+            } else {
+                Err(std::io::Error::new(
+                    std::io::ErrorKind::NotFound,
+                    format!("HDP installation not found at: {}", path),
+                ))
+            }
+        })
+        .map_err(Error::IO)
 }
 
 fn print_env_info() -> Result<(), Box<dyn std::error::Error>> {
