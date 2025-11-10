@@ -20,9 +20,9 @@ HDP (Herodotus Data Processor) is a modular framework for validating on-chain da
 
 ## Installation
 
-This project uses `uv` for Python package management and `cargo` for Rust.
-
 ### Prerequisites
+
+Both installation methods require Rust and `uv` (Python package manager):
 
 1.  **Install Rust**: If you don't have Rust, install it via `rustup`.
 
@@ -36,11 +36,33 @@ This project uses `uv` for Python package management and `cargo` for Rust.
     curl -LsSf https://astral.sh/uv/install.sh | sh
     ```
 
-### Build from Source
+### Option 1: Using CLI Tool (Recommended)
+
+Install the HDP CLI tool using the installation script:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
+```
+
+> To install a specific version:
+>
+> ```sh
+> VERSION=vX.X.X curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
+> ```
+
+---
+
+### Option 2: Manual Build from Source
+
+This project uses `uv` for Python package management and `cargo` for Rust.
+
+#### Build Steps
 
 1.  **Clone the Repository**: Clone the repository and initialize the submodules.
 
     ```sh
+    git clone https://github.com/HerodotusDev/hdp-cairo.git
+    cd hdp-cairo
     git submodule update --init
     ```
 
@@ -60,16 +82,27 @@ This project uses `uv` for Python package management and `cargo` for Rust.
 
 ## Running
 
-The runtime requires RPC calls to blockchain nodes. Ensure you create an environment variables file from the example and set the required values.
+The runtime requires RPC calls to blockchain nodes. Set up your environment variables:
 
-```sh
-cp example.env .env
-```
+- **Using CLI**: Run `hdp env-info` to see the required environment variables and get an example `.env` file.
+- **Manual Build**: Copy the example environment file and edit it:
 
-### Steps to Execute
+  ```sh
+  cp example.env .env
+  ```
+
+  Edit the `.env` file to provide the correct RPC endpoints and configuration details.
 
 1.  **Simulate Cairo1 Module & Collect Proof Information**:
     This step performs a dry run of your Cairo module. `module_contract_class.json` is a compiled contract from a Scarb build.
+
+    **Using CLI**:
+
+    ```sh
+    hdp dry-run -m module_contract_class.json --print_output
+    ```
+
+    **Manual Build**:
 
     ```sh
     cargo run --release --bin hdp-cli -- dry-run -m module_contract_class.json --print_output
@@ -78,12 +111,28 @@ cp example.env .env
 2.  **Fetch On-Chain Proofs**:
     This command fetches the necessary on-chain proofs required for the HDP run.
 
+    **Using CLI**:
+
+    ```sh
+    hdp fetch-proofs
+    ```
+
+    **Manual Build**:
+
     ```sh
     cargo run --release --bin hdp-cli --features progress_bars -- fetch-proofs
     ```
 
 3.  **Run Cairo1 Module with Verified Data**:
     This executes the module with verified on-chain data.
+
+    **Using CLI**:
+
+    ```sh
+    hdp sound-run -m module_contract_class.json --print_output
+    ```
+
+    **Manual Build**:
 
     ```sh
     cargo run --release --bin hdp-cli -- sound-run -m module_contract_class.json --print_output

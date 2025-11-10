@@ -139,14 +139,14 @@ impl ProgressBars {
             .progress_chars("=> ");
 
         let bars = [
-            (proof_keys.evm.header_keys.len(), "ethereum header keys - fetching"),
-            (proof_keys.evm.account_keys.len(), "ethereum account key - fetching"),
-            (proof_keys.evm.storage_keys.len(), "ethereum storage keys - fetching"),
-            (proof_keys.evm.receipt_keys.len(), "ethereum receipts keys - fetching"),
-            (proof_keys.evm.transaction_keys.len(), "ethereum transactions keys - fetching"),
-            (proof_keys.starknet.header_keys.len(), "starknet header keys - fetching"),
-            (proof_keys.starknet.storage_keys.len(), "starknet storage keys - fetching"),
-            (proof_keys.unconstrained.bytecode.len(), "unconstrained bytecode keys - fetching"),
+            (proof_keys.evm.header_keys.len(), "fetching - ethereum header keys"),
+            (proof_keys.evm.account_keys.len(), "fetching - ethereum account key"),
+            (proof_keys.evm.storage_keys.len(), "fetching - ethereum storage keys"),
+            (proof_keys.evm.receipt_keys.len(), "fetching - ethereum receipts keys"),
+            (proof_keys.evm.transaction_keys.len(), "fetching - ethereum transactions keys"),
+            (proof_keys.starknet.header_keys.len(), "fetching - starknet header keys"),
+            (proof_keys.starknet.storage_keys.len(), "fetching - starknet storage keys"),
+            (proof_keys.unconstrained.bytecode.len(), "fetching - unconstrained bytecode keys"),
         ]
         .map(|(len, msg)| {
             let pb = multi_progress.add(ProgressBar::new(len as u64));
@@ -172,7 +172,7 @@ impl ProgressBars {
 // Helper trait to safely increment progress
 trait ProgressExt {
     fn safe_inc(&self);
-    fn safe_finish_with_message(&self, msg: &'static str);
+    fn safe_finish_with_message(&self);
 }
 
 #[cfg(feature = "progress_bars")]
@@ -183,9 +183,9 @@ impl ProgressExt for Option<ProgressBar> {
         }
     }
 
-    fn safe_finish_with_message(&self, msg: &'static str) {
+    fn safe_finish_with_message(&self) {
         if let Some(pb) = self {
-            pb.finish_with_message(msg);
+            pb.finish_with_message(pb.message().replace("fetching", "finished"));
         }
     }
 }
@@ -235,6 +235,9 @@ impl<'a> Fetcher<'a> {
             self.progress_bars.evm_header.safe_inc();
         }
 
+        #[cfg(feature = "progress_bars")]
+        self.progress_bars.evm_header.safe_finish_with_message();
+
         Ok(headers_with_mmr)
     }
 
@@ -263,9 +266,7 @@ impl<'a> Fetcher<'a> {
         }
 
         #[cfg(feature = "progress_bars")]
-        self.progress_bars
-            .evm_account
-            .safe_finish_with_message("evm account keys - finished");
+        self.progress_bars.evm_account.safe_finish_with_message();
 
         // Collect storage proofs
         let chain_storage_keys_iter = self.proof_keys.evm.storage_keys.iter().filter(|key| key.chain_id == chain_id);
@@ -283,9 +284,7 @@ impl<'a> Fetcher<'a> {
         }
 
         #[cfg(feature = "progress_bars")]
-        self.progress_bars
-            .evm_storage
-            .safe_finish_with_message("evm storage keys - finished");
+        self.progress_bars.evm_storage.safe_finish_with_message();
 
         // For each block, we need to create a mpt_handler
         let mut receipt_mpt_handlers: HashMap<u64, TxReceiptsMptHandler> = HashMap::default();
@@ -314,9 +313,7 @@ impl<'a> Fetcher<'a> {
         );
 
         #[cfg(feature = "progress_bars")]
-        self.progress_bars
-            .evm_receipts
-            .safe_finish_with_message("evm receipt keys - finished");
+        self.progress_bars.evm_receipts.safe_finish_with_message();
 
         // For each tx block, we need to create a mpt_handler
         let mut tx_mpt_handlers: HashMap<u64, TxsMptHandler> = HashMap::default();
@@ -345,9 +342,7 @@ impl<'a> Fetcher<'a> {
         );
 
         #[cfg(feature = "progress_bars")]
-        self.progress_bars
-            .evm_transactions
-            .safe_finish_with_message("evm transaction keys - finished");
+        self.progress_bars.evm_transactions.safe_finish_with_message();
 
         Ok(EvmProofs {
             headers_with_mmr: process_headers(headers_with_mmr),
@@ -385,6 +380,9 @@ impl<'a> Fetcher<'a> {
             self.progress_bars.starknet_header.safe_inc();
         }
 
+        #[cfg(feature = "progress_bars")]
+        self.progress_bars.starknet_header.safe_finish_with_message();
+
         Ok(headers_with_mmr)
     }
 
@@ -394,11 +392,6 @@ impl<'a> Fetcher<'a> {
         let flattened_keys = self.proof_keys.starknet.to_flattened_keys(chain_id);
 
         let headers_with_mmr = self.collect_starknet_headers_proofs(&flattened_keys).await?;
-
-        #[cfg(feature = "progress_bars")]
-        self.progress_bars
-            .starknet_header
-            .safe_finish_with_message("starknet header keys - finished");
 
         // Collect storage proofs
         let chain_storage_keys_iter = self.proof_keys.starknet.storage_keys.iter().filter(|key| key.chain_id == chain_id);
@@ -413,9 +406,7 @@ impl<'a> Fetcher<'a> {
         }
 
         #[cfg(feature = "progress_bars")]
-        self.progress_bars
-            .starknet_storage
-            .safe_finish_with_message("starknet storage keys - finished");
+        self.progress_bars.starknet_storage.safe_finish_with_message();
 
         Ok(StarknetProofs {
             headers_with_mmr: process_headers(headers_with_mmr),
@@ -441,13 +432,11 @@ impl<'a> Fetcher<'a> {
                 UnconstrainedStateValue::Bytecode(result?),
             );
             #[cfg(feature = "progress_bars")]
-            self.progress_bars.unconstrained.safe_inc();
+            self.progress_bars.unconstrained_bytecode.safe_inc();
         }
 
         #[cfg(feature = "progress_bars")]
-        self.progress_bars
-            .unconstrained
-            .safe_finish_with_message("starknet storage keys - finished");
+        self.progress_bars.unconstrained_bytecode.safe_finish_with_message();
 
         Ok(UnconstrainedState(data))
     }

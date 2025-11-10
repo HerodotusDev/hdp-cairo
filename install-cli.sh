@@ -8,6 +8,7 @@ set -euo pipefail
 # - Builds the hdp-cli binary and symlinks it into $HOME/.local/bin
 # - Supports installing specific versions via VERSION environment variable (e.g., VERSION=v1.0.12)
 # - Supports --clean flag for full cargo clean (without flag, only cleans build script outputs)
+# - Supports --local flag to build from existing local repository without pulling from GitHub
 
 # Colors for better readability
 RED='\033[0;31m'
@@ -106,6 +107,16 @@ check_old_installation() {
     return 0
   fi
   return 1
+}
+
+check_local_repo() {
+  if [ ! -d "$REPO_DIR/.git" ]; then
+    echo -e "${RED}${ERROR}${NC} No HDP repository found at ${CYAN}$REPO_DIR${NC}"
+    echo -e "${YELLOW}${ARROW}${NC} The ${BOLD}--local${NC} flag requires an existing repository."
+    echo -e "${YELLOW}${ARROW}${NC} Please run the installer without ${BOLD}--local${NC} to clone the repository first, or ensure the repository exists at ${CYAN}$REPO_DIR${NC}"
+    exit 1
+  fi
+  echo -e "${GREEN}${SUCCESS}${NC} Found local repository at ${CYAN}$REPO_DIR${NC}"
 }
 
 cleanup_old_installation() {
@@ -209,7 +220,7 @@ setup_python_env() {
 clean_build_artifacts() {
   local clean_mode="$1"
   
-  if [ "$clean_mode" = "full" ]; then
+  if [ "$clean_mode" = true ]; then
     echo -e "${BLUE}${INFO}${NC} Performing full clean (${BOLD}cargo clean${NC})..."
     (cd "$REPO_DIR" && cargo clean)
   else
@@ -242,7 +253,7 @@ clean_build_artifacts() {
 }
 
 build_cli() {
-  local clean_mode="${1:-light}"
+  local clean_mode="${1:-false}"
   clean_build_artifacts "$clean_mode"
   echo -e "${BLUE}${INFO}${NC} Building ${BOLD}$BIN_NAME${NC} (release)..."
   (cd "$REPO_DIR" && cargo build --release --bin "$BIN_NAME")
@@ -275,24 +286,32 @@ print_path_hint() {
 }
 
 main() {
-  local clean_mode="light"
+  local clean_mode=false
+  local local_mode=false
   
   # Parse command line arguments
   while [[ $# -gt 0 ]]; do
     case $1 in
-      --clean)
-        clean_mode="full"
+      -c|--clean)
+        clean_mode=true
+        shift
+        ;;
+      -l|--local)
+        local_mode=true
         shift
         ;;
       -h|--help)
-        echo "Usage: $0 [--clean]"
+        echo "Usage: $0 [--clean] [--local]"
         echo
         echo "Options:"
-        echo "  --clean    Perform full cargo clean before building (slower but more thorough)"
+        echo "  -c | --clean    Perform full cargo clean before building (slower but more thorough)"
         echo "             Without this flag, only removes build script output directories"
+        echo "  -l | --local    Build from existing local repository without pulling from GitHub"
+        echo "             Fails if repository doesn't exist at $REPO_DIR"
         echo
         echo "Environment variables:"
         echo "  VERSION    Install a specific version (e.g., VERSION=v1.0.12)"
+        echo "             Ignored when using --local"
         exit 0
         ;;
       *)
@@ -320,20 +339,27 @@ main() {
   ensure_uv
   ensure_path_bootstrap
 
-  # Validate version if specified
-  if [ -n "${VERSION:-}" ]; then
-    validate_version "$VERSION"
-    echo -e "${BLUE}${INFO}${NC} Installing version: ${CYAN}$VERSION${NC}"
+  if [ "$local_mode" = true ]; then
+    echo -e "${BLUE}${INFO}${NC} Local mode: building from existing repository"
+    check_local_repo
+    # Skip version validation and repo cloning/updating in local mode
   else
-    echo -e "${BLUE}${INFO}${NC} Installing latest version"
+    # Validate version if specified
+    if [ -n "${VERSION:-}" ]; then
+      validate_version "$VERSION"
+      echo -e "${BLUE}${INFO}${NC} Installing version: ${CYAN}$VERSION${NC}"
+    else
+      echo -e "${BLUE}${INFO}${NC} Installing latest version"
+    fi
+
+    # Check for old installation and clean up if necessary
+    if check_old_installation; then
+      cleanup_old_installation
+    fi
+
+    clone_or_update_repo
   fi
 
-  # Check for old installation and clean up if necessary
-  if check_old_installation; then
-    cleanup_old_installation
-  fi
-
-  clone_or_update_repo
   init_submodules
   setup_python_env
   build_cli "$clean_mode"
