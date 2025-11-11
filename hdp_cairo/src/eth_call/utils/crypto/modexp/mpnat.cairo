@@ -531,7 +531,7 @@ pub impl MPNatTraitImpl of MPNatTrait {
         let s = modulus.digits.len;
 
         let mut digits = Felt252VecImpl::new();
-        // safe unwrap, since intiail length is 0;
+        // safe unwrap, since initial length is 0;
         digits.expand(s).unwrap();
         let mut x_bar = MPNat { digits };
         // Initialize result as `r mod modulus` (Montgomery form of 1)
