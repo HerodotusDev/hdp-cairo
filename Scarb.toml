@@ -20,6 +20,7 @@ alexandria_encoding = { git = "https://github.com/keep-starknet-strange/alexandr
 cairo_test = "2.10.0"
 hdp_cairo = { path = "hdp_cairo" }
 starknet = "2.10.0"
+garaga = { git = "https://github.com/keep-starknet-strange/garaga.git" }
 
 [workspace.tool.fmt]
 sort-module-level-items = true

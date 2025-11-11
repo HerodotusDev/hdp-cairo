@@ -3,7 +3,8 @@ use core::panic_with_felt252;
 use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;
 use crate::HDP;
-use crate::bytecode::{ByteCode, ByteCodeLeWords, OriginalByteCodeTrait, U256Trait};
+use crate::eth_call::utils::bytecode::{ByteCode, ByteCodeLeWords, OriginalByteCodeTrait};
+use crate::eth_call::utils::traits::integer::U256Trait;
 use crate::evm::account::{AccountKey, AccountTrait};
 
 const UNCONSTRAINED_CONTRACT_ADDRESS: felt252 = 'unconstrained';
