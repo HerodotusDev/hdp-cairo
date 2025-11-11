@@ -77,6 +77,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "example_eth_call"
+version = "0.1.0"
+dependencies = [
+ "hdp_cairo",
+]
+
+[[package]]
 name = "example_injected_state"
 version = "0.1.0"
 dependencies = [

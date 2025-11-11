@@ -10,6 +10,7 @@ members = [
     "examples/multi_chain_access",
     "examples/most_bridge",
     "examples/all_features_combined",
+    "examples/eth_call",
     "hdp_cairo",
     "tests",
 ]
