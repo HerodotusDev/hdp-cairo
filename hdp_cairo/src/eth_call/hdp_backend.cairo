@@ -43,7 +43,7 @@ pub fn fetch_original_storage(
     0
 }
 
-/// Checks if the EVM address is deployed.
+/// Checks if the EVM address is deployed - is a deployed contract, not an EOA.
 ///
 /// # Returns
 ///
@@ -57,13 +57,7 @@ pub fn is_deployed(hdp: Option<@HDP>, time_and_space: @TimeAndSpace, address: @E
         address: (*address).into(),
     };
 
-    if hdp.evm.account_get_code_hash(@account_key) != EMPTY_KECCAK {
-        true
-    } else if hdp.evm.account_get_nonce(@account_key) > 0 {
-        true
-    } else {
-        false
-    }
+    hdp.evm.account_get_code_hash(@account_key) != EMPTY_KECCAK
 }
 
 pub fn fetch_balance(
