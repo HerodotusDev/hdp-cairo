@@ -6,6 +6,7 @@ use crate::evm::account::{AccountKey, AccountTrait as EvmAccountTrait};
 use crate::evm::header::{HeaderKey, HeaderTrait};
 use crate::evm::storage::{StorageKey, StorageTrait};
 use crate::unconstrained::state::UnconstrainedMemorizerTrait;
+use super::utils::constants::EMPTY_KECCAK;
 
 #[derive(Destruct, Default, Copy)]
 pub struct TimeAndSpace {
@@ -56,9 +57,13 @@ pub fn is_deployed(hdp: Option<@HDP>, time_and_space: @TimeAndSpace, address: @E
         address: (*address).into(),
     };
 
-    // TODO: @herodotus [account] need a reliable way of checking if the account is deployed
-    //! this wont work! it's just a placeholder, probably always says true, unless it panics.
-    hdp.evm.account_get_nonce(@account_key) >= 0
+    if hdp.evm.account_get_code_hash(@account_key) != EMPTY_KECCAK {
+        true
+    } else if hdp.evm.account_get_nonce(@account_key) > 0 {
+        true
+    } else {
+        false
+    }
 }
 
 pub fn fetch_balance(
