@@ -181,3 +181,12 @@ pub fn fetch_base_fee(hdp: Option<@HDP>, time_and_space: @TimeAndSpace) -> u64 {
         .try_into()
         .unwrap_or_else(|| panic!("Failed to convert base fee to u128"))
 }
+
+pub fn fetch_prevrandao(hdp: Option<@HDP>, time_and_space: @TimeAndSpace) -> u256 {
+    let hdp = hdp.unwrap_or_else(|| panic!("HDP is not set: fetch_code_hash"));
+
+    let account_key = HeaderKey {
+        chain_id: *time_and_space.chain_id, block_number: *time_and_space.block_number,
+    };
+    hdp.evm.header_get_mix_hash(@account_key)
+}
