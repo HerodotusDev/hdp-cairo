@@ -163,6 +163,25 @@ Tests also require chain node RPC calls, so make sure your `.env` file is set up
 
 ## Note on On-Chain Finality
 
-Even if all local stages (dry run, proof fetching, sound run) succeed, on-chain settlement depends on the **MMR (Merkle Mountain Range)**. The data for all accessed values must be present in the MMR core module used for settlement.
+Even if all local stages (dry run, proof fetching, sound run) succeed, on-chain settlement depends on the **MMRs (Merkle Mountain Ranges)**. The data for all accessed values must be present in the MMRs inside [Herodotus Satellite contracts](https://github.com/HerodotusDev/satellite) used for settlement.
 
-This means the blocks you are accessing must have been included in the settlement contract's MMR. This is a critical consideration, especially when mixing testnet and mainnet data or for cross-chain access within the same HDP module. If you encounter issues during on-chain settlement, verify that the relevant block numbers have been included in the on-chain MMR.
+This means the blocks you are accessing must have been included in the settlement contract's MMRs. This is a critical consideration, especially when mixing testnet and mainnet data or for cross-chain access within the same HDP module. If you encounter issues during on-chain settlement, verify that the relevant block numbers have been included in the on-chain MMRs.
+
+---
+
+## Mentions
+
+Provable ETH call (located in [hdp_cairo/src/eth_call](./hdp_cairo/src/eth_call/)) makes use of code adapted from [**Kakarot**](https://github.com/kkrt-labs) [(@kkrt-labs/kakarot-ssj)](https://github.com/kkrt-labs/kakarot-ssj) under the [MIT License](https://github.com/kkrt-labs/kakarot-ssj/blob/main/LICENSE).
+
+Thanks for all the hard work guys 🙏
+
+> Original project: https://github.com/kkrt-labs/kakarot-ssj  
+> License file: https://github.com/kkrt-labs/kakarot-ssj/blob/main/LICENSE
+
+---
+
+## License
+
+`hdp-cairo` is licensed under the [Apache-2.0 license](./LICENSE).
+
+---

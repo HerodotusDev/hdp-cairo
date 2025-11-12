@@ -44,3 +44,7 @@ dist/
 # State server db folder
 crates/state_server/db
 db
+
+# dry-run and sound-run outputs
+dry_run_output.json
+proofs.json
