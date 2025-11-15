@@ -20,7 +20,6 @@ reqwest.workspace = true
 serde_json.workspace = true
 serde_with.workspace = true
 serde.workspace = true
-starknet-core.workspace = true
 starknet-crypto.workspace = true
 starknet-types-core.workspace = true
 strum_macros.workspace = true

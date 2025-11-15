@@ -3,9 +3,6 @@ name = "tests_modules"
 version = "0.1.0"
 edition = "2021"
 
-[dependencies]
-test-context = "0.4.1"
-
 [dev-dependencies]
 alloy.workspace = true
 anyhow.workspace = true
@@ -24,6 +21,7 @@ sound_hint_processor.workspace = true
 starknet-crypto.workspace = true
 state_server.workspace = true
 syscall_handler.workspace = true
+test-context = "0.4.1"
 tokio.workspace = true
 tracing.workspace = true
 types.workspace = true
