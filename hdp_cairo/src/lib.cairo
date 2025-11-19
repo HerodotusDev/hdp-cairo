@@ -1,10 +1,11 @@
 pub mod arbitrary_type;
-pub mod bytecode;
-pub mod debug;
+pub mod eth_call;
 pub mod evm;
 pub mod injected_state;
 pub mod starknet;
 pub mod unconstrained;
+
+pub use eth_call::execute_call::execute_eth_call;
 
 #[derive(Serde, Drop)]
 pub struct HDP {
