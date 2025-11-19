@@ -3,7 +3,6 @@ pub mod hashers;
 pub mod injected_state;
 pub mod starknet_modules;
 pub mod unconstrained;
-pub mod utils;
 use alexandria_bytes::Bytes;
 use alexandria_bytes::byte_array_ext::ByteArrayTraitExt;
 use alexandria_bytes::utils::{BytesDebug, BytesDisplay};

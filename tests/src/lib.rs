@@ -8,9 +8,6 @@ pub mod evm_modules;
 pub mod starknet_modules;
 
 #[cfg(test)]
-pub mod utils;
-
-#[cfg(test)]
 pub mod hashers;
 
 #[cfg(test)]
