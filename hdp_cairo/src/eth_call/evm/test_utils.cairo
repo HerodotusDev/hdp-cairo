@@ -7,7 +7,9 @@ use crate::eth_call::evm::memory::{Memory, MemoryTrait};
 use crate::eth_call::evm::model::account::AccountTrait;
 use crate::eth_call::evm::model::vm::{VM, VMTrait};
 use crate::eth_call::evm::model::{Environment, Message};
+use crate::eth_call::hdp_backend::TimeAndSpace;
 use crate::eth_call::utils::constants;
+use super::model::EnvironmentImpl;
 
 pub fn uninitialized_account() -> ClassHash {
     'uninitialized_account'.try_into().unwrap()
@@ -231,19 +233,10 @@ pub fn preset_message() -> Message {
 
 pub fn preset_environment() -> Environment {
     let block_info = starknet::get_block_info().unbox();
-
-    Environment {
-        origin: dual_origin(),
-        gas_price: gas_price(),
-        chain_id: chain_id(),
-        prevrandao: 0,
-        block_number: block_info.block_number,
-        block_timestamp: block_info.block_timestamp,
-        block_gas_limit: constants::BLOCK_GAS_LIMIT,
-        coinbase: coinbase(),
-        base_fee: BASE_FEE,
-        state: Default::default(),
-    }
+    let time_and_space = TimeAndSpace {
+        chain_id: chain_id().into(), block_number: block_info.block_number.into(),
+    };
+    EnvironmentImpl::new(dual_origin(), gas_price(), Default::default(), None, @time_and_space)
 }
 
 pub fn preset_vm() -> VM {

@@ -9,6 +9,7 @@ use crate::eth_call::evm::stack::StackTrait;
 use crate::eth_call::evm::state::StateTrait;
 use crate::eth_call::utils::constants::MIN_BASE_FEE_PER_BLOB_GAS;
 use crate::eth_call::utils::traits::{EthAddressIntoU256, EthAddressTryIntoResultContractAddress};
+use super::super::model::EnvironmentTrait;
 
 #[generate_trait]
 pub impl BlockInformation of BlockInformationTrait {
@@ -42,7 +43,7 @@ pub impl BlockInformation of BlockInformationTrait {
     fn exec_coinbase(ref self: VM) -> Result<(), EVMError> {
         self.charge_gas(gas::BASE)?;
 
-        let coinbase = self.env.coinbase;
+        let coinbase = self.env.get_coinbase();
         self.stack.push(coinbase.into())
     }
 
@@ -52,7 +53,7 @@ pub impl BlockInformation of BlockInformationTrait {
     fn exec_timestamp(ref self: VM) -> Result<(), EVMError> {
         self.charge_gas(gas::BASE)?;
 
-        self.stack.push(self.env.block_timestamp.into())
+        self.stack.push(self.env.get_block_timestamp().into())
     }
 
     /// 0x43 - NUMBER
@@ -69,7 +70,7 @@ pub impl BlockInformation of BlockInformationTrait {
     fn exec_prevrandao(ref self: VM) -> Result<(), EVMError> {
         self.charge_gas(gas::BASE)?;
 
-        self.stack.push(self.env.prevrandao)
+        self.stack.push(self.env.get_prevrandao())
     }
 
     /// 0x45 - GASLIMIT
@@ -78,7 +79,7 @@ pub impl BlockInformation of BlockInformationTrait {
     fn exec_gaslimit(ref self: VM) -> Result<(), EVMError> {
         self.charge_gas(gas::BASE)?;
 
-        self.stack.push(self.env.block_gas_limit.into())
+        self.stack.push(self.env.get_block_gas_limit().into())
     }
 
     /// 0x46 - CHAINID
@@ -114,7 +115,7 @@ pub impl BlockInformation of BlockInformationTrait {
     fn exec_basefee(ref self: VM) -> Result<(), EVMError> {
         self.charge_gas(gas::BASE)?;
 
-        self.stack.push(self.env.base_fee.into())
+        self.stack.push(self.env.get_base_fee().into())
     }
 
     /// 0x49 - BLOBHASH
@@ -147,10 +148,11 @@ mod tests {
     use crate::eth_call::evm::model::vm::VMTrait;
     use crate::eth_call::evm::stack::StackTrait;
     use crate::eth_call::evm::state::StateTrait;
-    use crate::eth_call::evm::test_utils::{VMBuilderTrait, gas_price};
+    use crate::eth_call::evm::test_utils::VMBuilderTrait;
     use crate::eth_call::utils::constants;
     use crate::eth_call::utils::constants::EMPTY_KECCAK;
     use crate::eth_call::utils::traits::EthAddressIntoU256;
+    use super::EnvironmentTrait;
 
 
     /// 0x40 - BLOCKHASH
@@ -293,7 +295,7 @@ mod tests {
 
         // Then
         assert_eq!(vm.stack.len(), 1);
-        assert_eq!(vm.stack.peek().unwrap(), vm.env.base_fee.into());
+        assert_eq!(vm.stack.peek().unwrap(), vm.env.get_base_fee().into());
     }
 
     #[test]
@@ -364,6 +366,6 @@ mod tests {
 
         // Then
         let coinbase_address = vm.stack.peek().unwrap();
-        assert(vm.env.coinbase.into() == coinbase_address, 'wrong coinbase address');
+        assert(vm.env.get_coinbase().into() == coinbase_address, 'wrong coinbase address');
     }
 }

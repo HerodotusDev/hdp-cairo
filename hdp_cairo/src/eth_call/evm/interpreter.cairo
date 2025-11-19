@@ -2,7 +2,6 @@ use core::num::traits::{Bounded, Zero};
 use hdp_cairo::HDP;
 // use core::ops::SnapshotDeref;
 use starknet::EthAddress;
-use starknet::storage::StoragePointerReadAccess;
 use crate::eth_call::evm::create_helpers::CreateHelpers;
 use crate::eth_call::evm::errors::{EVMError, EVMErrorTrait};
 use crate::eth_call::evm::instructions::{
@@ -23,13 +22,12 @@ use crate::eth_call::evm::state::StateTrait;
 use crate::eth_call::hdp_backend::{TimeAndSpace, fetch_base_fee};
 use crate::eth_call::utils::address::compute_contract_address;
 use crate::eth_call::utils::constants;
-use crate::eth_call::utils::env::get_env;
 use crate::eth_call::utils::eth_transaction::common::TxKind;
 use crate::eth_call::utils::eth_transaction::eip2930::{AccessListItem, AccessListItemTrait};
 use crate::eth_call::utils::eth_transaction::transaction::{Transaction, TransactionTrait};
 use crate::eth_call::utils::set::{Set, SetTrait};
 use crate::eth_call::utils::traits::eth_address::EthAddressExTrait;
-use super::model::AddressTrait;
+use super::model::{AddressTrait, EnvironmentImpl, EnvironmentTrait};
 use super::precompiles::Precompiles;
 
 #[generate_trait]
@@ -60,7 +58,7 @@ pub impl EVMImpl of EVMTrait {
         };
 
         let mut accessed_addresses: Set<EthAddress> = Default::default();
-        accessed_addresses.add(env.coinbase);
+        accessed_addresses.add(env.get_coinbase());
         accessed_addresses.add(to);
         accessed_addresses.add(env.origin);
         accessed_addresses.extend(eth_precompile_addresses().spanset());
@@ -107,7 +105,9 @@ pub impl EVMImpl of EVMTrait {
         let gas_price = tx.effective_gas_price(Option::Some(block_base_fee.into()));
         let gas_left = tx.gas_limit() - intrinsic_gas;
         let max_fee = tx.gas_limit().into() * gas_price;
-        let mut env = get_env(origin, gas_price, hdp, time_and_space);
+        let mut env = EnvironmentImpl::new(
+            origin, gas_price, Default::default(), hdp, time_and_space,
+        );
 
         let (message, is_deploy_tx) = {
             let mut sender_account = env.state.get_account(origin, hdp, time_and_space);
@@ -1058,15 +1058,16 @@ pub impl EVMImpl of EVMTrait {
 #[cfg(test)]
 mod tests {
     use core::num::traits::Zero;
+    use crate::eth_call::evm::model::Environment;
     use crate::eth_call::evm::model::account::Account;
-    use crate::eth_call::evm::model::{Environment, Message};
     use crate::eth_call::evm::state::StateTrait;
     use crate::eth_call::evm::test_utils::{dual_origin, test_dual_address};
     use crate::eth_call::utils::constants::EMPTY_KECCAK;
     use crate::eth_call::utils::eth_transaction::common::TxKind;
     use crate::eth_call::utils::eth_transaction::legacy::TxLegacy;
     use crate::eth_call::utils::eth_transaction::transaction::{Transaction, TransactionTrait};
-    use super::{EVMImpl, EVMTrait};
+    use super::super::model::EnvironmentImpl;
+    use super::{EVMImpl, TimeAndSpace};
 
     fn setup() -> (Account, Environment) {
         let sender_account = Account {
@@ -1078,18 +1079,10 @@ mod tests {
             selfdestruct: false,
             is_created: true,
         };
-        let mut env = Environment {
-            origin: dual_origin(),
-            gas_price: 20000000000_u128, // 20 Gwei
-            chain_id: 1_u64,
-            prevrandao: 0_u256,
-            block_number: 12345_u64,
-            block_gas_limit: 30000000_u64,
-            block_timestamp: 1634567890_u64,
-            coinbase: 0x0000000000000000000000000000000000000000.try_into().unwrap(),
-            base_fee: 0_u64,
-            state: Default::default(),
-        };
+        let time_and_space = TimeAndSpace { chain_id: 1, block_number: 12345 };
+        let mut env = EnvironmentImpl::new(
+            dual_origin(), 20000000000_u128, Default::default(), None, @time_and_space,
+        );
         env.state.set_account(sender_account);
         (sender_account, env)
     }
