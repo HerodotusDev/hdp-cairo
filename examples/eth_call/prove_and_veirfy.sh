@@ -17,8 +17,8 @@ ATLANTIC_RESPONSE=$(
     --form sharpProver=stone \
     --form layout=auto \
     --form result=PROOF_VERIFICATION_ON_L2 \
-    --form mockFactHash=true \
-    --form network=TESTNET \
+    --form mockFactHash=false \
+    --form network=MAINNET \
     --form declaredJobSize=M \
     --form "pieFile=@./pie.zip;type=application/zip"
 )
