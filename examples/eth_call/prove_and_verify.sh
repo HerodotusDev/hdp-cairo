@@ -8,6 +8,7 @@ fi
 
 API_KEY="$1"
 DESTINATION_CHAIN_ID="0x534e5f4d41494e" # Starknet Mainnet
+HDP_SERVER_URL="https://guppy-saving-mistakenly.ngrok-free.app"
 
 # 1) First request - create Atlantic query and capture response
 ATLANTIC_RESPONSE=$(
@@ -39,6 +40,7 @@ echo "Using atlanticQueryId: $ATLANTIC_QUERY_ID"
 curl -v -X POST \
   -H "Content-Type: application/json" \
   -H "X-API-KEY: ${API_KEY}" \
+  -H "ngrok-skip-browser-warning: true" \
   -d "{
     \"destination_chain_id\": \"${DESTINATION_CHAIN_ID}\",
     \"atlantic_query_id\": \"${ATLANTIC_QUERY_ID}\"
