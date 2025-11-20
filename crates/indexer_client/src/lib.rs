@@ -105,7 +105,7 @@ impl Indexer {
 
         let response = self
             .client
-            .get(base_url.join("/backend/get-all-ranges-accumulated-per-chain").unwrap())
+            .get(base_url.join("/block-ranges/get-all-ranges-accumulated-per-chain").unwrap())
             .send()
             .await
             .map_err(IndexerError::ReqwestError)?;
