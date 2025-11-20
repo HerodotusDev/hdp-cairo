@@ -1,9 +1,9 @@
 pub mod account;
 pub mod vm;
-use account::{Account, AccountTrait};
+use account::AccountTrait;
 use core::num::traits::{CheckedSub, Zero};
 use hdp_cairo::HDP;
-use starknet::{ContractAddress, EthAddress};
+use starknet::EthAddress;
 pub use vm::{VM, VMTrait};
 use crate::eth_call::evm::errors::EVMError;
 use crate::eth_call::evm::memory::materialize_span_to_array;
@@ -12,8 +12,11 @@ use crate::eth_call::evm::precompiles::{
     LAST_ETHEREUM_PRECOMPILE_ADDRESS,
 };
 use crate::eth_call::evm::state::State;
-use crate::eth_call::hdp_backend::TimeAndSpace;
 pub use crate::eth_call::hdp_backend::is_deployed;
+use crate::eth_call::hdp_backend::{
+    TimeAndSpace, fetch_base_fee, fetch_coinbase, fetch_gas_limit, fetch_number, fetch_prevrandao,
+    fetch_timestamp,
+};
 use crate::eth_call::utils::fmt::TSpanSetDebug;
 use crate::eth_call::utils::set::SpanSet;
 use crate::eth_call::utils::traits::{ContractAddressDefault, EthAddressDefault, SpanDefault};
@@ -27,20 +30,102 @@ pub struct Environment {
     pub gas_price: u128,
     /// The chain ID of the network.
     pub chain_id: u64,
-    /// The previous RANDAO value.
-    pub prevrandao: u256,
     /// The current block number.
     pub block_number: u64,
+    /// The previous RANDAO value.
+    prevrandao: Option<u256>,
     /// The gas limit for the current block.
-    pub block_gas_limit: u64,
+    block_gas_limit: Option<u64>,
     /// The timestamp of the current block.
-    pub block_timestamp: u64,
+    block_timestamp: Option<u64>,
     /// The address of the coinbase.
-    pub coinbase: EthAddress,
+    coinbase: Option<EthAddress>,
     /// The base fee for the current block.
-    pub base_fee: u64,
+    base_fee: Option<u64>,
     /// The state of the EVM.
     pub state: State,
+    pub hdp: Option<@HDP>,
+}
+
+#[generate_trait]
+pub impl EnvironmentImpl of EnvironmentTrait {
+    fn new(
+        origin: EthAddress,
+        gas_price: u128,
+        state: State,
+        hdp: Option<@HDP>,
+        time_and_space: @TimeAndSpace,
+    ) -> Environment {
+        Environment {
+            origin,
+            gas_price,
+            state,
+            hdp,
+            chain_id: (*time_and_space.chain_id).try_into().unwrap(),
+            block_number: (*time_and_space.block_number).try_into().unwrap(),
+            prevrandao: None,
+            block_gas_limit: None,
+            block_timestamp: None,
+            coinbase: None,
+            base_fee: None,
+        }
+    }
+
+    fn get_prevrandao(ref self: Environment) -> u256 {
+        if let Some(prevrandao) = self.prevrandao {
+            return prevrandao;
+        }
+        let time_and_space = TimeAndSpace {
+            chain_id: self.chain_id.into(), block_number: self.block_number.into(),
+        };
+        self.prevrandao = Some(fetch_prevrandao(self.hdp, @time_and_space));
+        self.prevrandao.unwrap()
+    }
+
+    fn get_block_gas_limit(ref self: Environment) -> u64 {
+        if let Some(block_gas_limit) = self.block_gas_limit {
+            return block_gas_limit;
+        }
+        let time_and_space = TimeAndSpace {
+            chain_id: self.chain_id.into(), block_number: self.block_number.into(),
+        };
+        self.block_gas_limit = Some(fetch_gas_limit(self.hdp, @time_and_space));
+        self.block_gas_limit.unwrap()
+    }
+
+    fn get_block_timestamp(ref self: Environment) -> u64 {
+        if let Some(block_timestamp) = self.block_timestamp {
+            return block_timestamp;
+        }
+        let time_and_space = TimeAndSpace {
+            chain_id: self.chain_id.into(), block_number: self.block_number.into(),
+        };
+        self.block_timestamp = Some(fetch_timestamp(self.hdp, @time_and_space));
+        self.block_timestamp.unwrap()
+    }
+
+    fn get_coinbase(ref self: Environment) -> EthAddress {
+        if let Some(coinbase) = self.coinbase {
+            return coinbase;
+        }
+        let time_and_space = TimeAndSpace {
+            chain_id: self.chain_id.into(), block_number: self.block_number.into(),
+        };
+        self.coinbase = Some(fetch_coinbase(self.hdp, @time_and_space));
+        self.coinbase.unwrap()
+    }
+
+
+    fn get_base_fee(ref self: Environment) -> u64 {
+        if let Some(base_fee) = self.base_fee {
+            return base_fee;
+        }
+        let time_and_space = TimeAndSpace {
+            chain_id: self.chain_id.into(), block_number: self.block_number.into(),
+        };
+        self.base_fee = Some(fetch_base_fee(self.hdp, @time_and_space));
+        self.base_fee.unwrap()
+    }
 }
 
 /// Represents a message call in the EVM.

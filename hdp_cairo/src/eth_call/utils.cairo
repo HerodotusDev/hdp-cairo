@@ -4,7 +4,6 @@ pub mod bytecode;
 pub mod constants;
 pub mod contracts_test_data;
 pub mod crypto;
-pub mod env;
 pub mod errors;
 pub mod eth_transaction;
 pub mod felt_vec;
