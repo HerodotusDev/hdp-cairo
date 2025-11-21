@@ -49,6 +49,10 @@ pub const OPTIMISM_MAINNET_CHAIN_ID: u128 = 0xa;
 pub const OPTIMISM_TESTNET_CHAIN_ID: u128 = 0xaa37dc;
 pub const STARKNET_MAINNET_CHAIN_ID: u128 = 0x534e5f4d41494e;
 pub const STARKNET_TESTNET_CHAIN_ID: u128 = 0x534e5f5345504f4c4941;
+pub const ARBITRUM_MAINNET_CHAIN_ID: u128 = 0xa4b1;
+pub const ARBITRUM_TESTNET_CHAIN_ID: u128 = 0x66eee;
+pub const BASE_MAINNET_CHAIN_ID: u128 = 0x2105;
+pub const BASE_TESTNET_CHAIN_ID: u128 = 0x14a34;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ProofsData {
@@ -111,6 +115,10 @@ pub enum ChainIds {
     StarknetSepolia,
     OptimismMainnet,
     OptimismSepolia,
+    ArbitrumMainnet,
+    ArbitrumSepolia,
+    BaseMainnet,
+    BaseSepolia,
 }
 
 impl fmt::Display for ChainIds {
@@ -122,6 +130,10 @@ impl fmt::Display for ChainIds {
             ChainIds::StarknetSepolia => write!(f, "starknet-sepolia"),
             ChainIds::OptimismMainnet => write!(f, "optimism-mainnet"),
             ChainIds::OptimismSepolia => write!(f, "optimism-sepolia"),
+            ChainIds::ArbitrumMainnet => write!(f, "arbitrum-mainnet"),
+            ChainIds::ArbitrumSepolia => write!(f, "arbitrum-sepolia"),
+            ChainIds::BaseMainnet => write!(f, "base-mainnet"),
+            ChainIds::BaseSepolia => write!(f, "base-sepolia"),
         }
     }
 }
@@ -137,6 +149,10 @@ impl FromStr for ChainIds {
             "starknet-sepolia" | "starknet_sepolia" | "starknetsepolia" => Ok(Self::StarknetSepolia),
             "optimism-mainnet" | "optimism_mainnet" | "optimismmainnet" => Ok(Self::OptimismMainnet),
             "optimism-sepolia" | "optimism_sepolia" | "optimismsepolia" => Ok(Self::OptimismSepolia),
+            "arbitrum-mainnet" | "arbitrum_mainnet" | "arbitrummainnet" => Ok(Self::ArbitrumMainnet),
+            "arbitrum-sepolia" | "arbitrum_sepolia" | "arbitrumsepolia" => Ok(Self::ArbitrumSepolia),
+            "base-mainnet" | "base_mainnet" | "basemainnet" => Ok(Self::BaseMainnet),
+            "base-sepolia" | "base_sepolia" | "basesepolia" => Ok(Self::BaseSepolia),
             _ => Err(format!("Invalid chain ID: {}", s)),
         }
     }
@@ -151,6 +167,10 @@ impl ChainIds {
             STARKNET_TESTNET_CHAIN_ID => Some(Self::StarknetSepolia),
             OPTIMISM_MAINNET_CHAIN_ID => Some(Self::OptimismMainnet),
             OPTIMISM_TESTNET_CHAIN_ID => Some(Self::OptimismSepolia),
+            ARBITRUM_MAINNET_CHAIN_ID => Some(Self::ArbitrumMainnet),
+            ARBITRUM_TESTNET_CHAIN_ID => Some(Self::ArbitrumSepolia),
+            BASE_MAINNET_CHAIN_ID => Some(Self::BaseMainnet),
+            BASE_TESTNET_CHAIN_ID => Some(Self::BaseSepolia),
             _ => None,
         }
     }
