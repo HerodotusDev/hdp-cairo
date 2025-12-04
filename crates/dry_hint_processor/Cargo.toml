@@ -22,3 +22,4 @@ syscall_handler.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 types.workspace = true
+serde_json.workspace = true

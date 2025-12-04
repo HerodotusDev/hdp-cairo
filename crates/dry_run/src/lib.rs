@@ -49,6 +49,12 @@ pub struct Args {
     )]
     pub output: PathBuf,
     #[arg(
+        long = "output_preimage",
+        default_value = "dry_run_output_preimage.json",
+        help = "Path where the output preimage JSON will be written"
+    )]
+    pub output_preimage: PathBuf,
+    #[arg(
         long = "print_output",
         default_value_t = false,
         help = "Print program output to stdout [default: false]"
@@ -62,6 +68,7 @@ pub struct Args {
 pub fn run(
     program_path: PathBuf,
     input: HDPDryRunInput,
+    output_preimage_path: PathBuf,
 ) -> Result<
     (
         SyscallHandler<
@@ -86,6 +93,10 @@ pub fn run(
     let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))?;
 
     let mut hint_processor = CustomHintProcessor::new(input);
+
+    // Set output preimage path in execution scopes before running (will be used by the hint)
+    hint_processor.set_output_preimage_path(output_preimage_path.clone());
+
     let mut cairo_runner = cairo_run_program(&program, &cairo_run_config, &mut hint_processor).map_err(Box::new)?;
     debug!("{:?}", cairo_runner.get_execution_resources());
 
@@ -139,6 +150,7 @@ pub async fn run_with_args(args: Args) -> Result<(), Error> {
             params,
             injected_state,
         },
+        args.output_preimage.clone(),
     )?;
 
     if args.print_output {

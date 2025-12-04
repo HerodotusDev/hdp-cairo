@@ -161,6 +161,8 @@ func main{
     let (leafs: Uint256*) = alloc();
     felt_array_to_uint256s(counter=retdata_size, retdata=retdata, leafs=leafs);
 
+    %{ save_output_preimage(ids.retdata, ids.retdata_size) %}
+
     with keccak_ptr {
         let output_root = compute_merkle_root(leafs, retdata_size);
     }

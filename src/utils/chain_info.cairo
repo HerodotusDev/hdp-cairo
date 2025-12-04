@@ -60,6 +60,62 @@ func fetch_chain_info(chain_id: felt) -> (info: ChainInfo) {
         );
     }
 
+    // Arbitrum Mainnet
+    if (chain_id == 42161) {
+        return (
+            info=ChainInfo(
+                id=42161,
+                id_bytes_len=2,
+                encoded_id=0x82A4B1,
+                encoded_id_bytes_len=3,
+                byzantium=0,
+                layout=Layout.EVM,
+            ),
+        );
+    }
+
+    // Arbitrum Sepolia
+    if (chain_id == 421614) {
+        return (
+            info=ChainInfo(
+                id=421614,
+                id_bytes_len=3,
+                encoded_id=0x83066EEE,
+                encoded_id_bytes_len=4,
+                byzantium=0,
+                layout=Layout.EVM,
+            ),
+        );
+    }
+
+    // Base Mainnet
+    if (chain_id == 8453) {
+        return (
+            info=ChainInfo(
+                id=8453,
+                id_bytes_len=2,
+                encoded_id=0x822105,
+                encoded_id_bytes_len=3,
+                byzantium=0,
+                layout=Layout.EVM,
+            ),
+        );
+    }
+
+    // Base Sepolia
+    if (chain_id == 84532) {
+        return (
+            info=ChainInfo(
+                id=84532,
+                id_bytes_len=3,
+                encoded_id=0x83014A34,
+                encoded_id_bytes_len=4,
+                byzantium=0,
+                layout=Layout.EVM,
+            ),
+        );
+    }
+
     // SN_MAIN
     if (chain_id == 23448594291968334) {
         return (
