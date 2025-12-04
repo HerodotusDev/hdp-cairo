@@ -8,7 +8,10 @@ use cairo_vm::{
         },
         hint_processor_utils::felt_to_usize,
     },
-    types::exec_scope::ExecutionScopes,
+    types::{
+        exec_scope::ExecutionScopes,
+        relocatable::MaybeRelocatable,
+    },
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
@@ -55,9 +58,15 @@ impl CustomHintProcessor {
             .get_continuous_range(retdata_ptr, len)?
             .into_iter()
             .map(|value| {
-                value
-                    .get_int()
-                    .ok_or_else(|| HintError::CustomHint("retdata contains relocatable value, expected felt".to_string().into_boxed_str()))
+                match value {
+                    MaybeRelocatable::Int(felt) => Ok(felt),
+                    MaybeRelocatable::RelocatableValue(relocatable) => {
+                        let segment_index = Felt252::from(relocatable.segment_index);
+                        let offset = Felt252::from(relocatable.offset);
+                        let two_to_64 = Felt252::from(2u64).pow(64u128);
+                        Ok(segment_index * two_to_64 + offset)
+                    }
+                }
             })
             .collect::<Result<Vec<Felt252>, HintError>>()?;
 
