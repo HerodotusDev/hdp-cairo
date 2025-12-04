@@ -43,7 +43,7 @@ impl CustomHintProcessor {
     pub fn hint_save_output_preimage(
         &mut self,
         vm: &mut VirtualMachine,
-        exec_scopes: &mut ExecutionScopes,
+        _exec_scopes: &mut ExecutionScopes,
         hint_data: &HintProcessorData,
         _constants: &HashMap<String, Felt252>,
     ) -> Result<(), HintError> {
