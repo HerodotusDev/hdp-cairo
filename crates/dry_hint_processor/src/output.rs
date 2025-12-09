@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::borrow::Cow;
 
 use cairo_vm::{
     hint_processor::{
@@ -11,7 +10,7 @@ use cairo_vm::{
     },
     types::{exec_scope::ExecutionScopes, relocatable::MaybeRelocatable},
     vm::{
-        errors::{hint_errors::HintError, memory_errors::MemoryError},
+        errors::hint_errors::HintError,
         vm_core::VirtualMachine,
     },
     Felt252,
@@ -54,33 +53,60 @@ impl CustomHintProcessor {
         let retdata_ptr = get_relocatable_from_var_name("retdata", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
         let retdata_size = get_integer_from_var_name("retdata_size", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
         let len = felt_to_usize(&retdata_size)?;
+ 
+        println!("save_output_preimage: retdata_size(len) = {}", len);
+        let cells = vm.get_continuous_range(retdata_ptr, len)?;
+ 
+        let mut values: Vec<Felt252> = Vec::new();
+        let mut i: usize = 0;
+        while i < cells.len() {
+            match &cells[i] {
+                MaybeRelocatable::Int(felt) => {
+                    println!("retdata[{}]: Int({})", i, felt);
+                    values.push(felt.clone());
+                    i += 1;
+                }
+                MaybeRelocatable::RelocatableValue(ptr) => {
+                    println!(
+                        "retdata[{}]: Ptr(seg={}, off={})",
+                        i, ptr.segment_index, ptr.offset
+                    );
 
-        let values = vm
-            .get_continuous_range(retdata_ptr, len)?
-            .into_iter()
-            .map(|value| {
-                match value {
-                    MaybeRelocatable::Int(felt) => {
-                        println!("hit reloacatable int: {}", felt);
-                        Ok(felt)
-                    },
-                    MaybeRelocatable::RelocatableValue(relocatable) => {
-                        println!(
-                            "hit relocatable, dereferencing: segment_index={}, offset={}",
-                            relocatable.segment_index, relocatable.offset
-                        );
-        
-                        // Deref pointer and expect an integer at that address
-                        let inner: Cow<'_, Felt252> = vm
-                            .get_integer(relocatable)
-                            .map_err(HintError::Memory)?;
+                   
+                    let mut scanned: Vec<Felt252> = Vec::new();
+                    let mut k: usize = 0;
+                    loop {
+                        let addr = cairo_vm::types::relocatable::Relocatable {
+                            segment_index: ptr.segment_index,
+                            offset: ptr.offset + k,
+                        };
+                        match vm.get_integer(addr) {
+                            Ok(val) => {
+                                scanned.push(val.into_owned());
+                                k += 1;
+                            }
+                            Err(_e) => {
+                                break;
+                            }
+                        }
+                    }
+                    println!(
+                        "scanned {} element(s) from seg={},off={}",
+                        scanned.len(),
+                        ptr.segment_index,
+                        ptr.offset
+                    );
+                    values.extend(scanned.into_iter());
 
-                        Ok(inner.into_owned())
+                    if i + 1 < cells.len() {
+                        i += 2;
+                    } else {
+                        i += 1;
                     }
                 }
-            })
-            .collect::<Result<Vec<Felt252>, HintError>>()?;
-
+            }
+        }
+ 
         // Write directly to file using the path stored in the hint processor
         let json_bytes = serde_json::to_vec(&values)
             .map_err(|e| HintError::CustomHint(format!("Failed to serialize output preimage: {}", e).into_boxed_str()))?;
@@ -89,7 +115,7 @@ impl CustomHintProcessor {
                 format!("Failed to write output preimage to {}: {}", self.output_preimage_path.display(), e).into_boxed_str(),
             )
         })?;
-
+ 
         Ok(())
     }
 }
