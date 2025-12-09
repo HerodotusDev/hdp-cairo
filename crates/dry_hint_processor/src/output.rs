@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::borrow::Cow;
 
 use cairo_vm::{
     hint_processor::{
@@ -8,11 +9,11 @@ use cairo_vm::{
         },
         hint_processor_utils::felt_to_usize,
     },
-    types::{
-        exec_scope::ExecutionScopes,
-        relocatable::MaybeRelocatable,
+    types::{exec_scope::ExecutionScopes, relocatable::MaybeRelocatable},
+    vm::{
+        errors::{hint_errors::HintError, memory_errors::MemoryError},
+        vm_core::VirtualMachine,
     },
-    vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
 use hints::vars;
@@ -59,12 +60,22 @@ impl CustomHintProcessor {
             .into_iter()
             .map(|value| {
                 match value {
-                    MaybeRelocatable::Int(felt) => Ok(felt),
+                    MaybeRelocatable::Int(felt) => {
+                        println!("hit reloacatable int: {}", felt);
+                        Ok(felt)
+                    },
                     MaybeRelocatable::RelocatableValue(relocatable) => {
-                        let segment_index = Felt252::from(relocatable.segment_index);
-                        let offset = Felt252::from(relocatable.offset);
-                        let two_to_64 = Felt252::from(2u64).pow(64u128);
-                        Ok(segment_index * two_to_64 + offset)
+                        println!(
+                            "hit relocatable, dereferencing: segment_index={}, offset={}",
+                            relocatable.segment_index, relocatable.offset
+                        );
+        
+                        // Deref pointer and expect an integer at that address
+                        let inner: Cow<'_, Felt252> = vm
+                            .get_integer(relocatable)
+                            .map_err(HintError::Memory)?;
+
+                        Ok(inner.into_owned())
                     }
                 }
             })
