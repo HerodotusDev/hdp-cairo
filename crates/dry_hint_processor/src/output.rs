@@ -9,10 +9,7 @@ use cairo_vm::{
         hint_processor_utils::felt_to_usize,
     },
     types::{exec_scope::ExecutionScopes, relocatable::MaybeRelocatable},
-    vm::{
-        errors::hint_errors::HintError,
-        vm_core::VirtualMachine,
-    },
+    vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
 use hints::vars;
@@ -53,9 +50,9 @@ impl CustomHintProcessor {
         let retdata_ptr = get_relocatable_from_var_name("retdata", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
         let retdata_size = get_integer_from_var_name("retdata_size", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
         let len = felt_to_usize(&retdata_size)?;
- 
+
         let cells = vm.get_continuous_range(retdata_ptr, len)?;
- 
+
         let mut values: Vec<Felt252> = Vec::new();
         if len > 0 {
             // Relocatable pointer at retdata[0]
@@ -79,7 +76,7 @@ impl CustomHintProcessor {
                 }
             }
         }
- 
+
         // Write directly to file using the path stored in the hint processor
         let json_bytes = serde_json::to_vec(&values)
             .map_err(|e| HintError::CustomHint(format!("Failed to serialize output preimage: {}", e).into_boxed_str()))?;
@@ -88,7 +85,7 @@ impl CustomHintProcessor {
                 format!("Failed to write output preimage to {}: {}", self.output_preimage_path.display(), e).into_boxed_str(),
             )
         })?;
- 
+
         Ok(())
     }
 }
