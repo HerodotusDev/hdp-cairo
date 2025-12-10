@@ -54,54 +54,27 @@ impl CustomHintProcessor {
         let retdata_size = get_integer_from_var_name("retdata_size", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
         let len = felt_to_usize(&retdata_size)?;
  
-        println!("save_output_preimage: retdata_size(len) = {}", len);
         let cells = vm.get_continuous_range(retdata_ptr, len)?;
  
         let mut values: Vec<Felt252> = Vec::new();
-        let mut i: usize = 0;
-        while i < cells.len() {
-            match &cells[i] {
-                MaybeRelocatable::Int(felt) => {
-                    println!("retdata[{}]: Int({})", i, felt);
-                    values.push(felt.clone());
-                    i += 1;
+        if len > 0 {
+            // Relocatable pointer at retdata[0]
+            let ptr = match &cells[0] {
+                MaybeRelocatable::RelocatableValue(ptr) => *ptr,
+                _ => {
+                    return Err(HintError::CustomHint(
+                        "Expected relocatable pointer at retdata[0]".to_owned().into_boxed_str(),
+                    ));
                 }
-                MaybeRelocatable::RelocatableValue(ptr) => {
-                    println!(
-                        "retdata[{}]: Ptr(seg={}, off={})",
-                        i, ptr.segment_index, ptr.offset
-                    );
-
-                   
-                    let mut scanned: Vec<Felt252> = Vec::new();
-                    let mut k: usize = 0;
-                    loop {
-                        let addr = cairo_vm::types::relocatable::Relocatable {
-                            segment_index: ptr.segment_index,
-                            offset: ptr.offset + k,
-                        };
-                        match vm.get_integer(addr) {
-                            Ok(val) => {
-                                scanned.push(val.into_owned());
-                                k += 1;
-                            }
-                            Err(_e) => {
-                                break;
-                            }
-                        }
-                    }
-                    println!(
-                        "scanned {} element(s) from seg={},off={}",
-                        scanned.len(),
-                        ptr.segment_index,
-                        ptr.offset
-                    );
-                    values.extend(scanned.into_iter());
-
-                    if i + 1 < cells.len() {
-                        i += 2;
-                    } else {
-                        i += 1;
+            };
+            let slice = vm.get_continuous_range(ptr, len).map_err(HintError::Memory)?;
+            for el in slice.into_iter() {
+                match el {
+                    MaybeRelocatable::Int(f) => values.push(f),
+                    MaybeRelocatable::RelocatableValue(_) => {
+                        return Err(HintError::CustomHint(
+                            "Unexpected relocatable inside output array".to_owned().into_boxed_str(),
+                        ));
                     }
                 }
             }
