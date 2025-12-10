@@ -16,7 +16,7 @@
 
 2. **ENVs:**
    HDP CLI requires and RPC endpoint for Ethereum and Starknet.
-   Please expose env vars before running present in [.env](example.env)
+   Please expose env vars before running present in [.env](https://github.com/HerodotusDev/hdp-cairo/blob/main/example.env)
 
 ### Option 2: Building from Source
 
@@ -51,7 +51,7 @@
      cp example.env .env
      ```
 
-   - Edit the [.env](example.env) file to provide the correct RPC endpoints and configuration details.
+   - Edit the [.env](https://github.com/HerodotusDev/hdp-cairo/blob/main/example.env) file to provide the correct RPC endpoints and configuration details.
 
 ---
 
@@ -209,4 +209,4 @@ scarb build
    cargo nextest run
    ```
 
-> **Note:** Ensure that the environment variables from [.env](example.env) are set before running the tests.
+> **Note:** Ensure that the environment variables from [.env](https://github.com/HerodotusDev/hdp-cairo/blob/main/example.env) are set before running the tests.
