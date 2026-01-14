@@ -46,6 +46,7 @@ func run_contract_bootloader{
     mul_mod_ptr: ModBuiltin*,
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
+    evm_storage: DictAccess*,
     evm_decoder_ptr: felt**,
     evm_key_hasher_ptr: felt**,
     starknet_memorizer: DictAccess*,

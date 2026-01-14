@@ -1,0 +1,1 @@
+{"bytecode":[96,0,84,96,0,82,96,32,96,0,243],"storage_data":[{"slot_low":0,"slot_high":0,"value_low":42,"value_high":0}],"test_cases":[{"function_name":"simple_sload","calldata":[],"expected_result":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,42],"description":"Load slot 0"}]}

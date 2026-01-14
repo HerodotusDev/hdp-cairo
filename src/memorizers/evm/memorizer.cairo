@@ -74,6 +74,22 @@ namespace EvmPackParams {
 
         return (params=params, params_len=4);
     }
+
+
+    const CODE_LABEL = 'code';
+    func code(chain_id: felt, block_number: felt, address: felt) -> (
+        params: felt*, params_len: felt
+    ) {
+        alloc_locals;
+
+        local params: felt* = nondet %{ segments.add() %};
+        assert params[0] = chain_id;
+        assert params[1] = CODE_LABEL;
+        assert params[2] = block_number;
+        assert params[3] = address;
+
+        return (params=params, params_len=4);
+    }
 }
 
 namespace EvmHashParams {
@@ -119,6 +135,16 @@ namespace EvmHashParams {
         );
         return hash_memorizer_key(params, params_len);
     }
+
+
+    func code{poseidon_ptr: PoseidonBuiltin*}(
+        chain_id: felt, block_number: felt, address: felt
+    ) -> felt {
+        let (params, params_len) = EvmPackParams.code(
+            chain_id=chain_id, block_number=block_number, address=address
+        );
+        return hash_memorizer_key(params, params_len);
+    }
 }
 
 namespace EvmHashParams2 {
@@ -150,6 +176,15 @@ namespace EvmHashParams2 {
     }
     func log{poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> felt {
         let (params, params_len) = EvmPackParams.block_receipt(params[0], params[1], params[2]);
+        return hash_memorizer_key(params, params_len);
+    }
+
+
+    func code{poseidon_ptr: PoseidonBuiltin*}(params: felt*) -> felt {
+        // EvmPackParams.code expects (chain_id, block_number, address)
+        // But params array is [chain_id, CODE_LABEL, block_number, address]
+        // So we need to extract: params[0]=chain_id, params[2]=block_number, params[3]=address
+        let (params, params_len) = EvmPackParams.code(params[0], params[2], params[3]);
         return hash_memorizer_key(params, params_len);
     }
 }

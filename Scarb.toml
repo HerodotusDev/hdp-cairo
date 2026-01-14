@@ -11,6 +11,9 @@ members = [
     "examples/most_bridge",
     "examples/all_features_combined",
     "examples/eth_call",
+    "examples/fast_evm",
+    "examples/hpect1_tests",
+    "examples/hpect1_basic_tests",
     "hdp_cairo",
     "tests",
 ]

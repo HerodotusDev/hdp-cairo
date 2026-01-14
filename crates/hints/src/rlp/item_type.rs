@@ -45,6 +45,43 @@ pub fn hint_is_long(
     )
 }
 
+// Hint for bytecode RLP decoding - determines if bytecode is short or long string
+pub const HINT_BYTECODE_IS_LONG: &str = r#"if ids.first_byte <= 0x7f:
+    ids.is_long = 0
+elif 0x80 <= ids.first_byte <= 0xb7:
+    ids.is_long = 0
+elif 0xb8 <= ids.first_byte <= 0xbf:
+    ids.is_long = 1
+else:
+    assert False, "Invalid RLP Bytecode Prefix""#;
+
+pub fn hint_bytecode_is_long(
+    vm: &mut VirtualMachine,
+    _exec_scope: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let first_byte = get_integer_from_var_name(vars::ids::FIRST_BYTE, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+
+    let insert = if first_byte <= FELT_7F {
+        Felt252::ZERO // single byte or short string
+    } else if FELT_80 <= first_byte && first_byte <= FELT_B7 {
+        Felt252::ZERO // short string
+    } else if FELT_B8 <= first_byte && first_byte <= FELT_BF {
+        Felt252::ONE // long string
+    } else {
+        return Err(HintError::CustomHint("Invalid RLP Bytecode Prefix".to_string().into()));
+    };
+
+    insert_value_from_var_name(
+        vars::ids::IS_LONG,
+        MaybeRelocatable::Int(insert),
+        vm,
+        &hint_data.ids_data,
+        &hint_data.ap_tracking,
+    )
+}
+
 pub const HINT_ITEM_TYPE: &str = r#"if ids.current_item <= 0x7f:
     ids.item_type = 0 # single byte [0x00, 0x7f]
 elif 0x80 <= ids.current_item <= 0xb7:

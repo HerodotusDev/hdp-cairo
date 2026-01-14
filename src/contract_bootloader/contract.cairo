@@ -35,6 +35,7 @@ func compute_contract{
     starknet_key_hasher_ptr: felt**,
     injected_state_memorizer: DictAccess*,
     unconstrained_memorizer: DictAccess*,
+    evm_storage: DictAccess*,
 }(module_inputs: felt*, module_inputs_len: felt) -> (
     module_hash: felt, retdata: felt*, retdata_size: felt
 ) {
@@ -80,7 +81,7 @@ func compute_contract{
     memcpy(dst=calldata + 8, src=module_inputs, len=module_inputs_len);
     let calldata_size = 8 + module_inputs_len;
 
-    with evm_memorizer, starknet_memorizer, injected_state_memorizer, unconstrained_memorizer, pow2_array {
+    with evm_memorizer, starknet_memorizer, injected_state_memorizer, unconstrained_memorizer, pow2_array, evm_storage {
         let (retdata_size, retdata) = run_contract_bootloader(
             compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata, dry_run=0
         );

@@ -84,6 +84,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "example_fast_evm"
+version = "0.1.0"
+dependencies = [
+ "hdp_cairo",
+]
+
+[[package]]
+name = "example_hpect1_basic_tests"
+version = "0.1.0"
+dependencies = [
+ "hdp_cairo",
+]
+
+[[package]]
+name = "example_hpect1_tests"
+version = "0.1.0"
+dependencies = [
+ "hdp_cairo",
+]
+
+[[package]]
 name = "example_injected_state"
 version = "0.1.0"
 dependencies = [

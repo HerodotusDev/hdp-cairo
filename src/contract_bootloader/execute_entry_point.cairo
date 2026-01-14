@@ -68,6 +68,7 @@ func call_execute_syscalls{
     syscall_ptr: felt*,
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
+    evm_storage: DictAccess*,
     evm_decoder_ptr: felt**,
     evm_key_hasher_ptr: felt**,
     starknet_memorizer: DictAccess*,
@@ -79,11 +80,15 @@ func call_execute_syscalls{
     alloc_locals;
     let (__fp__, _) = get_fp_and_pc();
 
-    if (dry_run == 1) {
-        return ();
-    }
+    // Enable syscall handling during dry-run to allow the host to record dependencies
+    // and to allow the EVM executor to run its logic.
+    // if (dry_run == 1) {
+    //     return ();
+    // }
 
-    execute_syscalls(execution_context=execution_context, syscall_ptr_end=syscall_ptr_end);
+    execute_syscalls(
+        execution_context=execution_context, syscall_ptr_end=syscall_ptr_end, dry_run=dry_run
+    );
     return ();
 }
 
@@ -154,6 +159,7 @@ func execute_entry_point{
     builtin_params: BuiltinParams*,
     pow2_array: felt*,
     evm_memorizer: DictAccess*,
+    evm_storage: DictAccess*,
     evm_decoder_ptr: felt**,
     evm_key_hasher_ptr: felt**,
     starknet_memorizer: DictAccess*,

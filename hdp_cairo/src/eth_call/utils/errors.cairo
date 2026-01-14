@@ -1,6 +1,24 @@
 // LENGTH
 pub const RLP_EMPTY_INPUT: felt252 = 'KKT: EmptyInput';
 pub const RLP_INPUT_TOO_SHORT: felt252 = 'KKT: InputTooShort';
+pub const TYPE_CONVERSION_ERROR: felt252 = 'KKT: TypeConversionError';
+
+/// Simplified EVM error type for utility functions
+#[derive(Drop, Copy, PartialEq, Debug)]
+pub enum EVMError {
+    TypeConversionError: felt252,
+    InvalidAddress,
+    Other: felt252,
+}
+
+/// Ensure helper - returns error if condition is false
+pub fn ensure(condition: bool, error: EVMError) -> Result<(), EVMError> {
+    if condition {
+        Result::Ok(())
+    } else {
+        Result::Err(error)
+    }
+}
 
 #[derive(Drop, Copy, PartialEq, Debug)]
 pub enum RLPError {

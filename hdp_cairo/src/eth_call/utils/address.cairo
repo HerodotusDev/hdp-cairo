@@ -1,7 +1,7 @@
 use core::array::ArrayTrait;
 use core::traits::TryInto;
 use starknet::EthAddress;
-use crate::eth_call::evm::errors::EVMError;
+use crate::eth_call::utils::errors::EVMError;
 use crate::eth_call::utils::rlp::{RLPItem, RLPTrait};
 use crate::eth_call::utils::traits::TryIntoResult;
 use crate::eth_call::utils::traits::bytes::{ToBytes, U8SpanExTrait};

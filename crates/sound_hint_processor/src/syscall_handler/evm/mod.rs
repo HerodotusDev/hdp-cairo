@@ -44,6 +44,9 @@ impl CallContractHandler {
     }
 }
 
+// 'evm_executor' as felt252 = 0x65766d5f6578656375746f72
+const EVM_EXECUTOR_ADDRESS: Felt252 = Felt252::from_hex_unchecked("0x65766d5f6578656375746f72");
+
 impl traits::SyscallHandler for CallContractHandler {
     type Request = CallContractRequest;
     type Response = CallContractResponse;
@@ -53,6 +56,24 @@ impl traits::SyscallHandler for CallContractHandler {
     }
 
     async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
+        // Handle evm_executor specially - allocate segment for Cairo Zero to use
+        // The actual EVM execution happens in Cairo Zero's execute_evm_call_from_syscall
+        // which will populate the response based on EVM execution results
+        // Format: [success, gas_used, retdata_len, ...retdata]
+        // Note: We don't write placeholders here - Cairo Zero will write the actual values via memcpy
+        // Writing placeholders causes DiffAssertValues errors when Cairo Zero tries to overwrite them
+        if request.contract_address == EVM_EXECUTOR_ADDRESS {
+            let retdata_start = vm.add_memory_segment();
+            // Allocate space but don't write placeholders - Cairo Zero will write via memcpy
+            // Set retdata_end = retdata_start + 3 (minimum for [success, gas_used, retdata_len])
+            // Cairo Zero will update this to the actual size after writing
+            let retdata_end = (retdata_start + 3)?;
+            return Ok(Self::Response {
+                retdata_start,
+                retdata_end,
+            });
+        }
+
         let mut calldata = request.calldata_start;
 
         let call_handler_id = CallHandlerId::try_from(request.contract_address)?;

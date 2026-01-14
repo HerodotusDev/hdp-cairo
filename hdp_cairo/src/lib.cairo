@@ -5,7 +5,12 @@ pub mod injected_state;
 pub mod starknet;
 pub mod unconstrained;
 
-pub use eth_call::execute_call::execute_eth_call;
+// Cairo Zero EVM execution (via syscall)
+pub use eth_call::execute_call_zero::execute_eth_call_zero;
+pub use eth_call::execute_call_zero::EvmCallResult;
+
+// Shared utilities
+pub use eth_call::hdp_backend::TimeAndSpace;
 
 #[derive(Serde, Drop)]
 pub struct HDP {

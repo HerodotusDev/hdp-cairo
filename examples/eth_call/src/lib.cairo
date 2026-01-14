@@ -1,7 +1,11 @@
+// Example: Execute eth_call using Cairo Zero EVM
+// This demonstrates reading Vitalik's USDC balance on Ethereum mainnet
+
 #[starknet::contract]
 mod module {
     use hdp_cairo::HDP;
-    use hdp_cairo::eth_call::hdp_backend::TimeAndSpace;
+    use hdp_cairo::TimeAndSpace;
+    use hdp_cairo::execute_eth_call_zero;
     use hdp_cairo::eth_call::utils::helpers::load_word;
 
     #[storage]
@@ -19,14 +23,15 @@ mod module {
         // cast calldata "balanceOf(address)" 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045
         // Result: 0x70a08231000000000000000000000000d8da6bf26964af9d7eed9e03e53415d37aa96045
         let calldata = [
-            0x70, 0xa0, 0x82, 0x31, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0xd8, 0xda, 0x6b, 0xf2, 0x69, 0x64, 0xaf, 0x9d, 0x7e, 0xed, 0x9e, 0x03,
-            0xe5, 0x34, 0x15, 0xd3, 0x7a, 0xa9, 0x60, 0x45,
-        ]
-            .span();
+            0x70_u8, 0xa0_u8, 0x82_u8, 0x31_u8, 0x00_u8, 0x00_u8, 0x00_u8, 0x00_u8, 
+            0x00_u8, 0x00_u8, 0x00_u8, 0x00_u8, 0x00_u8, 0x00_u8, 0x00_u8, 0x00_u8, 
+            0xd8_u8, 0xda_u8, 0x6b_u8, 0xf2_u8, 0x69_u8, 0x64_u8, 0xaf_u8, 0x9d_u8, 
+            0x7e_u8, 0xed_u8, 0x9e_u8, 0x03_u8, 0xe5_u8, 0x34_u8, 0x15_u8, 0xd3_u8, 
+            0x7a_u8, 0xa9_u8, 0x60_u8, 0x45_u8,
+        ].span();
 
-        // Executing the call:
-        let result = hdp_cairo::execute_eth_call(
+        // Executing the call using Cairo Zero EVM:
+        let result = execute_eth_call_zero(
             @hdp, @time_and_space, vitalik_eth_address, usdc_contract_address, calldata,
         );
 

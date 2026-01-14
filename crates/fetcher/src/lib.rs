@@ -496,7 +496,13 @@ pub fn parse_syscall_handler(
     // Process EVM keys
     for key in syscall_handler.call_contract_handler.evm_call_contract_handler.key_set {
         match key {
-            evm::DryRunKey::Account(value) => proof_keys.evm.account_keys.insert(value),
+            evm::DryRunKey::Account(value) => {
+                // For evm_executor syscalls, we also need to fetch bytecode
+                // Insert into both account_keys (for account proofs) and 
+                // unconstrained.bytecode (for eth_getCode bytecode fetching)
+                proof_keys.unconstrained.bytecode.insert(value.clone());
+                proof_keys.evm.account_keys.insert(value)
+            },
             evm::DryRunKey::Header(value) => proof_keys.evm.header_keys.insert(value),
             evm::DryRunKey::Storage(value) => proof_keys.evm.storage_keys.insert(value),
             evm::DryRunKey::Receipt(value) => proof_keys.evm.receipt_keys.insert(value),

@@ -27,9 +27,12 @@ from src.utils.utils import felt_array_to_uint256s, calculate_task_hash
 from packages.eth_essentials.lib.utils import pow2alloc251
 from src.memorizers.evm.memorizer import EvmMemorizer
 from src.memorizers.starknet.memorizer import StarknetMemorizer
+from src.evm.storage import storage_init
 from src.memorizers.bare import BareMemorizer
 from src.memorizers.injected_state.memorizer import InjectedStateMemorizer
 from src.memorizers.unconstrained.memorizer import UnconstrainedMemorizer
+from src.memorizers.evm.state_access import EvmStateAccess, EvmDecoder
+from src.memorizers.starknet.state_access import StarknetStateAccess, StarknetDecoder
 
 struct DryRunOutput {
     module_hash: felt,
@@ -127,12 +130,13 @@ func main{
     memcpy(dst=calldata + 8, src=module_inputs, len=module_inputs_len);
     let calldata_size = 8 + module_inputs_len;
 
-    let (evm_decoder_ptr: felt**) = alloc();
-    let (starknet_decoder_ptr: felt***) = alloc();
-    let (evm_key_hasher_ptr: felt**) = alloc();
-    let (starknet_key_hasher_ptr: felt**) = alloc();
+    let evm_key_hasher_ptr = EvmStateAccess.init();
+    let evm_decoder_ptr = EvmDecoder.init();
+    let starknet_key_hasher_ptr = StarknetStateAccess.init();
+    let starknet_decoder_ptr = StarknetDecoder.init();
+    let (evm_storage) = storage_init();
 
-    with keccak_ptr, evm_memorizer, starknet_memorizer, injected_state_memorizer, unconstrained_memorizer, pow2_array, evm_decoder_ptr, starknet_decoder_ptr, evm_key_hasher_ptr, starknet_key_hasher_ptr {
+    with keccak_ptr, evm_memorizer, evm_storage, starknet_memorizer, injected_state_memorizer, unconstrained_memorizer, pow2_array, evm_decoder_ptr, starknet_decoder_ptr, evm_key_hasher_ptr, starknet_key_hasher_ptr {
         let (retdata_size, retdata) = run_contract_bootloader(
             compiled_class=compiled_class, calldata_size=calldata_size, calldata=calldata, dry_run=1
         );

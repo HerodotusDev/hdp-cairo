@@ -206,6 +206,9 @@ impl<
     }
 }
 
+// 'evm_executor' as felt252 = 0x65766d5f6578656375746f72
+const EVM_EXECUTOR_ADDRESS: Felt252 = Felt252::from_hex_unchecked("0x65766d5f6578656375746f72");
+
 impl<
         EVM: CallContractSyscallHandler,
         STARKNET: CallContractSyscallHandler,
@@ -231,6 +234,11 @@ impl<
             }
             v if v == call_contract::injected_state::CONTRACT_ADDRESS => {
                 self.injected_state_call_contract_handler.execute(request, vm).await
+            }
+            v if v == EVM_EXECUTOR_ADDRESS => {
+                // Route evm_executor syscall to the EVM handler
+                // This allows the dry-run handler to intercept and record dependencies
+                self.evm_call_contract_handler.execute(request, vm).await
             }
             _ => {
                 let chain_id = <Felt252 as TryInto<u128>>::try_into(*vm.get_integer((request.calldata_start + 2)?)?)

@@ -7,7 +7,7 @@ use core::num::traits::{One, Zero};
 use starknet::secp256_trait::Signature;
 use starknet::storage_access::{StorageBaseAddress, storage_address_from_base};
 use starknet::{ContractAddress, EthAddress};
-use crate::eth_call::evm::errors::{EVMError, TYPE_CONVERSION_ERROR, ensure};
+use crate::eth_call::utils::errors::{EVMError, TYPE_CONVERSION_ERROR, ensure};
 use crate::eth_call::utils::math::Bitshift;
 
 pub impl DefaultSignature of Default<Signature> {

@@ -1,0 +1,22 @@
+[package]
+name = "example_hpect1_tests"
+version = "0.1.0"
+edition = "2023_11"
+
+[dependencies]
+starknet = { workspace = true }
+hdp_cairo = { workspace = true }
+
+[[target.starknet-contract]]
+sierra = true
+casm = true
+casm-add-pythonic-hints = true
+allowed-libfuncs = false
+
+[scripts]
+test = "snforge test"
+
+
+
+
+

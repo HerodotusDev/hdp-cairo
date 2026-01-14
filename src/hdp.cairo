@@ -40,6 +40,7 @@ from src.contract_bootloader.contract import compute_contract
 from starkware.cairo.common.memcpy import memcpy
 from src.memorizers.injected_state.memorizer import InjectedStateMemorizer, InjectedStateHashParams
 from src.memorizers.unconstrained.memorizer import UnconstrainedMemorizer, UnconstrainedHashParams
+from src.evm.storage import storage_init, storage_store
 
 from packages.eth_essentials.lib.utils import pow2alloc251
 
@@ -114,11 +115,7 @@ func run{
     let (starknet_memorizer, starknet_memorizer_start) = StarknetMemorizer.init();
     let (injected_state_memorizer, injected_state_memorizer_start) = InjectedStateMemorizer.init();
     let (unconstrained_memorizer, unconstrained_memorizer_start) = UnconstrainedMemorizer.init();
-
-    %{
-        if '__dict_manager' not in globals():
-            __dict_manager = DictManager()
-    %}
+    let (evm_storage) = storage_init();
 
     let (injected_state_keys) = alloc();
     let (injected_state_values) = alloc();
@@ -202,6 +199,7 @@ func run{
         starknet_key_hasher_ptr=starknet_key_hasher_ptr,
         injected_state_memorizer=injected_state_memorizer,
         unconstrained_memorizer=unconstrained_memorizer,
+        evm_storage=evm_storage,
     }(module_inputs, module_inputs_len);
 
     // Post Verification Checks: Ensure dict consistency

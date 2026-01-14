@@ -11,6 +11,7 @@ use cairo_vm::{
 
 pub mod contract_bootloader;
 pub mod decoder;
+pub mod evm;
 pub mod merkle;
 pub mod patricia;
 pub mod print;
@@ -72,11 +73,47 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(patricia::hints::SET_SIBLINGS.into(), patricia::hints::set_siblings);
     hints.insert(patricia::hints::SPLIT_DESCEND.into(), patricia::hints::split_descend);
     hints.insert(patricia::hints::WRITE_CASE_NOT_LEFT_TO_AP.into(), patricia::hints::write_case_not_left_to_ap);
+    // EVM memory hints
+    hints.insert(evm::HINT_MEMORY_STORE.into(), evm::hint_memory_store);
+    hints.insert(evm::HINT_MEMORY_STORE8.into(), evm::hint_memory_store8);
+    hints.insert(evm::HINT_MEMORY_LOAD.into(), evm::hint_memory_load);
+    hints.insert(evm::HINT_MEMORY_COPY_BYTES.into(), evm::hint_memory_copy_bytes);
+    hints.insert(evm::HINT_MEMORY_LOAD_BYTES.into(), evm::hint_memory_load_bytes);
+    // EVM storage hints
+    hints.insert(evm::HINT_STORAGE_LOAD.into(), evm::hint_storage_load);
+    hints.insert(evm::HINT_STORAGE_STORE.into(), evm::hint_storage_store);
+    hints.insert(evm::HINT_STORAGE_RESET.into(), evm::hint_storage_reset);
+    hints.insert(evm::HINT_STORAGE_SET_RETURNDATA_SIZE.into(), evm::hint_storage_set_returndata_size);
+    hints.insert(evm::HINT_STORAGE_GET_RETURNDATA_SIZE.into(), evm::hint_storage_get_returndata_size);
+    hints.insert(evm::HINT_STORAGE_SET_RETURN_DATA.into(), evm::hint_storage_set_return_data);
+    hints.insert(evm::HINT_STORAGE_GET_RETURN_OFFSET.into(), evm::hint_storage_get_return_offset);
+    hints.insert(evm::HINT_STORAGE_GET_RETURN_SIZE.into(), evm::hint_storage_get_return_size);
+    hints.insert(evm::HINT_STORAGE_SET_RETURNDATA.into(), evm::hint_storage_set_returndata);
+    // EVM interpreter hints
+    hints.insert(evm::HINT_ADDRESS.into(), evm::hint_address);
+    hints.insert(evm::HINT_CALLER.into(), evm::hint_caller);
+    hints.insert(evm::HINT_RETURNDATACOPY.into(), evm::hint_returndatacopy);
+    hints.insert(evm::HINT_SHA3.into(), evm::hint_sha3);
+    hints.insert(evm::HINT_EXTRACT_WORD_FROM_BYTECODE.into(), evm::hint_extract_word_from_bytecode);
+    // EVM bytecode conversion hint
+    hints.insert(evm::bytecode::HINT_BYTECODE_TO_RLP.into(), evm::bytecode::hint_bytecode_to_rlp);
+    // EVM response writing hint
+    hints.insert(evm::response::HINT_WRITE_EVM_RESPONSE.into(), evm::response::hint_write_evm_response);
+    // EVM PUSH hint
+    hints.insert(evm::push::HINT_READ_PUSH_VALUE.into(), evm::push::hint_read_push_value);
+    // EVM debug hints
+    hints.insert(evm::debug::HINT_DEBUG_BYTECODE_LOADED.into(), evm::debug::hint_debug_bytecode_loaded);
+    hints.insert(evm::debug::HINT_DEBUG_EVM_EXECUTION.into(), evm::debug::hint_debug_evm_execution);
+    hints.insert(evm::debug::HINT_DEBUG_RETURN_DATA.into(), evm::debug::hint_debug_return_data);
+    hints.insert(evm::debug::HINT_DEBUG_OPCODE_EXECUTION.into(), evm::debug::hint_debug_opcode_execution);
+    hints.insert(evm::debug::HINT_DEBUG_OPCODE_RESULT.into(), evm::debug::hint_debug_opcode_result);
+    hints.insert(evm::debug::HINT_DEBUG_JUMPI.into(), evm::debug::hint_debug_jumpi);
     hints.insert(print::HINT_PRINT_TASK_RESULT.into(), print::hint_print_task_result);
     hints.insert(print::MODULE_HASH.into(), print::module_hash);
     hints.insert(rlp::divmod::HINT_DIVMOD_RLP.into(), rlp::divmod::hint_divmod_rlp);
     hints.insert(rlp::divmod::HINT_DIVMOD_VALUE.into(), rlp::divmod::hint_divmod_value);
     hints.insert(rlp::item_type::HINT_IS_LONG.into(), rlp::item_type::hint_is_long);
+    hints.insert(rlp::item_type::HINT_BYTECODE_IS_LONG.into(), rlp::item_type::hint_bytecode_is_long);
     hints.insert(rlp::item_type::HINT_ITEM_TYPE.into(), rlp::item_type::hint_item_type);
     hints.insert(rlp::processed_words::HINT_PROCESSED_WORDS_RLP.into(), rlp::processed_words::hint_processed_words_rlp);
     hints.insert(rlp::processed_words::HINT_PROCESSED_WORDS.into(), rlp::processed_words::hint_processed_words);
@@ -249,6 +286,8 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(utils::debug::PRINT_FELT_HEX.into(), utils::debug::print_felt_hex);
     hints.insert(utils::debug::PRINT_FELT.into(), utils::debug::print_felt);
     hints.insert(utils::debug::PRINT_STRING.into(), utils::debug::print_string);
+
+    hints.insert(contract_bootloader::bytecode_bridge::HINT_BYTECODE_LE_WORDS_TO_RLP.into(), contract_bootloader::bytecode_bridge::hint_bytecode_le_words_to_rlp);
 
     hints
 }

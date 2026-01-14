@@ -7,6 +7,7 @@ pub mod transaction;
 
 use std::{collections::HashSet, hash::Hash};
 
+use alloy::primitives::Address;
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
 use serde::{Deserialize, Serialize};
 use strum_macros::FromRepr;
@@ -22,6 +23,9 @@ use types::{
     },
     keys::evm,
 };
+
+// 'evm_executor' as felt252 = 0x65766d5f6578656375746f72
+const EVM_EXECUTOR_ADDRESS: Felt252 = Felt252::from_hex_unchecked("0x65766d5f6578656375746f72");
 
 #[derive(FromRepr)]
 pub enum CallHandlerId {
@@ -48,6 +52,13 @@ impl SyscallHandler for CallContractHandler {
 
     async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
         let mut calldata = request.calldata_start;
+
+        // Handle evm_executor syscall specially during dry-run
+        // This records the target contract's account key for bytecode fetching
+        // and returns a mock success response (actual EVM execution happens in sound-run)
+        if request.contract_address == EVM_EXECUTOR_ADDRESS {
+            return self.handle_evm_executor_dry_run(vm, &mut calldata).await;
+        }
 
         let call_handler_id = CallHandlerId::try_from(request.contract_address)?;
 
@@ -118,6 +129,74 @@ impl SyscallHandler for CallContractHandler {
 
     fn write_response(&mut self, _response: Self::Response, _vm: &mut VirtualMachine, _ptr: &mut Relocatable) -> WriteResponseResult {
         unreachable!()
+    }
+}
+
+impl CallContractHandler {
+    /// Handle evm_executor syscall during dry-run
+    /// 
+    /// Syscall calldata format:
+    /// [0]: chain_id
+    /// [1]: block_number
+    /// [2]: timestamp
+    /// [3]: address (target contract)
+    /// [4]: caller
+    /// [5]: origin
+    /// [6]: value_low
+    /// [7]: value_high
+    /// [8]: gas_limit
+    /// [9]: read_only
+    /// [10]: depth
+    /// [11]: calldata_len
+    /// [12...]: calldata bytes
+    async fn handle_evm_executor_dry_run(
+        &mut self,
+        vm: &mut VirtualMachine,
+        calldata: &mut Relocatable,
+    ) -> SyscallResult<CallContractResponse> {
+        // Parse calldata to extract target contract info
+        let chain_id = felt_from_ptr(vm, calldata)?;
+        let block_number = felt_from_ptr(vm, calldata)?;
+        let _timestamp = felt_from_ptr(vm, calldata)?;
+        let address = felt_from_ptr(vm, calldata)?;
+        // Skip remaining fields (caller, origin, value, gas_limit, read_only, depth, calldata)
+
+        // Record the target contract's account key for bytecode fetching
+        let account_key = evm::account::Key {
+            chain_id: chain_id.try_into().map_err(|e| {
+                SyscallExecutionError::InternalError(format!("Invalid chain_id: {}", e).into())
+            })?,
+            block_number: block_number.try_into().map_err(|e| {
+                SyscallExecutionError::InternalError(format!("Invalid block_number: {}", e).into())
+            })?,
+            address: Address::try_from(address.to_biguint().to_bytes_be().as_slice()).map_err(|e| {
+                SyscallExecutionError::InternalError(format!("Invalid address: {}", e).into())
+            })?,
+        };
+
+        // Record the account key for dependency tracking
+        // Note: The bytecode key is recorded separately by the unconstrained handler
+        // when the bytecode syscall is made. The account key here ensures the account
+        // state is fetched, which may be needed for other operations.
+        self.key_set.insert(DryRunKey::Account(account_key));
+
+        // Return mock success response
+        // During dry-run, we don't actually execute the EVM - just record dependencies
+        // The actual execution happens during sound-run
+        // Response format must match sound-run: [success, gas_used, return_data_len, ...return_data]
+        let retdata_start = vm.add_memory_segment();
+        
+        // Write mock return data: [success=1, gas_used=0, return_data_len=0]
+        // This matches the format expected by execute_eth_call_zero
+        vm.insert_value(retdata_start, Felt252::ONE)?; // success
+        vm.insert_value((retdata_start + 1)?, Felt252::ZERO)?; // gas_used (0 in dry-run)
+        vm.insert_value((retdata_start + 2)?, Felt252::ZERO)?; // return_data_len (0 in dry-run)
+        let retdata_end = (retdata_start + 3)?;
+
+        Ok(CallContractResponse {
+            retdata_start,
+            retdata_end,
+        })
     }
 }
 

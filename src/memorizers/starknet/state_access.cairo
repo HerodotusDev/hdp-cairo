@@ -8,6 +8,7 @@ from starkware.cairo.common.dict_access import DictAccess
 from src.memorizers.starknet.memorizer import StarknetMemorizer, StarknetHashParams2
 from src.decoders.starknet.header_decoder import StarknetHeaderDecoder
 from src.utils.chain_info import Layout
+from src.memorizers.bare import BareMemorizer
 
 namespace StarknetDecoderTarget {
     const FELT = 0;  // returns a felt
@@ -147,6 +148,10 @@ namespace StarknetStateAccess {
 
         let (memorizer_key) = _compute_memorizer_key(params, state_access_type);
         let (data) = StarknetMemorizer.get(memorizer_key);
+
+        if (cast(data, felt) == BareMemorizer.DEFAULT_VALUE) {
+            return (result_len=0);
+        }
 
         let (result_len) = StarknetDecoder.decode(
             data, state_access_type, field, decoder_target, as_be

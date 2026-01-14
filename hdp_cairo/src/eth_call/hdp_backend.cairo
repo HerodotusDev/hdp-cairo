@@ -1,7 +1,5 @@
 use starknet::EthAddress;
 use crate::HDP;
-use crate::eth_call::evm::model::AddressTrait;
-use crate::eth_call::evm::model::account::{Account, AccountTrait};
 use crate::evm::account::{AccountKey, AccountTrait as EvmAccountTrait};
 use crate::evm::header::{HeaderKey, HeaderTrait};
 use crate::evm::storage::{StorageKey, StorageTrait};
@@ -14,33 +12,20 @@ pub struct TimeAndSpace {
     pub block_number: felt252,
 }
 
-/// Fetches the value stored at the given key for the corresponding contract accounts.
-/// If the account is not deployed (in case of a create/deploy transaction), returns 0.
-/// # Arguments
-///
-/// * `account` The account to read from.
-/// * `key` The key to read.
-///
-/// # Returns
-///
-/// A `Result` containing the value stored at the given key or an `EVMError` if there was an error.
-pub fn fetch_original_storage(
-    hdp: Option<@HDP>, time_and_space: @TimeAndSpace, account: @Account, key: u256,
+/// Fetches storage value for a given address and key from HDP
+pub fn fetch_storage(
+    hdp: Option<@HDP>, time_and_space: @TimeAndSpace, address: @EthAddress, key: u256,
 ) -> u256 {
-    let hdp = hdp.unwrap_or_else(|| panic!("HDP is not set: fetch_original_storage"));
+    let hdp = hdp.unwrap_or_else(|| panic!("HDP is not set: fetch_storage"));
 
-    let is_deployed = account.evm_address().is_deployed(Option::Some(hdp), time_and_space);
-    if is_deployed {
-        let storage_key = StorageKey {
-            chain_id: *time_and_space.chain_id,
-            block_number: *time_and_space.block_number,
-            address: account.evm_address().into(),
-            storage_slot: key,
-        };
+    let storage_key = StorageKey {
+        chain_id: *time_and_space.chain_id,
+        block_number: *time_and_space.block_number,
+        address: (*address).into(),
+        storage_slot: key,
+    };
 
-        return hdp.evm.storage_get_slot(@storage_key);
-    }
-    0
+    hdp.evm.storage_get_slot(@storage_key)
 }
 
 /// Checks if the EVM address is deployed - is a deployed contract, not an EOA.
@@ -93,7 +78,8 @@ pub fn fetch_bytecode(
 ) -> Span<u8> {
     let hdp = hdp.unwrap_or_else(|| panic!("HDP is not set: fetch_bytecode"));
 
-    println!("Fetching bytecode for address: {:?}", address);
+    // TODO: Bytecode is re-fetched on every execute_eth_call. 
+    // See api_batch_exec TODO: Add process_transaction_with_state() to enable state reuse.
 
     let account_key = AccountKey {
         chain_id: *time_and_space.chain_id,
