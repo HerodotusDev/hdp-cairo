@@ -10,6 +10,16 @@ pub fn print_output_preimage(
     preimage_path: &PathBuf,
     compiled_module_path: &PathBuf,
 ) -> Result<(), Error> {
+    print_output_preimage_with_options(preimage_path, compiled_module_path, false)
+}
+
+/// Deserialize and pretty print output preimage using ABI from contract class
+/// with options to control formatting
+pub fn print_output_preimage_with_options(
+    preimage_path: &PathBuf,
+    compiled_module_path: &PathBuf,
+    show_struct_names: bool,
+) -> Result<(), Error> {
     println!("\nOutput Preimage (deserialized via ABI):");
     println!("{}", "=".repeat(80));
 
@@ -50,13 +60,14 @@ pub fn print_output_preimage(
 
     // Deserialize based on ABI
     if let Some(output_type) = abi_output_type {
-        deserialize_with_abi_full(&preimage_data, &output_type, full_abi.as_ref())?;
+        deserialize_with_abi_full(&preimage_data, &output_type, full_abi.as_ref(), show_struct_names)?;
     } else {
         // Fallback to basic pretty printing if ABI not found
         println!("  Warning: Could not find output type in ABI, using basic format");
         print_basic_format(&preimage_data);
     }
 
+    println!();
     println!("{}", "=".repeat(80));
     println!();
 
@@ -130,6 +141,7 @@ fn deserialize_with_abi_full(
     preimage_data: &[Felt252],
     output_type: &Value,
     full_abi: Option<&Value>,
+    show_struct_names: bool,
 ) -> Result<(), Error> {
     // Get the contract class to find struct definitions
     // We need to get the full ABI to resolve struct types
@@ -149,7 +161,7 @@ fn deserialize_with_abi_full(
                             .to_string();
                         
                         // Print with custom formatter that preserves order and adds bold formatting
-                        print_formatted_struct(&struct_name, &deserialized, full_abi, 0)?;
+                        print_formatted_struct(&struct_name, &deserialized, full_abi, 0, show_struct_names)?;
                         return Ok(());
                     }
                     Err(e) => {
@@ -412,13 +424,18 @@ fn print_formatted_struct(
     value: &Value,
     abi: Option<&Value>,
     indent: usize,
+    show_struct_names: bool,
 ) -> Result<(), Error> {
     let indent_str = "  ".repeat(indent);
     
     // If it's an object (struct), print with preserved order
     if let Value::Object(map) = value {
-        // Print struct name with the given indent level
-        print!("{}{}{}{} {{", indent_str, BOLD, struct_name, RESET);
+        // Print struct name with the given indent level (if enabled)
+        if show_struct_names {
+            print!("{}{}{}{} {{", indent_str, BOLD, struct_name, RESET);
+        } else {
+            print!("{}{{", indent_str);
+        }
         
         if map.is_empty() {
             print!(" }}");
@@ -446,7 +463,7 @@ fn print_formatted_struct(
                                     print!("{}  \"{}\": ", field_indent_str, name);
                                     // Field values should be at the same indent as the field name
                                     // Fields are at indent+1, so pass indent+1 to the formatter
-                                    print_formatted_value(field_value, abi, indent + 1)?;
+                                    print_formatted_value(field_value, abi, indent + 1, show_struct_names)?;
                                     if idx < members.len() - 1 {
                                         println!(",");
                                     } else {
@@ -469,7 +486,7 @@ fn print_formatted_struct(
         for (idx, (key, val)) in entries.iter().enumerate() {
             print!("{}  \"{}\": ", field_indent_str, key);
             // Fields are at indent+1, so pass indent+1 to the formatter
-            print_formatted_value(val, abi, indent + 1)?;
+            print_formatted_value(val, abi, indent + 1, show_struct_names)?;
             if idx < entries.len() - 1 {
                 println!(",");
             } else {
@@ -479,13 +496,13 @@ fn print_formatted_struct(
         print!("{}}}", indent_str);
     } else {
         // Not a struct, just print the value
-        print_formatted_value(value, abi, indent)?;
+        print_formatted_value(value, abi, indent, show_struct_names)?;
     }
     
     Ok(())
 }
 
-fn print_formatted_value(value: &Value, abi: Option<&Value>, indent: usize) -> Result<(), Error> {
+fn print_formatted_value(value: &Value, abi: Option<&Value>, indent: usize, show_struct_names: bool) -> Result<(), Error> {
     match value {
         Value::Null => print!("{}null{}", BOLD, RESET),
         Value::Bool(b) => print!("{}{}{}", BOLD, b, RESET),
@@ -520,7 +537,7 @@ fn print_formatted_value(value: &Value, abi: Option<&Value>, indent: usize) -> R
                     // Print small numeric arrays on one line
                     print!("[");
                     for (idx, item) in arr.iter().enumerate() {
-                        print_formatted_value(item, abi, indent)?;
+                        print_formatted_value(item, abi, indent, show_struct_names)?;
                         if idx < arr.len() - 1 {
                             print!(", ");
                         }
@@ -539,7 +556,7 @@ fn print_formatted_value(value: &Value, abi: Option<&Value>, indent: usize) -> R
                             print!("{}    ", indent_str);
                         }
                         
-                        print_formatted_value(item, abi, indent)?;
+                        print_formatted_value(item, abi, indent, show_struct_names)?;
                         
                         if idx < arr.len() - 1 {
                             if is_line_end {
@@ -562,7 +579,7 @@ fn print_formatted_value(value: &Value, abi: Option<&Value>, indent: usize) -> R
                     for (idx, item) in arr.iter().enumerate() {
                         // For array elements, we print them at element_indent level
                         // The formatter should use this indent level directly
-                        print_formatted_value(item, abi, element_indent)?;
+                        print_formatted_value(item, abi, element_indent, show_struct_names)?;
                         if idx < arr.len() - 1 {
                             println!(",");
                         } else {
@@ -612,7 +629,7 @@ fn print_formatted_value(value: &Value, abi: Option<&Value>, indent: usize) -> R
             };
             
             // Use the struct formatter for nested structs
-            print_formatted_struct(&struct_name, value, abi, indent)?;
+            print_formatted_struct(&struct_name, value, abi, indent, show_struct_names)?;
         }
     }
     Ok(())
