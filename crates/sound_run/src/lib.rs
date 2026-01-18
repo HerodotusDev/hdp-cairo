@@ -17,7 +17,7 @@ use sound_hint_processor::CustomHintProcessor;
 use tokio as _;
 use tracing::info;
 use tracing_subscriber as _;
-use types::{error::Error, param::Param, CasmContractClass, HDPInput, HDPOutput, InjectedState, ProofsData};
+use types::{error::Error, output_preimage, param::Param, CasmContractClass, HDPInput, HDPOutput, InjectedState, ProofsData};
 
 use crate::prove::prover_input_from_runner;
 pub mod prove;
@@ -51,6 +51,12 @@ pub struct Args {
         help = "Print program output to stdout [default: false]"
     )]
     pub print_output: bool,
+    #[arg(
+        long = "print_output_preimage",
+        default_value_t = false,
+        help = "Print deserialized output preimage to stdout [default: false]"
+    )]
+    pub print_output_preimage: bool,
     #[arg(long = "proof_mode", conflicts_with = "cairo_pie", help = "Configure runner in proof mode")]
     pub proof_mode: bool,
 
@@ -103,7 +109,8 @@ pub async fn run_with_args(args: Args) -> Result<(), Error> {
     info!("Reading compiled module from: {}", args.compiled_module.display());
     info!("Reading proofs from: {}", args.proofs.display());
 
-    let compiled_class: CasmContractClass = serde_json::from_slice(&std::fs::read(args.compiled_module).map_err(Error::IO)?)?;
+    let compiled_module_path = args.compiled_module.clone();
+    let compiled_class: CasmContractClass = serde_json::from_slice(&std::fs::read(&compiled_module_path).map_err(Error::IO)?)?;
     let params: Vec<Param> = if let Some(input_path) = args.inputs {
         serde_json::from_slice(&std::fs::read(input_path).map_err(Error::IO)?)?
     } else {
@@ -141,6 +148,12 @@ pub async fn run_with_args(args: Args) -> Result<(), Error> {
 
     if args.print_output {
         println!("{:#?}", output);
+    }
+
+    if args.print_output_preimage {
+        // Use default path for sound run output preimage
+        let default_preimage_path = PathBuf::from("sound_run_output_preimage.json");
+        output_preimage::print_output_preimage(&default_preimage_path, &compiled_module_path)?;
     }
 
     if let Some(ref relocated_trace) = cairo_runner.relocated_trace {

@@ -7,6 +7,7 @@
 pub mod cairo;
 pub mod error;
 pub mod keys;
+pub mod output_preimage;
 pub mod param;
 pub mod proofs;
 
