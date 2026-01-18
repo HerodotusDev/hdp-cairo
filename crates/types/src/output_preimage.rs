@@ -417,7 +417,15 @@ fn print_formatted_struct(
     
     // If it's an object (struct), print with preserved order
     if let Value::Object(map) = value {
-        println!("{}{}{}{} {{", indent_str, BOLD, struct_name, RESET);
+        // Print struct name with the given indent level
+        print!("{}{}{}{} {{", indent_str, BOLD, struct_name, RESET);
+        
+        if map.is_empty() {
+            print!(" }}");
+            return Ok(());
+        }
+        
+        println!();
         
         // Get struct definition from ABI to maintain field order
         if let Some(abi_val) = abi {
@@ -430,10 +438,14 @@ fn print_formatted_struct(
                 }) {
                     if let Some(members) = struct_def.get("members").and_then(|v| v.as_array()) {
                         // Print fields in ABI order
+                        // Fields should be indented one level more than the struct name
+                        let field_indent_str = "  ".repeat(indent + 1);
                         for (idx, member) in members.iter().enumerate() {
                             if let Some(name) = member.get("name").and_then(|v| v.as_str()) {
                                 if let Some(field_value) = map.get(name) {
-                                    print!("{}  \"{}\": ", indent_str, name);
+                                    print!("{}  \"{}\": ", field_indent_str, name);
+                                    // Field values should be at the same indent as the field name
+                                    // Fields are at indent+1, so pass indent+1 to the formatter
                                     print_formatted_value(field_value, abi, indent + 1)?;
                                     if idx < members.len() - 1 {
                                         println!(",");
@@ -443,7 +455,7 @@ fn print_formatted_struct(
                                 }
                             }
                         }
-                        println!("{}}}", indent_str);
+                        print!("{}}}", indent_str);
                         return Ok(());
                     }
                 }
@@ -451,9 +463,12 @@ fn print_formatted_struct(
         }
         
         // Fallback: print in map order (which should be preserved)
+        // Fields should be indented one level more than the struct name
+        let field_indent_str = "  ".repeat(indent + 1);
         let entries: Vec<_> = map.iter().collect();
         for (idx, (key, val)) in entries.iter().enumerate() {
-            print!("{}  \"{}\": ", indent_str, key);
+            print!("{}  \"{}\": ", field_indent_str, key);
+            // Fields are at indent+1, so pass indent+1 to the formatter
             print_formatted_value(val, abi, indent + 1)?;
             if idx < entries.len() - 1 {
                 println!(",");
@@ -461,7 +476,7 @@ fn print_formatted_struct(
                 println!();
             }
         }
-        println!("{}}}", indent_str);
+        print!("{}}}", indent_str);
     } else {
         // Not a struct, just print the value
         print_formatted_value(value, abi, indent)?;
@@ -515,12 +530,13 @@ fn print_formatted_value(value: &Value, abi: Option<&Value>, indent: usize) -> R
                     // Print enum arrays compactly with multiple values per line (4 per line)
                     println!("[");
                     let items_per_line = 4;
+                    let indent_str = "  ".repeat(indent);
                     for (idx, item) in arr.iter().enumerate() {
                         let is_line_start = idx % items_per_line == 0;
                         let is_line_end = (idx + 1) % items_per_line == 0 || idx == arr.len() - 1;
                         
                         if is_line_start {
-                            print!("{}    ", "  ".repeat(indent));
+                            print!("{}    ", indent_str);
                         }
                         
                         print_formatted_value(item, abi, indent)?;
@@ -535,20 +551,25 @@ fn print_formatted_value(value: &Value, abi: Option<&Value>, indent: usize) -> R
                             println!();
                         }
                     }
-                    print!("{}  ]", "  ".repeat(indent));
+                    print!("{}  ]", indent_str);
                 } else {
                     // Print larger arrays or non-numeric arrays with line breaks
                     println!("[");
+                    let indent_str = "  ".repeat(indent);
+                    // Array elements are indented by 4 spaces from the array start
+                    // So if array is at indent N, elements are at N+2
+                    let element_indent = indent + 2;
                     for (idx, item) in arr.iter().enumerate() {
-                        print!("{}    ", "  ".repeat(indent));
-                        print_formatted_value(item, abi, indent + 1)?;
+                        // For array elements, we print them at element_indent level
+                        // The formatter should use this indent level directly
+                        print_formatted_value(item, abi, element_indent)?;
                         if idx < arr.len() - 1 {
                             println!(",");
                         } else {
                             println!();
                         }
                     }
-                    print!("{}  ]", "  ".repeat(indent));
+                    print!("{}  ]", indent_str);
                 }
             }
         }
