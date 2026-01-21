@@ -545,26 +545,49 @@ fn print_formatted_value(value: &Value, abi: Option<&Value>, indent: usize, show
                     print!("]");
                 } else if is_enum_array {
                     // Print enum arrays compactly with multiple values per line (4 per line)
-                    println!("[");
+                    // Calculate column widths for alignment
                     let items_per_line = 4;
+                    let num_lines = (arr.len() + items_per_line - 1) / items_per_line;
+                    let mut column_widths = vec![0; items_per_line];
+                    
+                    // Find maximum width for each column
+                    for (idx, item) in arr.iter().enumerate() {
+                        if let Value::String(s) = item {
+                            let col = idx % items_per_line;
+                            column_widths[col] = column_widths[col].max(s.len());
+                        }
+                    }
+                    
+                    println!("[");
                     let indent_str = "  ".repeat(indent);
                     for (idx, item) in arr.iter().enumerate() {
                         let is_line_start = idx % items_per_line == 0;
                         let is_line_end = (idx + 1) % items_per_line == 0 || idx == arr.len() - 1;
+                        let col = idx % items_per_line;
                         
                         if is_line_start {
                             print!("{}    ", indent_str);
                         }
                         
-                        print_formatted_value(item, abi, indent, show_struct_names)?;
-                        
-                        if idx < arr.len() - 1 {
-                            if is_line_end {
-                                println!(",");
-                            } else {
-                                print!(", ");
+                        // Print value with padding for column alignment
+                        if let Value::String(s) = item {
+                            let width = column_widths[col];
+                            print!("{}\"{}\"{}", BOLD, s, RESET);
+                            if !is_line_end && col < items_per_line - 1 {
+                                // Add padding to align next column
+                                let padding = width.saturating_sub(s.len()) + 2; // +2 for ", "
+                                print!(",{}", " ".repeat(padding));
                             }
                         } else {
+                            print_formatted_value(item, abi, indent, show_struct_names)?;
+                            if !is_line_end {
+                                print!(", ");
+                            }
+                        }
+                        
+                        if is_line_end {
+                            println!(",");
+                        } else if idx == arr.len() - 1 {
                             println!();
                         }
                     }
