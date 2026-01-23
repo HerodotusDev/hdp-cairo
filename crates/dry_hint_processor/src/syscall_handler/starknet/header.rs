@@ -42,15 +42,13 @@ impl CallHandler for HeaderCallHandler {
 
         // Fetch proof response
         let response = provider
-            .get_blocks(blocks::IndexerQuery::new(
-                key.chain_id,
-                key.block_number.into(),
-                key.block_number.into(),
-            ))
+            .get_blocks(blocks::IndexerQuery::new(key.chain_id, key.block_number, key.block_number))
             .await
             .map_err(|e| SyscallExecutionError::InternalError(format!("Network request failed: {}", e).into()))?;
 
         // Create block and handle function
-        Ok(StarknetBlock::from_hash_fields(response.fields).handle(function_id))
+        StarknetBlock::try_from_hash_fields(response.fields)
+            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))
+            .map(|b| b.handle(function_id))
     }
 }

@@ -5,12 +5,12 @@ pub mod receipt;
 pub mod storage;
 pub mod transaction;
 
-use std::{collections::HashSet, hash::Hash};
+use std::collections::HashSet;
 
-use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
+use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine};
 use serde::{Deserialize, Serialize};
-use strum_macros::FromRepr;
 use syscall_handler::{
+    call_contract::EvmCallHandlerId,
     felt_from_ptr,
     traits::{CallHandler, SyscallHandler},
     SyscallExecutionError, SyscallResult, WriteResponseResult,
@@ -23,16 +23,6 @@ use types::{
     keys::evm,
 };
 
-#[derive(FromRepr)]
-pub enum CallHandlerId {
-    Header = 0,
-    Account = 1,
-    Storage = 2,
-    Transaction = 3,
-    Receipt = 4,
-    Log = 5,
-}
-
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct CallContractHandler {
     pub key_set: HashSet<DryRunKey>,
@@ -43,13 +33,15 @@ impl SyscallHandler for CallContractHandler {
     type Response = CallContractResponse;
 
     fn read_request(&mut self, _vm: &VirtualMachine, _ptr: &mut Relocatable) -> SyscallResult<Self::Request> {
-        unreachable!()
+        Err(SyscallExecutionError::InternalError(
+            "dry evm::CallContractHandler::read_request should not be called (request is parsed by relay)".into(),
+        ))
     }
 
     async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
         let mut calldata = request.calldata_start;
 
-        let call_handler_id = CallHandlerId::try_from(request.contract_address)?;
+        let call_handler_id = EvmCallHandlerId::try_from(request.contract_address)?;
 
         let segment_index = felt_from_ptr(vm, &mut calldata)?;
         let offset = felt_from_ptr(vm, &mut calldata)?;
@@ -66,42 +58,42 @@ impl SyscallHandler for CallContractHandler {
         let retdata_start = vm.add_memory_segment();
         let mut retdata_end = retdata_start;
         match call_handler_id {
-            CallHandlerId::Header => {
+            EvmCallHandlerId::Header => {
                 let key = header::HeaderCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = header::HeaderCallHandler::derive_id(request.selector)?;
                 let result = header::HeaderCallHandler.handle(key.clone(), function_id, vm).await?;
                 self.key_set.insert(DryRunKey::Header(key));
                 retdata_end = result.to_memory(vm, retdata_end)?;
             }
-            CallHandlerId::Account => {
+            EvmCallHandlerId::Account => {
                 let key = account::AccountCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = account::AccountCallHandler::derive_id(request.selector)?;
                 let result = account::AccountCallHandler.handle(key.clone(), function_id, vm).await?;
                 self.key_set.insert(DryRunKey::Account(key));
                 retdata_end = result.to_memory(vm, retdata_end)?;
             }
-            CallHandlerId::Storage => {
+            EvmCallHandlerId::Storage => {
                 let key = storage::StorageCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = storage::StorageCallHandler::derive_id(request.selector)?;
                 let result = storage::StorageCallHandler.handle(key.clone(), function_id, vm).await?;
                 self.key_set.insert(DryRunKey::Storage(key));
                 retdata_end = result.to_memory(vm, retdata_end)?;
             }
-            CallHandlerId::Transaction => {
+            EvmCallHandlerId::Transaction => {
                 let key = transaction::TransactionCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = transaction::TransactionCallHandler::derive_id(request.selector)?;
                 let result = transaction::TransactionCallHandler.handle(key.clone(), function_id, vm).await?;
                 self.key_set.insert(DryRunKey::Tx(key));
                 retdata_end = result.to_memory(vm, retdata_end)?;
             }
-            CallHandlerId::Receipt => {
+            EvmCallHandlerId::Receipt => {
                 let key = receipt::ReceiptCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = receipt::ReceiptCallHandler::derive_id(request.selector)?;
                 let result = receipt::ReceiptCallHandler.handle(key.clone(), function_id, vm).await?;
                 self.key_set.insert(DryRunKey::Receipt(key));
                 retdata_end = result.to_memory(vm, retdata_end)?;
             }
-            CallHandlerId::Log => {
+            EvmCallHandlerId::Log => {
                 let key = log::LogCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = log::LogCallHandler::derive_id(request.selector)?;
                 let result = log::LogCallHandler.handle(key.clone(), function_id, vm).await?;
@@ -117,21 +109,9 @@ impl SyscallHandler for CallContractHandler {
     }
 
     fn write_response(&mut self, _response: Self::Response, _vm: &mut VirtualMachine, _ptr: &mut Relocatable) -> WriteResponseResult {
-        unreachable!()
-    }
-}
-
-impl TryFrom<Felt252> for CallHandlerId {
-    type Error = SyscallExecutionError;
-    fn try_from(value: Felt252) -> Result<Self, Self::Error> {
-        Self::from_repr(value.try_into().map_err(|e| Self::Error::InvalidSyscallInput {
-            input: value,
-            info: format!("{}", e),
-        })?)
-        .ok_or(Self::Error::InvalidSyscallInput {
-            input: value,
-            info: "Invalid function identifier".to_string(),
-        })
+        Err(SyscallExecutionError::InternalError(
+            "dry evm::CallContractHandler::write_response should not be called (response is written by relay)".into(),
+        ))
     }
 }
 

@@ -44,7 +44,9 @@ impl CallHandler for StorageCallHandler {
 
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
         let rpc_url = get_corresponding_rpc_url(&key).map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
-        let provider = JsonRpcClient::new(HttpTransport::new(Url::parse(&rpc_url).unwrap()));
+        let url =
+            Url::parse(&rpc_url).map_err(|e| SyscallExecutionError::InternalError(format!("Invalid RPC URL '{rpc_url}': {e}").into()))?;
+        let provider = JsonRpcClient::new(HttpTransport::new(url));
         let block_id = BlockId::Number(key.block_number);
         let value = match function_id {
             FunctionId::Storage => provider
