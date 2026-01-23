@@ -4,7 +4,7 @@ use alloy::{hex::FromHexError, primitives::Bytes};
 use indexer_client::{models::accumulators, Indexer};
 use types::{
     proofs::{injected_state::Action, mmr::MmrMeta},
-    Felt252, HashingFunction,
+    BlockNumber, ChainId, Felt252, HashingFunction,
 };
 
 use crate::FetcherError;
@@ -15,8 +15,8 @@ pub mod unconstrained;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FlattenedKey {
-    pub chain_id: u128,
-    pub block_number: u64,
+    pub chain_id: ChainId,
+    pub block_number: BlockNumber,
 }
 
 #[derive(Debug, Default)]
@@ -34,9 +34,9 @@ impl ProofKeys {
     }
 
     pub async fn fetch_mmr_proof(
-        deployed_on_chain_id: u128,
-        accumulates_chain_id: u128,
-        block_number: u64,
+        deployed_on_chain_id: ChainId,
+        accumulates_chain_id: ChainId,
+        block_number: BlockNumber,
         mmr_hashing_function: HashingFunction,
     ) -> Result<(accumulators::MMRProof, MmrMeta), FetcherError> {
         let provider = Indexer::default();

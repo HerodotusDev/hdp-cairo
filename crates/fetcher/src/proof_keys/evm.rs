@@ -16,7 +16,7 @@ use types::{
         header::{HeaderMmrMeta, HeaderProof},
         mpt::MPTProof,
     },
-    HashingFunction,
+    BlockNumber, ChainId, HashingFunction, TransactionIndex,
 };
 
 use super::FlattenedKey;
@@ -38,9 +38,9 @@ impl ProofKeys {
     }
 
     pub async fn fetch_header_proof(
-        deployed_on_chain_id: u128,
-        accumulates_chain_id: u128,
-        block_number: u64,
+        deployed_on_chain_id: ChainId,
+        accumulates_chain_id: ChainId,
+        block_number: BlockNumber,
         mmr_hashing_function: HashingFunction,
     ) -> Result<HeaderMmrMeta<Header>, FetcherError> {
         let (mmr_proof, mmr_meta) =
@@ -66,9 +66,14 @@ impl ProofKeys {
                     .iter()
                     .map(|x| Self::normalize_hex(x).parse())
                     .collect::<Result<Vec<Bytes>, FromHexError>>()?;
-                rlp_chunks.iter().flat_map(|x| x.iter().rev().cloned()).collect::<Vec<u8>>().into()
+                rlp_chunks.iter().flat_map(|x| x.iter().rev().copied()).collect::<Vec<u8>>().into()
             }
-            _ => return Err(FetcherError::InternalError("wrong rlp format".into())),
+            _ => {
+                return Err(FetcherError::InternalError(format!(
+                    "Unsupported EVM header RLP format from indexer: {:?}",
+                    mmr_proof.block_header
+                )))
+            }
         };
         Ok(HeaderMmrMeta {
             mmr_meta,
@@ -77,13 +82,21 @@ impl ProofKeys {
     }
 
     pub async fn fetch_account_proof(key: &keys::evm::account::Key) -> Result<Account, FetcherError> {
-        let rpc_url = get_corresponding_rpc_url(key).map_err(|e| FetcherError::InternalError(e.to_string()))?;
-        let provider = RootProvider::<Ethereum>::new_http(Url::parse(&rpc_url).unwrap());
+        let rpc_url = get_corresponding_rpc_url(key).map_err(|e| FetcherError::MissingRpcUrl {
+            chain_id: key.chain_id,
+            reason: e.to_string(),
+        })?;
+        let url = Url::parse(&rpc_url).map_err(|e| FetcherError::InternalError(format!("Invalid RPC URL '{rpc_url}': {e}")))?;
+        let provider = RootProvider::<Ethereum>::new_http(url);
         let value = provider
             .get_proof(key.address, vec![])
             .block_id(key.block_number.into())
             .await
-            .map_err(|e| FetcherError::InternalError(e.to_string()))?;
+            .map_err(|e| FetcherError::GetProofFailed {
+                address: key.address.to_string(),
+                block_number: key.block_number,
+                source: anyhow::Error::from(e),
+            })?;
         Ok(Account::new(
             value.address,
             vec![MPTProof::new(key.block_number, value.account_proof)],
@@ -91,13 +104,21 @@ impl ProofKeys {
     }
 
     pub async fn fetch_storage_proof(key: &keys::evm::storage::Key) -> Result<(Account, Storage), FetcherError> {
-        let rpc_url = get_corresponding_rpc_url(key).map_err(|e| FetcherError::InternalError(e.to_string()))?;
-        let provider = RootProvider::<Ethereum>::new_http(Url::parse(&rpc_url).unwrap());
+        let rpc_url = get_corresponding_rpc_url(key).map_err(|e| FetcherError::MissingRpcUrl {
+            chain_id: key.chain_id,
+            reason: e.to_string(),
+        })?;
+        let url = Url::parse(&rpc_url).map_err(|e| FetcherError::InternalError(format!("Invalid RPC URL '{rpc_url}': {e}")))?;
+        let provider = RootProvider::<Ethereum>::new_http(url);
         let value = provider
             .get_proof(key.address, vec![key.storage_slot])
             .block_id(key.block_number.into())
             .await
-            .map_err(|e| FetcherError::InternalError(e.to_string()))?;
+            .map_err(|e| FetcherError::GetProofFailed {
+                address: key.address.to_string(),
+                block_number: key.block_number,
+                source: anyhow::Error::from(e),
+            })?;
         Ok((
             Account::new(value.address, vec![MPTProof::new(key.block_number, value.account_proof)]),
             Storage::new(
@@ -113,8 +134,8 @@ impl ProofKeys {
 
     fn generate_block_tx_receipt_proof(
         tx_receipts_mpt_handler: &mut TxReceiptsMptHandler,
-        block_number: u64,
-        tx_index: u64,
+        block_number: BlockNumber,
+        tx_index: TransactionIndex,
     ) -> Result<MPTProof, FetcherError> {
         let trie_proof = tx_receipts_mpt_handler
             .get_proof(tx_index)
@@ -138,7 +159,11 @@ impl ProofKeys {
         Ok(Receipt::new(U256::from_be_slice(&rlp_encoded_key), receipt_mpt_proof))
     }
 
-    fn generate_block_tx_proof(tx_trie_handler: &mut TxsMptHandler, block_number: u64, tx_index: u64) -> Result<MPTProof, FetcherError> {
+    fn generate_block_tx_proof(
+        tx_trie_handler: &mut TxsMptHandler,
+        block_number: BlockNumber,
+        tx_index: TransactionIndex,
+    ) -> Result<MPTProof, FetcherError> {
         let trie_proof = tx_trie_handler
             .get_proof(tx_index)
             .map_err(|e| FetcherError::InternalError(e.to_string()))?;
@@ -161,7 +186,7 @@ impl ProofKeys {
         Ok(Transaction::new(U256::from_be_slice(&rlp_encoded_key), tx_proof))
     }
 
-    pub fn to_flattened_keys(&self, chain_id: u128) -> HashSet<FlattenedKey> {
+    pub fn to_flattened_keys(&self, chain_id: ChainId) -> HashSet<FlattenedKey> {
         let mut flattened = HashSet::new();
 
         for key in self.header_keys.iter().filter(|k| k.chain_id == chain_id) {

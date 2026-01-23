@@ -11,7 +11,7 @@ use types::{
         header::{HeaderMmrMeta, HeaderProof},
         starknet::{self, header::Header, storage::Storage},
     },
-    HashingFunction,
+    BlockNumber, ChainId, HashingFunction,
 };
 
 use super::FlattenedKey;
@@ -31,9 +31,9 @@ fn normalize_hex(input: &str) -> String {
 
 impl ProofKeys {
     pub async fn fetch_header_proof(
-        deployed_on_chain_id: u128,
-        accumulates_chain_id: u128,
-        block_number: u64,
+        deployed_on_chain_id: ChainId,
+        accumulates_chain_id: ChainId,
+        block_number: BlockNumber,
         mmr_hashing_function: HashingFunction,
     ) -> Result<HeaderMmrMeta<Header>, FetcherError> {
         let (mmr_proof, meta) =
@@ -62,14 +62,24 @@ impl ProofKeys {
                     headers: vec![Header { fields, proof }],
                 })
             }
-            _ => Err(FetcherError::InternalError("wrong starknet header format".into())),
+            _ => Err(FetcherError::InternalError(format!(
+                "Unsupported Starknet header format from indexer: {:?}",
+                mmr_proof.block_header
+            ))),
         }
     }
 
     pub async fn fetch_storage_proof(key: &keys::starknet::storage::Key) -> Result<Storage, FetcherError> {
-        let rpc_url = get_corresponding_rpc_url(key).map_err(|e| FetcherError::InternalError(e.to_string()))?;
+        let rpc_url = get_corresponding_rpc_url(key).map_err(|e| FetcherError::MissingRpcUrl {
+            chain_id: key.chain_id,
+            reason: e.to_string(),
+        })?;
+        let base_url = Url::parse(&rpc_url).map_err(|e| FetcherError::InternalError(format!("Invalid RPC URL '{rpc_url}': {e}")))?;
+        let endpoint = base_url
+            .join("/rpc/v0_9")
+            .map_err(|e| FetcherError::InternalError(format!("Invalid RPC base URL '{base_url}': {e}")))?;
         let response = reqwest::Client::new()
-            .post(Url::parse(&rpc_url).unwrap().join("/rpc/v0_9").unwrap())
+            .post(endpoint.clone())
             .json(&serde_json::json!({
                 "jsonrpc": "2.0",
                 "method": "starknet_getStorageProof",
@@ -84,12 +94,27 @@ impl ProofKeys {
             .send()
             .await?;
 
+        let status = response.status();
         let response_text = response.text().await?;
+        if !status.is_success() {
+            return Err(FetcherError::HttpStatus {
+                status,
+                url: endpoint.to_string(),
+                body: response_text,
+            });
+        }
 
-        let json_rpc_response: serde_json::Value =
-            serde_json::from_str(&response_text).map_err(|e| FetcherError::JsonDeserializationError(e.to_string()))?;
+        let json_rpc_response: serde_json::Value = serde_json::from_str(&response_text).map_err(|e| {
+            FetcherError::JsonDeserializationError(format!(
+                "Failed to parse JSON-RPC response from {}: {e}; body: {}",
+                endpoint, response_text
+            ))
+        })?;
         if let Some(err) = json_rpc_response.get("error") {
-            return Err(FetcherError::JsonDeserializationError(err.to_string()));
+            return Err(FetcherError::JsonDeserializationError(format!(
+                "JSON-RPC error from {}: {}",
+                endpoint, err
+            )));
         }
 
         let proof = serde_json::from_value::<starknet::storage::Output>(json_rpc_response["result"].clone())
@@ -98,7 +123,7 @@ impl ProofKeys {
         Ok(Storage::new(key.block_number, key.address, vec![key.storage_slot], proof))
     }
 
-    pub fn to_flattened_keys(&self, chain_id: u128) -> HashSet<FlattenedKey> {
+    pub fn to_flattened_keys(&self, chain_id: ChainId) -> HashSet<FlattenedKey> {
         let mut flattened = HashSet::new();
 
         for key in self.header_keys.iter().filter(|k| k.chain_id == chain_id) {

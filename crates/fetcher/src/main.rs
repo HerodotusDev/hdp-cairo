@@ -5,6 +5,7 @@
 
 use alloy as _;
 use alloy_rlp as _;
+use anyhow as _;
 use cairo_vm as _;
 use clap::Parser;
 use dry_hint_processor as _;
@@ -17,7 +18,6 @@ use reqwest as _;
 use serde_json as _;
 use starknet_types_core as _;
 use state_server as _;
-use syscall_handler as _;
 use thiserror as _;
 use tracing as _;
 use tracing_subscriber::EnvFilter;
