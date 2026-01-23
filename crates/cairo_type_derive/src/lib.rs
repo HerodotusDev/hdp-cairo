@@ -73,10 +73,13 @@ fn field_size(field: &syn::Field) -> proc_macro2::TokenStream {
             } else {
                 quote! { #type_name::cairo_size() }
             }
-        } else {
-            let field_name = field.ident.as_ref().unwrap();
+        } else if let Some(field_name) = field.ident.as_ref() {
             quote! {
                 compile_error!("Could not determine the size of {}.", #field_name);
+            }
+        } else {
+            quote! {
+                compile_error!("Could not determine the size of an unnamed field.");
             }
         }
     } else {
@@ -113,7 +116,15 @@ pub fn get_field_offsets_derive(input: proc_macro::TokenStream) -> proc_macro::T
             let mut get_field_offset_methods: Vec<proc_macro2::TokenStream> = vec![];
 
             for field in fields {
-                let field_name = field.ident.as_ref().expect("Expected named field");
+                let field_name = match field.ident.as_ref() {
+                    Some(name) => name,
+                    None => {
+                        return quote! {
+                            compile_error!("FieldOffsetGetters only supports named fields");
+                        }
+                        .into();
+                    }
+                };
                 let offset_fn_name = format_ident!("{}_offset", field_name);
 
                 let rendered_offset_impl = if field_sizes.is_empty() {
