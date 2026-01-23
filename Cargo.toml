@@ -22,12 +22,10 @@ alloy = { version = "1.0", features = ["full"] }
 alloy-rlp = { version = "0.3", features = ["derive"] }
 alloy-trie = { version = "0.9", features = ["ethereum", "serde"] }
 anyhow = "1.0.100"
-api = { path = "src/crates/api" }
 axum = { version = "0.8", features = ["tracing"] }
 bincode = "2.0.1"
 bitvec = "1.0.1"
 bytemuck = { version = "1.20", features = ["derive"] }
-cairo_runner = { path = "src/crates/cairo-runner" }
 cairo_type_derive = { path = "crates/cairo_type_derive" }
 cairo-lang-casm = "2.12.3"
 cairo-lang-starknet-classes = "2.12.3"
@@ -88,3 +86,16 @@ utoipa = { version = "5.3.1", features = ["axum_extras"] }
 utoipa-swagger-ui = { version = "9", features = ["axum"] }
 uuid = { version = "1.18.1", features = ["v4"] }
 version-compare = "0.2.0"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+redundant_closure_for_method_calls = "warn"
+cloned_instead_of_copied = "warn"
+too_many_arguments = "warn"
+type_complexity = "warn"
+large_enum_variant = "warn"

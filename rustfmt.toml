@@ -1,13 +1,14 @@
 # See: https://rust-lang.github.io/rustfmt
+edition = "2021"
 max_width = 140
-normalize_comments = true
 use_field_init_shorthand = true
 
-# Unstable
-comment_width = 140
-condense_wildcard_suffixes = true
-format_code_in_doc_comments = true
-group_imports = "StdExternalCrate"
+# Import organization (nightly features)
 imports_granularity = "Crate"
-unstable_features = true
+group_imports = "StdExternalCrate"
+reorder_imports = true
+
+# Code style
+format_code_in_doc_comments = true
 wrap_comments = true
+comment_width = 100
