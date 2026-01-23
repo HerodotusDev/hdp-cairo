@@ -46,7 +46,7 @@ pub fn hint_set_receipt(
     let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH_EVM)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
-        .unwrap();
+        .map_err(|e| HintError::CustomHint(format!("evm/receipt: ids.idx is not a valid usize: {e}").into()))?;
     let receipt = batch.transaction_receipts[idx].clone();
 
     exec_scopes.insert_value::<Receipt>(vars::scopes::RECEIPT, receipt);
@@ -68,11 +68,17 @@ pub fn hint_receipt_key(
 
     let key_ptr = get_address_from_var_name(vars::ids::KEY, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     vm.insert_value(
-        (key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 0)?,
+        (key_ptr
+            .get_relocatable()
+            .ok_or_else(|| HintError::CustomHint("evm/receipt: ids.key is not relocatable".into()))?
+            + 0)?,
         Felt252::from(key_low),
     )?;
     vm.insert_value(
-        (key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 1)?,
+        (key_ptr
+            .get_relocatable()
+            .ok_or_else(|| HintError::CustomHint("evm/receipt: ids.key is not relocatable".into()))?
+            + 1)?,
         Felt252::from(key_high),
     )?;
 

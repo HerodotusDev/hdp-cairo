@@ -9,6 +9,7 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
+use tracing::trace;
 use types::{proofs::injected_state::StateProofs, ChainProofs};
 
 use crate::vars;
@@ -21,6 +22,7 @@ pub fn hint_chain_proofs_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_chain_proofs_len", "executing hint");
     let chain_proofs = exec_scopes.get::<Vec<ChainProofs>>(vars::scopes::CHAIN_PROOFS)?;
     insert_value_into_ap(vm, Felt252::from(chain_proofs.len()))
 }
@@ -33,10 +35,11 @@ pub fn hint_chain_proofs_chain_id(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_chain_proofs_chain_id", "executing hint");
     let chain_proofs = exec_scopes.get::<Vec<ChainProofs>>(vars::scopes::CHAIN_PROOFS)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
-        .unwrap();
+        .map_err(|e| HintError::CustomHint(format!("verify: ids.idx is not a valid usize: {e}").into()))?;
     insert_value_into_ap(vm, Felt252::from(chain_proofs[idx - 1].chain_id()))
 }
 
@@ -48,6 +51,7 @@ pub fn hint_state_proofs_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_state_proofs_len", "executing hint");
     let state_proofs = exec_scopes.get::<StateProofs>(vars::scopes::STATE_PROOFS)?;
 
     insert_value_into_ap(vm, Felt252::from(state_proofs.len()))
@@ -61,10 +65,11 @@ pub fn hint_state_proofs_proof_type(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_state_proofs_proof_type", "executing hint");
     let state_proofs = exec_scopes.get::<StateProofs>(vars::scopes::STATE_PROOFS)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
-        .unwrap();
+        .map_err(|e| HintError::CustomHint(format!("verify: ids.idx is not a valid usize: {e}").into()))?;
 
     insert_value_into_ap(vm, state_proofs[idx - 1].get_type())
 }

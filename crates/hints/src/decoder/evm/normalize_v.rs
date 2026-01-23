@@ -30,8 +30,13 @@ pub fn hint_is_eip155(
     let v = vm
         .get_continuous_range(v_ptr, 2)?
         .into_iter()
-        .map(|v| v.get_int().unwrap())
-        .collect::<Vec<Felt252>>();
+        .enumerate()
+        .map(|(i, v)| {
+            v.get_int()
+                .ok_or_else(|| HintError::CustomHint(format!("decoder/evm/normalize_v: v[{i}] is not an integer").into()))
+                .map(|x| x.to_owned())
+        })
+        .collect::<Result<Vec<Felt252>, HintError>>()?;
 
     let insert = if id * Felt252::TWO + FELT_35 <= v[0] && v[0] <= id * Felt252::TWO + FELT_36 {
         Felt252::ONE

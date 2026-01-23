@@ -42,7 +42,7 @@ pub fn hint_ap_header_is_poseidon(
     let proofs = exec_scopes.get::<starknet::Proofs>(vars::scopes::BATCH_STARKNET)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
-        .unwrap();
+        .map_err(|e| HintError::CustomHint(format!("starknet/header: ids.idx is not a valid usize: {e}").into()))?;
 
     insert_value_into_ap(
         vm,
@@ -66,7 +66,7 @@ pub fn hint_vm_enter_scope(
     let proofs = exec_scopes.get::<starknet::Proofs>(vars::scopes::BATCH_STARKNET)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
-        .unwrap();
+        .map_err(|e| HintError::CustomHint(format!("starknet/header: ids.idx is not a valid usize: {e}").into()))?;
 
     let headers_with_mmr: Box<dyn Any> = Box::new(proofs.headers_with_mmr[idx - 1].clone());
     let dict_manager: Box<dyn Any> = Box::new(exec_scopes.get::<Rc<RefCell<DictManager>>>(vars::scopes::DICT_MANAGER)?);
@@ -102,7 +102,7 @@ pub fn hint_set_header(
     let headers_with_mmr = exec_scopes.get::<HeaderMmrMeta<starknet::header::Header>>(vars::scopes::HEADER_STARKNET_WITH_MMR)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
-        .unwrap();
+        .map_err(|e| HintError::CustomHint(format!("starknet/header: ids.idx is not a valid usize: {e}").into()))?;
 
     let header = headers_with_mmr.headers[idx - 1].clone();
     exec_scopes.insert_value::<starknet::header::Header>(vars::scopes::HEADER_STARKNET, header.clone());

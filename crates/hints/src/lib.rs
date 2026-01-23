@@ -11,6 +11,8 @@ use cairo_vm::{
 
 pub mod contract_bootloader;
 pub mod decoder;
+pub mod error;
+pub mod hint_processor_common;
 pub mod merkle;
 pub mod patricia;
 pub mod print;

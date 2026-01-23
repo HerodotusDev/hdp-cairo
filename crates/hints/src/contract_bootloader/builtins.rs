@@ -49,10 +49,15 @@ pub fn update_builtin_ptrs(
 
     for (i, builtin) in all_builtins.iter().enumerate() {
         if selected_builtins.contains(builtin) {
-            returned_builtins.push(vm.get_maybe(&(selected_ptrs + selected_builtin_offset)?).unwrap());
+            returned_builtins.push(vm.get_maybe(&(selected_ptrs + selected_builtin_offset)?).ok_or_else(|| {
+                HintError::CustomHint(format!("bootloader/builtins: selected_ptrs[{selected_builtin_offset}] is missing").into())
+            })?);
             selected_builtin_offset += 1;
         } else {
-            returned_builtins.push(vm.get_maybe(&(orig_builtin_ptrs + i)?).unwrap());
+            returned_builtins.push(
+                vm.get_maybe(&(orig_builtin_ptrs + i)?)
+                    .ok_or_else(|| HintError::CustomHint(format!("bootloader/builtins: orig_builtin_ptrs[{i}] is missing").into()))?,
+            );
         }
     }
 
@@ -82,8 +87,13 @@ pub fn select_builtin(
 
     let n_selected_builtins = exec_scopes.get_mut_ref::<Felt252>(vars::scopes::N_SELECTED_BUILTINS)?;
 
-    let select_builtin =
-        *n_selected_builtins > Felt252::ZERO && vm.get_maybe(&selected_encodings).unwrap() == vm.get_maybe(&all_encodings).unwrap();
+    let selected_val = vm
+        .get_maybe(&selected_encodings)
+        .ok_or_else(|| HintError::CustomHint("bootloader/builtins: ids.selected_encodings is missing".into()))?;
+    let all_val = vm
+        .get_maybe(&all_encodings)
+        .ok_or_else(|| HintError::CustomHint("bootloader/builtins: ids.all_encodings is missing".into()))?;
+    let select_builtin = *n_selected_builtins > Felt252::ZERO && selected_val == all_val;
 
     insert_value_from_var_name(
         vars::ids::SELECT_BUILTIN,

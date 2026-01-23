@@ -47,7 +47,7 @@ pub fn hint_set_batch_storages(
     let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH_EVM)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
-        .unwrap();
+        .map_err(|e| HintError::CustomHint(format!("evm/storage_item: ids.idx is not a valid usize: {e}").into()))?;
     let storage = batch.storages[idx].clone();
     let address_le_chunks: Vec<MaybeRelocatable> = storage
         .address
@@ -100,11 +100,17 @@ pub fn hint_set_storage_key(
 
     let key_ptr = get_address_from_var_name(vars::ids::KEY, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     vm.insert_value(
-        (key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 0)?,
+        (key_ptr
+            .get_relocatable()
+            .ok_or_else(|| HintError::CustomHint("evm/storage_item: ids.key is not relocatable".into()))?
+            + 0)?,
         Felt252::from(key_low),
     )?;
     vm.insert_value(
-        (key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 1)?,
+        (key_ptr
+            .get_relocatable()
+            .ok_or_else(|| HintError::CustomHint("evm/storage_item: ids.key is not relocatable".into()))?
+            + 1)?,
         Felt252::from(key_high),
     )?;
 
@@ -158,7 +164,7 @@ pub fn hint_set_storage_proof_at(
     let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_EVM)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
-        .unwrap();
+        .map_err(|e| HintError::CustomHint(format!("evm/storage_item: ids.idx is not a valid usize: {e}").into()))?;
     let proof = storage.proofs[idx].clone();
 
     exec_scopes.insert_value::<MPTProof>(vars::scopes::PROOF, proof);

@@ -28,7 +28,7 @@ pub fn hint_state_proof_enter_scope(
     let state_proofs = exec_scopes.get::<StateProofs>(vars::scopes::STATE_PROOFS)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
-        .unwrap();
+        .map_err(|e| HintError::CustomHint(format!("injected_state: ids.idx is not a valid usize: {e}").into()))?;
 
     let state_proof: Box<dyn Any> = match state_proofs[idx - 1].to_owned() {
         StateProof::Read(state_proof) => Box::new(state_proof),

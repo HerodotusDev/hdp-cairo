@@ -15,6 +15,7 @@ use cairo_vm::{
     Felt252,
 };
 use num_bigint::BigUint;
+use tracing::trace;
 use types::proofs::{
     evm::{account::Account, Proofs},
     mpt::MPTProof,
@@ -33,6 +34,7 @@ pub fn hint_batch_accounts_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_batch_accounts_len", "executing hint");
     let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH_EVM)?;
 
     insert_value_into_ap(vm, Felt252::from(batch.accounts.len()))
@@ -47,10 +49,11 @@ pub fn hint_get_account_address(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_get_account_address", "executing hint");
     let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH_EVM)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
-        .unwrap();
+        .map_err(|e| HintError::CustomHint(format!("evm/account: ids.idx is not a valid usize: {e}").into()))?;
     let account = batch.accounts[idx].clone();
     let address_le_chunks: Vec<MaybeRelocatable> = account
         .address
@@ -75,17 +78,24 @@ pub fn hint_account_key(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_account_key", "executing hint");
     let account = exec_scopes.get::<Account>(vars::scopes::ACCOUNT_EVM)?;
 
     let (key_low, key_high) = split_128(&BigUint::from_bytes_be(account.account_key.as_slice()));
 
     let key_ptr = get_address_from_var_name(vars::ids::KEY, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     vm.insert_value(
-        (key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 0)?,
+        (key_ptr
+            .get_relocatable()
+            .ok_or_else(|| HintError::CustomHint("evm/account: ids.key is not relocatable".into()))?
+            + 0)?,
         Felt252::from(key_low),
     )?;
     vm.insert_value(
-        (key_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 1)?,
+        (key_ptr
+            .get_relocatable()
+            .ok_or_else(|| HintError::CustomHint("evm/account: ids.key is not relocatable".into()))?
+            + 1)?,
         Felt252::from(key_high),
     )?;
 
@@ -101,6 +111,7 @@ pub fn hint_account_key_leading_zeros(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_account_key_leading_zeros", "executing hint");
     let account = exec_scopes.get::<Account>(vars::scopes::ACCOUNT_EVM)?;
     let key_leading_zeros = count_leading_zero_nibbles_from_hex(&account.account_key.to_string());
 
@@ -121,6 +132,7 @@ pub fn hint_account_proofs_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_account_proofs_len", "executing hint");
     let account = exec_scopes.get::<Account>(vars::scopes::ACCOUNT_EVM)?;
 
     insert_value_into_ap(vm, Felt252::from(account.proofs.len()))
@@ -134,10 +146,11 @@ pub fn hint_account_proof_at(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_account_proof_at", "executing hint");
     let account = exec_scopes.get::<Account>(vars::scopes::ACCOUNT_EVM)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
-        .unwrap();
+        .map_err(|e| HintError::CustomHint(format!("evm/account: ids.idx is not a valid usize: {e}").into()))?;
 
     exec_scopes.insert_value::<MPTProof>(vars::scopes::PROOF, account.proofs[idx].clone());
 
@@ -152,6 +165,7 @@ pub fn hint_account_proof_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_account_proof_len", "executing hint");
     let proof = exec_scopes.get::<MPTProof>(vars::scopes::PROOF)?;
 
     insert_value_into_ap(vm, Felt252::from(proof.proof.len()))
@@ -165,6 +179,7 @@ pub fn hint_account_proof_block_number(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_account_proof_block_number", "executing hint");
     let proof = exec_scopes.get::<MPTProof>(vars::scopes::PROOF)?;
 
     insert_value_into_ap(vm, Felt252::from(proof.block_number))
@@ -178,6 +193,7 @@ pub fn hint_account_proof_bytes_len(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_account_proof_bytes_len", "executing hint");
     let proof = exec_scopes.get::<MPTProof>(vars::scopes::PROOF)?;
     let proof_bytes_len_ptr = get_ptr_from_var_name(vars::ids::PROOF_BYTES_LEN, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     let proof_len: Vec<MaybeRelocatable> = proof.proof.into_iter().map(|f| f.len().into()).collect();
@@ -193,6 +209,7 @@ pub fn hint_get_mpt_proof(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_get_mpt_proof", "executing hint");
     let proof = exec_scopes.get::<MPTProof>(vars::scopes::PROOF)?;
     let mpt_proof_ptr = get_ptr_from_var_name(vars::ids::MPT_PROOF, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     let proof_le_chunks: Result<Vec<MaybeRelocatable>, MemoryError> = proof

@@ -44,7 +44,7 @@ pub fn hint_set_batch_storages(
     let batch = exec_scopes.get::<Proofs>(vars::scopes::BATCH_STARKNET)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
-        .unwrap();
+        .map_err(|e| HintError::CustomHint(format!("starknet/storage: ids.idx is not a valid usize: {e}").into()))?;
     let storage = batch.storages[idx].clone();
 
     exec_scopes.insert_value::<Storage>(vars::scopes::STORAGE_STARKNET, storage);
@@ -193,7 +193,9 @@ pub fn hint_set_contract_nodes(
     let mut ordered_nodes: Vec<ProofNode> = Vec::with_capacity(node_store.len());
 
     while !node_store.is_empty() {
-        let node = node_store.remove(&target_node_hash).unwrap();
+        let node = node_store
+            .remove(&target_node_hash)
+            .ok_or_else(|| HintError::CustomHint(format!("starknet/storage: missing proof node for hash {target_node_hash:?}").into()))?;
         ordered_nodes.push(node.clone());
 
         target_node_hash = match node.0 {
@@ -206,22 +208,17 @@ pub fn hint_set_contract_nodes(
         };
     }
 
-    let data = ordered_nodes
-        .into_iter()
-        .map(|node| {
-            let segment = vm.add_memory_segment();
-            vm.load_data(
-                segment,
-                &CairoTrieNode(node.0)
-                    .into_iter()
-                    .map(MaybeRelocatable::from)
-                    .collect::<Vec<MaybeRelocatable>>(),
-            )
-            .unwrap();
-            segment
-        })
-        .map(MaybeRelocatable::from)
-        .collect::<Vec<MaybeRelocatable>>();
+    let mut data: Vec<MaybeRelocatable> = Vec::with_capacity(ordered_nodes.len());
+    for node in ordered_nodes.into_iter() {
+        let segment = vm.add_memory_segment();
+        let segment_data = CairoTrieNode(node.0)
+            .into_iter()
+            .map(MaybeRelocatable::from)
+            .collect::<Vec<MaybeRelocatable>>();
+        vm.load_data(segment, &segment_data)
+            .map_err(|e| HintError::CustomHint(format!("starknet/storage: failed to load CairoTrieNode segment: {e}").into()))?;
+        data.push(MaybeRelocatable::from(segment));
+    }
 
     vm.load_data(contract_nodes_ptr, &data)?;
 
@@ -254,7 +251,7 @@ pub fn hint_set_storage_starknet_proof_contract_data_storage_proofs_len(
     let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_STARKNET)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
-        .unwrap();
+        .map_err(|e| HintError::CustomHint(format!("starknet/storage: ids.idx is not a valid usize: {e}").into()))?;
 
     insert_value_into_ap(vm, storage.output.contracts_storage_proofs[idx].0.len())
 }
@@ -282,7 +279,9 @@ pub fn hint_set_storage_starknet_proof_contract_data_storage_proof(
     let mut ordered_nodes: Vec<ProofNode> = Vec::with_capacity(node_store.len());
 
     while !node_store.is_empty() {
-        let node = node_store.remove(&target_node_hash).unwrap();
+        let node = node_store
+            .remove(&target_node_hash)
+            .ok_or_else(|| HintError::CustomHint(format!("starknet/storage: missing proof node for hash {target_node_hash:?}").into()))?;
         ordered_nodes.push(node.clone());
 
         target_node_hash = match node.0 {
@@ -295,22 +294,17 @@ pub fn hint_set_storage_starknet_proof_contract_data_storage_proof(
         };
     }
 
-    let data = ordered_nodes
-        .into_iter()
-        .map(|node| {
-            let segment = vm.add_memory_segment();
-            vm.load_data(
-                segment,
-                &CairoTrieNode(node.0)
-                    .into_iter()
-                    .map(MaybeRelocatable::from)
-                    .collect::<Vec<MaybeRelocatable>>(),
-            )
-            .unwrap();
-            segment
-        })
-        .map(MaybeRelocatable::from)
-        .collect::<Vec<MaybeRelocatable>>();
+    let mut data: Vec<MaybeRelocatable> = Vec::with_capacity(ordered_nodes.len());
+    for node in ordered_nodes.into_iter() {
+        let segment = vm.add_memory_segment();
+        let segment_data = CairoTrieNode(node.0)
+            .into_iter()
+            .map(MaybeRelocatable::from)
+            .collect::<Vec<MaybeRelocatable>>();
+        vm.load_data(segment, &segment_data)
+            .map_err(|e| HintError::CustomHint(format!("starknet/storage: failed to load CairoTrieNode segment: {e}").into()))?;
+        data.push(MaybeRelocatable::from(segment));
+    }
 
     vm.load_data(contract_state_nodes_ptr, &data)?;
 
@@ -343,17 +337,21 @@ pub fn hint_set_eval_depth(
     let nodes_ptr = get_ptr_from_var_name(vars::ids::NODES, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     let n_nodes: usize = get_integer_from_var_name(vars::ids::N_NODES, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
-        .unwrap();
+        .map_err(|e| HintError::CustomHint(format!("starknet/storage: ids.n_nodes is not a valid usize: {e}").into()))?;
 
-    let sum = Felt252::from(
-        (0..n_nodes)
-            .map(|idx| CairoTrieNode::from_memory(vm, (vm.get_relocatable((nodes_ptr + idx).unwrap())).unwrap()).unwrap())
-            .map(|node| match node.0 {
-                TrieNode::Binary { left: _, right: _ } => 1,
-                TrieNode::Edge { child: _, path } => path.len(),
-            })
-            .sum::<usize>(),
-    );
+    let mut sum_usize: usize = 0;
+    for idx in 0..n_nodes {
+        let node_ptr = vm
+            .get_relocatable((nodes_ptr + idx)?)
+            .map_err(|e| HintError::CustomHint(format!("starknet/storage: nodes[{idx}] is not relocatable: {e}").into()))?;
+        let node = CairoTrieNode::from_memory(vm, node_ptr)
+            .map_err(|e| HintError::CustomHint(format!("starknet/storage: failed to read CairoTrieNode at nodes[{idx}]: {e}").into()))?;
+        sum_usize += match node.0 {
+            TrieNode::Binary { .. } => 1,
+            TrieNode::Edge { path, .. } => path.len(),
+        };
+    }
+    let sum = Felt252::from(sum_usize);
 
     insert_value_into_ap(vm, sum)
 }

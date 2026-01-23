@@ -24,9 +24,11 @@ pub fn hint_divmod_rlp(
     let rlp = get_ptr_from_var_name(vars::ids::RLP, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     let i: usize = get_integer_from_var_name(vars::ids::I, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
-        .unwrap();
+        .map_err(|e| HintError::CustomHint(format!("rlp/divmod_rlp: ids.i is not a valid usize: {e}").into()))?;
     let devisor = get_integer_from_var_name(vars::ids::DEVISOR, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let (q, r) = vm.get_integer((rlp + i)?)?.div_rem(&NonZeroFelt::try_from(devisor).unwrap());
+    let devisor = NonZeroFelt::try_from(devisor)
+        .map_err(|e| HintError::CustomHint(format!("rlp/divmod_rlp: ids.devisor is zero/invalid: {e}").into()))?;
+    let (q, r) = vm.get_integer((rlp + i)?)?.div_rem(&devisor);
 
     insert_value_from_var_name(
         vars::ids::Q,
@@ -55,9 +57,11 @@ pub fn hint_divmod_value(
     let value = get_ptr_from_var_name(vars::ids::VALUE, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     let i: usize = get_integer_from_var_name(vars::ids::I, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
-        .unwrap();
+        .map_err(|e| HintError::CustomHint(format!("rlp/divmod_value: ids.i is not a valid usize: {e}").into()))?;
     let devisor = get_integer_from_var_name(vars::ids::DEVISOR, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let (q, r) = vm.get_integer((value + i)?)?.div_rem(&NonZeroFelt::try_from(devisor).unwrap());
+    let devisor = NonZeroFelt::try_from(devisor)
+        .map_err(|e| HintError::CustomHint(format!("rlp/divmod_value: ids.devisor is zero/invalid: {e}").into()))?;
+    let (q, r) = vm.get_integer((value + i)?)?.div_rem(&devisor);
 
     insert_value_from_var_name(
         vars::ids::Q,

@@ -25,8 +25,13 @@ pub fn hint_v_is_encoded(
     let v = vm
         .get_continuous_range(v_ptr, 2)?
         .into_iter()
-        .map(|v| v.get_int().unwrap())
-        .collect::<Vec<Felt252>>();
+        .enumerate()
+        .map(|(i, v)| {
+            v.get_int()
+                .ok_or_else(|| HintError::CustomHint(format!("decoder/evm/v_is_encoded: v[{i}] is not an integer").into()))
+                .map(|x| x.to_owned())
+        })
+        .collect::<Result<Vec<Felt252>, HintError>>()?;
 
     let insert = match v[0].cmp(&FELT_127) {
         Ordering::Less | Ordering::Equal => Felt252::ZERO,

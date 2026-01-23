@@ -10,6 +10,7 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
+use tracing::trace;
 use types::{
     proofs::{evm, header::HeaderMmrMeta},
     HashingFunction,
@@ -25,6 +26,7 @@ pub fn hint_headers_with_mmr_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_headers_with_mmr_len", "executing hint");
     let proofs = exec_scopes.get::<evm::Proofs>(vars::scopes::BATCH_EVM)?;
     insert_value_into_ap(vm, Felt252::from(proofs.headers_with_mmr.len()))
 }
@@ -37,10 +39,11 @@ pub fn hint_ap_header_is_poseidon(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_ap_header_is_poseidon", "executing hint");
     let proofs = exec_scopes.get::<evm::Proofs>(vars::scopes::BATCH_EVM)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
-        .unwrap();
+        .map_err(|e| HintError::CustomHint(format!("evm/header: ids.idx is not a valid usize: {e}").into()))?;
 
     insert_value_into_ap(
         vm,
@@ -60,10 +63,11 @@ pub fn hint_ap_header_is_keccak(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_ap_header_is_keccak", "executing hint");
     let proofs = exec_scopes.get::<evm::Proofs>(vars::scopes::BATCH_EVM)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
-        .unwrap();
+        .map_err(|e| HintError::CustomHint(format!("evm/header: ids.idx is not a valid usize: {e}").into()))?;
 
     insert_value_into_ap(
         vm,
@@ -81,10 +85,11 @@ pub fn hint_enter_scope_header_with_mmr(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_enter_scope_header_with_mmr", "executing hint");
     let proofs = exec_scopes.get::<evm::Proofs>(vars::scopes::BATCH_EVM)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
-        .unwrap();
+        .map_err(|e| HintError::CustomHint(format!("evm/header: ids.idx is not a valid usize: {e}").into()))?;
 
     let headers_with_mmr: Box<dyn Any> = Box::new(proofs.headers_with_mmr[idx - 1].clone());
     let dict_manager: Box<dyn Any> = Box::new(exec_scopes.get::<Rc<RefCell<DictManager>>>(vars::scopes::DICT_MANAGER)?);
@@ -103,6 +108,7 @@ pub fn hint_headers_with_mmr_headers_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_headers_with_mmr_headers_len", "executing hint");
     let header_with_mmr = exec_scopes.get::<HeaderMmrMeta<evm::header::Header>>(vars::scopes::HEADER_EVM_WITH_MMR)?;
     insert_value_into_ap(vm, Felt252::from(header_with_mmr.headers.len()))
 }
@@ -115,10 +121,11 @@ pub fn hint_set_header(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_set_header", "executing hint");
     let headers_with_mmr = exec_scopes.get::<HeaderMmrMeta<evm::header::Header>>(vars::scopes::HEADER_EVM_WITH_MMR)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
-        .unwrap();
+        .map_err(|e| HintError::CustomHint(format!("evm/header: ids.idx is not a valid usize: {e}").into()))?;
 
     let header = headers_with_mmr.headers[idx - 1].clone();
     exec_scopes.insert_value::<evm::header::Header>(vars::scopes::HEADER_EVM, header);
@@ -134,6 +141,7 @@ pub fn hint_set_rlp(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_set_rlp", "executing hint");
     let header = exec_scopes.get::<evm::header::Header>(vars::scopes::HEADER_EVM)?;
     let rlp_le_chunks: Vec<MaybeRelocatable> = header
         .rlp
@@ -155,6 +163,7 @@ pub fn hint_rlp_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_rlp_len", "executing hint");
     let header = exec_scopes.get::<evm::header::Header>(vars::scopes::HEADER_EVM)?;
     insert_value_into_ap(vm, Felt252::from(header.rlp.chunks(8).count()))
 }
@@ -167,12 +176,13 @@ pub fn hint_rlp_byte_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_rlp_byte_len", "executing hint");
     let header = exec_scopes.get::<evm::header::Header>(vars::scopes::HEADER_EVM)?;
     insert_value_into_ap(
         vm,
         Felt252::from(
             alloy_rlp::Header::decode(&mut header.rlp.to_vec().as_slice())
-                .unwrap()
+                .map_err(|e| HintError::CustomHint(format!("evm/header: failed to decode RLP header: {e}").into()))?
                 .length_with_payload(),
         ),
     )
@@ -186,6 +196,7 @@ pub fn hint_leaf_idx(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_leaf_idx", "executing hint");
     let header = exec_scopes.get::<evm::header::Header>(vars::scopes::HEADER_EVM)?;
     insert_value_into_ap(vm, Felt252::from(header.proof.leaf_idx))
 }
@@ -198,6 +209,7 @@ pub fn hint_mmr_path_len(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_mmr_path_len", "executing hint");
     let header = exec_scopes.get::<evm::header::Header>(vars::scopes::HEADER_EVM)?;
 
     insert_value_into_ap(vm, Felt252::from(header.proof.mmr_path.len()))
@@ -211,6 +223,7 @@ pub fn hint_mmr_path_keccak(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_mmr_path_keccak", "executing hint");
     let header = exec_scopes.get::<evm::header::Header>(vars::scopes::HEADER_EVM)?;
     let mmr_path_ptr = get_ptr_from_var_name(vars::ids::MMR_PATH_KECCAK, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
@@ -234,6 +247,7 @@ pub fn hint_mmr_path_poseidon(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
+    trace!(hint = "hint_mmr_path_poseidon", "executing hint");
     let header = exec_scopes.get::<evm::header::Header>(vars::scopes::HEADER_EVM)?;
     let mmr_path_ptr = get_ptr_from_var_name(vars::ids::MMR_PATH_POSEIDON, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 

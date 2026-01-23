@@ -50,7 +50,10 @@ pub fn hint_get_trie_root_hash(
     let root_hash_ptr = get_address_from_var_name(vars::ids::ROOT, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     vm.insert_value(
-        (root_hash_ptr.get_relocatable().ok_or(HintError::WrongHintData)? + 0)?,
+        (root_hash_ptr
+            .get_relocatable()
+            .ok_or_else(|| HintError::CustomHint("injected_state/inclusion: ids.root is not relocatable".into()))?
+            + 0)?,
         Felt252::from_bytes_be(&root_hash.to_be_bytes()),
     )?;
 
@@ -69,20 +72,16 @@ pub fn hint_get_trie_node_proof(
 
     let nodes_ptr = get_ptr_from_var_name(vars::ids::NODES_PTR, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    let data = state_proof
-        .state_proof
-        .into_iter()
-        .map(|node| {
-            let segment = vm.add_memory_segment();
-            let data = &CairoTrieNodeSerde(node)
-                .into_iter()
-                .map(MaybeRelocatable::from)
-                .collect::<Vec<MaybeRelocatable>>();
-            vm.load_data(segment, data).unwrap();
-            segment
-        })
-        .map(MaybeRelocatable::from)
-        .collect::<Vec<MaybeRelocatable>>();
+    let mut data: Vec<MaybeRelocatable> = Vec::with_capacity(state_proof.state_proof.len());
+    for node in state_proof.state_proof.into_iter() {
+        let segment = vm.add_memory_segment();
+        let segment_data = CairoTrieNodeSerde(node)
+            .into_iter()
+            .map(MaybeRelocatable::from)
+            .collect::<Vec<MaybeRelocatable>>();
+        vm.load_data(segment, &segment_data)?;
+        data.push(MaybeRelocatable::from(segment));
+    }
 
     vm.load_data(nodes_ptr, &data)?;
 

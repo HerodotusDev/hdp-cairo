@@ -30,8 +30,13 @@ pub fn hint_target_task_hash(
             2,
         )?
         .into_iter()
-        .map(|x| x.get_int().unwrap())
-        .collect::<Vec<Felt252>>();
+        .enumerate()
+        .map(|(i, x)| {
+            x.get_int()
+                .ok_or_else(|| HintError::CustomHint(format!("merkle/target_task_hash: task_hash[{i}] is not an integer").into()))
+                .map(|v| v.to_owned())
+        })
+        .collect::<Result<Vec<Felt252>, HintError>>()?;
 
     let target_task_hash = task_hash[0].to_biguint() + FELT_TWO_POW_128.to_biguint() * task_hash[1].to_biguint();
 
@@ -55,8 +60,13 @@ pub fn hint_is_left_smaller(
             2,
         )?
         .into_iter()
-        .map(|x| x.get_int().unwrap())
-        .collect::<Vec<Felt252>>();
+        .enumerate()
+        .map(|(i, x)| {
+            x.get_int()
+                .ok_or_else(|| HintError::CustomHint(format!("merkle/is_left_smaller: left[{i}] is not an integer").into()))
+                .map(|v| v.to_owned())
+        })
+        .collect::<Result<Vec<Felt252>, HintError>>()?;
 
     let right = vm
         .get_continuous_range(
@@ -64,8 +74,13 @@ pub fn hint_is_left_smaller(
             2,
         )?
         .into_iter()
-        .map(|x| x.get_int().unwrap())
-        .collect::<Vec<Felt252>>();
+        .enumerate()
+        .map(|(i, x)| {
+            x.get_int()
+                .ok_or_else(|| HintError::CustomHint(format!("merkle/is_left_smaller: right[{i}] is not an integer").into()))
+                .map(|v| v.to_owned())
+        })
+        .collect::<Result<Vec<Felt252>, HintError>>()?;
 
     let left_flipped =
         BigUint::from_bytes_le(&left[0].to_bytes_be()) * FELT_TWO_POW_128.to_biguint() + BigUint::from_bytes_le(&left[1].to_bytes_be());
