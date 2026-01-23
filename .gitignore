@@ -33,13 +33,14 @@ dist/
 # --- IDEs ---
 .idea/
 .vscode/
+.cursor/
 
 # --- Whitelist ---
 # Keep specific files that would otherwise be ignored
 !example.env
 !packages/cairo-lang-0.13.3.zip
 !examples/**/*.json
-!crates/server/tests/*.json
+!crates/state_server/tests/*.json
 
 # State server db folder
 crates/state_server/db
