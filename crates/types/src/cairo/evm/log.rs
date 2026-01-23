@@ -7,7 +7,7 @@ use alloy_rlp::{Decodable, Encodable};
 use cairo_vm::Felt252;
 use strum_macros::FromRepr;
 
-use crate::cairo::structs::Uint256;
+use crate::cairo::{evm::error::CairoEvmError, structs::Uint256};
 
 #[derive(FromRepr, Debug)]
 pub enum FunctionId {
@@ -38,39 +38,60 @@ impl CairoReceiptWithBloom {
         buffer
     }
 
-    pub fn rlp_decode(mut rlp: &[u8]) -> Self {
-        Self(<ReceiptWithBloom>::decode(&mut rlp).unwrap())
+    pub fn try_rlp_decode(mut rlp: &[u8]) -> Result<Self, CairoEvmError> {
+        <ReceiptWithBloom>::decode(&mut rlp)
+            .map(Self)
+            .map_err(|e| CairoEvmError::RlpDecode {
+                what: "evm::log/receipt_with_bloom",
+                err: e.to_string(),
+            })
     }
 
-    pub fn handle(&self, function_id: FunctionId, log_index: usize) -> Vec<Felt252> {
-        match function_id {
-            FunctionId::Address => <Uint256 as Into<[Felt252; 2]>>::into(self.0.logs().get(log_index).unwrap().address.into()).to_vec(),
-            FunctionId::Topic0 => {
-                <Uint256 as Into<[Felt252; 2]>>::into(self.0.logs().get(log_index).unwrap().data.topics()[0].into()).to_vec()
-            }
-            FunctionId::Topic1 => {
-                <Uint256 as Into<[Felt252; 2]>>::into(self.0.logs().get(log_index).unwrap().data.topics()[1].into()).to_vec()
-            }
-            FunctionId::Topic2 => {
-                <Uint256 as Into<[Felt252; 2]>>::into(self.0.logs().get(log_index).unwrap().data.topics()[2].into()).to_vec()
-            }
-            FunctionId::Topic3 => {
-                <Uint256 as Into<[Felt252; 2]>>::into(self.0.logs().get(log_index).unwrap().data.topics()[3].into()).to_vec()
-            }
-            FunctionId::Topic4 => {
-                <Uint256 as Into<[Felt252; 2]>>::into(self.0.logs().get(log_index).unwrap().data.topics()[4].into()).to_vec()
-            }
-            FunctionId::Data => self
-                .0
-                .logs()
-                .get(log_index)
-                .unwrap()
+    pub fn handle(&self, function_id: FunctionId, log_index: usize) -> Result<Vec<Felt252>, CairoEvmError> {
+        let logs = self.0.logs();
+        let log = logs.get(log_index).ok_or(CairoEvmError::IndexOutOfBounds {
+            what: "evm::log",
+            index_name: "log_index",
+            index: log_index,
+            len: logs.len(),
+        })?;
+
+        let topic_index = match function_id {
+            FunctionId::Topic0 => Some(0usize),
+            FunctionId::Topic1 => Some(1usize),
+            FunctionId::Topic2 => Some(2usize),
+            FunctionId::Topic3 => Some(3usize),
+            FunctionId::Topic4 => Some(4usize),
+            _ => None,
+        };
+
+        if let Some(topic_index) = topic_index {
+            let topics = log.data.topics();
+            let topic = topics.get(topic_index).ok_or(CairoEvmError::IndexOutOfBounds {
+                what: "evm::log",
+                index_name: "topic_index",
+                index: topic_index,
+                len: topics.len(),
+            })?;
+            return Ok(<Uint256 as Into<[Felt252; 2]>>::into((*topic).into()).to_vec());
+        }
+
+        Ok(match function_id {
+            FunctionId::Address => <Uint256 as Into<[Felt252; 2]>>::into(log.address.into()).to_vec(),
+            FunctionId::Data => log
                 .data
                 .data
                 .chunks((u128::BITS / 8) as usize)
                 .map(Felt252::from_bytes_be_slice)
                 .collect(),
-        }
+            // Already handled above.
+            FunctionId::Topic0 | FunctionId::Topic1 | FunctionId::Topic2 | FunctionId::Topic3 | FunctionId::Topic4 => {
+                return Err(CairoEvmError::InternalInvariant {
+                    what: "evm::log",
+                    info: "topic branch should have returned earlier",
+                });
+            }
+        })
     }
 }
 

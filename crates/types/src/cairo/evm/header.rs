@@ -6,7 +6,7 @@ use alloy_rlp::{Decodable, Encodable};
 use cairo_vm::Felt252;
 use strum_macros::FromRepr;
 
-use crate::cairo::structs::Uint256;
+use crate::cairo::{evm::error::CairoEvmError, structs::Uint256};
 
 #[derive(FromRepr, Debug)]
 pub enum FunctionId {
@@ -101,27 +101,27 @@ impl CairoHeader {
     }
 
     pub fn base_fee_per_gas(&self) -> Option<Uint256> {
-        self.0.base_fee_per_gas.map(|f| f.into())
+        self.0.base_fee_per_gas.map(Into::into)
     }
 
     pub fn withdrawals_root(&self) -> Option<Uint256> {
-        self.0.withdrawals_root.map(|f| f.into())
+        self.0.withdrawals_root.map(Into::into)
     }
 
     pub fn blob_gas_used(&self) -> Option<Uint256> {
-        self.0.blob_gas_used.map(|f| f.into())
+        self.0.blob_gas_used.map(Into::into)
     }
 
     pub fn excess_blob_gas(&self) -> Option<Uint256> {
-        self.0.excess_blob_gas.map(|f| f.into())
+        self.0.excess_blob_gas.map(Into::into)
     }
 
     pub fn parent_beacon_block_root(&self) -> Option<Uint256> {
-        self.0.parent_beacon_block_root.map(|f| f.into())
+        self.0.parent_beacon_block_root.map(Into::into)
     }
 
     pub fn requests_hash(&self) -> Option<Uint256> {
-        self.0.requests_hash.map(|f| f.into())
+        self.0.requests_hash.map(Into::into)
     }
 
     pub fn hash(&self) -> Uint256 {
@@ -134,12 +134,15 @@ impl CairoHeader {
         buffer
     }
 
-    pub fn rlp_decode(mut rlp: &[u8]) -> Self {
-        Self(<Header>::decode(&mut rlp).unwrap())
+    pub fn try_rlp_decode(mut rlp: &[u8]) -> Result<Self, CairoEvmError> {
+        <Header>::decode(&mut rlp).map(Self).map_err(|e| CairoEvmError::RlpDecode {
+            what: "evm::header",
+            err: e.to_string(),
+        })
     }
 
-    pub fn handle(&self, function_id: FunctionId) -> Vec<Felt252> {
-        match function_id {
+    pub fn handle(&self, function_id: FunctionId) -> Result<Vec<Felt252>, CairoEvmError> {
+        Ok(match function_id {
             FunctionId::Parent => <Uint256 as Into<[Felt252; 2]>>::into(self.parent()).to_vec(),
             FunctionId::Uncle => <Uint256 as Into<[Felt252; 2]>>::into(self.uncle()).to_vec(),
             FunctionId::Coinbase => <Uint256 as Into<[Felt252; 2]>>::into(self.coinbase()).to_vec(),
@@ -153,16 +156,41 @@ impl CairoHeader {
             FunctionId::Timestamp => <Uint256 as Into<[Felt252; 2]>>::into(self.timestamp()).to_vec(),
             FunctionId::MixHash => <Uint256 as Into<[Felt252; 2]>>::into(self.mix_hash()).to_vec(),
             FunctionId::Nonce => <Uint256 as Into<[Felt252; 2]>>::into(self.nonce()).to_vec(),
-            FunctionId::BaseFeePerGas => <Uint256 as Into<[Felt252; 2]>>::into(self.base_fee_per_gas().unwrap()).to_vec(),
+            FunctionId::BaseFeePerGas => {
+                <Uint256 as Into<[Felt252; 2]>>::into(self.base_fee_per_gas().ok_or(CairoEvmError::MissingField {
+                    what: "evm::header",
+                    field: "base_fee_per_gas",
+                })?)
+                .to_vec()
+            }
             FunctionId::Bloom => self
                 .bloom()
                 .0
                 .chunks((u128::BITS / 8) as usize)
                 .map(Felt252::from_bytes_be_slice)
                 .collect(),
-            FunctionId::RequestsHash => <Uint256 as Into<[Felt252; 2]>>::into(self.requests_hash().unwrap()).to_vec(),
-            _ => panic!("Unsupported FunctionId"),
-        }
+            FunctionId::RequestsHash => <Uint256 as Into<[Felt252; 2]>>::into(self.requests_hash().ok_or(CairoEvmError::MissingField {
+                what: "evm::header",
+                field: "requests_hash",
+            })?)
+            .to_vec(),
+            other => {
+                return Err(CairoEvmError::UnsupportedFunction {
+                    what: "evm::header",
+                    function_id: match other {
+                        FunctionId::ExtraData => "ExtraData",
+                        FunctionId::ParentBeaconBlockRoot => "ParentBeaconBlockRoot",
+                        FunctionId::WithdrawalsRoot => "WithdrawalsRoot",
+                        FunctionId::BlobGasUsed => "BlobGasUsed",
+                        FunctionId::ExcessBlobGas => "ExcessBlobGas",
+                        FunctionId::ReceiptRoot => "ReceiptRoot",
+                        // Covered above but kept for completeness:
+                        _ => "Unknown",
+                    }
+                    .to_string(),
+                });
+            }
+        })
     }
 }
 

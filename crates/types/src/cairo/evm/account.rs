@@ -2,7 +2,7 @@ use alloy::{consensus::Account, primitives::keccak256};
 use alloy_rlp::{Decodable, Encodable};
 use strum_macros::FromRepr;
 
-use crate::cairo::structs::Uint256;
+use crate::cairo::{evm::error::CairoEvmError, structs::Uint256};
 
 #[derive(FromRepr, Debug)]
 pub enum FunctionId {
@@ -45,17 +45,20 @@ impl CairoAccount {
         buffer
     }
 
-    pub fn rlp_decode(mut rlp: &[u8]) -> Self {
-        Self(<Account>::decode(&mut rlp).unwrap())
+    pub fn try_rlp_decode(mut rlp: &[u8]) -> Result<Self, CairoEvmError> {
+        <Account>::decode(&mut rlp).map(Self).map_err(|e| CairoEvmError::RlpDecode {
+            what: "evm::account",
+            err: e.to_string(),
+        })
     }
 
-    pub fn handle(&self, function_id: FunctionId) -> Uint256 {
-        match function_id {
+    pub fn handle(&self, function_id: FunctionId) -> Result<Uint256, CairoEvmError> {
+        Ok(match function_id {
             FunctionId::Nonce => self.nonce(),
             FunctionId::Balance => self.balance(),
             FunctionId::StateRoot => self.storage_hash(),
             FunctionId::CodeHash => self.code_hash(),
-        }
+        })
     }
 }
 

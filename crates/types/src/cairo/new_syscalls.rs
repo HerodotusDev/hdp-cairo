@@ -132,12 +132,11 @@ impl Deref for CairoVec {
 
 impl CairoType for CairoVec {
     fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
-        let len = *vm.get_integer((address + 0)?)?;
-        let result = vm
-            .get_integer_range((address + 1)?, len.try_into().unwrap())?
-            .into_iter()
-            .map(|e| *e)
-            .collect();
+        let len_felt = *vm.get_integer((address + 0)?)?;
+        let len: usize = len_felt
+            .try_into()
+            .map_err(|e| MemoryError::ErrorRetrievingMessage(format!("Invalid CairoVec length: {len_felt} ({e})").into()))?;
+        let result = vm.get_integer_range((address + 1)?, len)?.into_iter().map(|e| *e).collect();
         Ok(result)
     }
     fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
@@ -146,20 +145,27 @@ impl CairoType for CairoVec {
         Ok((address + (self.len() + 1))?)
     }
     fn n_fields(vm: &VirtualMachine, address: Relocatable) -> Result<usize, MemoryError> {
-        let len = *vm.get_integer((address + 0)?)? + FELT_1;
-        Ok(len.try_into().unwrap())
+        let len_plus_1_felt = *vm.get_integer((address + 0)?)? + FELT_1;
+        let len_plus_1: usize = len_plus_1_felt
+            .try_into()
+            .map_err(|e| MemoryError::ErrorRetrievingMessage(format!("Invalid CairoVec length: {len_plus_1_felt} ({e})").into()))?;
+        Ok(len_plus_1)
     }
 }
 
 impl CairoType for Vec<Felt252> {
     fn from_memory(_vm: &VirtualMachine, _address: Relocatable) -> Result<Self, MemoryError> {
-        unreachable!()
+        Err(MemoryError::ErrorRetrievingMessage(
+            "Vec<Felt252>::from_memory is unsupported; use CairoVec instead".into(),
+        ))
     }
     fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
         vm.load_data((address + 0)?, &self.iter().map(MaybeRelocatable::from).collect::<Vec<_>>())?;
         Ok((address + self.len())?)
     }
     fn n_fields(_vm: &VirtualMachine, _address: Relocatable) -> Result<usize, MemoryError> {
-        unreachable!()
+        Err(MemoryError::ErrorRetrievingMessage(
+            "Vec<Felt252>::n_fields is unsupported; use CairoVec instead".into(),
+        ))
     }
 }

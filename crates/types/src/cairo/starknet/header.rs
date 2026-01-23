@@ -5,7 +5,10 @@ use serde::{Deserialize, Serialize};
 use strum_macros::FromRepr;
 use version_compare::{Cmp, Version};
 
-use crate::cairo::structs::CairoFelt;
+use crate::cairo::{starknet::error::CairoStarknetError, structs::CairoFelt};
+
+// 0x535441524b4e45545f424c4f434b5f4841534830 = int.from_bytes(b"STARKNET_BLOCK_HASH0", "big")
+const STARKNET_BLOCK_HASH0: Felt252 = Felt252::from_hex_unchecked("0x535441524b4e45545f424c4f434b5f4841534830");
 
 #[derive(FromRepr, Debug)]
 pub enum FunctionId {
@@ -32,9 +35,15 @@ pub enum FunctionId {
 impl From<Block> for StarknetBlock {
     fn from(value: Block) -> Self {
         let binding = value.starknet_version.to_string();
-        let version = Version::from(&binding).unwrap();
-        match version.compare(Version::from("0.13.2").unwrap()) {
-            Cmp::Gt | Cmp::Eq => StarknetBlock::V0_13_2(Box::new(StarknetBlock0_13_2::from_block(&value))),
+        let version = Version::from(&binding);
+        let v0_13_2 = Version::from("0.13.2");
+
+        match (version, v0_13_2) {
+            (Some(version), Some(v0_13_2)) => match version.compare(v0_13_2) {
+                Cmp::Gt | Cmp::Eq => StarknetBlock::V0_13_2(Box::new(StarknetBlock0_13_2::from_block(&value))),
+                _ => StarknetBlock::Legacy(Box::new(StarknetBlockLegacy::from_block(&value))),
+            },
+            // If the version string is malformed, fall back to legacy layout (but never panic).
             _ => StarknetBlock::Legacy(Box::new(StarknetBlockLegacy::from_block(&value))),
         }
     }
@@ -55,32 +64,42 @@ impl StarknetBlock {
     }
 
     pub fn n_fields_from_first_word(first_word: Felt252) -> usize {
-        // 0x535441524b4e45545f424c4f434b5f4841534830 = int.from_bytes(b"STARKNET_BLOCK_HASH0",
-        // "big"),
-        if first_word == Felt252::from_hex("0x535441524b4e45545f424c4f434b5f4841534830").unwrap() {
+        if first_word == STARKNET_BLOCK_HASH0 {
             StarknetBlock0_13_2::n_fields()
         } else {
             StarknetBlockLegacy::n_fields()
         }
     }
 
-    pub fn from_memorizer(fields: Vec<Felt252>) -> Self {
+    pub fn try_from_memorizer(fields: Vec<Felt252>) -> Result<Self, CairoStarknetError> {
         match fields.len() {
-            n if n == StarknetBlockLegacy::n_fields() => StarknetBlock::Legacy(Box::new(StarknetBlockLegacy::from_memorizer(fields))),
-            n if n == StarknetBlock0_13_2::n_fields() => StarknetBlock::V0_13_2(Box::new(StarknetBlock0_13_2::from_memorizer(fields))),
-            _ => panic!("Invalid number of fields"),
+            n if n == StarknetBlockLegacy::n_fields() => {
+                Ok(StarknetBlock::Legacy(Box::new(StarknetBlockLegacy::try_from_memorizer(fields)?)))
+            }
+            n if n == StarknetBlock0_13_2::n_fields() => {
+                Ok(StarknetBlock::V0_13_2(Box::new(StarknetBlock0_13_2::try_from_memorizer(fields)?)))
+            }
+            got => Err(CairoStarknetError::InvalidFieldCount {
+                what: "starknet::header/memorizer",
+                expected: StarknetBlockLegacy::n_fields(),
+                got,
+            }),
         }
     }
 
-    pub fn from_hash_fields(fields: Vec<Felt252>) -> Self {
+    pub fn try_from_hash_fields(fields: Vec<Felt252>) -> Result<Self, CairoStarknetError> {
         match fields.len() {
             n if n == StarknetBlockLegacy::n_hash_fields() => {
-                StarknetBlock::Legacy(Box::new(StarknetBlockLegacy::from_hash_fields(fields)))
+                Ok(StarknetBlock::Legacy(Box::new(StarknetBlockLegacy::try_from_hash_fields(fields)?)))
             }
             n if n == StarknetBlock0_13_2::n_hash_fields() => {
-                StarknetBlock::V0_13_2(Box::new(StarknetBlock0_13_2::from_hash_fields(fields)))
+                Ok(StarknetBlock::V0_13_2(Box::new(StarknetBlock0_13_2::try_from_hash_fields(fields)?)))
             }
-            _ => panic!("Invalid number of fields"),
+            got => Err(CairoStarknetError::InvalidFieldCount {
+                what: "starknet::header/hash_fields",
+                expected: StarknetBlockLegacy::n_hash_fields(),
+                got,
+            }),
         }
     }
 
@@ -249,43 +268,72 @@ pub struct StarknetBlockLegacy {
 }
 
 impl StarknetBlockLegacy {
-    pub fn from_memorizer(fields: Vec<Felt252>) -> Self {
-        Self {
-            block_number: fields[1],
-            state_root: fields[2],
-            sequencer_address: fields[3],
-            block_timestamp: fields[4],
-            transaction_count: fields[5],
-            transaction_commitment: fields[6],
-            event_count: fields[7],
-            event_commitment: fields[8],
-            parent_block_hash: fields[11],
+    fn get(fields: &[Felt252], idx: usize, what: &'static str) -> Result<Felt252, CairoStarknetError> {
+        fields.get(idx).copied().ok_or(CairoStarknetError::FieldIndexOutOfBounds {
+            what,
+            index: idx,
+            len: fields.len(),
+        })
+    }
+
+    pub fn try_from_memorizer(fields: Vec<Felt252>) -> Result<Self, CairoStarknetError> {
+        let what = "starknet::header/legacy/memorizer";
+        if fields.len() != Self::n_fields() {
+            return Err(CairoStarknetError::InvalidFieldCount {
+                what,
+                expected: Self::n_fields(),
+                got: fields.len(),
+            });
         }
+        Ok(Self {
+            block_number: Self::get(&fields, 1, what)?,
+            state_root: Self::get(&fields, 2, what)?,
+            sequencer_address: Self::get(&fields, 3, what)?,
+            block_timestamp: Self::get(&fields, 4, what)?,
+            transaction_count: Self::get(&fields, 5, what)?,
+            transaction_commitment: Self::get(&fields, 6, what)?,
+            event_count: Self::get(&fields, 7, what)?,
+            event_commitment: Self::get(&fields, 8, what)?,
+            parent_block_hash: Self::get(&fields, 11, what)?,
+        })
     }
 
     // We build the header from the indexer API
-    pub fn from_hash_fields(fields: Vec<Felt252>) -> Self {
-        Self {
-            block_number: fields[0],
-            state_root: fields[1],
-            sequencer_address: fields[2],
-            block_timestamp: fields[3],
-            transaction_count: fields[4],
-            transaction_commitment: fields[5],
-            event_count: fields[6],
-            event_commitment: fields[7], // There are two zeros here that are hashed
-            parent_block_hash: fields[10],
+    pub fn try_from_hash_fields(fields: Vec<Felt252>) -> Result<Self, CairoStarknetError> {
+        let what = "starknet::header/legacy/hash_fields";
+        if fields.len() != Self::n_hash_fields() {
+            return Err(CairoStarknetError::InvalidFieldCount {
+                what,
+                expected: Self::n_hash_fields(),
+                got: fields.len(),
+            });
         }
+        Ok(Self {
+            block_number: Self::get(&fields, 0, what)?,
+            state_root: Self::get(&fields, 1, what)?,
+            sequencer_address: Self::get(&fields, 2, what)?,
+            block_timestamp: Self::get(&fields, 3, what)?,
+            transaction_count: Self::get(&fields, 4, what)?,
+            transaction_commitment: Self::get(&fields, 5, what)?,
+            event_count: Self::get(&fields, 6, what)?,
+            event_commitment: Self::get(&fields, 7, what)?, // There are two zeros here that are hashed
+            parent_block_hash: Self::get(&fields, 10, what)?,
+        })
     }
 
     // We build the header from the feeder gateway
     pub fn from_block(block: &Block) -> Self {
         let total_events: usize = block.transaction_receipts.iter().map(|(_, events)| events.len()).sum();
         let total_transactions: usize = block.transactions.len();
+        let sequencer_address = block
+            .sequencer_address
+            .as_ref()
+            .map(|a| Felt252::from_bytes_be(&a.as_inner().to_be_bytes()))
+            .unwrap_or(Felt252::ZERO);
         Self {
             block_number: Felt252::from(block.block_number.get()),
             state_root: Felt252::from_bytes_be(&block.state_commitment.as_inner().to_be_bytes()),
-            sequencer_address: Felt252::from_bytes_be(&block.sequencer_address.ok_or(Felt252::ZERO).unwrap().as_inner().to_be_bytes()),
+            sequencer_address,
             block_timestamp: Felt252::from(block.timestamp.get()),
             transaction_count: Felt252::from(total_transactions),
             transaction_commitment: Felt252::from_bytes_be(&block.transaction_commitment.as_inner().to_be_bytes()),
@@ -341,47 +389,71 @@ pub struct StarknetBlock0_13_2 {
 }
 
 impl StarknetBlock0_13_2 {
-    pub fn from_hash_fields(fields: Vec<Felt252>) -> Self {
-        Self {
-            block_hash_version: fields[0],
-            block_number: fields[1],
-            state_root: fields[2],
-            sequencer_address: fields[3],
-            block_timestamp: fields[4],
-            concatenated_counts: fields[5],
-            state_diff_commitment: fields[6],
-            transaction_commitment: fields[7],
-            event_commitment: fields[8],
-            receipt_commitment: fields[9],
-            l1_gas_price_wei: fields[10],
-            l1_gas_price_fri: fields[11],
-            l1_data_gas_price_wei: fields[12],
-            l1_data_gas_price_fri: fields[13],
-            protocol_version: fields[14], // index 15 is a zero for hashing
-            parent_block_hash: fields[16],
+    fn get(fields: &[Felt252], idx: usize, what: &'static str) -> Result<Felt252, CairoStarknetError> {
+        fields.get(idx).copied().ok_or(CairoStarknetError::FieldIndexOutOfBounds {
+            what,
+            index: idx,
+            len: fields.len(),
+        })
+    }
+
+    pub fn try_from_hash_fields(fields: Vec<Felt252>) -> Result<Self, CairoStarknetError> {
+        let what = "starknet::header/0_13_2/hash_fields";
+        if fields.len() != Self::n_hash_fields() {
+            return Err(CairoStarknetError::InvalidFieldCount {
+                what,
+                expected: Self::n_hash_fields(),
+                got: fields.len(),
+            });
         }
+        Ok(Self {
+            block_hash_version: Self::get(&fields, 0, what)?,
+            block_number: Self::get(&fields, 1, what)?,
+            state_root: Self::get(&fields, 2, what)?,
+            sequencer_address: Self::get(&fields, 3, what)?,
+            block_timestamp: Self::get(&fields, 4, what)?,
+            concatenated_counts: Self::get(&fields, 5, what)?,
+            state_diff_commitment: Self::get(&fields, 6, what)?,
+            transaction_commitment: Self::get(&fields, 7, what)?,
+            event_commitment: Self::get(&fields, 8, what)?,
+            receipt_commitment: Self::get(&fields, 9, what)?,
+            l1_gas_price_wei: Self::get(&fields, 10, what)?,
+            l1_gas_price_fri: Self::get(&fields, 11, what)?,
+            l1_data_gas_price_wei: Self::get(&fields, 12, what)?,
+            l1_data_gas_price_fri: Self::get(&fields, 13, what)?,
+            protocol_version: Self::get(&fields, 14, what)?, // index 15 is a zero for hashing
+            parent_block_hash: Self::get(&fields, 16, what)?,
+        })
     }
 
     // we offset by 1, as the length is the first element
-    pub fn from_memorizer(fields: Vec<Felt252>) -> Self {
-        Self {
-            block_hash_version: fields[1],
-            block_number: fields[2],
-            state_root: fields[3],
-            sequencer_address: fields[4],
-            block_timestamp: fields[5],
-            concatenated_counts: fields[6],
-            state_diff_commitment: fields[7],
-            transaction_commitment: fields[8],
-            event_commitment: fields[9],
-            receipt_commitment: fields[10],
-            l1_gas_price_wei: fields[11],
-            l1_gas_price_fri: fields[12],
-            l1_data_gas_price_wei: fields[13],
-            l1_data_gas_price_fri: fields[14],
-            protocol_version: fields[15],
-            parent_block_hash: fields[17],
+    pub fn try_from_memorizer(fields: Vec<Felt252>) -> Result<Self, CairoStarknetError> {
+        let what = "starknet::header/0_13_2/memorizer";
+        if fields.len() != Self::n_fields() {
+            return Err(CairoStarknetError::InvalidFieldCount {
+                what,
+                expected: Self::n_fields(),
+                got: fields.len(),
+            });
         }
+        Ok(Self {
+            block_hash_version: Self::get(&fields, 1, what)?,
+            block_number: Self::get(&fields, 2, what)?,
+            state_root: Self::get(&fields, 3, what)?,
+            sequencer_address: Self::get(&fields, 4, what)?,
+            block_timestamp: Self::get(&fields, 5, what)?,
+            concatenated_counts: Self::get(&fields, 6, what)?,
+            state_diff_commitment: Self::get(&fields, 7, what)?,
+            transaction_commitment: Self::get(&fields, 8, what)?,
+            event_commitment: Self::get(&fields, 9, what)?,
+            receipt_commitment: Self::get(&fields, 10, what)?,
+            l1_gas_price_wei: Self::get(&fields, 11, what)?,
+            l1_gas_price_fri: Self::get(&fields, 12, what)?,
+            l1_data_gas_price_wei: Self::get(&fields, 13, what)?,
+            l1_data_gas_price_fri: Self::get(&fields, 14, what)?,
+            protocol_version: Self::get(&fields, 15, what)?,
+            parent_block_hash: Self::get(&fields, 17, what)?,
+        })
     }
 
     pub fn get_transaction_count(&self) -> Felt252 {
@@ -431,17 +503,33 @@ impl StarknetBlock0_13_2 {
             is_blob_mode,
         );
 
+        let sequencer_address = block
+            .sequencer_address
+            .as_ref()
+            .map(|a| Felt252::from_bytes_be(&a.as_inner().to_be_bytes()))
+            .unwrap_or(Felt252::ZERO);
+        let state_diff_commitment = block
+            .state_diff_commitment
+            .as_ref()
+            .map(|f| Felt252::from_bytes_be(&f.as_inner().to_be_bytes()))
+            .unwrap_or(Felt252::ZERO);
+        let receipt_commitment = block
+            .receipt_commitment
+            .as_ref()
+            .map(|f| Felt252::from_bytes_be(&f.as_inner().to_be_bytes()))
+            .unwrap_or(Felt252::ZERO);
+
         Self {
-            block_hash_version: Felt252::from_hex("0x535441524b4e45545f424c4f434b5f4841534830").unwrap(),
+            block_hash_version: STARKNET_BLOCK_HASH0,
             block_number: Felt252::from(block.block_number.get()),
             state_root: Felt252::from_bytes_be(&block.state_commitment.as_inner().to_be_bytes()),
-            sequencer_address: Felt252::from_bytes_be(&block.sequencer_address.ok_or(Felt252::ZERO).unwrap().as_inner().to_be_bytes()),
+            sequencer_address,
             block_timestamp: Felt252::from(block.timestamp.get()),
             concatenated_counts,
-            state_diff_commitment: Felt252::from_bytes_be(&block.state_diff_commitment.unwrap().as_inner().to_be_bytes()),
+            state_diff_commitment,
             transaction_commitment: Felt252::from_bytes_be(&block.transaction_commitment.as_inner().to_be_bytes()),
             event_commitment: Felt252::from_bytes_be(&block.event_commitment.as_inner().to_be_bytes()),
-            receipt_commitment: Felt252::from_bytes_be(&block.receipt_commitment.unwrap().as_inner().to_be_bytes()),
+            receipt_commitment,
             l1_gas_price_wei: Felt252::from(block.l1_gas_price.price_in_wei.0),
             l1_gas_price_fri: Felt252::from(block.l1_gas_price.price_in_fri.0),
             l1_data_gas_price_wei: Felt252::from(block.l1_data_gas_price.price_in_wei.0),

@@ -9,10 +9,28 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("Invalid arguments")]
+    #[error("invalid arguments")]
     Cli(#[from] clap::Error),
-    #[error("Failed to interact with the file system")]
+    #[error("failed to interact with the file system")]
     IO(#[from] std::io::Error),
+    #[error("failed to read file '{path}': {source}")]
+    ReadFile {
+        path: String,
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("failed to write file '{path}': {source}")]
+    WriteFile {
+        path: String,
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("missing required environment variable '{var}' (hint: run `hdp env-info` for setup)")]
+    MissingEnv {
+        var: &'static str,
+        #[source]
+        source: std::env::VarError,
+    },
     #[error(transparent)]
     EncodeTrace(#[from] EncodeTraceError),
     #[error(transparent)]
@@ -29,12 +47,14 @@ pub enum Error {
     Program(#[from] ProgramError),
     #[error(transparent)]
     Memory(#[from] MemoryError),
-    #[error("Program panicked with {0:?}")]
-    RunPanic(Vec<Felt252>),
+    #[error("Cairo program panicked with {panic_values:?}")]
+    RunPanic { panic_values: Vec<Felt252> },
     #[error("Function signature has no return types")]
     NoRetTypesInSignature,
-    #[error("Failed to extract return values from VM")]
-    FailedToExtractReturnValues,
+    #[error("failed to extract return values from VM segment {segment}: {reason}")]
+    ReturnValueExtraction { segment: usize, reason: String },
+    #[error("Internal error: {0}")]
+    Internal(String),
     #[error("Function expects arguments of size {expected} and received {actual} instead.")]
     ArgumentsSizeMismatch { expected: i16, actual: i16 },
     #[error("Function param {param_index} only partially contains argument {arg_index}.")]

@@ -9,16 +9,18 @@ use serde::{
     Deserialize, Deserializer, Serialize, Serializer,
 };
 
+use crate::BlockNumber;
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Storage {
-    pub block_number: u64,
+    pub block_number: BlockNumber,
     pub contract_address: Felt252,
     pub storage_addresses: Vec<Felt252>,
     pub output: Output,
 }
 
 impl Storage {
-    pub fn new(block_number: u64, contract_address: Felt252, storage_addresses: Vec<Felt252>, output: Output) -> Self {
+    pub fn new(block_number: BlockNumber, contract_address: Felt252, storage_addresses: Vec<Felt252>, output: Output) -> Self {
         Self {
             block_number,
             contract_address,
@@ -83,7 +85,7 @@ impl Serialize for ProofNode {
 
             TrieNode::Edge { child, path } => {
                 let mut s = serializer.serialize_struct("ProofNode", 3)?;
-                let p = Felt::from_bits(path).unwrap();
+                let p = Felt::from_bits(path).map_err(|_e| serde::ser::Error::custom("invalid edge path bits (cannot convert to Felt)"))?;
                 let len = path.len();
                 s.serialize_field("path", &p)?;
                 s.serialize_field("length", &len)?;
@@ -177,6 +179,12 @@ impl<'de> Deserialize<'de> for ProofNode {
                         return Err(de::Error::custom("found both Binary and Edge fields"));
                     }
                     let path_bits = path_felt.view_bits().to_bitvec();
+                    if len == 0 || len > path_bits.len() {
+                        return Err(de::Error::custom(format!(
+                            "invalid edge path length {len}; must be within 1..={} bits",
+                            path_bits.len()
+                        )));
+                    }
                     Ok(ProofNode(TrieNode::Edge {
                         child,
                         path: path_bits[path_bits.len() - len..].to_bitvec(),

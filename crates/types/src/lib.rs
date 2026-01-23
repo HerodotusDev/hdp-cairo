@@ -2,7 +2,6 @@
 #![warn(unused_extern_crates)]
 #![warn(unused_crate_dependencies)]
 #![forbid(unsafe_code)]
-#![feature(iter_next_chunk)]
 
 pub mod cairo;
 pub mod error;
@@ -33,6 +32,15 @@ pub const RPC_URL_STARKNET_TESTNET: &str = "RPC_URL_STARKNET_TESTNET";
 
 pub const RPC_URL_HERODOTUS_INDEXER: &str = "RPC_URL_HERODOTUS_INDEXER";
 
+/// Type alias for chain identifiers (e.g., Ethereum mainnet = 0x1).
+pub type ChainId = u128;
+
+/// Type alias for block numbers.
+pub type BlockNumber = u64;
+
+/// Type alias for transaction indices within a block.
+pub type TransactionIndex = u64;
+
 /// Enum for available hashing functions
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Default, Copy)]
 #[serde(rename_all = "lowercase")]
@@ -43,12 +51,12 @@ pub enum HashingFunction {
     // Pedersen,
 }
 
-pub const ETHEREUM_MAINNET_CHAIN_ID: u128 = 0x1;
-pub const ETHEREUM_TESTNET_CHAIN_ID: u128 = 0xaa36a7;
-pub const OPTIMISM_MAINNET_CHAIN_ID: u128 = 0xa;
-pub const OPTIMISM_TESTNET_CHAIN_ID: u128 = 0xaa37dc;
-pub const STARKNET_MAINNET_CHAIN_ID: u128 = 0x534e5f4d41494e;
-pub const STARKNET_TESTNET_CHAIN_ID: u128 = 0x534e5f5345504f4c4941;
+pub const ETHEREUM_MAINNET_CHAIN_ID: ChainId = 0x1;
+pub const ETHEREUM_TESTNET_CHAIN_ID: ChainId = 0xaa36a7;
+pub const OPTIMISM_MAINNET_CHAIN_ID: ChainId = 0xa;
+pub const OPTIMISM_TESTNET_CHAIN_ID: ChainId = 0xaa37dc;
+pub const STARKNET_MAINNET_CHAIN_ID: ChainId = 0x534e5f4d41494e;
+pub const STARKNET_TESTNET_CHAIN_ID: ChainId = 0x534e5f5345504f4c4941;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ProofsData {
@@ -91,7 +99,7 @@ pub enum ChainProofs {
 }
 
 impl ChainProofs {
-    pub fn chain_id(&self) -> u128 {
+    pub fn chain_id(&self) -> ChainId {
         match self {
             ChainProofs::EthereumMainnet(_) => 0x1,
             ChainProofs::EthereumSepolia(_) => 0xaa36a7,
@@ -143,7 +151,7 @@ impl FromStr for ChainIds {
 }
 
 impl ChainIds {
-    pub fn from_u128(chain_id: u128) -> Option<Self> {
+    pub fn from_u128(chain_id: ChainId) -> Option<Self> {
         match chain_id {
             ETHEREUM_MAINNET_CHAIN_ID => Some(Self::EthereumMainnet),
             ETHEREUM_TESTNET_CHAIN_ID => Some(Self::EthereumSepolia),
@@ -188,10 +196,10 @@ pub struct HDPDryRunOutput {
 impl FromIterator<Felt252> for HDPDryRunOutput {
     fn from_iter<T: IntoIterator<Item = Felt252>>(iter: T) -> Self {
         let mut i = iter.into_iter();
-        let task_hash_low = i.next().unwrap();
-        let task_hash_high = i.next().unwrap();
-        let output_tree_root_low = i.next().unwrap();
-        let output_tree_root_high = i.next().unwrap();
+        let task_hash_low = i.next().unwrap_or(Felt252::ZERO);
+        let task_hash_high = i.next().unwrap_or(Felt252::ZERO);
+        let output_tree_root_low = i.next().unwrap_or(Felt252::ZERO);
+        let output_tree_root_high = i.next().unwrap_or(Felt252::ZERO);
 
         Self {
             task_hash_low,
@@ -236,14 +244,14 @@ impl FromIterator<Felt252> for HDPOutput {
         let mut i = iter.into_iter();
 
         // Fixed 4 words
-        let task_hash_low = i.next().unwrap();
-        let task_hash_high = i.next().unwrap();
-        let output_tree_root_low = i.next().unwrap();
-        let output_tree_root_high = i.next().unwrap();
+        let task_hash_low = i.next().unwrap_or(Felt252::ZERO);
+        let task_hash_high = i.next().unwrap_or(Felt252::ZERO);
+        let output_tree_root_low = i.next().unwrap_or(Felt252::ZERO);
+        let output_tree_root_high = i.next().unwrap_or(Felt252::ZERO);
 
         // New mixed-layout header: [poseidon_len, keccak_len]
-        let poseidon_len_f = i.next().unwrap();
-        let keccak_len_f = i.next().unwrap();
+        let poseidon_len_f = i.next().unwrap_or(Felt252::ZERO);
+        let keccak_len_f = i.next().unwrap_or(Felt252::ZERO);
 
         // Convert Felt252 -> usize by reading the last 8 bytes (big-endian)
         let felt_to_usize = |f: &Felt252| -> usize {
@@ -257,14 +265,25 @@ impl FromIterator<Felt252> for HDPOutput {
 
         // Poseidon section: poseidon_len * 4 felts
         let mut mmr_metas = Vec::<MmrMetaOutput>::with_capacity(poseidon_len + keccak_len);
+        fn take_chunk<const N: usize>(iter: &mut impl Iterator<Item = Felt252>) -> Option<[Felt252; N]> {
+            let mut v = Vec::with_capacity(N);
+            for _ in 0..N {
+                v.push(iter.next()?);
+            }
+            v.try_into().ok()
+        }
         for _ in 0..poseidon_len {
-            let [id, size, chain_id, root] = i.next_chunk::<4>().expect("missing poseidon mmr_meta words");
+            let Some([id, size, chain_id, root]) = take_chunk::<4>(&mut i) else {
+                break;
+            };
             mmr_metas.push(MmrMetaOutput::Poseidon { id, size, chain_id, root });
         }
 
         // Keccak section: keccak_len * 5 felts (id, size, chain_id, root_low, root_high)
         for _ in 0..keccak_len {
-            let [id, size, chain_id, root_low, root_high] = i.next_chunk::<5>().expect("missing keccak mmr_meta words");
+            let Some([id, size, chain_id, root_low, root_high]) = take_chunk::<5>(&mut i) else {
+                break;
+            };
             mmr_metas.push(MmrMetaOutput::Keccak {
                 id,
                 size,
