@@ -1,3 +1,7 @@
+// ============================================================================
+// EVM Module
+// ============================================================================
+// EVM proof helpers and constants for supported chains.
 pub mod account;
 pub mod block_receipt;
 pub mod block_tx;

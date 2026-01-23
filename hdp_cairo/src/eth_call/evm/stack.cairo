@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Stack
+// ============================================================================
+// Defines the stack structure, push/pop semantics, and bounds checks.
+
 use core::dict::{Felt252Dict, Felt252DictTrait};
 //! Stack implementation.
 //! # Example
@@ -222,7 +227,7 @@ impl StackImpl of StackTrait {
     #[inline(always)]
     fn peek(ref self: Stack) -> Option<u256> {
         if self.len() == 0 {
-            Option::None(())
+            Option::None
         } else {
             let last_index = self.len() - 1;
             let item = self.items.get(last_index.into());

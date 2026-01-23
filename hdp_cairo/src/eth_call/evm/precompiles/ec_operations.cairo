@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Elliptic Curve Operations
+// ============================================================================
+// Shared BN254 curve helpers for ECADD and ECMUL precompiles.
+
 pub(crate) mod ec_add;
 pub(crate) mod ec_mul;
 use core::circuit::{

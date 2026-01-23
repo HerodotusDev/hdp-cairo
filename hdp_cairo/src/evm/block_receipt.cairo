@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Block Receipt Access
+// ============================================================================
+// Reads receipt fields from memorized transaction receipts.
+
 use hdp_cairo::EvmMemorizer;
 use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;

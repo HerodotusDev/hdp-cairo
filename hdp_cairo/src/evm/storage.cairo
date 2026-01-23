@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Storage Access
+// ============================================================================
+// Reads storage slots from the EVM memorizer.
+
 use hdp_cairo::EvmMemorizer;
 use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;

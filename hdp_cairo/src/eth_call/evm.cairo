@@ -1,3 +1,9 @@
+// ============================================================================
+// Eth Call EVM Module
+// ============================================================================
+// Groups the EVM execution submodules used by eth_call.
+// Exposes interpreter, state, memory, stack, gas, precompiles, and helpers.
+
 pub mod call_helpers;
 pub mod create_helpers;
 pub mod errors;

@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Block Transaction Access
+// ============================================================================
+// Reads transaction fields from memorized block transactions.
+
 use hdp_cairo::EvmMemorizer;
 use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;

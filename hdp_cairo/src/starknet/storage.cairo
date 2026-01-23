@@ -1,3 +1,8 @@
+// ============================================================================
+// Starknet Storage Access
+// ============================================================================
+// Reads storage slots from the Starknet memorizer.
+
 use hdp_cairo::StarknetMemorizer;
 use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;

@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Instruction Traits
+// ============================================================================
+// Re-exports per-opcode trait groups used by the interpreter.
+
 /// Sub modules.
 mod block_information;
 

@@ -1,4 +1,9 @@
-use core::starknet::EthAddress;
+// ============================================================================
+// Ethereum Transaction Enum
+// ============================================================================
+// Wraps legacy and typed transactions with helpers for RLP parsing.
+
+use starknet::EthAddress;
 use crate::eth_call::utils::errors::{EthTransactionError, RLPError, RLPErrorTrait};
 use crate::eth_call::utils::eth_transaction::common::{TxKind, TxKindTrait};
 use crate::eth_call::utils::eth_transaction::eip1559::{TxEip1559, TxEip1559Trait};
@@ -276,7 +281,7 @@ pub impl _TransactionUnsigned of TransactionUnsignedTrait {
 
         let rlp_decoded_data = *rlp_decoded_data.at(0);
         let legacy_tx: TxLegacy = match rlp_decoded_data {
-            RLPItem::String => { Result::Err(EthTransactionError::ExpectedRLPItemToBeList)? },
+            RLPItem::String(_) => { Result::Err(EthTransactionError::ExpectedRLPItemToBeList)? },
             RLPItem::List(mut val) => {
                 if (val.len() != 9) {
                     return Result::Err(EthTransactionError::LegacyTxWrongPayloadLength(val.len()));
@@ -360,7 +365,7 @@ pub impl _TransactionUnsigned of TransactionUnsignedTrait {
         }
 
         let mut rlp_decoded_data = match *rlp_decoded_data.at(0) {
-            RLPItem::String => {
+            RLPItem::String(_) => {
                 return Result::Err(
                     EthTransactionError::RLPError(RLPError::Custom('not encoded as list')),
                 );

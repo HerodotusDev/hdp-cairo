@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM State Tracker
+// ============================================================================
+// Tracks account/storage changes, logs, and selfdestructs during execution.
+
 use core::dict::{Felt252Dict, Felt252DictTrait};
 use core::hash::{HashStateExTrait, HashStateTrait};
 use core::nullable::{FromNullableResult, match_nullable};

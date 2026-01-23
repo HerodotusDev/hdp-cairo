@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Header Access
+// ============================================================================
+// Queries block header fields via memorizer syscall dispatch.
+
 use hdp_cairo::EvmMemorizer;
 use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;

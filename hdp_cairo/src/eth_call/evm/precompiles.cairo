@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Precompiles
+// ============================================================================
+// Dispatches precompile calls and defines supported address ranges.
+
 mod blake2f;
 mod ec_operations;
 mod ec_recover;

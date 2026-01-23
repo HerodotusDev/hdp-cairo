@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Push Opcodes
+// ============================================================================
+// Implements PUSH1..PUSH32 immediate stack operations.
+
 //! Push Operations.
 
 use crate::eth_call::evm::errors::EVMError;
@@ -16,7 +21,7 @@ fn exec_push_i(ref self: VM, i: u8) -> Result<(), EVMError> {
 
     self.set_pc(self.pc() + i);
 
-    if data.len() == 0 {
+    if data.is_empty() {
         self.stack.push(0)
     } else {
         self.stack.push(data.pad_right_with_zeroes(i).from_be_bytes_partial().unwrap())

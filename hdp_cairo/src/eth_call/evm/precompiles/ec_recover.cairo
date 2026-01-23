@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM ECRecover Precompile
+// ============================================================================
+// Recovers the public key from secp256k1 signature and message hash.
+
 use core::traits::Into;
 use starknet::eth_signature::public_key_point_to_eth_address;
 use starknet::secp256_trait::{Secp256PointTrait, Signature, recover_public_key};
@@ -22,10 +27,11 @@ pub impl EcRecover of Precompile {
         // Pad the input to 128 bytes to avoid out-of-bounds accesses
         let input = input.pad_right_with_zeroes(128);
         let message_hash = input.slice(0, 32);
-        let message_hash = match message_hash.from_be_bytes() {
-            Option::Some(message_hash) => message_hash,
-            Option::None => { return Result::Ok((gas, [].span())); },
-        };
+        let message_hash: Option<u256> = message_hash.from_be_bytes();
+        if message_hash.is_none() {
+            return Result::Ok((gas, [].span()));
+        }
+        let message_hash = message_hash.unwrap_or(0);
 
         let v: Option<u256> = input.slice(32, 32).from_be_bytes();
         let y_parity = match v {
@@ -40,16 +46,17 @@ pub impl EcRecover of Precompile {
         };
 
         let r: Option<u256> = input.slice(64, 32).from_be_bytes();
-        let r = match r {
-            Option::Some(r) => r,
-            Option::None => { return Result::Ok((gas, [].span())); },
-        };
+        let r_is_none = r.is_none();
+        let r = r.unwrap_or(0);
+        if r_is_none {
+            return Result::Ok((gas, [].span()));
+        }
 
         let s: Option<u256> = input.slice(96, 32).from_be_bytes();
-        let s = match s {
-            Option::Some(s) => s,
-            Option::None => { return Result::Ok((gas, [].span())); },
-        };
+        if s.is_none() {
+            return Result::Ok((gas, [].span()));
+        }
+        let s = s.unwrap_or(0);
 
         let signature = Signature { r, s, y_parity };
 

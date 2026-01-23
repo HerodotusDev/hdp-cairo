@@ -1,6 +1,12 @@
+// ============================================================================
+// EVM Stop and Arithmetic Opcodes
+// ============================================================================
+// Implements STOP, ADD/MUL/DIV, modular math, and related arithmetic ops.
+
 //! Stop and Arithmetic Operations.
 use core::integer::u512_safe_div_rem_by_u256;
 use core::num::traits::{OverflowingAdd, OverflowingMul, OverflowingSub};
+use core::traits::DivRem;
 use crate::eth_call::evm::errors::EVMError;
 use crate::eth_call::evm::gas;
 use crate::eth_call::evm::model::vm::{VM, VMTrait};
@@ -244,9 +250,8 @@ pub impl StopAndArithmeticOperations of StopAndArithmeticOperationsTrait {
         let result = if b < 32 {
             let s = 8 * b + 7;
             let two_pow_s = 2.pow(s);
-            // Get v, the t-th bit of x. To do this we bitshift x by s bits to the right and apply a
-            // mask to get the last bit.
-            let v = (x / two_pow_s) & 1;
+            // Get v, the t-th bit of x by shifting and taking the remainder mod 2.
+            let (_, v) = DivRem::div_rem(x / two_pow_s, 2);
             // Compute the mask with 8b+7 bits set to one
             let mask = two_pow_s - 1;
             if v == 0 {
@@ -661,7 +666,7 @@ mod tests {
         // Then
         assert(vm.stack.len() == 1, 'stack should have one element');
         assert(vm.stack.peek().unwrap() == 100, 'stack top should be 100');
-        let expected_gas_used = 10 + 50 * 1;
+        let expected_gas_used = 10 + 50;
         assert_eq!(initial_gas - vm.gas_left(), expected_gas_used);
     }
 
@@ -681,7 +686,7 @@ mod tests {
         assert(
             vm.stack.peek().unwrap() == 0, 'stack top should be 0',
         ); // (2^128)^2 = 2^256 = 0 % 2^256
-        let expected_gas_used = 10 + 50 * 1;
+        let expected_gas_used = 10 + 50;
         assert_eq!(initial_gas - vm.gas_left(), expected_gas_used);
     }
 

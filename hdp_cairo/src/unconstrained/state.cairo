@@ -1,3 +1,8 @@
+// ============================================================================
+// Unconstrained State Access
+// ============================================================================
+// Reads unconstrained bytecode data via the HDP memorizer.
+
 use core::keccak::cairo_keccak;
 use core::panic_with_felt252;
 use starknet::SyscallResultTrait;

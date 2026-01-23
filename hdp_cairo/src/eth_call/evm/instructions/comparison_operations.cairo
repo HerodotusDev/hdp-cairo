@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Comparison and Bitwise Opcodes
+// ============================================================================
+// Implements LT/GT/EQ, bitwise ops, shifts, and signed comparisons.
+
 use core::num::traits::Bounded;
 use crate::eth_call::evm::errors::EVMError;
 use crate::eth_call::evm::gas;

@@ -1,3 +1,8 @@
+// ============================================================================
+// Eth Transaction Utilities
+// ============================================================================
+// Defines transaction types and fee calculations for eth_call.
+
 pub mod common;
 pub mod eip1559;
 pub mod eip2930;

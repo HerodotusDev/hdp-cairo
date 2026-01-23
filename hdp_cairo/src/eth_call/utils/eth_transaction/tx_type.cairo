@@ -1,3 +1,8 @@
+// ============================================================================
+// Ethereum Transaction Type Tags
+// ============================================================================
+// Declares the typed transaction identifiers (legacy, 2930, 1559).
+
 /// Transaction Type
 #[derive(Copy, Drop, Debug, PartialEq)]
 pub enum TxType {

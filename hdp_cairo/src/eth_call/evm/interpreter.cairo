@@ -1,3 +1,9 @@
+// ============================================================================
+// EVM Interpreter
+// ============================================================================
+// Executes EVM bytecode on the Cairo VM implementation.
+// Orchestrates instruction dispatch, gas accounting, and state transitions.
+
 use core::num::traits::{Bounded, Zero};
 use hdp_cairo::HDP;
 // use core::ops::SnapshotDeref;

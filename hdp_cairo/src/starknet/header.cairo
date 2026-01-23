@@ -1,3 +1,8 @@
+// ============================================================================
+// Starknet Header Access
+// ============================================================================
+// Queries Starknet block header fields via memorizer syscall dispatch.
+
 use hdp_cairo::StarknetMemorizer;
 use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;

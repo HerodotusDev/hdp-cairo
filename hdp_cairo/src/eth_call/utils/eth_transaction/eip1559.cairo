@@ -1,3 +1,8 @@
+// ============================================================================
+// EIP-1559 Transaction (Type 0x2)
+// ============================================================================
+// Defines max fee and priority fee fields for typed transactions.
+
 use core::num::traits::SaturatingSub;
 use crate::eth_call::utils::errors::{EthTransactionError, RLPError, RLPErrorTrait};
 use crate::eth_call::utils::eth_transaction::common::TxKind;

@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM ECADD Precompile
+// ============================================================================
+// Performs BN254 elliptic curve addition.
+
 use core::circuit::{
     CircuitElement as CE, CircuitInput as CI, CircuitInputs, CircuitModulus, CircuitOutputsTrait,
     EvalCircuitTrait, circuit_inverse, circuit_mul, circuit_sub, u384,

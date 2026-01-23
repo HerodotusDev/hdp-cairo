@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Account Access
+// ============================================================================
+// Queries account fields (nonce, balance, state root, code hash) via memorizer.
+
 use hdp_cairo::EvmMemorizer;
 use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;

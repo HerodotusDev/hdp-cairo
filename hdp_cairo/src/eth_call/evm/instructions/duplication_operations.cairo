@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Duplication Opcodes
+// ============================================================================
+// Implements DUP1..DUP16 operations on the stack.
+
 //! Duplication Operations.
 
 // Internal imports

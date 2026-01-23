@@ -1,3 +1,8 @@
+// ============================================================================
+// Injected State Access
+// ============================================================================
+// Reads and writes injected state trie roots and values.
+
 use hdp_cairo::InjectedStateMemorizer;
 use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;
@@ -21,7 +26,7 @@ pub impl InjectedStateMemorizerImpl of InjectedStateMemorizerTrait {
         let value = *ret_data.at(0);
         let exists = *ret_data.at(1) == 1;
 
-        if exists == true {
+        if exists {
             return Option::Some(value);
         } else {
             return Option::None;
@@ -37,7 +42,7 @@ pub impl InjectedStateMemorizerImpl of InjectedStateMemorizerTrait {
         let value = *ret_data.at(0);
         let exists = *ret_data.at(1) == 1;
 
-        if exists == true {
+        if exists {
             return Option::Some(value);
         } else {
             return Option::None;

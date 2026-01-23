@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Log Access
+// ============================================================================
+// Reads log fields (address, topics, data) from memorized receipts.
+
 use hdp_cairo::EvmMemorizer;
 use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;

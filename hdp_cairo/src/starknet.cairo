@@ -1,3 +1,7 @@
+// ============================================================================
+// Starknet Module
+// ============================================================================
+// Starknet proof helpers and constants for supported chains.
 pub mod header;
 pub mod storage;
 

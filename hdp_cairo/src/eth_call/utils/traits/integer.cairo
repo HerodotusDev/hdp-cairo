@@ -86,12 +86,10 @@ pub impl USizeBytesUsedTraitImpl of BytesUsedTrait<usize> {
                 };
             }
             return 2;
-        } else {
-            if self < 0x1000000 { // 256^3
-                return 3;
-            }
-            return 4;
+        } else if self < 0x1000000 { // 256^3
+            return 3;
         }
+        return 4;
     }
 }
 
@@ -99,22 +97,18 @@ pub impl U64BytesUsedTraitImpl of BytesUsedTrait<u64> {
     fn bytes_used(self: u64) -> u8 {
         if self <= Bounded::<u32>::MAX.into() { // 256^4
             return BytesUsedTrait::<u32>::bytes_used(self.try_into().unwrap());
-        } else {
-            if self < 0x1000000000000 { // 256^6
-                if self < 0x10000000000 {
-                    if self < 0x100000000 {
-                        return 4;
-                    }
-                    return 5;
+        } else if self < 0x1000000000000 { // 256^6
+            if self < 0x10000000000 {
+                if self < 0x100000000 {
+                    return 4;
                 }
-                return 6;
-            } else {
-                if self < 0x100000000000000 { // 256^7
-                    return 7;
-                } else {
-                    return 8;
-                }
+                return 5;
             }
+            return 6;
+        } else if self < 0x100000000000000 { // 256^7
+            return 7;
+        } else {
+            return 8;
         }
     }
 }
@@ -231,15 +225,13 @@ pub(crate) mod bits_used_internal {
             }
 
             return 5;
-        } else {
-            if self < 0b10000000 {
-                if self < 0b1000000 {
-                    return 6;
-                }
-                return 7;
+        } else if self < 0b10000000 {
+            if self < 0b1000000 {
+                return 6;
             }
-            return 8;
+            return 7;
         }
+        return 8;
     }
 }
 
@@ -560,7 +552,7 @@ mod tests {
         use core::num::traits::Bounded;
         use crate::eth_call::utils::math::Bitshift;
         use crate::eth_call::utils::traits::bytes::ToBytes;
-        use super::super::{BitsUsed, BytesUsedTrait};
+        use super::super::BytesUsedTrait;
 
         #[test]
         fn test_u128_bytes_used() {

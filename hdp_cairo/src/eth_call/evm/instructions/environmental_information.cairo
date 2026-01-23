@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Environmental Information Opcodes
+// ============================================================================
+// Implements ADDRESS, BALANCE, CALLER, CALLVALUE, CODE*, and related ops.
+
 use core::num::traits::{OverflowingAdd, Zero};
 use crate::eth_call::evm::errors::{EVMError, ensure};
 use crate::eth_call::evm::gas;
@@ -311,12 +316,10 @@ mod tests {
     use crate::eth_call::evm::model::vm::VMTrait;
     use crate::eth_call::evm::stack::StackTrait;
     use crate::eth_call::evm::state::StateTrait;
-    use crate::eth_call::evm::test_utils::{
-        VMBuilderTrait, callvalue, gas_price, origin, test_address,
-    };
+    use crate::eth_call::evm::test_utils::{VMBuilderTrait, callvalue, gas_price, origin};
     use crate::eth_call::utils::constants::EMPTY_KECCAK;
     use crate::eth_call::utils::contracts_test_data::counter_evm_bytecode;
-    use crate::eth_call::utils::helpers::{compute_starknet_address, u256_to_bytes_array};
+    use crate::eth_call::utils::helpers::u256_to_bytes_array;
     use crate::eth_call::utils::traits::EthAddressIntoU256;
     use crate::eth_call::utils::traits::array::ArrayExtTrait;
     use crate::eth_call::utils::traits::bytes::U8SpanExTrait;

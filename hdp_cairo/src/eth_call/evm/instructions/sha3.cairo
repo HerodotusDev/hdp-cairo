@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM SHA3 Opcode
+// ============================================================================
+// Implements the KECCAK256 hashing opcode over memory.
+
 use core::cmp::min;
 //! SHA3.
 use core::keccak::{cairo_keccak};

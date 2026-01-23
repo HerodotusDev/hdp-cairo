@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Exchange Opcodes
+// ============================================================================
+// Implements SWAP1..SWAP16 operations.
+
 //! Exchange Operations.
 
 use crate::eth_call::evm::errors::EVMError;

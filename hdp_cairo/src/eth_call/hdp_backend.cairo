@@ -1,3 +1,9 @@
+// ============================================================================
+// HDP Backend Bridge for Eth Call
+// ============================================================================
+// Adapts HDP memorizer data into EVM account/storage lookups
+// and provides block/environment fields for execution.
+
 use starknet::EthAddress;
 use crate::HDP;
 use crate::eth_call::evm::model::AddressTrait;
