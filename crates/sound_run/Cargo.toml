@@ -7,17 +7,24 @@ edition = "2021"
 path = "src/lib.rs"
 
 [dependencies]
-bytemuck.workspace = true
+bytemuck = { workspace = true, optional = true }
 cairo-vm.workspace = true
 clap.workspace = true
 dotenvy.workspace = true
 serde_json.workspace = true
 sound_hint_processor.workspace = true
-stwo_cairo_adapter.workspace = true
+stwo_cairo_adapter = { workspace = true, optional = true }
 tokio.workspace = true
 tracing-subscriber.workspace = true
 tracing.workspace = true
 types.workspace = true
 
+[features]
+# Enable STWO prover input generation (pulls in nightly-only prover deps via stwo).
+stwo = ["dep:stwo_cairo_adapter", "dep:bytemuck"]
+
 [build-dependencies]
 sha2 = "0.10.6"
+
+[lints]
+workspace = true
