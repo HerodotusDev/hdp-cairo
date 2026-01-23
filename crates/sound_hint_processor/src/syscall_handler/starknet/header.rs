@@ -55,7 +55,10 @@ impl CallHandler for HeaderCallHandler {
         let ptr = self
             .memorizer
             .read_key_ptr(&MaybeRelocatable::Int(key.hash()), self.dict_manager.clone())?;
-        let field_len: usize = (*vm.get_integer(ptr)?.as_ref()).try_into().unwrap();
+        let field_len_felt = *vm.get_integer(ptr)?.as_ref();
+        let field_len: usize = field_len_felt.try_into().map_err(|e| {
+            SyscallExecutionError::InternalError(format!("Invalid starknet header field_len: {field_len_felt} ({e})").into())
+        })?;
 
         let fields = vm
             .get_integer_range(ptr, field_len + 1)?
@@ -63,6 +66,8 @@ impl CallHandler for HeaderCallHandler {
             .map(|f| (*f.as_ref()))
             .collect::<Vec<Felt252>>();
 
-        Ok(StarknetBlock::from_memorizer(fields).handle(function_id))
+        StarknetBlock::try_from_memorizer(fields)
+            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))
+            .map(|b| b.handle(function_id))
     }
 }

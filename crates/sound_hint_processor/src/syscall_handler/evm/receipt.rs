@@ -56,7 +56,9 @@ impl CallHandler for ReceiptCallHandler {
 
         // data is the rlp-encoded receipt (injected by the verified mpt proof Cairo0 memorizer)
         let mut data = vm.get_integer(ptr)?.to_bytes_le().to_vec();
-        let tx_type = data[0];
+        let tx_type = *data
+            .first()
+            .ok_or_else(|| SyscallExecutionError::InternalError("Empty receipt RLP buffer".into()))?;
         let mut extra_len = 0;
         // If not a legacy tx, remove the tx type from the receipt
         if tx_type > 0 && tx_type < 4 {
@@ -76,10 +78,15 @@ impl CallHandler for ReceiptCallHandler {
             .take(length)
             .collect::<Vec<u8>>();
 
-        if extra_len != 0 {
-            Ok(CairoReceiptWithBloom::rlp_decode(&rlp[1..]).handle(function_id))
+        let receipt = if extra_len != 0 {
+            CairoReceiptWithBloom::try_rlp_decode(&rlp[1..])
         } else {
-            Ok(CairoReceiptWithBloom::rlp_decode(&rlp).handle(function_id))
+            CairoReceiptWithBloom::try_rlp_decode(&rlp)
         }
+        .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
+
+        receipt
+            .handle(function_id)
+            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))
     }
 }

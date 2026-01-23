@@ -52,12 +52,15 @@ impl CallHandler for TransactionCallHandler {
     }
 
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
+        let function_id_dbg = format!("{function_id:?}");
         let ptr = self
             .memorizer
             .read_key_ptr(&MaybeRelocatable::Int(key.hash()), self.dict_manager.clone())?;
         let mut data = vm.get_integer(ptr)?.to_bytes_le().to_vec();
 
-        let tx_type = data[0];
+        let tx_type = *data
+            .first()
+            .ok_or_else(|| SyscallExecutionError::InternalError(format!("Empty tx RLP buffer for key {key:?}").into()))?;
         let mut extra_len = 0;
         if tx_type > 0 && tx_type < 5 {
             data.remove(0);
@@ -65,8 +68,8 @@ impl CallHandler for TransactionCallHandler {
         }
 
         data.resize(128000, 0); // 128kb is max tx size
-        let header =
-            alloy_rlp::Header::decode(&mut data.as_slice()).map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?;
+        let header = alloy_rlp::Header::decode(&mut data.as_slice())
+            .map_err(|e| SyscallExecutionError::InternalError(format!("RLP header decode failed for tx key {key:?}: {e}").into()))?;
         let length = header.length_with_payload() + extra_len;
         let rlp = vm
             .get_integer_range(ptr, length.div_ceil(8))?
@@ -75,6 +78,12 @@ impl CallHandler for TransactionCallHandler {
             .take(length)
             .collect::<Vec<u8>>();
 
-        Ok(CairoTransaction::rlp_decode(&rlp).handle(function_id))
+        CairoTransaction::try_rlp_decode(&rlp)
+            .and_then(|tx| tx.handle(function_id))
+            .map_err(|e| {
+                SyscallExecutionError::InternalError(
+                    format!("tx decode/handle failed for key {key:?}, function_id {function_id_dbg}: {e}").into(),
+                )
+            })
     }
 }

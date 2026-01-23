@@ -67,6 +67,8 @@ impl CallHandler for StorageCallHandler {
             .take(length)
             .collect::<Vec<u8>>();
 
-        Ok(CairoStorage::rlp_decode(&rlp).handle(function_id))
+        CairoStorage::try_rlp_decode(&rlp)
+            .and_then(|s| s.handle(function_id))
+            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))
     }
 }

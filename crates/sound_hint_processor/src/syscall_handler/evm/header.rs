@@ -66,6 +66,8 @@ impl CallHandler for HeaderCallHandler {
             .take(length)
             .collect::<Vec<u8>>();
 
-        Ok(CairoHeader::rlp_decode(&rlp).handle(function_id))
+        CairoHeader::try_rlp_decode(&rlp)
+            .and_then(|h| h.handle(function_id))
+            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))
     }
 }

@@ -51,13 +51,17 @@ impl CallHandler for LogsCallHandler {
     }
 
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
+        let key_dbg = format!("{key:?}");
+        let function_id_dbg = format!("{function_id:?}");
         let ptr = self
             .memorizer
             .read_key_ptr(&MaybeRelocatable::Int(key.hash()), self.dict_manager.clone())?;
 
         // data is the rlp-encoded receipt (injected by the verified mpt proof Cairo0 memorizer)
         let mut data = vm.get_integer(ptr)?.to_bytes_le().to_vec();
-        let tx_type = data[0];
+        let tx_type = *data
+            .first()
+            .ok_or_else(|| SyscallExecutionError::InternalError(format!("Empty receipt RLP buffer for key {key_dbg}").into()))?;
         let mut extra_len = 0;
         // If not a legacy tx, remove the tx type from the receipt
         if tx_type > 0 && tx_type < 4 {
@@ -67,8 +71,8 @@ impl CallHandler for LogsCallHandler {
         }
 
         data.resize(128000, 0); // 128kb is max tx size
-        let header =
-            alloy_rlp::Header::decode(&mut data.as_slice()).map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?;
+        let header = alloy_rlp::Header::decode(&mut data.as_slice())
+            .map_err(|e| SyscallExecutionError::InternalError(format!("RLP header decode failed for receipt key {key_dbg}: {e}").into()))?;
         let length = header.length_with_payload() + extra_len;
         let rlp = vm
             .get_integer_range(ptr, length.div_ceil(8))?
@@ -77,12 +81,20 @@ impl CallHandler for LogsCallHandler {
             .take(length)
             .collect::<Vec<u8>>();
 
-        let key = log::Key::try_from(key).unwrap();
+        let key =
+            log::Key::try_from(key).map_err(|e| SyscallExecutionError::InternalError(format!("Invalid log key {key_dbg}: {e}").into()))?;
 
-        if extra_len != 0 {
-            Ok(CairoReceiptWithBloom::rlp_decode(&rlp[1..]).handle(function_id, key.log_index))
+        let receipt = if extra_len != 0 {
+            CairoReceiptWithBloom::try_rlp_decode(&rlp[1..])
         } else {
-            Ok(CairoReceiptWithBloom::rlp_decode(&rlp).handle(function_id, key.log_index))
+            CairoReceiptWithBloom::try_rlp_decode(&rlp)
         }
+        .map_err(|e| SyscallExecutionError::InternalError(format!("Receipt decode failed for key {key_dbg}: {e}").into()))?;
+
+        receipt.handle(function_id, key.log_index).map_err(|e| {
+            SyscallExecutionError::InternalError(
+                format!("Receipt handle failed for key {key_dbg}, function_id {function_id_dbg}: {e}").into(),
+            )
+        })
     }
 }
