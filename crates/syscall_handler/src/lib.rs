@@ -1,5 +1,4 @@
 #![allow(async_fn_in_trait)]
-#![feature(trait_alias)]
 #![forbid(unsafe_code)]
 #![warn(unused_crate_dependencies)]
 #![warn(unused_extern_crates)]
@@ -27,14 +26,15 @@ use call_contract::{arbitrary_type::ArbitraryTypeCallContractHandler, debug::Deb
 use keccak::KeccakHandler;
 use thiserror::Error;
 use tokio::{sync::RwLock, task};
+use tracing::debug;
 use traits::CallContractSyscallHandler;
 use types::{
     cairo::{
         new_syscalls::{CallContractRequest, CallContractResponse},
         traits::CairoType,
     },
-    ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID, STARKNET_MAINNET_CHAIN_ID,
-    STARKNET_TESTNET_CHAIN_ID,
+    ChainId, ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID,
+    STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
 };
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -149,11 +149,16 @@ impl<
             .ok_or(HintError::CustomHint(Box::from("syscall_ptr is None")))?;
 
         assert_eq!(*ptr, syscall_ptr);
+        let selector_felt = felt_from_ptr(vm, ptr)?;
+        let selector = SyscallSelector::try_from(selector_felt)?;
+        debug!(?selector, "Executing syscall");
 
-        match SyscallSelector::try_from(felt_from_ptr(vm, ptr)?)? {
+        match selector {
             SyscallSelector::CallContract => run_handler(&mut syscall_handler.call_contract_handler, ptr, vm).await,
             SyscallSelector::Keccak => run_handler(&mut syscall_handler.keccak_handler, ptr, vm).await,
         }?;
+
+        debug!(?selector, "Syscall completed successfully");
 
         syscall_handler.syscall_ptr = Some(*ptr);
 
@@ -233,15 +238,22 @@ impl<
                 self.injected_state_call_contract_handler.execute(request, vm).await
             }
             _ => {
-                let chain_id = <Felt252 as TryInto<u128>>::try_into(*vm.get_integer((request.calldata_start + 2)?)?)
-                    .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
+                let chain_id = <Felt252 as TryInto<u128>>::try_into(*vm.get_integer((request.calldata_start + 2)?)?).map_err(|e| {
+                    SyscallExecutionError::KeyDerivationFailed {
+                        handler: "call_contract",
+                        reason: e.to_string(),
+                    }
+                })?;
 
                 match chain_id {
                     ETHEREUM_MAINNET_CHAIN_ID | ETHEREUM_TESTNET_CHAIN_ID | OPTIMISM_MAINNET_CHAIN_ID | OPTIMISM_TESTNET_CHAIN_ID => {
                         self.evm_call_contract_handler.execute(request, vm).await
                     }
                     STARKNET_MAINNET_CHAIN_ID | STARKNET_TESTNET_CHAIN_ID => self.starknet_call_contract_handler.execute(request, vm).await,
-                    _ => Err(SyscallExecutionError::InternalError(Box::from("Unknown chain id"))),
+                    _ => Err(SyscallExecutionError::UnsupportedChainId {
+                        chain_id,
+                        operation: "call_contract",
+                    }),
                 }
             }
         }
@@ -277,7 +289,7 @@ where
 
     let values = vm.get_integer_range(array_data_start_ptr, array_size)?;
 
-    Ok(values.into_iter().map(|felt| felt.into_owned()).collect())
+    Ok(values.into_iter().map(std::borrow::Cow::into_owned).collect())
 }
 
 pub fn ignore_felt_array(ptr: &mut Relocatable) -> SyscallResult<()> {
@@ -313,20 +325,38 @@ pub fn write_maybe_relocatable<T: Into<MaybeRelocatable>>(
 
 #[derive(Debug, Error)]
 pub enum SyscallExecutionError {
-    #[error("Internal Error: {0}")]
+    #[error("internal: {0}")]
     InternalError(Box<str>),
+
+    #[error("failed to derive {handler} key from calldata: {reason}")]
+    KeyDerivationFailed { handler: &'static str, reason: String },
+
+    #[error("unsupported chain ID {chain_id} for {operation}")]
+    UnsupportedChainId { chain_id: ChainId, operation: &'static str },
+
+    #[error("memorizer lookup failed for key {key:?}: {reason}")]
+    MemorizerLookupFailed { key: String, reason: String },
+
+    #[error("memory: {0}")]
+    Memory(#[from] MemoryError),
+
+    #[error("vm: {0}")]
+    VirtualMachine(#[from] VirtualMachineError),
+
+    #[error("hint: {0}")]
+    Hint(#[from] HintError),
+
+    #[error("math: {0}")]
+    Math(#[from] MathError),
+
     #[error("Invalid address domain: {address_domain:?}")]
     InvalidAddressDomain { address_domain: Felt252 },
+
     #[error("Invalid syscall input: {input:?}; {info}")]
     InvalidSyscallInput { input: Felt252, info: String },
+
     #[error("Syscall error.")]
     SyscallError { error_data: Vec<Felt252> },
-}
-
-impl From<MemoryError> for SyscallExecutionError {
-    fn from(error: MemoryError) -> Self {
-        Self::InternalError(format!("Memory error: {}", error).into())
-    }
 }
 
 impl From<SyscallExecutionError> for HintError {
@@ -334,25 +364,6 @@ impl From<SyscallExecutionError> for HintError {
         HintError::CustomHint(format!("SyscallExecution error: {}", error).into())
     }
 }
-
-impl From<HintError> for SyscallExecutionError {
-    fn from(error: HintError) -> Self {
-        Self::InternalError(format!("Hint error: {}", error).into())
-    }
-}
-
-impl From<VirtualMachineError> for SyscallExecutionError {
-    fn from(error: VirtualMachineError) -> Self {
-        Self::InternalError(format!("VirtualMachine error: {}", error).into())
-    }
-}
-
-impl From<MathError> for SyscallExecutionError {
-    fn from(error: MathError) -> Self {
-        Self::InternalError(format!("MathError error: {}", error).into())
-    }
-}
-
 pub type SyscallResult<T> = Result<T, SyscallExecutionError>;
 pub type WriteResponseResult = SyscallResult<()>;
 

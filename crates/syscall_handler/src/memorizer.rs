@@ -61,8 +61,15 @@ impl Memorizer {
 
 impl CairoType for Memorizer {
     fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
-        let segment_index: isize = (*vm.get_integer((address + 0)?)?).try_into().unwrap();
-        let offset: usize = (*vm.get_integer((address + 1)?)?).try_into().unwrap();
+        let segment_index_felt = *vm.get_integer((address + 0)?)?;
+        let segment_index: isize = segment_index_felt.try_into().map_err(|e| {
+            MemoryError::ErrorRetrievingMessage(format!("Invalid memorizer segment_index: {segment_index_felt} ({e})").into())
+        })?;
+
+        let offset_felt = *vm.get_integer((address + 1)?)?;
+        let offset: usize = offset_felt
+            .try_into()
+            .map_err(|e| MemoryError::ErrorRetrievingMessage(format!("Invalid memorizer offset: {offset_felt} ({e})").into()))?;
 
         Ok(Self {
             dict_ptr: Relocatable::from((segment_index, offset)),

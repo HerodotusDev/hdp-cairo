@@ -24,4 +24,6 @@ pub trait CallHandler {
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult>;
 }
 
-pub trait CallContractSyscallHandler = SyscallHandler<Request = CallContractRequest, Response = CallContractResponse>;
+pub trait CallContractSyscallHandler: SyscallHandler<Request = CallContractRequest, Response = CallContractResponse> {}
+
+impl<T> CallContractSyscallHandler for T where T: SyscallHandler<Request = CallContractRequest, Response = CallContractResponse> {}

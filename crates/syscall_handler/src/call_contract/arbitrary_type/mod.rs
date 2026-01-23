@@ -19,7 +19,9 @@ impl traits::SyscallHandler for ArbitraryTypeCallContractHandler {
     type Response = CallContractResponse;
 
     fn read_request(&mut self, _vm: &VirtualMachine, _ptr: &mut Relocatable) -> SyscallResult<Self::Request> {
-        unreachable!()
+        Err(crate::SyscallExecutionError::InternalError(
+            "ArbitraryTypeCallContractHandler::read_request should not be called (request is parsed by CallContractHandlerRelay)".into(),
+        ))
     }
 
     async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
@@ -40,6 +42,9 @@ impl traits::SyscallHandler for ArbitraryTypeCallContractHandler {
     }
 
     fn write_response(&mut self, _response: Self::Response, _vm: &mut VirtualMachine, _ptr: &mut Relocatable) -> WriteResponseResult {
-        unreachable!()
+        Err(crate::SyscallExecutionError::InternalError(
+            "ArbitraryTypeCallContractHandler::write_response should not be called (response is written by CallContractHandlerRelay)"
+                .into(),
+        ))
     }
 }
