@@ -1,3 +1,7 @@
+// ============================================================================
+// Contract Execution Wrapper
+// ============================================================================
+// Runs the contract bootloader and exposes contract execution helpers.
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.cairo_builtins import (
     BitwiseBuiltin,

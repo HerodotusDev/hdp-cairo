@@ -1,3 +1,7 @@
+// ============================================================================
+// Debug Helpers
+// ============================================================================
+// Utility print functions for local debugging in Cairo0.
 func print_felt(value: felt) {
     %{ print(f"{ids.value}") %}
 

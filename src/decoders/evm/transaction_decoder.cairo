@@ -1,3 +1,13 @@
+// ============================================================================
+// EVM Transaction Decoder
+// ============================================================================
+// Extracts fields from RLP-encoded Ethereum transactions.
+// Handles legacy and typed transactions (EIP-2930, EIP-1559, EIP-4844, EIP-7702).
+//
+// Key operations:
+// - Locate field indices per transaction type
+// - Recover sender and compute transaction hash when requested
+// - Convert RLP values into BE Uint256 outputs
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian, felt_to_uint256
@@ -103,15 +113,24 @@ namespace TransactionDecoder {
         }
 
         if (field == TransactionField.INPUT) {
-            assert 1 = 0;  // returns as felt
+            with_attr error_message(
+                    "TransactionDecoder.get_field: INPUT field returns felt, not Uint256") {
+                assert 1 = 0;
+            }
         }
 
         if (field == TransactionField.ACCESS_LIST) {
-            assert 1 = 0;  // returns as felt
+            with_attr error_message(
+                    "TransactionDecoder.get_field: ACCESS_LIST field returns felt, not Uint256") {
+                assert 1 = 0;
+            }
         }
 
         if (field == TransactionField.BLOB_VERSIONED_HASHES) {
-            assert 1 = 0;  // returns as felt
+            with_attr error_message(
+                    "TransactionDecoder.get_field: BLOB_VERSIONED_HASHES field returns felt, not Uint256") {
+                assert 1 = 0;
+            }
         }
 
         let (local value_start_offset) = get_rlp_list_meta(rlp, rlp_start_offset);
@@ -127,19 +146,31 @@ namespace TransactionDecoder {
     ) -> (value: Uint256, bytes_len: felt) {
         alloc_locals;
         if (field == TransactionField.RECEIVER) {
-            assert 1 = 0;  // returns as felt
+            with_attr error_message(
+                    "TransactionDecoder.get_field_and_bytes_len: RECEIVER field returns felt, not Uint256") {
+                assert 1 = 0;
+            }
         }
 
         if (field == TransactionField.INPUT) {
-            assert 1 = 0;  // returns as felt
+            with_attr error_message(
+                    "TransactionDecoder.get_field_and_bytes_len: INPUT field returns felt, not Uint256") {
+                assert 1 = 0;
+            }
         }
 
         if (field == TransactionField.ACCESS_LIST) {
-            assert 1 = 0;  // returns as felt
+            with_attr error_message(
+                    "TransactionDecoder.get_field_and_bytes_len: ACCESS_LIST field returns felt, not Uint256") {
+                assert 1 = 0;
+            }
         }
 
         if (field == TransactionField.BLOB_VERSIONED_HASHES) {
-            assert 1 = 0;  // returns as felt
+            with_attr error_message(
+                    "TransactionDecoder.get_field_and_bytes_len: BLOB_VERSIONED_HASHES field returns felt, not Uint256") {
+                assert 1 = 0;
+            }
         }
 
         let (local value_start_offset) = get_rlp_list_meta(rlp, rlp_start_offset);
@@ -450,7 +481,10 @@ namespace TxTypeFieldMap {
 
         if (index == 0xFFFFFFFF) {
             // Field not available in this transaction type
-            assert 1 = 0;
+            with_attr error_message(
+                    "TxTypeFieldMap: field {field} not available for tx_type {tx_type}") {
+                assert 1 = 0;
+            }
         }
 
         return index;
@@ -584,19 +618,19 @@ namespace TxTypeFieldMap {
         //     10: V
         //     11: R
         //     12: S
-        dw 1;        // NONCE
+        dw 1;  // NONCE
         dw 0xFFFFFFFF;  // GAS_PRICE (not available in EIP-7702)
-        dw 4;        // GAS_LIMIT
-        dw 5;        // RECEIVER / DESTINATION
-        dw 6;        // VALUE
-        dw 7;        // INPUT / DATA
-        dw 10;       // V
-        dw 11;       // R
-        dw 12;       // S
-        dw 0;        // CHAIN_ID
-        dw 8;        // ACCESS_LIST
-        dw 3;        // MAX_FEE_PER_GAS
-        dw 2;        // MAX_PRIORITY_FEE_PER_GAS
-        dw 9;        // AUTHORIZATION_LIST
+        dw 4;  // GAS_LIMIT
+        dw 5;  // RECEIVER / DESTINATION
+        dw 6;  // VALUE
+        dw 7;  // INPUT / DATA
+        dw 10;  // V
+        dw 11;  // R
+        dw 12;  // S
+        dw 0;  // CHAIN_ID
+        dw 8;  // ACCESS_LIST
+        dw 3;  // MAX_FEE_PER_GAS
+        dw 2;  // MAX_PRIORITY_FEE_PER_GAS
+        dw 9;  // AUTHORIZATION_LIST
     }
 }

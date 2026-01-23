@@ -1,3 +1,7 @@
+// ============================================================================
+// EVM Account Verifier
+// ============================================================================
+// Verifies account proofs against header state roots and writes them to memorizer.
 from packages.eth_essentials.lib.block_header import extract_state_root_little
 from src.decoders.evm.header_decoder import HeaderDecoder, HeaderField, HeaderKey
 from src.memorizers.evm.memorizer import EvmMemorizer, EvmHashParams

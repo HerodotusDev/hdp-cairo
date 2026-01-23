@@ -1,3 +1,7 @@
+// ============================================================================
+// MPT Utilities
+// ============================================================================
+// Wrapper helpers for MPT proof verification and non-inclusion handling.
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian
 from starkware.cairo.common.alloc import alloc

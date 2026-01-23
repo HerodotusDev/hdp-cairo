@@ -1,3 +1,8 @@
+// ============================================================================
+// Chain Info Utilities
+// ============================================================================
+// Provides chain metadata (layout, encoding, byzantium block) for known chains
+// and exposes helpers for mapping chain IDs to layouts.
 from src.types import ChainInfo
 
 namespace Layout {
@@ -88,7 +93,9 @@ func fetch_chain_info(chain_id: felt) -> (info: ChainInfo) {
         );
     }
 
-    assert 1 = 0;
+    with_attr error_message("fetch_chain_info: unsupported chain_id {chain_id}") {
+        assert 1 = 0;
+    }
     return (
         info=ChainInfo(
             id=0, id_bytes_len=0, encoded_id=0, encoded_id_bytes_len=0, byzantium=0, layout=-1

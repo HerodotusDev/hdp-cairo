@@ -1,3 +1,7 @@
+// ============================================================================
+// Starknet Storage Verifier
+// ============================================================================
+// Verifies Starknet storage proofs and writes results to memorizer.
 // %builtins pedersen range_check bitwise poseidon
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.hash import hash2

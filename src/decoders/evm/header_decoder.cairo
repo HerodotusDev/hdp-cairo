@@ -1,3 +1,16 @@
+// ============================================================================
+// EVM Header Decoder
+// ============================================================================
+// Extracts fields from RLP-encoded Ethereum block headers.
+//
+// Header Structure (21 fields):
+// - Static fields (0-6): PARENT, UNCLE, COINBASE, STATE_ROOT, TX_ROOT, RECEIPT_ROOT, BLOOM
+// - Dynamic fields (7+): DIFFICULTY, NUMBER, GAS_LIMIT, TIMESTAMP, EXTRA, MIX_HASH, NONCE, etc.
+//
+// Data Representation:
+// - All data stored as little-endian 8-byte chunks
+// - Addresses are 20 bytes, hashes are 32 bytes
+// - Dynamic fields require RLP list traversal
 from packages.eth_essentials.lib.block_header import (
     extract_block_number_big,
     reverse_block_header_chunks,
@@ -92,7 +105,9 @@ namespace HeaderDecoder {
             return (res_array=res_array, res_len=bytes_len / 0x20 * 2);
         }
         if (field == HeaderField.EXTRA_DATA) {
-            assert 1 = 0;
+            with_attr error_message("HeaderDecoder.get_field: EXTRA_DATA field is not supported") {
+                assert 1 = 0;
+            }
         }
 
         // field is part of the dynamic section

@@ -1,3 +1,7 @@
+// ============================================================================
+// Bare Memorizer
+// ============================================================================
+// Thin wrapper around Cairo dicts to store memorized RLP blobs.
 from starkware.cairo.common.dict import dict_write, dict_read
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin

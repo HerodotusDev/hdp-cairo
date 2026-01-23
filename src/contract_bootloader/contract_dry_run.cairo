@@ -1,3 +1,8 @@
+// ============================================================================
+// Contract Dry Run Entry Point
+// ============================================================================
+// Executes a contract module in dry-run mode and outputs the task hash and
+// result merkle root without requiring proof artifacts.
 %builtins output pedersen range_check bitwise poseidon range_check96 add_mod mul_mod
 
 from starkware.cairo.common.cairo_builtins import (

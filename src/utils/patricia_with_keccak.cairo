@@ -1,3 +1,8 @@
+// ============================================================================
+// Patricia Trie (Keccak)
+// ============================================================================
+// Implements Patricia trie updates and proofs using truncated Keccak hashing.
+// Used for MPT-like verification paths in Cairo0.
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.math import (

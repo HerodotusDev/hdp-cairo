@@ -1,3 +1,7 @@
+// ============================================================================
+// Core Types
+// ============================================================================
+// Shared structs for chain info, MMR metadata, tasks, and trie nodes.
 struct ChainInfo {
     id: felt,
     id_bytes_len: felt,

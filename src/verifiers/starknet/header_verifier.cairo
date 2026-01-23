@@ -1,3 +1,7 @@
+// ============================================================================
+// Starknet Header Verifier
+// ============================================================================
+// Verifies Starknet header inclusion in Poseidon MMR batches.
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, HashBuiltin
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.dict import dict_read
@@ -45,27 +49,27 @@ func verify_mmr_batches{
         %{ segments.write_arg(ids.peaks_poseidon, header_starknet_with_mmr.mmr_meta.peaks) %}
         tempvar peaks_len: felt = nondet %{ len(header_starknet_with_mmr.mmr_meta.peaks) %};
 
-        let (peaks_dict, peaks_dict_start) = validate_poseidon_mmr_meta(&mmr_meta_poseidon, peaks_poseidon, peaks_len);
+        let (peaks_dict, peaks_dict_start) = validate_poseidon_mmr_meta(
+            &mmr_meta_poseidon, peaks_poseidon, peaks_len
+        );
         assert mmr_metas_poseidon[mmr_meta_idx_poseidon] = mmr_meta_poseidon;
         tempvar n_header_proofs: felt = nondet %{ len(header_starknet_with_mmr.headers) %};
-        verify_headers_with_mmr_peaks_poseidon{mmr_meta_poseidon=mmr_meta_poseidon, peaks_dict=peaks_dict}(n_header_proofs);
+        verify_headers_with_mmr_peaks_poseidon{
+            mmr_meta_poseidon=mmr_meta_poseidon, peaks_dict=peaks_dict
+        }(n_header_proofs);
 
         default_dict_finalize(peaks_dict_start, peaks_dict, 0);
 
         %{ vm_exit_scope() %}
-        return verify_mmr_batches(
-            idx=idx - 1,
-            mmr_meta_idx_poseidon=mmr_meta_idx_poseidon + 1,
-        );
+        return verify_mmr_batches(idx=idx - 1, mmr_meta_idx_poseidon=mmr_meta_idx_poseidon + 1);
     }
-    
-    assert 0 = 1;
+
+    with_attr error_message("Invalid Starknet header MMR: Poseidon hashing expected") {
+        assert 0 = 1;
+    }
 
     %{ vm_exit_scope() %}
-    return verify_mmr_batches(
-        idx=idx,
-        mmr_meta_idx_poseidon=mmr_meta_idx_poseidon,
-    );
+    return verify_mmr_batches(idx=idx, mmr_meta_idx_poseidon=mmr_meta_idx_poseidon);
 }
 
 // Guard function that verifies the inclusion of headers in the MMR.

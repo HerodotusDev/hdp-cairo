@@ -1,3 +1,15 @@
+// ============================================================================
+// Verification Orchestration
+// ============================================================================
+// This module dispatches verification by chain layout and proof type:
+//
+// - Chain state verification: iterates over chain_proofs and routes each batch
+//   to the EVM or Starknet verifier based on chain layout.
+// - Injected state verification: iterates over injected proofs and routes each
+//   proof by type (READ vs WRITE) to inclusion or update verification.
+// - EVM vs Starknet handling: EVM uses keccak/poseidon-aware MMR validation,
+//   while Starknet uses poseidon-only MMR validation with starknet-specific
+//   header and storage formats.
 from src.verifiers.evm.verify import run_state_verification as evm_run_state_verification
 from src.verifiers.starknet.verify import run_state_verification as starknet_run_state_verification
 from src.verifiers.injected_state.verify import (
@@ -97,7 +109,10 @@ func run_chain_state_verification_inner{
         }
     }
 
-    assert 0 = 1;
+    with_attr error_message(
+            "run_chain_state_verification_inner: unsupported chain layout (expected EVM=0 or STARKNET=1, got {chain_info.layout})") {
+        assert 0 = 1;
+    }
     return (mmr_meta_idx_poseidon=0, mmr_meta_idx_keccak=0, idx=0);
 }
 
@@ -191,7 +206,10 @@ func run_injected_state_verification_inner{
         return run_injected_state_verification_inner(idx=idx - 1);
     }
 
-    assert 0 = 1;
+    with_attr error_message(
+            "run_injected_state_verification_inner: unsupported proof_type (expected READ=0 or WRITE=1, got {proof_type})") {
+        assert 0 = 1;
+    }
 
     return (idx=0);
 }

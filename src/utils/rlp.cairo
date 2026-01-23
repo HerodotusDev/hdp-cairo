@@ -1,3 +1,21 @@
+// ============================================================================
+// RLP Utilities
+// ============================================================================
+// Provides helpers for decoding RLP-encoded data into Cairo-friendly layouts.
+//
+// Representation:
+// - Data is stored as little-endian 8-byte chunks (LE 64-bit words).
+// - Byte offsets are tracked to support short and long strings/lists.
+//
+// Encoding rules (RLP):
+// - Single byte [0x00, 0x7f]
+// - Short string [0x80, 0xb7], long string [0xb8, 0xbf]
+// - Short list [0xc0, 0xf7], long list [0xf8, 0xff]
+//
+// Key functions:
+// - get_rlp_list_meta / get_rlp_list_bytes_len: list boundaries
+// - rlp_list_retrieve: fetch list elements by index
+// - le_chunks_to_uint256: convert LE chunks to Uint256
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from packages.eth_essentials.lib.utils import felt_divmod
 from packages.eth_essentials.lib.rlp_little import (
@@ -401,7 +419,9 @@ func le_chunks_to_uint256{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_ar
         );
     }
 
-    assert 0 = 1;
+    with_attr error_message("Invalid RLP to Uint256 conversion: elements_len must be 1-4") {
+        assert 0 = 1;
+    }
 
     return (Uint256(low=0, high=0));
 }
@@ -695,6 +715,8 @@ func get_rlp_len{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt
     }
 
     // Unknown item_type
-    assert 1 = 0;
+    with_attr error_message("RLP decode failed: unknown item_type {item_type}") {
+        assert 1 = 0;
+    }
     return 0;
 }

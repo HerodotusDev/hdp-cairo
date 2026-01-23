@@ -1,3 +1,8 @@
+// ============================================================================
+// Merkle Utilities
+// ============================================================================
+// Helpers for computing task/result Merkle roots and hash aggregation over
+// Uint256 leaves using Keccak.
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.cairo_keccak.keccak import (
     cairo_keccak as keccak,

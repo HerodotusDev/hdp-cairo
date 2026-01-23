@@ -1,3 +1,7 @@
+// ============================================================================
+// MPT Verifier (Starknet)
+// ============================================================================
+// Verifies Starknet Patricia proofs using Poseidon-based hashing utilities.
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.hash import hash2
 from starkware.cairo.common.sponge_as_hash import SpongeHashBuiltin
@@ -137,7 +141,10 @@ func traverse_binary_leaf{
     }
 
     // If the leaf node is a binary node, we always have inclusion.
-    assert traversed_path = expected_path;
+    with_attr error_message(
+            "MPT verification failed: traversed_path {traversed_path} != expected_path {expected_path}") {
+        assert traversed_path = expected_path;
+    }
 
     if (node_path == 0) {
         return (root=root, value=leaf.left, inclusion_flag=1);
@@ -147,7 +154,9 @@ func traverse_binary_leaf{
         return (root=root, value=leaf.right, inclusion_flag=1);
     }
 
-    assert 0 = 1;
+    with_attr error_message("MPT verification failed: unexpected node structure") {
+        assert 0 = 1;
+    }
 
     return (root=0, value=0, inclusion_flag=0);
 }

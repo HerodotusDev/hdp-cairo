@@ -1,3 +1,8 @@
+// ============================================================================
+// Syscall Execution Router
+// ============================================================================
+// Dispatches Cairo0 syscalls (CallContract, Keccak) and routes state access
+// to the correct chain-specific memorizer/decoder based on chain layout.
 from starkware.starknet.common.new_syscalls import (
     CALL_CONTRACT_SELECTOR,
     CallContractRequest,
@@ -98,7 +103,9 @@ func execute_syscalls{
     }
 
     // Unknown selector
-    assert 1 = 0;
+    with_attr error_message("execute_syscalls: unsupported selector {selector}") {
+        assert 1 = 0;
+    }
 
     return execute_syscalls(execution_context=execution_context, syscall_ptr_end=syscall_ptr_end);
 }
@@ -235,7 +242,10 @@ func execute_call_contract{
         }
 
         // Unknown DictId
-        assert 1 = 0;
+        with_attr error_message(
+                "execute_call_contract: unsupported injected_state handler id {call_handler_id}") {
+            assert 1 = 0;
+        }
 
         return ();
     }
@@ -270,7 +280,9 @@ func execute_call_contract{
     }
 
     // Unknown DictId
-    assert 1 = 0;
+    with_attr error_message("execute_call_contract: unsupported chain layout {layout}") {
+        assert 1 = 0;
+    }
 
     return ();
 }

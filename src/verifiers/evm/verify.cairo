@@ -1,14 +1,14 @@
+// ============================================================================
+// EVM Verification Orchestrator
+// ============================================================================
+// Runs MMR/header verification, then account/storage/tx/receipt verifiers.
 from src.verifiers.evm.account_verifier import verify_accounts
 from src.verifiers.evm.storage_item_verifier import verify_storage_items
 from src.verifiers.evm.header_verifier import verify_mmr_batches
 from src.verifiers.evm.block_tx_verifier import verify_block_tx_proofs
 from src.verifiers.evm.receipt_verifier import verify_block_receipt_proofs
 from starkware.cairo.common.dict_access import DictAccess
-from starkware.cairo.common.cairo_builtins import (
-    PoseidonBuiltin,
-    BitwiseBuiltin,
-    HashBuiltin,
-)
+from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin, HashBuiltin
 from src.types import MMRMetaPoseidon, MMRMetaKeccak, ChainInfo
 from src.utils.chain_info import fetch_chain_info
 
@@ -25,7 +25,9 @@ func run_state_verification{
     mmr_metas_poseidon: MMRMetaPoseidon*,
     mmr_metas_keccak: MMRMetaKeccak*,
     chain_info: ChainInfo,
-}(mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt) -> (mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt) {
+}(mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt) -> (
+    mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt
+) {
     alloc_locals;
 
     // Step 1: Verify MMR and headers inclusion

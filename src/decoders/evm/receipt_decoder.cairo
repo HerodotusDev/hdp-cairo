@@ -1,3 +1,15 @@
+// ============================================================================
+// EVM Receipt Decoder
+// ============================================================================
+// Extracts fields from RLP-encoded Ethereum transaction receipts.
+// Supports typed receipts (EIP-2718) and legacy receipts.
+//
+// Fields:
+// - SUCCESS, CUMULATIVE_GAS_USED, BLOOM
+//
+// Data Representation:
+// - Values are returned as BE Uint256 (two felts)
+// - Bloom is expanded into a Uint256 array
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
 from src.decoders.evm.transaction_decoder import TransactionType
 from src.utils.chain_info import ChainInfo

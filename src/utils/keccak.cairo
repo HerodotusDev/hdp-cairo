@@ -1,3 +1,7 @@
+// ============================================================================
+// Keccak Utilities
+// ============================================================================
+// Helpers for truncated Keccak hashing and hash builtin compatibility.
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.math import split_felt, unsigned_div_rem

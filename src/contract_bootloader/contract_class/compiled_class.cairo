@@ -1,3 +1,7 @@
+// ============================================================================
+// Compiled Class Utilities
+// ============================================================================
+// Defines compiled class structures and hash computation helpers.
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin
 from starkware.cairo.common.hash_state_poseidon import (

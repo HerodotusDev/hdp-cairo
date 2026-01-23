@@ -1,3 +1,8 @@
+// ============================================================================
+// Starknet State Access
+// ============================================================================
+// Dispatches Starknet memorizer reads and decodes header/storage values using
+// per-target decoder tables.
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
 from starkware.cairo.common.uint256 import uint256_reverse_endian, Uint256
 from starkware.cairo.common.alloc import alloc
