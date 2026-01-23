@@ -3,7 +3,8 @@ authors = ["Okm165"]
 language = "en"
 multilingual = false
 src = "src"
-title = "Herodotus Data Processor Documentation"
+title = "HDP Cairo Documentation"
+description = "Provable historical blockchain data in Cairo"
 
 [output.html]
 git-repository-url = "https://github.com/HerodotusDev/hdp-cairo"
