@@ -63,11 +63,7 @@ impl MultiMMWithdrawalDictImpl of MultiMMWithdrawalDictTrait {
         let mut new_token_keys = ArrayTrait::new();
         let mut new_balances = ArrayTrait::new();
 
-        loop {
-            if i >= len {
-                break;
-            }
-
+        while i < len {
             let existing_mm = *self.mm_keys.at(i);
             let existing_token = *self.token_keys.at(i);
             let existing_balance = *self.balances.at(i);
@@ -105,10 +101,7 @@ impl MultiMMWithdrawalDictImpl of MultiMMWithdrawalDictTrait {
         ref self: MultiMMWithdrawalDict, mm_withdrawal_address: u256, token_address: u256,
     ) -> Option<u256> {
         let mut i = 0;
-        loop {
-            if i >= self.mm_keys.len() {
-                break;
-            }
+        while i < self.mm_keys.len() {
             if *self.mm_keys.at(i) == mm_withdrawal_address
                 && *self.token_keys.at(i) == token_address {
                 return Option::Some(*self.balances.at(i));
@@ -123,20 +116,13 @@ impl MultiMMWithdrawalDictImpl of MultiMMWithdrawalDictTrait {
         let mut processed_mms = ArrayTrait::new();
 
         let mut i = 0;
-        loop {
-            if i >= self.mm_keys.len() {
-                break;
-            }
-
+        while i < self.mm_keys.len() {
             let mm = *self.mm_keys.at(i);
 
             // Check if this MM has already been processed
             let mut skip = false;
             let mut j = 0;
-            loop {
-                if j >= processed_mms.len() {
-                    break;
-                }
+            while j < processed_mms.len() {
                 if *processed_mms.at(j) == mm {
                     skip = true;
                     break;
@@ -153,10 +139,7 @@ impl MultiMMWithdrawalDictImpl of MultiMMWithdrawalDictTrait {
 
             let mut balances_to_withdraw = ArrayTrait::new();
             let mut k = 0;
-            loop {
-                if k >= self.mm_keys.len() {
-                    break;
-                }
+            while k < self.mm_keys.len() {
                 if *self.mm_keys.at(k) == mm {
                     balances_to_withdraw
                         .append(
