@@ -21,7 +21,7 @@ use indexer_client as _;
 use serde_json as _;
 use sound_run::HDP_COMPILED_JSON;
 use syscall_handler as _;
-use tracing::{self as _, info, level_filters::LevelFilter};
+use tracing::{self as _, debug, info, level_filters::LevelFilter};
 use tracing_subscriber::EnvFilter;
 use types::error::Error;
 
@@ -54,6 +54,18 @@ pub struct UpdateArgs {
     local: bool,
 }
 
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+pub struct EnvCheckArgs {
+    #[arg(
+        short = 'i',
+        long = "inputs",
+        default_value = "dry_run_output.json",
+        help = "Path to the dry-run output JSON (the file produced by `hdp dry-run`)"
+    )]
+    pub inputs: PathBuf,
+}
+
 #[derive(Subcommand, Debug)]
 enum Commands {
     /// Run the dry-run functionality
@@ -77,6 +89,9 @@ enum Commands {
     /// Print example .env file with info
     #[command(name = "env-info")]
     EnvInfo,
+    /// Check which RPC env vars are required for a given dry-run output (and which are missing)
+    #[command(name = "env-check")]
+    EnvCheck(EnvCheckArgs),
     /// Update HDP CLI
     ///
     /// Runs the update/install command: ```curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash```
@@ -95,24 +110,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
     setup_tracing(cli.log_level.as_ref(), cli.debug)?;
+    debug!(?cli, "Parsed CLI arguments");
 
-    match cli.command {
-        Commands::DryRun(_) | Commands::FetchProofs(_) | Commands::SoundRun(_) => check_env()?,
+    match &cli.command {
+        Commands::DryRun(_) | Commands::FetchProofs(_) | Commands::SoundRun(_) => check_env(&cli.command)?,
         _ => {}
     }
 
-    match cli.command {
-        Commands::DryRun(args) => dry_run::run_with_args(args).await?,
-        Commands::FetchProofs(args) => fetcher::run_with_args(args).await?,
-        Commands::SoundRun(args) => sound_run::run_with_args(args).await?,
+    let command_name = format!("{:?}", cli.command);
+    info!(command = %command_name, "Command start");
+
+    let result: Result<(), Box<dyn std::error::Error>> = match cli.command {
+        Commands::DryRun(args) => dry_run::run_with_args(args).await.map_err(Into::into),
+        Commands::FetchProofs(args) => fetcher::run_with_args(args).await.map_err(Into::into),
+        Commands::SoundRun(args) => sound_run::run_with_args(args).await.map_err(Into::into),
         Commands::ProgramHash { program } => {
-            let program_file = std::fs::read(program.unwrap_or(PathBuf::from(HDP_COMPILED_JSON))).map_err(Error::IO)?;
+            let program_path = program.unwrap_or_else(|| PathBuf::from(HDP_COMPILED_JSON));
+            let program_file = std::fs::read(&program_path).map_err(Error::IO)?;
             let program = Program::from_bytes(&program_file, Some(cairo_run::CairoRunConfig::default().entrypoint))?;
 
-            println!(
-                "{}",
-                compute_program_hash_chain(&program.get_stripped_program().unwrap(), 0)?.to_hex_string()
-            );
+            let stripped = program.get_stripped_program().map_err(|e| {
+                Error::IO(std::io::Error::other(format!(
+                    "Failed to strip program at {}: {e}",
+                    program_path.display()
+                )))
+            })?;
+
+            println!("{}", compute_program_hash_chain(&stripped, 0)?.to_hex_string());
+            Ok(())
         }
         Commands::Link => {
             let result: Result<(), Error> = (|| {
@@ -166,8 +191,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             })();
 
             result?;
+            Ok(())
         }
-        Commands::EnvInfo => print_env_info()?,
+        Commands::EnvInfo => print_env_info(),
+        Commands::EnvCheck(args) => env_check(args),
         Commands::Update(args) => {
             let script = if args.local {
                 // Load script from local filesystem
@@ -189,7 +216,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .map_err(Error::IO)?;
 
                 let mut script = Vec::new();
-                curl.stdout.take().unwrap().read_to_end(&mut script)?;
+                curl.stdout
+                    .take()
+                    .ok_or_else(|| Error::IO(std::io::Error::other("Failed to capture curl stdout")))?
+                    .read_to_end(&mut script)?;
                 script
             };
 
@@ -206,7 +236,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let status = bash_cmd
                 .spawn()
                 .and_then(|mut child| {
-                    child.stdin.as_mut().unwrap().write_all(&script)?;
+                    child
+                        .stdin
+                        .as_mut()
+                        .ok_or_else(|| std::io::Error::other("Failed to open stdin pipe to installer"))?
+                        .write_all(&script)?;
                     child.wait()
                 })
                 .map_err(Error::IO)?;
@@ -214,12 +248,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             if !status.success() {
                 return Err(Box::new(Error::IO(std::io::Error::other("Installer failed"))) as Box<dyn std::error::Error>);
             }
+            Ok(())
         }
         Commands::Pwd => {
             let hdp_path = get_hdp_path()?;
             println!("{}", hdp_path.display());
+            Ok(())
         }
-    }
+    };
+
+    result?;
+    info!(command = %command_name, "Command completed");
 
     Ok(())
 }
@@ -265,18 +304,134 @@ fn print_env_info() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn check_env() -> Result<(), Box<dyn std::error::Error>> {
-    info!("ℹ️  If you're having problems with the .env file, or RPC endpoints, run `hdp env-info` to get more information.");
+fn env_check(args: EnvCheckArgs) -> Result<(), Box<dyn std::error::Error>> {
+    use types::{RPC_URL_HERODOTUS_INDEXER, RPC_URL_OPTIMISM_TESTNET};
 
-    // Check required environment variables
-    for env_var in ["RPC_URL_HERODOTUS_INDEXER"] {
-        if std::env::var(env_var).is_err() {
-            let _ = print_env_info(); // Ignore the error to avoid accidentally hiding the error below
-            return Err(format!("Missing required environment variable: {}", env_var).into());
-        }
+    // Touch the constants so `cargo clippy --all-targets` doesn't complain if some are only
+    // referenced through the helper. (Keeps the import list stable.)
+    let _ = RPC_URL_OPTIMISM_TESTNET;
+
+    let is_missing = |name: &str| -> bool { std::env::var(name).map(|v| v.trim().is_empty()).unwrap_or(true) };
+
+    let mut required = required_env_vars_for_fetch_inputs(&args.inputs)?;
+    required.insert(RPC_URL_HERODOTUS_INDEXER);
+
+    let mut missing: Vec<&'static str> = required.iter().copied().filter(|v| is_missing(v)).collect();
+    missing.sort();
+    missing.dedup();
+
+    println!("Required env vars for `{}`:", args.inputs.display());
+    for v in &required {
+        println!("- {v}");
     }
 
-    Ok(())
+    if missing.is_empty() {
+        println!();
+        println!("✅ All required env vars are set.");
+        return Ok(());
+    }
+
+    println!();
+    println!("❌ Missing env vars:");
+    for v in &missing {
+        println!("- {v}");
+    }
+    println!();
+    println!("Tip: run `hdp env-info` to print an example `.env` template.");
+
+    Err(format!("Missing required env vars: {}", missing.join(", ")).into())
+}
+
+fn check_env(cmd: &Commands) -> Result<(), Box<dyn std::error::Error>> {
+    info!("ℹ️  If you're having problems with the .env file, or RPC endpoints, run `hdp env-info` to get more information.");
+
+    let is_missing = |name: &str| -> bool { std::env::var(name).map(|v| v.trim().is_empty()).unwrap_or(true) };
+
+    match cmd {
+        // Dry-run may hit RPCs depending on the module, but we can't cheaply infer which ones here.
+        // So we don't hard-fail on missing RPC env vars for dry-run; errors will be surfaced with context at call sites.
+        Commands::DryRun(_) => Ok(()),
+
+        // Sound-run consumes already-fetched proofs; it should not require network env vars.
+        Commands::SoundRun(_) => Ok(()),
+
+        Commands::FetchProofs(args) => {
+            use types::RPC_URL_HERODOTUS_INDEXER;
+
+            // Always required for MMR/header proofs.
+            if is_missing(RPC_URL_HERODOTUS_INDEXER) {
+                let _ = print_env_info();
+                return Err(format!("Missing required environment variable: {RPC_URL_HERODOTUS_INDEXER}").into());
+            }
+
+            let required = required_env_vars_for_fetch_inputs(&args.inputs)?;
+            let mut missing: Vec<&'static str> = required.iter().copied().filter(|v| is_missing(v)).collect();
+            missing.sort();
+            missing.dedup();
+
+            if !missing.is_empty() {
+                let _ = print_env_info();
+                return Err(format!("Missing required environment variables for fetch-proofs: {}", missing.join(", ")).into());
+            }
+
+            Ok(())
+        }
+
+        _ => Ok(()),
+    }
+}
+
+fn required_env_vars_for_fetch_inputs(inputs_path: &PathBuf) -> Result<std::collections::BTreeSet<&'static str>, Error> {
+    use dry_hint_processor::DryRunSyscallHandler;
+    use types::{
+        ETHEREUM_MAINNET_CHAIN_ID, ETHEREUM_TESTNET_CHAIN_ID, OPTIMISM_MAINNET_CHAIN_ID, OPTIMISM_TESTNET_CHAIN_ID,
+        RPC_URL_ETHEREUM_MAINNET, RPC_URL_ETHEREUM_TESTNET, RPC_URL_OPTIMISM_MAINNET, RPC_URL_OPTIMISM_TESTNET, RPC_URL_STARKNET_MAINNET,
+        RPC_URL_STARKNET_TESTNET, STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID,
+    };
+
+    let bytes = std::fs::read(inputs_path).map_err(Error::IO)?;
+    let syscall_handler: DryRunSyscallHandler = serde_json::from_slice(&bytes).map_err(Error::SerdeJson)?;
+
+    let proof_keys = fetcher::parse_syscall_handler(syscall_handler).map_err(|e| Error::Internal(e.to_string()))?;
+
+    let mut chain_ids = std::collections::BTreeSet::<types::ChainId>::new();
+    for k in proof_keys.evm.header_keys.iter() {
+        chain_ids.insert(k.chain_id);
+    }
+    for k in proof_keys.evm.account_keys.iter() {
+        chain_ids.insert(k.chain_id);
+    }
+    for k in proof_keys.evm.storage_keys.iter() {
+        chain_ids.insert(k.chain_id);
+    }
+    for k in proof_keys.evm.receipt_keys.iter() {
+        chain_ids.insert(k.chain_id);
+    }
+    for k in proof_keys.evm.transaction_keys.iter() {
+        chain_ids.insert(k.chain_id);
+    }
+    for k in proof_keys.starknet.header_keys.iter() {
+        chain_ids.insert(k.chain_id);
+    }
+    for k in proof_keys.starknet.storage_keys.iter() {
+        chain_ids.insert(k.chain_id);
+    }
+
+    let mut required = std::collections::BTreeSet::<&'static str>::new();
+    for chain_id in chain_ids {
+        let env_var = match chain_id {
+            ETHEREUM_MAINNET_CHAIN_ID => RPC_URL_ETHEREUM_MAINNET,
+            ETHEREUM_TESTNET_CHAIN_ID => RPC_URL_ETHEREUM_TESTNET,
+            OPTIMISM_MAINNET_CHAIN_ID => RPC_URL_OPTIMISM_MAINNET,
+            OPTIMISM_TESTNET_CHAIN_ID => RPC_URL_OPTIMISM_TESTNET,
+            STARKNET_MAINNET_CHAIN_ID => RPC_URL_STARKNET_MAINNET,
+            STARKNET_TESTNET_CHAIN_ID => RPC_URL_STARKNET_TESTNET,
+            _ => continue,
+        };
+        required.insert(env_var);
+    }
+
+    Ok(required)
 }
 
 fn setup_tracing(log_level: Option<&String>, debug: bool) -> Result<(), Box<dyn std::error::Error>> {

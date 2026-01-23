@@ -26,3 +26,7 @@ tracing-subscriber.workspace = true
 
 [features]
 default = ["fetcher/progress_bars"]
+stwo = ["sound_run/stwo"]
+
+[lints]
+workspace = true
