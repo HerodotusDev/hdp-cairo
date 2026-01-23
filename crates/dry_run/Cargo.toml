@@ -21,3 +21,6 @@ types.workspace = true
 
 [build-dependencies]
 sha2 = "0.10.6"
+
+[lints]
+workspace = true
