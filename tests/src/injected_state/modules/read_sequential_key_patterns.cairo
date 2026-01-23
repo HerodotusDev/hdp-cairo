@@ -17,10 +17,7 @@ mod read_sequential_key_patterns {
         // Build trie with sequential keys
         let mut current_root = 0x0;
         let mut i = 0;
-        loop {
-            if i >= sequential_keys.len() {
-                break;
-            }
+        while i < sequential_keys.len() {
             let key = *sequential_keys.at(i);
             let value = *sequential_values.at(i);
             current_root = hdp.injected_state.write_key(label, key, value);
@@ -29,10 +26,7 @@ mod read_sequential_key_patterns {
 
         // Read all sequential keys and verify
         let mut j = 0;
-        loop {
-            if j >= sequential_keys.len() {
-                break;
-            }
+        while j < sequential_keys.len() {
             let expected_key = *sequential_keys.at(j);
             let expected_value = *sequential_values.at(j);
 

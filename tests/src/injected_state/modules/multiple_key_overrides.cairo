@@ -24,11 +24,7 @@ mod multiple_key_overrides {
 
         // Perform multiple overwrites of the same key
         let mut i = 0;
-        loop {
-            if i >= values.len() {
-                break;
-            }
-
+        while i < values.len() {
             let val = *values.at(i);
             let new_root = hdp.injected_state.write_key(label, key, val);
 
@@ -43,15 +39,9 @@ mod multiple_key_overrides {
 
         // Verify all roots are unique (except potentially the first one)
         let mut j = 0;
-        loop {
-            if j >= root_history.len() {
-                break;
-            }
+        while j < root_history.len() {
             let mut k = j + 1;
-            loop {
-                if k >= root_history.len() {
-                    break;
-                }
+            while k < root_history.len() {
                 let root_j = *root_history.at(j);
                 let root_k = *root_history.at(k);
                 assert!(root_j != root_k, "Roots should be different");

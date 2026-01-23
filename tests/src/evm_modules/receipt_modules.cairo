@@ -23,11 +23,7 @@ mod receipts_get_status {
         ];
 
         let mut i: usize = 0;
-        loop {
-            if i >= tx_indexes.len() {
-                break;
-            }
-
+        while i < tx_indexes.len() {
             hdp
                 .evm
                 .block_receipt_get_status(

@@ -25,3 +25,10 @@ test-context = "0.4.1"
 tokio.workspace = true
 tracing.workspace = true
 types.workspace = true
+
+[features]
+# Heavy integration tests that require opening sockets / external services.
+integration_tests = []
+
+[lints]
+workspace = true
