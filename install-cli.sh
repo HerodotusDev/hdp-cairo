@@ -256,7 +256,16 @@ build_cli() {
   local clean_mode="${1:-false}"
   clean_build_artifacts "$clean_mode"
   echo -e "${BLUE}${INFO}${NC} Building ${BOLD}$BIN_NAME${NC} (release)..."
-  (cd "$REPO_DIR" && cargo build --release --bin "$BIN_NAME")
+  # Default build uses the repo toolchain. To enable STWO prover input support:
+  # - set STWO=1 (or STWO=true) when running this installer, or
+  # - rebuild later with: cargo build --release --bin hdp-cli --features stwo
+  local stwo_mode="${STWO:-false}"
+  if [ "$stwo_mode" = "1" ] || [ "$stwo_mode" = "true" ]; then
+    echo -e "${BLUE}${INFO}${NC} STWO mode enabled: building with --features stwo"
+    (cd "$REPO_DIR" && cargo build --release --bin "$BIN_NAME" --features stwo)
+  else
+    (cd "$REPO_DIR" && cargo build --release --bin "$BIN_NAME")
+  fi
 }
 
 ensure_symlink() {
@@ -377,6 +386,7 @@ main() {
   echo -e "  ${CYAN}$REPO_DIR${NC}"
   echo
   echo -e "${YELLOW}${ARROW}${NC} Once you run ${BOLD}cargo build --release${NC}, the symlink will automatically make your version available everywhere using ${BOLD}hdp${NC}"
+  echo -e "${YELLOW}${ARROW}${NC} For STWO prover input support, rebuild with: ${BOLD}cargo +nightly build --release --bin hdp-cli --features stwo${NC}"
   echo -e "${YELLOW}${ARROW}${NC} You can change branches, update the repo, add prints, or modify code as you please"
   echo -e "${YELLOW}${ARROW}${NC} The symlink always points to your latest built version"
   echo -e "${YELLOW}${ARROW}${NC} You can also symlink this repo into your project for easier access to debugging"
