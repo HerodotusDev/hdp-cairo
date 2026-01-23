@@ -10,5 +10,11 @@ dependencies = [
     "cairo-lang @ file://${PROJECT_ROOT}/packages/cairo-lang-0.13.3.zip",
 ]
 
+[project.optional-dependencies]
+dev = ["black", "isort"]
+
 [tool.uv]
-# Future configuration for uv can be placed here.
+dev-dependencies = ["pytest"]
+
+[tool.black]
+line-length = 100
