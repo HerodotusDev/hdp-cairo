@@ -234,7 +234,8 @@ pub fn verify_read_proof_with_membership(
 /// Strict membership assertion to avoid false positives in critical tests.
 /// - For existing keys, membership must be Member.
 /// - For non-existent keys on a non-empty trie, membership must be NonMember.
-/// - For empty trie, allow NonMember (our verifier returns NonMember for empty trie with empty proof).
+/// - For empty trie, allow NonMember (our verifier returns NonMember for empty trie with empty
+///   proof).
 pub fn assert_read_membership_strict(
     proof: &StateProof,
     key: Felt,

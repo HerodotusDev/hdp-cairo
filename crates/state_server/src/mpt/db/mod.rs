@@ -46,8 +46,9 @@ impl ConnectionManager {
                 SqliteConnectionManager::memory()
             } else {
                 // In file mode, use file-based databases
-                let db_path = format!("{}/{}.db", self.db_root_path.as_ref().unwrap(), trie_label);
-                std::fs::create_dir_all(self.db_root_path.as_ref().unwrap()).map_err(Error::Io)?;
+                let db_root_path = self.db_root_path.as_ref().ok_or(Error::MissingDbRootPath)?;
+                let db_path = format!("{}/{}.db", db_root_path, trie_label);
+                std::fs::create_dir_all(db_root_path).map_err(Error::Io)?;
                 SqliteConnectionManager::file(db_path)
             };
 
@@ -55,7 +56,8 @@ impl ConnectionManager {
             self.pools.insert(trie_label, Arc::new(pool));
         }
 
-        Ok(self.pools.get(&trie_label).unwrap().get()?)
+        let pool = self.pools.get(&trie_label).ok_or(Error::MissingPool)?;
+        Ok(pool.get()?)
     }
 
     pub fn create_tables_if_not_exists(&mut self, trie_label: Felt) -> Result<(), Error> {

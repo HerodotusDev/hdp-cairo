@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use bitvec::{order::Msb0, slice::BitSlice};
 use pathfinder_crypto::Felt;
 use pathfinder_merkle_tree::storage::Storage;
@@ -70,8 +71,8 @@ impl<'a> TrieDB<'a> {
     ///
     /// # Arguments
     ///
-    /// * `nodes` - A vector of tuples representing the nodes to be persisted. Each tuple contains a `StoredNode`, a `Felt` hash, and a trie
-    ///   index.
+    /// * `nodes` - A vector of tuples representing the nodes to be persisted. Each tuple contains a
+    ///   `StoredNode`, a `Felt` hash, and a trie index.
     ///
     /// # Errors
     ///
@@ -161,7 +162,7 @@ impl<'a> TrieDB<'a> {
 
         match hash_bytes {
             Some(bytes) => {
-                let hash = Felt::from_be_slice(&bytes).unwrap();
+                let hash = Felt::from_be_slice(&bytes).map_err(|err| Error::MptDecodeError(format!("Invalid node hash bytes: {err}")))?;
                 Ok(Some(hash))
             }
             None => Ok(None),
@@ -179,16 +180,13 @@ impl<'a> TrieDB<'a> {
     /// Returns `Ok(leaf)` if the leaf is found, `Ok(TrieLeaf::empty(key))` otherwise.
     pub fn get_leaf(&self, key: Felt) -> anyhow::Result<TrieLeaf> {
         let mut stmt = self.conn.prepare_cached("SELECT value FROM leafs WHERE key = ?")?;
-        let result: Option<TrieLeaf> = stmt
-            .query_row(params![key.to_be_bytes().to_vec()], |row| {
-                let value: Vec<u8> = row.get(0)?;
-                let value = Felt::from_be_slice(&value).unwrap();
-                Ok(TrieLeaf::new(key, value))
-            })
-            .optional()?;
+        let result: Option<Vec<u8>> = stmt.query_row(params![key.to_be_bytes().to_vec()], |row| row.get(0)).optional()?;
 
         match result {
-            Some(leaf) => Ok(leaf),
+            Some(value_bytes) => {
+                let value = Felt::from_be_slice(&value_bytes).map_err(|err| anyhow!("Invalid leaf value bytes: {err}"))?;
+                Ok(TrieLeaf::new(key, value))
+            }
             None => Ok(TrieLeaf::empty(key)),
         }
     }
@@ -209,10 +207,13 @@ impl<'a> TrieDB<'a> {
             .conn
             .prepare_cached("SELECT value FROM leafs WHERE key = ? AND root_idx <= ? ORDER BY idx DESC LIMIT 1")?;
 
-        let result: Option<TrieLeaf> = stmt
-            .query_row(params![key.to_be_bytes().to_vec(), max_root_idx], |row| {
-                let value: Vec<u8> = row.get(0)?;
-                let value = Felt::from_be_slice(&value).unwrap();
+        let result: Option<Vec<u8>> = stmt
+            .query_row(params![key.to_be_bytes().to_vec(), max_root_idx], |row| row.get(0))
+            .optional()?;
+
+        result
+            .map(|value_bytes| {
+                let value = Felt::from_be_slice(&value_bytes).map_err(|err| anyhow!("Invalid leaf value bytes: {err}"))?;
 
                 let leaf = TrieLeaf::new(key, value);
 
@@ -220,9 +221,7 @@ impl<'a> TrieDB<'a> {
 
                 Ok(leaf)
             })
-            .optional()?;
-
-        Ok(result)
+            .transpose()
     }
 }
 

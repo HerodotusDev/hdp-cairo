@@ -214,7 +214,7 @@ async fn write_sequential_overwrites() {
     let key = Felt::from(0x123u64);
 
     // Test multiple sequential overwrites of the same key
-    let values = vec![
+    let values = [
         Felt::from(0x100u64),
         Felt::from(0x200u64),
         Felt::from(0x300u64),
@@ -300,7 +300,7 @@ async fn write_circular_value_pattern() {
     let key = Felt::from(0x123u64);
 
     // Test writing a circular pattern of values
-    let values = vec![
+    let values = [
         Felt::from(0x100u64),
         Felt::from(0x200u64),
         Felt::from(0x300u64),
@@ -386,7 +386,7 @@ async fn write_large_number_of_keys() {
     }
 
     // Verify a sample of the written values
-    let sample_indices = vec![0, 50, 100, 150, 199];
+    let sample_indices = [0, 50, 100, 150, 199];
     for &idx in sample_indices.iter() {
         if idx < key_count {
             let key = Felt::from(idx as u64);
@@ -413,7 +413,7 @@ async fn write_concurrent_key_access() {
     let label = Felt::from(0x36_u64);
 
     // Test writing to different keys in a pattern that might stress concurrent access
-    let keys = vec![
+    let keys = [
         Felt::from(0x001u64),
         Felt::from(0x100u64),
         Felt::from(0x200u64),

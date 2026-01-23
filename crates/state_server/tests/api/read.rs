@@ -192,7 +192,7 @@ async fn read_sparse_key_distribution() {
         Felt::from(1000000u64),
         Felt::from(1000000000u64),
     ];
-    let sparse_values = vec![
+    let sparse_values = [
         Felt::from(0x111u64),
         Felt::from(0x222u64),
         Felt::from(0x333u64),
@@ -323,7 +323,7 @@ async fn read_large_key_set() {
     assert_eq!(read_resp.state_proofs.len(), large_key_count);
 
     // Verify a sample of the results
-    let sample_indices = vec![0, 25, 50, 75, 99];
+    let sample_indices = [0, 25, 50, 75, 99];
     for &idx in sample_indices.iter() {
         if idx < read_resp.state_proofs.len() {
             match &read_resp.state_proofs[idx] {

@@ -1,6 +1,10 @@
-use axum::response::{IntoResponse, Response};
+use axum::{
+    http::StatusCode,
+    response::{IntoResponse, Response},
+    Json,
+};
 use pathfinder_merkle_tree::tree::GetProofError;
-use reqwest::StatusCode;
+use serde::Serialize;
 use thiserror::Error;
 use tracing::error;
 
@@ -26,6 +30,10 @@ pub enum Error {
     U256ToU64Conversion,
     #[error("Missing node index")]
     MissingNodeIndex,
+    #[error("Missing database root path")]
+    MissingDbRootPath,
+    #[error("Missing connection pool for trie")]
+    MissingPool,
     #[error("Leaf not found")]
     LeafNotFound,
     #[error("Failed to get leaf")]
@@ -40,12 +48,20 @@ pub enum Error {
     Any(#[from] anyhow::Error),
 }
 
+#[derive(Serialize)]
+struct ErrorBody {
+    error: String,
+}
+
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
-        error!("Mpt error: {}", self);
-        match self {
-            Error::MissingNodeIndex => StatusCode::NOT_FOUND.into_response(),
-            error => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
-        }
+        error!("Mpt error: {self}");
+
+        let status = match self {
+            Error::MissingNodeIndex | Error::LeafNotFound => StatusCode::NOT_FOUND,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
+        };
+
+        (status, Json(ErrorBody { error: self.to_string() })).into_response()
     }
 }

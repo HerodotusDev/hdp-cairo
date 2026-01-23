@@ -1,3 +1,4 @@
+use anyhow as _;
 use bitvec::{order::Msb0, slice::BitSlice};
 use pathfinder_common::{hash::TruncatedKeccakHash, trie::TrieNode};
 use pathfinder_crypto::Felt;
@@ -37,7 +38,7 @@ impl Trie {
     pub fn load(
         root_idx: TrieStorageIndex,
         conn: &PooledConnection<SqliteConnectionManager>,
-    ) -> (TrieDB, MerkleTree<TruncatedKeccakHash, 251>) {
+    ) -> (TrieDB<'_>, MerkleTree<TruncatedKeccakHash, 251>) {
         let storage = TrieDB::new(conn);
         let trie = MerkleTree::<TruncatedKeccakHash, 251>::new(root_idx);
 
@@ -67,7 +68,7 @@ impl Trie {
     /// A new empty Trie instance with storage, trie, and root index.
     pub fn create_empty(
         conn: &PooledConnection<SqliteConnectionManager>,
-    ) -> Result<(TrieDB, MerkleTree<TruncatedKeccakHash, 251>, TrieStorageIndex), Error> {
+    ) -> Result<(TrieDB<'_>, MerkleTree<TruncatedKeccakHash, 251>, TrieStorageIndex), Error> {
         let storage = TrieDB::new(conn);
         let trie = MerkleTree::<TruncatedKeccakHash, 251>::empty();
         let root_idx = TrieStorageIndex::from(0);
@@ -156,7 +157,8 @@ impl Trie {
     /// * `storage` - The TrieDB.
     /// * `update` - The TrieUpdate.
     /// * `items` - The items to be persisted.
-    /// * `starting_index` - Optional starting index to replay from. If None, uses the maximum index + 1.
+    /// * `starting_index` - Optional starting index to replay from. If None, uses the maximum index
+    ///   + 1.
     ///
     /// # Returns
     ///
@@ -167,7 +169,15 @@ impl Trie {
         items: &Vec<TrieLeaf>,
         starting_index: Option<u64>,
     ) -> Result<TrieStorageIndex, Error> {
-        let next_index = starting_index.unwrap_or_else(|| storage.get_node_idx().unwrap()) + 1;
+        let next_index = match starting_index {
+            Some(idx) => idx + 1,
+            None => {
+                storage
+                    .get_node_idx()
+                    .map_err(|e| Error::Any(anyhow::anyhow!("Failed to get node idx: {e}")))?
+                    + 1
+            }
+        };
         let mut nodes_to_persist: Vec<(StoredNode, Felt, u64)> = vec![];
         let mut root_index: Option<TrieStorageIndex> = None;
 
