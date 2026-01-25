@@ -4,6 +4,7 @@
 // Queries account fields (nonce, balance, state root, code hash) via memorizer.
 
 use hdp_cairo::EvmMemorizer;
+use hdp_cairo::evm::result_to_u256;
 use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;
 
@@ -25,19 +26,19 @@ pub struct AccountKey {
 pub impl AccountImpl of AccountTrait {
     fn account_get_nonce(self: @EvmMemorizer, key: @AccountKey) -> u256 {
         let result = self.call_memorizer(ACCOUNT_GET_NONCE, key);
-        u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
+        result_to_u256(result)
     }
     fn account_get_balance(self: @EvmMemorizer, key: @AccountKey) -> u256 {
         let result = self.call_memorizer(ACCOUNT_GET_BALANCE, key);
-        u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
+        result_to_u256(result)
     }
     fn account_get_state_root(self: @EvmMemorizer, key: @AccountKey) -> u256 {
         let result = self.call_memorizer(ACCOUNT_GET_STATE_ROOT, key);
-        u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
+        result_to_u256(result)
     }
     fn account_get_code_hash(self: @EvmMemorizer, key: @AccountKey) -> u256 {
         let result = self.call_memorizer(ACCOUNT_GET_CODE_HASH, key);
-        u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
+        result_to_u256(result)
     }
 
     fn call_memorizer(self: @EvmMemorizer, selector: felt252, key: @AccountKey) -> Span<felt252> {

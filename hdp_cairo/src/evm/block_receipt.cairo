@@ -4,6 +4,7 @@
 // Reads receipt fields from memorized transaction receipts.
 
 use hdp_cairo::EvmMemorizer;
+use hdp_cairo::evm::result_to_u256;
 use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;
 
@@ -24,11 +25,11 @@ pub struct BlockReceiptKey {
 pub impl BlockReceiptImpl of BlockReceiptTrait {
     fn block_receipt_get_status(self: @EvmMemorizer, key: @BlockReceiptKey) -> u256 {
         let result = self.call_memorizer(BLOCK_RECEIPT_GET_STATUS, key);
-        u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
+        result_to_u256(result)
     }
     fn block_receipt_get_cumulative_gas_used(self: @EvmMemorizer, key: @BlockReceiptKey) -> u256 {
         let result = self.call_memorizer(BLOCK_RECEIPT_GET_CUMULATIVE_GAS_USED, key);
-        u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
+        result_to_u256(result)
     }
     fn block_receipt_get_bloom(self: @EvmMemorizer, key: @BlockReceiptKey) -> ByteArray {
         let mut result: ByteArray = "";
