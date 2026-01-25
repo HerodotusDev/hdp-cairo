@@ -8,6 +8,25 @@ use strum_macros::FromRepr;
 
 use crate::SyscallExecutionError;
 
+macro_rules! impl_call_handler_try_from {
+    ($type:ty) => {
+        impl TryFrom<Felt252> for $type {
+            type Error = SyscallExecutionError;
+
+            fn try_from(value: Felt252) -> Result<Self, Self::Error> {
+                let id = usize::try_from(value).map_err(|e| SyscallExecutionError::InvalidSyscallInput {
+                    input: value,
+                    info: e.to_string(),
+                })?;
+                Self::from_repr(id).ok_or(SyscallExecutionError::InvalidSyscallInput {
+                    input: value,
+                    info: "Invalid function identifier".to_string(),
+                })
+            }
+        }
+    };
+}
+
 /// Call handler identifiers for EVM operations.
 #[derive(Debug, Clone, Copy, FromRepr, PartialEq, Eq)]
 pub enum EvmCallHandlerId {
@@ -19,20 +38,7 @@ pub enum EvmCallHandlerId {
     Log = 5,
 }
 
-impl TryFrom<Felt252> for EvmCallHandlerId {
-    type Error = SyscallExecutionError;
-
-    fn try_from(value: Felt252) -> Result<Self, Self::Error> {
-        let id = usize::try_from(value).map_err(|e| SyscallExecutionError::InvalidSyscallInput {
-            input: value,
-            info: e.to_string(),
-        })?;
-        Self::from_repr(id).ok_or(SyscallExecutionError::InvalidSyscallInput {
-            input: value,
-            info: "Invalid function identifier".to_string(),
-        })
-    }
-}
+impl_call_handler_try_from!(EvmCallHandlerId);
 
 /// Call handler identifiers for Starknet operations.
 #[derive(Debug, Clone, Copy, FromRepr, PartialEq, Eq)]
@@ -41,20 +47,7 @@ pub enum StarknetCallHandlerId {
     Storage = 1,
 }
 
-impl TryFrom<Felt252> for StarknetCallHandlerId {
-    type Error = SyscallExecutionError;
-
-    fn try_from(value: Felt252) -> Result<Self, Self::Error> {
-        let id = usize::try_from(value).map_err(|e| SyscallExecutionError::InvalidSyscallInput {
-            input: value,
-            info: e.to_string(),
-        })?;
-        Self::from_repr(id).ok_or(SyscallExecutionError::InvalidSyscallInput {
-            input: value,
-            info: "Invalid function identifier".to_string(),
-        })
-    }
-}
+impl_call_handler_try_from!(StarknetCallHandlerId);
 
 /// Call handler identifiers for injected state operations.
 #[derive(Debug, Clone, Copy, FromRepr, PartialEq, Eq)]
@@ -64,20 +57,7 @@ pub enum InjectedStateCallHandlerId {
     Write = 2,
 }
 
-impl TryFrom<Felt252> for InjectedStateCallHandlerId {
-    type Error = SyscallExecutionError;
-
-    fn try_from(value: Felt252) -> Result<Self, Self::Error> {
-        let id = usize::try_from(value).map_err(|e| SyscallExecutionError::InvalidSyscallInput {
-            input: value,
-            info: e.to_string(),
-        })?;
-        Self::from_repr(id).ok_or(SyscallExecutionError::InvalidSyscallInput {
-            input: value,
-            info: "Invalid function identifier".to_string(),
-        })
-    }
-}
+impl_call_handler_try_from!(InjectedStateCallHandlerId);
 
 /// Call handler identifiers for unconstrained operations.
 #[derive(Debug, Clone, Copy, FromRepr, PartialEq, Eq)]
@@ -85,17 +65,4 @@ pub enum UnconstrainedCallHandlerId {
     Bytecode = 0,
 }
 
-impl TryFrom<Felt252> for UnconstrainedCallHandlerId {
-    type Error = SyscallExecutionError;
-
-    fn try_from(value: Felt252) -> Result<Self, Self::Error> {
-        let id = usize::try_from(value).map_err(|e| SyscallExecutionError::InvalidSyscallInput {
-            input: value,
-            info: e.to_string(),
-        })?;
-        Self::from_repr(id).ok_or(SyscallExecutionError::InvalidSyscallInput {
-            input: value,
-            info: "Invalid function identifier".to_string(),
-        })
-    }
-}
+impl_call_handler_try_from!(UnconstrainedCallHandlerId);
