@@ -10,6 +10,13 @@ namespace Layout {
     const STARKNET = 1;
 }
 
+// ChainInfo fields:
+// - id: Numeric chain ID (e.g., 1 for Ethereum Mainnet)
+// - id_bytes_len: Number of bytes needed to represent the chain ID
+// - encoded_id: RLP-encoded chain ID (for EIP-155 signature encoding)
+// - encoded_id_bytes_len: Length of the RLP-encoded chain ID
+// - byzantium: Block number where Byzantium fork activated (0 = at genesis)
+// - layout: Chain layout type (EVM = 0, Starknet = 1)
 func fetch_chain_info(chain_id: felt) -> (info: ChainInfo) {
     if (chain_id == 1) {
         return (
