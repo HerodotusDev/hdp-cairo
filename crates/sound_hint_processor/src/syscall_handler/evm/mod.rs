@@ -15,12 +15,9 @@ use syscall_handler::{
     call_contract::EvmCallHandlerId, memorizer::Memorizer, traits, traits::CallHandler, SyscallExecutionError, SyscallResult,
     WriteResponseResult,
 };
-use types::{
-    cairo::{
-        new_syscalls::{CallContractRequest, CallContractResponse},
-        traits::CairoType,
-    },
-    keys::evm,
+use types::cairo::{
+    new_syscalls::{CallContractRequest, CallContractResponse},
+    traits::CairoType,
 };
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
@@ -28,7 +25,6 @@ pub struct CallContractHandler {
     #[serde(skip)]
     pub dict_manager: Rc<RefCell<DictManager>>,
 }
-
 impl CallContractHandler {
     pub fn new(dict_manager: Rc<RefCell<DictManager>>) -> Self {
         Self { dict_manager }
@@ -116,37 +112,5 @@ impl traits::SyscallHandler for CallContractHandler {
         Err(SyscallExecutionError::InternalError(
             "sound evm::CallContractHandler::write_response should not be called (response is written by relay)".into(),
         ))
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Clone)]
-#[serde(rename_all = "lowercase")]
-pub enum DryRunKey {
-    Account(evm::account::Key),
-    Header(evm::header::Key),
-    Storage(evm::storage::Key),
-    Receipt(evm::receipt::Key),
-    Tx(evm::transaction::Key),
-}
-
-impl DryRunKey {
-    pub fn is_account(&self) -> bool {
-        matches!(self, Self::Account(_))
-    }
-
-    pub fn is_header(&self) -> bool {
-        matches!(self, Self::Header(_))
-    }
-
-    pub fn is_storage(&self) -> bool {
-        matches!(self, Self::Storage(_))
-    }
-
-    pub fn is_receipt(&self) -> bool {
-        matches!(self, Self::Receipt(_))
-    }
-
-    pub fn is_tx(&self) -> bool {
-        matches!(self, Self::Tx(_))
     }
 }
