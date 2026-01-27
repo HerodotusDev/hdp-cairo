@@ -1,5 +1,7 @@
 # HDP Cairo
 
+<a href="https://deepwiki.com/HerodotusDev/hdp-cairo"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
+
 HDP (Herodotus Data Processor) is a modular framework for validating on-chain data from multiple blockchain RPC sources, executing user-defined logic written in Cairo1, and producing an execution trace that can be used to generate a zero-knowledge proof. The proof attests to the correctness of both the on-chain data and the performed computation.
 
 ---
