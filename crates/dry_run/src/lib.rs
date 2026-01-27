@@ -22,7 +22,7 @@ use syscall_handler::{SyscallHandler, SyscallHandlerWrapper};
 use tokio as _;
 use tracing::{debug, info};
 use tracing_subscriber as _;
-use types::{error::Error, param::Param, CasmContractClass, HDPDryRunInput, HDPDryRunOutput, InjectedState};
+use types::{error::Error, output_preimage, param::Param, CasmContractClass, HDPDryRunInput, HDPDryRunOutput, InjectedState};
 
 pub const DRY_RUN_COMPILED_JSON: &str = env!("DRY_RUN_COMPILED_JSON");
 
@@ -49,11 +49,23 @@ pub struct Args {
     )]
     pub output: PathBuf,
     #[arg(
+        long = "output_preimage",
+        default_value = "dry_run_output_preimage.json",
+        help = "Path where the output preimage JSON will be written"
+    )]
+    pub output_preimage: PathBuf,
+    #[arg(
         long = "print_output",
         default_value_t = false,
         help = "Print program output to stdout [default: false]"
     )]
     pub print_output: bool,
+    #[arg(
+        long = "print_output_preimage",
+        default_value_t = false,
+        help = "Print deserialized output preimage to stdout [default: false]"
+    )]
+    pub print_output_preimage: bool,
     #[structopt(long = "allow_missing_builtins")]
     pub allow_missing_builtins: Option<bool>,
 }
@@ -62,6 +74,7 @@ pub struct Args {
 pub fn run(
     program_path: PathBuf,
     input: HDPDryRunInput,
+    output_preimage_path: PathBuf,
 ) -> Result<
     (
         SyscallHandler<
@@ -86,6 +99,10 @@ pub fn run(
     let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))?;
 
     let mut hint_processor = CustomHintProcessor::new(input);
+
+    // Set output preimage path in execution scopes before running (will be used by the hint)
+    hint_processor.set_output_preimage_path(output_preimage_path.clone());
+
     let mut cairo_runner = cairo_run_program(&program, &cairo_run_config, &mut hint_processor).map_err(Box::new)?;
     debug!("{:?}", cairo_runner.get_execution_resources());
 
@@ -119,7 +136,8 @@ pub fn run(
 pub async fn run_with_args(args: Args) -> Result<(), Error> {
     info!("Starting dry run execution...");
     info!("Reading compiled module from: {}", args.compiled_module.display());
-    let compiled_class: CasmContractClass = serde_json::from_slice(&std::fs::read(args.compiled_module).map_err(Error::IO)?)?;
+    let compiled_module_path = args.compiled_module.clone();
+    let compiled_class: CasmContractClass = serde_json::from_slice(&std::fs::read(&compiled_module_path).map_err(Error::IO)?)?;
     let params: Vec<Param> = if let Some(path) = args.inputs {
         serde_json::from_slice(&std::fs::read(path).map_err(Error::IO)?)?
     } else {
@@ -139,10 +157,15 @@ pub async fn run_with_args(args: Args) -> Result<(), Error> {
             params,
             injected_state,
         },
+        args.output_preimage.clone(),
     )?;
 
     if args.print_output {
         println!("{:#?}", output);
+    }
+
+    if args.print_output_preimage {
+        output_preimage::print_output_preimage(&args.output_preimage, &compiled_module_path)?;
     }
 
     std::fs::write(

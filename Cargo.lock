@@ -2667,6 +2667,7 @@ dependencies = [
  "pathfinder-crypto",
  "reqwest 0.12.24",
  "serde",
+ "serde_json",
  "starknet",
  "starknet-crypto 0.7.4",
  "starknet-types-core 0.1.9",

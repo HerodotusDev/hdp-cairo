@@ -34,6 +34,7 @@ use crate::syscall_handler::{injected_state, unconstrained};
 
 pub struct CustomHintProcessor {
     inputs: HDPDryRunInput,
+    output_preimage_path: std::path::PathBuf,
     builtin_hint_proc: BuiltinHintProcessor,
     cairo1_builtin_hint_proc: Cairo1HintProcessor,
     hints: HashMap<String, HintImpl>,
@@ -44,11 +45,16 @@ impl CustomHintProcessor {
     pub fn new(inputs: HDPDryRunInput) -> Self {
         Self {
             inputs,
+            output_preimage_path: std::path::PathBuf::from("dry_run_output_preimage.json"),
             builtin_hint_proc: BuiltinHintProcessor::new_empty(),
             cairo1_builtin_hint_proc: Cairo1HintProcessor::new(Default::default(), Default::default(), true),
             hints: Self::hints(),
             extensive_hints: Self::extensive_hints(),
         }
+    }
+
+    pub fn set_output_preimage_path(&mut self, path: std::path::PathBuf) {
+        self.output_preimage_path = path;
     }
 
     #[rustfmt::skip]
@@ -91,6 +97,7 @@ impl HintProcessorLogic for CustomHintProcessor {
             let res = match hint_code {
                 crate::input::HINT_INPUT => self.hint_input(vm, exec_scopes, hpd, constants),
                 crate::output::HINT_OUTPUT => self.hint_output(vm, exec_scopes, hpd, constants),
+                crate::output::HINT_SAVE_OUTPUT_PREIMAGE => self.hint_save_output_preimage(vm, exec_scopes, hpd, constants),
                 _ => Err(HintError::UnknownHint(hint_code.to_string().into_boxed_str())),
             };
 
