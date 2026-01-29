@@ -17,6 +17,9 @@ pub mod injected_state;
 pub mod unconstrained;
 
 #[cfg(test)]
+pub mod bytecode_verify;
+
+#[cfg(test)]
 pub mod test_state_server;
 
 #[cfg(test)]
