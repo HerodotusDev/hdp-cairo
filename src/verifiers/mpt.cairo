@@ -316,3 +316,20 @@ namespace HashNodeTruncatedKeccak {
         return node_hash + node.len;
     }
 }
+
+// Starknet 0.14.x: state tree uses Blake2s for Patricia trie node hashing.
+namespace HashNodeBlake2s {
+    // Hash function for binary nodes. (Blake2s version)
+    func hash_binary_node{hash_ptr: HashBuiltin*}(node: TrieNodeBinary*) -> felt {
+        assert hash_ptr.result = nondet %{ blake2s_felt(ids.node.left, ids.node.right) %};
+        let (node_hash) = hash2{hash_ptr=hash_ptr}(node.left, node.right);
+        return node_hash;
+    }
+
+    // Hash function for edge nodes. (Blake2s version)
+    func hash_edge_node{hash_ptr: HashBuiltin*}(node: TrieNodeEdge*) -> felt {
+        assert hash_ptr.result = nondet %{ blake2s_felt(ids.node.child, ids.node.value) %};
+        let (node_hash) = hash2{hash_ptr=hash_ptr}(node.child, node.value);
+        return node_hash + node.len;
+    }
+}

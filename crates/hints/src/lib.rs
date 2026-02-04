@@ -177,6 +177,8 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(verifiers::injected_state::update::HINT_TRIE_ROOT_PREV.into(), verifiers::injected_state::update::hint_trie_root_prev);
     hints.insert(verifiers::mpt::HINT_KECCAK160_BINARY_NODE.into(), verifiers::mpt::hint_keccak160_binary_node);
     hints.insert(verifiers::mpt::HINT_KECCAK160_EDGE_NODE.into(), verifiers::mpt::hint_keccak160_edge_node);
+    hints.insert(verifiers::mpt::HINT_BLAKE2S_BINARY_NODE.into(), verifiers::mpt::hint_blake2s_binary_node);
+    hints.insert(verifiers::mpt::HINT_BLAKE2S_EDGE_NODE.into(), verifiers::mpt::hint_blake2s_edge_node);
     hints.insert(verifiers::starknet::header_verifier::HINT_AP_HEADER_IS_POSEIDON.into(), verifiers::starknet::header_verifier::hint_ap_header_is_poseidon);
     hints.insert(verifiers::starknet::header_verifier::HINT_FIELDS_LEN.into(), verifiers::starknet::header_verifier::hint_rlp_len);
     hints.insert(verifiers::starknet::header_verifier::HINT_HEADERS_WITH_MMR_HEADERS_LEN.into(), verifiers::starknet::header_verifier::hint_headers_with_mmr_headers_len);
@@ -195,6 +197,8 @@ pub fn hints() -> HashMap<String, HintImpl> {
     hints.insert(verifiers::starknet::mmr_verifier::HINT_HEADERS_WITH_MMR_META_ROOT.into(), verifiers::starknet::mmr_verifier::hint_headers_with_mmr_meta_root);
     hints.insert(verifiers::starknet::mmr_verifier::HINT_HEADERS_WITH_MMR_META_SIZE.into(), verifiers::starknet::mmr_verifier::hint_headers_with_mmr_meta_size);
     hints.insert(verifiers::starknet::mmr_verifier::HINT_HEADERS_WITH_MMR_PEAKS_POSEIDON.into(), verifiers::starknet::mmr_verifier::hint_headers_with_mmr_peaks_poseidon);
+    hints.insert(verifiers::starknet::storage_verifier::HINT_SET_USE_BLAKE.into(), verifiers::starknet::storage_verifier::hint_set_use_blake);
+    hints.insert(verifiers::starknet::storage_verifier::HINT_SET_USE_BLAKE_WRAPPED.into(), verifiers::starknet::storage_verifier::hint_set_use_blake);
     hints.insert(verifiers::starknet::storage_verifier::HINT_BATCH_STORAGES_LEN.into(), verifiers::starknet::storage_verifier::hint_batch_storages_len);
     hints.insert(verifiers::starknet::storage_verifier::HINT_NODE_IS_EDGE.into(), verifiers::starknet::storage_verifier::hint_node_is_edge);
     hints.insert(verifiers::starknet::storage_verifier::HINT_SET_BATCH_STORAGES.into(), verifiers::starknet::storage_verifier::hint_set_batch_storages);

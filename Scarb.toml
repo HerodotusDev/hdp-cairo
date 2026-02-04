@@ -4,6 +4,7 @@ edition = "2023_11"
 
 members = [
     "examples/blacklist",
+    "examples/starknet_storage",
     "examples/compliance",
     "examples/starkgate",
     "examples/injected_state",
@@ -13,6 +14,7 @@ members = [
     "examples/eth_call",
     "hdp_cairo",
     "tests",
+    "../sentree-platform/contracts/sentinel-hdp-verifier",
 ]
 
 [workspace.dependencies]

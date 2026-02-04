@@ -2,6 +2,7 @@ pub mod scopes {
     pub const ACCOUNT_EVM: &str = "account_evm";
     pub const BATCH_EVM: &str = "batch_evm";
     pub const BATCH_STARKNET: &str = "batch_starknet";
+    pub const CHAIN_ID: &str = "chain_id";
     pub const CASE: &str = "case";
     pub const CHAIN_PROOFS: &str = "chain_proofs";
     pub const COMPILED_CLASS: &str = "compiled_class";

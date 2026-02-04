@@ -115,6 +115,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "example_starknet_storage"
+version = "0.1.0"
+dependencies = [
+ "hdp_cairo",
+]
+
+[[package]]
 name = "garaga"
 version = "0.18.2"
 source = "git+https://github.com/keep-starknet-strange/garaga.git#42643fa19e9618fd880d4fa6bfbc543da6c6abbe"

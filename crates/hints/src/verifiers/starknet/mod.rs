@@ -31,7 +31,7 @@ pub fn hint_headers_with_mmr_len(
 }
 
 pub const HINT_VM_ENTER_SCOPE: &str =
-    "vm_enter_scope({'batch_starknet': chain_proofs[ids.idx - 1].value, '__dict_manager': __dict_manager})";
+    "vm_enter_scope({'batch_starknet': chain_proofs[ids.idx - 1].value, 'chain_id': chain_proofs[ids.idx - 1].chain_id, '__dict_manager': __dict_manager})";
 
 pub fn hint_vm_enter_scope(
     vm: &mut VirtualMachine,
@@ -43,6 +43,8 @@ pub fn hint_vm_enter_scope(
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
         .unwrap();
+
+    let chain_id = chain_proofs[idx - 1].chain_id();
 
     let batch: Box<dyn Any> = match chain_proofs[idx - 1].clone() {
         ChainProofs::EthereumMainnet(proofs) => Box::new(proofs),
@@ -56,6 +58,7 @@ pub fn hint_vm_enter_scope(
 
     exec_scopes.enter_scope(HashMap::from([
         (String::from(vars::scopes::BATCH_STARKNET), batch),
+        (String::from(vars::scopes::CHAIN_ID), Box::new(chain_id)),
         (String::from(vars::scopes::DICT_MANAGER), dict_manager),
     ]));
 

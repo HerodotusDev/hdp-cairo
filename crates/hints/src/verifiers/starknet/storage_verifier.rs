@@ -18,7 +18,48 @@ use types::{
     },
 };
 
+use types::{STARKNET_MAINNET_CHAIN_ID, STARKNET_TESTNET_CHAIN_ID};
+
 use crate::vars;
+
+/// Block number when Starknet 0.14.1 (Blake state tree) activated on Mainnet (Dec 10, 2025).
+/// Verify from https://starkscan.co/blocks by date.
+/// Set high until pathfinder/RPC generates Blake2s proofs for Patricia trie nodes.
+const STARKNET_MAINNET_BLAKE_ACTIVATION_BLOCK: u64 = 5_000_000;
+
+/// Block number when Starknet 0.14.1 (Blake state tree) activated on Sepolia (Nov 11, 2025).
+/// Verify from https://sepolia.starkscan.co/blocks by date.
+/// Set high until pathfinder/RPC generates Blake2s proofs for Patricia trie nodes.
+const STARKNET_SEPOLIA_BLAKE_ACTIVATION_BLOCK: u64 = 10_000_000;
+
+pub const HINT_SET_USE_BLAKE: &str =
+    "memory[ap] = to_felt_or_relocatable(use_blake_for_starknet_state_tree(chain_id, storage_starknet.block_number))";
+
+/// Wrapped form produced by Cairo compiler for nondet hints.
+pub const HINT_SET_USE_BLAKE_WRAPPED: &str =
+    "memory[ap] = to_felt_or_relocatable(memory[ap] = to_felt_or_relocatable(use_blake_for_starknet_state_tree(chain_id, storage_starknet.block_number)))";
+
+pub fn hint_set_use_blake(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    _hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let chain_id: u128 = exec_scopes
+        .get::<u128>(vars::scopes::CHAIN_ID)
+        .or_else(|_| exec_scopes.get::<u64>(vars::scopes::CHAIN_ID).map(|v| v as u128))
+        .unwrap_or(0);
+    let storage = exec_scopes.get::<Storage>(vars::scopes::STORAGE_STARKNET)?;
+    let block_number = storage.block_number;
+
+    let use_blake = match chain_id {
+        id if id == STARKNET_MAINNET_CHAIN_ID => block_number >= STARKNET_MAINNET_BLAKE_ACTIVATION_BLOCK,
+        id if id == STARKNET_TESTNET_CHAIN_ID => block_number >= STARKNET_SEPOLIA_BLAKE_ACTIVATION_BLOCK,
+        _ => false, // Unknown chain: default to Pedersen (old)
+    };
+
+    insert_value_into_ap(vm, Felt252::from(if use_blake { 1 } else { 0 }))
+}
 
 pub const HINT_BATCH_STORAGES_LEN: &str = "memory[ap] = to_felt_or_relocatable(len(batch_starknet.storages))";
 
