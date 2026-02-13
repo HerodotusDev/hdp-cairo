@@ -1,3 +1,7 @@
+// ============================================================================
+// MMR Verifier
+// ============================================================================
+// Validates MMR metadata and peak inclusion for Poseidon and Keccak variants.
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin
 from src.types import MMRMetaPoseidon, MMRMetaKeccak
 from packages.eth_essentials.lib.utils import (

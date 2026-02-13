@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM ModExp Precompile
+// ============================================================================
+// Modular exponentiation precompile with EIP-198 gas rules.
+
 use core::cmp::{max, min};
 use core::num::traits::{Bounded, OverflowingAdd};
 // CREDITS: The implementation has take reference from
@@ -34,24 +39,15 @@ pub impl ModExp of Precompile {
 
         // cast base_len, exp_len , modulus_len to usize, it does not make sense to handle larger
         // values
-        let base_len: usize = match base_len.try_into() {
-            Option::Some(base_len) => { base_len },
-            Option::None => {
-                return Result::Err(EVMError::InvalidParameter('base_len casting to u32 failed'));
-            },
-        };
-        let exp_len: usize = match exp_len.try_into() {
-            Option::Some(exp_len) => { exp_len },
-            Option::None => {
-                return Result::Err(EVMError::InvalidParameter('exp_len casting to u32 failed'));
-            },
-        };
-        let mod_len: usize = match mod_len.try_into() {
-            Option::Some(mod_len) => { mod_len },
-            Option::None => {
-                return Result::Err(EVMError::InvalidParameter('mod_len casting to u32 failed'));
-            },
-        };
+        let base_len: usize = base_len
+            .try_into()
+            .ok_or(EVMError::InvalidParameter('base_len casting to u32 failed'))?;
+        let exp_len: usize = exp_len
+            .try_into()
+            .ok_or(EVMError::InvalidParameter('exp_len casting to u32 failed'))?;
+        let mod_len: usize = mod_len
+            .try_into()
+            .ok_or(EVMError::InvalidParameter('mod_len casting to u32 failed'))?;
 
         // Handle a special case when both the base and mod length is zero
         if base_len == 0 && mod_len == 0 {
@@ -73,12 +69,7 @@ pub impl ModExp of Precompile {
             let right_padded_highp = input.slice_right_padded(base_len, 32);
             // If exp_len is less then 32 bytes get only exp_len bytes and do left padding.
             let out = right_padded_highp.slice(0, exp_highp_len).pad_left_with_zeroes(32);
-            match out.from_be_bytes() {
-                Option::Some(result) => result,
-                Option::None => {
-                    return Result::Err(EVMError::InvalidParameter('failed to extract exp_highp'));
-                },
-            }
+            out.from_be_bytes().ok_or(EVMError::InvalidParameter('failed to extract exp_highp'))?
         };
 
         let gas = calc_gas(base_len.into(), exp_len.into(), mod_len.into(), exp_highp);

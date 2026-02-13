@@ -1,3 +1,7 @@
+// ============================================================================
+// Starknet Verification Orchestrator
+// ============================================================================
+// Runs MMR/header verification and storage proof verification for Starknet.
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, HashBuiltin, BitwiseBuiltin
 

@@ -1,9 +1,19 @@
 name: rust-vm-CI
 
 on:
+  workflow_dispatch:
+  pull_request:
   push:
     branches:
       - "**"
+
+env:
+  RUST_BACKTRACE: 1
+  CARGO_TERM_COLOR: always
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
 
 jobs:
   check:
@@ -16,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: true
 
@@ -27,6 +37,8 @@ jobs:
 
       - name: Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: nightly-2025-04-06
 
       - name: Cargo cache
         uses: actions/cache@v4
@@ -57,10 +69,13 @@ jobs:
         run: .venv/bin/cairo-format -c src/*.cairo
 
       - name: Run clippy check
-        run: cargo clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Future incompatibility report
+        run: cargo report future-incompatibilities
 
   test:
-    name: Run Tests
+    name: Run Tests (stable / offline)
     strategy:
       fail-fast: false
       matrix:
@@ -69,7 +84,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: true
 
@@ -80,9 +95,8 @@ jobs:
 
       - name: Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
-
-      - name: Install Nextest
-        uses: taiki-e/install-action@nextest
+        with:
+          toolchain: nightly-2025-04-06
       
       - name: Set up Scarb
         uses: software-mansion/setup-scarb@v1
@@ -109,13 +123,70 @@ jobs:
       - name: Build Test Contracts
         run: scarb build
 
-      - name: Run Nextest Tests
+      - name: Run cargo tests (stable)
+        run: cargo test --workspace --all-targets
+
+  integration:
+    name: Run Integration Tests (optional / requires secrets)
+    if: ${{ secrets.RPC_URL_HERODOTUS_INDEXER != '' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: nightly-2025-04-06
+
+      - name: Install Nextest
+        uses: taiki-e/install-action@nextest
+
+      - name: Set up Scarb
+        uses: software-mansion/setup-scarb@v1
+
+      - name: Cargo cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Set up Cairo (Linux)
+        if: runner.os == 'Linux'
+        run: uv sync
+
+      - name: Set up Cairo (macOS)
+        if: runner.os == 'macOS'
+        run: CFLAGS=-I/opt/homebrew/opt/gmp/include LDFLAGS=-L/opt/homebrew/opt/gmp/lib uv sync
+
+      - name: Build Test Contracts
+        run: scarb build
+
+      - name: Run Nextest Tests (integration)
         env:
+          HDP_INTEGRATION_TESTS: "1"
           RPC_URL_ETHEREUM_MAINNET: ${{ secrets.RPC_URL_ETHEREUM_MAINNET }}
           RPC_URL_ETHEREUM_TESTNET: ${{ secrets.RPC_URL_ETHEREUM_TESTNET }}
           RPC_URL_HERODOTUS_INDEXER: ${{ secrets.RPC_URL_HERODOTUS_INDEXER }}
           RPC_URL_STARKNET_MAINNET: ${{ secrets.RPC_URL_STARKNET_MAINNET }}
           RPC_URL_STARKNET_TESTNET: ${{ secrets.RPC_URL_STARKNET_TESTNET }}
           RPC_URL_OPTIMISM_MAINNET: ${{ secrets.RPC_URL_OPTIMISM_MAINNET }}
-          RPC_URL_OPTIMISM_SEPOLIA: ${{ secrets.RPC_URL_OPTIMISM_SEPOLIA }}
+          RPC_URL_OPTIMISM_TESTNET: ${{ secrets.RPC_URL_OPTIMISM_TESTNET }}
         run: cargo nextest run --profile ci

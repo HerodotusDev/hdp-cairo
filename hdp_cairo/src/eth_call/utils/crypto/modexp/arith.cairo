@@ -21,19 +21,10 @@ pub fn monpro(ref x: MPNat, ref y: MPNat, ref n: MPNat, n_prime: Word, ref out: 
     let s = out.len() - 2;
 
     let mut i = 0;
-    loop {
-        if i == s {
-            break;
-        }
-
+    while i < s {
         let mut c = 0;
         let mut j = 0;
-
-        loop {
-            if j == s {
-                break;
-            }
-
+        while j < s {
             let (prod, carry) = shifted_carrying_mul(
                 out[j], x.digits.get(j).unwrap_or(0), y.digits.get(i).unwrap_or(0), c,
             );
@@ -52,15 +43,10 @@ pub fn monpro(ref x: MPNat, ref y: MPNat, ref n: MPNat, n_prime: Word, ref out: 
         c = carry;
 
         let mut j = 1;
-        loop {
-            if j == s {
-                break;
-            }
-
+        while j != s {
             let (prod, carry) = shifted_carrying_mul(out[j], m, n.digits.get(j).unwrap_or(0), c);
             out.set(j - 1, prod);
             c = carry;
-
             j += 1;
         }
 
@@ -97,11 +83,7 @@ pub fn monpro(ref x: MPNat, ref y: MPNat, ref n: MPNat, n_prime: Word, ref out: 
 
     let mut b = false;
     let mut i: u32 = 0;
-    loop {
-        if i == s || i == out.len {
-            break;
-        }
-
+    while i < s && i < out.len() {
         let out_digit = out[i];
 
         let (diff, borrow) = borrowing_sub(out_digit, n.digits.get(i).unwrap_or(0), b);
@@ -131,29 +113,20 @@ pub fn monsq(ref x: MPNat, ref n: MPNat, n_prime: Word, ref out: Felt252Vec<Word
         let m = out[i].wrapping_mul(n_prime);
 
         let mut j = 0;
-        loop {
-            if j == s {
-                break;
-            }
-
+        while j != s {
             let (prod, carry) = shifted_carrying_mul(
                 out[i + j], m, n.digits.get(j).unwrap_or(0), c,
             );
             out.set(i + j, prod);
             c = carry;
-
             j += 1;
         }
 
         let mut j = i + s;
-        loop {
-            if c == 0 {
-                break;
-            }
+        while c != 0 {
             let (sum, carry) = carrying_add(out[j], c, false);
             out.set(j, sum);
             c = carry.into();
-
             j += 1;
         }
 
@@ -191,16 +164,11 @@ pub fn monsq(ref x: MPNat, ref n: MPNat, n_prime: Word, ref out: Felt252Vec<Word
 
     let mut b = false;
     let mut i = 0;
-    loop {
-        if i == s || i == out.len {
-            break;
-        }
-
+    while i != s && i != out.len {
         let out_digit = out[i];
         let (diff, borrow) = borrowing_sub(out_digit, n.digits.get(i).unwrap_or(0), b);
         out.set(i, diff);
         b = borrow;
-
         i += 1;
     }
 
@@ -219,25 +187,19 @@ pub fn big_wrapping_pow(
     result.digits.set(0, 1);
 
     let mut i = 0;
-    loop {
-        if i == exp.len() {
-            break;
-        }
-
+    while i != exp.len() {
         let b = *exp[i];
         let mut mask: u8 = 128;
-
-        loop {
-            if mask == 0 {
-                break;
-            }
-
+        while mask != 0 {
             // TODO: investigate if deep clone can be avoided
             let digits = result.digits.duplicate();
+
             let mut tmp = MPNat { digits };
 
             big_wrapping_mul(ref result, ref tmp, ref scratch_space);
+
             result.digits.copy_from_vec_le(ref scratch_space).unwrap();
+
             scratch_space.reset(); // zero-out the scratch space
 
             if (b & mask) != 0 {
@@ -248,7 +210,6 @@ pub fn big_wrapping_pow(
 
             mask = mask.shr(1);
         }
-
         i += 1;
     }
 
@@ -260,26 +221,19 @@ pub fn big_wrapping_mul(ref x: MPNat, ref y: MPNat, ref out: Felt252Vec<Word>) {
     let s = out.len();
     let mut i = 0;
 
-    loop {
-        if i == s {
-            break;
-        }
-
+    while i != s {
         let mut c: Word = 0;
 
         let mut j = 0;
-        let stop_condition = s - i;
-        loop {
-            if j == stop_condition {
-                break;
-            }
 
+        let stop_condition = s - i;
+
+        while j != stop_condition {
             let (prod, carry) = shifted_carrying_mul(
                 out[i + j], x.digits.get(j).unwrap_or(0), y.digits.get(i).unwrap_or(0), c,
             );
             c = carry;
             out.set(i + j, prod);
-
             j += 1;
         }
 
@@ -293,17 +247,17 @@ pub fn mod_inv(x: Word) -> Word {
     let mut y = 1;
     let mut i = 2;
 
-    loop {
-        if i == WORD_BITS {
-            break;
-        }
-
+    while i != WORD_BITS {
         let mask: u64 = 1_u64.shl(i.into()) - 1;
+
         let xy = x.wrapping_mul(y) & mask;
+
         let q = (mask + 1) / 2;
+
         if xy >= q {
             y += q;
         }
+
         i += 1;
     }
 
@@ -341,20 +295,13 @@ pub fn compute_r_mod_n(ref n: MPNat, ref out: Felt252Vec<Word>) {
         let mut b = false;
 
         let mut i: usize = 0;
-        loop {
-            if i == n.digits.len || i == out.len {
-                break;
-            }
-
+        while i != n.digits.len && i != out.len {
             let n_digit = n.digits[i];
-
             let (prod, carry) = carrying_mul(approx_q, n_digit, c);
             c = carry;
-
             let (diff, borrow) = borrowing_sub(0, prod, b);
             b = borrow;
             out.set(i, diff);
-
             i += 1;
         }
 
@@ -421,47 +368,49 @@ fn big_sq(ref x: MPNat, ref out: Felt252Vec<Word>) {
     let s = x.digits.len();
     let mut i = 0;
 
-    loop {
-        if i == s {
-            break;
-        }
-
+    while i != s {
         let (product, carry) = shifted_carrying_mul(out[i + i], x.digits[i], x.digits[i], 0);
+
         out.set(i + i, product);
+
         let mut c: DoubleWord = carry.into();
 
         let mut j = i + 1;
 
-        loop {
-            if j == s {
-                break;
-            }
-
+        while j != s {
             let mut new_c: DoubleWord = 0;
+
             let res: DoubleWord = (x.digits[i].into()) * (x.digits[j].into());
+
             let (res, overflow) = res.overflowing_add(res);
+
             if overflow {
                 new_c += BASE;
             }
 
             let (res, overflow) = out[i + j].into().overflowing_add(res);
+
             if overflow {
                 new_c += BASE;
             }
 
             let (res, overflow) = res.overflowing_add(c);
+
             if overflow {
                 new_c += BASE;
             }
 
             out.set(i + j, res.as_u64());
+
             c = new_c + res.shr(WORD_BITS.into());
 
             j += 1;
         }
 
         let (sum, carry) = carrying_add(out[i + s], c.as_u64(), false);
+
         out.set(i + s, sum);
+
         out.set(i + s + 1, (c.shr(WORD_BITS.into()) + (carry.into())).as_u64());
 
         i += 1;
@@ -474,18 +423,12 @@ pub fn in_place_shl(ref a: Felt252Vec<Word>, shift: u32) -> Word {
     let carry_shift = WORD_BITS - shift;
 
     let mut i = 0;
-    loop {
-        if i == a.len {
-            break;
-        }
-
+    while i != a.len {
         let mut a_digit = a[i];
         let carry = a_digit.wrapping_shr(carry_shift.into());
         a_digit = a_digit.wrapping_shl(shift.into()) | c;
         a.set(i, a_digit);
-
         c = carry;
-
         i += 1;
     }
 
@@ -498,20 +441,13 @@ pub fn in_place_shr(ref a: Felt252Vec<Word>, shift: u32) -> Word {
     let borrow_shift = WORD_BITS - shift;
 
     let mut i = a.len;
-    loop {
-        if i == 0 {
-            break;
-        }
-
+    while i != 0 {
         let j = i - 1;
-
         let mut a_digit = a[j];
         let borrow = a_digit.wrapping_shl(borrow_shift.into());
         a_digit = a_digit.wrapping_shr(shift.into()) | b;
         a.set(j, a_digit);
-
         b = borrow;
-
         i -= 1;
     }
 
@@ -524,16 +460,15 @@ pub fn in_place_add(ref a: Felt252Vec<Word>, ref b: Felt252Vec<Word>) -> bool {
 
     let mut i = 0;
 
-    loop {
-        if i == a.len() || i == b.len() {
-            break;
-        }
-
+    while i != a.len() && i != b.len() {
         let a_digit = a[i];
+
         let b_digit = b[i];
 
         let (sum, carry) = carrying_add(a_digit, b_digit, c);
+
         a.set(i, sum);
+
         c = carry;
 
         i += 1;
@@ -555,12 +490,9 @@ pub fn in_place_mul_sub(ref a: Felt252Vec<Word>, ref x: Felt252Vec<Word>, y: Wor
 
     let mut i = 0;
 
-    loop {
-        if i == a.len() || i == x.len() {
-            break;
-        }
-
+    while i != a.len() && i != x.len() {
         let a_digit = a[i];
+
         let x_digit = x[i];
 
         // We want to calculate sum = x - y * c + carry.
@@ -573,8 +505,11 @@ pub fn in_place_mul_sub(ref a: Felt252Vec<Word>, ref x: Felt252Vec<Word>, y: Wor
             - ((x_digit.into()) * (y.into()));
 
         let new_offset_carry = (offset_sum.shr(WORD_BITS.into())).as_u64();
+
         let new_x = offset_sum.as_u64();
+
         offset_carry = new_offset_carry;
+
         a.set(i, new_x);
 
         i += 1;
@@ -920,11 +855,7 @@ mod tests {
     #[available_gas(10000000000000)]
     fn test_mod_inv_0() {
         let mut i = 1;
-        loop {
-            if i == 1025 {
-                break;
-            }
-
+        while i != 1025 {
             check_mod_inv(2 * i - 1);
             i += 1;
         }
@@ -934,11 +865,7 @@ mod tests {
     #[available_gas(10000000000000)]
     fn test_mod_inv_1() {
         let mut i = 0;
-        loop {
-            if i == 1025 {
-                break;
-            }
-
+        while i != 1025 {
             check_mod_inv(0xFF_FF_FF_FF - 2 * i);
             i += 1;
         }

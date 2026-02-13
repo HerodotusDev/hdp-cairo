@@ -1,3 +1,15 @@
+// ============================================================================
+// EVM Log Decoder
+// ============================================================================
+// Extracts log fields from RLP-encoded Ethereum receipts.
+//
+// Inputs:
+// - rlp: receipt payload (possibly typed via EIP-2718 envelope)
+// - log_index: index of the log entry within the receipt
+//
+// Outputs:
+// - Address and topics as BE Uint256 values
+// - Data as an array of Uint256 words
 from packages.eth_essentials.lib.rlp_little import extract_byte_at_pos
 from src.decoders.evm.receipt_decoder import ReceiptDecoder
 from src.utils.chain_info import ChainInfo

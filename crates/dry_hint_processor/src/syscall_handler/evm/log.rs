@@ -45,20 +45,32 @@ impl CallHandler for LogCallHandler {
 
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
         let rpc_url = get_corresponding_rpc_url(&key).map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
-        let provider = RootProvider::<Ethereum>::new_http(Url::parse(&rpc_url).unwrap());
+        let url =
+            Url::parse(&rpc_url).map_err(|e| SyscallExecutionError::InternalError(format!("Invalid RPC URL '{rpc_url}': {e}").into()))?;
+        let provider = RootProvider::<Ethereum>::new_http(url);
 
         let receipts = provider
             .get_block_receipts(BlockId::Number(BlockNumberOrTag::Number(key.block_number)))
             .await
             .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?
-            .unwrap();
+            .ok_or_else(|| SyscallExecutionError::InternalError("Receipts not found".into()))?;
 
-        let tx_idx: usize = key.transaction_index.try_into().unwrap();
-        let receipt = match receipts[tx_idx].inner.as_receipt_with_bloom() {
+        let tx_idx: usize = key
+            .transaction_index
+            .try_into()
+            .map_err(|e| SyscallExecutionError::InternalError(format!("Invalid transaction_index: {e}").into()))?;
+
+        let receipt = receipts
+            .get(tx_idx)
+            .ok_or_else(|| SyscallExecutionError::InternalError("Transaction index out of bounds".into()))?;
+
+        let receipt = match receipt.inner.as_receipt_with_bloom() {
             Some(receipt) => CairoReceiptWithBloom::from(receipt.clone()),
             None => return Err(SyscallExecutionError::InternalError("Receipt not found".into())),
         };
 
-        Ok(receipt.handle(function_id, key.log_index))
+        receipt
+            .handle(function_id, key.log_index)
+            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))
     }
 }

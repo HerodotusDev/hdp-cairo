@@ -28,8 +28,10 @@ pub fn hint_keccak160_binary_node(
         vm,
         Felt252::from_bytes_be(
             &keccak_hash(
-                pathfinder_crypto::Felt::from_be_bytes(node_left.to_bytes_be()).unwrap(),
-                pathfinder_crypto::Felt::from_be_bytes(node_right.to_bytes_be()).unwrap(),
+                pathfinder_crypto::Felt::from_be_bytes(node_left.to_bytes_be())
+                    .map_err(|e| HintError::CustomHint(format!("mpt: invalid node.left Felt bytes: {e}").into()))?,
+                pathfinder_crypto::Felt::from_be_bytes(node_right.to_bytes_be())
+                    .map_err(|e| HintError::CustomHint(format!("mpt: invalid node.right Felt bytes: {e}").into()))?,
             )
             .to_be_bytes(),
         ),
@@ -51,8 +53,10 @@ pub fn hint_keccak160_edge_node(
         vm,
         Felt252::from_bytes_be(
             &keccak_hash(
-                pathfinder_crypto::Felt::from_be_bytes(node_child.to_bytes_be()).unwrap(),
-                pathfinder_crypto::Felt::from_be_bytes(node_value.to_bytes_be()).unwrap(),
+                pathfinder_crypto::Felt::from_be_bytes(node_child.to_bytes_be())
+                    .map_err(|e| HintError::CustomHint(format!("mpt: invalid node.child Felt bytes: {e}").into()))?,
+                pathfinder_crypto::Felt::from_be_bytes(node_value.to_bytes_be())
+                    .map_err(|e| HintError::CustomHint(format!("mpt: invalid node.value Felt bytes: {e}").into()))?,
             )
             .to_be_bytes(),
         ),

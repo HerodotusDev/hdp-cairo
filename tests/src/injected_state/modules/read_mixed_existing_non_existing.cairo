@@ -29,10 +29,7 @@ mod read_mixed_existing_non_existing {
         // Test reading multiple keys in sequence (mix of existing and non-existing)
         let mixed_keys = array![existing_key, non_existing_key, 0x999, existing_key];
         let mut i = 0;
-        loop {
-            if i >= mixed_keys.len() {
-                break;
-            }
+        while i < mixed_keys.len() {
             let key = *mixed_keys.at(i);
             let value = hdp.injected_state.read_key(label, key);
 
@@ -40,7 +37,8 @@ mod read_mixed_existing_non_existing {
                 assert!(value.is_some(), "Existing key should return Some");
                 let val = value.unwrap();
                 assert!(val == existing_value, "Existing key should return correct value");
-            } else {
+            }
+            if key != existing_key {
                 assert!(value.is_none(), "Non-existing key should return None");
             }
 

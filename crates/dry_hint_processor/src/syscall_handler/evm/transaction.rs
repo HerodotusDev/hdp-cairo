@@ -45,22 +45,38 @@ impl CallHandler for TransactionCallHandler {
     }
 
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
-        let rpc_url = get_corresponding_rpc_url(&key).map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
-        let provider = RootProvider::<Ethereum>::new_http(Url::parse(&rpc_url).unwrap());
+        let function_id_dbg = format!("{function_id:?}");
+        let rpc_url = get_corresponding_rpc_url(&key)
+            .map_err(|e| SyscallExecutionError::InternalError(format!("Failed to resolve RPC URL for key {key:?}: {e}").into()))?;
+        let url = Url::parse(&rpc_url)
+            .map_err(|e| SyscallExecutionError::InternalError(format!("Invalid RPC URL '{rpc_url}' for key {key:?}: {e}").into()))?;
+        let provider = RootProvider::<Ethereum>::new_http(url);
 
         let block = provider
             .get_block(BlockId::Number(BlockNumberOrTag::Number(key.block_number)))
             .full()
             .await
-            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?
-            .unwrap();
+            .map_err(|e| SyscallExecutionError::InternalError(format!("eth_getBlockByNumber failed for key {key:?}: {e}").into()))?
+            .ok_or_else(|| SyscallExecutionError::InternalError(format!("Block not found for key {key:?}").into()))?;
         let tx = block
             .transactions
             .txns()
-            .nth(key.transaction_index.try_into().unwrap())
-            .ok_or_else(|| SyscallExecutionError::InternalError("Transaction index out of bounds".into()))?;
+            .nth(key.transaction_index.try_into().map_err(|e| {
+                SyscallExecutionError::InternalError(
+                    format!("Invalid transaction_index {} for key {key:?}: {e}", key.transaction_index).into(),
+                )
+            })?)
+            .ok_or_else(|| {
+                SyscallExecutionError::InternalError(
+                    format!("Transaction index {} out of bounds for key {key:?}", key.transaction_index).into(),
+                )
+            })?;
         let cairo_tx = CairoTransaction::from(tx.clone());
 
-        Ok(cairo_tx.handle(function_id))
+        cairo_tx.handle(function_id).map_err(|e| {
+            SyscallExecutionError::InternalError(
+                format!("Transaction handler failed for key {key:?}, function_id {function_id_dbg}: {e}").into(),
+            )
+        })
     }
 }

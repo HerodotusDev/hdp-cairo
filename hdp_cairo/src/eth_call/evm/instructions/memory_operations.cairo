@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Memory and Storage Opcodes
+// ============================================================================
+// Implements MLOAD/MSTORE, SLOAD/SSTORE, JUMP, and related memory ops.
+
 use core::cmp::max;
 //! Stack Memory Storage and Flow Operations.
 use crate::eth_call::evm::errors::{EVMError, ensure};
@@ -314,12 +319,10 @@ mod tests {
     use crate::eth_call::evm::gas;
     use crate::eth_call::evm::instructions::MemoryOperationTrait;
     use crate::eth_call::evm::memory::MemoryTrait;
-    use crate::eth_call::evm::model::account::AccountTrait;
     use crate::eth_call::evm::model::vm::VMTrait;
     use crate::eth_call::evm::stack::StackTrait;
     use crate::eth_call::evm::state::StateTrait;
     use crate::eth_call::evm::test_utils::{MemoryTestUtilsTrait, VMBuilderTrait};
-    use crate::eth_call::utils::traits::bytes::U8SpanExTrait;
 
     #[test]
     fn test_pc_basic() {

@@ -1,4 +1,10 @@
+// ============================================================================
+// EVM Storage Access
+// ============================================================================
+// Reads storage slots from the EVM memorizer.
+
 use hdp_cairo::EvmMemorizer;
+use hdp_cairo::evm::result_to_u256;
 use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;
 
@@ -18,7 +24,7 @@ pub struct StorageKey {
 pub impl StorageImpl of StorageTrait {
     fn storage_get_slot(self: @EvmMemorizer, key: @StorageKey) -> u256 {
         let result = self.call_memorizer(key);
-        u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
+        result_to_u256(result)
     }
 
     fn call_memorizer(self: @EvmMemorizer, key: @StorageKey) -> Span<felt252> {

@@ -1,3 +1,8 @@
+// ============================================================================
+// Eth Transaction Common Types
+// ============================================================================
+// Shared types like TxKind for legacy and typed transactions.
+
 use starknet::EthAddress;
 
 /// The `to` field of a transaction. Either a target address, or empty for a

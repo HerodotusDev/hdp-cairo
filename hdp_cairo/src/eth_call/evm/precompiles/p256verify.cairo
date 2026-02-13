@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM P256 Verify Precompile
+// ============================================================================
+// Validates secp256r1 signatures with fixed gas cost.
+
 use starknet::secp256_trait::{Secp256Trait, is_valid_signature};
 use starknet::secp256r1::Secp256r1Point;
 use starknet::{EthAddress, SyscallResultTrait};
@@ -26,40 +31,47 @@ pub impl P256Verify of Precompile {
         }
 
         let message_hash = input.slice(0, 32);
-        let message_hash = match message_hash.from_be_bytes() {
-            Option::Some(message_hash) => message_hash,
-            Option::None => { return Result::Ok((gas, [].span())); },
-        };
+        let message_hash: Option<u256> = message_hash.from_be_bytes();
+        let message_hash_is_none = message_hash.is_none();
+        let message_hash = message_hash.unwrap_or(0);
+        if message_hash_is_none {
+            return Result::Ok((gas, [].span()));
+        }
 
         let r: Option<u256> = input.slice(32, 32).from_be_bytes();
-        let r = match r {
-            Option::Some(r) => r,
-            Option::None => { return Result::Ok((gas, [].span())); },
-        };
+        let r_is_none = r.is_none();
+        let r = r.unwrap_or(0);
+        if r_is_none {
+            return Result::Ok((gas, [].span()));
+        }
 
         let s: Option<u256> = input.slice(64, 32).from_be_bytes();
-        let s = match s {
-            Option::Some(s) => s,
-            Option::None => { return Result::Ok((gas, [].span())); },
-        };
+        let s_is_none = s.is_none();
+        let s = s.unwrap_or(0);
+        if s_is_none {
+            return Result::Ok((gas, [].span()));
+        }
 
         let x: Option<u256> = input.slice(96, 32).from_be_bytes();
-        let x = match x {
-            Option::Some(x) => x,
-            Option::None => { return Result::Ok((gas, [].span())); },
-        };
+        let x_is_none = x.is_none();
+        let x = x.unwrap_or(0);
+        if x_is_none {
+            return Result::Ok((gas, [].span()));
+        }
 
         let y: Option<u256> = input.slice(128, 32).from_be_bytes();
-        let y = match y {
-            Option::Some(y) => y,
-            Option::None => { return Result::Ok((gas, [].span())); },
-        };
+        let y_is_none = y.is_none();
+        let y = y.unwrap_or(0);
+        if y_is_none {
+            return Result::Ok((gas, [].span()));
+        }
 
         let public_key: Option<Secp256r1Point> = Secp256Trait::secp256_ec_new_syscall(x, y)
             .unwrap_syscall();
-        let public_key = match public_key {
-            Option::Some(public_key) => public_key,
-            Option::None => { return Result::Ok((gas, [].span())); },
+        let public_key = if let Option::Some(public_key) = public_key {
+            public_key
+        } else {
+            return Result::Ok((gas, [].span()));
         };
 
         if !is_valid_signature(message_hash, r, s, public_key) {
@@ -73,11 +85,7 @@ pub impl P256Verify of Precompile {
 #[cfg(test)]
 mod tests {
     use core::array::ArrayTrait;
-    use crate::eth_call::evm::instructions::SystemOperationsTrait;
-    use crate::eth_call::evm::memory::MemoryTrait;
     use crate::eth_call::evm::precompiles::p256verify::P256Verify;
-    use crate::eth_call::evm::stack::StackTrait;
-    use crate::eth_call::evm::test_utils::{VMBuilderTrait, native_token};
     use crate::eth_call::utils::traits::bytes::{FromBytes, ToBytes};
 
 

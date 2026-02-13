@@ -1,3 +1,8 @@
+// ============================================================================
+// General Utilities
+// ============================================================================
+// Common helpers for endian conversion, RLP chunk handling, hashing, and
+// output formatting used across the Cairo program.
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.uint256 import Uint256, uint256_reverse_endian, felt_to_uint256
 from starkware.cairo.common.alloc import alloc
@@ -77,7 +82,10 @@ func reverse_small_chunk_endianess{range_check_ptr}(word: felt, bytes_len: felt)
         return word_reverse_endian_56_RC{range_check_ptr=range_check_ptr}(word);
     }
 
-    assert 1 = 0;
+    with_attr error_message(
+            "reverse_small_chunk_endianess: bytes_len must be in 1..7, got {bytes_len}") {
+        assert 1 = 0;
+    }
     return 0;
 }
 
@@ -117,7 +125,9 @@ func reverse_chunk_endianess{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
         return (res);
     }
 
-    assert 1 = 0;
+    with_attr error_message("reverse_chunk_endianess: bytes_len must be in 1..8, got {bytes_len}") {
+        assert 1 = 0;
+    }
     return 0;
 }
 

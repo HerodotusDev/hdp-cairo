@@ -139,11 +139,7 @@ pub impl MPNatTraitImpl of MPNatTrait {
             // algorithm is easy.
             let k = self.digits.len() - 1;
             let mut i = k;
-            loop {
-                if i == 0 {
-                    break;
-                }
-
+            while i != 0 {
                 i -= 1;
 
                 let self_most_sig = self.digits.pop().unwrap();
@@ -188,12 +184,7 @@ pub impl MPNatTraitImpl of MPNatTrait {
         let mut self_most_sig: Word = 0;
 
         let mut j = m + 1;
-
-        loop {
-            if j == 0 {
-                break;
-            }
-
+        while j != 0 {
             j -= 1;
 
             let self_second_sig = self.digits[self.digits.len() - 1];
@@ -203,16 +194,11 @@ pub impl MPNatTraitImpl of MPNatTrait {
             let mut q_hat = a / other_most_sig;
             let mut r_hat = a % other_most_sig;
 
-            loop {
-                let a = q_hat * other_second_sig;
-                let b = join_as_double(r_hat.as_u64(), self_third_sig);
-                if q_hat >= BASE || a > b {
-                    q_hat -= 1;
-                    r_hat += other_most_sig;
-                    if BASE <= r_hat {
-                        break;
-                    }
-                } else {
+            while q_hat >= BASE || q_hat
+                * other_second_sig > join_as_double(r_hat.as_u64(), self_third_sig) {
+                q_hat -= 1;
+                r_hat += other_most_sig;
+                if BASE <= r_hat {
                     break;
                 }
             }
@@ -273,7 +259,8 @@ pub impl MPNatTraitImpl of MPNatTrait {
         }
 
         // A binary number is odd iff its lowest order bit is set.
-        self.digits[0] & 1 == 1
+        let (_, r) = DivRem::div_rem(self.digits[0], 2);
+        r == 1
     }
 
     // Koç's algorithm for inversion mod 2^k
@@ -298,12 +285,8 @@ pub impl MPNatTraitImpl of MPNatTrait {
         let (mut wordpos, mut bitpos) = (0, 0);
 
         let mut i = 0;
-        loop {
-            if i == k {
-                break;
-            }
-
-            let x = b.digits[0] & 1;
+        while i < k {
+            let (_, x) = DivRem::div_rem(b.digits[0], 2);
             if x != 0 {
                 if !neg {
                     // b = a - b
@@ -366,18 +349,15 @@ pub impl MPNatTraitImpl of MPNatTrait {
         if exp.len() <= (ByteSize::<usize>::byte_size()) {
             let exp_as_number: usize = exp.from_le_bytes_partial().expect('modpow_exp_as_number');
 
-            match self.digits.len().checked_mul(exp_as_number) {
-                Option::Some(max_output_digits) => {
-                    if (modulus.digits.len() > max_output_digits) {
-                        // Special case: modulus is larger than `base ^ exp`, so division is not
-                        // relevant
-                        let mut scratch_space: Felt252Vec<Word> = Felt252VecImpl::new();
-                        scratch_space.expand(max_output_digits).unwrap();
+            if let Option::Some(max_output_digits) = self.digits.len().checked_mul(exp_as_number) {
+                if (modulus.digits.len() > max_output_digits) {
+                    // Special case: modulus is larger than `base ^ exp`, so division is not
+                    // relevant
+                    let mut scratch_space: Felt252Vec<Word> = Felt252VecImpl::new();
+                    scratch_space.expand(max_output_digits).unwrap();
 
-                        return big_wrapping_pow(ref self, exp, ref scratch_space);
-                    }
-                },
-                Option::None => {},
+                    return big_wrapping_pow(ref self, exp, ref scratch_space);
+                }
             };
         }
 
@@ -415,11 +395,7 @@ pub impl MPNatTraitImpl of MPNatTrait {
             if additional_zero_bits > 0 {
                 tmp.digits.set(0, modulus.digits[trailing_zeros].shr(additional_zero_bits.into()));
                 let mut i = 1;
-                loop {
-                    if i == num_digits {
-                        break;
-                    }
-
+                while i < num_digits {
                     let d = modulus.digits[trailing_zeros + i];
                     tmp
                         .digits
@@ -442,14 +418,8 @@ pub impl MPNatTraitImpl of MPNatTrait {
                     .clone_slice(trailing_zeros, modulus.digits.len() - trailing_zeros);
                 tmp.digits.insert_vec(0, ref slice).unwrap();
             }
-            if tmp.digits.len() > 0 {
-                loop {
-                    if tmp.digits[tmp.digits.len() - 1] != 0 {
-                        break;
-                    }
-
-                    tmp.digits.pop().unwrap();
-                };
+            while tmp.digits.len() > 0 && tmp.digits[tmp.digits.len() - 1] == 0 {
+                tmp.digits.pop().unwrap();
             }
             tmp
         };
@@ -469,11 +439,7 @@ pub impl MPNatTraitImpl of MPNatTrait {
         let mut diff = {
             let mut b = false;
             let mut i = 0;
-            loop {
-                if i == scratch.len() || i == s {
-                    break;
-                }
-
+            while i < scratch.len() && i < s {
                 let (diff, borrow) = borrowing_sub(
                     x2.digits.get(i).unwrap_or(0), x1.digits.get(i).unwrap_or(0), b,
                 );
@@ -505,11 +471,7 @@ pub impl MPNatTraitImpl of MPNatTrait {
         let mut c = false;
 
         let mut i = 0;
-        loop {
-            if i == digits.len() {
-                break;
-            }
-
+        while i < digits.len() {
             let out_digit = digits[i];
 
             let (sum, carry) = carrying_add(x1.digits.get(i).unwrap_or(0), out_digit, c);
@@ -559,20 +521,11 @@ pub impl MPNatTraitImpl of MPNatTrait {
         let monpro_len = s + 2;
 
         let mut i = 0;
-        loop {
-            if i == exp.len() {
-                break;
-            }
-
+        while i < exp.len() {
             let b = *exp[i];
 
             let mut mask: u8 = 128;
-
-            loop {
-                if mask == 0 {
-                    break;
-                }
-
+            while mask != 0 {
                 monsq(ref x_bar, ref modulus, n_prime, ref scratch);
                 //TODO: optimize
                 let mut slice = scratch.clone_slice(0, s);
@@ -681,14 +634,6 @@ pub impl MPNatTraitImpl of MPNatTrait {
 
 pub fn mp_nat_to_u128(ref x: MPNat) -> u128 {
     let result = x.digits.to_le_bytes();
-    let mut i: usize = 0;
-    loop {
-        if i == result.len() {
-            break;
-        }
-
-        i += 1;
-    }
     result.from_le_bytes_partial().expect('mpnat_to_u128')
 }
 
@@ -908,10 +853,7 @@ mod tests {
     #[available_gas(100000000000000)]
     fn test_mp_nat_is_odd() {
         let mut n = 0;
-        loop {
-            if n == 1025 {
-                break;
-            }
+        while n != 1025 {
             check_is_odd(n);
 
             n += 1;
@@ -919,11 +861,7 @@ mod tests {
 
         let mut n = 0xFF_FF_FF_FF_00_00_00_00;
 
-        loop {
-            if n == 0xFF_FF_FF_FF_00_00_04_01 {
-                break;
-            }
-
+        while n != 0xFF_FF_FF_FF_00_00_04_01 {
             check_is_odd(n);
             n += 1;
         };

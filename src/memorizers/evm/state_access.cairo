@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM State Access
+// ============================================================================
+// Dispatches EVM memorizer reads and decodes values using the appropriate
+// decoder based on state access type (header, account, storage, tx, receipt, log).
 from src.decoders.evm.account_decoder import AccountDecoder as EvmAccountDecoder
 from src.decoders.evm.header_decoder import HeaderDecoder as EvmHeaderDecoder
 from src.decoders.evm.log_decoder import LogDecoder as EvmLogDecoder

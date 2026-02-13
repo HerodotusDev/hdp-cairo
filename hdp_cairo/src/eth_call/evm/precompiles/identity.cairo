@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Identity Precompile
+// ============================================================================
+// Returns input unchanged with linear gas cost.
+
 use starknet::EthAddress;
 use crate::eth_call::evm::errors::EVMError;
 use crate::eth_call::evm::precompiles::Precompile;

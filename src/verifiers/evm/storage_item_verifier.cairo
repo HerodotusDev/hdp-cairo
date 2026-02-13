@@ -1,3 +1,7 @@
+// ============================================================================
+// EVM Storage Verifier
+// ============================================================================
+// Verifies storage proofs against account/storage roots and stores them.
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
 from starkware.cairo.common.dict_access import DictAccess
 from src.utils.mpt import verify_mpt_proof

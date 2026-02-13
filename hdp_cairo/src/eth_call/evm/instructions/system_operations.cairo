@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM System Opcodes
+// ============================================================================
+// Implements CALL-family and CREATE-family system operations.
+
 use crate::eth_call::evm::call_helpers::CallHelpers;
 use crate::eth_call::evm::create_helpers::{CreateHelpers, CreateType};
 use crate::eth_call::evm::errors::{EVMError, ensure};
@@ -400,13 +405,10 @@ mod tests {
     use crate::eth_call::evm::model::vm::VMTrait;
     use crate::eth_call::evm::stack::StackTrait;
     use crate::eth_call::evm::state::StateTrait;
-    use crate::eth_call::evm::test_utils::{
-        MemoryTestUtilsTrait, VMBuilderTrait, evm_address, native_token, origin, test_address,
-        uninitialized_account,
-    };
+    use crate::eth_call::evm::test_utils::{MemoryTestUtilsTrait, VMBuilderTrait, evm_address};
     use crate::eth_call::utils::constants::EMPTY_KECCAK;
     use crate::eth_call::utils::contracts_test_data::{storage_evm_bytecode, storage_evm_initcode};
-    use crate::eth_call::utils::helpers::{compute_starknet_address, load_word};
+    use crate::eth_call::utils::helpers::load_word;
     use crate::eth_call::utils::traits::EthAddressIntoU256;
     use crate::eth_call::utils::traits::bytes::U8SpanExTrait;
 
@@ -496,9 +498,6 @@ mod tests {
         // Deploy bytecode at 0xabfa740ccd
         // SSTORE 0x42 at 0x42
         let eth_address: EthAddress = 0xabfa740ccd_u256.into();
-        let starknet_address = compute_starknet_address(
-            test_address(), eth_address, 0.try_into().unwrap(),
-        );
         let deployed_bytecode = [
             0x60, 0x01, 0x60, 0x01, 0x01, 0x60, 0x00, 0x53, 0x60, 0x42, 0x60, 0x42, 0x55, 0x60,
             0x20, 0x60, 0x00, 0xf3,
@@ -557,9 +556,6 @@ mod tests {
         // Deploy bytecode at 0xabfa740ccd
         // SSTORE 0x42 at 0x42
         let eth_address: EthAddress = 0xabfa740ccd_u256.into();
-        let starknet_address = compute_starknet_address(
-            test_address(), eth_address, 0.try_into().unwrap(),
-        );
         let deployed_bytecode = [
             0x60, 0x01, 0x60, 0x01, 0x01, 0x60, 0x00, 0x53, 0x60, 0x42, 0x60, 0x42, 0x55, 0x60,
             0x20, 0x60, 0x00, 0xf3,
@@ -620,9 +616,6 @@ mod tests {
             .span();
         let code_hash = deployed_bytecode.compute_keccak256_hash();
         let eth_address: EthAddress = 0x1234.try_into().unwrap();
-        let starknet_address = compute_starknet_address(
-            test_address(), eth_address, 0.try_into().unwrap(),
-        );
         let contract_account = Account {
             address: eth_address,
             balance: 0,
@@ -682,9 +675,6 @@ mod tests {
             .span();
         let code_hash = deployed_bytecode.compute_keccak256_hash();
         let eth_address: EthAddress = 0x1234.try_into().unwrap();
-        let starknet_address = compute_starknet_address(
-            test_address(), eth_address, 0.try_into().unwrap(),
-        );
         let contract_account = Account {
             address: eth_address,
             balance: 0,
@@ -722,9 +712,6 @@ mod tests {
 
         let deployed_bytecode = [0xff].span();
         let eth_address: EthAddress = evm_address();
-        let starknet_address = compute_starknet_address(
-            test_address(), eth_address, uninitialized_account(),
-        );
         let origin_account = Account {
             address: eth_address,
             balance: 2,

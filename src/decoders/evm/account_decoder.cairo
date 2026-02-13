@@ -1,3 +1,14 @@
+// ============================================================================
+// EVM Account Decoder
+// ============================================================================
+// Extracts account fields from RLP-encoded Ethereum account data.
+//
+// Fields:
+// - NONCE, BALANCE, STATE_ROOT, CODE_HASH
+//
+// Data Representation:
+// - All data stored as little-endian 8-byte chunks
+// - Conversion to Uint256 uses helper utilities in src/utils/rlp.cairo
 from src.utils.rlp import rlp_list_retrieve, le_chunks_to_be_uint256
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.dict_access import DictAccess

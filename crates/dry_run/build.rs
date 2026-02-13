@@ -1,12 +1,12 @@
 use std::{env, fs, path::PathBuf, process::Command};
 
-fn main() {
-    let workspace_root = PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR is not set")).join("../../");
+fn run() -> Result<(), Box<dyn std::error::Error>> {
+    let workspace_root = PathBuf::from(env::var("CARGO_MANIFEST_DIR")?).join("../../");
     let python_path = workspace_root.join(".venv/bin");
     let cairo_path = workspace_root.join("packages/eth_essentials");
     let src_dir = workspace_root.join("src");
     let entrypoint_path = src_dir.join("contract_bootloader").join("contract_dry_run.cairo");
-    let output_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR is not set")).join("cairo");
+    let output_dir = PathBuf::from(env::var("OUT_DIR")?).join("cairo");
 
     println!("cargo:rerun-if-changed={}", src_dir.display());
 
@@ -14,29 +14,23 @@ fn main() {
     if let Ok(compiled_json) = env::var("DRY_RUN_COMPILED_JSON") {
         println!("cargo:rustc-env=DRY_RUN_COMPILED_JSON={}", compiled_json);
         println!("Skipping Cairo compilation since DRY_RUN_COMPILED_JSON is already set.");
-        return;
+        return Ok(());
     }
 
     // Create output directory
-    fs::create_dir_all(&output_dir).expect("Failed to create output directory");
+    fs::create_dir_all(&output_dir)?;
     let output_file = output_dir.join("compiled.json");
 
     // Run the cairo-compile command.
-    let status = Command::new(
-        python_path
-            .join("cairo-compile")
-            .to_str()
-            .expect("Failed to convert path to string"),
-    )
-    .arg(format!("--cairo_path={}:{}", workspace_root.display(), cairo_path.display()))
-    .arg(entrypoint_path.to_str().expect("Failed to convert path to string"))
-    .arg("--output")
-    .arg(output_file.to_str().expect("Failed to convert path to string"))
-    .status()
-    .expect("Failed to execute cairo-compile");
+    let status = Command::new(python_path.join("cairo-compile"))
+        .arg(format!("--cairo_path={}:{}", workspace_root.display(), cairo_path.display()))
+        .arg(&entrypoint_path)
+        .arg("--output")
+        .arg(&output_file)
+        .status()?;
 
     if !status.success() {
-        panic!("cairo-compile failed for file: {}", entrypoint_path.display());
+        return Err(format!("cairo-compile failed for file: {}", entrypoint_path.display()).into());
     }
 
     // This directive tells Cargo to set an environment variable named DRY_RUN_COMPILED_JSON
@@ -44,4 +38,12 @@ fn main() {
     // This environment variable can then be accessed in our Rust code using the env!() macro.
     // Example: let path = env!("DRY_RUN_COMPILED_JSON");
     println!("cargo:rustc-env=DRY_RUN_COMPILED_JSON={}", output_file.display());
+    Ok(())
+}
+
+fn main() {
+    if let Err(err) = run() {
+        eprintln!("dry_run build script error: {err}");
+        std::process::exit(1);
+    }
 }

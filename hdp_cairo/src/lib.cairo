@@ -1,3 +1,7 @@
+// ============================================================================
+// HDP Cairo Package
+// ============================================================================
+// Public entry module exporting EVM/Starknet helpers and memorizer wrappers.
 pub mod arbitrary_type;
 pub mod eth_call;
 pub mod evm;

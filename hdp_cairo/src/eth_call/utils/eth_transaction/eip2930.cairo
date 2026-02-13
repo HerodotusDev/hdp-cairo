@@ -1,3 +1,8 @@
+// ============================================================================
+// EIP-2930 Transaction (Type 0x1)
+// ============================================================================
+// Defines access list items and typed transaction layout.
+
 use starknet::EthAddress;
 use crate::eth_call::utils::errors::{EthTransactionError, RLPError, RLPErrorTrait};
 use crate::eth_call::utils::eth_transaction::common::TxKind;

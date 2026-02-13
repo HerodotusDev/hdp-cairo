@@ -27,8 +27,8 @@ impl CustomHintProcessor {
         let result = vm
             .get_continuous_range(result_ptr, 2)?
             .into_iter()
-            .map(|v| v.get_int().unwrap())
-            .collect::<Vec<Felt252>>();
+            .map(|v| v.get_int().ok_or(HintError::WrongHintData).map(|x| x.to_owned()))
+            .collect::<Result<Vec<Felt252>, HintError>>()?;
 
         println!("result: {}, {}", result[0], result[1]);
         Ok(())

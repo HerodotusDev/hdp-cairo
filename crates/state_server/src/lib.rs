@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex};
 
+use anyhow as _;
 use axum::{
     routing::{get, post},
     Router,
@@ -42,8 +43,12 @@ impl AppState {
         &self,
         trie_label: pathfinder_crypto::Felt,
     ) -> Result<r2d2::PooledConnection<r2d2_sqlite::SqliteConnectionManager>, mpt::error::Error> {
-        self.connection_manager.lock().unwrap().create_tables_if_not_exists(trie_label)?;
-        self.connection_manager.lock().unwrap().get_connection(trie_label)
+        let mut cm = self
+            .connection_manager
+            .lock()
+            .map_err(|e| mpt::error::Error::Any(anyhow::anyhow!("state_server connection_manager mutex poisoned: {e}")))?;
+        cm.create_tables_if_not_exists(trie_label)?;
+        cm.get_connection(trie_label)
     }
 }
 

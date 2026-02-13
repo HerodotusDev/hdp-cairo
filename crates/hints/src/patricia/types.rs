@@ -1,8 +1,10 @@
-//! Contains the core data structures and type definitions used throughout the Patricia Merkle tree implementation.
+//! Contains the core data structures and type definitions used throughout the Patricia Merkle tree
+//! implementation.
 //!
-//! This module defines everything from the basic representation of tree components like `NodeEdge` and `StorageLeaf`,
-//! to structural helpers like `Height` and `NodePath`. It also includes types for representing tree modifications
-//! (`TreeUpdate`) and the necessary machinery for traversing the tree's history (`PreimageNodeIterator`).
+//! This module defines everything from the basic representation of tree components like `NodeEdge`
+//! and `StorageLeaf`, to structural helpers like `Height` and `NodePath`. It also includes types
+//! for representing tree modifications (`TreeUpdate`) and the necessary machinery for traversing
+//! the tree's history (`PreimageNodeIterator`).
 
 use std::{
     collections::{HashMap, HashSet},

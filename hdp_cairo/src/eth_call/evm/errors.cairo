@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Errors
+// ============================================================================
+// Defines error codes and helpers used by interpreter and helpers.
+
 use core::fmt::{Debug, Display, Error, Formatter};
 use crate::eth_call::utils::traits::bytes::ToBytes;
 
@@ -77,7 +82,7 @@ pub impl EVMErrorImpl of EVMErrorTrait {
             EVMError::NotImplemented => 'not implemented',
             EVMError::InvalidParameter(error_message) => error_message,
             // TODO: refactor with dynamic strings once supported
-            EVMError::InvalidOpcode => 'invalid opcode'.into(),
+            EVMError::InvalidOpcode(_) => 'invalid opcode'.into(),
             EVMError::WriteInStaticContext => 'write protection',
             EVMError::Collision => 'create collision'.into(),
             EVMError::OutOfGas => 'out of gas'.into(),

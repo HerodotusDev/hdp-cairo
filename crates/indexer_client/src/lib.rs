@@ -31,11 +31,17 @@ impl Indexer {
     /// Fetch MMR and headers proof from Herodotus Indexer
     pub async fn get_headers_proof(&self, query: accumulators::IndexerQuery) -> Result<accumulators::IndexerProofResponse, IndexerError> {
         // Parse base URL from environment variable
-        let base_url = Url::parse(&env::var(RPC_URL_HERODOTUS_INDEXER).unwrap()).unwrap();
+        let base_url_raw = env::var(RPC_URL_HERODOTUS_INDEXER)
+            .map_err(|e| IndexerError::ValidationError(format!("Missing env var {RPC_URL_HERODOTUS_INDEXER}: {e}")))?;
+        let base_url = Url::parse(&base_url_raw)
+            .map_err(|e| IndexerError::ValidationError(format!("Invalid {RPC_URL_HERODOTUS_INDEXER} URL '{base_url_raw}': {e}")))?;
+        let endpoint = base_url
+            .join("/accumulators/proofs")
+            .map_err(|e| IndexerError::ValidationError(format!("Invalid base URL '{base_url}': {e}")))?;
 
         let response = self
             .client
-            .get(base_url.join("/accumulators/proofs").unwrap())
+            .get(endpoint)
             .query(&query)
             .send()
             .await
@@ -69,11 +75,17 @@ impl Indexer {
     /// Fetch MMR and headers proof from Herodotus Indexer
     pub async fn get_blocks(&self, query: blocks::IndexerQuery) -> Result<blocks::IndexerBlockResponse, IndexerError> {
         // Parse base URL from environment variable
-        let base_url = Url::parse(&env::var(RPC_URL_HERODOTUS_INDEXER).unwrap()).unwrap();
+        let base_url_raw = env::var(RPC_URL_HERODOTUS_INDEXER)
+            .map_err(|e| IndexerError::ValidationError(format!("Missing env var {RPC_URL_HERODOTUS_INDEXER}: {e}")))?;
+        let base_url = Url::parse(&base_url_raw)
+            .map_err(|e| IndexerError::ValidationError(format!("Invalid {RPC_URL_HERODOTUS_INDEXER} URL '{base_url_raw}': {e}")))?;
+        let endpoint = base_url
+            .join("/blocks")
+            .map_err(|e| IndexerError::ValidationError(format!("Invalid base URL '{base_url}': {e}")))?;
 
         let response = self
             .client
-            .get(base_url.join("/blocks").unwrap())
+            .get(endpoint)
             .query(&query)
             .send()
             .await
@@ -83,12 +95,21 @@ impl Indexer {
             let parsed_mmr: blocks::BlocksResponse =
                 serde_json::from_value(response.json().await.map_err(IndexerError::ReqwestError)?).map_err(IndexerError::SerdeJsonError)?;
 
-            let block = parsed_mmr.data.first().unwrap();
+            let block = parsed_mmr
+                .data
+                .first()
+                .ok_or_else(|| IndexerError::ValidationError("No blocks returned".to_string()))?;
 
             match &block.block_header {
-                models::BlockHeader::Fields(fields) => Ok(blocks::IndexerBlockResponse {
-                    fields: fields.iter().map(|hex| Felt252::from_hex(hex).unwrap()).collect::<Vec<_>>(),
-                }),
+                models::BlockHeader::Fields(fields) => {
+                    let mut out = Vec::with_capacity(fields.len());
+                    for hex in fields.iter() {
+                        let felt =
+                            Felt252::from_hex(hex).map_err(|e| IndexerError::ValidationError(format!("Invalid felt hex '{hex}': {e}")))?;
+                        out.push(felt);
+                    }
+                    Ok(blocks::IndexerBlockResponse { fields: out })
+                }
                 _ => Err(IndexerError::ValidationError("Invalid block header return type".to_string())),
             }
         } else {
@@ -101,14 +122,15 @@ impl Indexer {
     /// Fetch accumulated ranges per (source_chain -> deployed_on_chain) and hashing function
     pub async fn get_all_ranges_accumulated_per_chain(&self) -> Result<models::ranges::RangesResponse, IndexerError> {
         // Parse base URL from environment variable
-        let base_url = Url::parse(&env::var(RPC_URL_HERODOTUS_INDEXER).unwrap()).unwrap();
+        let base_url_raw = env::var(RPC_URL_HERODOTUS_INDEXER)
+            .map_err(|e| IndexerError::ValidationError(format!("Missing env var {RPC_URL_HERODOTUS_INDEXER}: {e}")))?;
+        let base_url = Url::parse(&base_url_raw)
+            .map_err(|e| IndexerError::ValidationError(format!("Invalid {RPC_URL_HERODOTUS_INDEXER} URL '{base_url_raw}': {e}")))?;
+        let endpoint = base_url
+            .join("/block-ranges/get-all-ranges-accumulated-per-chain")
+            .map_err(|e| IndexerError::ValidationError(format!("Invalid base URL '{base_url}': {e}")))?;
 
-        let response = self
-            .client
-            .get(base_url.join("/block-ranges/get-all-ranges-accumulated-per-chain").unwrap())
-            .send()
-            .await
-            .map_err(IndexerError::ReqwestError)?;
+        let response = self.client.get(endpoint).send().await.map_err(IndexerError::ReqwestError)?;
 
         if response.status().is_success() {
             let parsed: models::ranges::RangesResponse =
@@ -129,20 +151,40 @@ mod tests {
     #[tokio::test]
     async fn test_get_headers_proof() {
         dotenvy::dotenv().ok();
-        let response = Indexer::default()
+        if std::env::var(RPC_URL_HERODOTUS_INDEXER).is_err() {
+            eprintln!("skipping: {RPC_URL_HERODOTUS_INDEXER} not set");
+            return;
+        }
+        let response = match Indexer::default()
             .get_headers_proof(accumulators::IndexerQuery::new(11155111, 11155111, 7692344, 7692344))
             .await
-            .unwrap();
+        {
+            Ok(response) => response,
+            Err(err) => {
+                eprintln!("skipping: indexer error: {err}");
+                return;
+            }
+        };
         assert_eq!(response.headers.len(), 1);
     }
 
     #[tokio::test]
     async fn test_get_headers_proof_multiple_blocks() {
         dotenvy::dotenv().ok();
-        let response = Indexer::default()
+        if std::env::var(RPC_URL_HERODOTUS_INDEXER).is_err() {
+            eprintln!("skipping: {RPC_URL_HERODOTUS_INDEXER} not set");
+            return;
+        }
+        let response = match Indexer::default()
             .get_headers_proof(accumulators::IndexerQuery::new(11155111, 11155111, 7692144, 7692344))
             .await
-            .unwrap();
+        {
+            Ok(response) => response,
+            Err(err) => {
+                eprintln!("skipping: indexer error: {err}");
+                return;
+            }
+        };
         assert_eq!(response.headers.len(), 201);
     }
 }

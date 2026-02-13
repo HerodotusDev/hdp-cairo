@@ -67,6 +67,8 @@ impl CallHandler for AccountCallHandler {
             .take(length)
             .collect::<Vec<u8>>();
 
-        Ok(CairoAccount::rlp_decode(&rlp).handle(function_id))
+        CairoAccount::try_rlp_decode(&rlp)
+            .and_then(|acct| acct.handle(function_id))
+            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))
     }
 }

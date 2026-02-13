@@ -1,5 +1,6 @@
 use cairo_vm::Felt252;
 use serde::{Deserialize, Serialize};
+use types::{BlockNumber, ChainId};
 
 use super::{BlockHeader, HashingFunction};
 
@@ -12,15 +13,15 @@ pub enum Sorting {
 /// Query parameters for the indexer
 #[derive(Debug, Serialize)]
 pub struct IndexerQuery {
-    pub chain_id: u128,
+    pub chain_id: ChainId,
     pub hashing_function: HashingFunction,
-    pub from_block_number_inclusive: u128,
-    pub to_block_number_inclusive: u128,
+    pub from_block_number_inclusive: BlockNumber,
+    pub to_block_number_inclusive: BlockNumber,
     pub sort: Sorting,
 }
 
 impl IndexerQuery {
-    pub fn new(chain_id: u128, from_block: u128, to_block: u128) -> Self {
+    pub fn new(chain_id: ChainId, from_block: BlockNumber, to_block: BlockNumber) -> Self {
         Self {
             chain_id,
             hashing_function: HashingFunction::Poseidon,
@@ -33,7 +34,7 @@ impl IndexerQuery {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Block {
-    pub block_number: u64,
+    pub block_number: BlockNumber,
     pub block_header: BlockHeader,
     pub block_hash: String,
 }

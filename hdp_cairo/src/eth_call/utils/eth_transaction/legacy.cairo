@@ -1,3 +1,8 @@
+// ============================================================================
+// Legacy Ethereum Transaction
+// ============================================================================
+// Defines the fields and defaults for type-0 transactions.
+
 use crate::eth_call::utils::eth_transaction::common::TxKind;
 use crate::eth_call::utils::traits::SpanDefault;
 

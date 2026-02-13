@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Virtual Machine State
+// ============================================================================
+// Holds interpreter state, memory, stack, and execution context.
+
 use core::cmp::min;
 use core::dict::{Felt252Dict, Felt252DictTrait};
 use core::num::traits::{CheckedSub, SaturatingSub};
@@ -64,10 +69,7 @@ pub impl VMImpl of VMTrait {
     /// # Error : returns `EVMError::OutOfGas` if gas_left - value < 0
     #[inline(always)]
     fn charge_gas(ref self: VM, value: u64) -> Result<(), EVMError> {
-        self.gas_left = match self.gas_left.checked_sub(value) {
-            Option::Some(gas_left) => gas_left,
-            Option::None => { return Result::Err(EVMError::OutOfGas); },
-        };
+        self.gas_left = self.gas_left.checked_sub(value).ok_or(EVMError::OutOfGas)?;
         Result::Ok(())
     }
 

@@ -1,3 +1,7 @@
+// ============================================================================
+// EVM Header Verifier
+// ============================================================================
+// Verifies EVM header inclusion in MMR batches and records headers in memorizer.
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, BitwiseBuiltin
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.dict import dict_read, dict_write
@@ -28,12 +32,16 @@ func verify_mmr_batches{
     mmr_metas_poseidon: MMRMetaPoseidon*,
     mmr_metas_keccak: MMRMetaKeccak*,
     chain_info: ChainInfo,
-}(idx: felt, mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt) -> (mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt) {
+}(idx: felt, mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt) -> (
+    mmr_meta_idx_poseidon: felt, mmr_meta_idx_keccak: felt
+) {
     alloc_locals;
     let (__fp__, _) = get_fp_and_pc();
 
     if (0 == idx) {
-        return (mmr_meta_idx_poseidon=mmr_meta_idx_poseidon, mmr_meta_idx_keccak=mmr_meta_idx_keccak);
+        return (
+            mmr_meta_idx_poseidon=mmr_meta_idx_poseidon, mmr_meta_idx_keccak=mmr_meta_idx_keccak
+        );
     }
 
     tempvar is_poseidon = nondet %{ batch_evm.headers_with_mmr[ids.idx - 1].is_poseidon() %};
@@ -51,10 +59,14 @@ func verify_mmr_batches{
         %{ segments.write_arg(ids.peaks_poseidon, header_evm_with_mmr.mmr_meta.peaks) %}
         tempvar peaks_len: felt = nondet %{ len(header_evm_with_mmr.mmr_meta.peaks) %};
 
-        let (peaks_dict, peaks_dict_start) = validate_poseidon_mmr_meta(&mmr_meta_poseidon, peaks_poseidon, peaks_len);
+        let (peaks_dict, peaks_dict_start) = validate_poseidon_mmr_meta(
+            &mmr_meta_poseidon, peaks_poseidon, peaks_len
+        );
         assert mmr_metas_poseidon[mmr_meta_idx_poseidon] = mmr_meta_poseidon;
         tempvar n_header_proofs: felt = nondet %{ len(header_evm_with_mmr.headers) %};
-        verify_headers_with_mmr_peaks_poseidon{mmr_meta_poseidon=mmr_meta_poseidon, peaks_dict=peaks_dict}(n_header_proofs);
+        verify_headers_with_mmr_peaks_poseidon{
+            mmr_meta_poseidon=mmr_meta_poseidon, peaks_dict=peaks_dict
+        }(n_header_proofs);
 
         default_dict_finalize(peaks_dict_start, peaks_dict, 0);
 
@@ -82,10 +94,14 @@ func verify_mmr_batches{
         %{ segments.write_arg(ids.peaks_keccak, header_evm_with_mmr.mmr_meta.peaks) %}
         tempvar peaks_len: felt = nondet %{ len(header_evm_with_mmr.mmr_meta.peaks) %};
 
-        let (peaks_dict, peaks_dict_start) = validate_keccak_mmr_meta(&mmr_meta_keccak, peaks_keccak, peaks_len);
+        let (peaks_dict, peaks_dict_start) = validate_keccak_mmr_meta(
+            &mmr_meta_keccak, peaks_keccak, peaks_len
+        );
         assert mmr_metas_keccak[mmr_meta_idx_keccak] = mmr_meta_keccak;
         tempvar n_header_proofs: felt = nondet %{ len(header_evm_with_mmr.headers) %};
-        verify_headers_with_mmr_peaks_keccak{mmr_meta_keccak=mmr_meta_keccak, peaks_dict=peaks_dict}(n_header_proofs);
+        verify_headers_with_mmr_peaks_keccak{
+            mmr_meta_keccak=mmr_meta_keccak, peaks_dict=peaks_dict
+        }(n_header_proofs);
 
         default_dict_finalize(peaks_dict_start, peaks_dict, 0);
 
@@ -96,8 +112,11 @@ func verify_mmr_batches{
             mmr_meta_idx_keccak=mmr_meta_idx_keccak + 1,
         );
     }
-    
-    assert 0 = 1;
+
+    with_attr error_message(
+            "Invalid EVM header MMR: neither Poseidon nor Keccak hashing detected") {
+        assert 0 = 1;
+    }
 
     %{ vm_exit_scope() %}
     return verify_mmr_batches(

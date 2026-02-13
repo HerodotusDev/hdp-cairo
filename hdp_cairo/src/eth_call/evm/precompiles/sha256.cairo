@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM SHA256 Precompile
+// ============================================================================
+// Implements the SHA256 precompile gas cost and execution.
+
 use core::sha256::compute_sha256_u32_array;
 use starknet::EthAddress;
 use crate::eth_call::evm::errors::EVMError;
@@ -23,7 +28,7 @@ pub impl Sha256 of Precompile {
             let bytes4 = (*bytes4).unbox();
             sha256_input.append(FromBytes::from_be_bytes(bytes4.span()).unwrap());
         }
-        let (last_input_word, last_input_num_bytes) = if input.len() == 0 {
+        let (last_input_word, last_input_num_bytes) = if input.is_empty() {
             (0, 0)
         } else {
             let mut last_input_word: u32 = 0;
@@ -50,11 +55,7 @@ pub impl Sha256 of Precompile {
 #[cfg(test)]
 mod tests {
     use core::result::ResultTrait;
-    use crate::eth_call::evm::instructions::SystemOperationsTrait;
-    use crate::eth_call::evm::memory::MemoryTrait;
     use crate::eth_call::evm::precompiles::sha256::Sha256;
-    use crate::eth_call::evm::stack::StackTrait;
-    use crate::eth_call::evm::test_utils::{MemoryTestUtilsTrait, VMBuilderTrait, native_token};
     use crate::eth_call::utils::traits::bytes::{FromBytes, ToBytes};
 
     //source:

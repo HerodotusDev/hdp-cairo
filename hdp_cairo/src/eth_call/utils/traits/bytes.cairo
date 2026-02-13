@@ -2,7 +2,7 @@ use core::cmp::min;
 use core::keccak::cairo_keccak;
 use core::num::traits::{BitSize, Bounded, One, SaturatingAdd, Zero};
 use core::traits::BitAnd;
-use crate::eth_call::utils::constants::{POW_2, POW_256_1, POW_256_REV};
+use crate::eth_call::utils::constants::POW_256_1;
 use crate::eth_call::utils::math::Bitshift;
 use crate::eth_call::utils::traits::integer::{ByteSize, BytesUsedTrait, U256Trait};
 

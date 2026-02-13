@@ -65,11 +65,7 @@ pub fn compress(rounds: usize, h: Span<u64>, m: Span<u64>, t: Span<u64>, f: bool
     let IV = IV();
 
     let mut i = 0;
-    loop {
-        if (i == h.len()) {
-            break;
-        }
-
+    while i < h.len() {
         v.set(i, *h[i]);
         v.set(i + h.len(), *IV[i]);
 
@@ -84,11 +80,7 @@ pub fn compress(rounds: usize, h: Span<u64>, m: Span<u64>, t: Span<u64>, f: bool
     }
 
     let mut i = 0;
-    loop {
-        if i == rounds {
-            break;
-        }
-
+    while i < rounds {
         let s = *(SIGMA()[i % 10]);
 
         g(ref v, 0, 4, 8, 12, *m[*s[0]], *m[*s[1]]);
@@ -107,11 +99,7 @@ pub fn compress(rounds: usize, h: Span<u64>, m: Span<u64>, t: Span<u64>, f: bool
     let mut result: Array<u64> = Default::default();
 
     let mut i = 0;
-    loop {
-        if (i == 8) {
-            break;
-        }
-
+    while i < 8 {
         result.append(*h[i] ^ (v[i] ^ v[i + 8]));
 
         i += 1;

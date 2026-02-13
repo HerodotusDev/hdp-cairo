@@ -1,3 +1,8 @@
+// ============================================================================
+// RLP Encoding/Decoding Utilities
+// ============================================================================
+// Implements basic RLP parsing helpers for eth_call transactions.
+
 use core::array::{ArrayTrait, SpanTrait};
 use core::option::OptionTrait;
 use core::panic_with_felt252;
@@ -220,7 +225,7 @@ pub impl RLPHelpersImpl of RLPHelpersTrait {
         match self {
             RLPItem::String(bytes) => {
                 // Empty strings means 0
-                if bytes.len() == 0 {
+                if bytes.is_empty() {
                     return Result::Ok(0);
                 }
                 let value = bytes.from_be_bytes_partial().expect('parse_u64_from_string');
@@ -241,7 +246,7 @@ pub impl RLPHelpersImpl of RLPHelpersTrait {
         match self {
             RLPItem::String(bytes) => {
                 // Empty strings means 0
-                if bytes.len() == 0 {
+                if bytes.is_empty() {
                     return Result::Ok(0);
                 }
                 let value = bytes.from_be_bytes_partial().expect('parse_u128_from_string');
@@ -262,7 +267,7 @@ pub impl RLPHelpersImpl of RLPHelpersTrait {
     fn try_parse_address_from_string(self: RLPItem) -> Result<Option<EthAddress>, RLPError> {
         match self {
             RLPItem::String(bytes) => {
-                if bytes.len() == 0 {
+                if bytes.is_empty() {
                     return Result::Ok(Option::None);
                 }
                 if bytes.len() == 20 {
@@ -286,7 +291,7 @@ pub impl RLPHelpersImpl of RLPHelpersTrait {
         match self {
             RLPItem::String(bytes) => {
                 // Empty strings means 0
-                if bytes.len() == 0 {
+                if bytes.is_empty() {
                     return Result::Ok(0);
                 }
                 let value = bytes.from_be_bytes_partial().expect('parse_u256_from_string');
@@ -323,21 +328,12 @@ pub impl RLPHelpersImpl of RLPHelpersTrait {
             RLPItem::String(_) => { return Result::Err(RLPError::NotAList); },
             RLPItem::List(mut keys) => {
                 let mut storage_keys: Array<u256> = array![];
-                let storage_keys: Result<Span<u256>, RLPError> = loop {
-                    match keys.pop_front() {
-                        Option::Some(rlp_item) => {
-                            let storage_key = match ((*rlp_item).parse_u256_from_string()) {
-                                Result::Ok(storage_key) => { storage_key },
-                                Result::Err(err) => { break Result::Err(err); },
-                            };
+                while let Option::Some(rlp_item) = keys.pop_front() {
+                    let storage_key = (*rlp_item).parse_u256_from_string()?;
+                    storage_keys.append(storage_key);
+                }
 
-                            storage_keys.append(storage_key);
-                        },
-                        Option::None => { break Result::Ok(storage_keys.span()); },
-                    }
-                };
-
-                storage_keys
+                Result::Ok(storage_keys.span())
             },
         }
     }
@@ -377,21 +373,16 @@ pub impl RLPHelpersImpl of RLPHelpersTrait {
                     let [rlp_address, rlp_keys] = (*inner_tuple).unbox();
                     let ethereum_address = match rlp_address.try_parse_address_from_string() {
                         Result::Ok(maybe_eth_address) => {
-                            match (maybe_eth_address) {
-                                Option::Some(eth_address) => { eth_address },
-                                Option::None => {
-                                    break Result::Err(RLPError::FailedParsingAccessList);
-                                },
+                            if let Option::Some(eth_address) = maybe_eth_address {
+                                eth_address
+                            } else {
+                                break Result::Err(RLPError::FailedParsingAccessList);
                             }
                         },
                         Result::Err(err) => { break Result::Err(err); },
                     };
 
-                    let storage_keys: Span<u256> =
-                        match rlp_keys.parse_storage_keys_from_rlp_item() {
-                        Result::Ok(storage_keys) => storage_keys,
-                        Result::Err(err) => { break Result::Err(err); },
-                    };
+                    let storage_keys = rlp_keys.parse_storage_keys_from_rlp_item()?;
                     parsed_access_list.append(AccessListItem { ethereum_address, storage_keys });
                 },
             }
@@ -527,10 +518,7 @@ mod tests {
     fn test_rlp_encode_string_length_exactly_56() {
         let mut input: Array<u8> = Default::default();
         let mut i = 0;
-        loop {
-            if i == 56 {
-                break;
-            }
+        while i != 56 {
             input.append(0x60);
             i += 1;
         }
@@ -541,10 +529,7 @@ mod tests {
         assert(*res[0] == 0xb8, 'wrong prefix');
         assert(*res[1] == 56, 'wrong string length');
         let mut i = 2;
-        loop {
-            if i == 58 {
-                break;
-            }
+        while i != 58 {
             assert(*res[i] == 0x60, 'wrong value in sequence');
             i += 1;
         };
@@ -554,10 +539,7 @@ mod tests {
     fn test_rlp_encode_string_length_greater_than_56() {
         let mut input: Array<u8> = Default::default();
         let mut i = 0;
-        loop {
-            if i == 60 {
-                break;
-            }
+        while i != 60 {
             input.append(0x70);
             i += 1;
         }
@@ -568,10 +550,7 @@ mod tests {
         assert(*res[0] == 0xb8, 'wrong prefix');
         assert(*res[1] == 60, 'wrong length byte');
         let mut i = 2;
-        loop {
-            if i == 62 {
-                break;
-            }
+        while i != 62 {
             assert(*res[i] == 0x70, 'wrong value in sequence');
             i += 1;
         }
@@ -581,10 +560,7 @@ mod tests {
     fn test_rlp_encode_string_large_bytearray_inputs() {
         let mut input: Array<u8> = Default::default();
         let mut i = 0;
-        loop {
-            if i == 500 {
-                break;
-            }
+        while i != 500 {
             input.append(0x70);
             i += 1;
         }
@@ -596,10 +572,7 @@ mod tests {
         assert(*res[1] == 0x01, 'wrong first length byte');
         assert(*res[2] == 0xF4, 'wrong second length byte');
         let mut i = 3;
-        loop {
-            if i == 503 {
-                break;
-            }
+        while i != 503 {
             assert(*res[i] == 0x70, 'wrong value in sequence');
             i += 1;
         }
@@ -666,17 +639,11 @@ mod tests {
     #[test]
     fn test_rlp_decode_string() {
         let mut i = 0;
-        loop {
-            if i == 0x80 {
-                break;
-            }
+        while i != 0x80 {
             let mut arr = ArrayTrait::new();
             arr.append(i);
-
             let res = RLPTrait::decode(arr.span()).unwrap();
-
             assert(res == [RLPItem::String(arr.span())].span(), 'Wrong value');
-
             i += 1;
         };
     }

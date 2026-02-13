@@ -14,13 +14,13 @@ use clap::Parser;
 use dotenvy as _;
 use dry_hint_processor::{
     syscall_handler::{evm, injected_state, starknet, unconstrained},
-    CustomHintProcessor,
+    CustomHintProcessor, DryRunSyscallHandler,
 };
 use hints::vars;
 use serde_json as _;
-use syscall_handler::{SyscallHandler, SyscallHandlerWrapper};
+use syscall_handler::SyscallHandlerWrapper;
 use tokio as _;
-use tracing::{debug, info};
+use tracing::{debug, info, instrument};
 use tracing_subscriber as _;
 use types::{error::Error, param::Param, CasmContractClass, HDPDryRunInput, HDPDryRunOutput, InjectedState};
 
@@ -59,21 +59,10 @@ pub struct Args {
 }
 
 #[allow(clippy::type_complexity)]
-pub fn run(
-    program_path: PathBuf,
-    input: HDPDryRunInput,
-) -> Result<
-    (
-        SyscallHandler<
-            evm::CallContractHandler,
-            starknet::CallContractHandler,
-            injected_state::CallContractHandler,
-            unconstrained::CallContractHandler,
-        >,
-        HDPDryRunOutput,
-    ),
-    Error,
-> {
+#[instrument(skip(input), fields(program = %program_path.display()))]
+pub fn run(program_path: PathBuf, input: HDPDryRunInput) -> Result<(DryRunSyscallHandler, HDPDryRunOutput), Error> {
+    info!("Starting dry run execution");
+    debug!(params_count = input.params.len(), "Input parameters loaded");
     let cairo_run_config = cairo_run::CairoRunConfig {
         layout: LayoutName::all_cairo,
         secure_run: Some(true),
@@ -82,12 +71,19 @@ pub fn run(
     };
 
     info!("Program path: {}", program_path.display());
-    let program_file = std::fs::read(program_path).map_err(Error::IO)?;
+    let program_file = std::fs::read(&program_path).map_err(|e| Error::ReadFile {
+        path: program_path.display().to_string(),
+        source: e,
+    })?;
     let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))?;
 
     let mut hint_processor = CustomHintProcessor::new(input);
     let mut cairo_runner = cairo_run_program(&program, &cairo_run_config, &mut hint_processor).map_err(Box::new)?;
-    debug!("{:?}", cairo_runner.get_execution_resources());
+    let resources = cairo_runner
+        .get_execution_resources()
+        .map_err(|err| Error::Internal(format!("Failed to read execution resources: {err}")))?;
+    debug!(?resources, "Execution resources");
+    info!(n_steps = resources.n_steps, "Execution completed");
 
     let syscall_handler = cairo_runner
         .exec_scopes
@@ -97,10 +93,10 @@ pub fn run(
             injected_state::CallContractHandler,
             unconstrained::CallContractHandler,
         >>(vars::scopes::SYSCALL_HANDLER)
-        .unwrap()
+        .map_err(|e| Error::Internal(format!("Missing syscall handler in exec scopes: {e}")))?
         .syscall_handler
         .try_read()
-        .unwrap()
+        .map_err(|e| Error::Internal(format!("Failed to read syscall handler lock: {e}")))?
         .clone();
 
     let segment_index = cairo_runner.vm.get_output_builtin_mut()?.base();
@@ -109,7 +105,20 @@ pub fn run(
         .vm
         .get_range(Relocatable::from((segment_index as isize, 0)), segment_size)
         .into_iter()
-        .map(|v| v.clone().unwrap().get_int().unwrap());
+        .map(|v| {
+            let v = v.clone().ok_or_else(|| Error::ReturnValueExtraction {
+                segment: segment_index,
+                reason: "missing output value".to_string(),
+            })?;
+            v.get_int()
+                .ok_or_else(|| Error::ReturnValueExtraction {
+                    segment: segment_index,
+                    reason: "output value is not an integer".to_string(),
+                })
+                .map(|x| x.to_owned())
+        })
+        .collect::<Result<Vec<_>, Error>>()?
+        .into_iter();
 
     let output = HDPDryRunOutput::from_iter(iter);
 
@@ -119,14 +128,26 @@ pub fn run(
 pub async fn run_with_args(args: Args) -> Result<(), Error> {
     info!("Starting dry run execution...");
     info!("Reading compiled module from: {}", args.compiled_module.display());
-    let compiled_class: CasmContractClass = serde_json::from_slice(&std::fs::read(args.compiled_module).map_err(Error::IO)?)?;
+    let compiled_class_bytes = std::fs::read(&args.compiled_module).map_err(|e| Error::ReadFile {
+        path: args.compiled_module.display().to_string(),
+        source: e,
+    })?;
+    let compiled_class: CasmContractClass = serde_json::from_slice(&compiled_class_bytes)?;
     let params: Vec<Param> = if let Some(path) = args.inputs {
-        serde_json::from_slice(&std::fs::read(path).map_err(Error::IO)?)?
+        let bytes = std::fs::read(&path).map_err(|e| Error::ReadFile {
+            path: path.display().to_string(),
+            source: e,
+        })?;
+        serde_json::from_slice(&bytes)?
     } else {
         Vec::new()
     };
     let injected_state: InjectedState = if let Some(path) = args.injected_state {
-        serde_json::from_slice(&std::fs::read(path).map_err(Error::IO)?)?
+        let bytes = std::fs::read(&path).map_err(|e| Error::ReadFile {
+            path: path.display().to_string(),
+            source: e,
+        })?;
+        serde_json::from_slice(&bytes)?
     } else {
         InjectedState::default()
     };
@@ -145,19 +166,12 @@ pub async fn run_with_args(args: Args) -> Result<(), Error> {
         println!("{:#?}", output);
     }
 
+    let out_path = args.output.display().to_string();
     std::fs::write(
-        args.output,
-        serde_json::to_vec::<
-            SyscallHandler<
-                evm::CallContractHandler,
-                starknet::CallContractHandler,
-                injected_state::CallContractHandler,
-                unconstrained::CallContractHandler,
-            >,
-        >(&syscall_handler)
-        .map_err(|e| Error::IO(e.into()))?,
+        &args.output,
+        serde_json::to_vec::<DryRunSyscallHandler>(&syscall_handler).map_err(|e| Error::IO(e.into()))?,
     )
-    .map_err(Error::IO)?;
+    .map_err(|e| Error::WriteFile { path: out_path, source: e })?;
 
     info!("Dry run completed successfully.");
 

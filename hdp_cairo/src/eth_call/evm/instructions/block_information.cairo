@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Block Information Opcodes
+// ============================================================================
+// Implements BLOCKHASH, COINBASE, TIMESTAMP, NUMBER, DIFFICULTY, GASLIMIT, etc.
+
 //! Block Information.
 
 use starknet::SyscallResultTrait;

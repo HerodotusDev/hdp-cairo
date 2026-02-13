@@ -1,4 +1,3 @@
-use alloy::primitives::{BlockNumber, TxNumber};
 use cairo_vm::{
     types::relocatable::Relocatable,
     vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
@@ -8,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use starknet_crypto::poseidon_hash_many;
 
 use super::{ChainIdentifiable, KeyError, BLOCK_RECEIPT_LABEL};
-use crate::cairo::traits::CairoType;
+use crate::{cairo::traits::CairoType, BlockNumber, ChainId, TransactionIndex};
 
 #[derive(Debug, Clone)]
 pub struct CairoKey {
@@ -49,14 +48,14 @@ impl CairoType for CairoKey {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Key {
-    pub chain_id: u128,
+    pub chain_id: ChainId,
     pub block_number: BlockNumber,
-    pub transaction_index: TxNumber,
+    pub transaction_index: TransactionIndex,
     pub log_index: usize,
 }
 
 impl ChainIdentifiable for Key {
-    fn chain_id(&self) -> u128 {
+    fn chain_id(&self) -> ChainId {
         self.chain_id
     }
 }
@@ -65,19 +64,22 @@ impl TryFrom<CairoKey> for Key {
     type Error = KeyError;
     fn try_from(value: CairoKey) -> Result<Self, Self::Error> {
         Ok(Self {
-            chain_id: value.chain_id.try_into().map_err(|e| KeyError::ConversionError(format!("{}", e)))?,
-            block_number: value
-                .block_number
-                .try_into()
-                .map_err(|e| KeyError::ConversionError(format!("{}", e)))?,
-            transaction_index: value
-                .transaction_index
-                .try_into()
-                .map_err(|e| KeyError::ConversionError(format!("{}", e)))?,
-            log_index: value
-                .log_index
-                .try_into()
-                .map_err(|e| KeyError::ConversionError(format!("{}", e)))?,
+            chain_id: value.chain_id.try_into().map_err(|_| KeyError::FeltConversionFailed {
+                field: "chain_id",
+                value: value.chain_id.to_string(),
+            })?,
+            block_number: value.block_number.try_into().map_err(|_| KeyError::FeltConversionFailed {
+                field: "block_number",
+                value: value.block_number.to_string(),
+            })?,
+            transaction_index: value.transaction_index.try_into().map_err(|_| KeyError::FeltConversionFailed {
+                field: "transaction_index",
+                value: value.transaction_index.to_string(),
+            })?,
+            log_index: value.log_index.try_into().map_err(|_| KeyError::FeltConversionFailed {
+                field: "log_index",
+                value: value.log_index.to_string(),
+            })?,
         })
     }
 }

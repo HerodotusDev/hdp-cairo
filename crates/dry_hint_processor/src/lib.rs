@@ -10,27 +10,33 @@ pub mod syscall_handler;
 use std::{any::Any, collections::HashMap};
 
 use ::syscall_handler::SyscallHandlerWrapper;
-use cairo_lang_casm::{
-    hints::{Hint, StarknetHint},
-    operand::{BinOpOperand, DerefOrImmediate, Operation, Register, ResOperand},
-};
+use cairo_lang_casm::hints::{Hint, StarknetHint};
 use cairo_vm::{
     hint_processor::{
         builtin_hint_processor::builtin_hint_processor_definition::{BuiltinHintProcessor, HintProcessorData},
         cairo_1_hint_processor::hint_processor::Cairo1HintProcessor,
         hint_processor_definition::{HintExtension, HintProcessorLogic},
     },
-    types::{exec_scope::ExecutionScopes, relocatable::Relocatable},
+    types::exec_scope::ExecutionScopes,
     vm::{errors::hint_errors::HintError, runners::cairo_runner::ResourceTracker, vm_core::VirtualMachine},
     Felt252,
 };
-use hints::{extensive_hints, hints, vars, ExtensiveHintImpl, HintImpl};
+use hints::{extensive_hints, hint_processor_common::get_ptr_from_res_operand, hints, vars, ExtensiveHintImpl, HintImpl};
 use starknet_types_core::felt::Felt;
 use syscall_handler::{evm, starknet};
 use tokio::{runtime::Handle, task};
+use tracing::trace;
 use types::HDPDryRunInput;
 
 use crate::syscall_handler::{injected_state, unconstrained};
+
+/// Syscall handler type used by dry-run execution.
+pub type DryRunSyscallHandler = ::syscall_handler::SyscallHandler<
+    syscall_handler::evm::CallContractHandler,
+    syscall_handler::starknet::CallContractHandler,
+    injected_state::CallContractHandler,
+    unconstrained::CallContractHandler,
+>;
 
 pub struct CustomHintProcessor {
     inputs: HDPDryRunInput,
@@ -75,7 +81,9 @@ impl HintProcessorLogic for CustomHintProcessor {
         _hint_data: &Box<dyn Any>,
         _constants: &HashMap<String, Felt252>,
     ) -> Result<(), HintError> {
-        unreachable!();
+        Err(HintError::CustomHint(
+            "Non-extensive hints are unsupported; enable extensive hints".into(),
+        ))
     }
 
     fn execute_hint_extensive(
@@ -87,6 +95,7 @@ impl HintProcessorLogic for CustomHintProcessor {
     ) -> Result<HintExtension, HintError> {
         if let Some(hpd) = hint_data.downcast_ref::<HintProcessorData>() {
             let hint_code = hpd.code.as_str();
+            trace!(hint = hint_code, "Executing hint");
 
             let res = match hint_code {
                 crate::input::HINT_INPUT => self.hint_input(vm, exec_scopes, hpd, constants),
@@ -143,27 +152,3 @@ impl HintProcessorLogic for CustomHintProcessor {
 }
 
 impl ResourceTracker for CustomHintProcessor {}
-
-fn get_ptr_from_res_operand(vm: &mut VirtualMachine, res: &ResOperand) -> Result<Relocatable, HintError> {
-    let (cell, base_offset) = match res {
-        ResOperand::Deref(cell) => (cell, Felt252::ZERO),
-        ResOperand::BinOp(BinOpOperand {
-            op: Operation::Add,
-            a,
-            b: DerefOrImmediate::Immediate(b),
-        }) => (a, Felt252::from(&b.value)),
-        _ => {
-            return Err(HintError::CustomHint(
-                "Failed to extract buffer, expected ResOperand of BinOp type to have Immediate b value"
-                    .to_owned()
-                    .into_boxed_str(),
-            ));
-        }
-    };
-    let base = match cell.register {
-        Register::AP => vm.get_ap(),
-        Register::FP => vm.get_fp(),
-    };
-    let cell_reloc = (base + (i32::from(cell.offset)))?;
-    (vm.get_relocatable(cell_reloc)? + &base_offset).map_err(|e| e.into())
-}

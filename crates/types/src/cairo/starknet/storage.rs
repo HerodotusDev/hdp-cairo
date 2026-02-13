@@ -68,7 +68,7 @@ impl IntoIterator for CairoTrieNode {
             TrieNode::Edge { child, path } => vec![
                 FELT_1,
                 Felt252::from_bytes_be(&child.to_be_bytes()),
-                Felt252::from_bytes_be(&Felt::from_bits(&path).unwrap().to_be_bytes()),
+                Felt252::from_bytes_be(&Felt::from_bits(&path).unwrap_or(Felt::ZERO).to_be_bytes()),
                 Felt252::from(path.len()),
             ]
             .into_iter(),
@@ -81,18 +81,34 @@ impl CairoType for CairoTrieNode {
         vm: &cairo_vm::vm::vm_core::VirtualMachine,
         address: cairo_vm::types::relocatable::Relocatable,
     ) -> Result<Self, MemoryError> {
-        let node_type: u8 = (*vm.get_integer((address + 0)?)?).try_into().unwrap();
+        let node_type_felt = *vm.get_integer((address + 0)?)?;
+        let node_type: u8 = node_type_felt
+            .try_into()
+            .map_err(|e| MemoryError::ErrorRetrievingMessage(format!("Invalid trie node type: {node_type_felt} ({e})").into()))?;
         match node_type {
             0 => Ok(Self(TrieNode::Binary {
-                left: Felt::from_be_bytes(vm.get_integer((address + 1)?)?.to_bytes_be()).unwrap(),
-                right: Felt::from_be_bytes(vm.get_integer((address + 2)?)?.to_bytes_be()).unwrap(),
+                left: Felt::from_be_bytes(vm.get_integer((address + 1)?)?.to_bytes_be())
+                    .map_err(|e| MemoryError::ErrorRetrievingMessage(format!("Invalid trie binary left Felt bytes ({e})").into()))?,
+                right: Felt::from_be_bytes(vm.get_integer((address + 2)?)?.to_bytes_be())
+                    .map_err(|e| MemoryError::ErrorRetrievingMessage(format!("Invalid trie binary right Felt bytes ({e})").into()))?,
             })),
             1 => Ok(Self({
-                let len: usize = (*vm.get_integer((address + 3)?)?).try_into().unwrap();
-                let path = Felt::from_be_bytes(vm.get_integer((address + 2)?)?.to_bytes_be()).unwrap();
+                let len_felt = *vm.get_integer((address + 3)?)?;
+                let len: usize = len_felt
+                    .try_into()
+                    .map_err(|e| MemoryError::ErrorRetrievingMessage(format!("Invalid trie edge path length: {len_felt} ({e})").into()))?;
+
+                let path = Felt::from_be_bytes(vm.get_integer((address + 2)?)?.to_bytes_be())
+                    .map_err(|e| MemoryError::ErrorRetrievingMessage(format!("Invalid trie edge path Felt bytes ({e})").into()))?;
                 let path_bits = path.view_bits().to_bitvec();
+                if len == 0 || len > path_bits.len() {
+                    return Err(MemoryError::ErrorRetrievingMessage(
+                        format!("Invalid trie edge path length {len}; must be within 1..={} bits", path_bits.len()).into(),
+                    ));
+                }
                 let node = TrieNode::Edge {
-                    child: Felt::from_be_bytes(vm.get_integer((address + 1)?)?.to_bytes_be()).unwrap(),
+                    child: Felt::from_be_bytes(vm.get_integer((address + 1)?)?.to_bytes_be())
+                        .map_err(|e| MemoryError::ErrorRetrievingMessage(format!("Invalid trie edge child Felt bytes ({e})").into()))?,
                     path: path_bits[path_bits.len() - len..].to_bitvec(),
                 };
                 node
@@ -117,7 +133,13 @@ impl CairoType for CairoTrieNode {
                 vm.insert_value((address + 1)?, Felt252::from_bytes_be(&child.to_be_bytes()))?;
                 vm.insert_value(
                     (address + 2)?,
-                    Felt252::from_bytes_be(&Felt::from_bits(path).unwrap().to_be_bytes()),
+                    Felt252::from_bytes_be(
+                        &Felt::from_bits(path)
+                            .map_err(|_e| {
+                                MemoryError::ErrorRetrievingMessage("Invalid trie edge path bits (cannot convert to Felt)".into())
+                            })?
+                            .to_be_bytes(),
+                    ),
                 )?;
                 vm.insert_value((address + 3)?, Felt252::from(path.len()))?;
             }

@@ -7,7 +7,7 @@ use alloy_rlp::{Decodable, Encodable};
 use cairo_vm::Felt252;
 use strum_macros::FromRepr;
 
-use crate::cairo::structs::Uint256;
+use crate::cairo::{evm::error::CairoEvmError, structs::Uint256};
 
 #[derive(FromRepr, Debug)]
 pub enum FunctionId {
@@ -49,12 +49,17 @@ impl CairoReceiptWithBloom {
         buffer
     }
 
-    pub fn rlp_decode(mut rlp: &[u8]) -> Self {
-        Self(<ReceiptWithBloom>::decode(&mut rlp).unwrap())
+    pub fn try_rlp_decode(mut rlp: &[u8]) -> Result<Self, CairoEvmError> {
+        <ReceiptWithBloom>::decode(&mut rlp)
+            .map(Self)
+            .map_err(|e| CairoEvmError::RlpDecode {
+                what: "evm::receipt",
+                err: e.to_string(),
+            })
     }
 
-    pub fn handle(&self, function_id: FunctionId) -> Vec<Felt252> {
-        match function_id {
+    pub fn handle(&self, function_id: FunctionId) -> Result<Vec<Felt252>, CairoEvmError> {
+        Ok(match function_id {
             FunctionId::Status => <Uint256 as Into<[Felt252; 2]>>::into(self.status()).to_vec(),
             FunctionId::CumulativeGasUsed => <Uint256 as Into<[Felt252; 2]>>::into(self.cumulative_gas_used()).to_vec(),
             FunctionId::Bloom => self
@@ -63,7 +68,7 @@ impl CairoReceiptWithBloom {
                 .chunks((u128::BITS / 8) as usize)
                 .map(Felt252::from_bytes_be_slice)
                 .collect(),
-        }
+        })
     }
 }
 

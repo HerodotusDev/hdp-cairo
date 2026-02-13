@@ -1,3 +1,7 @@
+// ============================================================================
+// Entry Point Executor
+// ============================================================================
+// Selects and executes contract entry points with syscall handling.
 from starkware.cairo.common.cairo_builtins import (
     BitwiseBuiltin,
     EcOpBuiltin,

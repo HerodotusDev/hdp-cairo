@@ -18,11 +18,7 @@ mod transaction_get_nonce {
 
         let mut i: usize = 0;
         let max_tx_idx = 10;
-        loop {
-            if i >= max_tx_idx {
-                break;
-            }
-
+        while i < max_tx_idx {
             let tx_idx = i;
             hdp
                 .evm

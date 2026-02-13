@@ -5,10 +5,7 @@ use core::panic_with_felt252;
 use core::pedersen::PedersenTrait;
 use core::traits::{DivRem, TryInto};
 use starknet::{ClassHash, ContractAddress, EthAddress};
-use crate::eth_call::utils::constants::{
-    CONTRACT_ADDRESS_PREFIX, MAX_ADDRESS, POW_2, POW_256_1, POW_256_REV,
-};
-use crate::eth_call::utils::math::{Bitshift, WrappingBitshift};
+use crate::eth_call::utils::constants::{CONTRACT_ADDRESS_PREFIX, MAX_ADDRESS, POW_2, POW_256_REV};
 use crate::eth_call::utils::traits::array::ArrayExtTrait;
 use crate::eth_call::utils::traits::{
     BoolIntoNumeric, EthAddressIntoU256, U256TryIntoContractAddress,

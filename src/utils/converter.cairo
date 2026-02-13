@@ -1,3 +1,7 @@
+// ============================================================================
+// Converter Utilities
+// ============================================================================
+// Small conversion helpers for endian swaps and address decoding.
 from packages.eth_essentials.lib.utils import word_reverse_endian_64
 from src.utils.rlp import right_shift_le_chunks
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin

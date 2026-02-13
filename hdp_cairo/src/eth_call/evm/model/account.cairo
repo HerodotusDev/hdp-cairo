@@ -1,8 +1,11 @@
+// ============================================================================
+// EVM Account Model
+// ============================================================================
+// Account builder and account state representation for eth_call.
+
 use core::dict::{Felt252Dict, Felt252DictTrait};
-use core::num::traits::Zero;
 use hdp_cairo::HDP;
-use starknet::{ContractAddress, EthAddress};
-use crate::eth_call::evm::test_utils::test_address;
+use starknet::EthAddress;
 use crate::eth_call::hdp_backend::{fetch_balance, fetch_bytecode, fetch_code_hash, fetch_nonce};
 use crate::eth_call::utils::constants::EMPTY_KECCAK;
 use crate::eth_call::utils::traits::bytes::U8SpanExTrait;

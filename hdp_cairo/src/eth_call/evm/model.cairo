@@ -1,7 +1,12 @@
+// ============================================================================
+// EVM Execution Model
+// ============================================================================
+// Defines core structs for environment, messages, receipts, and results.
+
 pub mod account;
 pub mod vm;
 use account::AccountTrait;
-use core::num::traits::{CheckedSub, Zero};
+use core::num::traits::CheckedSub;
 use hdp_cairo::HDP;
 use starknet::EthAddress;
 pub use vm::{VM, VMTrait};
@@ -14,7 +19,7 @@ use crate::eth_call::evm::precompiles::{
 use crate::eth_call::evm::state::State;
 pub use crate::eth_call::hdp_backend::is_deployed;
 use crate::eth_call::hdp_backend::{
-    TimeAndSpace, fetch_base_fee, fetch_coinbase, fetch_gas_limit, fetch_number, fetch_prevrandao,
+    TimeAndSpace, fetch_base_fee, fetch_coinbase, fetch_gas_limit, fetch_prevrandao,
     fetch_timestamp,
 };
 use crate::eth_call::utils::fmt::TSpanSetDebug;

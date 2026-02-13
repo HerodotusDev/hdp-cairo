@@ -1,8 +1,11 @@
-use core::ops::DerefMut;
+// ============================================================================
+// EVM Test Utilities
+// ============================================================================
+// Helpers for constructing test accounts, addresses, and VM fixtures.
+
 use core::traits::TryInto;
-use starknet::storage::{StoragePathEntry, StoragePointerWriteAccess, StorageTraitMut};
 use starknet::storage_access::{StorageBaseAddress, storage_base_address_from_felt252};
-use starknet::{ClassHash, ContractAddress, EthAddress, contract_address_const};
+use starknet::{ClassHash, ContractAddress, EthAddress};
 use crate::eth_call::evm::memory::{Memory, MemoryTrait};
 use crate::eth_call::evm::model::account::AccountTrait;
 use crate::eth_call::evm::model::vm::{VM, VMTrait};
@@ -130,7 +133,7 @@ pub fn coinbase() -> EthAddress {
 }
 
 pub fn starknet_address() -> ContractAddress {
-    contract_address_const::<'starknet_address'>()
+    'starknet_address'.try_into().unwrap()
 }
 
 pub fn evm_address() -> EthAddress {
@@ -146,7 +149,7 @@ pub fn other_evm_address() -> EthAddress {
 }
 
 pub fn other_starknet_address() -> ContractAddress {
-    contract_address_const::<'other_starknet_address'>()
+    'other_starknet_address'.try_into().unwrap()
 }
 
 pub fn other_address() -> EthAddress {
@@ -158,7 +161,7 @@ pub fn storage_base_address() -> StorageBaseAddress {
 }
 
 pub fn zero_address() -> ContractAddress {
-    contract_address_const::<0x00>()
+    0x00.try_into().unwrap()
 }
 
 pub fn callvalue() -> u256 {
@@ -166,7 +169,7 @@ pub fn callvalue() -> u256 {
 }
 
 pub fn native_token() -> ContractAddress {
-    contract_address_const::<'native_token'>()
+    'native_token'.try_into().unwrap()
 }
 
 pub fn chain_id() -> u64 {
@@ -174,7 +177,7 @@ pub fn chain_id() -> u64 {
 }
 
 pub fn kakarot_address() -> ContractAddress {
-    contract_address_const::<'kakarot'>()
+    'kakarot'.try_into().unwrap()
 }
 
 pub fn sequencer_evm_address() -> EthAddress {

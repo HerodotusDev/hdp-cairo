@@ -1,3 +1,7 @@
+// ============================================================================
+// EVM Receipt Verifier
+// ============================================================================
+// Verifies receipt proofs against block headers and stores them in memorizer.
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, PoseidonBuiltin
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.cairo_keccak.keccak import cairo_keccak as keccak

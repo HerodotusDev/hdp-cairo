@@ -1,35 +1,57 @@
-## Overview
+# Introduction
 
-HDP (Herodotus Data Processor) is a modular framework for validating on-chain data from multiple blockchain RPC sources, executing user-defined logic written in Cairo1, and producing an execution trace that can be used to generate a zero-knowledge proof. The proof attests to the correctness of both the on-chain data and the performed computation.
+HDP (Herodotus Data Processor) enables **provable computations on historical blockchain data**. It connects to live RPC nodes during a simulation phase, fetches cryptographic proofs for every accessed value, and replays the computation offline with verification guarantees.
 
-HDP is designed with a two-stage process:
+## The problem
 
-### 1. Data Verification
+Historical on-chain data is hard to trust at scale. Indexers are fast but not verifiable, and replaying full chain history is too expensive for most applications. When you need to prove a statement about past state, you need both the data and a cryptographic trail that ties it back to a trusted root.
 
-- **RPC Data Fetch & Validation:**  
-  HDP connects to blockchain RPC endpoints (e.g., Ethereum, StarkNet) to download raw data along with the necessary on-chain proofs.
+## The HDP approach
 
-- **Verifiers:**  
-  Specialized circuits validate the data by checking inclusion proofs (for example, the Merkle Patricia Trie in Ethereum) and confirming that block headers are authentic and correctly linked in the chain.
+HDP splits execution into three stages:
 
-- **Memorizers:**  
-  Once verified, the data is stored in an internal dictionary (memorizers) to be readily available for subsequent processing.
+1. **Dry run**: execute the Cairo module against live RPCs and collect the keys you touched.
+2. **Fetcher**: download proofs for every key (MMR for headers, MPT/Patricia for state).
+3. **Sound run**: verify proofs and execute the same Cairo module offline.
 
-### 2. Computation
+The result is deterministic output plus commitments (`task_hash`, `output_root`, and `mmr_metas`) that can be verified on-chain.
 
-- **User-defined Logic:**  
-  Developers write modules in Cairo1, to specify the computation or checks to be performed on the data.
+## Key capabilities
 
-- **Bootloader:**  
-  The bootloader loads the compiled Cairo1 bytecode. It retrieves the necessary data from the memorizers and executes the program.
+- **Cross-chain access**: Ethereum, Optimism, and Starknet in one module.
+- **Cryptographic verification**: MMR for headers, MPT/Patricia for state.
+- **Offline execution**: sound run has zero network calls.
+- **Optional proof generation**: STWO prover input support.
 
-- **Trace and Proof Generation:**  
-  After execution, a trace is produced. This trace forms the basis for a zero-knowledge proof that attests to the correctness of the on-chain data and the user-defined computation.
+## Use cases
 
-This combined approach allows HDP to securely prove statements about historical on-chain events, voting power, balances, and other chain-dependent attributes in a trustless and verifiable manner.
+- Solvency and reserve proofs
+- Compliance and audit trails
+- Historical analytics with provable results
+- Cross-chain state composition
 
-HDP is built to support data from multiple blockchains within a single Cairo1 execution. This capability is especially useful for use cases such as bridging, where data from various chains is verified and processed within one unified pipeline.
+## Architecture at a glance
 
-<p align="center">
-  <img src="hdp_simple.png" alt="hdp diagram"/>
-</p>
+```
++------------------------+
+| Cairo1 module          |
+| uses hdp.* APIs        |
++------------------------+
+| Cairo0 bootloader      |
+| verifiers + outputs    |
++------------------------+
+| Rust hints/handlers    |
+| Dry: RPC keys          |
+| Sound: memorizer reads |
++------------------------+
+```
+
+## How to read this book
+
+Start with `Getting Started` to run a full pipeline. Then:
+
+- `Architecture` for how the system fits together.
+- `Pipeline` to understand each stage and its inputs/outputs.
+- `Verification` and `State Management` for proof details.
+- `Cairo Library` for the public API you use in modules.
+- `Examples` and `Reference` for practical workflows and CLI details.

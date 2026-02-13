@@ -7,8 +7,10 @@ use alloy::{
 use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
-use strum_macros::FromRepr;
-use syscall_handler::{felt_from_ptr, traits::SyscallHandler, SyscallExecutionError, SyscallResult, WriteResponseResult};
+use syscall_handler::{
+    call_contract::UnconstrainedCallHandlerId, felt_from_ptr, traits::SyscallHandler, SyscallExecutionError, SyscallResult,
+    WriteResponseResult,
+};
 use types::{
     cairo::{
         new_syscalls::{CallContractRequest, CallContractResponse},
@@ -16,13 +18,7 @@ use types::{
         unconstrained::bytecode::BytecodeLeWords,
     },
     keys::{self, evm::get_corresponding_rpc_url},
-    Felt252,
 };
-
-#[derive(FromRepr, Debug)]
-pub enum CallHandlerId {
-    Bytecode = 0,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct CallContractHandler {
@@ -34,13 +30,15 @@ impl SyscallHandler for CallContractHandler {
     type Response = CallContractResponse;
 
     fn read_request(&mut self, _vm: &VirtualMachine, _ptr: &mut Relocatable) -> SyscallResult<Self::Request> {
-        unreachable!()
+        Err(SyscallExecutionError::InternalError(
+            "dry unconstrained::CallContractHandler::read_request should not be called (request is parsed by relay)".into(),
+        ))
     }
 
     async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
         let mut calldata = request.calldata_start;
 
-        let call_handler_id = CallHandlerId::try_from(request.selector)?;
+        let call_handler_id = UnconstrainedCallHandlerId::try_from(request.selector)?;
 
         let segment_index = felt_from_ptr(vm, &mut calldata)?;
         let offset = felt_from_ptr(vm, &mut calldata)?;
@@ -57,12 +55,14 @@ impl SyscallHandler for CallContractHandler {
         let retdata_start = vm.add_memory_segment();
         let mut retdata_end = retdata_start;
         match call_handler_id {
-            CallHandlerId::Bytecode => {
+            UnconstrainedCallHandlerId::Bytecode => {
                 let key: keys::evm::account::Key = keys::evm::account::CairoKey::from_memory(vm, calldata)?
                     .try_into()
                     .map_err(|e| SyscallExecutionError::InternalError(format!("{}", e).into()))?;
                 let rpc_url = get_corresponding_rpc_url(&key).map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
-                let provider = RootProvider::<Ethereum>::new_http(Url::parse(&rpc_url).unwrap());
+                let url = Url::parse(&rpc_url)
+                    .map_err(|e| SyscallExecutionError::InternalError(format!("Invalid RPC URL '{rpc_url}': {e}").into()))?;
+                let provider = RootProvider::<Ethereum>::new_http(url);
                 let result = provider
                     .get_code_at(key.address)
                     .block_id(key.block_number.into())
@@ -82,21 +82,9 @@ impl SyscallHandler for CallContractHandler {
     }
 
     fn write_response(&mut self, _response: Self::Response, _vm: &mut VirtualMachine, _ptr: &mut Relocatable) -> WriteResponseResult {
-        unreachable!()
-    }
-}
-
-impl TryFrom<Felt252> for CallHandlerId {
-    type Error = SyscallExecutionError;
-    fn try_from(value: Felt252) -> Result<Self, Self::Error> {
-        Self::from_repr(value.try_into().map_err(|e| Self::Error::InvalidSyscallInput {
-            input: value,
-            info: format!("{}", e),
-        })?)
-        .ok_or(Self::Error::InvalidSyscallInput {
-            input: value,
-            info: "Invalid function identifier".to_string(),
-        })
+        Err(SyscallExecutionError::InternalError(
+            "dry unconstrained::CallContractHandler::write_response should not be called (response is written by relay)".into(),
+        ))
     }
 }
 

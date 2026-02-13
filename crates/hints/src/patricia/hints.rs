@@ -619,12 +619,14 @@ pub fn build_descent_map(
 
     exec_scopes.insert_value(vars::scopes::NODE, node.clone());
     // Notes:
-    // 1. We do not build `common_args` as it seems to be a Python trick to enter new scopes with a dict destructuring one-liner as the dict
-    //    references itself. Neat trick that does not translate too well in Rust. We just make sure that `descent_map`,
-    //    `__patricia_skip_validation_runner` and `preimage` are in the scope.
-    // 2. The Rust VM has no `globals()`, `__patricia_skip_validation_runner` should already be in `exec_scopes.data[0]`.
-    // 3. `preimage` is guaranteed to be present as we fetch it earlier. Conclusion: we only need to insert
-    //    `__patricia_skip_validation_runner` and `descent_map`.
+    // 1. We do not build `common_args` as it seems to be a Python trick to enter new scopes with a dict
+    //    destructuring one-liner as the dict references itself. Neat trick that does not translate too
+    //    well in Rust. We just make sure that `descent_map`, `__patricia_skip_validation_runner` and
+    //    `preimage` are in the scope.
+    // 2. The Rust VM has no `globals()`, `__patricia_skip_validation_runner` should already be in
+    //    `exec_scopes.data[0]`.
+    // 3. `preimage` is guaranteed to be present as we fetch it earlier. Conclusion: we only need to
+    //    insert `__patricia_skip_validation_runner` and `descent_map`.
     exec_scopes.insert_value(vars::scopes::DESCENT_MAP, descent_map);
 
     let patricia_skip_validation_runner_from_root: Option<PatriciaSkipValidationRunner> =

@@ -37,10 +37,7 @@ mod read_duplicate_keys {
         // Test reading duplicate keys in a loop
         let duplicate_keys = array![key, key, key, key];
         let mut i = 0;
-        loop {
-            if i >= duplicate_keys.len() {
-                break;
-            }
+        while i < duplicate_keys.len() {
             let duplicate_key = *duplicate_keys.at(i);
             let duplicate_value = hdp.injected_state.read_key(label, duplicate_key).unwrap();
             assert!(duplicate_value == value, "Duplicate key read should return same value");

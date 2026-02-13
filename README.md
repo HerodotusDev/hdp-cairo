@@ -10,180 +10,165 @@ HDP (Herodotus Data Processor) is a modular framework for validating on-chain da
   <img src="./docs/HDPCairo.png" alt="HDP Cairo">
 </p>
 
----
-
 <p align="left">
   <a href="https://herodotusdev.github.io/hdp-cairo/program_hash.json">
     <img src="https://img.shields.io/badge/dynamic/json?url=https://herodotusdev.github.io/hdp-cairo/program_hash.json&query=$.program_hash&label=program_hash&color=blue&style=flat-square" alt="program_hash">
   </a>
 </p>
 
----
+## Quick start (CLI)
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
+hdp env-info
+hdp dry-run -m module_contract_class.json --print_output
+hdp fetch-proofs
+hdp sound-run -m module_contract_class.json --print_output
+```
+
+`module_contract_class.json` is produced by a Scarb build of your Cairo1 module.
+
+## Prerequisites
+
+- **Rust toolchain**: pinned to `nightly-2025-04-06` via `rust-toolchain.toml`.
+  `rustup` will install it automatically, or run:
+  ```sh
+  rustup toolchain install nightly-2025-04-06
+  ```
+- **uv**: Python package manager used to install Cairo0 tooling.
+  ```sh
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  ```
 
 ## Installation
 
-### Prerequisites
-
-Both installation methods require Rust and `uv` (Python package manager):
-
-1.  **Install Rust**: If you don't have Rust, install it via `rustup`.
-
-    ```sh
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-    ```
-
-2.  **Install uv**: Install the `uv` Python package manager.
-
-    ```sh
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    ```
-
-### Option 1: Using CLI Tool (Recommended)
-
-Install the HDP CLI tool using the installation script:
+### Option 1: CLI tool (recommended)
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
 ```
 
-> To install a specific version:
->
-> ```sh
-> VERSION=vX.X.X curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
-> ```
+To install a specific version:
 
----
+```sh
+VERSION=vX.X.X curl -fsSL https://raw.githubusercontent.com/HerodotusDev/hdp-cairo/main/install-cli.sh | bash
+```
 
-### Option 2: Manual Build from Source
+### Option 2: Build from source
 
-This project uses `uv` for Python package management and `cargo` for Rust.
+1. Clone and init submodules:
+   ```sh
+   git clone https://github.com/HerodotusDev/hdp-cairo.git
+   cd hdp-cairo
+   git submodule update --init
+   ```
+2. Install Python deps and Cairo0 tooling:
+   ```sh
+   uv sync
+   ```
+3. Build the CLI:
+   ```sh
+   cargo build --release --bin hdp-cli
+   ```
 
-#### Build Steps
+To use `cairo-format` from the virtual environment:
 
-1.  **Clone the Repository**: Clone the repository and initialize the submodules.
+```sh
+source .venv/bin/activate
+```
 
-    ```sh
-    git clone https://github.com/HerodotusDev/hdp-cairo.git
-    cd hdp-cairo
-    git submodule update --init
-    ```
+## Toolchain and features
 
-2.  **Create Virtual Environment**: This command creates a `.venv` directory and installs all Python packages specified in `pyproject.toml`.
+- **Default**: builds with the pinned nightly toolchain.
+- **STWO prover input**: build with `--features stwo`.
 
-    ```sh
-    uv sync
-    ```
+```sh
+cargo build --release --bin hdp-cli --features stwo
+```
 
-3.  **Activate Virtual Environment**: To use tools like `cairo-format`, you need to activate the environment.
+If you run `hdp sound-run --stwo_prover_input ...` without `--features stwo`, the CLI will instruct you to rebuild.
 
-    ```sh
-    source .venv/bin/activate
-    ```
+## Runtime configuration
 
----
+The runtime requires RPC access. Use the CLI helpers or copy the example env file:
 
-## Running
+```sh
+hdp env-info
+hdp env-check --inputs dry_run_output.json
+cp example.env .env
+```
 
-The runtime requires RPC calls to blockchain nodes. Set up your environment variables:
+RPC variables (see `example.env`):
 
-- **Using CLI**: Run `hdp env-info` to see the required environment variables and get an example `.env` file.
-- **Manual Build**: Copy the example environment file and edit it:
+- `RPC_URL_HERODOTUS_INDEXER`
+- `RPC_URL_ETHEREUM_MAINNET`
+- `RPC_URL_ETHEREUM_TESTNET`
+- `RPC_URL_STARKNET_MAINNET`
+- `RPC_URL_STARKNET_TESTNET`
+- `RPC_URL_OPTIMISM_MAINNET`
+- `RPC_URL_OPTIMISM_TESTNET`
 
-  ```sh
-  cp example.env .env
-  ```
+`hdp fetch-proofs` reads the dry-run output and fails fast with the missing variables for the chains used in that run.
 
-  Edit the `.env` file to provide the correct RPC endpoints and configuration details.
+## Workflow
 
-1.  **Simulate Cairo1 Module & Collect Proof Information**:
-    This step performs a dry run of your Cairo module. `module_contract_class.json` is a compiled contract from a Scarb build.
+1. **Dry run**: simulate the module and collect proof requirements.
+   ```sh
+   hdp dry-run -m module_contract_class.json --print_output
+   ```
+2. **Fetch proofs**:
+   ```sh
+   hdp fetch-proofs
+   ```
+3. **Sound run**: execute the module with verified data.
+   ```sh
+   hdp sound-run -m module_contract_class.json --print_output
+   ```
 
-    **Using CLI**:
+For source builds, use `cargo run --release --bin hdp-cli -- <command>`.
 
-    ```sh
-    hdp dry-run -m module_contract_class.json --print_output
-    ```
+## Documentation
 
-    **Manual Build**:
+- `docs/` contains the mdBook sources.
+- Cairo library details live under `docs/src/cairo_library/`.
 
-    ```sh
-    cargo run --release --bin hdp-cli -- dry-run -m module_contract_class.json --print_output
-    ```
+## Development and testing
 
-2.  **Fetch On-Chain Proofs**:
-    This command fetches the necessary on-chain proofs required for the HDP run.
+```sh
+cargo test
+```
 
-    **Using CLI**:
+Optional:
 
-    ```sh
-    hdp fetch-proofs
-    ```
+```sh
+scarb build
+cargo nextest run
+```
 
-    **Manual Build**:
+To enable integration-heavy tests:
 
-    ```sh
-    cargo run --release --bin hdp-cli --features progress_bars -- fetch-proofs
-    ```
+```sh
+HDP_INTEGRATION_TESTS=1 cargo test
+```
 
-3.  **Run Cairo1 Module with Verified Data**:
-    This executes the module with verified on-chain data.
+If you see future-incompatible warnings (e.g. `size-of`), inspect with:
 
-    **Using CLI**:
+```sh
+make future-incompat
+```
 
-    ```sh
-    hdp sound-run -m module_contract_class.json --print_output
-    ```
+## Note on on-chain finality
 
-    **Manual Build**:
-
-    ```sh
-    cargo run --release --bin hdp-cli -- sound-run -m module_contract_class.json --print_output
-    ```
-
-    The program will output the **results root** and **tasks root**, which can be used to extract the results from the on-chain contract.
-
----
-
-## Testing
-
-Tests also require chain node RPC calls, so make sure your `.env` file is set up correctly.
-
-1.  **Build Cairo1 Modules**:
-
-    ```sh
-    scarb build
-    ```
-
-2.  **Run Tests**:
-    Execute the test suite using `nextest`.
-
-    ```sh
-    cargo nextest run
-    ```
-
----
-
-## Note on On-Chain Finality
-
-Even if all local stages (dry run, proof fetching, sound run) succeed, on-chain settlement depends on the **MMRs (Merkle Mountain Ranges)**. The data for all accessed values must be present in the MMRs inside [Herodotus Satellite contracts](https://github.com/HerodotusDev/satellite) used for settlement.
-
-This means the blocks you are accessing must have been included in the settlement contract's MMRs. This is a critical consideration, especially when mixing testnet and mainnet data or for cross-chain access within the same HDP module. If you encounter issues during on-chain settlement, verify that the relevant block numbers have been included in the on-chain MMRs.
-
----
+Even if local stages (dry run, proof fetching, sound run) succeed, on-chain settlement depends on **MMRs (Merkle
+Mountain Ranges)**. Blocks accessed must be included in the MMRs within the
+[Herodotus Satellite contracts](https://github.com/HerodotusDev/satellite).
 
 ## Mentions
 
-Provable ETH call (located in [hdp_cairo/src/eth_call](./hdp_cairo/src/eth_call/)) makes use of code adapted from [**Kakarot**](https://github.com/kkrt-labs) [(@kkrt-labs/kakarot-ssj)](https://github.com/kkrt-labs/kakarot-ssj) under the [MIT License](https://github.com/kkrt-labs/kakarot-ssj/blob/main/LICENSE).
-
-Thanks for all the hard work guys 🙏
-
-> Original project: https://github.com/kkrt-labs/kakarot-ssj  
-> License file: https://github.com/kkrt-labs/kakarot-ssj/blob/main/LICENSE
-
----
+Provable ETH call (in `hdp_cairo/src/eth_call/`) adapts code from
+[Kakarot](https://github.com/kkrt-labs) ([kkrt-labs/kakarot-ssj](https://github.com/kkrt-labs/kakarot-ssj))
+under the [MIT License](https://github.com/kkrt-labs/kakarot-ssj/blob/main/LICENSE).
 
 ## License
 
 `hdp-cairo` is licensed under the [Apache-2.0 license](./LICENSE).
-
----

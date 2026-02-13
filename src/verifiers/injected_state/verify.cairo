@@ -1,3 +1,7 @@
+// ============================================================================
+// Injected State Verifier
+// ============================================================================
+// Verifies injected state inclusion/update proofs using Patricia + Keccak.
 from starkware.cairo.common.cairo_builtins import HashBuiltin, PoseidonBuiltin, BitwiseBuiltin
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.alloc import alloc

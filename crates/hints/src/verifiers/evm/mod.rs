@@ -44,7 +44,7 @@ pub fn hint_vm_enter_scope(
     let chain_proofs = exec_scopes.get::<Vec<ChainProofs>>(vars::scopes::CHAIN_PROOFS)?;
     let idx: usize = get_integer_from_var_name(vars::ids::IDX, vm, &hint_data.ids_data, &hint_data.ap_tracking)?
         .try_into()
-        .unwrap();
+        .map_err(|e| HintError::CustomHint(format!("evm: ids.idx is not a valid usize: {e}").into()))?;
 
     let batch: Box<dyn Any> = match chain_proofs[idx - 1].clone() {
         ChainProofs::EthereumMainnet(proofs) => Box::new(proofs),

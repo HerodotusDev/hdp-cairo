@@ -1,3 +1,5 @@
+#![allow(clippy::panic, clippy::unwrap_used)]
+
 pub mod helpers;
 pub mod invariants;
 pub mod proof;

@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Gas Accounting
+// ============================================================================
+// Defines intrinsic gas rules and per-opcode gas cost helpers.
+
 use core::cmp::min;
 use core::num::traits::CheckedAdd;
 use crate::eth_call::evm::errors::EVMError;
@@ -190,7 +195,7 @@ pub fn memory_expansion(
                     }
                 }
             },
-            Option::None => { break Result::Ok((current_max_size)); },
+            Option::None => { break Result::Ok(current_max_size); },
         }
     }?;
 

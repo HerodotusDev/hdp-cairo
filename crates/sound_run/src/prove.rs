@@ -8,10 +8,11 @@ use stwo_cairo_adapter::{
     ProverInput, PublicSegmentContext,
 };
 use tracing::{debug, info};
+use types::error::Error;
 
 /// Extracts artifacts from a finished cairo runner, to later be used for proving.
-pub fn prover_input_from_runner(runner: &CairoRunner) -> ProverInput {
-    let public_input = runner.get_air_public_input().unwrap();
+pub fn prover_input_from_runner(runner: &CairoRunner) -> Result<ProverInput, Error> {
+    let public_input = runner.get_air_public_input()?;
     let addresses = public_input
         .public_memory
         .iter()
@@ -33,7 +34,7 @@ pub fn prover_input_from_runner(runner: &CairoRunner) -> ProverInput {
     let trace = runner
         .relocated_trace
         .as_ref()
-        .unwrap()
+        .ok_or_else(|| Error::Internal("Missing relocated_trace".into()))?
         .iter()
         .map(|x| RelocatedTraceEntry {
             ap: x.ap,
@@ -52,9 +53,10 @@ pub fn prover_input_from_runner(runner: &CairoRunner) -> ProverInput {
     let public_segment_context = PublicSegmentContext::new(&main_args);
 
     info!("Generating input for the prover...");
-    let input = adapt_to_stwo_input(&trace, mem, addresses, &segments, public_segment_context).unwrap();
+    let input = adapt_to_stwo_input(&trace, mem, addresses, &segments, public_segment_context)
+        .map_err(|e| Error::Internal(format!("adapt_to_stwo_input failed: {e}")))?;
     info!("Input for the prover generated successfully.");
     debug!("State transitions: {}", input.state_transitions.casm_states_by_opcode);
     debug!("Builtins: {:#?}", input.builtins_segments.get_counts());
-    input
+    Ok(input)
 }

@@ -1,3 +1,7 @@
+// ============================================================================
+// Starknet Memorizer
+// ============================================================================
+// Packs parameters and hashes memorizer keys for Starknet state proofs.
 from starkware.cairo.common.dict_access import DictAccess
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash_many

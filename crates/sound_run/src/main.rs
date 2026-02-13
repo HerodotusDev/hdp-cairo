@@ -3,12 +3,14 @@
 #![warn(unused_crate_dependencies)]
 #![forbid(unsafe_code)]
 
+#[cfg(feature = "stwo")]
 use bytemuck as _;
 use cairo_vm as _;
 use clap::Parser;
 use serde_json as _;
 use sound_hint_processor as _;
 use sound_run::Args;
+#[cfg(feature = "stwo")]
 use stwo_cairo_adapter as _;
 use tracing as _;
 use tracing_subscriber::EnvFilter;

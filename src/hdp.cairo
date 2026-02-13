@@ -1,3 +1,18 @@
+// ============================================================================
+// HDP (Herodotus Data Processor) - Main Entry Point
+// ============================================================================
+// This module orchestrates the HDP Cairo 0 program execution:
+//
+// 1. Initialize memorizers for different chain types (EVM, Starknet)
+// 2. Run chain state verification (MMR proofs, account proofs, storage proofs)
+// 3. Run injected state verification
+// 4. Execute the user's contract module
+// 5. Compute and output the task hash and result merkle root
+//
+// Public Output Format:
+// - task_hash (low, high): Hash of the module and public inputs
+// - output_tree_root (low, high): Merkle root of the contract's return data
+// - mmr_metas: List of MMR metadata for each verified chain
 %builtins output pedersen range_check bitwise poseidon range_check96 add_mod mul_mod
 
 from starkware.cairo.common.cairo_builtins import (

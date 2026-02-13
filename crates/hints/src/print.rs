@@ -41,8 +41,13 @@ pub fn hint_print_task_result(
     let result = vm
         .get_continuous_range(result_ptr, 2)?
         .into_iter()
-        .map(|v| v.get_int().unwrap())
-        .collect::<Vec<Felt252>>();
+        .enumerate()
+        .map(|(i, v)| {
+            v.get_int()
+                .ok_or_else(|| HintError::CustomHint(format!("print/task_result: result[{i}] is not an integer").into()))
+                .map(|x| x.to_owned())
+        })
+        .collect::<Result<Vec<Felt252>, HintError>>()?;
 
     let result_low = result[0].to_biguint();
     let result_high = result[1].to_biguint();

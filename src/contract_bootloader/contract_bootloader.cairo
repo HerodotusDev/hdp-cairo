@@ -1,3 +1,7 @@
+// ============================================================================
+// Contract Bootloader
+// ============================================================================
+// Loads compiled classes, executes entry points, and manages builtin pointers.
 from starkware.cairo.common.cairo_builtins import (
     BitwiseBuiltin,
     EcOpBuiltin,

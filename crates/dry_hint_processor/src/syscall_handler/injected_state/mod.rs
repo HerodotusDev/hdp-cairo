@@ -12,8 +12,10 @@ use state_server::api::{
     read::{ReadRequest, ReadResponse},
     write::{WriteRequest, WriteResponse},
 };
-use strum_macros::FromRepr;
-use syscall_handler::{memorizer::Memorizer, traits::SyscallHandler, SyscallExecutionError, SyscallResult, WriteResponseResult};
+use syscall_handler::{
+    call_contract::InjectedStateCallHandlerId, memorizer::Memorizer, traits::SyscallHandler, SyscallExecutionError, SyscallResult,
+    WriteResponseResult,
+};
 use tracing::error;
 use types::{
     cairo::{
@@ -25,13 +27,6 @@ use types::{
     proofs::injected_state::{Action, ActionRead, ActionWrite},
     Felt252,
 };
-
-#[derive(FromRepr, Debug)]
-pub enum CallHandlerId {
-    ReadTrieRoot = 0,
-    Read = 1,
-    Write = 2,
-}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CacheKey {
@@ -83,11 +78,13 @@ impl SyscallHandler for CallContractHandler {
     type Response = CallContractResponse;
 
     fn read_request(&mut self, _vm: &VirtualMachine, _ptr: &mut Relocatable) -> SyscallResult<Self::Request> {
-        unreachable!()
+        Err(SyscallExecutionError::InternalError(
+            "dry injected_state::CallContractHandler::read_request should not be called (request is parsed by relay)".into(),
+        ))
     }
 
     async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
-        let call_handler_id = CallHandlerId::try_from(request.selector)?;
+        let call_handler_id = InjectedStateCallHandlerId::try_from(request.selector)?;
 
         let mut calldata = request.calldata_start;
         let memorizer = Memorizer::derive(vm, &mut calldata)?;
@@ -96,7 +93,7 @@ impl SyscallHandler for CallContractHandler {
         let mut retdata_end = retdata_start;
 
         match call_handler_id {
-            CallHandlerId::ReadTrieRoot => {
+            InjectedStateCallHandlerId::Label => {
                 let key = keys::injected_state::label::CairoKey::from_memory(vm, calldata)?;
 
                 let trie_root = self.get_trie_root(&memorizer, key.trie_label)?;
@@ -108,7 +105,7 @@ impl SyscallHandler for CallContractHandler {
 
                 retdata_end = result.to_memory(vm, retdata_end)?;
             }
-            CallHandlerId::Read => {
+            InjectedStateCallHandlerId::Read => {
                 let key = keys::injected_state::read::CairoKey::from_memory(vm, calldata)?;
 
                 if let Some(cached_entry) = self
@@ -219,7 +216,7 @@ impl SyscallHandler for CallContractHandler {
                     }
                 }
             }
-            CallHandlerId::Write => {
+            InjectedStateCallHandlerId::Write => {
                 let key = keys::injected_state::write::CairoKey::from_memory(vm, calldata)?;
 
                 let trie_root = self
@@ -295,20 +292,8 @@ impl SyscallHandler for CallContractHandler {
     }
 
     fn write_response(&mut self, _response: Self::Response, _vm: &mut VirtualMachine, _ptr: &mut Relocatable) -> WriteResponseResult {
-        unreachable!()
-    }
-}
-
-impl TryFrom<Felt252> for CallHandlerId {
-    type Error = SyscallExecutionError;
-    fn try_from(value: Felt252) -> Result<Self, Self::Error> {
-        Self::from_repr(value.try_into().map_err(|e| Self::Error::InvalidSyscallInput {
-            input: value,
-            info: format!("{}", e),
-        })?)
-        .ok_or(Self::Error::InvalidSyscallInput {
-            input: value,
-            info: "Invalid function identifier".to_string(),
-        })
+        Err(SyscallExecutionError::InternalError(
+            "dry injected_state::CallContractHandler::write_response should not be called (response is written by relay)".into(),
+        ))
     }
 }

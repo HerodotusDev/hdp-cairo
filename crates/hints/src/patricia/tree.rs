@@ -1,9 +1,11 @@
-//! Implements the core off-chain algorithms for building and analyzing Patricia Merkle tree structures.
+//! Implements the core off-chain algorithms for building and analyzing Patricia Merkle tree
+//! structures.
 //!
-//! This module provides the foundational logic for the Cairo hints. Its primary responsibilities include:
+//! This module provides the foundational logic for the Cairo hints. Its primary responsibilities
+//! include:
 //! 1. Constructing an "update tree" from a list of modifications (`build_update_tree`).
-//! 2. Calculating the `descent_map`, which is crucial for optimizing the on-chain traversal by identifying paths where we can descend
-//!    multiple layers at once (`patricia_guess_descents`).
+//! 2. Calculating the `descent_map`, which is crucial for optimizing the on-chain traversal by
+//!    identifying paths where we can descend multiple layers at once (`patricia_guess_descents`).
 //! 3. Providing helper utilities for decoding nodes and navigating the tree structure.
 
 use std::{
@@ -79,7 +81,7 @@ where
 /// # Errors
 /// Returns `PatriciaHintError::UnexpectedLeaf` if a leaf is passed, or
 /// `PatriciaHintError::InvalidTupleNode` for an invalid branch with no children.
-pub fn decode_node<LF>(node: &TreeUpdate<LF>) -> Result<DecodedNode<LF>, PatriciaHintError>
+pub fn decode_node<LF>(node: &TreeUpdate<LF>) -> Result<DecodedNode<'_, LF>, PatriciaHintError>
 where
     LF: Clone,
 {
@@ -319,7 +321,7 @@ pub fn generate_preimage<H: FeltHash>(proof: Vec<TrieNode>) -> Preimage {
                 Felt252::from_bytes_be(&hash.to_be_bytes()),
                 vec![
                     Felt252::from_bytes_be(&Felt::from_u64(path.len() as u64).to_be_bytes()),
-                    Felt252::from_bytes_be(&Felt::from_bits(&path).unwrap().to_be_bytes()),
+                    Felt252::from_bytes_be(&Felt::from_bits(&path).unwrap_or(Felt::ZERO).to_be_bytes()),
                     Felt252::from_bytes_be(&child.to_be_bytes()),
                 ],
             ),

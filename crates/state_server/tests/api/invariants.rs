@@ -257,7 +257,7 @@ async fn key_value_permutation_testing() {
     let label = Felt::from(0x15_u64);
 
     // Test various key-value combinations (using only safe, non-zero values)
-    let test_cases = vec![
+    let test_cases = [
         (Felt::from(1u64), Felt::from(100u64)),       // Simple key-value pair
         (Felt::from(2u64), Felt::from(200u64)),       // Another simple pair
         (Felt::from(0x123u64), Felt::from(0x456u64)), // Hex-like values

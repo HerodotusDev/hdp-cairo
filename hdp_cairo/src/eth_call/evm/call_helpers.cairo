@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Call Helpers
+// ============================================================================
+// Implements CALL, CALLCODE, DELEGATECALL, and STATICCALL execution helpers.
+
 //! CALL, CALLCODE, DELEGATECALL, STATICCALL opcode helpers
 use core::cmp::min;
 use starknet::EthAddress;
@@ -11,7 +16,6 @@ use crate::eth_call::evm::state::StateTrait;
 use crate::eth_call::utils::constants;
 use crate::eth_call::utils::set::SetTrait;
 use crate::eth_call::utils::traits::{BoolIntoNumeric, U256TryIntoResult};
-use super::test_utils::test_address;
 
 /// CallArgs is a subset of CallContext
 /// Created in order to simplify setting up the call opcodes

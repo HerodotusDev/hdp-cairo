@@ -18,7 +18,8 @@ pub struct ProofKeys {
 impl ProofKeys {
     pub async fn fetch_bytecode(key: &keys::evm::account::Key) -> Result<Bytes, FetcherError> {
         let rpc_url = get_corresponding_rpc_url(key).map_err(|e| FetcherError::InternalError(e.to_string()))?;
-        let provider = RootProvider::<Ethereum>::new_http(Url::parse(&rpc_url).unwrap());
+        let url = Url::parse(&rpc_url).map_err(|e| FetcherError::InternalError(format!("Invalid RPC URL '{rpc_url}': {e}")))?;
+        let provider = RootProvider::<Ethereum>::new_http(url);
         provider
             .get_code_at(key.address)
             .block_id(key.block_number.into())

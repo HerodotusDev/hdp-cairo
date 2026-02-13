@@ -1,3 +1,9 @@
+// ============================================================================
+// Eth Call Entrypoint
+// ============================================================================
+// Builds a synthetic EIP-1559 transaction from call parameters
+// and executes it through the EVM interpreter.
+
 use starknet::EthAddress;
 use crate::HDP;
 use crate::eth_call::evm::gas::calculate_intrinsic_gas_cost;

@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Memory Model
+// ============================================================================
+// Implements linear memory operations, expansion cost, and byte access helpers.
+
 use core::cmp::min;
 use core::dict::{Felt252Dict, Felt252DictTrait};
 use core::integer::u32_safe_divmod;
@@ -7,7 +12,6 @@ use crate::eth_call::utils::constants::{
 };
 use crate::eth_call::utils::helpers;
 use crate::eth_call::utils::math::Bitshift;
-use crate::eth_call::utils::traits::array::ArrayExtTrait;
 
 /// Materializes a Span<u8> into an Array<u8> by extracting actual u8 values.
 /// This is necessary to avoid relocatable memory issues when spans point to
@@ -131,7 +135,7 @@ impl MemoryImpl of MemoryTrait {
     /// * `offset` - The offset within memory to store the bytes at.
     #[inline(always)]
     fn store_n(ref self: Memory, elements: Span<u8>, offset: usize) {
-        if elements.len() == 0 {
+        if elements.is_empty() {
             return;
         }
 
@@ -671,12 +675,9 @@ impl Felt252DictExtensionImpl of Felt252DictExtension {
 
 #[cfg(test)]
 mod tests {
-    use core::num::traits::Bounded;
     use crate::eth_call::evm::memory::{InternalMemoryTrait, MemoryTrait};
     use crate::eth_call::utils::constants::{POW_2_120, POW_2_56, POW_2_64, POW_2_8};
     use crate::eth_call::utils::helpers;
-    use crate::eth_call::utils::math::{Exponentiation, WrappingExponentiation};
-    use crate::eth_call::utils::traits::array::SpanExtTrait;
 
 
     fn load_should_load_an_element_from_the_memory_with_offset_stored_with_store_n(

@@ -1,11 +1,11 @@
-use std::{collections::HashSet, hash::Hash};
+use std::collections::HashSet;
 
-use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine, Felt252};
+use cairo_vm::{types::relocatable::Relocatable, vm::vm_core::VirtualMachine};
 use header::HeaderCallHandler;
 use serde::{Deserialize, Serialize};
 use storage::StorageCallHandler;
-use strum_macros::FromRepr;
 use syscall_handler::{
+    call_contract::StarknetCallHandlerId,
     felt_from_ptr,
     traits::{CallHandler, SyscallHandler},
     SyscallExecutionError, SyscallResult, WriteResponseResult,
@@ -20,12 +20,6 @@ use types::{
 pub mod header;
 pub mod storage;
 
-#[derive(FromRepr)]
-pub enum CallHandlerId {
-    Header = 0,
-    Storage = 1,
-}
-
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct CallContractHandler {
     pub key_set: HashSet<DryRunKey>,
@@ -36,13 +30,15 @@ impl SyscallHandler for CallContractHandler {
     type Response = CallContractResponse;
 
     fn read_request(&mut self, _vm: &VirtualMachine, _ptr: &mut Relocatable) -> SyscallResult<Self::Request> {
-        unreachable!()
+        Err(SyscallExecutionError::InternalError(
+            "dry starknet::CallContractHandler::read_request should not be called (request is parsed by relay)".into(),
+        ))
     }
 
     async fn execute(&mut self, request: Self::Request, vm: &mut VirtualMachine) -> SyscallResult<Self::Response> {
         let mut calldata = request.calldata_start;
 
-        let call_handler_id = CallHandlerId::try_from(request.contract_address)?;
+        let call_handler_id = StarknetCallHandlerId::try_from(request.contract_address)?;
         let segment_index = felt_from_ptr(vm, &mut calldata)?;
         let offset = felt_from_ptr(vm, &mut calldata)?;
 
@@ -59,7 +55,7 @@ impl SyscallHandler for CallContractHandler {
         let mut retdata_end = retdata_start;
 
         match call_handler_id {
-            CallHandlerId::Header => {
+            StarknetCallHandlerId::Header => {
                 let key = HeaderCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = HeaderCallHandler::derive_id(request.selector)?;
                 let result = HeaderCallHandler.handle(key.clone(), function_id, vm).await?;
@@ -67,7 +63,7 @@ impl SyscallHandler for CallContractHandler {
                 result.to_memory(vm, retdata_end)?;
                 retdata_end += <HeaderCallHandler as CallHandler>::CallHandlerResult::n_fields(vm, retdata_end)?;
             }
-            CallHandlerId::Storage => {
+            StarknetCallHandlerId::Storage => {
                 let key = StorageCallHandler::derive_key(vm, &mut calldata)?;
                 let function_id = StorageCallHandler::derive_id(request.selector)?;
                 let result = StorageCallHandler.handle(key.clone(), function_id, vm).await?;
@@ -84,21 +80,9 @@ impl SyscallHandler for CallContractHandler {
     }
 
     fn write_response(&mut self, _response: Self::Response, _vm: &mut VirtualMachine, _ptr: &mut Relocatable) -> WriteResponseResult {
-        unreachable!()
-    }
-}
-
-impl TryFrom<Felt252> for CallHandlerId {
-    type Error = SyscallExecutionError;
-    fn try_from(value: Felt252) -> Result<Self, Self::Error> {
-        Self::from_repr(value.try_into().map_err(|e| Self::Error::InvalidSyscallInput {
-            input: value,
-            info: format!("{}", e),
-        })?)
-        .ok_or(Self::Error::InvalidSyscallInput {
-            input: value,
-            info: "Invalid function identifier".to_string(),
-        })
+        Err(SyscallExecutionError::InternalError(
+            "dry starknet::CallContractHandler::write_response should not be called (response is written by relay)".into(),
+        ))
     }
 }
 

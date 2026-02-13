@@ -53,7 +53,7 @@ mod module {
                         },
                     ),
                 WITHDRAWAL_EVENT_SIGNATURE,
-            ) == true) {
+            )) {
                 for index in 0..block.tx_count {
                     // Check if the bloom filter in the block receipt contains the specific target
                     // value corresponding to Withdrawal (address to, bytes32 nullifierHash,
@@ -71,7 +71,7 @@ mod module {
                                 },
                             ),
                         WITHDRAWAL_EVENT_SIGNATURE,
-                    ) == true) {
+                    )) {
                         // Get the contract address (receiver) for the transaction.
                         let contract_address: EthAddress = hdp
                             .evm

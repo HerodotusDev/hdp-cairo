@@ -17,7 +17,10 @@ pub struct BytecodeLeWords {
 
 impl CairoType for BytecodeLeWords {
     fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
-        let words_64bit_len: usize = (*vm.get_integer((address + 0)?)?).try_into().unwrap();
+        let words_64bit_len_felt = *vm.get_integer((address + 0)?)?;
+        let words_64bit_len: usize = words_64bit_len_felt.try_into().map_err(|e| {
+            MemoryError::ErrorRetrievingMessage(format!("Invalid bytecode words_64bit_len: {words_64bit_len_felt} ({e})").into())
+        })?;
         let words_64bit = vm
             .get_integer_range((address + 1)?, words_64bit_len)?
             .into_iter()
@@ -43,7 +46,10 @@ impl CairoType for BytecodeLeWords {
         Ok((address + (words_64bit_len + 3))?)
     }
     fn n_fields(vm: &VirtualMachine, address: Relocatable) -> Result<usize, MemoryError> {
-        let words_64bit_len: usize = (*vm.get_integer((address + 0)?)?).try_into().unwrap();
+        let words_64bit_len_felt = *vm.get_integer((address + 0)?)?;
+        let words_64bit_len: usize = words_64bit_len_felt.try_into().map_err(|e| {
+            MemoryError::ErrorRetrievingMessage(format!("Invalid bytecode words_64bit_len: {words_64bit_len_felt} ({e})").into())
+        })?;
         Ok(words_64bit_len + 3)
     }
 }
@@ -55,7 +61,9 @@ impl From<Bytes> for BytecodeLeWords {
         let words_64bit: Vec<Felt252> = bytes
             .chunks_exact(8)
             .map(|chunk| {
-                let word = u64::from_le_bytes(chunk.try_into().expect("chunks_exact guarantees 8 bytes"));
+                let mut array = [0u8; 8];
+                array.copy_from_slice(chunk);
+                let word = u64::from_le_bytes(array);
                 Felt252::from(word)
             })
             .collect();

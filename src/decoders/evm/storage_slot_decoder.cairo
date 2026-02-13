@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Storage Slot Decoder
+// ============================================================================
+// Converts RLP-encoded storage slot values into BE Uint256 outputs.
+// This is used when decoding storage proofs and slot values.
 from src.utils.rlp import decode_rlp_word_to_uint256
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.registers import get_fp_and_pc

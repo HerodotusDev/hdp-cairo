@@ -45,12 +45,16 @@ impl CallHandler for HeaderCallHandler {
 
     async fn handle(&mut self, key: Self::Key, function_id: Self::Id, _vm: &VirtualMachine) -> SyscallResult<Self::CallHandlerResult> {
         let rpc_url = get_corresponding_rpc_url(&key).map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?;
-        let provider = RootProvider::<Ethereum>::new_http(Url::parse(&rpc_url).unwrap());
+        let url =
+            Url::parse(&rpc_url).map_err(|e| SyscallExecutionError::InternalError(format!("Invalid RPC URL '{rpc_url}': {e}").into()))?;
+        let provider = RootProvider::<Ethereum>::new_http(url);
         let value = provider
             .get_block_by_number(key.block_number.into())
             .await
             .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))?
             .ok_or(SyscallExecutionError::InternalError("Block not found".into()))?;
-        Ok(CairoHeader::from(value.header.inner).handle(function_id))
+        CairoHeader::from(value.header.inner)
+            .handle(function_id)
+            .map_err(|e| SyscallExecutionError::InternalError(e.to_string().into()))
     }
 }

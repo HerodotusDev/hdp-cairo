@@ -1,3 +1,13 @@
+// ============================================================================
+// Starknet Header Decoder
+// ============================================================================
+// Extracts fields from Starknet header payloads (version 1 and 2 layouts).
+//
+// Version handling:
+// - VERSION_1: legacy layout (shorter field set)
+// - VERSION_2: expanded layout including data availability metadata
+//
+// Field indices are resolved via per-version tables to keep decoding consistent.
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.registers import get_label_location
 from starkware.cairo.common.uint256 import Uint256, felt_to_uint256
@@ -100,7 +110,9 @@ namespace StarknetHeaderDecoder {
         }
 
         // Should never reach here
-        assert 1 = 0;
+        with_attr error_message("StarknetHeaderDecoder.get_field: unsupported field {field}") {
+            assert 1 = 0;
+        }
         return (value=0);
     }
 
@@ -164,7 +176,10 @@ func get_header_field_index{range_check_ptr}(version: felt, field: felt) -> felt
 
     if (index == 0xFFFFFFFF) {
         // Field not available in this version
-        assert 1 = 0;
+        with_attr error_message(
+                "StarknetHeaderDecoder.get_header_field_index: field {field} not available for version {version}") {
+            assert 1 = 0;
+        }
     }
 
     return index;

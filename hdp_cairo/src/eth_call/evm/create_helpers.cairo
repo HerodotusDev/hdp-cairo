@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Create Helpers
+// ============================================================================
+// Handles CREATE/CREATE2 execution and contract address derivation.
+
 use core::num::traits::{Bounded, Zero};
 use starknet::EthAddress;
 use crate::eth_call::evm::errors::{EVMError, ensure};

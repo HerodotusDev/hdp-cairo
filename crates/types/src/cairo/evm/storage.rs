@@ -2,7 +2,7 @@ use alloy::primitives::{keccak256, StorageValue};
 use alloy_rlp::{Decodable, Encodable};
 use strum_macros::FromRepr;
 
-use crate::cairo::structs::Uint256;
+use crate::cairo::{evm::error::CairoEvmError, structs::Uint256};
 
 #[derive(FromRepr, Debug)]
 pub enum FunctionId {
@@ -30,14 +30,17 @@ impl CairoStorage {
         buffer
     }
 
-    pub fn rlp_decode(mut rlp: &[u8]) -> Self {
-        Self(<StorageValue>::decode(&mut rlp).unwrap())
+    pub fn try_rlp_decode(mut rlp: &[u8]) -> Result<Self, CairoEvmError> {
+        <StorageValue>::decode(&mut rlp).map(Self).map_err(|e| CairoEvmError::RlpDecode {
+            what: "evm::storage",
+            err: e.to_string(),
+        })
     }
 
-    pub fn handle(&self, function_id: FunctionId) -> Uint256 {
-        match function_id {
+    pub fn handle(&self, function_id: FunctionId) -> Result<Uint256, CairoEvmError> {
+        Ok(match function_id {
             FunctionId::Storage => self.storage(),
-        }
+        })
     }
 }
 

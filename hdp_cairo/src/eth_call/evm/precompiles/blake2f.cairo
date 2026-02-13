@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM BLAKE2f Precompile
+// ============================================================================
+// Implements the BLAKE2 compression function precompile.
+
 use core::array::ArrayTrait;
 use core::option::OptionTrait;
 use starknet::EthAddress;

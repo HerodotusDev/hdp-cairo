@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM ECMUL Precompile
+// ============================================================================
+// Performs BN254 elliptic curve scalar multiplication.
+
 use core::circuit::u384;
 use core::option::Option;
 use starknet::EthAddress;

@@ -1,3 +1,8 @@
+// ============================================================================
+// EVM Logging Opcodes
+// ============================================================================
+// Implements LOG0..LOG4 and log event emission.
+
 //! Logging Operations.
 
 use crate::eth_call::evm::errors::{EVMError, ensure};

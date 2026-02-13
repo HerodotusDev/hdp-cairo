@@ -1,4 +1,10 @@
+// ============================================================================
+// EVM Log Access
+// ============================================================================
+// Reads log fields (address, topics, data) from memorized receipts.
+
 use hdp_cairo::EvmMemorizer;
+use hdp_cairo::evm::result_to_u256;
 use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;
 
@@ -24,27 +30,27 @@ pub struct LogKey {
 pub impl LogImpl of LogTrait {
     fn log_get_address(self: @EvmMemorizer, key: @LogKey) -> u256 {
         let result = self.call_memorizer(LOG_GET_ADDRESS, key);
-        u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
+        result_to_u256(result)
     }
     fn log_get_topic0(self: @EvmMemorizer, key: @LogKey) -> u256 {
         let result = self.call_memorizer(LOG_GET_TOPIC0, key);
-        u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
+        result_to_u256(result)
     }
     fn log_get_topic1(self: @EvmMemorizer, key: @LogKey) -> u256 {
         let result = self.call_memorizer(LOG_GET_TOPIC1, key);
-        u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
+        result_to_u256(result)
     }
     fn log_get_topic2(self: @EvmMemorizer, key: @LogKey) -> u256 {
         let result = self.call_memorizer(LOG_GET_TOPIC2, key);
-        u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
+        result_to_u256(result)
     }
     fn log_get_topic3(self: @EvmMemorizer, key: @LogKey) -> u256 {
         let result = self.call_memorizer(LOG_GET_TOPIC3, key);
-        u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
+        result_to_u256(result)
     }
     fn log_get_topic4(self: @EvmMemorizer, key: @LogKey) -> u256 {
         let result = self.call_memorizer(LOG_GET_TOPIC4, key);
-        u256 { low: (*result[0]).try_into().unwrap(), high: (*result[1]).try_into().unwrap() }
+        result_to_u256(result)
     }
     fn log_get_data(self: @EvmMemorizer, key: @LogKey) -> Array<u128> {
         let mut result: Array<u128> = array![];

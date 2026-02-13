@@ -114,19 +114,19 @@ impl IntoIterator for CairoTrieNodeSerde {
         match self.0 {
             TrieNodeSerde::Binary { left, right } => vec![
                 FELT_0,
-                Felt252::from_hex(&left.to_hex_str()).unwrap(),
-                Felt252::from_hex(&right.to_hex_str()).unwrap(),
+                Felt252::from_bytes_be(&left.to_be_bytes()),
+                Felt252::from_bytes_be(&right.to_be_bytes()),
                 FELT_0,
             ]
             .into_iter(),
             TrieNodeSerde::Edge { child, path, bit_len } => {
                 let mut bitvec = BitVec::<u8, Msb0>::from_slice(&path);
                 bitvec.truncate(bit_len.min(251));
-                let path = Felt::from_bits(&bitvec).unwrap();
+                let path = Felt::from_bits(&bitvec).unwrap_or(Felt::ZERO);
                 vec![
                     FELT_1,
                     Felt252::from_bytes_be(&child.to_be_bytes()),
-                    Felt252::from_hex(&path.to_hex_str()).unwrap(),
+                    Felt252::from_bytes_be(&path.to_be_bytes()),
                     Felt252::from(bit_len as u64),
                 ]
                 .into_iter()

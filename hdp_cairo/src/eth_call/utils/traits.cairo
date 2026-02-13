@@ -126,10 +126,7 @@ pub impl EthAddressTryIntoResultContractAddress of TryIntoResult<ContractAddress
 
 pub impl U256TryIntoResult<U, +TryInto<u256, U>> of TryIntoResult<u256, U> {
     fn try_into_result(self: u256) -> Result<U, EVMError> {
-        match self.try_into() {
-            Option::Some(value) => Result::Ok(value),
-            Option::None => Result::Err(EVMError::TypeConversionError(TYPE_CONVERSION_ERROR)),
-        }
+        self.try_into().ok_or(EVMError::TypeConversionError(TYPE_CONVERSION_ERROR))
     }
 }
 

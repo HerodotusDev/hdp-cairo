@@ -1,3 +1,7 @@
+// ============================================================================
+// Arbitrary Type Helper
+// ============================================================================
+// Helper for calling the arbitrary_type syscall and deserializing results.
 use starknet::SyscallResultTrait;
 use starknet::syscalls::call_contract_syscall;
 

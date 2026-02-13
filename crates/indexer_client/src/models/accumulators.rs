@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use alloy::primitives::BlockNumber;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
+use types::{BlockNumber, ChainId};
 
 use super::{BlockHeader, HashingFunction};
 
@@ -21,8 +21,8 @@ pub enum ContractType {
 /// Query parameters for the indexer
 #[derive(Debug, Serialize)]
 pub struct IndexerQuery {
-    pub deployed_on_chain: u128,
-    pub accumulates_chain: u128,
+    pub deployed_on_chain: ChainId,
+    pub accumulates_chain: ChainId,
     pub hashing_function: HashingFunction,
     pub contract_type: ContractType,
     pub from_block_number_inclusive: BlockNumber,
@@ -35,7 +35,7 @@ pub struct IndexerQuery {
 }
 
 impl IndexerQuery {
-    pub fn new(deployed_on_chain_id: u128, accumulates_chain_id: u128, from_block: BlockNumber, to_block: BlockNumber) -> Self {
+    pub fn new(deployed_on_chain_id: ChainId, accumulates_chain_id: ChainId, from_block: BlockNumber, to_block: BlockNumber) -> Self {
         Self {
             deployed_on_chain: deployed_on_chain_id,
             accumulates_chain: accumulates_chain_id,
@@ -82,7 +82,7 @@ pub struct MMRMetadata {
 #[serde_as]
 pub struct MMRProof {
     pub block_header: BlockHeader,
-    pub block_number: u64,
+    pub block_number: BlockNumber,
     pub element_hash: String,
     pub element_index: u64,
     pub siblings_hashes: Vec<String>,

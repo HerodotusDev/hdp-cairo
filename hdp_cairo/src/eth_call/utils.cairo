@@ -1,3 +1,8 @@
+// ============================================================================
+// Eth Call Utilities
+// ============================================================================
+// Shared helpers for bytecode parsing, crypto, RLP, math, and transaction types.
+
 pub mod address;
 pub mod alexandria_data_structures;
 pub mod bytecode;

@@ -1,4 +1,4 @@
-use alloy::primitives::{Address, BlockNumber, StorageKey};
+use alloy::primitives::{Address, StorageKey};
 use cairo_vm::{
     types::relocatable::Relocatable,
     vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use starknet_crypto::poseidon_hash_many;
 
 use super::{ChainIdentifiable, KeyError};
-use crate::cairo::traits::CairoType;
+use crate::{cairo::traits::CairoType, BlockNumber, ChainId};
 
 #[derive(Debug, Clone)]
 pub struct CairoKey {
@@ -56,14 +56,14 @@ impl CairoType for CairoKey {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Key {
-    pub chain_id: u128,
+    pub chain_id: ChainId,
     pub block_number: BlockNumber,
     pub address: Address,
     pub storage_slot: StorageKey,
 }
 
 impl ChainIdentifiable for Key {
-    fn chain_id(&self) -> u128 {
+    fn chain_id(&self) -> ChainId {
         self.chain_id
     }
 }
@@ -72,13 +72,20 @@ impl TryFrom<CairoKey> for Key {
     type Error = KeyError;
     fn try_from(value: CairoKey) -> Result<Self, Self::Error> {
         Ok(Self {
-            chain_id: value.chain_id.try_into().map_err(|e| KeyError::ConversionError(format!("{}", e)))?,
-            block_number: value
-                .block_number
-                .try_into()
-                .map_err(|e| KeyError::ConversionError(format!("{}", e)))?,
-            address: Address::try_from(value.address.to_biguint().to_bytes_be().as_slice())
-                .map_err(|e| KeyError::ConversionError(format!("{}", e)))?,
+            chain_id: value.chain_id.try_into().map_err(|_| KeyError::FeltConversionFailed {
+                field: "chain_id",
+                value: value.chain_id.to_string(),
+            })?,
+            block_number: value.block_number.try_into().map_err(|_| KeyError::FeltConversionFailed {
+                field: "block_number",
+                value: value.block_number.to_string(),
+            })?,
+            address: Address::try_from(value.address.to_biguint().to_bytes_be().as_slice()).map_err(|_| {
+                KeyError::FeltConversionFailed {
+                    field: "address",
+                    value: value.address.to_string(),
+                }
+            })?,
             storage_slot: StorageKey::from(
                 &[
                     &value.storage_slot_high.to_bytes_be().as_slice()[16..],
@@ -86,7 +93,10 @@ impl TryFrom<CairoKey> for Key {
                 ]
                 .concat()
                 .try_into()
-                .map_err(|_| KeyError::ConversionError("Failed to form StorageKey".into()))?,
+                .map_err(|v: Vec<u8>| KeyError::FeltConversionFailed {
+                    field: "storage_slot",
+                    value: format!("expected 32 bytes, got {}", v.len()),
+                })?,
             ),
         })
     }
