@@ -396,24 +396,15 @@ async fn upload_module(args: UploadArgs) -> Result<(), Box<dyn std::error::Error
 
     info!("✅ Build successful");
 
-    // Find the compiled contract class file
-    // Scarb builds to target/dev/<package_name>_<target_name>.compiled_contract_class.json
-    let target_dir = current_dir.join("target/dev");
-    
-    let mut compiled_file_path: Option<PathBuf> = None;
-    if target_dir.exists() {
-        for entry in std::fs::read_dir(&target_dir).map_err(Error::IO)? {
-            let entry = entry.map_err(Error::IO)?;
-            let file_name = entry.file_name();
-            let file_name_str = file_name.to_string_lossy();
-            if file_name_str.ends_with(".compiled_contract_class.json") {
-                compiled_file_path = Some(entry.path());
-                break;
-            }
-        }
-    }
-
-    let compiled_file_path = compiled_file_path.ok_or("Compiled contract class file not found. Make sure the module has a [[target.starknet-contract]] section in Scarb.toml")?;
+    let compiled_file_path = find_compiled_contract_class_file(&current_dir, &module_name)?
+        .ok_or_else(|| {
+            format!(
+                "Compiled contract class file not found for module '{}'. \
+                 Make sure the module has a [[target.starknet-contract]] section in Scarb.toml \
+                 and that 'scarb build' produced a *.compiled_contract_class.json artifact.",
+                module_name
+            )
+        })?;
     info!("📄 Found compiled program: {}", compiled_file_path.display());
 
     // Read compiled program
@@ -449,7 +440,7 @@ async fn upload_module(args: UploadArgs) -> Result<(), Box<dyn std::error::Error
 
     let mut source_files: HashMap<String, String> = HashMap::new();
     for entry in WalkDir::new(&src_dir) {
-        let entry = entry.map_err(Error::IO)?;
+        let entry = entry.map_err(|e| Error::IO(std::io::Error::other(e.to_string())))?;
         let path = entry.path();
         
         if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("cairo") {
@@ -528,8 +519,9 @@ async fn upload_module(args: UploadArgs) -> Result<(), Box<dyn std::error::Error
         .await?;
 
     if !response.status().is_success() {
+        let status = response.status();
         let error_text = response.text().await?;
-        return Err(format!("Upload failed ({}): {}", response.status(), error_text).into());
+        return Err(format!("Upload failed ({}): {}", status, error_text).into());
     }
 
     let result: serde_json::Value = response.json().await?;
@@ -541,4 +533,61 @@ async fn upload_module(args: UploadArgs) -> Result<(), Box<dyn std::error::Error
     println!("✅ Successfully uploaded module '{}' v{}", module_name, module_version);
 
     Ok(())
+}
+
+fn find_compiled_contract_class_file(current_dir: &Path, module_name: &str) -> Result<Option<PathBuf>, Error> {
+    let mut search_dirs = Vec::new();
+    let mut cursor = Some(current_dir.to_path_buf());
+
+    // Search current dir and all parents for target/dev artifacts.
+    while let Some(dir) = cursor {
+        search_dirs.push(dir.join("target/dev"));
+        cursor = dir.parent().map(Path::to_path_buf);
+    }
+
+    // De-duplicate while preserving order.
+    search_dirs.dedup();
+
+    let mut all_candidates = Vec::new();
+    for dir in search_dirs {
+        if !dir.exists() {
+            continue;
+        }
+        for entry in std::fs::read_dir(&dir).map_err(Error::IO)? {
+            let entry = entry.map_err(Error::IO)?;
+            let file_name = entry.file_name().to_string_lossy().to_string();
+            if file_name.ends_with(".compiled_contract_class.json") {
+                all_candidates.push(entry.path());
+            }
+        }
+    }
+
+    if all_candidates.is_empty() {
+        return Ok(None);
+    }
+
+    // Prefer artifacts that include "<module_name>_" in filename.
+    let module_prefix = format!("{}_", module_name);
+    let mut preferred: Vec<PathBuf> = all_candidates
+        .iter()
+        .filter(|path| {
+            path.file_name()
+                .and_then(|v| v.to_str())
+                .map(|n| n.contains(&module_prefix))
+                .unwrap_or(false)
+        })
+        .cloned()
+        .collect();
+
+    if preferred.is_empty() {
+        preferred = all_candidates;
+    }
+
+    preferred.sort_by_key(|path| {
+        std::fs::metadata(path)
+            .and_then(|m| m.modified())
+            .ok()
+    });
+
+    Ok(preferred.pop())
 }
