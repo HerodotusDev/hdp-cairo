@@ -4,8 +4,9 @@
 #![forbid(unsafe_code)]
 
 use std::{
+    collections::HashMap,
     io::{Read, Write},
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::{Command, Stdio},
 };
 
@@ -54,6 +55,28 @@ pub struct UpdateArgs {
     local: bool,
 }
 
+#[derive(Parser, Debug)]
+pub struct UploadArgs {
+    /// API key for authentication
+    #[arg(short = 'k', long = "api-key")]
+    api_key: Option<String>,
+    /// HDP server URL (defaults to HDP_SERVER_URL env var or http://localhost:3001)
+    #[arg(short = 'u', long = "url")]
+    server_url: Option<String>,
+    /// Module description
+    #[arg(long = "description")]
+    description: Option<String>,
+    /// Tags (comma-separated)
+    #[arg(long = "tags")]
+    tags: Option<String>,
+    /// License
+    #[arg(long = "license")]
+    license: Option<String>,
+    /// Version changelog
+    #[arg(long = "changelog")]
+    changelog: Option<String>,
+}
+
 #[derive(Subcommand, Debug)]
 enum Commands {
     /// Run the dry-run functionality
@@ -85,6 +108,12 @@ enum Commands {
     /// Print the path to the HDP repository directory
     #[command(name = "pwd")]
     Pwd,
+    /// Upload a module to the HDP server
+    ///
+    /// Builds the module, collects source files, and uploads everything to the HDP server.
+    /// Must be run from the module root directory (where Scarb.toml is located).
+    #[command(name = "upload")]
+    Upload(UploadArgs),
 }
 
 #[tokio::main]
@@ -219,6 +248,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let hdp_path = get_hdp_path()?;
             println!("{}", hdp_path.display());
         }
+        Commands::Upload(upload_args) => {
+            upload_module(upload_args).await?;
+        }
     }
 
     Ok(())
@@ -298,6 +330,215 @@ fn setup_tracing(log_level: Option<&String>, debug: bool) -> Result<(), Box<dyn 
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::builder().with_default_directive(level_filter.into()).from_env_lossy())
         .init();
+
+    Ok(())
+}
+
+async fn upload_module(args: UploadArgs) -> Result<(), Box<dyn std::error::Error>> {
+    use walkdir::WalkDir;
+
+    let UploadArgs {
+        api_key,
+        server_url,
+        description,
+        tags,
+        license,
+        changelog,
+    } = args;
+
+    info!("📦 Starting module upload...");
+
+    // Get current directory
+    let current_dir = std::env::current_dir().map_err(Error::IO)?;
+    let scarb_toml_path = current_dir.join("Scarb.toml");
+
+    if !scarb_toml_path.exists() {
+        return Err("Scarb.toml not found in current directory. Please run this command from the module root directory.".into());
+    }
+
+    // Read Scarb.toml
+    let scarb_toml_content = std::fs::read_to_string(&scarb_toml_path).map_err(Error::IO)?;
+    let scarb_toml: toml::Value = toml::from_str(&scarb_toml_content)?;
+
+    let package = scarb_toml
+        .get("package")
+        .ok_or("Missing [package] section in Scarb.toml")?;
+
+    let module_name = package
+        .get("name")
+        .and_then(|v| v.as_str())
+        .ok_or("Missing 'name' field in [package] section")?
+        .to_string();
+
+    let module_version = package
+        .get("version")
+        .and_then(|v| v.as_str())
+        .ok_or("Missing 'version' field in [package] section")?
+        .to_string();
+
+    info!("📋 Module: {} v{}", module_name, module_version);
+
+    // Build the module with scarb
+    info!("🔨 Building module with scarb...");
+    let build_output = Command::new("scarb")
+        .arg("build")
+        .current_dir(&current_dir)
+        .output()
+        .map_err(|e| Error::IO(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("Failed to run scarb build: {}. Make sure scarb is installed and in PATH.", e),
+        )))?;
+
+    if !build_output.status.success() {
+        let stderr = String::from_utf8_lossy(&build_output.stderr);
+        return Err(format!("Scarb build failed:\n{}", stderr).into());
+    }
+
+    info!("✅ Build successful");
+
+    // Find the compiled contract class file
+    // Scarb builds to target/dev/<package_name>_<target_name>.compiled_contract_class.json
+    let target_dir = current_dir.join("target/dev");
+    
+    let mut compiled_file_path: Option<PathBuf> = None;
+    if target_dir.exists() {
+        for entry in std::fs::read_dir(&target_dir).map_err(Error::IO)? {
+            let entry = entry.map_err(Error::IO)?;
+            let file_name = entry.file_name();
+            let file_name_str = file_name.to_string_lossy();
+            if file_name_str.ends_with(".compiled_contract_class.json") {
+                compiled_file_path = Some(entry.path());
+                break;
+            }
+        }
+    }
+
+    let compiled_file_path = compiled_file_path.ok_or("Compiled contract class file not found. Make sure the module has a [[target.starknet-contract]] section in Scarb.toml")?;
+    info!("📄 Found compiled program: {}", compiled_file_path.display());
+
+    // Read compiled program
+    let compiled_program_bytes = std::fs::read(&compiled_file_path).map_err(Error::IO)?;
+    let compiled_program_json: serde_json::Value = serde_json::from_slice(&compiled_program_bytes)?;
+
+    // Extract compiler version from compiled program
+    let compiler_version = compiled_program_json
+        .get("compiler_version")
+        .and_then(|v| v.as_str())
+        .ok_or("Missing compiler_version in compiled program")?
+        .to_string();
+
+    // Try to find ABI file (usually in target/dev/<package_name>_<target_name>.contract_class.json)
+    let abi_file_path = compiled_file_path
+        .to_string_lossy()
+        .replace(".compiled_contract_class.json", ".contract_class.json");
+    let abi_file_path = PathBuf::from(abi_file_path);
+    
+    let abi_json: Option<serde_json::Value> = if abi_file_path.exists() {
+        let abi_content = std::fs::read_to_string(&abi_file_path).map_err(Error::IO)?;
+        let contract_class: serde_json::Value = serde_json::from_str(&abi_content)?;
+        contract_class.get("abi").cloned()
+    } else {
+        None
+    };
+
+    // Collect all source files from src directory
+    let src_dir = current_dir.join("src");
+    if !src_dir.exists() {
+        return Err("src directory not found".into());
+    }
+
+    let mut source_files: HashMap<String, String> = HashMap::new();
+    for entry in WalkDir::new(&src_dir) {
+        let entry = entry.map_err(Error::IO)?;
+        let path = entry.path();
+        
+        if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("cairo") {
+            let relative_path = path
+                .strip_prefix(&current_dir)
+                .map_err(|e| Error::IO(std::io::Error::other(format!("Failed to get relative path: {}", e))))?
+                .to_string_lossy()
+                .to_string();
+            
+            let content = std::fs::read_to_string(path).map_err(Error::IO)?;
+            source_files.insert(relative_path, content);
+        }
+    }
+
+    info!("📁 Collected {} source files", source_files.len());
+
+    // Get API key
+    let api_key = api_key
+        .or_else(|| std::env::var("HERODOTUS_CLOUD_API_KEY").ok())
+        .ok_or("API key required. Provide via --api-key flag or HERODOTUS_CLOUD_API_KEY environment variable")?;
+
+    // Get server URL
+    let server_url = server_url
+        .or_else(|| std::env::var("HDP_SERVER_URL").ok())
+        .unwrap_or_else(|| "http://localhost:3001".to_string());
+
+    info!("🚀 Uploading to {}...", server_url);
+
+    // Build multipart form
+    let client = reqwest::Client::new();
+    let mut form = reqwest::multipart::Form::new();
+
+    // Add compiled module
+    form = form.part("module", reqwest::multipart::Part::bytes(compiled_program_bytes)
+        .file_name("module.json")
+        .mime_str("application/json")?);
+
+    // Add required fields
+    form = form.text("name", module_name.clone());
+    form = form.text("compiler_version", compiler_version);
+    form = form.text("version", module_version.clone());
+
+    // Add optional fields
+    if let Some(desc) = description {
+        form = form.text("description", desc);
+    }
+    if let Some(tags_str) = tags {
+        form = form.text("tags", tags_str);
+    }
+    if let Some(lic) = license {
+        form = form.text("license", lic);
+    }
+    if let Some(changelog_str) = changelog {
+        form = form.text("version_changelog", changelog_str);
+    }
+
+    // Add source files as JSON
+    let source_files_json = serde_json::to_string(&source_files)?;
+    form = form.text("source_files", source_files_json);
+
+    // Add ABI if available
+    if let Some(abi) = abi_json {
+        let abi_str = serde_json::to_string(&abi)?;
+        form = form.text("abi", abi_str);
+    }
+
+    // Add Scarb.toml
+    form = form.text("scarb_toml", scarb_toml_content);
+
+    // Upload
+    let response = client
+        .post(format!("{}/modules/upload", server_url))
+        .header("X-API-KEY", api_key)
+        .multipart(form)
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        let error_text = response.text().await?;
+        return Err(format!("Upload failed ({}): {}", response.status(), error_text).into());
+    }
+
+    let result: serde_json::Value = response.json().await?;
+    info!("✅ Module uploaded successfully!");
+    info!("   Module ID: {}", result.get("id").and_then(|v| v.as_str()).unwrap_or("N/A"));
+    info!("   Program Hash: {}", result.get("programHash").and_then(|v| v.as_str()).unwrap_or("N/A"));
+    
+    println!();
+    println!("✅ Successfully uploaded module '{}' v{}", module_name, module_version);
 
     Ok(())
 }
