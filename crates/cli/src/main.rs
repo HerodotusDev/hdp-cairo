@@ -22,7 +22,7 @@ use indexer_client as _;
 use serde_json as _;
 use sound_run::HDP_COMPILED_JSON;
 use syscall_handler as _;
-use tracing::{self as _, info, level_filters::LevelFilter};
+use tracing::{self as _, error, info, level_filters::LevelFilter};
 use tracing_subscriber::EnvFilter;
 use types::error::Error;
 
@@ -77,6 +77,25 @@ pub struct UploadArgs {
     changelog: Option<String>,
 }
 
+#[derive(Parser, Debug)]
+pub struct ExecuteArgs {
+    /// API key for authentication
+    #[arg(short = 'k', long = "api-key")]
+    api_key: Option<String>,
+    /// HDP server URL (defaults to HDP_SERVER_URL env var or http://localhost:3001)
+    #[arg(short = 'u', long = "url")]
+    server_url: Option<String>,
+    /// Destination chain id in hex format (e.g. 0xaa36a7 for Ethereum Sepolia)
+    #[arg(short = 'd', long = "destination-chain-id", default_value = "0xaa36a7")]
+    destination_chain_id: String,
+    /// Task params as JSON array string (default: [])
+    #[arg(long = "params")]
+    params: Option<String>,
+    /// Injected state as JSON object string (default: {})
+    #[arg(long = "injected-state")]
+    injected_state: Option<String>,
+}
+
 #[derive(Subcommand, Debug)]
 enum Commands {
     /// Run the dry-run functionality
@@ -114,10 +133,22 @@ enum Commands {
     /// Must be run from the module root directory (where Scarb.toml is located).
     #[command(name = "upload")]
     Upload(UploadArgs),
+    /// Execute a module by sending POST /tasks with compiled class inline
+    ///
+    /// Builds the module and submits an HDP task directly with input.compiled_class in the JSON payload.
+    #[command(name = "execute")]
+    Execute(ExecuteArgs),
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() {
+    if let Err(err) = run().await {
+        error!("{}", err);
+        std::process::exit(1);
+    }
+}
+
+async fn run() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv().ok();
 
     // Parse CLI early to get log level, but don't process commands yet
@@ -250,6 +281,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Commands::Upload(upload_args) => {
             upload_module(upload_args).await?;
+        }
+        Commands::Execute(execute_args) => {
+            execute_task(execute_args).await?;
         }
     }
 
@@ -531,6 +565,143 @@ async fn upload_module(args: UploadArgs) -> Result<(), Box<dyn std::error::Error
     
     println!();
     println!("✅ Successfully uploaded module '{}' v{}", module_name, module_version);
+
+    Ok(())
+}
+
+async fn execute_task(args: ExecuteArgs) -> Result<(), Box<dyn std::error::Error>> {
+    let ExecuteArgs {
+        api_key,
+        server_url,
+        destination_chain_id,
+        params,
+        injected_state,
+    } = args;
+
+    info!("🚀 Starting task execution...");
+
+    // Get current directory
+    let current_dir = std::env::current_dir().map_err(Error::IO)?;
+    let scarb_toml_path = current_dir.join("Scarb.toml");
+
+    if !scarb_toml_path.exists() {
+        return Err("Scarb.toml not found in current directory. Please run this command from the module root directory.".into());
+    }
+
+    // Read Scarb.toml metadata
+    let scarb_toml_content = std::fs::read_to_string(&scarb_toml_path).map_err(Error::IO)?;
+    let scarb_toml: toml::Value = toml::from_str(&scarb_toml_content)?;
+    let package = scarb_toml
+        .get("package")
+        .ok_or("Missing [package] section in Scarb.toml")?;
+    let module_name = package
+        .get("name")
+        .and_then(|v| v.as_str())
+        .ok_or("Missing 'name' field in [package] section")?
+        .to_string();
+    let module_version = package
+        .get("version")
+        .and_then(|v| v.as_str())
+        .ok_or("Missing 'version' field in [package] section")?
+        .to_string();
+
+    info!("📋 Module: {} v{}", module_name, module_version);
+    info!("🔨 Building module with scarb...");
+
+    let build_output = Command::new("scarb")
+        .arg("build")
+        .current_dir(&current_dir)
+        .output()
+        .map_err(|e| {
+            Error::IO(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("Failed to run scarb build: {}. Make sure scarb is installed and in PATH.", e),
+            ))
+        })?;
+
+    if !build_output.status.success() {
+        let stderr = String::from_utf8_lossy(&build_output.stderr);
+        return Err(format!("Scarb build failed:\n{}", stderr).into());
+    }
+
+    info!("✅ Build successful");
+
+    let compiled_file_path = find_compiled_contract_class_file(&current_dir, &module_name)?
+        .ok_or_else(|| {
+            format!(
+                "Compiled contract class file not found for module '{}'. \
+                 Make sure the module has a [[target.starknet-contract]] section in Scarb.toml \
+                 and that 'scarb build' produced a *.compiled_contract_class.json artifact.",
+                module_name
+            )
+        })?;
+    info!("📄 Found compiled class: {}", compiled_file_path.display());
+
+    let compiled_program_bytes = std::fs::read(&compiled_file_path).map_err(Error::IO)?;
+    let compiled_program_json: serde_json::Value = serde_json::from_slice(&compiled_program_bytes)?;
+
+    let params_json: serde_json::Value = if let Some(raw) = params {
+        let parsed: serde_json::Value = serde_json::from_str(&raw)?;
+        if !parsed.is_array() {
+            return Err("--params must be a JSON array".into());
+        }
+        parsed
+    } else {
+        serde_json::json!([])
+    };
+
+    let injected_state_json: serde_json::Value = if let Some(raw) = injected_state {
+        let parsed: serde_json::Value = serde_json::from_str(&raw)?;
+        if !parsed.is_object() {
+            return Err("--injected-state must be a JSON object".into());
+        }
+        parsed
+    } else {
+        serde_json::json!({})
+    };
+
+    let api_key = api_key
+        .or_else(|| std::env::var("HERODOTUS_CLOUD_API_KEY").ok())
+        .ok_or("API key required. Provide via --api-key flag or HERODOTUS_CLOUD_API_KEY environment variable")?;
+
+    let server_url = server_url
+        .or_else(|| std::env::var("HDP_SERVER_URL").ok())
+        .unwrap_or_else(|| "http://localhost:3001".to_string());
+
+    let request_body = serde_json::json!({
+        "destination_chain_id": destination_chain_id,
+        "input": {
+            "params": params_json,
+            "compiled_class": compiled_program_json,
+            "injected_state": injected_state_json
+        }
+    });
+
+    info!("📮 Sending task execution request to {}/tasks ...", server_url);
+    let client = reqwest::Client::new();
+    let response = client
+        .post(format!("{}/tasks", server_url))
+        .header("X-API-KEY", api_key)
+        .header("Content-Type", "application/json")
+        .json(&request_body)
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await?;
+        return Err(format!("Task execution failed ({}): {}", status, error_text).into());
+    }
+
+    let result: serde_json::Value = response.json().await?;
+    let task_uuid = result.get("uuid").and_then(|v| v.as_str()).unwrap_or("N/A");
+
+    info!("✅ Task submitted successfully");
+    info!("   Task UUID: {}", task_uuid);
+    println!();
+    println!("✅ Task accepted: {}", task_uuid);
+    println!("🔎 Check status:");
+    println!("   curl -H \"X-API-KEY: {}\" \"{}/tasks/{}/status\"", "<YOUR_API_KEY>", server_url, task_uuid);
 
     Ok(())
 }
