@@ -559,9 +559,19 @@ async fn upload_module(args: UploadArgs) -> Result<(), Box<dyn std::error::Error
     }
 
     let result: serde_json::Value = response.json().await?;
+    let module_id = result.get("id").and_then(|v| v.as_str()).unwrap_or("N/A");
+    let program_hash = result.get("programHash").and_then(|v| v.as_str()).unwrap_or("N/A");
     info!("✅ Module uploaded successfully!");
-    info!("   Module ID: {}", result.get("id").and_then(|v| v.as_str()).unwrap_or("N/A"));
-    info!("   Program Hash: {}", result.get("programHash").and_then(|v| v.as_str()).unwrap_or("N/A"));
+    info!("   Module ID: {}", module_id);
+    info!("   Program Hash: {}", program_hash);
+    if module_id != "N/A" && program_hash != "N/A" {
+        let module_link = format!(
+            "https://herodotus.cloud/en/hdp/module/{}?program_hash={}",
+            module_id, program_hash
+        );
+        info!("   Herodotus Cloud: {}", module_link);
+        println!("🔗 Module page: {}", module_link);
+    }
     
     println!();
     println!("✅ Successfully uploaded module '{}' v{}", module_name, module_version);
@@ -698,6 +708,11 @@ async fn execute_task(args: ExecuteArgs) -> Result<(), Box<dyn std::error::Error
 
     info!("✅ Task submitted successfully");
     info!("   Task UUID: {}", task_uuid);
+    if task_uuid != "N/A" {
+        let task_link = format!("https://herodotus.cloud/en/hdp/task/{}", task_uuid);
+        info!("   Herodotus Cloud: {}", task_link);
+        println!("🔗 Task page: {}", task_link);
+    }
     println!();
     println!("✅ Task accepted: {}", task_uuid);
     println!("🔎 Check status:");

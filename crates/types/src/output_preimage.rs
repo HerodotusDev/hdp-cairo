@@ -547,7 +547,6 @@ fn print_formatted_value(value: &Value, abi: Option<&Value>, indent: usize, show
                     // Print enum arrays compactly with multiple values per line (4 per line)
                     // Calculate column widths for alignment
                     let items_per_line = 4;
-                    let num_lines = (arr.len() + items_per_line - 1) / items_per_line;
                     let mut column_widths = vec![0; items_per_line];
                     
                     // Find maximum width for each column
