@@ -96,6 +96,32 @@ pub struct ExecuteArgs {
     injected_state: Option<String>,
 }
 
+#[derive(Parser, Debug)]
+pub struct ListModulesArgs {
+    /// API key for authentication (required unless --all)
+    #[arg(short = 'k', long = "api-key")]
+    api_key: Option<String>,
+    /// HDP server URL (defaults to HDP_SERVER_URL env var or http://localhost:3001)
+    #[arg(short = 'u', long = "url")]
+    server_url: Option<String>,
+    /// List all modules (not only current user's modules)
+    #[arg(long = "all")]
+    all: bool,
+}
+
+#[derive(Parser, Debug)]
+pub struct ModuleVersionsArgs {
+    /// Module id
+    #[arg(short = 'm', long = "module-id")]
+    module_id: String,
+    /// API key for authentication (optional; forwarded as X-API-KEY when provided)
+    #[arg(short = 'k', long = "api-key")]
+    api_key: Option<String>,
+    /// HDP server URL (defaults to HDP_SERVER_URL env var or http://localhost:3001)
+    #[arg(short = 'u', long = "url")]
+    server_url: Option<String>,
+}
+
 #[derive(Subcommand, Debug)]
 enum Commands {
     /// Run the dry-run functionality
@@ -127,6 +153,16 @@ enum Commands {
     /// Print the path to the HDP repository directory
     #[command(name = "pwd")]
     Pwd,
+    /// Cloud-related commands (upload, execute, list modules, module versions)
+    #[command(name = "cloud")]
+    Cloud {
+        #[command(subcommand)]
+        command: CloudCommands,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum CloudCommands {
     /// Upload a module to the HDP server
     ///
     /// Builds the module, collects source files, and uploads everything to the HDP server.
@@ -138,6 +174,14 @@ enum Commands {
     /// Builds the module and submits an HDP task directly with input.compiled_class in the JSON payload.
     #[command(name = "execute")]
     Execute(ExecuteArgs),
+    /// List modules in a clean table format
+    ///
+    /// By default lists current user's modules. Use --all to list all modules.
+    #[command(name = "list-modules")]
+    ListModules(ListModulesArgs),
+    /// List all versions of a given module
+    #[command(name = "module-versions")]
+    ModuleVersions(ModuleVersionsArgs),
 }
 
 #[tokio::main]
@@ -279,11 +323,19 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
             let hdp_path = get_hdp_path()?;
             println!("{}", hdp_path.display());
         }
-        Commands::Upload(upload_args) => {
-            upload_module(upload_args).await?;
-        }
-        Commands::Execute(execute_args) => {
-            execute_task(execute_args).await?;
+        Commands::Cloud { command } => match command {
+            CloudCommands::Upload(upload_args) => {
+                upload_module(upload_args).await?;
+            }
+            CloudCommands::Execute(execute_args) => {
+                execute_task(execute_args).await?;
+            }
+            CloudCommands::ListModules(args) => {
+                list_modules(args).await?;
+            }
+            CloudCommands::ModuleVersions(args) => {
+                list_module_versions(args).await?;
+            }
         }
     }
 
@@ -569,7 +621,6 @@ async fn upload_module(args: UploadArgs) -> Result<(), Box<dyn std::error::Error
             "https://herodotus.cloud/en/hdp/module/{}?program_hash={}",
             module_id, program_hash
         );
-        info!("   Herodotus Cloud: {}", module_link);
         println!("🔗 Module page: {}", module_link);
     }
     
@@ -710,7 +761,6 @@ async fn execute_task(args: ExecuteArgs) -> Result<(), Box<dyn std::error::Error
     info!("   Task UUID: {}", task_uuid);
     if task_uuid != "N/A" {
         let task_link = format!("https://herodotus.cloud/en/hdp/task/{}", task_uuid);
-        info!("   Herodotus Cloud: {}", task_link);
         println!("🔗 Task page: {}", task_link);
     }
     println!();
@@ -718,6 +768,161 @@ async fn execute_task(args: ExecuteArgs) -> Result<(), Box<dyn std::error::Error
     println!("🔎 Check status:");
     println!("   curl -H \"X-API-KEY: {}\" \"{}/tasks/{}/status\"", "<YOUR_API_KEY>", server_url, task_uuid);
 
+    Ok(())
+}
+
+fn resolve_server_url(server_url: Option<String>) -> String {
+    server_url
+        .or_else(|| std::env::var("HDP_SERVER_URL").ok())
+        .unwrap_or_else(|| "http://localhost:3001".to_string())
+}
+
+fn print_table(headers: &[&str], rows: &[Vec<String>]) {
+    let mut widths: Vec<usize> = headers.iter().map(|h| h.len()).collect();
+    for row in rows {
+        for (idx, cell) in row.iter().enumerate() {
+            if idx < widths.len() {
+                widths[idx] = widths[idx].max(cell.len());
+            }
+        }
+    }
+
+    let border = widths
+        .iter()
+        .map(|w| "-".repeat(*w + 2))
+        .collect::<Vec<_>>()
+        .join("+");
+    println!("+{}+", border);
+
+    let header_line = headers
+        .iter()
+        .enumerate()
+        .map(|(idx, h)| format!(" {:<width$} ", h, width = widths[idx]))
+        .collect::<Vec<_>>()
+        .join("|");
+    println!("|{}|", header_line);
+    println!("+{}+", border);
+
+    for row in rows {
+        let line = row
+            .iter()
+            .enumerate()
+            .map(|(idx, c)| format!(" {:<width$} ", c, width = widths[idx]))
+            .collect::<Vec<_>>()
+            .join("|");
+        println!("|{}|", line);
+    }
+    println!("+{}+", border);
+}
+
+async fn list_modules(args: ListModulesArgs) -> Result<(), Box<dyn std::error::Error>> {
+    let server_url = resolve_server_url(args.server_url);
+    let client = reqwest::Client::new();
+
+    info!("📦 Fetching modules from {}...", server_url);
+    let resp = if args.all {
+        client.get(format!("{}/modules", server_url)).send().await?
+    } else {
+        let api_key = args
+            .api_key
+            .or_else(|| std::env::var("HERODOTUS_CLOUD_API_KEY").ok())
+            .ok_or("API key required. Provide via --api-key or HERODOTUS_CLOUD_API_KEY (or use --all)")?;
+        client
+            .get(format!("{}/modules/my", server_url))
+            .header("X-API-KEY", api_key)
+            .send()
+            .await?
+    };
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let err = resp.text().await?;
+        return Err(format!("Failed to list modules ({}): {}", status, err).into());
+    }
+
+    let body: serde_json::Value = resp.json().await?;
+    let modules = body
+        .get("modules")
+        .and_then(|v| v.as_array())
+        .ok_or("Invalid response format: missing modules array")?;
+
+    if modules.is_empty() {
+        println!("No modules found.");
+        return Ok(());
+    }
+
+    let rows = modules
+        .iter()
+        .map(|m| {
+            vec![
+                m.get("id").and_then(|v| v.as_str()).unwrap_or("-").to_string(),
+                m.get("name").and_then(|v| v.as_str()).unwrap_or("-").to_string(),
+                m.get("latestModuleVersionProgramHash")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("-")
+                    .to_string(),
+                m.get("creatorUser")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("-")
+                    .to_string(),
+                m.get("publishedOnMarketplace")
+                    .and_then(|v| v.as_bool())
+                    .map(|v| if v { "yes" } else { "no" })
+                    .unwrap_or("-")
+                    .to_string(),
+            ]
+        })
+        .collect::<Vec<_>>();
+
+    println!();
+    print_table(&["MODULE_ID", "NAME", "LATEST_PROGRAM_HASH", "CREATOR_USER", "MARKETPLACE"], &rows);
+    Ok(())
+}
+
+async fn list_module_versions(args: ModuleVersionsArgs) -> Result<(), Box<dyn std::error::Error>> {
+    let server_url = resolve_server_url(args.server_url);
+    let client = reqwest::Client::new();
+    let url = format!("{}/modules/{}/versions", server_url, args.module_id);
+    let api_key = args.api_key.or_else(|| std::env::var("HERODOTUS_CLOUD_API_KEY").ok());
+
+    info!("📚 Fetching module versions from {}...", server_url);
+    let mut request = client.get(url);
+    if let Some(key) = api_key {
+        request = request.header("X-API-KEY", key);
+    }
+    let resp = request.send().await?;
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let err = resp.text().await?;
+        return Err(format!("Failed to list module versions ({}): {}", status, err).into());
+    }
+
+    let versions: serde_json::Value = resp.json().await?;
+    let versions = versions
+        .as_array()
+        .ok_or("Invalid response format: expected versions array")?;
+
+    if versions.is_empty() {
+        println!("No versions found for this module.");
+        return Ok(());
+    }
+
+    let rows = versions
+        .iter()
+        .map(|v| {
+            vec![
+                v.get("version").and_then(|x| x.as_str()).unwrap_or("-").to_string(),
+                v.get("hash").and_then(|x| x.as_str()).unwrap_or("-").to_string(),
+                v.get("usageCount")
+                    .and_then(|x| x.as_i64())
+                    .map(|x| x.to_string())
+                    .unwrap_or_else(|| "-".to_string()),
+                v.get("createdAt").and_then(|x| x.as_str()).unwrap_or("-").to_string(),
+            ]
+        })
+        .collect::<Vec<_>>();
+
+    println!();
+    print_table(&["VERSION", "PROGRAM_HASH", "USAGE_COUNT", "CREATED_AT"], &rows);
     Ok(())
 }
 
