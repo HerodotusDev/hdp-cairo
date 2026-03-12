@@ -18,16 +18,30 @@ hdp --log-level trace fetch-proofs
 
 ## Command Reference
 
+`hdp` supports the following commands:
+
+### Local Workflow Commands
+
 | Command | Purpose |
 |---|---|
 | `hdp dry-run` | Simulate module execution and produce dry-run output/preimage |
 | `hdp fetch-proofs` | Fetch proof material required by HDP sound run |
 | `hdp sound-run` | Execute verified run with fetched proofs |
 | `hdp program-hash` | Print HDP program hash |
+
+### Cloud Commands
+
+| Command | Purpose |
+|---|---|
 | `hdp cloud upload` | Build and upload module package to HDP server |
 | `hdp cloud execute` | Build module and submit `POST /tasks` with inline `compiled_class` |
 | `hdp cloud list-modules` | List modules in a clean table (all or current user) |
 | `hdp cloud module-versions` | List all versions of a given module in a clean table |
+
+### Utility Commands
+
+| Command | Purpose |
+|---|---|
 | `hdp env-info` | Print example `.env` + runtime hints |
 | `hdp link` | Symlink installed `hdp_cairo` into current project |
 | `hdp update` | Reinstall/update CLI from installer script |

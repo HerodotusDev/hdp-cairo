@@ -146,12 +146,22 @@ The runtime requires RPC calls to blockchain nodes. Set up your environment vari
 
 `hdp` supports the following commands:
 
+### Local Workflow Commands
+
 - `hdp dry-run` - simulates module execution and collects proof metadata
 - `hdp fetch-proofs` - fetches required on-chain proofs
 - `hdp sound-run` - executes the verified run and can produce Cairo PIE
 - `hdp program-hash` - prints HDP program hash from compiled program
-- `hdp upload` - builds and uploads your module to HDP server
-- `hdp execute` - builds your module and sends `POST /tasks` with inline `compiled_class`
+
+### Cloud Commands
+
+- `hdp cloud upload` - builds and uploads your module to HDP server
+- `hdp cloud execute` - builds your module and sends `POST /tasks` with inline `compiled_class`
+- `hdp cloud list-modules` - lists modules in a table (all modules or current user modules)
+- `hdp cloud module-versions` - lists all versions of a module in a table
+
+### Utility Commands
+
 - `hdp env-info` - prints `.env` template and required runtime envs
 - `hdp link` - links installed `hdp_cairo` sources into your local project
 - `hdp update` - updates the installed CLI
@@ -175,7 +185,7 @@ hdp env-info
 
 ## Upload Module to HDP Server (CLI)
 
-Use `hdp upload` from your module root directory (the directory containing `Scarb.toml`).
+Use `hdp cloud upload` from your module root directory (the directory containing `Scarb.toml`).
 
 The command:
 
@@ -198,7 +208,7 @@ The command:
 
 ```sh
 cd /path/to/your/module
-hdp upload \
+hdp cloud upload \
   --api-key "$HERODOTUS_CLOUD_API_KEY" \
   --url "http://localhost:3001"
 ```
@@ -206,7 +216,7 @@ hdp upload \
 ### With metadata
 
 ```sh
-hdp upload \
+hdp cloud upload \
   --api-key "$HERODOTUS_CLOUD_API_KEY" \
   --url "http://localhost:3001" \
   --description "Provable ETH call module" \
@@ -220,7 +230,7 @@ hdp upload \
 ```sh
 export HERODOTUS_CLOUD_API_KEY="..."
 export HDP_SERVER_URL="http://localhost:3001"
-hdp upload
+hdp cloud upload
 ```
 
 ### Notes
