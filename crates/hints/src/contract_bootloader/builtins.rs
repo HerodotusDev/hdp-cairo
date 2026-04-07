@@ -81,11 +81,23 @@ pub fn select_builtin(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let selected_encodings = get_ptr_from_var_name(vars::ids::SELECTED_ENCODINGS, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-
-    let all_encodings = get_ptr_from_var_name(vars::ids::ALL_ENCODINGS, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-
     let n_selected_builtins = exec_scopes.get_mut_ref::<Felt252>(vars::scopes::N_SELECTED_BUILTINS)?;
+
+    // Short-circuit: when no selected builtins remain, don't read memory
+    // (mirrors Python's `n_selected_builtins > 0 and memory[...]` short-circuit)
+    if *n_selected_builtins == Felt252::ZERO {
+        insert_value_from_var_name(
+            vars::ids::SELECT_BUILTIN,
+            Felt252::ZERO,
+            vm,
+            &hint_data.ids_data,
+            &hint_data.ap_tracking,
+        )?;
+        return Ok(());
+    }
+
+    let selected_encodings = get_ptr_from_var_name(vars::ids::SELECTED_ENCODINGS, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let all_encodings = get_ptr_from_var_name(vars::ids::ALL_ENCODINGS, vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     let selected_val = vm
         .get_maybe(&selected_encodings)
@@ -93,7 +105,7 @@ pub fn select_builtin(
     let all_val = vm
         .get_maybe(&all_encodings)
         .ok_or_else(|| HintError::CustomHint("bootloader/builtins: ids.all_encodings is missing".into()))?;
-    let select_builtin = *n_selected_builtins > Felt252::ZERO && selected_val == all_val;
+    let select_builtin = selected_val == all_val;
 
     insert_value_from_var_name(
         vars::ids::SELECT_BUILTIN,

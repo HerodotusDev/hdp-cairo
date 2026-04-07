@@ -145,7 +145,7 @@ mod test_utils {
             .context("failed to initialize CairoRunner (dry_run)")?;
 
         // Run the Cairo VM
-        let mut hint_processor = dry_hint_processor::CustomHintProcessor::new(program_inputs);
+        let mut hint_processor = dry_hint_processor::CustomHintProcessor::new(program_inputs, false);
         cairo_runner
             .run_until_pc(end, &mut hint_processor)
             .context("dry_run failed: Cairo VM execution failed")?;
@@ -229,7 +229,7 @@ mod test_utils {
             .context("failed to initialize CairoRunner (sound_run)")?;
 
         // Run the Cairo VM
-        let mut hint_processor = sound_hint_processor::CustomHintProcessor::new(program_inputs);
+        let mut hint_processor = sound_hint_processor::CustomHintProcessor::new(program_inputs, false);
         cairo_runner
             .run_until_pc(end, &mut hint_processor)
             .context("sound_run failed: Cairo VM execution failed")?;

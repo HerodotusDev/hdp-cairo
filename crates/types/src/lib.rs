@@ -7,6 +7,7 @@ pub mod cairo;
 pub mod error;
 pub mod keys;
 pub mod param;
+pub mod pretty_debug;
 pub mod proofs;
 
 use std::{fmt, str::FromStr};

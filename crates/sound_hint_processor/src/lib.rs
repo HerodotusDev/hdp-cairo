@@ -10,7 +10,7 @@ pub mod syscall_handler;
 use std::{any::Any, collections::HashMap};
 
 use ::syscall_handler::SyscallHandlerWrapper;
-use cairo_lang_casm::hints::{Hint, StarknetHint};
+use cairo_lang_casm::hints::{CoreHint, CoreHintBase, Hint, StarknetHint};
 use cairo_vm::{
     hint_processor::{
         builtin_hint_processor::builtin_hint_processor_definition::{BuiltinHintProcessor, HintProcessorData},
@@ -21,7 +21,11 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, runners::cairo_runner::ResourceTracker, vm_core::VirtualMachine},
     Felt252,
 };
-use hints::{extensive_hints, hint_processor_common::get_ptr_from_res_operand, hints, vars, ExtensiveHintImpl, HintImpl};
+use hints::{
+    extensive_hints,
+    hint_processor_common::{get_ptr_from_res_operand, pretty_debug_text_from_vm_range},
+    hints, vars, ExtensiveHintImpl, HintImpl,
+};
 use starknet_types_core::felt::Felt;
 use syscall_handler::{evm, starknet};
 use tokio::{runtime::Handle, task};
@@ -44,16 +48,18 @@ pub struct CustomHintProcessor {
     cairo1_builtin_hint_proc: Cairo1HintProcessor,
     hints: HashMap<String, HintImpl>,
     extensive_hints: HashMap<String, ExtensiveHintImpl>,
+    pretty_output: bool,
 }
 
 impl CustomHintProcessor {
-    pub fn new(inputs: HDPInput) -> Self {
+    pub fn new(inputs: HDPInput, pretty_output: bool) -> Self {
         Self {
             inputs,
             builtin_hint_proc: BuiltinHintProcessor::new_empty(),
             cairo1_builtin_hint_proc: Cairo1HintProcessor::new(Default::default(), Default::default(), true),
             hints: Self::hints(),
             extensive_hints: Self::extensive_hints(),
+            pretty_output,
         }
     }
 
@@ -139,6 +145,18 @@ impl HintProcessorLogic for CustomHintProcessor {
                             .map(|_| HintExtension::default())
                     })
                 });
+            } else if self.pretty_output {
+                if let Hint::Core(CoreHintBase::Core(CoreHint::DebugPrint { start, end })) = hint {
+                    let text = pretty_debug_text_from_vm_range(vm, start, end)?;
+                    if !text.is_empty() {
+                        println!("{}", text);
+                    }
+                    return Ok(HintExtension::default());
+                }
+                return self
+                    .cairo1_builtin_hint_proc
+                    .execute(vm, exec_scopes, hint)
+                    .map(|_| HintExtension::default());
             } else {
                 return self
                     .cairo1_builtin_hint_proc
