@@ -10,7 +10,7 @@ pub mod syscall_handler;
 use std::{any::Any, collections::HashMap};
 
 use ::syscall_handler::SyscallHandlerWrapper;
-use cairo_lang_casm::hints::{Hint, StarknetHint};
+use cairo_lang_casm::hints::{CoreHint, CoreHintBase, Hint, StarknetHint};
 use cairo_vm::{
     hint_processor::{
         builtin_hint_processor::builtin_hint_processor_definition::{BuiltinHintProcessor, HintProcessorData},
@@ -44,16 +44,18 @@ pub struct CustomHintProcessor {
     cairo1_builtin_hint_proc: Cairo1HintProcessor,
     hints: HashMap<String, HintImpl>,
     extensive_hints: HashMap<String, ExtensiveHintImpl>,
+    pretty_output: bool,
 }
 
 impl CustomHintProcessor {
-    pub fn new(inputs: HDPDryRunInput) -> Self {
+    pub fn new(inputs: HDPDryRunInput, pretty_output: bool) -> Self {
         Self {
             inputs,
             builtin_hint_proc: BuiltinHintProcessor::new_empty(),
             cairo1_builtin_hint_proc: Cairo1HintProcessor::new(Default::default(), Default::default(), true),
             hints: Self::hints(),
             extensive_hints: Self::extensive_hints(),
+            pretty_output,
         }
     }
 
@@ -139,6 +141,29 @@ impl HintProcessorLogic for CustomHintProcessor {
                             .map(|_| HintExtension::default())
                     })
                 });
+            } else if self.pretty_output {
+                if let Hint::Core(CoreHintBase::Core(CoreHint::DebugPrint { start, end })) = hint {
+                    let start_ptr = get_ptr_from_res_operand(vm, start)?;
+                    let end_ptr = get_ptr_from_res_operand(vm, end)?;
+                    let len = (end_ptr - start_ptr)
+                        .map_err(|_| HintError::CustomHint("DebugPrint: invalid range".into()))?;
+                    if len > 0 {
+                        let felts: Vec<Felt252> = vm
+                            .get_integer_range(start_ptr, len)?
+                            .into_iter()
+                            .map(|f| (*f.as_ref()))
+                            .collect();
+                        let text = pretty_debug_text(&felts);
+                        if !text.is_empty() {
+                            println!("{}", text);
+                        }
+                    }
+                    return Ok(HintExtension::default());
+                }
+                return self
+                    .cairo1_builtin_hint_proc
+                    .execute(vm, exec_scopes, hint)
+                    .map(|_| HintExtension::default());
             } else {
                 return self
                     .cairo1_builtin_hint_proc
@@ -152,3 +177,33 @@ impl HintProcessorLogic for CustomHintProcessor {
 }
 
 impl ResourceTracker for CustomHintProcessor {}
+
+/// Reconstruct a clean debug message from a DebugPrint felt range.
+/// Each felt is tried as a Cairo short string (up to 31 ASCII bytes);
+/// printable fragments are concatenated into a single line.
+fn pretty_debug_text(felts: &[Felt252]) -> String {
+    let mut text = String::new();
+    for value in felts {
+        if let Some(s) = felt_as_short_string(value) {
+            text.push_str(&s);
+        }
+    }
+    text
+}
+
+/// Decode a Felt252 as a Cairo short string (same logic as cairo-vm's
+/// `as_cairo_short_string`). Returns None if any byte is non-ASCII.
+fn felt_as_short_string(value: &Felt252) -> Option<String> {
+    let mut result = String::new();
+    let mut ended = false;
+    for byte in value.to_bytes_be().into_iter().skip_while(|b| *b == 0) {
+        if byte == 0 {
+            ended = true;
+        } else if ended || !byte.is_ascii() {
+            return None;
+        } else {
+            result.push(byte as char);
+        }
+    }
+    Some(result)
+}

@@ -53,6 +53,12 @@ pub struct Args {
         help = "Print program output to stdout [default: false]"
     )]
     pub print_output: bool,
+    #[arg(
+        long = "print_output_pretty",
+        default_value_t = false,
+        help = "Print clean debug messages (text only, no raw felt values) [default: false]"
+    )]
+    pub print_output_pretty: bool,
     #[arg(long = "proof_mode", conflicts_with = "cairo_pie", help = "Configure runner in proof mode")]
     pub proof_mode: bool,
 
@@ -75,7 +81,12 @@ pub struct Args {
 }
 
 #[instrument(skip(input, cairo_run_config), fields(program = %program_path.display()))]
-pub fn run(program_path: PathBuf, cairo_run_config: CairoRunConfig, input: HDPInput) -> Result<(CairoRunner, HDPOutput), Error> {
+pub fn run(
+    program_path: PathBuf,
+    cairo_run_config: CairoRunConfig,
+    input: HDPInput,
+    pretty_output: bool,
+) -> Result<(CairoRunner, HDPOutput), Error> {
     debug!(
         chain_proofs = input.chain_proofs.len(),
         state_proofs = input.state_proofs.len(),
@@ -90,7 +101,7 @@ pub fn run(program_path: PathBuf, cairo_run_config: CairoRunConfig, input: HDPIn
     })?;
     let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))?;
 
-    let mut hint_processor = CustomHintProcessor::new(input);
+    let mut hint_processor = CustomHintProcessor::new(input, pretty_output);
     let mut cairo_runner = cairo_run_program(&program, &cairo_run_config, &mut hint_processor).map_err(Box::new)?;
     let resources = cairo_runner
         .get_execution_resources()
@@ -184,9 +195,10 @@ pub async fn run_with_args(args: Args) -> Result<(), Error> {
             injected_state,
             unconstrained: proofs_data.unconstrained,
         },
+        args.print_output_pretty,
     )?;
 
-    if args.print_output {
+    if args.print_output || args.print_output_pretty {
         println!("{:#?}", output);
     }
 

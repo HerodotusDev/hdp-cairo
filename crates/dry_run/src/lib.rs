@@ -54,13 +54,23 @@ pub struct Args {
         help = "Print program output to stdout [default: false]"
     )]
     pub print_output: bool,
+    #[arg(
+        long = "print_output_pretty",
+        default_value_t = false,
+        help = "Print clean debug messages (text only, no raw felt values) [default: false]"
+    )]
+    pub print_output_pretty: bool,
     #[structopt(long = "allow_missing_builtins")]
     pub allow_missing_builtins: Option<bool>,
 }
 
 #[allow(clippy::type_complexity)]
 #[instrument(skip(input), fields(program = %program_path.display()))]
-pub fn run(program_path: PathBuf, input: HDPDryRunInput) -> Result<(DryRunSyscallHandler, HDPDryRunOutput), Error> {
+pub fn run(
+    program_path: PathBuf,
+    input: HDPDryRunInput,
+    pretty_output: bool,
+) -> Result<(DryRunSyscallHandler, HDPDryRunOutput), Error> {
     info!("Starting dry run execution");
     debug!(params_count = input.params.len(), "Input parameters loaded");
     let cairo_run_config = cairo_run::CairoRunConfig {
@@ -77,7 +87,7 @@ pub fn run(program_path: PathBuf, input: HDPDryRunInput) -> Result<(DryRunSyscal
     })?;
     let program = Program::from_bytes(&program_file, Some(cairo_run_config.entrypoint))?;
 
-    let mut hint_processor = CustomHintProcessor::new(input);
+    let mut hint_processor = CustomHintProcessor::new(input, pretty_output);
     let mut cairo_runner = cairo_run_program(&program, &cairo_run_config, &mut hint_processor).map_err(Box::new)?;
     let resources = cairo_runner
         .get_execution_resources()
@@ -160,9 +170,10 @@ pub async fn run_with_args(args: Args) -> Result<(), Error> {
             params,
             injected_state,
         },
+        args.print_output_pretty,
     )?;
 
-    if args.print_output {
+    if args.print_output || args.print_output_pretty {
         println!("{:#?}", output);
     }
 
