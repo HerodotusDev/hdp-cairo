@@ -21,7 +21,11 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, runners::cairo_runner::ResourceTracker, vm_core::VirtualMachine},
     Felt252,
 };
-use hints::{extensive_hints, hint_processor_common::get_ptr_from_res_operand, hints, vars, ExtensiveHintImpl, HintImpl};
+use hints::{
+    extensive_hints,
+    hint_processor_common::{get_ptr_from_res_operand, pretty_debug_text_from_vm_range},
+    hints, vars, ExtensiveHintImpl, HintImpl,
+};
 use starknet_types_core::felt::Felt;
 use syscall_handler::{evm, starknet};
 use tokio::{runtime::Handle, task};
@@ -143,20 +147,9 @@ impl HintProcessorLogic for CustomHintProcessor {
                 });
             } else if self.pretty_output {
                 if let Hint::Core(CoreHintBase::Core(CoreHint::DebugPrint { start, end })) = hint {
-                    let start_ptr = get_ptr_from_res_operand(vm, start)?;
-                    let end_ptr = get_ptr_from_res_operand(vm, end)?;
-                    let len = (end_ptr - start_ptr)
-                        .map_err(|_| HintError::CustomHint("DebugPrint: invalid range".into()))?;
-                    if len > 0 {
-                        let felts: Vec<Felt252> = vm
-                            .get_integer_range(start_ptr, len)?
-                            .into_iter()
-                            .map(|f| (*f.as_ref()))
-                            .collect();
-                        let text = pretty_debug_text(&felts);
-                        if !text.is_empty() {
-                            println!("{}", text);
-                        }
+                    let text = pretty_debug_text_from_vm_range(vm, start, end)?;
+                    if !text.is_empty() {
+                        println!("{}", text);
                     }
                     return Ok(HintExtension::default());
                 }
@@ -177,28 +170,3 @@ impl HintProcessorLogic for CustomHintProcessor {
 }
 
 impl ResourceTracker for CustomHintProcessor {}
-
-fn pretty_debug_text(felts: &[Felt252]) -> String {
-    let mut text = String::new();
-    for value in felts {
-        if let Some(s) = felt_as_short_string(value) {
-            text.push_str(&s);
-        }
-    }
-    text
-}
-
-fn felt_as_short_string(value: &Felt252) -> Option<String> {
-    let mut result = String::new();
-    let mut ended = false;
-    for byte in value.to_bytes_be().into_iter().skip_while(|b| *b == 0) {
-        if byte == 0 {
-            ended = true;
-        } else if ended || !byte.is_ascii() {
-            return None;
-        } else {
-            result.push(byte as char);
-        }
-    }
-    Some(result)
-}

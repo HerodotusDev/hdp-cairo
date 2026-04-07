@@ -4,6 +4,7 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
     Felt252,
 };
+use types::pretty_debug::pretty_debug_text;
 
 pub fn get_ptr_from_res_operand(vm: &mut VirtualMachine, res: &ResOperand) -> Result<Relocatable, HintError> {
     let (cell, base_offset) = match res {
@@ -27,4 +28,24 @@ pub fn get_ptr_from_res_operand(vm: &mut VirtualMachine, res: &ResOperand) -> Re
     };
     let cell_reloc = (base + (i32::from(cell.offset)))?;
     (vm.get_relocatable(cell_reloc)? + &base_offset).map_err(Into::into)
+}
+
+/// Reads felts in the VM range `[start, end)` and decodes them as Cairo short-string debug output.
+pub fn pretty_debug_text_from_vm_range(
+    vm: &mut VirtualMachine,
+    start: &ResOperand,
+    end: &ResOperand,
+) -> Result<String, HintError> {
+    let start_ptr = get_ptr_from_res_operand(vm, start)?;
+    let end_ptr = get_ptr_from_res_operand(vm, end)?;
+    let len = (end_ptr - start_ptr).map_err(|_| HintError::CustomHint("DebugPrint: invalid range".into()))?;
+    if len == 0 {
+        return Ok(String::new());
+    }
+    let felts: Vec<Felt252> = vm
+        .get_integer_range(start_ptr, len)?
+        .into_iter()
+        .map(|f| (*f.as_ref()))
+        .collect();
+    Ok(pretty_debug_text(&felts))
 }
